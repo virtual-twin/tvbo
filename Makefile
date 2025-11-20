@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all all
+.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release all
 all: build save
 
 build:
@@ -104,4 +104,12 @@ docs-test-to-debug:
 	echo "  Fixed & Moved: $$passed"; \
 	echo "  Still Failing: $$failed"; \
 	echo "========================================"
+
+pypi-release:
+	@echo "Building and uploading to PyPI..."
+	@rm -rf dist build *.egg-info
+	@python -m build
+	@python -m twine check dist/*
+	@python -m twine upload dist/*
+	@echo "✓ Release uploaded to PyPI"
 
