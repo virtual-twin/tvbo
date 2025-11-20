@@ -52,28 +52,72 @@ class Connectome(tvbo_datamodel.Connectome):
     """
 
     def __init__(self, **kwargs):
-        # Accept raw arrays; convert to Matrix before delegating to datamodel
-        # Load normative connectome data if parcellation/atlas is specified
-        if "parcellation" in kwargs and kwargs["parcellation"].get("atlas"):
-            atlas_name = kwargs["parcellation"]["atlas"].get("name")
-            tractogram = kwargs.get("tractogram", "dTOR")
-            w_in, l_in = get_normative_connectome_data(atlas_name, tractogram)
-            kwargs["weights"] = w_in
-            kwargs["lengths"] = l_in
-            # Infer number of regions from the loaded weights
-            if "number_of_regions" not in kwargs and "number_of_nodes" not in kwargs:
-                if hasattr(w_in, "dataLocation") and w_in.dataLocation:
-                    w_arr = pd.read_csv(w_in.dataLocation, header=None).values
-                    kwargs["number_of_regions"] = w_arr.shape[0]
-                    kwargs["number_of_nodes"] = w_arr.shape[0]
-
-        # Sync number_of_regions and number_of_nodes if one is provided
+        """Initialize Connectome with priority order:
+        1. weights/lengths from kwargs (if provided)
+        2. Load from parcellation/atlas (if provided and weights/lengths not given)
+        3. Create default connectome based on number_of_nodes (fallback)
+        """
+        # Sync number_of_regions and number_of_nodes early
         if "number_of_regions" in kwargs and "number_of_nodes" not in kwargs:
             kwargs["number_of_nodes"] = kwargs["number_of_regions"]
         elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
             kwargs["number_of_regions"] = kwargs["number_of_nodes"]
 
-        if "weights" in kwargs and isinstance(kwargs["weights"], np.ndarray):
+        # Determine number of nodes for default connectome
+        n_nodes = kwargs.get("number_of_nodes") or kwargs.get("number_of_regions") or 1
+
+        # Priority 1: Use weights/lengths from kwargs if provided (already there)
+        has_weights = "weights" in kwargs
+        has_lengths = "lengths" in kwargs
+
+        # Priority 2: Load normative data if parcellation/atlas specified and no weights/lengths
+        if not has_weights and not has_lengths:
+            if "parcellation" in kwargs and kwargs["parcellation"].get("atlas"):
+                atlas_name = kwargs["parcellation"]["atlas"].get("name")
+                tractogram = kwargs.get("tractogram", "dTOR")
+                w_in, l_in = get_normative_connectome_data(atlas_name, tractogram)
+                kwargs["weights"] = w_in
+                kwargs["lengths"] = l_in
+                # Infer number of regions from loaded data
+                if hasattr(w_in, "dataLocation") and w_in.dataLocation:
+                    w_arr = pd.read_csv(w_in.dataLocation, header=None).values
+                    n_nodes = w_arr.shape[0]
+                    kwargs["number_of_regions"] = n_nodes
+                    kwargs["number_of_nodes"] = n_nodes
+                has_weights = True
+                has_lengths = True
+
+        # Priority 3: Create default matrices if still no weights/lengths
+        if not has_weights:
+            kwargs["weights"] = tvbo_datamodel.Matrix(
+                x=tvbo_datamodel.BrainRegionSeries(
+                    values=[str(i) for i in range(n_nodes)]
+                ),
+                y=tvbo_datamodel.BrainRegionSeries(
+                    values=[str(i) for i in range(n_nodes)]
+                ),
+                values=[0.0] * (n_nodes * n_nodes),
+            )
+
+        if not has_lengths:
+            kwargs["lengths"] = tvbo_datamodel.Matrix(
+                x=tvbo_datamodel.BrainRegionSeries(
+                    values=[str(i) for i in range(n_nodes)]
+                ),
+                y=tvbo_datamodel.BrainRegionSeries(
+                    values=[str(i) for i in range(n_nodes)]
+                ),
+                values=[1.0] * (n_nodes * n_nodes),
+            )
+
+        # Ensure number_of_regions/nodes are set
+        if "number_of_regions" not in kwargs:
+            kwargs["number_of_regions"] = n_nodes
+        if "number_of_nodes" not in kwargs:
+            kwargs["number_of_nodes"] = n_nodes
+
+        # Convert numpy arrays to Matrix objects if needed
+        if isinstance(kwargs.get("weights"), np.ndarray):
             w_in = kwargs["weights"]
             kwargs["weights"] = tvbo_datamodel.Matrix(
                 x=tvbo_datamodel.BrainRegionSeries(
@@ -85,7 +129,7 @@ class Connectome(tvbo_datamodel.Connectome):
                 values=w_in.reshape(-1).astype(float).tolist(),
             )
 
-        if "lengths" in kwargs and isinstance(kwargs["lengths"], np.ndarray):
+        if isinstance(kwargs.get("lengths"), np.ndarray):
             l_in = kwargs["lengths"]
             kwargs["lengths"] = tvbo_datamodel.Matrix(
                 x=tvbo_datamodel.BrainRegionSeries(

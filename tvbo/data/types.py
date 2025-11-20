@@ -504,8 +504,24 @@ class TimeSeries(BaseTimeSeries):
         return dominant_frequency
 
     def compute_normalised_average_power(self, VOI=None):
-        from tvb.analyzers import fft
+        """
+        Compute normalized average power spectrum using FFT.
+        
+        Parameters
+        ----------
+        VOI : str, optional
+            Variable of interest to analyze. Required if multiple state variables exist.
+            
+        Returns
+        -------
+        frequency : ndarray
+            Frequency values in Hz
+        power : ndarray
+            Normalized average power values
+        """
+        from scipy.fft import fft, fftfreq
 
+        # Select variable of interest
         if len(self.labels_dimensions["State Variable"]) == 1:
             ts = self
         elif len(self.labels_dimensions["State Variable"]) > 1 and VOI:
@@ -515,12 +531,24 @@ class TimeSeries(BaseTimeSeries):
                 f"select variable of interest (VOI) from {self.labels_dimensions['State Variable']}"
             )
 
-        ft = fft.compute_fast_fourier_transform(ts, 1e3, None, False)
-        ft.compute_normalised_average_power()
-        frequency = ft.frequency * 1000
-        power = ft.normalised_average_power
-        if frequency.shape[0] > power.shape[0] and frequency[0] > 1:
-            frequency = frequency[:-1]
+        # Get data and compute FFT
+        data = ts.data
+        dt = ts.sample_period_ms / 1000  # Convert to seconds
+        n_samples = data.shape[0]
+
+        # Compute FFT for positive frequencies only
+        fft_result = fft(data, axis=0)
+        fft_power = np.abs(fft_result) ** 2
+        frequency = fftfreq(n_samples, d=dt)
+
+        # Take only positive frequencies
+        positive_mask = frequency >= 0
+        frequency = frequency[positive_mask]
+        fft_power = fft_power[positive_mask]
+
+        # Average over regions and modes, normalize
+        power = fft_power.mean(axis=(1, 2))  # Average over state vars and regions
+        power = power / power.sum()  # Normalize
 
         return frequency, power
 
