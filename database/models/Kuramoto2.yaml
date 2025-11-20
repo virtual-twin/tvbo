@@ -1,0 +1,63 @@
+name: KuramotoModel2
+parameters:
+    omega:
+        name: omega
+        definition: "Sets the base line frequency for the Kuramoto oscillator in [rad/ms]."
+        value: 1.0
+        domain:
+            lo: 0.01
+            hi: 200.0
+            step: 0.1
+
+derived_parameters:
+    f:
+        description: "Intrinsic frequency of node n on its limit cycle"
+        equation:
+            rhs: "(omega/(2*pi))*1000"
+        unit: Hz
+
+derived_variables:
+    lc_0:
+        name: lc_0
+        equation:
+            lhs: lc_0
+            rhs: sin(local_coupling*theta)
+        conditional: false
+    I:
+        name: I
+        description:
+            "`I` is the input via local and long range connectivity, passing
+            first through the Kuramoto coupling function"
+        equation:
+            lhs: I
+            rhs: c_glob+lc_0
+        conditional: false
+
+coupling_terms:
+    c_glob:
+        name: c_glob
+
+state_variables:
+    theta:
+        name: theta
+        domain:
+            lo: 0.0
+            hi: 6.283185307179586
+        description:
+            The Kuramoto model has only one state variable representing oscillations
+            in general
+        equation:
+            lhs: thetadot
+            rhs: omega + I
+        variable_of_interest: true
+        coupling_variable: true
+        initial_value: 0.1
+
+output_transforms:
+    phase:
+        equation:
+            rhs: theta / (2*pi)
+
+    signal:
+        equation:
+            rhs: sin(theta)

@@ -1,0 +1,22 @@
+name: MannevilleSimpleMap
+references:
+- Manneville1980
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+system_type: discrete
+parameters:
+  epsilon:
+    name: epsilon
+    value: 0.1
+    description: Intermittency control ε.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: ((1 + epsilon)*x + (1 - epsilon)*x**2) % 1
+      latex: false
+    initial_value: 0.4
+description: |-
+  Simple intermittency map x_{n+1} = [(1+ε)x_n + (1-ε)x_n^2] mod 1, used to illustrate
+  bursts separated by quiescent phases.
+number_of_modes: 1

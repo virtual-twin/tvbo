@@ -1,0 +1,39 @@
+name: GenericLinear
+parameters:
+  gamma:
+    name: gamma
+    definition: 'Slope parameter of the state-variable ''x_GL'', representing the
+      inverse of the relaxation time.
+
+
+      Note: The ‘minus’ sign for the self-connections, scaled by ''gamma_GL'', guarantees
+      that the nodes have a stable equilibrium point (ref).'
+    value: -10.0
+    domain:
+      lo: -100.0
+      hi: 0.0
+      step: 1.0
+    description: Slope parameter of the state-variable 'x_GL', representing the inverse
+      of the relaxation time
+description: The Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e.,
+  one state-variable ('x')) neural mass model (Galán, 2008).
+references:
+- Galan2008
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  x:
+    name: x
+    domain:
+      lo: -1.0
+      hi: 1.0
+    description: State-variable of the Generic Linear model
+    equation:
+      lhs: Derivative(x, t)
+      rhs: c_pop0 + gamma*x + local_coupling*x
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+number_of_modes: 1

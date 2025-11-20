@@ -1,0 +1,227 @@
+name: Epileptor2D
+parameters:
+  Iext:
+    name: Iext
+    definition: External input current to the first state-variable x_E2D, in Epileptor2D
+      (Proix et al.,2014).
+    value: 3.1
+    domain:
+      lo: 1.5
+      hi: 5.0
+      step: 0.1
+    description: External input current to the first state-variable x_E2D, in Epileptor2D
+      (Proix et al
+  Ks:
+    name: Ks
+    definition: 'Permittivity coupling on the slow permittivity state-variable z_E2D
+      in Epileptor2D (Proix et al., 2014).
+
+
+      The coupling quantifies the influence of neuronal fast discharges x_E2D on the
+      local slow permittivity variable z_E2D.'
+    value: 0.0
+    domain:
+      lo: -4.0
+      hi: 4.0
+      step: 0.1
+    description: Permittivity coupling on the slow permittivity state-variable z_E2D
+      in Epileptor2D (Proix et al
+  Kvf:
+    name: Kvf
+    definition: Coupling scaling on a very fast time scale.
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 4.0
+      step: 0.5
+    description: Coupling scaling on a very fast time scale
+  a:
+    name: a
+    definition: Coefficient of the cubic term in the first state-variable x_E2D via
+      the function f(x)_E2D, in Epileptor2D Proix et al.,2014).
+    value: 1.0
+    description: Coefficient of the cubic term in the first state-variable x_E2D via
+      the function f(x)_E2D, in Epileptor2D Proix et al
+  b:
+    name: b
+    definition: Coefficient of the squared term in the first state-variable x_E2D
+      via the function f_E2D, in Epileptor2D (Proix et al.,2014).
+    value: 3.0
+    description: Coefficient of the squared term in the first state-variable x_E2D
+      via the function f_E2D, in Epileptor2D (Proix et al
+  c:
+    name: c
+    definition: Additive coefficient for the second state-variable x_{2},         called
+      :math:`y_{0}` in Jirsa paper.
+    value: 1.0
+    description: Additive coefficient for the second state-variable x_{2},         called
+      :math:`y_{0}` in Jirsa paper
+  d:
+    name: d
+    definition: Coefficient of the squared term in the first state-variable x_E2D
+      via the function f in Epileptor2D (Proix et al.,2014).
+    value: 5.0
+    description: Coefficient of the squared term in the first state-variable x_E2D
+      via the function f in Epileptor2D (Proix et al
+  modification:
+    name: modification
+    definition: When modification is True, the function h_E2D uses a nonlinear influence
+      on z_E2D. The default value is False, i.e., linear influence on z_E2D.
+    value: 0.0
+    description: When modification is True, the function h_E2D uses a nonlinear influence
+      on z_E2D
+  r:
+    name: r
+    definition: "Temporal scaling in the slow state-variable, \\\n        called :math:`1\\\
+      tau_{0}` in Jirsa paper (see class Epileptor)."
+    value: 0.00035
+    domain:
+      lo: 0.0
+      hi: 0.001
+      step: 5.0e-05
+    description: Temporal scaling in the slow state-variable, \         called :math:`1\tau_{0}`
+      in Jirsa paper (see class Epileptor)
+  slope:
+    name: slope
+    definition: Linear coefficient in the first state-variable x_E2D via the function
+      f_E2D, in Epileptor2D (Proix et al.,2014).
+    value: 0.0
+    domain:
+      lo: -16.0
+      hi: 6.0
+      step: 0.1
+    description: Linear coefficient in the first state-variable x_E2D via the function
+      f_E2D, in Epileptor2D (Proix et al
+  tt:
+    name: tt
+    definition: Characteristic time scale of the whole-system Epileptor2D.
+    value: 1.0
+    domain:
+      lo: 0.001
+      hi: 1.0
+      step: 0.001
+    description: Characteristic time scale of the whole-system Epileptor2D
+  x0:
+    name: x0
+    definition: 'Degree of excitability or epileptogenicity in Epileptor2D (Proix
+      et al.,2014).
+
+
+      If x0 is greater than a critical value, x0,critic = −2.05 (i.e., in the supercritical
+      regime), the system can trigger seizures autonomously; otherwise it is in its
+      equilibrium state (i.e., in the subcritical regime).
+
+
+      Note:
+
+      - If modification_E2D:
+
+      if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures
+      autonomously; otherwise it is in its equilibrium state (Proix et al., 2014).'
+    value: -1.6
+    domain:
+      lo: -3.0
+      hi: -1.0
+      step: 0.1
+    description: Degree of excitability or epileptogenicity in Epileptor2D (Proix
+      et al
+description: "Epileptor2D (E2D) is a phenomenological neural mass model consisting\
+  \ in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see\
+  \ Epileptor5D; Proix et al., 2014, 2017).\n\nNote: \n------\n- Equations and default\
+  \ parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable\
+  \ (z_E2D) can be modified to account for the time difference between the interictal\
+  \ (between seizures) and ictal (during seizure) states (see Proix et al., 2014)."
+references:
+- Proix2017
+- Proix2014
+derived_variables:
+  x1cond:
+    name: x1cond
+    symbol: x1cond
+    equation:
+      lhs: x1cond
+      rhs: Piecewise((a*x1**2 + x1*(-b + d), x1 < 0), (d*x1 - slope - 0.6*(z - 4.0)**2,
+        True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: x1 < 0
+      equation:
+        lhs: x1cond
+        rhs: a*x1**2 + x1*(-b + d)
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: x1cond
+        rhs: d*x1 - slope - 0.6*(z - 1*4.0)**2
+        latex: false
+  zcond:
+    name: zcond
+    symbol: zcond
+    equation:
+      lhs: zcond
+      rhs: Piecewise((-0.1*z**7, z < 0), (0, True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: z < 0
+      equation:
+        lhs: zcond
+        rhs: -0.1*z**7
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: zcond
+        rhs: '0'
+        latex: false
+  h:
+    name: h
+    symbol: h
+    equation:
+      lhs: h
+      rhs: Piecewise((x0 + 3.0/(exp((-x1 - 1*0.5)/0.1) + 1.0), modification > 0),
+        (zcond + 4*(-x0 + x1), True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: modification > 0
+      equation:
+        lhs: h
+        rhs: x0 + 3.0/(exp((-x1 - 0.5)/0.1) + 1.0)
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: h
+        rhs: zcond + 4*(-x0 + x1)
+        latex: false
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  x1:
+    name: x1
+    domain:
+      lo: -2.0
+      hi: 1.0
+    description: First state-variable in the Epileptor2D (Proix et al
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: tt*(Iext + Kvf*c_pop0 + c + local_coupling*x1 - x1*x1cond - z)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  z:
+    name: z
+    domain:
+      lo: 2.0
+      hi: 5.0
+    description: Slow permittivity state-variable of the Epileptor2D (Proix et al
+    equation:
+      lhs: Derivative(z, t)
+      rhs: r*tt*(Ks*c_pop0 + h - z)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+number_of_modes: 1

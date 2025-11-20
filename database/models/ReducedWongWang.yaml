@@ -1,0 +1,166 @@
+name: ReducedWongWang
+parameters:
+  I_o:
+    name: I_o
+    definition: 'External input current to the neurons population (Deco et al., 2013).
+
+
+      Note:
+
+      ------
+
+      In TVB, the default value is set to 0.33 (instead of 0.30 as in Deco et al.
+      (2013)) for setting the system is bistability (see Hansen et al., 2015).'
+    value: 0.33
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: External input current to the neurons population (Deco et al
+    unit: nA
+  J_N:
+    name: J_N
+    definition: Excitatory recurrence
+    value: 0.2609
+    domain:
+      lo: 0.2609
+      hi: 0.5
+      step: 0.001
+    description: Excitatory recurrence
+    unit: nA
+  a:
+    name: a
+    definition: 'Slope (or gain) parameter of the sigmoid input-output function H_RWW
+      (Deco et al., 2013).
+
+
+      Note:
+
+      -----
+
+      In the original publication, the parameter ''a'' is set in (nC)^-1 (i.e., equivalent
+      to  (nA.s)^-1).  In TVB, the parameter has been converted in (pC)^-1 for setting
+      the system in millisecond.'
+    value: 0.27
+    domain:
+      lo: 0.0
+      hi: 0.27
+      step: 0.01
+    description: Slope (or gain) parameter of the sigmoid input-output function H_RWW
+      (Deco et al
+    unit: (pC)^-1
+  b:
+    name: b
+    definition: "Shift parameter of the sigmoid input-output function H_RWW (Deco\
+      \ et al., 2013). \n\nNote:\n------\nIn the original publication, the parameter\
+      \ 'b' is set in Hz. In TVB, the parameter has been converted in kHz for setting\
+      \ the system in millisecond."
+    value: 0.108
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Shift parameter of the sigmoid input-output function H_RWW (Deco
+      et al
+    unit: kHz
+  d:
+    name: d
+    definition: "Scaling parameter of the sigmoid input-output function H_RWW (Deco\
+      \ et al., 2013). \n\nNote:\n------\nIn the original publication, the parameter\
+      \ 'd' is set in second. In TVB, the parameter has been converted in millisecond\
+      \ for setting the system in millisecond."
+    value: 154.0
+    domain:
+      lo: 0.0
+      hi: 200.0
+      step: 0.01
+    description: Scaling parameter of the sigmoid input-output function H_RWW (Deco
+      et al
+    unit: ms
+  gamma:
+    name: gamma
+    definition: Kinetic parameter
+    value: 0.641
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Kinetic parameter
+  tau_s:
+    name: tau_s
+    definition: Kinetic parameter. Decay time constant for the NMDA synapses of the
+      neurons population (Deco et al., 2013).
+    value: 100.0
+    domain:
+      lo: 50.0
+      hi: 150.0
+      step: 1.0
+    description: Kinetic parameter
+    unit: ms
+  w:
+    name: w
+    definition: Excitatory recurrence
+    value: 0.6
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Excitatory recurrence
+    unit: dimensionless
+description: 'Reduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e.,
+  only one state-variable ''S'') neural mass model that approximates the realistic
+  temporal dynamics of a detailed spiking and conductance-based synaptic large-scale
+  network (Deco et al., 2013).
+
+
+  RWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh
+  model, that consists in disentangling the contribution of the two neuronal populations
+  (excitatory and inhibitory) in order to study the time evolution of just one pool
+  of neurons for each network node (Wong & Wang, 2006). It results that the dynamics
+  of each network node described the temporal evolution of the opening probability
+  of the NMDA channels.'
+references:
+- WongWang2006
+- Deco2013
+derived_variables:
+  x:
+    name: x
+    description: (NMDAR)-mediated synaptic input current to the neurons population
+      (Deco et al., 2013).
+    equation:
+      lhs: x
+      rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_pop0
+      latex: false
+    conditional: false
+  H:
+    name: H
+    description: Sigmoid input-output function of the synaptic input current, x_RWW,
+      that computes the averaged firing rate of the neurons population (Deco et al.,
+      2013).
+    equation:
+      lhs: H
+      rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
+      latex: false
+    conditional: false
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  S:
+    name: S
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: State-variable of the Reduced WongWang model, denoting the average,
+      (NMDAR)-mediated synaptic gating, i
+    equation:
+      lhs: Derivative(S, t)
+      rhs: H*gamma*(1 - S) - S/tau_s
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    boundaries:
+      lo: 0.0
+      hi: 1.0
+    initial_value: 0.1
+number_of_modes: 1

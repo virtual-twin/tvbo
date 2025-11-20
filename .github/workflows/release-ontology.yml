@@ -1,0 +1,124 @@
+name: Release Ontology
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'tvbo/data/ontology/tvb-o.owl'
+      - 'tvbo/__init__.py'  # Also trigger if version changes
+
+permissions:
+  contents: write
+
+jobs:
+  check-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need at least 2 commits to check for changes
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check if ontology changed
+        id: check_ontology
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep -q "tvbo/data/ontology/tvb-o.owl"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Ontology file has changed"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Ontology file has not changed"
+          fi
+
+      - name: Extract package version
+        if: steps.check_ontology.outputs.changed == 'true'
+        id: get_version
+        run: |
+          VERSION=$(python -c "import re, pathlib; init=pathlib.Path('tvbo/__init__.py').read_text(encoding='utf-8'); m=re.search(r'__version__\\s*=\\s*[\'\"]([^\'\"]+)[\'\"]', init); print(m.group(1) if m else '')")
+          if [ -z "$VERSION" ]; then
+            echo "Could not extract __version__ from tvbo/__init__.py" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=ontology-v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Package version: $VERSION"
+
+      - name: Check if ontology release already exists
+        if: steps.check_ontology.outputs.changed == 'true'
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.get_version.outputs.tag }}"
+          if gh release view "$TAG" &>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $TAG already exists"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Release $TAG does not exist"
+          fi
+
+      - name: Generate release notes
+        if: steps.check_ontology.outputs.changed == 'true' && steps.check_release.outputs.exists == 'false'
+        id: release_notes
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          cat > release_notes.md << 'EOF'
+          # TVB-O Ontology Release v${{ steps.get_version.outputs.version }}
+
+          This release contains the TVB-O ontology (OWL file) corresponding to tvbo version ${{ steps.get_version.outputs.version }}.
+
+          ## Files
+          - `tvb-o.owl` - The Virtual Brain Ontology in OWL format
+          - `tvb-o.owl.sha256` - SHA256 checksum for verification
+
+          ## Usage
+          You can reference this ontology in your work using the persistent URL:
+          ```
+          https://github.com/virtual-twin/tvbo-python/raw/ontology-v${{ steps.get_version.outputs.version }}/tvbo/data/ontology/tvb-o.owl
+          ```
+
+          ## Changes
+          This ontology release corresponds to tvbo package version ${{ steps.get_version.outputs.version }}.
+          See the [main CHANGELOG](https://github.com/virtual-twin/tvbo-python/blob/main/CHANGELOG.md) for details about changes in this version.
+
+          ## Commit
+          This release is built from commit: ${{ github.sha }}
+          EOF
+          echo "Generated release notes"
+
+      - name: Generate checksums
+        if: steps.check_ontology.outputs.changed == 'true' && steps.check_release.outputs.exists == 'false'
+        run: |
+          cd tvbo/data/ontology
+          sha256sum tvb-o.owl > tvb-o.owl.sha256
+          echo "Generated checksum:"
+          cat tvb-o.owl.sha256
+
+      - name: Create GitHub Release
+        if: steps.check_ontology.outputs.changed == 'true' && steps.check_release.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.get_version.outputs.tag }}" \
+            --title "TVB-O Ontology v${{ steps.get_version.outputs.version }}" \
+            --notes-file release_notes.md \
+            tvbo/data/ontology/tvb-o.owl \
+            tvbo/data/ontology/tvb-o.owl.sha256
+
+      - name: Release summary
+        if: steps.check_ontology.outputs.changed == 'true'
+        run: |
+          if [ "${{ steps.check_release.outputs.exists }}" == "true" ]; then
+            echo "ℹ️ Ontology release ${{ steps.get_version.outputs.tag }} already exists. Skipping creation."
+          else
+            echo "✅ Created ontology release: ${{ steps.get_version.outputs.tag }}"
+            echo "📦 Attached files: tvb-o.owl, tvb-o.owl.sha256"
+            echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.tag }}"
+          fi

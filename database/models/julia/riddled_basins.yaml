@@ -1,0 +1,63 @@
+name: RiddledBasins
+references:
+- OttRiddled2014
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  gamma:
+    name: gamma
+    value: 0.05
+    description: Damping coefficient γ.
+  xbar:
+    name: xbar
+    value: 1.9
+    description: Shift parameter x̄.
+  f0:
+    name: f0
+    value: 2.3
+    description: Forcing amplitude f₀.
+  omega:
+    name: omega
+    value: 3.5
+    description: Forcing angular frequency ω.
+  x0:
+    name: x0
+    value: 1.0
+    description: Forcing x-projection coefficient.
+  y0:
+    name: y0
+    value: 0.0
+    description: Forcing y-projection coefficient.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: vx
+      latex: false
+    initial_value: 0.5
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: vy
+      latex: false
+    initial_value: 0.6
+  vx:
+    name: vx
+    equation:
+      lhs: Derivative(vx, t)
+      rhs: -gamma*vx - (-4*x*(1 - x**2) + y**2) + f0*sin(omega*t)*x0
+      latex: false
+    initial_value: 0.0
+  vy:
+    name: vy
+    equation:
+      lhs: Derivative(vy, t)
+      rhs: -gamma*vy - 2*y*(x + xbar) + f0*sin(omega*t)*y0
+      latex: false
+    initial_value: 0.0
+description: |-
+  Time-periodically forced four-dimensional system exhibiting riddled basins of
+  attraction: arbitrarily small neighborhoods contain points converging to
+  distinct attractors, illustrating extreme sensitivity in basin structure.
+number_of_modes: 1

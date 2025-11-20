@@ -1,0 +1,30 @@
+name: SigmoidalJansenRit
+parameters:
+  a:
+    name: a
+    value: 1.0
+    description: Scaling of the coupling term
+  midpoint:
+    name: midpoint
+    value: 6.0
+    description: Midpoint of the linear portion of the sigmoid
+  cmax:
+    name: cmax
+    value: 0.005
+    description: Maximum of the Sigmoid function
+  r:
+    name: r
+    value: 0.56
+    description: The steepness of the sigmoidal transformation
+  cmin:
+    name: cmin
+    value: 0.0
+    description: minimum of the Sigmoid function
+sparse: false
+pre_expression:
+  rhs: cmin + (cmax - cmin)/(exp(r*(midpoint - (x_j[0] - x_j[1]))) + 1.0)
+  latex: false
+post_expression:
+  rhs: a*gx
+  latex: false
+delayed: true

@@ -1,0 +1,78 @@
+name: CoupledRoessler
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  omega1:
+    name: omega1
+    value: 0.18
+    description: Frequency scaling of first oscillator.
+  omega2:
+    name: omega2
+    value: 0.22
+    description: Frequency scaling of second oscillator.
+  a:
+    name: a
+    value: 0.2
+    description: Linear term coefficient a.
+  b:
+    name: b
+    value: 0.2
+    description: Drive parameter b.
+  c:
+    name: c
+    value: 5.7
+    description: Folding parameter c.
+  k1:
+    name: k1
+    value: 0.115
+    description: Diffusive coupling from oscillator 2 to 1.
+  k2:
+    name: k2
+    value: 0.0
+    description: Diffusive coupling from oscillator 1 to 2.
+state_variables:
+  x1:
+    name: x1
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: -omega1*y1 - z1
+      latex: false
+    initial_value: 1.0
+  y1:
+    name: y1
+    equation:
+      lhs: Derivative(y1, t)
+      rhs: omega1*x1 + a*y1 + k1*(y2 - y1)
+      latex: false
+    initial_value: -2.0
+  z1:
+    name: z1
+    equation:
+      lhs: Derivative(z1, t)
+      rhs: b + z1*(x1 - c)
+      latex: false
+    initial_value: 0.0
+  x2:
+    name: x2
+    equation:
+      lhs: Derivative(x2, t)
+      rhs: -omega2*y2 - z2
+      latex: false
+    initial_value: 0.11
+  y2:
+    name: y2
+    equation:
+      lhs: Derivative(y2, t)
+      rhs: omega2*x2 + a*y2 + k2*(y1 - y2)
+      latex: false
+    initial_value: 0.2
+  z2:
+    name: z2
+    equation:
+      lhs: Derivative(z2, t)
+      rhs: b + z2*(x2 - c)
+      latex: false
+    initial_value: 0.1
+description: |-
+  Pair of diffusively coupled Rössler oscillators used to study phase and
+  generalized synchronization, lag synchronization and coupling asymmetry effects.
+number_of_modes: 1

@@ -1,0 +1,39 @@
+type: network
+label: DesikanKilliany (PPMI85)
+name: DesikanKilliany (PPMI85)
+parcellation:
+  atlas:
+    name: DesikanKilliany
+tractogram: PPMI85
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85_lengths.csv
+number_of_regions: 87
+space: MNI152Nlin2009c
+weights_min: 0.0
+weights_max: 11197.0
+weights_mean: 82.10569427929714
+weights_median: 0.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 1119.7
+  - 2239.4
+  - 3359.1000000000004
+  - 4478.8
+  - 5598.5
+  - 6718.200000000001
+  - 7837.900000000001
+  - 8957.6
+  - 10077.300000000001
+  - 11197.0
+  counts:
+  - 7423
+  - 102
+  - 26
+  - 12
+  - 2
+  - 0
+  - 0
+  - 0
+  - 0
+  - 4

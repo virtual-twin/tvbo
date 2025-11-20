@@ -1,0 +1,39 @@
+type: network
+label: Yeo17 (dTOR)
+name: Yeo17 (dTOR)
+parcellation:
+  atlas:
+    name: Yeo17
+tractogram: dTOR
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-dTOR_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-dTOR_lengths.csv
+number_of_regions: 17
+space: MNI152
+weights_min: 0.0
+weights_max: 175715.0
+weights_mean: 27403.813148788926
+weights_median: 13429.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 17571.5
+  - 35143.0
+  - 52714.5
+  - 70286.0
+  - 87857.5
+  - 105429.0
+  - 123000.5
+  - 140572.0
+  - 158143.5
+  - 175715.0
+  counts:
+  - 165
+  - 48
+  - 22
+  - 14
+  - 18
+  - 10
+  - 4
+  - 0
+  - 6
+  - 2

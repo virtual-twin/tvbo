@@ -1,0 +1,46 @@
+id: 3
+label: "PDE diffusion demo (state variables)"
+description: "Solve u_t = -div(D * grad(u)) with zero Dirichlet boundary on the cortex."
+field_dynamics:
+  label: "Heat/diffusion equation"
+  domain:
+    label: "Cortex"
+    coordinate_space:
+      name: "MNI152"
+    geometry: "nifti:cortex_mask.nii.gz"
+  mesh:
+    label: "cortical_mesh"
+    element_type: triangle
+    coordinate_space:
+      name: "MNI152"
+    dataLocation: "gifti:/Users/leonmartin_bih/Downloads/simple.rh.pial.gii"
+  parameters:
+    - name: D
+      unit: "m^2/s"
+      value: 1.0e-6
+  operators:
+    - label: "Diffusion"
+      operator_type: laplacian
+      coefficient:
+        name: D
+  state_variables:
+    - name: u
+      label: "u"
+      quantity_kind: "scalar"
+      unit: "a.u."
+      initial_value: 1.0
+      boundary_conditions:
+        - label: "Zero Dirichlet"
+          bc_type: Dirichlet
+          value:
+            rhs: "0"
+      equation:
+        lhs: "u_t"
+        rhs: "D * laplacian(u)"
+  solver:
+    label: "FEM implicit Euler"
+    discretization: FEM
+    time_integrator: "implicit Euler"
+    dt: 0.5
+integration:
+  duration: 100

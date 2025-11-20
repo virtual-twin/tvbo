@@ -1,0 +1,41 @@
+name: DuffingForced
+references:
+- Duffing1918
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  omega:
+    name: omega
+    value: 2.2
+    description: Forcing angular frequency ω.
+  f:
+    name: f
+    value: 27.0
+    description: Forcing amplitude f.
+  d:
+    name: d
+    value: 0.2
+    description: Linear damping coefficient d.
+  beta:
+    name: beta
+    value: 1.0
+    description: Linear stiffness parameter β.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: v
+      latex: false
+    initial_value: 0.1
+    description: Position coordinate.
+  v:
+    name: v
+    equation:
+      lhs: Derivative(v, t)
+      rhs: f*cos(omega*t) - beta*x - x**3 - d*v
+      latex: false
+    initial_value: 0.25
+    description: Velocity coordinate.
+description: |-
+  Forced Duffing oscillator with linear damping and periodic forcing. Exhibits rich nonlinear dynamics including bifurcations, quasiperiodicity, and chaos depending on forcing amplitude and frequency.
+number_of_modes: 1

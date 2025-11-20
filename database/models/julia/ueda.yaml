@@ -1,0 +1,34 @@
+name: Ueda
+references:
+- Ruelle1980
+- Ueda1961
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  k:
+    name: k
+    value: 0.1
+    description: Linear damping coefficient k.
+  B:
+    name: B
+    value: 12.0
+    description: Forcing amplitude B.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: v
+      latex: false
+    initial_value: 3.0
+  v:
+    name: v
+    equation:
+      lhs: Derivative(v, t)
+      rhs: B*cos(t) - k*v - x**3
+      latex: false
+    initial_value: 0.0
+description: |-
+  Classic forced nonlinear oscillator (Ueda system) producing a broken-egg stroboscopic
+  attractor under periodic sampling. Among early documented examples of deterministic
+  chaos in driven oscillatory systems.
+number_of_modes: 1

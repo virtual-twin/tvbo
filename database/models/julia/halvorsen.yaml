@@ -1,0 +1,45 @@
+name: Halvorsen
+references:
+- Halvorsen2000
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  a:
+    name: a
+    value: 1.4
+    description: Linear damping / coupling strength.
+  b:
+    name: b
+    value: 0.4
+    description: Quadratic saturation coefficient.
+  c:
+    name: c
+    value: 1.0
+    description: Constant drive parameter.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: -a*x - 4*y - 4*z - y**2
+      latex: false
+    initial_value: -1.0
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: -a*y - 4*z - 4*x - z**2
+      latex: false
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: -a*z - 4*x - 4*y - x**2 + c
+      latex: false
+    initial_value: 1.0
+description: |-
+  Smooth three-dimensional chaotic flow with rotational symmetry and robust strange
+  attractor arising from quadratic cross-couplings and constant drive. Exhibits
+  intertwined scroll-like structure and sensitive dependence useful for benchmarking
+  nonlinear state estimation and control strategies.
+number_of_modes: 1

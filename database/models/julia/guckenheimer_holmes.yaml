@@ -1,0 +1,57 @@
+name: GuckenheimerHolmes
+references:
+- GuckenheimerHolmes1983
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  a:
+    name: a
+    value: 0.5
+    description: Linear growth/damping parameter in x-equation.
+  b:
+    name: b
+    value: 0.5
+    description: Linear growth/damping parameter in y-equation.
+  c:
+    name: c
+    value: 0.5
+    description: Linear growth/damping parameter in z-equation.
+  d:
+    name: d
+    value: 1.0
+    description: Nonlinear coupling parameter for x.
+  e:
+    name: e
+    value: 1.0
+    description: Nonlinear coupling parameter for y.
+  f:
+    name: f
+    value: 1.0
+    description: Nonlinear coupling parameter for z.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a*x + d*y*z + x*(y**2 + z**2)
+      latex: false
+    initial_value: 0.1
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: b*y + e*x*z + y*(x**2 + z**2)
+      latex: false
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: c*z + f*x*y + z*(x**2 + y**2)
+      latex: false
+    initial_value: 0.0
+description: |-
+  Symmetric three-dimensional normal form near a triple zero eigenvalue illustrating
+  mode interactions, heteroclinic cycles, and the onset of complicated dynamics in
+  equivariant bifurcation problems. Tunable linear and quadratic interaction terms
+  produce transitions between steady states, periodic orbits, and chaotic transients.
+number_of_modes: 1

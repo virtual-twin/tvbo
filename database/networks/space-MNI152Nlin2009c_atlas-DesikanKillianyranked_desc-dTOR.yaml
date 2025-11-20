@@ -1,0 +1,39 @@
+type: network
+label: DesikanKillianyranked (dTOR)
+name: DesikanKillianyranked (dTOR)
+parcellation:
+  atlas:
+    name: DesikanKillianyranked
+tractogram: dTOR
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR_lengths.csv
+number_of_regions: 87
+space: MNI152Nlin2009c
+weights_min: 0.0
+weights_max: 458885.0
+weights_mean: 1977.2881490289337
+weights_median: 10.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 45888.5
+  - 91777.0
+  - 137665.5
+  - 183554.0
+  - 229442.5
+  - 275331.0
+  - 321219.5
+  - 367108.0
+  - 412996.5
+  - 458885.0
+  counts:
+  - 7541
+  - 18
+  - 2
+  - 6
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 2

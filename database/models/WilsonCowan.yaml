@@ -1,0 +1,335 @@
+name: WilsonCowan
+parameters:
+  P:
+    name: P
+    definition: External stimulus to the excitatory population (Wilson and Cowan,
+      1972).
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 20.0
+      step: 0.01
+    description: External stimulus to the excitatory population (Wilson and Cowan,
+      1972)
+  Q:
+    name: Q
+    definition: External stimulus to the inhibitory population (Wilson and Cowan,
+      1972).
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 20.0
+      step: 0.01
+    description: External stimulus to the inhibitory population (Wilson and Cowan,
+      1972)
+  a_e:
+    name: a_e
+    definition: Steepness of the excitatory response function S_e_WC (Wilson and Cowan,
+      1972).
+    value: 1.2
+    domain:
+      lo: 0.0
+      hi: 1.4
+      step: 0.01
+    description: Steepness of the excitatory response function S_e_WC (Wilson and
+      Cowan, 1972)
+  a_i:
+    name: a_i
+    definition: Steepness of the excitatory response function S_i_WC (Wilson and Cowan,
+      1972).
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 2.0
+      step: 0.01
+    description: Steepness of the excitatory response function S_i_WC (Wilson and
+      Cowan, 1972)
+  alpha_e:
+    name: alpha_e
+    definition: Balance parameter between excitatory and inhibitory masses (Sanz-Leon
+      et al., 2015).
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 20.0
+      step: 0.01
+    description: Balance parameter between excitatory and inhibitory masses (Sanz-Leon
+      et al
+  alpha_i:
+    name: alpha_i
+    definition: Balance parameter between excitatory and inhibitory masses (Sanz-Leon
+      et al., 2015).
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 20.0
+      step: 0.01
+    description: Balance parameter between excitatory and inhibitory masses (Sanz-Leon
+      et al
+  b_e:
+    name: b_e
+    definition: Position of the maximum slope of the excitatory response function
+      S_e_WC (Sanz-Leon et al., 2015).
+    value: 2.8
+    domain:
+      lo: 1.4
+      hi: 6.0
+      step: 0.01
+    description: Position of the maximum slope of the excitatory response function
+      S_e_WC (Sanz-Leon et al
+  b_i:
+    name: b_i
+    definition: "Position of the maximum slope of a sigmoid function [in\n       \
+      \ threshold units]"
+    value: 4.0
+    domain:
+      lo: 2.0
+      hi: 6.0
+      step: 0.01
+    description: Position of the maximum slope of a sigmoid function [in         threshold
+      units]
+  c_e:
+    name: c_e
+    definition: The amplitude parameter for the excitatory response function
+    value: 1.0
+    domain:
+      lo: 1.0
+      hi: 20.0
+      step: 1.0
+    description: The amplitude parameter for the excitatory response function
+  c_ee:
+    name: c_ee
+    definition: Excitatory to excitatory  coupling coefficient
+    value: 12.0
+    domain:
+      lo: 11.0
+      hi: 16.0
+      step: 0.01
+    description: Excitatory to excitatory  coupling coefficient
+  c_ei:
+    name: c_ei
+    definition: Inhibitory to excitatory coupling coefficient
+    value: 4.0
+    domain:
+      lo: 2.0
+      hi: 15.0
+      step: 0.01
+    description: Inhibitory to excitatory coupling coefficient
+  c_i:
+    name: c_i
+    definition: The amplitude parameter for the excitatory response function S_i_WC
+      (Sanz-Leon et al., 2015).
+    value: 1.0
+    domain:
+      lo: 1.0
+      hi: 20.0
+      step: 1.0
+    description: The amplitude parameter for the excitatory response function S_i_WC
+      (Sanz-Leon et al
+  c_ie:
+    name: c_ie
+    definition: Excitatory to inhibitory coupling coefficient (Sanz-Leon et al., 2015)
+    value: 13.0
+    domain:
+      lo: 2.0
+      hi: 22.0
+      step: 0.01
+    description: Excitatory to inhibitory coupling coefficient (Sanz-Leon et al
+  c_ii:
+    name: c_ii
+    definition: Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al., 2015)
+    value: 11.0
+    domain:
+      lo: 2.0
+      hi: 15.0
+      step: 0.01
+    description: Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al
+  k_e:
+    name: k_e
+    definition: Maximum value of the excitatory response function
+    value: 1.0
+    domain:
+      lo: 0.5
+      hi: 2.0
+      step: 0.01
+    description: Maximum value of the excitatory response function
+  k_i:
+    name: k_i
+    definition: Maximum value of the inhibitory response function
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 2.0
+      step: 0.01
+    description: Maximum value of the inhibitory response function
+  r_e:
+    name: r_e
+    definition: Excitatory refractory period
+    value: 1.0
+    domain:
+      lo: 0.5
+      hi: 2.0
+      step: 0.01
+    description: Excitatory refractory period
+  r_i:
+    name: r_i
+    definition: Inhibitory refractory period
+    value: 1.0
+    domain:
+      lo: 0.5
+      hi: 2.0
+      step: 0.01
+    description: Inhibitory refractory period
+  shift_sigmoid:
+    name: shift_sigmoid
+    definition: "In order to have resting state (E=0 and I=0) in absence of external\
+      \ input,\n        the logistic curve are translated downward S(0)=0"
+    value: 1.0
+    description: In order to have resting state (E=0 and I=0) in absence of external
+      input,         the logistic curve are translated downward S(0)=0
+  tau_e:
+    name: tau_e
+    definition: Excitatory population, membrane time-constant (Wilson and Cowan, 1972).
+    value: 10.0
+    domain:
+      lo: 0.0
+      hi: 150.0
+      step: 0.01
+    description: Excitatory population, membrane time-constant (Wilson and Cowan,
+      1972)
+    unit: ms
+  tau_i:
+    name: tau_i
+    definition: Inhibitory population, membrane time-constant (Wilson and Cowan, 1972).
+    value: 10.0
+    domain:
+      lo: 0.0
+      hi: 150.0
+      step: 0.01
+    description: Inhibitory population, membrane time-constant (Wilson and Cowan,
+      1972)
+    unit: ms
+  theta_e:
+    name: theta_e
+    definition: Excitation threshold of excitatory population (Sanz-Leon et al., 2015).
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 60.0
+      step: 0.01
+    description: Excitation threshold of excitatory population (Sanz-Leon et al
+  theta_i:
+    name: theta_i
+    definition: Excitation threshold of inhibitory population (Sanz-Leon et al., 2015).
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 60.0
+      step: 0.01
+    description: Excitation threshold of inhibitory population (Sanz-Leon et al
+description: "The Wilson and Cowan model consists of two populations or masses, one\
+  \ excitatory and one inhibitory, that are described by their mean firings rates\
+  \ E and I respectively (Wilson and Cowan, 1972, 1973). \n\nThis model is the minimal\
+  \ representation of a NMM with a coarse-grained description of the overall activity\
+  \ of a large-scale neuronal network, as opposed to being a detailed biophysical\
+  \ model. While employing just two differential equations, it has been used to build\
+  \ various biophysically realistic models (Liley et al., 1999; Daffertshofer and\
+  \ van Wijk, 2011). \n\nKey parameters in the model are the strength of connectivity\
+  \ between each subtype of population (excitatory and inhibitory) and the strength\
+  \ of input to each subpopulation. The Input parameters P and Q also provide the\
+  \ entry point for local and long-range connectivity, that is, the activity coming\
+  \ from neighboring and distant populations respectively.\n\nVarying Input and connectivity\
+  \ generates a diversity of dynamical behaviors that are representative of observed\
+  \ activity in the brain, like multistability, oscillations, traveling waves and\
+  \ spatial patterns.\nWe consider the transmission parameters of the excitatory population\
+  \ to be glutamatergic and therefore to be modified by glutamatergic receptors. The\
+  \ inhibitory population is considered as GABAergic.\n\nNote:\n- Equations and parameter\
+  \ names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)\n- Default\
+  \ parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)\n- The model in\
+  \ Sanz-Leon et., 2015 includes more parameters than the original model, which can\
+  \ be traced in the description of the parameters."
+references:
+- Wilson1972
+- Wilson1973
+derived_variables:
+  lc_0:
+    name: lc_0
+    equation:
+      lhs: lc_0
+      rhs: local_coupling*E
+      latex: false
+    conditional: false
+  lc_1:
+    name: lc_1
+    equation:
+      lhs: lc_1
+      rhs: I*local_coupling
+      latex: false
+    conditional: false
+  x_e:
+    name: x_e
+    description: Average level of excitation in excitatory neuron at time t. Can be
+      interpreted as membrane potential (Sanz-Leon et al., 2015).
+    equation:
+      lhs: x_e
+      rhs: alpha_e*(-I*c_ei + P + c_ee*E + c_pop0 + lc_0 + lc_1 - theta_e)
+      latex: false
+    conditional: false
+  x_i:
+    name: x_i
+    description: Average level of excitation in inhibitory neuron at time t. Can be
+      interpreted as membrane potential. (Sanz-Leon et al., 2015).
+    equation:
+      lhs: x_i
+      rhs: alpha_i*(-I*c_ii + Q + c_ie*E + lc_0 + lc_1 - theta_i)
+      latex: false
+    conditional: false
+  s_e:
+    name: s_e
+    equation:
+      lhs: s_e
+      rhs: c_e/(1.0 + exp(-a_e*(-b_e + x_e))) - 1.0*shift_sigmoid/(exp(a_e*b_e) +
+        1.0)
+      latex: false
+    conditional: false
+  s_i:
+    name: s_i
+    equation:
+      lhs: s_i
+      rhs: c_i/(1.0 + exp(-a_i*(-b_i + x_i))) - 1.0*shift_sigmoid/(exp(a_i*b_i) +
+        1.0)
+      latex: false
+    conditional: false
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  E:
+    name: E
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973),
+      denoting the mean firing rate of all excitatory neurons of the population
+    equation:
+      lhs: Derivative(E, t)
+      rhs: (-E + s_e*(-E*r_e + k_e))/tau_e
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  I:
+    name: I
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973),
+      denoting the mean firing rate of all inhibitory neurons of the population
+    equation:
+      lhs: Derivative(I, t)
+      rhs: (-I + s_i*(-I*r_i + k_i))/tau_i
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+number_of_modes: 1

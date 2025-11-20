@@ -1,0 +1,37 @@
+name: GrebogiMap
+references:
+- Grebogi1983
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+system_type: discrete
+parameters:
+  a:
+    name: a
+    value: 1.32
+    description: Coefficient a in angle update.
+  b:
+    name: b
+    value: 0.9
+    description: Coefficient b in angle update.
+  J0:
+    name: J0
+    value: 0.3
+    description: Drive amplitude J0.
+state_variables:
+  theta:
+    name: theta
+    equation:
+      lhs: theta_next
+      rhs: (theta + a*sin(2*theta) - b*sin(4*theta) - x*sin(theta)) % (2*pi)
+      latex: false
+    initial_value: 0.2
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: -J0*cos(theta)
+      latex: false
+    initial_value: 0.0
+description: |-
+  Two-dimensional map with chaotic transients and fractal basin boundaries; converges
+  to one of two fixed points depending on initial condition.
+number_of_modes: 1

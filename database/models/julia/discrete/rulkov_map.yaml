@@ -1,0 +1,38 @@
+name: RulkovMap
+references:
+- Rulkov2002
+- Rulkov2001
+- Cao2013
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+system_type: discrete
+parameters:
+  alpha:
+    name: alpha
+    value: 4.1
+    description: Nonlinearity parameter α controlling spiking/bursting.
+  beta:
+    name: beta
+    value: 0.001
+    description: Bias parameter β.
+  sigma:
+    name: sigma
+    value: 0.001
+    description: Coupling parameter σ from fast to slow variable.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: alpha/(1 + x**2) + y
+      latex: false
+    initial_value: 1.0
+  y:
+    name: y
+    equation:
+      lhs: y_next
+      rhs: y - sigma*x - beta
+      latex: false
+    initial_value: 1.0
+description: |-
+  Two-dimensional phenomenological neuron map capable of spiking and bursting regimes.
+number_of_modes: 1

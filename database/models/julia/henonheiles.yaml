@@ -1,0 +1,50 @@
+name: HenonHeiles
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters: {}
+state_variables:
+  x:
+    name: x
+    description: Position x.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: px
+      latex: false
+    initial_value: 0.0
+  y:
+    name: y
+    description: Position y.
+    equation:
+      lhs: Derivative(y, t)
+      rhs: py
+      latex: false
+    initial_value: -0.25
+  px:
+    name: px
+    description: Conjugate momentum p_x.
+    equation:
+      lhs: Derivative(px, t)
+      rhs: -x - 2*x*y
+      latex: false
+    initial_value: 0.42081
+  py:
+    name: py
+    description: Conjugate momentum p_y.
+    equation:
+      lhs: Derivative(py, t)
+      rhs: -y - (x**2 - y**2)
+      latex: false
+    initial_value: 0.0
+derived_variables:
+  H:
+    name: H
+    description: Hamiltonian energy.
+    equation:
+      lhs: H
+      rhs: 0.5*(px**2 + py**2) + 0.5*(x**2 + y**2) + (x**2*y - (y**3)/3)
+      latex: false
+    conditional: false
+description: |-
+  The Hénon–Heiles system is a conservative 2 DoF Hamiltonian model introduced to
+  study stellar motion near a galactic center and the search for a third integral
+  of motion. The default initial condition is a typical chaotic orbit.
+number_of_modes: 1

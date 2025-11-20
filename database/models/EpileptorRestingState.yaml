@@ -1,0 +1,441 @@
+name: EpileptorRestingState
+parameters:
+  I_rs:
+    name: I_rs
+    definition: External input current to the third population (x_rs, y_rs).
+    value: 0.0
+    domain:
+      lo: -5.0
+      hi: 5.0
+      step: 0.01
+    description: External input current to the third population (x_rs, y_rs)
+  Iext2:
+    name: Iext2
+    definition: External input current to the second population (x2, y2).
+    value: 0.45
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.05
+    description: External input current to the second population (x2, y2)
+  Iext:
+    name: Iext
+    definition: External input current to the first population (x1, y1).
+    value: 3.1
+    domain:
+      lo: 1.5
+      hi: 5.0
+      step: 0.1
+    description: External input current to the first population (x1, y1)
+  K_rs:
+    name: K_rs
+    definition: Coupling scaling on a fast time scale.
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 10.0
+      step: 0.001
+    description: Coupling scaling on a fast time scale
+  Kf:
+    name: Kf
+    definition: Coupling scaling on a fast time scale.
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 4.0
+      step: 0.5
+    description: Coupling scaling on a fast time scale
+  Ks:
+    name: Ks
+    definition: Permittivity coupling, that is from the very fast time scale         toward
+      the slow time scale.
+    value: 0.0
+    domain:
+      lo: -4.0
+      hi: 4.0
+      step: 0.1
+    description: Permittivity coupling, that is from the very fast time scale         toward
+      the slow time scale
+  Kvf:
+    name: Kvf
+    definition: Coupling scaling on a very fast time scale.
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 4.0
+      step: 0.5
+    description: Coupling scaling on a very fast time scale
+  a:
+    name: a
+    definition: Coefficient of the cubic term in the first state-variable x1.
+    value: 1.0
+    description: Coefficient of the cubic term in the first state-variable x1
+  a_rs:
+    name: a_rs
+    definition: Vertical shift of the configurable nullcline         in the state-variable
+      y_rs.
+    value: -2.0
+    domain:
+      lo: -5.0
+      hi: 5.0
+      step: 0.01
+    description: Vertical shift of the configurable nullcline         in the state-variable
+      y_rs
+  aa:
+    name: aa
+    definition: Linear coefficient in the fifth state-variable y2.
+    value: 6.0
+    description: Linear coefficient in the fifth state-variable y2
+  alpha_rs:
+    name: alpha_rs
+    definition: Constant parameter to scale the rate of feedback from the         slow
+      variable y_rs to the fast variable x_rs.
+    value: 1.0
+    domain:
+      lo: -5.0
+      hi: 5.0
+      step: 0.0001
+    description: Constant parameter to scale the rate of feedback from the         slow
+      variable y_rs to the fast variable x_rs
+  b:
+    name: b
+    definition: Coefficient of the squared term in the first state-variable x1.
+    value: 3.0
+    description: Coefficient of the squared term in the first state-variable x1
+  b_rs:
+    name: b_rs
+    definition: Linear coefficient of the state-variable y_rs.
+    value: -10.0
+    domain:
+      lo: -20.0
+      hi: 15.0
+      step: 0.01
+    description: Linear coefficient of the state-variable y_rs
+  bb:
+    name: bb
+    definition: Linear coefficient of lowpass excitatory coupling in the fourth         state-variable
+      x2.
+    value: 2.0
+    description: Linear coefficient of lowpass excitatory coupling in the fourth         state-variable
+      x2
+  beta_rs:
+    name: beta_rs
+    definition: Constant parameter to scale the rate of feedback from the         slow
+      variable y_rs to itself.
+    value: 1.0
+    domain:
+      lo: -5.0
+      hi: 5.0
+      step: 0.0001
+    description: Constant parameter to scale the rate of feedback from the         slow
+      variable y_rs to itself
+  c:
+    name: c
+    definition: Additive coefficient for the second state-variable y1,         called
+      :math:'y_{0}' in Jirsa et al. (2014).
+    value: 1.0
+    description: Additive coefficient for the second state-variable y1,         called
+      :math:'y_{0}' in Jirsa et al
+  d:
+    name: d
+    definition: Coefficient of the squared term in the second state-variable y1.
+    value: 5.0
+    description: Coefficient of the squared term in the second state-variable y1
+  d_rs:
+    name: d_rs
+    definition: Temporal scaling of the whole third system (x_rs, y_rs).
+    value: 0.02
+    domain:
+      lo: 0.0001
+      hi: 1.0
+      step: 0.0001
+    description: Temporal scaling of the whole third system (x_rs, y_rs)
+  e_rs:
+    name: e_rs
+    definition: Coefficient of the squared term in the sixth state-variable x_rs.
+    value: 3.0
+    domain:
+      lo: -5.0
+      hi: 5.0
+      step: 0.0001
+    description: Coefficient of the squared term in the sixth state-variable x_rs
+  f_rs:
+    name: f_rs
+    definition: Coefficient of the cubic term in the sixth state-variable x_rs.
+    value: 1.0
+    domain:
+      lo: -5.0
+      hi: 5.0
+      step: 0.0001
+    description: Coefficient of the cubic term in the sixth state-variable x_rs
+  gamma_rs:
+    name: gamma_rs
+    definition: 'Constant parameter to reproduce FHN dynamics where         excitatory
+      input currents are negative.        Note: It scales both I_rs and the long-range
+      coupling term.'
+    value: 1.0
+    domain:
+      lo: -1.0
+      hi: 1.0
+      step: 0.1
+    description: Constant parameter to reproduce FHN dynamics where         excitatory
+      input currents are negative
+  p:
+    name: p
+    definition: Linear coefficient.
+    value: 0.0
+    domain:
+      lo: -1.0
+      hi: 1.0
+      step: 0.1
+    description: Linear coefficient
+  r:
+    name: r
+    definition: "Temporal scaling in the third state-variable z,         called :math:'1/\t\
+      au_{0}' in Jirsa et al. (2014)."
+    value: 0.00035
+    domain:
+      lo: 0.0
+      hi: 0.001
+      step: 5.0e-05
+    description: "Temporal scaling in the third state-variable z,         called :math:'1/\t\
+      au_{0}' in Jirsa et al"
+  slope:
+    name: slope
+    definition: Linear coefficient in the first state-variable x1.
+    value: 0.0
+    domain:
+      lo: -16.0
+      hi: 6.0
+      step: 0.1
+    description: Linear coefficient in the first state-variable x1
+  tau:
+    name: tau
+    definition: Temporal scaling coefficient in the fifth state-variable y2.
+    value: 10.0
+    description: Temporal scaling coefficient in the fifth state-variable y2
+  tau_rs:
+    name: tau_rs
+    definition: Temporal scaling coefficient in the third population (x_rs, y_rs).
+    value: 1.0
+    domain:
+      lo: 1.0
+      hi: 5.0
+      step: 0.01
+    description: Temporal scaling coefficient in the third population (x_rs, y_rs)
+  tt:
+    name: tt
+    definition: Time scaling of the Epileptor.
+    value: 1.0
+    domain:
+      lo: 0.001
+      hi: 10.0
+      step: 0.001
+    description: Time scaling of the Epileptor
+  x0:
+    name: x0
+    definition: Epileptogenicity parameter.
+    value: -1.6
+    domain:
+      lo: -3.0
+      hi: -1.0
+      step: 0.1
+    description: Epileptogenicity parameter
+description: "Epileptor Resting-State (ERS) is an extension of the phenomenological\
+  \ neural mass model of Epileptor5D, tuned to express regionally specific physiological\
+  \ oscillations in addition to the epileptiform discharges (Courtiol et al., 2020).\
+  \ This extension was made using the Generic 2-dimensional Oscillator model (parametrized\
+  \ close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce\
+  \ the spontaneous local field potential-like signal.\n        \nThis model, its\
+  \ motivation and derivation can be found in the published article (Courtiol et al.,\
+  \ 2020)."
+references:
+- Courtiol2020
+- Jirsa2014
+derived_variables:
+  lc_1:
+    name: lc_1
+    equation:
+      lhs: lc_1
+      rhs: local_coupling*x_rs
+      latex: false
+    conditional: false
+  output:
+    name: output
+    equation:
+      lhs: output
+      rhs: p*(-x1 + x2) + x_rs*(1 - p)
+      latex: false
+    conditional: false
+  x1cond:
+    name: x1cond
+    symbol: x1cond
+    equation:
+      lhs: x1cond
+      rhs: Piecewise(((-a)*x1**2 + b*x1, x1 < 0), (slope - x2 + 0.6*(z - 4.0)**2,
+        True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: x1 < 0
+      equation:
+        lhs: x1cond
+        rhs: (-a)*x1**2 + b*x1
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: x1cond
+        rhs: slope - x2 + 0.6*(z - 1*4.0)**2
+        latex: false
+  y2cond:
+    name: y2cond
+    symbol: y2cond
+    equation:
+      lhs: y2cond
+      rhs: Piecewise((0.0, x2 < -0.25), (aa*(x2 + 0.25), True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: x2 < -0.25
+      equation:
+        lhs: y2cond
+        rhs: '0.0'
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: y2cond
+        rhs: aa*(x2 + 0.25)
+        latex: false
+  zcond:
+    name: zcond
+    symbol: zcond
+    equation:
+      lhs: zcond
+      rhs: Piecewise((-0.1*z**7, z < 0), (0.0, True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: z < 0
+      equation:
+        lhs: zcond
+        rhs: -0.1*z**7
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: zcond
+        rhs: '0.0'
+        latex: false
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+  c_pop1:
+    name: c_pop1
+  c_pop2:
+    name: c_pop2
+state_variables:
+  g:
+    name: g
+    domain:
+      lo: -1.0
+      hi: 1.0
+    description: ''
+    equation:
+      lhs: Derivative(g, t)
+      rhs: tt*(-0.01*g + 0.001*x1)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+  x1:
+    name: x1
+    domain:
+      lo: -1.8
+      hi: -1.4
+    description: ''
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  x2:
+    name: x2
+    domain:
+      lo: -1.1
+      hi: -0.9
+    description: ''
+    equation:
+      lhs: Derivative(x2, t)
+      rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  x_rs:
+    name: x_rs
+    domain:
+      lo: -2.0
+      hi: 4.0
+    description: ''
+    equation:
+      lhs: Derivative(x_rs, t)
+      rhs: d_rs*tau_rs*(I_rs*gamma_rs + K_rs*c_pop2*gamma_rs + alpha_rs*y_rs + e_rs*x_rs**2
+        - f_rs*x_rs**3 + lc_1)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  y1:
+    name: y1
+    domain:
+      lo: -15.0
+      hi: -10.0
+    description: ''
+    equation:
+      lhs: Derivative(y1, t)
+      rhs: tt*(c - d*x1**2 - y1)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+  y2:
+    name: y2
+    domain:
+      lo: 0.001
+      hi: 0.01
+    description: ''
+    equation:
+      lhs: Derivative(y2, t)
+      rhs: tt*(-y2 + y2cond)/tau
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+  y_rs:
+    name: y_rs
+    domain:
+      lo: -6.0
+      hi: 6.0
+    description: ''
+    equation:
+      lhs: Derivative(y_rs, t)
+      rhs: d_rs*(a_rs + b_rs*x_rs - beta_rs*y_rs)/tau_rs
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+  z:
+    name: z
+    domain:
+      lo: 3.6
+      hi: 4.0
+    description: ''
+    equation:
+      lhs: Derivative(z, t)
+      rhs: r*tt*(Ks*c_pop0 - 4*x0 + 4*x1 - z + zcond)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+number_of_modes: 1

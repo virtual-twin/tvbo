@@ -1,0 +1,27 @@
+---
+jupyter: python3
+---
+
+```{python}
+from tvbo.knowledge.simulation import localdynamics
+from tvbo.export import experiment
+
+maith = localdynamics.load_model_from_file(
+    "/Users/leonmartin_bih/projects/TVB-O/tvbo-multiscale/models/MaithEtAlCortexExcInh.yaml"
+)
+
+sim = experiment.SimulationExperiment(
+    model=maith,
+    connectivity={"parcellation": {"atlas": {"name": "DesikanKilliany"}}},
+    integration={
+        "method": "Heun",
+        "step_size": 0.01,
+        "noise": {"parameters": {"sigma": {"value": 0.000001}}},
+    },
+)
+sim.configure()
+
+sim.get_parameters_collection()
+```
+
+

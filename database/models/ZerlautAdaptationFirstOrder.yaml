@@ -1,0 +1,772 @@
+name: ZerlautAdaptationFirstOrder
+parameters:
+  C_m:
+    name: C_m
+    definition: membrane capacitance [pF]
+    value: 200.0
+    domain:
+      lo: 10.0
+      hi: 500.0
+      step: 10.0
+    description: membrane capacitance [pF]
+  DTvN0:
+    name: DTvN0
+    definition: Normalization factors page 48 after the equation 4 from [ZD_2018]
+    value: 1.0
+    description: Normalization factors page 48 after the equation 4 from [ZD_2018]
+  DmuV0:
+    name: DmuV0
+    definition: Normalization factors page 48 after the equation 4 from [ZD_2018]
+    value: 10.0
+    description: Normalization factors page 48 after the equation 4 from [ZD_2018]
+  DsV0:
+    name: DsV0
+    definition: Normalization factors page 48 after the equation 4 from [ZD_2018]
+    value: 6.0
+    description: Normalization factors page 48 after the equation 4 from [ZD_2018]
+  E_L_e:
+    name: E_L_e
+    definition: leak reversal potential for excitatory [mV]
+    value: -65.0
+    domain:
+      lo: -90.0
+      hi: -60.0
+      step: 0.1
+    description: leak reversal potential for excitatory [mV]
+  E_L_i:
+    name: E_L_i
+    definition: leak reversal potential for inhibitory [mV]
+    value: -65.0
+    domain:
+      lo: -90.0
+      hi: -60.0
+      step: 0.1
+    description: leak reversal potential for inhibitory [mV]
+  E_e:
+    name: E_e
+    definition: excitatory reversal potential [mV]
+    value: 0.0
+    domain:
+      lo: -20.0
+      hi: 20.0
+      step: 0.01
+    description: excitatory reversal potential [mV]
+  E_i:
+    name: E_i
+    definition: inhibitory reversal potential [mV]
+    value: -80.0
+    domain:
+      lo: -100.0
+      hi: -60.0
+      step: 1.0
+    description: inhibitory reversal potential [mV]
+  K_ext_e:
+    name: K_ext_e
+    definition: Number of excitatory connexions from external population
+    value: 400.0
+    domain:
+      lo: 0.0
+      hi: 10000.0
+      step: 1.0
+    description: Number of excitatory connexions from external population
+  K_ext_i:
+    name: K_ext_i
+    definition: Number of inhibitory connexions from external population
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 10000.0
+      step: 1.0
+    description: Number of inhibitory connexions from external population
+  N_tot:
+    name: N_tot
+    definition: cell number
+    value: 10000.0
+    domain:
+      lo: 1000.0
+      hi: 50000.0
+      step: 1000.0
+    description: cell number
+  P0_e:
+    name: P0_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: -0.04983106
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P0_i:
+    name: P0_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: -0.05149122024209484
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P1_e:
+    name: P1_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: 0.005063550882777035
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P1_i:
+    name: P1_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: 0.004003689190271077
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P2_e:
+    name: P2_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: -0.023470121807314552
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P2_i:
+    name: P2_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: -0.008352013668528155
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P3_e:
+    name: P3_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: 0.0022951513725067503
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P3_i:
+    name: P3_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: 0.0002414237992765705
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P4_e:
+    name: P4_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: -0.0004105302652029825
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P4_i:
+    name: P4_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: -0.0005070645080016026
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P5_e:
+    name: P5_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: 0.010547051343547399
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P5_i:
+    name: P5_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: 0.0014345394104282397
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P6_e:
+    name: P6_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: -0.03659252821136933
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P6_i:
+    name: P6_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: -0.014686689498949967
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P7_e:
+    name: P7_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: 0.007437487505797858
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P7_i:
+    name: P7_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: 0.004502706285435741
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P8_e:
+    name: P8_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: 0.001265064721846073
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P8_i:
+    name: P8_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: 0.0028472190352532454
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P9_e:
+    name: P9_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: -0.04072161294490446
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P9_i:
+    name: P9_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: -0.015357804594594548
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  P_e:
+    name: P_e
+    definition: Polynome of excitatory phenomenological threshold (order 9)
+    value: -0.04983106
+    description: Polynome of excitatory phenomenological threshold (order 9)
+  P_i:
+    name: P_i
+    definition: Polynome of inhibitory phenomenological threshold (order 9)
+    value: -0.05149122024209484
+    description: Polynome of inhibitory phenomenological threshold (order 9)
+  Q_e:
+    name: Q_e
+    definition: excitatory quantal conductance [nS]
+    value: 1.5
+    domain:
+      lo: 0.0
+      hi: 5.0
+      step: 0.1
+    description: excitatory quantal conductance [nS]
+  Q_i:
+    name: Q_i
+    definition: inhibitory quantal conductance [nS]
+    value: 5.0
+    domain:
+      lo: 0.0
+      hi: 10.0
+      step: 0.1
+    description: inhibitory quantal conductance [nS]
+  S_i:
+    name: S_i
+    definition: "Scaling of the remote input for the inhibitory population with\n\
+      \        respect to the excitatory population."
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 2.0
+      step: 0.01
+    description: Scaling of the remote input for the inhibitory population with         respect
+      to the excitatory population
+  T:
+    name: T
+    definition: Time scale of describing network activity
+    value: 20.0
+    domain:
+      lo: 1.0
+      hi: 20.0
+      step: 0.1
+    description: Time scale of describing network activity
+  TvN0:
+    name: TvN0
+    definition: Normalization factors page 48 after the equation 4 from [ZD_2018]
+    value: 0.5
+    description: Normalization factors page 48 after the equation 4 from [ZD_2018]
+  a_e:
+    name: a_e
+    definition: Excitatory adaptation conductance [nS]
+    value: 4.0
+    domain:
+      lo: 0.0
+      hi: 20.0
+      step: 0.1
+    description: Excitatory adaptation conductance [nS]
+  a_i:
+    name: a_i
+    definition: Inhibitory adaptation conductance [nS]
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 20.0
+      step: 0.1
+    description: Inhibitory adaptation conductance [nS]
+  b_e:
+    name: b_e
+    definition: Excitatory adaptation current increment [pA]
+    value: 60.0
+    domain:
+      lo: 0.0
+      hi: 150.0
+      step: 1.0
+    description: Excitatory adaptation current increment [pA]
+  b_i:
+    name: b_i
+    definition: Inhibitory adaptation current increment [pA]
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 100.0
+      step: 0.1
+    description: Inhibitory adaptation current increment [pA]
+  external_input_ex_ex:
+    name: external_input_ex_ex
+    definition: external drive
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 0.1
+      step: 0.001
+    description: external drive
+  external_input_ex_in:
+    name: external_input_ex_in
+    definition: external drive
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 0.1
+      step: 0.001
+    description: external drive
+  external_input_in_ex:
+    name: external_input_in_ex
+    definition: external drive
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 0.1
+      step: 0.001
+    description: external drive
+  external_input_in_in:
+    name: external_input_in_in
+    definition: external drive
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 0.1
+      step: 0.001
+    description: external drive
+  g_L:
+    name: g_L
+    definition: leak conductance [nS]
+    value: 10.0
+    domain:
+      lo: 0.1
+      hi: 100.0
+      step: 0.1
+    description: leak conductance [nS]
+  g:
+    name: g
+    definition: fraction of inhibitory cells
+    value: 0.2
+    domain:
+      lo: 0.01
+      hi: 0.4
+      step: 0.01
+    description: fraction of inhibitory cells
+  muV0:
+    name: muV0
+    definition: Normalization factors page 48 after the equation 4 from [ZD_2018]
+    value: -60.0
+    description: Normalization factors page 48 after the equation 4 from [ZD_2018]
+  p_connect_e:
+    name: p_connect_e
+    definition: connectivity probability
+    value: 0.05
+    domain:
+      lo: 0.001
+      hi: 0.2
+      step: 0.001
+    description: connectivity probability
+  p_connect_i:
+    name: p_connect_i
+    definition: connectivity probability
+    value: 0.05
+    domain:
+      lo: 0.001
+      hi: 0.2
+      step: 0.001
+    description: connectivity probability
+  sV0:
+    name: sV0
+    definition: Normalization factors page 48 after the equation 4 from [ZD_2018]
+    value: 4.0
+    description: Normalization factors page 48 after the equation 4 from [ZD_2018]
+  tau_OU:
+    name: tau_OU
+    definition: time constant noise
+    value: 5.0
+    domain:
+      lo: 0.1
+      hi: 10.0
+      step: 0.01
+    description: time constant noise
+  tau_e:
+    name: tau_e
+    definition: excitatory decay [ms]
+    value: 5.0
+    domain:
+      lo: 1.0
+      hi: 10.0
+      step: 1.0
+    description: excitatory decay [ms]
+  tau_i:
+    name: tau_i
+    definition: inhibitory decay [ms]
+    value: 5.0
+    domain:
+      lo: 0.5
+      hi: 10.0
+      step: 0.01
+    description: inhibitory decay [ms]
+  tau_w_e:
+    name: tau_w_e
+    definition: Adaptation time constant of excitatory neurons [ms]
+    value: 500.0
+    domain:
+      lo: 1.0
+      hi: 1000.0
+      step: 1.0
+    description: Adaptation time constant of excitatory neurons [ms]
+  tau_w_i:
+    name: tau_w_i
+    definition: Adaptation time constant of inhibitory neurons [ms]
+    value: 1.0
+    domain:
+      lo: 1.0
+      hi: 1000.0
+      step: 1.0
+    description: Adaptation time constant of inhibitory neurons [ms]
+  weight_noise:
+    name: weight_noise
+    definition: weight noise
+    value: 10.5
+    domain:
+      lo: 0.0
+      hi: 50.0
+      step: 1.0
+    description: weight noise
+description: ''
+references:
+- Zerlaut2018
+- diVolo2019
+derived_variables:
+  lc_E:
+    name: lc_E
+    equation:
+      lhs: lc_E
+      rhs: local_coupling*E
+      latex: false
+    conditional: false
+  lc_I:
+    name: lc_I
+    equation:
+      lhs: lc_I
+      rhs: I*local_coupling
+      latex: false
+    conditional: false
+  Fe_ext:
+    name: Fe_ext
+    symbol: Fe_ext
+    equation:
+      lhs: Fe_ext
+      rhs: Piecewise((0, K_ext_e*(c_pop0 + lc_E + ou_drift*weight_noise) < 0), (c_pop0
+        + lc_E + ou_drift*weight_noise, True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: K_ext_e*(c_pop0 + lc_E + ou_drift*weight_noise) < 0
+      equation:
+        lhs: Fe_ext
+        rhs: '0'
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: Fe_ext
+        rhs: c_pop0 + lc_E + ou_drift*weight_noise
+        latex: false
+  Fi_ext:
+    name: Fi_ext
+    equation:
+      lhs: Fi_ext
+      rhs: lc_I
+      latex: false
+    conditional: false
+  fe_e:
+    name: fe_e
+    equation:
+      lhs: fe_e
+      rhs: K_ext_e*(Fe_ext + external_input_ex_ex) + N_tot*p_connect_e*(1.0 - g)*(E
+        + 1/1000000)
+      latex: false
+    conditional: false
+  fe_i:
+    name: fe_i
+    equation:
+      lhs: fe_i
+      rhs: K_ext_e*(Fe_ext + external_input_in_ex) + N_tot*p_connect_e*(1.0 - g)*(E
+        + 1/1000000)
+      latex: false
+    conditional: false
+  fi_e:
+    name: fi_e
+    equation:
+      lhs: fi_e
+      rhs: K_ext_i*(Fi_ext + external_input_ex_in) + N_tot*g*p_connect_i*(I + 1/1000000)
+      latex: false
+    conditional: false
+  fi_i:
+    name: fi_i
+    equation:
+      lhs: fi_i
+      rhs: K_ext_i*(Fi_ext + external_input_in_in) + N_tot*g*p_connect_i*(I + 1/1000000)
+      latex: false
+    conditional: false
+  mu_Ge_e:
+    name: mu_Ge_e
+    equation:
+      lhs: mu_Ge_e
+      rhs: Q_e*fe_e*tau_e
+      latex: false
+    conditional: false
+  mu_Ge_i:
+    name: mu_Ge_i
+    equation:
+      lhs: mu_Ge_i
+      rhs: Q_e*fe_i*tau_e
+      latex: false
+    conditional: false
+  mu_Gi_e:
+    name: mu_Gi_e
+    equation:
+      lhs: mu_Gi_e
+      rhs: Q_i*fi_e*tau_i
+      latex: false
+    conditional: false
+  mu_Gi_i:
+    name: mu_Gi_i
+    equation:
+      lhs: mu_Gi_i
+      rhs: Q_i*fi_i*tau_i
+      latex: false
+    conditional: false
+  mu_G_e:
+    name: mu_G_e
+    equation:
+      lhs: mu_G_e
+      rhs: g_L + mu_Ge_e + mu_Gi_e
+      latex: false
+    conditional: false
+  mu_G_i:
+    name: mu_G_i
+    equation:
+      lhs: mu_G_i
+      rhs: g_L + mu_Ge_i + mu_Gi_i
+      latex: false
+    conditional: false
+  T_m_e:
+    name: T_m_e
+    equation:
+      lhs: T_m_e
+      rhs: C_m/mu_G_e
+      latex: false
+    conditional: false
+  T_m_i:
+    name: T_m_i
+    equation:
+      lhs: T_m_i
+      rhs: C_m/mu_G_i
+      latex: false
+    conditional: false
+  mu_V_e:
+    name: mu_V_e
+    equation:
+      lhs: mu_V_e
+      rhs: (E_L_e*g_L + E_e*mu_Ge_e + E_i*mu_Gi_e - W_e)/mu_G_e
+      latex: false
+    conditional: false
+  mu_V_i:
+    name: mu_V_i
+    equation:
+      lhs: mu_V_i
+      rhs: (E_L_i*g_L + E_e*mu_Ge_i + E_i*mu_Gi_i - W_i)/mu_G_i
+      latex: false
+    conditional: false
+  U_e_e:
+    name: U_e_e
+    equation:
+      lhs: U_e_e
+      rhs: Q_e*(E_e - mu_V_e)/mu_G_e
+      latex: false
+    conditional: false
+  U_e_i:
+    name: U_e_i
+    equation:
+      lhs: U_e_i
+      rhs: Q_e*(E_e - mu_V_i)/mu_G_i
+      latex: false
+    conditional: false
+  U_i_e:
+    name: U_i_e
+    equation:
+      lhs: U_i_e
+      rhs: Q_i*(E_i - mu_V_e)/mu_G_e
+      latex: false
+    conditional: false
+  U_i_i:
+    name: U_i_i
+    equation:
+      lhs: U_i_i
+      rhs: Q_i*(E_i - mu_V_i)/mu_G_i
+      latex: false
+    conditional: false
+  V_e:
+    name: V_e
+    equation:
+      lhs: V_e
+      rhs: (-muV0 + mu_V_e)/DmuV0
+      latex: false
+    conditional: false
+  V_i:
+    name: V_i
+    equation:
+      lhs: V_i
+      rhs: (-muV0 + mu_V_i)/DmuV0
+      latex: false
+    conditional: false
+  T_V_e:
+    name: T_V_e
+    equation:
+      lhs: T_V_e
+      rhs: (U_e_e**2*fe_e*tau_e**2 + U_i_e**2*fi_e*tau_i**2)/(U_e_e**2*fe_e*tau_e**2/(T_m_e
+        + tau_e) + U_i_e**2*fi_e*tau_i**2/(T_m_e + tau_i))
+      latex: false
+    conditional: false
+  T_V_i:
+    name: T_V_i
+    equation:
+      lhs: T_V_i
+      rhs: (U_e_i**2*fe_i*tau_e**2 + U_i_i**2*fi_i*tau_i**2)/(U_e_i**2*fe_i*tau_e**2/(T_m_i
+        + tau_e) + U_i_i**2*fi_i*tau_i**2/(T_m_i + tau_i))
+      latex: false
+    conditional: false
+  sigma_V_e:
+    name: sigma_V_e
+    equation:
+      lhs: sigma_V_e
+      rhs: sqrt(U_e_e**2*fe_e*tau_e**2/(2.0*T_m_e + 2.0*tau_e) + U_i_e**2*fi_e*tau_i**2/(2.0*T_m_e
+        + 2.0*tau_i))
+      latex: false
+    conditional: false
+  sigma_V_i:
+    name: sigma_V_i
+    equation:
+      lhs: sigma_V_i
+      rhs: sqrt(U_e_i**2*fe_i*tau_e**2/(2.0*T_m_i + 2.0*tau_e) + U_i_i**2*fi_i*tau_i**2/(2.0*T_m_i
+        + 2.0*tau_i))
+      latex: false
+    conditional: false
+  S_e:
+    name: S_e
+    equation:
+      lhs: S_e
+      rhs: (-sV0 + sigma_V_e)/DsV0
+      latex: false
+    conditional: false
+  S_i:
+    name: S_i
+    description: "Scaling of the remote input for the inhibitory population with\n\
+      \        respect to the excitatory population."
+    equation:
+      lhs: S_i
+      rhs: (-sV0 + sigma_V_i)/DsV0
+      latex: false
+    conditional: false
+  T_e:
+    name: T_e
+    equation:
+      lhs: T_e
+      rhs: (-TvN0 + T_V_e*g_L/C_m)/DTvN0
+      latex: false
+    conditional: false
+  T_i:
+    name: T_i
+    equation:
+      lhs: T_i
+      rhs: (-TvN0 + T_V_i*g_L/C_m)/DTvN0
+      latex: false
+    conditional: false
+  V_thre_e:
+    name: V_thre_e
+    equation:
+      lhs: V_thre_e
+      rhs: 1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_e + 1000.0*P3_e*T_e + 1000.0*P4_e*V_e**2
+        + 1000.0*P5_e*S_e**2 + 1000.0*P6_e*T_e**2 + 1000.0*P7_e*S_e*V_e + 1000.0*P8_e*T_e*V_e
+        + 1000.0*P9_e*S_e*T_e
+      latex: false
+    conditional: false
+  V_thre_i:
+    name: V_thre_i
+    equation:
+      lhs: V_thre_i
+      rhs: 1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_i + 1000.0*P3_i*T_i + 1000.0*P4_i*V_i**2
+        + 1000.0*P5_i*S_i**2 + 1000.0*P6_i*T_i**2 + 1000.0*P7_i*S_i*V_i + 1000.0*P8_i*T_i*V_i
+        + 1000.0*P9_i*S_i*T_i
+      latex: false
+    conditional: false
+  f_out_e:
+    name: f_out_e
+    equation:
+      lhs: f_out_e
+      rhs: erfc(sqrt(2)*(V_thre_e - mu_V_e)/(2*sigma_V_e))/(2*T_V_e)
+      latex: false
+    conditional: false
+  f_out_i:
+    name: f_out_i
+    equation:
+      lhs: f_out_i
+      rhs: erfc(sqrt(2)*(V_thre_i - mu_V_i)/(2*sigma_V_i))/(2*T_V_i)
+      latex: false
+    conditional: false
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  E:
+    name: E
+    domain:
+      lo: 0.001
+      hi: 0.25
+    description: Firing rate of excitatory population in KHz
+    equation:
+      lhs: Derivative(E, t)
+      rhs: (-E + f_out_e)/T
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    boundaries:
+      lo: 0.0
+      hi: .inf
+    initial_value: 0.1
+  I:
+    name: I
+    domain:
+      lo: 0.001
+      hi: 0.25
+    description: Firing rate of inhibitory population in KHz
+    equation:
+      lhs: Derivative(I, t)
+      rhs: (-I + f_out_i)/T
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    boundaries:
+      lo: 0.0
+      hi: .inf
+    initial_value: 0.1
+  W_e:
+    name: W_e
+    domain:
+      lo: 0.0
+      hi: 200.0
+    description: Level of adaptation of excitatory in pA
+    equation:
+      lhs: Derivative(W_e, t)
+      rhs: E*b_e - W_e/tau_w_e + a_e*(-E_L_e + mu_V_e)/tau_w_e
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+  W_i:
+    name: W_i
+    domain:
+      lo: 0.0
+      hi: 0.0
+    description: Level of adaptation of inhibitory in pA
+    equation:
+      lhs: Derivative(W_i, t)
+      rhs: I*b_i - W_i/tau_w_i + a_i*(-E_L_i + mu_V_i)/tau_w_i
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+  ou_drift:
+    name: ou_drift
+    domain:
+      lo: 0.0
+      hi: 0.0
+    description: ''
+    equation:
+      lhs: Derivative(ou_drift, t)
+      rhs: -ou_drift/tau_OU
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    initial_value: 0.1
+number_of_modes: 1

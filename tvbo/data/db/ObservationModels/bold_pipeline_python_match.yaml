@@ -1,0 +1,216 @@
+name: "BOLD_ObservationModel"
+description: "BOLD signal observation model with subsampling and HRF convolution"
+acronym: "BOLD"
+
+# Processing pipeline steps - matches the Python example exactly
+pipeline:
+  # Step 1: First subsampling (temporal averaging)
+  - order: 1
+    type: "subsample"
+    transformation:
+      name: "subsample"
+      description: "Temporal subsampling with averaging"
+      source_code: |
+        def subsample(X, stepsize=4):
+            return (X[:-stepsize:stepsize] + X[stepsize::stepsize]) / 2
+      arguments:
+        X:
+          name: "X"
+          description: "Input time series data"
+        stepsize:
+          name: "stepsize"
+          description: "Subsampling step size"
+    input_mapping:
+      - function_argument: "X"
+        source: "Input"
+    output_alias: "subsample"
+    apply_on_dimension: "time|X|subsample|4|False|{\"X\": \"Input\"}|{\"stepsize\": 4}"
+
+  # Step 2: Generate timepoints dynamically
+  - order: 2
+    type: "custom_transform"
+    transformation:
+      name: "timepoints_generator"
+      description: "Dynamic timepoints generation"
+      source_code: |
+        def create_timepoints(dummy_input):
+            import numpy as np
+            return np.arange(0, 30, (0.1 * 4) / 1000)  # ts.dt * stepsize / 1000
+      arguments:
+        dummy_input:
+          name: "dummy_input"
+          description: "Trigger input (unused)"
+    input_mapping:
+      - function_argument: "dummy_input"
+        source: "subsample"
+    output_alias: "Timepoints"
+    apply_on_dimension: "custom_transform||timepoints_generator|0|False|{\"dummy_input\": \"subsample\"}|{}"
+
+  # Step 3: Generate HRF from ontology
+  - order: 3
+    type: "custom_transform"
+    transformation:
+      name: "HRF"
+      description: "Hemodynamic Response Function from TVB ontology"
+      # Note: This would be loaded from ontology.onto.HemodynamicResponseFunctionTVB
+      ontology_reference: "ontology.onto.HemodynamicResponseFunctionTVB"
+    input_mapping:
+      - function_argument: "var"
+        source: "Timepoints"
+    output_alias: "HRF"
+
+  # Step 4: Convolution with HRF
+  - order: 4
+    type: "convolution"
+    transformation:
+      name: "fftconvolve"
+      description: "FFT-based convolution for BOLD signal generation"
+      callable:
+        module: "scipy.signal"
+        qualname: "fftconvolve"
+      arguments:
+        in1:
+          name: "in1"
+          description: "First input signal"
+        in2:
+          name: "in2"
+          description: "Second input signal (HRF)"
+        mode:
+          name: "mode"
+          description: "Convolution mode"
+    input_mapping:
+      - function_argument: "in1"
+        source: "subsample"
+      - function_argument: "in2"
+        source: "HRF"
+    output_alias: "fftconvolve"
+    ensure_shape: "4d"
+    apply_on_dimension: "convolution||fftconvolve|0|True|{\"in1\": \"subsample\", \"in2\": \"HRF\"}|{\"mode\": \"full\"}"
+
+  # Step 5: Second subsampling (downsampling to BOLD frequency)
+  - order: 5
+    type: "subsample"
+    transformation:
+      name: "subsample_2"
+      description: "Second subsampling to BOLD temporal resolution"
+      source_code: |
+        def subsample(X, stepsize=180):
+            return (X[:-stepsize:stepsize] + X[stepsize::stepsize]) / 2
+      arguments:
+        X:
+          name: "X"
+          description: "Convolved signal"
+        stepsize:
+          name: "stepsize"
+          description: "BOLD downsampling factor"
+    input_mapping:
+      - function_argument: "X"
+        source: "fftconvolve"
+    output_alias: "subsample_2"
+    apply_on_dimension: "time|X|subsample_2|180|False|{\"X\": \"fftconvolve\"}|{\"stepsize\": 180}"
+
+  # Step 6: Post-Volterra transformation
+  - order: 6
+    type: "custom_transform"
+    transformation:
+      name: "post_volterra"
+      description: "Post-Volterra transformation for BOLD signal"
+      equation:
+        rhs: "(X-1) * (0.08*k_1*V_0)"
+        parameters:
+          k_1:
+            name: "k_1"
+            value: 5.6
+            description: "Volterra kernel parameter"
+          V_0:
+            name: "V_0"
+            value: 0.02
+            description: "Baseline volume fraction"
+      arguments:
+        X:
+          name: "X"
+          description: "Input signal after second subsampling"
+    input_mapping:
+      - function_argument: "X"
+        source: "subsample_2"
+    output_alias: "post_volterra"
+
+# Derivative computations (functional connectivity)
+derivatives:
+  - name: "FC_raw"
+    description: "Functional connectivity from raw input"
+    equation:
+      rhs: "corrcoef(x)"
+      parameters: {}
+    transformation:
+      name: "corrcoef_raw"
+      callable:
+        module: "numpy"
+        qualname: "corrcoef"
+      arguments:
+        x:
+          name: "x"
+          description: "Input time series"
+        rowvar:
+          name: "rowvar"
+          description: "Row variable flag"
+    input_source: "Input"
+    select_state: 0
+    processing_parameters:
+      rowvar: false
+
+  - name: "FC_bold"
+    description: "Functional connectivity from BOLD signal"
+    equation:
+      rhs: "corrcoef(x)"
+      parameters: {}
+    transformation:
+      name: "corrcoef_bold"
+      callable:
+        module: "numpy"
+        qualname: "corrcoef"
+      arguments:
+        x:
+          name: "x"
+          description: "BOLD time series"
+        rowvar:
+          name: "rowvar"
+          description: "Row variable flag"
+    input_source: "fftconvolve"
+    select_state: 0
+    processing_parameters:
+      rowvar: false
+
+# Global parameters
+parameters:
+  - name: "stepsize"
+    description: "Initial temporal subsampling factor"
+    value: 4
+    unit: "samples"
+  - name: "period"
+    description: "BOLD sampling period factor"
+    value: 720
+    unit: "samples"
+  - name: "dt"
+    description: "Original time step"
+    value: 0.1
+    unit: "ms"
+
+# Software environment
+environment:
+  software: "Python"
+  version: "3.8+"
+  platform: "any"
+
+# Expected output definition
+definition: |
+  Complete BOLD observation model that exactly matches the Python implementation:
+  1. Initial temporal subsampling (4x reduction) with apply_on_time
+  2. Dynamic timepoints generation from subsampled data
+  3. HRF generation from TVB ontology
+  4. FFT convolution with ensure_4d=True
+  5. Second subsampling to BOLD resolution with apply_on_time
+  6. Post-Volterra transformation with equation parameters
+  7. Two derivative computations for functional connectivity (raw and BOLD)
+  
+  This YAML represents the exact same pipeline as the Python add_function calls.

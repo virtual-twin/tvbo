@@ -1,0 +1,615 @@
+name: KIonEx
+parameters:
+  Cm:
+    name: Cm
+    definition: membrane capacitance
+    value: 1.0
+    domain:
+      lo: 0.5
+      hi: 1.5
+      step: 0.1
+    description: membrane capacitance
+  Delta:
+    name: Delta
+    definition: HWHM heterogeneous noise
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 10.0
+      step: 0.01
+    description: HWHM heterogeneous noise
+  E:
+    name: E
+    definition: Reversal Potential
+    value: 0.0
+    domain:
+      lo: -80.0
+      hi: 0.0
+      step: 0.5
+    description: Reversal Potential
+  J:
+    name: J
+    definition: Mean Synaptic weight
+    value: 0.1
+    domain:
+      lo: 0.001
+      hi: 40.0
+      step: 0.01
+    description: Mean Synaptic weight
+  K_bath:
+    name: K_bath
+    definition: Potassium concentration in bath
+    value: 5.5
+    domain:
+      lo: 3.0
+      hi: 40.0
+      step: 0.25
+    description: Potassium concentration in bath
+  R_minus:
+    name: R_minus
+    definition: curvature left parabola
+    value: 0.5
+    domain:
+      lo: 0.0001
+      hi: 5.0
+      step: 0.01
+    description: curvature left parabola
+  R_plus:
+    name: R_plus
+    definition: curvature right parabola
+    value: -0.5
+    domain:
+      lo: -5.0
+      hi: -0.0001
+      step: 0.01
+    description: curvature right parabola
+  Vstar:
+    name: Vstar
+    definition: x-coordinate meeting point of parabolas
+    value: -31.0
+    domain:
+      lo: -55.0
+      hi: -15.0
+      step: 0.5
+    description: x-coordinate meeting point of parabolas
+  c_minus:
+    name: c_minus
+    definition: x-coordinate left parabola
+    value: -40.0
+    domain:
+      lo: -100.0
+      hi: -10.0
+      step: 0.5
+    description: x-coordinate left parabola
+  c_plus:
+    name: c_plus
+    definition: x-coordinate right parabola
+    value: -20.0
+    domain:
+      lo: -80.0
+      hi: 0.0
+      step: 0.5
+    description: x-coordinate right parabola
+  epsilon:
+    name: epsilon
+    definition: diffusion rate
+    value: 0.001
+    domain:
+      lo: 0.0005
+      hi: 0.0015
+      step: 0.0001
+    description: diffusion rate
+  eta:
+    name: eta
+    definition: Mean heterogeneous noise
+    value: 0.0
+    domain:
+      lo: -10.0
+      hi: 10.0
+      step: 0.1
+    description: Mean heterogeneous noise
+  gamma:
+    name: gamma
+    definition: conversion factor
+    value: 0.04
+    domain:
+      lo: 0.02
+      hi: 0.06
+      step: 0.005
+    description: conversion factor
+  tau_n:
+    name: tau_n
+    definition: time constant of gating variable
+    value: 4.0
+    domain:
+      lo: 2.0
+      hi: 6.0
+      step: 0.5
+    description: time constant of gating variable
+  Chn:
+    name: Chn
+    value: 0.4
+    domain:
+      lo: 0.4
+      hi: 0.4
+      step: 0.0
+    description: ''
+  Ckp:
+    name: Ckp
+    value: 5.5
+    domain:
+      lo: 5.5
+      hi: 5.5
+      step: 0.0
+    description: ''
+    unit: mol.m**-3
+  Cl_i0:
+    name: Cl_i0
+    definition: initial concentration of intracellular Cl
+    value: 4.8
+    domain:
+      lo: 4.8
+      hi: 4.8
+      step: 0.0
+    description: initial concentration of intracellular Cl
+    unit: mMol/m**3
+  Cl_o0:
+    name: Cl_o0
+    definition: initial concentration of extracellular Cl
+    value: 112.0
+    domain:
+      lo: 112.0
+      hi: 112.0
+      step: 0.0
+    description: initial concentration of extracellular Cl
+    unit: mMol/m**3
+  Cmna:
+    name: Cmna
+    value: -24.0
+    domain:
+      lo: -24.0
+      hi: -24.0
+      step: 0.0
+    description: ''
+    unit: mV
+  Cnap:
+    name: Cnap
+    value: 21.0
+    domain:
+      lo: 21.0
+      hi: 21.0
+      step: 0.0
+    description: ''
+    unit: mol.m**-3
+  Cnk:
+    name: Cnk
+    value: -19.0
+    domain:
+      lo: -19.0
+      hi: -19.0
+      step: 0.0
+    description: ''
+    unit: mV
+  DChn:
+    name: DChn
+    value: -8.0
+    domain:
+      lo: -8.0
+      hi: -8.0
+      step: 0.0
+    description: ''
+  DCkp:
+    name: DCkp
+    value: 1.0
+    domain:
+      lo: 1.0
+      hi: 1.0
+      step: 0.0
+    description: ''
+    unit: mol.m**-3
+  DCmna:
+    name: DCmna
+    value: 12.0
+    domain:
+      lo: 12.0
+      hi: 12.0
+      step: 0.0
+    description: ''
+    unit: mV
+  DCnap:
+    name: DCnap
+    value: 21.0
+    domain:
+      lo: 21.0
+      hi: 21.0
+      step: 0.0
+    description: ''
+    unit: mol.m**-3
+  DCnk:
+    name: DCnk
+    value: 18.0
+    domain:
+      lo: 18.0
+      hi: 18.0
+      step: 0.0
+    description: ''
+    unit: mV
+  K_i0:
+    name: K_i0
+    definition: initial concentration of intracellular K
+    value: 130.0
+    domain:
+      lo: 130.0
+      hi: 130.0
+      step: 0.0
+    description: initial concentration of intracellular K
+    unit: mMol/m**3
+  K_o0:
+    name: K_o0
+    definition: initial concentration of extracellular K
+    value: 4.8
+    domain:
+      lo: 4.8
+      hi: 4.8
+      step: 0.0
+    description: initial concentration of extracellular K
+    unit: mMol/m**3
+  Na_i0:
+    name: Na_i0
+    definition: initial concentration of intracellular Na
+    value: 16.0
+    domain:
+      lo: 16.0
+      hi: 16.0
+      step: 0.0
+    description: initial concentration of intracellular Na
+    unit: mMol/m**3
+  Na_o0:
+    name: Na_o0
+    definition: initial concentration of extracellular Na
+    value: 138.0
+    domain:
+      lo: 138.0
+      hi: 138.0
+      step: 0.0
+    description: initial concentration of extracellular Na
+    unit: mMol/m**3
+  g_Cl:
+    name: g_Cl
+    definition: chloride conductance
+    value: 7.5
+    domain:
+      lo: 7.5
+      hi: 7.5
+      step: 0.0
+    description: chloride conductance
+    unit: nS
+  g_K:
+    name: g_K
+    definition: maximal potassium conductance
+    value: 22.0
+    domain:
+      lo: 22.0
+      hi: 22.0
+      step: 0.0
+    description: maximal potassium conductance
+    unit: nS
+  g_Kl:
+    name: g_Kl
+    definition: potassium leak conductance
+    value: 0.12
+    domain:
+      lo: 0.12
+      hi: 0.12
+      step: 0.0
+    description: potassium leak conductance
+    unit: nS
+  g_Na:
+    name: g_Na
+    definition: maximal sodiumconductance
+    value: 40.0
+    domain:
+      lo: 40.0
+      hi: 40.0
+      step: 0.0
+    description: maximal sodiumconductance
+    unit: nS
+  g_Nal:
+    name: g_Nal
+    definition: sodium leak conductance
+    value: 0.02
+    domain:
+      lo: 0.02
+      hi: 0.02
+      step: 0.0
+    description: sodium leak conductance
+    unit: nS
+  rho:
+    name: rho
+    definition: maximal Na/K pump current
+    value: 250.0
+    domain:
+      lo: 250.0
+      hi: 250.0
+      step: 0.0
+    description: maximal Na/K pump current
+    unit: pA
+  w_i:
+    name: w_i
+    definition: intracellular volume
+    value: 2160.0
+    domain:
+      lo: 2160.0
+      hi: 2160.0
+      step: 0.0
+    description: intracellular volume
+    unit: umeter**3
+  w_o:
+    name: w_o
+    definition: extracellular volume
+    value: 720.0
+    domain:
+      lo: 720.0
+      hi: 720.0
+      step: 0.0
+    description: extracellular volume
+    unit: umeter**3
+description: "It describes the mean-field activity of a population of Hodgkin-Huxley-type\
+  \ neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and\
+  \ extra-cellular potassium ion concentrations to the mean membrane potential, and\
+  \ the synaptic input to the population firing rate. \nThe model is derived as the\
+  \ mathematical limit of an infinite number of all-to-all coupled neurons, resulting\
+  \ in 5 state variables:\n    :math:`x` represents a phenomenological variable connected\
+  \ to the firing rate, \n    :math:`V` represent the average membrane potential,\n\
+  \    :math:`n` represents the gating variable for potassium K, \n    :math:`\\Delta\
+  \ K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g`\
+  \ represents the extracellular potassium buffering by the external bath\n    \"\"\
+  \""
+references:
+- Rabuffo2024
+- Depannemaecker2023
+derived_variables:
+  DNa_i:
+    name: DNa_i
+    equation:
+      lhs: DNa_i
+      rhs: -DKi
+      latex: false
+    conditional: false
+  I_Cl:
+    name: I_Cl
+    equation:
+      lhs: I_Cl
+      rhs: g_Cl*(V + 26.64*log(Cl_o0/Cl_i0))
+      latex: false
+    conditional: false
+  K_i:
+    name: K_i
+    equation:
+      lhs: K_i
+      rhs: DKi + K_i0
+      latex: false
+    conditional: false
+  beta:
+    name: beta
+    equation:
+      lhs: beta
+      rhs: w_i/w_o
+      latex: false
+    conditional: false
+  h:
+    name: h
+    equation:
+      lhs: h
+      rhs: 1.1 - 1.0/(1.0 + 24.5325301971094*exp(-8.0*n))
+      latex: false
+    conditional: false
+  minf:
+    name: minf
+    equation:
+      lhs: minf
+      rhs: 1.0/(exp((Cmna - V)/DCmna) + 1.0)
+      latex: false
+    conditional: false
+  ninf:
+    name: ninf
+    equation:
+      lhs: ninf
+      rhs: 1.0/(exp((Cnk - V)/DCnk) + 1.0)
+      latex: false
+    conditional: false
+  r:
+    name: r
+    equation:
+      lhs: r
+      rhs: R_minus*x/pi
+      latex: false
+    conditional: false
+  DK_o:
+    name: DK_o
+    equation:
+      lhs: DK_o
+      rhs: -DKi*beta
+      latex: false
+    conditional: false
+  DNa_o:
+    name: DNa_o
+    equation:
+      lhs: DNa_o
+      rhs: -DNa_i*beta
+      latex: false
+    conditional: false
+  Na_i:
+    name: Na_i
+    equation:
+      lhs: Na_i
+      rhs: DNa_i + Na_i0
+      latex: false
+    conditional: false
+  xcond:
+    name: xcond
+    symbol: xcond
+    equation:
+      lhs: xcond
+      rhs: Piecewise((Delta - J*r*x + 2*R_minus*x*(V - c_minus), V <= Vstar), (Delta
+        - J*r*x + 2*R_plus*x*(V - c_plus), True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: V <= Vstar
+      equation:
+        lhs: xcond
+        rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: xcond
+        rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
+        latex: false
+  K_o:
+    name: K_o
+    equation:
+      lhs: K_o
+      rhs: DK_o + K_o0 + Kg
+      latex: false
+    conditional: false
+  Na_o:
+    name: Na_o
+    equation:
+      lhs: Na_o
+      rhs: DNa_o + Na_o0
+      latex: false
+    conditional: false
+  I_K:
+    name: I_K
+    equation:
+      lhs: I_K
+      rhs: (V - 26.64*log(K_o/K_i))*(g_K*n + g_Kl)
+      latex: false
+    conditional: false
+  I_Na:
+    name: I_Na
+    equation:
+      lhs: I_Na
+      rhs: (V - 26.64*log(Na_o/Na_i))*(g_Na*h*minf + g_Nal)
+      latex: false
+    conditional: false
+  I_pump:
+    name: I_pump
+    equation:
+      lhs: I_pump
+      rhs: 1.0*rho/((exp((Ckp - K_o)/DCkp) + 1.0)*(exp((Cnap - Na_i)/DCnap) + 1.0))
+      latex: false
+    conditional: false
+  V_temp:
+    name: V_temp
+    equation:
+      lhs: V_temp
+      rhs: -1.0*(I_Cl + I_K + I_Na + I_pump)/Cm
+      latex: false
+    conditional: false
+  Vcond:
+    name: Vcond
+    symbol: Vcond
+    equation:
+      lhs: Vcond
+      rhs: Piecewise((R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V
+        <= Vstar), (R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
+      latex: false
+    conditional: true
+    cases:
+    - condition: V <= Vstar
+      equation:
+        lhs: Vcond
+        rhs: R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: Vcond
+        rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
+        latex: false
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  DKi:
+    name: DKi
+    domain:
+      lo: -10.0
+      hi: 0.0
+    description: ''
+    equation:
+      lhs: Derivative(DKi, t)
+      rhs: -gamma*(I_K - 2.0*I_pump)/w_i
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    boundaries:
+      lo: -100.0
+      hi: .inf
+    initial_value: 0.1
+  Kg:
+    name: Kg
+    domain:
+      lo: -20.0
+      hi: -5.0
+    description: ''
+    equation:
+      lhs: Derivative(Kg, t)
+      rhs: epsilon*(K_bath - K_o)
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    boundaries:
+      lo: -100.0
+      hi: .inf
+    initial_value: 0.1
+  V:
+    name: V
+    domain:
+      lo: -90.0
+      hi: 10.0
+    description: ''
+    equation:
+      lhs: Derivative(V, t)
+      rhs: Vcond
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    boundaries:
+      lo: -500.0
+      hi: .inf
+    initial_value: 0.1
+  n:
+    name: n
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: ''
+    equation:
+      lhs: Derivative(n, t)
+      rhs: (-n + ninf)/tau_n
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    boundaries:
+      lo: 0.0
+      hi: .inf
+    initial_value: 0.1
+  x:
+    name: x
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: ''
+    equation:
+      lhs: Derivative(x, t)
+      rhs: xcond
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    boundaries:
+      lo: 0.0
+      hi: .inf
+    initial_value: 0.1
+number_of_modes: 1

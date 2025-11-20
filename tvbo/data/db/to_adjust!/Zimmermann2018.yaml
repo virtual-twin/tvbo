@@ -1,0 +1,62 @@
+key: "Zimmerman2018"
+title: "Differentiation of Alzheimer's disease based on local and global parameters in personalized Virtual Brain models"
+year: 2018
+doi: "10.1016/j.nicl.2018.04.017"
+derived_from: "Sachdev et al., 2010; Tsang et al., 2013"
+
+simulation_experiments:
+  - id: 1
+    description: "Computational modeling with TVB"
+    model:
+      label: "ReducedWongWang"
+      iri: "http://www.thevirtualbrain.org/tvb-o/ReducedWongWang"
+      parameters:
+        - label: "conduction_velocity"
+          value: 6.0
+        - label: "global_coupling"
+          value: 2.0
+        - label: "aE"
+          value: 310
+        - label: "aI"
+          value: 615
+        - label: "bE"
+          value: 125
+        - label: "bI"
+          value: 177
+        - label: "dE"
+          value: 0.16
+        - label: "dI"
+          value: 0.087
+        - label: "tauE"
+          value: 100
+        - label: "tauI"
+          value: 10
+        - label: "gamma"
+          value: 0.000641
+        - label: "sigma"
+          value: 0.01
+        - label: "Io"
+          value: 0.382
+        - label: "LEE"
+          value: 1.0
+        - label: "LIE"
+          value: 1.0
+        - label: "LEI"
+          value: 1.0
+    integration:
+      method: "4th order Runge-Kutta"
+      step_size: 0.01
+      duration: 11000
+      transient_time: 1000
+    monitors:
+      - label: "simulated_BOLD"
+        imaging_modality: "BOLD"
+    modelfitting:
+      - description: "Fit TVB model to empirical data"
+        targets:
+          - label: "Empirical FC"
+            symbol: "empirical_FC"
+            equation: "corr(simulated_BOLD, empirical_BOLD)"
+        cost_function:
+          label: "Least Squares"
+          equation: "sum((X - Y)^2)"

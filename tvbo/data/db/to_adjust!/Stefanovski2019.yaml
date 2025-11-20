@@ -1,0 +1,35 @@
+key: Stefanovski2019
+year: 2019
+doi: 10.3389/fncom.2019.00054
+title: "Linking Molecular Pathways and Large-Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer's Disease"
+
+simulation_experiments:
+  - id: 1
+    model:
+      label: JansenRit
+      parameters:
+        - label: A
+          value: 3.25
+        - label: B
+          value: 22
+        - label: C
+          value: 10
+        - label: D
+          value: 20
+        - label: E
+          value: 220
+        - label: v_0
+          value: 6
+    integration:
+      method: HeunStochastic
+      noise:
+        additive: true
+        parameters:
+          - label: sigma
+            value: 0.1
+    coupling:
+      label: SigmoidalJansenRit
+    # "noise" and "monitor" are unexpected values although they appear in InstanceTemplate
+
+  #   monitors:
+  #       - type: EEG

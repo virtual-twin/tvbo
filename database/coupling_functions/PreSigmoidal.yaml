@@ -1,0 +1,30 @@
+name: PreSigmoidal
+parameters:
+  theta:
+    name: theta
+    value: 0.5
+    description: Threshold
+  P:
+    name: P
+    value: 1.0
+    description: Excitation-Inhibition ratio
+  Q:
+    name: Q
+    value: 1.0
+    description: Average
+  H:
+    name: H
+    value: 0.5
+    description: Global Factor
+  G:
+    name: G
+    value: 60.0
+    description: Gain
+sparse: false
+pre_expression:
+  rhs: H*(Q + tanh(G*(P*x_j - theta)))
+  latex: false
+post_expression:
+  rhs: gx
+  latex: false
+delayed: true
