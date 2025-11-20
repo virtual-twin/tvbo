@@ -44,13 +44,13 @@ title: The Virtual Brain Ontology
 ## Quickstart
 
 :::: {.panel-tabset}
-### Python Installation:
+### Python Installation
 ```bash
 pip install tvbo
 ```
 For more installation options, see the [Installation Guide](installation.md).
 
-### Model Specification:
+### Model Specification
 ```yaml
 name: LorenzAttractor
 parameters:
@@ -121,5 +121,61 @@ lorenz = Dynamics(
 
 SimulationExperiment(local_dynamics=lorenz).run(duration=1000).plot()
 
+```
+
+### Explore network dynamics with `tvboptim`
+```{python}
+import matplotlib.pyplot as plt
+from tvbo.data.tvbo_data.connectomes import Connectome
+from tvbo import SimulationExperiment, Dynamics
+from tvbo import Coupling
+from tvboptim.types import GridAxis, Space
+from tvboptim.execution import ParallelExecution
+import jax
+
+c = Coupling.from_ontology("HyperbolicTangent")
+
+sc = Connectome(
+    parcellation={"atlas": {"name": "DesikanKilliany"}},
+    normalization={"rhs": "(W - W_min) / (W_max - W_min)"},
+)
+
+exp = SimulationExperiment(
+    model=Dynamics("Generic2dOscillator"),
+    network=sc,
+    coupling={"name": "Linear", "parameters": {"a": {"value": 1}}},
+    integration={
+        "method": "Heun",
+        "duration": 3000,
+        "step_size": 0.1,
+    },
+)
+
+model = exp.execute("jax")
+
+state = exp.collect_state()
+
+n = 5
+state.parameters.local_dynamics.a = GridAxis(-10, 10, n)
+state.parameters.coupling.a = GridAxis(0, 0.1, n)
+grid = Space(state, mode="product")
+
+n_devices = jax.device_count()
+
+
+def explore():
+    exec = ParallelExecution(model, grid, n_pmap=n_devices, n_vmap=10)
+    return exec.run()
+
+
+exploration_results = explore()
+
+print(exploration_results.results.shape)
+
+fig, axs = plt.subplots(n, n, figsize=(15, 15))
+for i, d in enumerate(exploration_results.results.data.squeeze()):
+    ax = axs.flatten()[i]
+    im = ax.plot(d[1000:, 0], linewidth=1)
+    ax.axis("off")
 ```
 ::::
