@@ -163,24 +163,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#tvbo.data.tvbo_data.connectomes" id="toc-tvbo.data.tvbo_data.connectomes" class="nav-link active" data-scroll-target="#tvbo.data.tvbo_data.connectomes">connectomes</a>
-  <ul class="collapse">
-  <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
+  <li><a href="#classes" id="toc-classes" class="nav-link active" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
   <li><a href="#tvbo.data.tvbo_data.connectomes.Connectome" id="toc-tvbo.data.tvbo_data.connectomes.Connectome" class="nav-link" data-scroll-target="#tvbo.data.tvbo_data.connectomes.Connectome">Connectome</a></li>
   </ul></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
+  <ul class="collapse">
+  <li><a href="#tvbo.data.tvbo_data.connectomes.get_normative_connectome_data" id="toc-tvbo.data.tvbo_data.connectomes.get_normative_connectome_data" class="nav-link" data-scroll-target="#tvbo.data.tvbo_data.connectomes.get_normative_connectome_data">get_normative_connectome_data</a></li>
   </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/api/connectomes.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">connectomes</h1>
+</div>
 
 
 
+<div class="quarto-title-meta">
 
-<section id="tvbo.data.tvbo_data.connectomes" class="level1">
-<h1>connectomes</h1>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
 <p><code>data.tvbo_data.connectomes</code></p>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
@@ -205,14 +220,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Represents brain structural connectivity including connection weights, tract lengths, and spatial information. Supports loading normative connectomes from atlases or custom data, with JAX pytree compatibility.</p>
 <section id="examples" class="level4 doc-section doc-section-examples">
 <h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h4>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load atlas-based connectome</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix()</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom connectome from arrays</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(weights<span class="op">=</span>np.random.rand(<span class="dv">10</span>, <span class="dv">10</span>), number_of_regions<span class="op">=</span><span class="dv">10</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.calculate_delays(conduction_speed<span class="op">=</span><span class="fl">3.0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="b6bd2fda" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Connectome</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Load atlas-based connectome</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix()</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom connectome from arrays</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(weights<span class="op">=</span>np.random.rand(<span class="dv">10</span>, <span class="dv">10</span>), number_of_regions<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.calculate_delays(conduction_speed<span class="op">=</span><span class="fl">3.0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 <section id="see-also" class="level4 doc-section doc-section-see-also">
 <h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h4>
@@ -229,8 +247,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.atlas">atlas</a></td>
+<td>Brain atlas associated with this connectome.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.labels">labels</a></td>
+<td>Brain region labels from atlas.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.lengths_matrix">lengths_matrix</a></td>
+<td>Tract length matrix as numpy/JAX array.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.weights_matrix">weights_matrix</a></td>
-<td>Return weights matrix as ndarray.</td>
+<td>Connection weights matrix as numpy/JAX array.</td>
 </tr>
 </tbody>
 </table>
@@ -246,8 +276,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.calculate_delays">calculate_delays</a></td>
+<td>Calculate signal propagation delays between regions.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.compute_delays">compute_delays</a></td>
+<td>Calculate signal propagation delays between regions.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.create_graph">create_graph</a></td>
+<td>Create NetworkX graph from connectivity matrices.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.execute">execute</a></td>
+<td>Convert connectome to simulator-specific format.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel">from_datamodel</a></td>
-<td>Create a Connectome instance from a tvbo_datamodel.Connectome object.</td>
+<td>Create a Connectome from a datamodel instance.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.get_atlas">get_atlas</a></td>
+<td>Retrieve the Atlas object for this connectome.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.get_centers">get_centers</a></td>
+<td>Get 3D spatial coordinates of brain region centers.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.normalize">normalize</a></td>
+<td>Add min-max normalization of connection weights to metadata.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.normalize_weights">normalize_weights</a></td>
+<td>Set normalization equation for connection weights.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.plot_graph">plot_graph</a></td>
+<td>Visualize connectome as network graph.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.plot_lengths">plot_lengths</a></td>
+<td>Plot tract lengths matrix as heatmap.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.plot_matrix">plot_matrix</a></td>
+<td>Plot both weights and lengths matrices side by side.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.plot_overview">plot_overview</a></td>
+<td>Create comprehensive visualization with graph and matrices.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.plot_weights">plot_weights</a></td>
+<td>Plot connection weights matrix as heatmap.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.to_yaml">to_yaml</a></td>
+<td>Serialize Connectome to YAML format.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten">tree_flatten</a></td>
@@ -255,71 +341,557 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<section id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel" class="level5">
-<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel">from_datamodel</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Create a Connectome instance from a tvbo_datamodel.Connectome object.</p>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.calculate_delays" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.calculate_delays">calculate_delays</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.calculate_delays(conduction_speed<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Calculate signal propagation delays between regions.</p>
 <section id="parameters" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 12%">
-<col style="width: 30%">
-<col style="width: 43%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>datamodel</td>
-<td>tvbo_datamodel.Connectome</td>
-<td>A tvbo_datamodel.Connectome instance</td>
-<td><em>required</em></td>
-</tr>
-</tbody>
-</table>
+<p>conduction_speed : float, optional Conduction speed in mm/ms. If None, uses <code>self.conduction_speed.value</code></p>
 </section>
 <section id="returns" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 8%">
-<col style="width: 13%">
-<col style="width: 77%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>Connectome</td>
-<td>A new Connectome instance with all fields copied from the datamodel</td>
-</tr>
-</tbody>
-</table>
+<p>np.ndarray or jax.Array Delay matrix (N x N) in milliseconds</p>
+</section>
+<section id="raises" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<p>ValueError If lengths matrix is not available</p>
+</section>
+<section id="examples-1" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h6>
+<div id="b47123b6" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.calculate_delays(conduction_speed<span class="op">=</span><span class="fl">3.0</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>plt.imshow(delays, cmap<span class="op">=</span><span class="st">'viridis'</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(label<span class="op">=</span><span class="st">'Delay (ms)'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-3-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="see-also-1" class="level6 doc-section doc-section-see-also">
+<h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See Also</h6>
+<p>compute_delays : Alternative method with string “default” option</p>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.compute_delays" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.compute_delays">compute_delays</h5>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.compute_delays(conduction_speed<span class="op">=</span><span class="st">'default'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Calculate signal propagation delays between regions.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<p>conduction_speed : str or float, default=“default” Signal propagation speed in mm/ms. If “default”, uses <code>self.conduction_speed.value</code> (typically 3.0 mm/ms)</p>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<p>np.ndarray or jax.Array Delay matrix (N x N) in milliseconds</p>
+</section>
+<section id="raises-1" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h6>
+<p>ValueError If lengths matrix is not available</p>
+</section>
+<section id="examples-2" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-2">Examples</h6>
+<div id="9992bb61" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.compute_delays(conduction_speed<span class="op">=</span><span class="fl">4.0</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean delay: </span><span class="sc">{</span>delays<span class="sc">.</span>mean()<span class="sc">:.2f}</span><span class="ss"> ms"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mean delay: 18.67 ms</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.create_graph" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.create_graph">create_graph</h5>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.create_graph(weight_threshold<span class="op">=</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create NetworkX graph from connectivity matrices.</p>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<p>weight_threshold : float, default=0 Minimum weight for including an edge in the graph</p>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<p>networkx.MultiDiGraph Directed multigraph with ‘weight’ and ‘delay’ edge attributes</p>
+</section>
+<section id="examples-3" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-3">Examples</h6>
+<div id="5075029d" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> sc.create_graph(weight_threshold<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Nodes: </span><span class="sc">{</span>G<span class="sc">.</span>number_of_nodes()<span class="sc">}</span><span class="ss">, Edges: </span><span class="sc">{</span>G<span class="sc">.</span>number_of_edges()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Nodes: 87, Edges: 5242</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.execute">execute</h5>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Convert connectome to simulator-specific format.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<p>format : str, default=“tvb” Target format. Currently supports “tvb” (The Virtual Brain)</p>
+</section>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<p>Any Connectivity object in the specified format</p>
+</section>
+<section id="examples-4" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-4">Examples</h6>
+<div id="c858a7ea" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>tvb_conn <span class="op">=</span> sc.execute(<span class="bu">format</span><span class="op">=</span><span class="st">"tvb"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Use with TVB simulator</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel">from_datamodel</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a Connectome from a datamodel instance.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<p>datamodel : tvbo_datamodel.Connectome Source datamodel Connectome instance</p>
+</section>
+<section id="returns-4" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
+<p>Connectome New Connectome with fields copied from datamodel</p>
+</section>
+<section id="examples-5" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-5">Examples</h6>
+<div id="82d0bf67" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel <span class="im">import</span> tvbo_datamodel</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>dm <span class="op">=</span> tvbo_datamodel.Connectome(number_of_nodes<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome.from_datamodel(dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.get_atlas" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.get_atlas">get_atlas</h5>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.get_atlas()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Retrieve the Atlas object for this connectome.</p>
+<section id="returns-5" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h6>
+<p>Atlas Atlas instance with parcellation metadata and terminology</p>
+</section>
+<section id="examples-6" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-6">Examples</h6>
+<div id="a1d09a4c" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>atlas <span class="op">=</span> sc.get_atlas()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.get_centers" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.get_centers">get_centers</h5>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.get_centers()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Get 3D spatial coordinates of brain region centers.</p>
+<section id="returns-6" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h6>
+<p>dict of int to tuple of float Mapping from region index to (x, y, z) coordinates in mm</p>
+</section>
+<section id="examples-7" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-7">Examples</h6>
+<div id="dd1c63b7" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>centers <span class="op">=</span> sc.get_centers()</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, (x, y, z) <span class="kw">in</span> centers.items():</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Region </span><span class="sc">{</span>idx<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>z<span class="sc">:.1f}</span><span class="ss">)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Region 0: (-24.4, -61.9, -36.6)
+Region 1: (-11.5, -18.5, 7.1)
+Region 2: (-12.7, 10.4, 9.8)
+Region 3: (-26.0, 1.4, 0.2)
+Region 4: (-20.5, -4.5, -0.8)
+Region 5: (-6.1, -30.4, -33.2)
+Region 6: (-25.2, -21.8, -13.6)
+Region 7: (-22.9, -4.5, -19.3)
+Region 8: (-8.3, 11.5, -7.8)
+Region 9: (-10.2, -14.8, -10.1)
+Region 10: (24.8, -61.5, -36.7)
+Region 11: (11.6, -16.9, 7.1)
+Region 12: (13.3, 11.8, 9.7)
+Region 13: (26.6, 3.2, -0.4)
+Region 14: (21.3, -2.8, -0.9)
+Region 15: (26.5, -20.7, -13.8)
+Region 16: (23.3, -3.0, -19.6)
+Region 17: (8.5, 12.6, -7.2)
+Region 18: (10.6, -14.2, -10.2)
+Region 19: (-53.4, -45.8, 8.5)
+Region 20: (-5.0, 21.2, 27.0)
+Region 21: (-36.7, 11.2, 49.3)
+Region 22: (-6.8, -78.3, 21.7)
+Region 23: (-24.2, -4.8, -32.8)
+Region 24: (-34.9, -44.1, -20.6)
+Region 25: (-40.6, -70.6, 33.0)
+Region 26: (-50.6, -31.5, -24.9)
+Region 27: (-6.5, -45.4, 19.8)
+Region 28: (-31.0, -88.6, 1.7)
+Region 29: (-24.4, 32.0, -18.0)
+Region 30: (-14.2, -67.4, -4.7)
+Region 31: (-5.9, 34.5, -17.1)
+Region 32: (-58.0, -21.8, -14.9)
+Region 33: (-23.9, -30.4, -18.6)
+Region 34: (-6.4, -28.4, 58.8)
+Region 35: (-47.7, 15.5, 14.4)
+Region 36: (-43.2, 41.4, -13.0)
+Region 37: (-47.2, 31.7, 3.1)
+Region 38: (-12.1, -80.1, 6.5)
+Region 39: (-46.6, -22.3, 44.2)
+Region 40: (-5.4, -18.1, 39.0)
+Region 41: (-43.1, -7.0, 42.5)
+Region 42: (-8.5, -59.0, 39.0)
+Region 43: (-4.6, 36.3, -0.8)
+Region 44: (-33.5, 46.4, 17.8)
+Region 45: (-11.3, 30.5, 44.0)
+Region 46: (-23.5, -64.1, 52.0)
+Region 47: (-53.7, -11.5, -3.7)
+Region 48: (-55.0, -39.4, 35.1)
+Region 49: (-7.6, 67.5, -10.2)
+Region 50: (-28.5, 13.7, -37.0)
+Region 51: (-44.8, -21.6, 9.4)
+Region 52: (-36.0, 0.9, -0.4)
+Region 53: (54.4, -40.3, 9.9)
+Region 54: (5.1, 22.5, 27.4)
+Region 55: (36.8, 14.0, 49.4)
+Region 56: (8.3, -78.3, 22.8)
+Region 57: (23.8, -4.8, -33.7)
+Region 58: (34.0, -37.7, -22.9)
+Region 59: (46.3, -63.1, 32.7)
+Region 60: (50.5, -27.1, -27.2)
+Region 61: (7.7, -43.7, 20.1)
+Region 62: (35.1, -83.9, 0.8)
+Region 63: (23.6, 32.2, -18.3)
+Region 64: (14.5, -65.5, -3.5)
+Region 65: (-1.0, 27.0, -17.0)
+Region 66: (58.0, -19.8, -15.7)
+Region 67: (25.1, -29.0, -18.9)
+Region 68: (7.2, -26.1, 58.7)
+Region 69: (48.5, 16.1, 13.3)
+Region 70: (43.1, 42.5, -13.4)
+Region 71: (49.1, 32.4, 4.8)
+Region 72: (13.3, -78.1, 8.1)
+Region 73: (47.4, -18.8, 43.8)
+Region 74: (5.8, -16.5, 39.2)
+Region 75: (44.3, -4.5, 42.8)
+Region 76: (10.3, -57.7, 38.7)
+Region 77: (5.0, 37.2, 1.9)
+Region 78: (34.5, 47.9, 16.5)
+Region 79: (11.9, 31.7, 43.5)
+Region 80: (25.2, -63.0, 53.3)
+Region 81: (54.7, -6.9, -5.2)
+Region 82: (55.9, -31.0, 36.0)
+Region 83: (8.4, 67.2, -13.2)
+Region 84: (28.3, 15.1, -35.1)
+Region 85: (45.7, -17.9, 8.7)
+Region 86: (34.9, 3.4, -2.5)</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.normalize" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.normalize">normalize</h5>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.normalize()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add min-max normalization of connection weights to metadata.</p>
+<p>Sets normalization equation to scale weights to [0, 1] range. Equivalent to <code>normalize_weights("(W - W_min) / (W_max - W_min)")</code>.</p>
+<section id="examples-8" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-8">Examples</h6>
+<div id="b12768dc" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>sc.normalize()</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>normalized_weights <span class="op">=</span> sc.weights_matrix  <span class="co"># Now in [0, 1] range</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="see-also-2" class="level6 doc-section doc-section-see-also">
+<h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-2">See Also</h6>
+<p>normalize_weights : Set custom normalization equation</p>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.normalize_weights" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.normalize_weights">normalize_weights</h5>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.normalize_weights(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    equation_rhs<span class="op">=</span><span class="st">'(W - W_min) / (W_max - W_min)'</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Set normalization equation for connection weights.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<p>equation_rhs : str, default=“(W - W_min) / (W_max - W_min)” Right-hand side of normalization equation. Can reference W, W_min, W_max</p>
+</section>
+<section id="examples-9" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-9">Examples</h6>
+<div id="063a7a22" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>sc.normalize_weights(<span class="st">"W / W_max"</span>)  <span class="co"># Normalize to [0, 1]</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>normalized <span class="op">=</span> sc.weights_matrix  <span class="co"># Returns normalized weights</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="notes" class="level6 doc-section doc-section-notes">
+<h6 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h6>
+<p>The normalization is applied when accessing <code>weights_matrix</code> property.</p>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.plot_graph" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.plot_graph">plot_graph</h5>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.plot_graph(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    node_cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    edge_cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    node_colors<span class="op">=</span><span class="st">'in-strength'</span>,</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    node_size<span class="op">=</span><span class="st">'in-strength'</span>,</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    threshold_percentile<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    pos_scaling<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    node_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    edge_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    log_in_strength<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    node_size_scaling<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    edge_color<span class="op">=</span><span class="st">'weight'</span>,</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    pos<span class="op">=</span><span class="st">'spring'</span>,</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    plot_brain<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    edge_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    node_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    fontsize<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Visualize connectome as network graph.</p>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
+<p>ax : matplotlib.axes.Axes, optional Axes to plot on. If None, creates new figure node_cmap : str or Colormap, default=“viridis” Colormap for node colors edge_cmap : str or Colormap, default=“viridis” Colormap for edge colors node_colors : str, default=“in-strength” Node coloring scheme: “in-strength” or “node” node_size : str or float, default=“in-strength” Node size scheme: “in-strength” or numeric value threshold_percentile : float, default=0 Only show edges above this percentile of weights pos_scaling : float, default=1 Scaling factor for spring layout positions node_labels : bool, default=True Whether to show node index labels edge_labels : bool, default=True Whether to show edge weight labels log_in_strength : bool, default=True Use log scale for in-strength calculations node_size_scaling : float, default=100 Scaling factor for node sizes edge_color : str, default=“weight” Edge attribute to use for coloring pos : str or dict, default=“spring” Node positions: “spring” for automatic layout or dict of positions plot_brain : str, optional Brain view for anatomical layout: “horizontal”, “sagittal”, or “coronal” edge_kwargs : dict, optional Additional arguments passed to nx.draw_networkx_edges node_kwargs : dict, optional Additional arguments passed to nx.draw_networkx_nodes fontsize : float, default=8 Font size for labels</p>
+</section>
+<section id="returns-7" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h6>
+<p>Figure or ScalarMappable Figure if ax is None, otherwise ScalarMappable for colorbar</p>
+</section>
+<section id="examples-10" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-10">Examples</h6>
+<div id="bbfb095f" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple graph</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>))</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>mappable <span class="op">=</span> sc.plot_graph(ax, threshold_percentile<span class="op">=</span><span class="dv">75</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>plt.colorbar(mappable, ax<span class="op">=</span>ax)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Anatomical layout</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>sc.plot_graph(ax, plot_brain<span class="op">=</span><span class="st">"horizontal"</span>, node_labels<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-12-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-12-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.plot_lengths" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.plot_lengths">plot_lengths</h5>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.plot_lengths(ax, cmap<span class="op">=</span><span class="st">'magma'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot tract lengths matrix as heatmap.</p>
+<section id="parameters-7" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h6>
+<p>ax : matplotlib.axes.Axes Axes to plot on cmap : str, default=“magma” Matplotlib colormap name</p>
+</section>
+<section id="returns-8" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h6>
+<p>matplotlib.image.AxesImage Image object for adding colorbar</p>
+</section>
+<section id="examples-11" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-11">Examples</h6>
+<div id="d9293313" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> sc.plot_lengths(ax)</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">"mm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-13-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.plot_matrix" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.plot_matrix">plot_matrix</h5>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.plot_matrix(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    log_weights<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span><span class="st">'magma'</span>,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot both weights and lengths matrices side by side.</p>
+<section id="parameters-8" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h6>
+<p>log_weights : bool, default=False If True, use log scale for weights colormap cmap : str, default=“magma” Matplotlib colormap name</p>
+</section>
+<section id="returns-9" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h6>
+<p>matplotlib.figure.Figure Figure containing both matrix plots</p>
+</section>
+<section id="examples-12" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-12">Examples</h6>
+<div id="1d61ac79" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix(log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="13">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-14-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.plot_overview" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.plot_overview">plot_overview</h5>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.plot_overview(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    weights_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    lengths_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    graph_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    log_weights<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create comprehensive visualization with graph and matrices.</p>
+<p>Produces a three-panel figure showing network graph, weights matrix, and lengths matrix with synchronized colorbars and formatting.</p>
+<section id="parameters-9" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h6>
+<p>weights_kwargs : dict, optional Keyword arguments passed to <code>plot_weights</code> lengths_kwargs : dict, optional Keyword arguments passed to <code>plot_lengths</code> graph_kwargs : dict, optional Keyword arguments passed to <code>plot_graph</code> log_weights : bool, default=False Use logarithmic scale for weights</p>
+</section>
+<section id="returns-10" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h6>
+<p>matplotlib.figure.Figure Figure with three subplots (graph, weights, lengths)</p>
+</section>
+<section id="examples-13" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-13">Examples</h6>
+<div id="ab08dba0" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>sc.plot_overview(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="14">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-15-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="see-also-3" class="level6 doc-section doc-section-see-also">
+<h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-3">See Also</h6>
+<p>plot_graph : Network graph visualization plot_matrix : Side-by-side matrix visualization</p>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.plot_weights" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.plot_weights">plot_weights</h5>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.plot_weights(ax, cmap<span class="op">=</span><span class="st">'magma'</span>, log<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot connection weights matrix as heatmap.</p>
+<section id="parameters-10" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h6>
+<p>ax : matplotlib.axes.Axes Axes to plot on cmap : str, default=“magma” Matplotlib colormap name log : bool, default=False If True, use logarithmic color scale</p>
+</section>
+<section id="returns-11" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-11">Returns</h6>
+<p>matplotlib.image.AxesImage Image object for adding colorbar</p>
+</section>
+<section id="examples-14" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-14">Examples</h6>
+<div id="026e0ec9" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> sc.plot_weights(ax, log<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="connectomes_files/figure-html/cell-16-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.to_yaml" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.to_yaml">to_yaml</h5>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.to_yaml(filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Serialize Connectome to YAML format.</p>
+<section id="parameters-11" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h6>
+<p>filepath : str, optional Path to save YAML file. If None, returns YAML string.</p>
+</section>
+<section id="returns-12" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-12">Returns</h6>
+<p>str YAML representation of the Connectome</p>
+</section>
+<section id="examples-15" class="level6 doc-section doc-section-examples">
+<h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-15">Examples</h6>
+<div id="aff964a1" class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> sc.to_yaml()</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>sc.to_yaml(<span class="st">"connectome.yaml"</span>)  <span class="co"># Save to file</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="16">
+<pre><code>'connectome.yaml'</code></pre>
+</div>
+</div>
 </section>
 </section>
 <section id="tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten">tree_flatten</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return children and auxiliary data for JAX pytree support.</p>
 <p>Children: (weights, lengths) so JAX can map/transform numerical payloads. Aux data: metadata dict WITHOUT the array data to avoid duplication.</p>
-
-
 </section>
 </section>
+</section>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.get_normative_connectome_data">get_normative_connectome_data</a></td>
+<td>Load normative connectivity matrices from BIDS dataset.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.data.tvbo_data.connectomes.get_normative_connectome_data" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.get_normative_connectome_data">get_normative_connectome_data</h3>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.get_normative_connectome_data(atlas, desc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load normative connectivity matrices from BIDS dataset.</p>
+<section id="parameters-12" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
+<p>atlas : str Name of the brain parcellation atlas (e.g., “DesikanKilliany”, “Destrieux”) desc : str Description/type of the connectome data (e.g., “dTOR”, “dMRT”)</p>
+</section>
+<section id="returns-13" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-13">Returns</h4>
+<p>weights : tvbo_datamodel.Matrix Connection strength matrix lengths : tvbo_datamodel.Matrix Tract length matrix</p>
+</section>
+<section id="examples-16" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-16">Examples</h4>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>weights, lengths <span class="op">=</span> get_normative_connectome_data(<span class="st">"DesikanKilliany"</span>, <span class="st">"dTOR"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+
 </section>
 </section>
 </section>
