@@ -246,12 +246,12 @@ class Connectome(tvbo_datamodel.Connectome):
         (weights, lengths) = children
         # Reconstruct from metadata dict (which doesn't include weights/lengths/parcellation)
         meta_dict = _json.loads(meta_json)
-        
+
         # Don't try to reconstruct Matrix objects from the arrays here
         # because during JAX tracing, we can't convert tracers to Python lists.
         # Instead, we'll create a minimal object and rely on _pytree_data for array access.
         # The weights_matrix and lengths_matrix properties will use _pytree_data if available.
-        
+
         obj = cls(**meta_dict)
 
         # Store the array children as a tuple using object.__setattr__
@@ -442,7 +442,7 @@ class Connectome(tvbo_datamodel.Connectome):
     def plot_weights(self, ax, cmap="magma", log=False):
         from matplotlib.colors import LogNorm
         import numpy as np
-        
+
         weights = self.weights_matrix
         if log:
             # Use LogNorm with vmin set to smallest non-zero value to avoid white holes
