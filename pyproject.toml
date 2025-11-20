@@ -120,8 +120,10 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://git.bihealth.org/martinl/tvbo"
-bug-tracker = "https://git.bihealth.org/martinl/tvbo/issues"
+homepage = "https://virtual-twin.github.io/tvbo/"
+documentation = "https://virtual-twin.github.io/tvbo/"
+repository = "https://github.com/virtual-twin/tvbo"
+bug-tracker = "https://github.com/virtual-twin/tvbo/issues"
 
 [tool.hatch.build]
 include = ["tvbo/**", "README.md"]
