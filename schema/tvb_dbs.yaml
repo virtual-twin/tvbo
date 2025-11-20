@@ -1,0 +1,249 @@
+id: http://www.thevirtualbrain.org/tvbo/dbs
+name: tvb_dbs
+title: The Virtual Brain DBS Schema
+description: Extension of the TVB data model for Deep Brain Stimulation (DBS) studies, including subject metadata, electrode configurations, and stimulation parameters.
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  tvbo_dbs: http://www.thevirtualbrain.org/tvb-o/dbs/
+
+default_prefix: tvbo_dbs
+
+slots:
+  subject_id:
+    identifier: true
+    description: >-
+      Unique identifier for a subject within a dataset.
+    from_schema: https://w3id.org/tvbo/dbs
+    range: string
+    required: true
+    exact_mappings:
+      - schema:identifier
+    aliases:
+      - subject code
+      - subject label
+
+  id:
+    description: Surrogate integer key.
+    range: integer
+
+classes:
+  Dataset:
+    description: Collection of data related to a specific DBS study.
+    slots:
+      - label
+    attributes:
+      dataset_id:
+        range: string
+      subjects:
+        range: Subject
+        multivalued: true
+        inlined: true
+      clinical_scores:
+        multivalued: true
+        range: ClinicalScore
+      coordinate_space:
+        range: CommonCoordinateSpace
+
+  Subject:
+    description: Human or animal subject receiving DBS.
+    slots:
+      - subject_id
+    attributes:
+      age:
+        range: float
+      sex:
+        range: string
+      diagnosis:
+        range: string
+      handedness:
+        range: string
+      protocols:
+        multivalued: true
+        range: DBSProtocol
+        description: All DBS protocols assigned to this subject.
+      coordinate_space:
+        range: CommonCoordinateSpace
+        description: Coordinate space used for this subject's data
+
+  Electrode:
+    description: Implanted DBS electrode and contact geometry.
+    attributes:
+      electrode_id:
+        range: string
+        description: Unique identifier for this electrode
+      manufacturer:
+        range: string
+      model:
+        range: string
+      hemisphere:
+        range: string
+        description: Hemisphere of electrode (left/right)
+        ifabsent: left
+      contacts:
+        multivalued: true
+        range: Contact
+        description: List of physical contacts along the electrode
+      head:
+        range: Coordinate
+      tail:
+        range: Coordinate
+      trajectory:
+        range: Coordinate
+        multivalued: true
+        description: The planned trajectory for electrode implantation
+      target_structure:
+        range: ParcellationEntity
+        description: Anatomical target structure from a brain atlas
+      coordinate_space:
+        range: CommonCoordinateSpace
+        description: Coordinate space used for implantation planning
+      recon_path:
+        range: string
+
+  Contact:
+    description: Individual contact on a DBS electrode.
+    attributes:
+      contact_id:
+        range: integer
+        description: Identifier (e.g., 0, 1, 2)
+      coordinate:
+        range: Coordinate
+        description: 3D coordinate of the contact center in the defined coordinate space
+      label:
+        range: string
+        description: Optional human-readable label (e.g., "1a")
+
+  StimulationSetting:
+    description: DBS parameters for a specific session.
+    # slots:
+    #   - id
+    # slot_usage:
+    #   id:
+    #     identifier: true
+    #     required: true
+    attributes:
+      electrode_reference:
+        range: Electrode
+      amplitude:
+        range: Parameter
+      frequency:
+        range: Parameter
+      pulse_width:
+        range: Parameter
+      mode:
+        range: string
+      active_contacts:
+        multivalued: true
+        range: integer
+      efield:
+        range: EField
+        description: Metadata about the E-field result for this setting
+
+  DBSProtocol:
+    description: A protocol describing DBS therapy, potentially bilateral or multi-lead.
+    slots:
+      - name
+    attributes:
+      electrodes:
+        multivalued: true
+        range: Electrode
+      settings:
+        multivalued: true
+        range: StimulationSetting
+      timing_info:
+        range: string
+      notes:
+        range: string
+      clinical_improvement:
+        range: ClinicalImprovement
+        multivalued: true
+        description: Observed improvement relative to baseline based on a defined score.
+
+  ClinicalScale:
+    description: A clinical assessment inventory or structured scale composed of multiple scores or items.
+    slots:
+      - acronym
+    # slot_usage:
+    #   acronym:
+    #     identifier: true
+    #     required: true
+    attributes:
+      name:
+        range: string
+        description: Full name of the scale (e.g., Unified Parkinson’s Disease Rating Scale)
+      acronym:
+        range: string
+        description: Short abbreviation (e.g., UPDRS)
+      version:
+        range: string
+        description: Version of the instrument (e.g., 3.0)
+      domain:
+        range: string
+        description: Overall clinical domain (e.g., motor, cognition)
+      reference:
+        range: string
+        description: DOI, PMID or persistent identifier
+
+  ClinicalScore:
+    description: Metadata about a clinical score or scale.
+    slots:
+      - acronym
+    attributes:
+      name:
+        range: string
+        description: Full name of the score (e.g., Unified Parkinson's Disease Rating Scale - Part III)
+      acronym:
+        range: string
+      description:
+        range: string
+      domain:
+        range: string
+        description: Domain assessed (e.g. motor, mood, pain)
+      reference:
+        range: string
+        description: PubMed ID, DOI, or other reference to the score definition
+      scale:
+        range: ClinicalScale
+        required: false
+        description: The scale this score belongs to, if applicable
+      parent_score:
+        range: ClinicalScore
+        description: If this score is a subscore of a broader composite
+
+  ClinicalImprovement:
+    description: Relative improvement on a defined clinical score.
+    attributes:
+      score:
+        range: ClinicalScore
+      baseline_value:
+        range: float
+        description: Preoperative baseline value of the score
+      absolute_value:
+        range: float
+        description: Absolute value of the score at the time of assessment
+      percent_change:
+        range: float
+        description: Percent change compared to preoperative baseline (positive = improvement)
+      time_post_surgery:
+        range: float
+        description: Timepoint of assessment in days or months after implantation
+      evaluator:
+        range: string
+        description: Who performed the rating (e.g., rater initials, clinician ID, or system)
+      timepoint:
+        range: string
+        description: Timepoint of assessment (e.g., "1 month post-op", "6 months post-op")
+
+  EField:
+    description: Simulated electric field from DBS modeling.
+    attributes:
+      volume_data:
+        range: string
+        description: Reference to raw or thresholded volume
+      coordinate_space:
+        range: CommonCoordinateSpace
+        description: Reference to a common coordinate space (e.g. MNI152)
+      threshold_applied:
+        range: float
+        description: Threshold value applied to the E-field simulation

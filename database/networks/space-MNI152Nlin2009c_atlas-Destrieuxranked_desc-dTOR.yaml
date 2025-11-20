@@ -1,0 +1,39 @@
+type: network
+label: Destrieuxranked (dTOR)
+name: Destrieuxranked (dTOR)
+parcellation:
+  atlas:
+    name: Destrieuxranked
+tractogram: dTOR
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR_lengths.csv
+number_of_regions: 167
+space: MNI152Nlin2009c
+weights_min: 0.0
+weights_max: 306659.0
+weights_mean: 585.4290221951306
+weights_median: 2.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 30665.9
+  - 61331.8
+  - 91997.70000000001
+  - 122663.6
+  - 153329.5
+  - 183995.40000000002
+  - 214661.30000000002
+  - 245327.2
+  - 275993.10000000003
+  - 306659.0
+  counts:
+  - 27865
+  - 12
+  - 4
+  - 0
+  - 4
+  - 2
+  - 0
+  - 0
+  - 0
+  - 2

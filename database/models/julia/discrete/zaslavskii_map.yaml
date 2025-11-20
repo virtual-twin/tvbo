@@ -1,0 +1,45 @@
+name: ZaslavskiiMap
+references:
+- Zaslavskii1978
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+system_type: discrete
+parameters:
+  eps:
+    name: eps
+    value: 5.0
+    description: Forcing amplitude ε.
+  nu:
+    name: nu
+    value: 0.2
+    description: Coupling strength ν.
+  r:
+    name: r
+    value: 2.0
+    description: Damping parameter r.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: (x + nu*(1 + mu*y) + eps*nu*mu*cos(2*pi*x)) % 1
+      latex: false
+    initial_value: 0.1
+  y:
+    name: y
+    equation:
+      lhs: y_next
+      rhs: exp(-r)*(y + eps*cos(2*pi*x))
+      latex: false
+    initial_value: 0.2
+derived_variables:
+  mu:
+    name: mu
+    equation:
+      lhs: mu
+      rhs: (1 - exp(-r))/r
+      latex: false
+    conditional: false
+description: |-
+  Two-dimensional dissipative map exhibiting chaotic attractors for standard parameter
+  sets; sometimes mischaracterized as the “simplest” strange attractor.
+number_of_modes: 1

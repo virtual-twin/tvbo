@@ -1,0 +1,20 @@
+{
+    "Name": "TVB-O Connectome Dataset",
+    "BIDSVersion": "1.6.0",
+    "GeneratedBy": [
+        {
+            "Name": "TVB-O Pipeline",
+            "Version": "1.0.0",
+            "CodeURL": "https://github.com/your_repo/tvbo-pipeline"
+        }
+    ],
+    "SourceDatasets": [
+        {
+            "URL": "https://example.com/source-dataset",
+            "DOI": "10.1234/example.doi"
+        }
+    ],
+    "DatasetType": "derivative",
+    "GeneratedDate": "2024-09-06",
+    "License": "CC-BY 4.0"
+}

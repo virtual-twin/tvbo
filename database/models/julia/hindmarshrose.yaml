@@ -1,0 +1,69 @@
+name: HindmarshRose
+references:
+- HindmarshRose1984
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  a:
+    name: a
+    value: 1.0
+    description: Cubic nonlinearity scaling a.
+  b:
+    name: b
+    value: 3.0
+    description: Quadratic term scaling b.
+  c:
+    name: c
+    value: 1.0
+    description: Constant current term c in y equation.
+  d:
+    name: d
+    value: 5.0
+    description: Scaling of x^2 in y equation.
+  r:
+    name: r
+    value: 0.001
+    description: Slow adaptation rate r.
+  s:
+    name: s
+    value: 4.0
+    description: Adaptation coupling strength s.
+  xr:
+    name: xr
+    value: -1.6
+    description: Reference potential x_r.
+  I:
+    name: I
+    value: 2.0
+    description: External applied current I.
+state_variables:
+  x:
+    name: x
+    description: Fast membrane potential variable.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: y - a*x**3 + b*x**2 - z + I
+      latex: false
+    initial_value: -1.0
+  y:
+    name: y
+    description: Fast recovery / ionic current variable.
+    equation:
+      lhs: Derivative(y, t)
+      rhs: c - d*x**2 - y
+      latex: false
+    initial_value: 0.0
+  z:
+    name: z
+    description: Slow adaptation current variable.
+    equation:
+      lhs: Derivative(z, t)
+      rhs: r*(s*(x - xr) - z)
+      latex: false
+    initial_value: 0.0
+description: |-
+  The Hindmarsh-Rose model reproduces the bursting behavior of a neuron's membrane
+  potential, characterized by a fast sequence of spikes followed by a quiescent period.
+  The x variable is the membrane potential; y the fast recovery (ionic current) variable;
+  z a slow adaptation current. Parameter sets modulate transitions between quiescence,
+  tonic spiking and bursting.
+number_of_modes: 1

@@ -1,0 +1,40 @@
+type: network
+label: HCPex (dTOR)
+name: HCPex (dTOR)
+parcellation:
+  atlas:
+    name: HCPex
+tractogram: dTOR
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR_lengths.csv
+number_of_regions: 427
+space: MNI152NLin2009cAsym
+assignments: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR_assignments.csv
+weights_min: 0.0
+weights_max: 44497.0
+weights_mean: 111.84821942751839
+weights_median: 0.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 4449.7
+  - 8899.4
+  - 13349.099999999999
+  - 17798.8
+  - 22248.5
+  - 26698.199999999997
+  - 31147.899999999998
+  - 35597.6
+  - 40047.299999999996
+  - 44497.0
+  counts:
+  - 181481
+  - 526
+  - 172
+  - 84
+  - 24
+  - 12
+  - 10
+  - 12
+  - 6
+  - 2

@@ -1,0 +1,35 @@
+key: Breakspear2003
+simulation_experiments:
+  - id: 1
+    network:
+      number_of_regions: 2
+    model:
+      name: LarterBreakspear
+      derived_from_model:
+        name: MorrisLecar
+      parameters:
+        I:
+          value: 0.3
+        a_ee:
+          value: 0.4
+        a_ei:
+          value: 0.1
+        a_ie:
+          value: 1
+        a_ne:
+          value: 1
+        a_ni:
+          value: 0.4
+        r_NMDA:
+          value: 0.2
+        g_Ca:
+          value: 1.1
+        g_K:
+          value: 2.0
+        g_L:
+          value: 0.5
+        phi:
+          value: 0.7
+
+        C:
+          explored_values: [0, 0.1, 0.13, 0.2]

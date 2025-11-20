@@ -1,0 +1,58 @@
+name: Kuramoto
+parameters:
+    omega:
+        name: omega
+        definition: Sets the base line frequency for the Kuramoto oscillator.
+        value: 1.0
+        domain:
+            lo: 0.01
+            hi: 200.0
+            step: 0.1
+        description: Sets the base line frequency for the Kuramoto oscillator
+        unit: rad/ms
+description:
+    The Kuramoto model is a model of synchronization phenomena derived by
+    Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including
+    the study of neuronal oscillations and synchronization.
+references:
+    - Cabral2011
+    - Strogatz2000
+    - Kuramoto1975
+derived_variables:
+    lc_0:
+        name: lc_0
+        equation:
+            lhs: lc_0
+            rhs: sin(local_coupling*theta)
+            latex: false
+        conditional: false
+    I:
+        name: I
+        description:
+            Input via local and long range connectivity, passing first through
+            the Kuramoto coupling function
+        equation:
+            lhs: I
+            rhs: c_pop0 + lc_0
+            latex: false
+        conditional: false
+coupling_terms:
+    c_pop0:
+        name: c_pop0
+state_variables:
+    theta:
+        name: theta
+        domain:
+            lo: 0.0
+            hi: 6.283185307179586
+        description:
+            The Kuramoto model has only one state variable representing oscillations
+            in general
+        equation:
+            lhs: Derivative(theta, t)
+            rhs: I + omega
+            latex: false
+        variable_of_interest: true
+        coupling_variable: true
+        initial_value: 0.1
+number_of_modes: 1

@@ -1,0 +1,55 @@
+name: HyperRoessler
+references:
+- Stankevich2012
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  a:
+    name: a
+    value: 0.25
+    description: Parameter a.
+  b:
+    name: b
+    value: 3.0
+    description: Parameter b.
+  c:
+    name: c
+    value: 0.5
+    description: Parameter c.
+  d:
+    name: d
+    value: 0.05
+    description: Parameter d for fourth dimension coupling.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: "-(y + z)"
+      latex: false
+    initial_value: -1.0
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: x + a*y + w
+      latex: false
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: b + z*(x - c)
+      latex: false
+    initial_value: 0.5
+  w:
+    name: w
+    equation:
+      lhs: Derivative(w, t)
+      rhs: -d*z + y*w
+      latex: false
+    initial_value: 0.1
+description: |-
+  Four-dimensional hyperchaotic extension of the Rössler system introducing an
+  additional variable that yields a second positive Lyapunov exponent over wide
+  parameter ranges while preserving the spiral-type attractor structure.
+number_of_modes: 1

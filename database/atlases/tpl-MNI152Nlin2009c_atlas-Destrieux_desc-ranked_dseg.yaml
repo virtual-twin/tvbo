@@ -1,0 +1,506 @@
+name: Destrieux
+coordinateSpace:
+  abbreviation: MNI152Nlin2009c
+terminology:
+  entities:
+  - name: left-cerebellum-cortex
+    lookupLabel: 1
+    originalLookupLabel: 8
+  - name: left-thalamus
+    lookupLabel: 2
+    originalLookupLabel: 10
+  - name: left-caudate
+    lookupLabel: 3
+    originalLookupLabel: 11
+  - name: left-putamen
+    lookupLabel: 4
+    originalLookupLabel: 12
+  - name: left-pallidum
+    lookupLabel: 5
+    originalLookupLabel: 13
+  - name: brain-stem
+    lookupLabel: 6
+    originalLookupLabel: 16
+  - name: left-hippocampus
+    lookupLabel: 7
+    originalLookupLabel: 17
+  - name: left-amygdala
+    lookupLabel: 8
+    originalLookupLabel: 18
+  - name: left-accumbens-area
+    lookupLabel: 9
+    originalLookupLabel: 26
+  - name: left-ventraldc
+    lookupLabel: 10
+    originalLookupLabel: 28
+  - name: right-cerebellum-cortex
+    lookupLabel: 11
+    originalLookupLabel: 47
+  - name: right-thalamus
+    lookupLabel: 12
+    originalLookupLabel: 49
+  - name: right-caudate
+    lookupLabel: 13
+    originalLookupLabel: 50
+  - name: right-putamen
+    lookupLabel: 14
+    originalLookupLabel: 51
+  - name: right-pallidum
+    lookupLabel: 15
+    originalLookupLabel: 52
+  - name: right-hippocampus
+    lookupLabel: 16
+    originalLookupLabel: 53
+  - name: right-amygdala
+    lookupLabel: 17
+    originalLookupLabel: 54
+  - name: right-accumbens-area
+    lookupLabel: 18
+    originalLookupLabel: 58
+  - name: right-ventraldc
+    lookupLabel: 19
+    originalLookupLabel: 60
+  - name: ctx_lh_g_and_s_frontomargin
+    lookupLabel: 20
+    originalLookupLabel: 11101
+  - name: ctx_lh_g_and_s_occipital_inf
+    lookupLabel: 21
+    originalLookupLabel: 11102
+  - name: ctx_lh_g_and_s_paracentral
+    lookupLabel: 22
+    originalLookupLabel: 11103
+  - name: ctx_lh_g_and_s_subcentral
+    lookupLabel: 23
+    originalLookupLabel: 11104
+  - name: ctx_lh_g_and_s_transv_frontopol
+    lookupLabel: 24
+    originalLookupLabel: 11105
+  - name: ctx_lh_g_and_s_cingul-ant
+    lookupLabel: 25
+    originalLookupLabel: 11106
+  - name: ctx_lh_g_and_s_cingul-mid-ant
+    lookupLabel: 26
+    originalLookupLabel: 11107
+  - name: ctx_lh_g_and_s_cingul-mid-post
+    lookupLabel: 27
+    originalLookupLabel: 11108
+  - name: ctx_lh_g_cingul-post-dorsal
+    lookupLabel: 28
+    originalLookupLabel: 11109
+  - name: ctx_lh_g_cingul-post-ventral
+    lookupLabel: 29
+    originalLookupLabel: 11110
+  - name: ctx_lh_g_cuneus
+    lookupLabel: 30
+    originalLookupLabel: 11111
+  - name: ctx_lh_g_front_inf-opercular
+    lookupLabel: 31
+    originalLookupLabel: 11112
+  - name: ctx_lh_g_front_inf-orbital
+    lookupLabel: 32
+    originalLookupLabel: 11113
+  - name: ctx_lh_g_front_inf-triangul
+    lookupLabel: 33
+    originalLookupLabel: 11114
+  - name: ctx_lh_g_front_middle
+    lookupLabel: 34
+    originalLookupLabel: 11115
+  - name: ctx_lh_g_front_sup
+    lookupLabel: 35
+    originalLookupLabel: 11116
+  - name: ctx_lh_g_ins_lg_and_s_cent_ins
+    lookupLabel: 36
+    originalLookupLabel: 11117
+  - name: ctx_lh_g_insular_short
+    lookupLabel: 37
+    originalLookupLabel: 11118
+  - name: ctx_lh_g_occipital_middle
+    lookupLabel: 38
+    originalLookupLabel: 11119
+  - name: ctx_lh_g_occipital_sup
+    lookupLabel: 39
+    originalLookupLabel: 11120
+  - name: ctx_lh_g_oc-temp_lat-fusifor
+    lookupLabel: 40
+    originalLookupLabel: 11121
+  - name: ctx_lh_g_oc-temp_med-lingual
+    lookupLabel: 41
+    originalLookupLabel: 11122
+  - name: ctx_lh_g_oc-temp_med-parahip
+    lookupLabel: 42
+    originalLookupLabel: 11123
+  - name: ctx_lh_g_orbital
+    lookupLabel: 43
+    originalLookupLabel: 11124
+  - name: ctx_lh_g_pariet_inf-angular
+    lookupLabel: 44
+    originalLookupLabel: 11125
+  - name: ctx_lh_g_pariet_inf-supramar
+    lookupLabel: 45
+    originalLookupLabel: 11126
+  - name: ctx_lh_g_parietal_sup
+    lookupLabel: 46
+    originalLookupLabel: 11127
+  - name: ctx_lh_g_postcentral
+    lookupLabel: 47
+    originalLookupLabel: 11128
+  - name: ctx_lh_g_precentral
+    lookupLabel: 48
+    originalLookupLabel: 11129
+  - name: ctx_lh_g_precuneus
+    lookupLabel: 49
+    originalLookupLabel: 11130
+  - name: ctx_lh_g_rectus
+    lookupLabel: 50
+    originalLookupLabel: 11131
+  - name: ctx_lh_g_subcallosal
+    lookupLabel: 51
+    originalLookupLabel: 11132
+  - name: ctx_lh_g_temp_sup-g_t_transv
+    lookupLabel: 52
+    originalLookupLabel: 11133
+  - name: ctx_lh_g_temp_sup-lateral
+    lookupLabel: 53
+    originalLookupLabel: 11134
+  - name: ctx_lh_g_temp_sup-plan_polar
+    lookupLabel: 54
+    originalLookupLabel: 11135
+  - name: ctx_lh_g_temp_sup-plan_tempo
+    lookupLabel: 55
+    originalLookupLabel: 11136
+  - name: ctx_lh_g_temporal_inf
+    lookupLabel: 56
+    originalLookupLabel: 11137
+  - name: ctx_lh_g_temporal_middle
+    lookupLabel: 57
+    originalLookupLabel: 11138
+  - name: ctx_lh_lat_fis-ant-horizont
+    lookupLabel: 58
+    originalLookupLabel: 11139
+  - name: ctx_lh_lat_fis-ant-vertical
+    lookupLabel: 59
+    originalLookupLabel: 11140
+  - name: ctx_lh_lat_fis-post
+    lookupLabel: 60
+    originalLookupLabel: 11141
+  - name: ctx_lh_pole_occipital
+    lookupLabel: 61
+    originalLookupLabel: 11143
+  - name: ctx_lh_pole_temporal
+    lookupLabel: 62
+    originalLookupLabel: 11144
+  - name: ctx_lh_s_calcarine
+    lookupLabel: 63
+    originalLookupLabel: 11145
+  - name: ctx_lh_s_central
+    lookupLabel: 64
+    originalLookupLabel: 11146
+  - name: ctx_lh_s_cingul-marginalis
+    lookupLabel: 65
+    originalLookupLabel: 11147
+  - name: ctx_lh_s_circular_insula_ant
+    lookupLabel: 66
+    originalLookupLabel: 11148
+  - name: ctx_lh_s_circular_insula_inf
+    lookupLabel: 67
+    originalLookupLabel: 11149
+  - name: ctx_lh_s_circular_insula_sup
+    lookupLabel: 68
+    originalLookupLabel: 11150
+  - name: ctx_lh_s_collat_transv_ant
+    lookupLabel: 69
+    originalLookupLabel: 11151
+  - name: ctx_lh_s_collat_transv_post
+    lookupLabel: 70
+    originalLookupLabel: 11152
+  - name: ctx_lh_s_front_inf
+    lookupLabel: 71
+    originalLookupLabel: 11153
+  - name: ctx_lh_s_front_middle
+    lookupLabel: 72
+    originalLookupLabel: 11154
+  - name: ctx_lh_s_front_sup
+    lookupLabel: 73
+    originalLookupLabel: 11155
+  - name: ctx_lh_s_interm_prim-jensen
+    lookupLabel: 74
+    originalLookupLabel: 11156
+  - name: ctx_lh_s_intrapariet_and_p_trans
+    lookupLabel: 75
+    originalLookupLabel: 11157
+  - name: ctx_lh_s_oc_middle_and_lunatus
+    lookupLabel: 76
+    originalLookupLabel: 11158
+  - name: ctx_lh_s_oc_sup_and_transversal
+    lookupLabel: 77
+    originalLookupLabel: 11159
+  - name: ctx_lh_s_occipital_ant
+    lookupLabel: 78
+    originalLookupLabel: 11160
+  - name: ctx_lh_s_oc-temp_lat
+    lookupLabel: 79
+    originalLookupLabel: 11161
+  - name: ctx_lh_s_oc-temp_med_and_lingual
+    lookupLabel: 80
+    originalLookupLabel: 11162
+  - name: ctx_lh_s_orbital_lateral
+    lookupLabel: 81
+    originalLookupLabel: 11163
+  - name: ctx_lh_s_orbital_med-olfact
+    lookupLabel: 82
+    originalLookupLabel: 11164
+  - name: ctx_lh_s_orbital-h_shaped
+    lookupLabel: 83
+    originalLookupLabel: 11165
+  - name: ctx_lh_s_parieto_occipital
+    lookupLabel: 84
+    originalLookupLabel: 11166
+  - name: ctx_lh_s_pericallosal
+    lookupLabel: 85
+    originalLookupLabel: 11167
+  - name: ctx_lh_s_postcentral
+    lookupLabel: 86
+    originalLookupLabel: 11168
+  - name: ctx_lh_s_precentral-inf-part
+    lookupLabel: 87
+    originalLookupLabel: 11169
+  - name: ctx_lh_s_precentral-sup-part
+    lookupLabel: 88
+    originalLookupLabel: 11170
+  - name: ctx_lh_s_suborbital
+    lookupLabel: 89
+    originalLookupLabel: 11171
+  - name: ctx_lh_s_subparietal
+    lookupLabel: 90
+    originalLookupLabel: 11172
+  - name: ctx_lh_s_temporal_inf
+    lookupLabel: 91
+    originalLookupLabel: 11173
+  - name: ctx_lh_s_temporal_sup
+    lookupLabel: 92
+    originalLookupLabel: 11174
+  - name: ctx_lh_s_temporal_transverse
+    lookupLabel: 93
+    originalLookupLabel: 11175
+  - name: ctx_rh_g_and_s_frontomargin
+    lookupLabel: 94
+    originalLookupLabel: 12101
+  - name: ctx_rh_g_and_s_occipital_inf
+    lookupLabel: 95
+    originalLookupLabel: 12102
+  - name: ctx_rh_g_and_s_paracentral
+    lookupLabel: 96
+    originalLookupLabel: 12103
+  - name: ctx_rh_g_and_s_subcentral
+    lookupLabel: 97
+    originalLookupLabel: 12104
+  - name: ctx_rh_g_and_s_transv_frontopol
+    lookupLabel: 98
+    originalLookupLabel: 12105
+  - name: ctx_rh_g_and_s_cingul-ant
+    lookupLabel: 99
+    originalLookupLabel: 12106
+  - name: ctx_rh_g_and_s_cingul-mid-ant
+    lookupLabel: 100
+    originalLookupLabel: 12107
+  - name: ctx_rh_g_and_s_cingul-mid-post
+    lookupLabel: 101
+    originalLookupLabel: 12108
+  - name: ctx_rh_g_cingul-post-dorsal
+    lookupLabel: 102
+    originalLookupLabel: 12109
+  - name: ctx_rh_g_cingul-post-ventral
+    lookupLabel: 103
+    originalLookupLabel: 12110
+  - name: ctx_rh_g_cuneus
+    lookupLabel: 104
+    originalLookupLabel: 12111
+  - name: ctx_rh_g_front_inf-opercular
+    lookupLabel: 105
+    originalLookupLabel: 12112
+  - name: ctx_rh_g_front_inf-orbital
+    lookupLabel: 106
+    originalLookupLabel: 12113
+  - name: ctx_rh_g_front_inf-triangul
+    lookupLabel: 107
+    originalLookupLabel: 12114
+  - name: ctx_rh_g_front_middle
+    lookupLabel: 108
+    originalLookupLabel: 12115
+  - name: ctx_rh_g_front_sup
+    lookupLabel: 109
+    originalLookupLabel: 12116
+  - name: ctx_rh_g_ins_lg_and_s_cent_ins
+    lookupLabel: 110
+    originalLookupLabel: 12117
+  - name: ctx_rh_g_insular_short
+    lookupLabel: 111
+    originalLookupLabel: 12118
+  - name: ctx_rh_g_occipital_middle
+    lookupLabel: 112
+    originalLookupLabel: 12119
+  - name: ctx_rh_g_occipital_sup
+    lookupLabel: 113
+    originalLookupLabel: 12120
+  - name: ctx_rh_g_oc-temp_lat-fusifor
+    lookupLabel: 114
+    originalLookupLabel: 12121
+  - name: ctx_rh_g_oc-temp_med-lingual
+    lookupLabel: 115
+    originalLookupLabel: 12122
+  - name: ctx_rh_g_oc-temp_med-parahip
+    lookupLabel: 116
+    originalLookupLabel: 12123
+  - name: ctx_rh_g_orbital
+    lookupLabel: 117
+    originalLookupLabel: 12124
+  - name: ctx_rh_g_pariet_inf-angular
+    lookupLabel: 118
+    originalLookupLabel: 12125
+  - name: ctx_rh_g_pariet_inf-supramar
+    lookupLabel: 119
+    originalLookupLabel: 12126
+  - name: ctx_rh_g_parietal_sup
+    lookupLabel: 120
+    originalLookupLabel: 12127
+  - name: ctx_rh_g_postcentral
+    lookupLabel: 121
+    originalLookupLabel: 12128
+  - name: ctx_rh_g_precentral
+    lookupLabel: 122
+    originalLookupLabel: 12129
+  - name: ctx_rh_g_precuneus
+    lookupLabel: 123
+    originalLookupLabel: 12130
+  - name: ctx_rh_g_rectus
+    lookupLabel: 124
+    originalLookupLabel: 12131
+  - name: ctx_rh_g_subcallosal
+    lookupLabel: 125
+    originalLookupLabel: 12132
+  - name: ctx_rh_g_temp_sup-g_t_transv
+    lookupLabel: 126
+    originalLookupLabel: 12133
+  - name: ctx_rh_g_temp_sup-lateral
+    lookupLabel: 127
+    originalLookupLabel: 12134
+  - name: ctx_rh_g_temp_sup-plan_polar
+    lookupLabel: 128
+    originalLookupLabel: 12135
+  - name: ctx_rh_g_temp_sup-plan_tempo
+    lookupLabel: 129
+    originalLookupLabel: 12136
+  - name: ctx_rh_g_temporal_inf
+    lookupLabel: 130
+    originalLookupLabel: 12137
+  - name: ctx_rh_g_temporal_middle
+    lookupLabel: 131
+    originalLookupLabel: 12138
+  - name: ctx_rh_lat_fis-ant-horizont
+    lookupLabel: 132
+    originalLookupLabel: 12139
+  - name: ctx_rh_lat_fis-ant-vertical
+    lookupLabel: 133
+    originalLookupLabel: 12140
+  - name: ctx_rh_lat_fis-post
+    lookupLabel: 134
+    originalLookupLabel: 12141
+  - name: ctx_rh_pole_occipital
+    lookupLabel: 135
+    originalLookupLabel: 12143
+  - name: ctx_rh_pole_temporal
+    lookupLabel: 136
+    originalLookupLabel: 12144
+  - name: ctx_rh_s_calcarine
+    lookupLabel: 137
+    originalLookupLabel: 12145
+  - name: ctx_rh_s_central
+    lookupLabel: 138
+    originalLookupLabel: 12146
+  - name: ctx_rh_s_cingul-marginalis
+    lookupLabel: 139
+    originalLookupLabel: 12147
+  - name: ctx_rh_s_circular_insula_ant
+    lookupLabel: 140
+    originalLookupLabel: 12148
+  - name: ctx_rh_s_circular_insula_inf
+    lookupLabel: 141
+    originalLookupLabel: 12149
+  - name: ctx_rh_s_circular_insula_sup
+    lookupLabel: 142
+    originalLookupLabel: 12150
+  - name: ctx_rh_s_collat_transv_ant
+    lookupLabel: 143
+    originalLookupLabel: 12151
+  - name: ctx_rh_s_collat_transv_post
+    lookupLabel: 144
+    originalLookupLabel: 12152
+  - name: ctx_rh_s_front_inf
+    lookupLabel: 145
+    originalLookupLabel: 12153
+  - name: ctx_rh_s_front_middle
+    lookupLabel: 146
+    originalLookupLabel: 12154
+  - name: ctx_rh_s_front_sup
+    lookupLabel: 147
+    originalLookupLabel: 12155
+  - name: ctx_rh_s_interm_prim-jensen
+    lookupLabel: 148
+    originalLookupLabel: 12156
+  - name: ctx_rh_s_intrapariet_and_p_trans
+    lookupLabel: 149
+    originalLookupLabel: 12157
+  - name: ctx_rh_s_oc_middle_and_lunatus
+    lookupLabel: 150
+    originalLookupLabel: 12158
+  - name: ctx_rh_s_oc_sup_and_transversal
+    lookupLabel: 151
+    originalLookupLabel: 12159
+  - name: ctx_rh_s_occipital_ant
+    lookupLabel: 152
+    originalLookupLabel: 12160
+  - name: ctx_rh_s_oc-temp_lat
+    lookupLabel: 153
+    originalLookupLabel: 12161
+  - name: ctx_rh_s_oc-temp_med_and_lingual
+    lookupLabel: 154
+    originalLookupLabel: 12162
+  - name: ctx_rh_s_orbital_lateral
+    lookupLabel: 155
+    originalLookupLabel: 12163
+  - name: ctx_rh_s_orbital_med-olfact
+    lookupLabel: 156
+    originalLookupLabel: 12164
+  - name: ctx_rh_s_orbital-h_shaped
+    lookupLabel: 157
+    originalLookupLabel: 12165
+  - name: ctx_rh_s_parieto_occipital
+    lookupLabel: 158
+    originalLookupLabel: 12166
+  - name: ctx_rh_s_pericallosal
+    lookupLabel: 159
+    originalLookupLabel: 12167
+  - name: ctx_rh_s_postcentral
+    lookupLabel: 160
+    originalLookupLabel: 12168
+  - name: ctx_rh_s_precentral-inf-part
+    lookupLabel: 161
+    originalLookupLabel: 12169
+  - name: ctx_rh_s_precentral-sup-part
+    lookupLabel: 162
+    originalLookupLabel: 12170
+  - name: ctx_rh_s_suborbital
+    lookupLabel: 163
+    originalLookupLabel: 12171
+  - name: ctx_rh_s_subparietal
+    lookupLabel: 164
+    originalLookupLabel: 12172
+  - name: ctx_rh_s_temporal_inf
+    lookupLabel: 165
+    originalLookupLabel: 12173
+  - name: ctx_rh_s_temporal_sup
+    lookupLabel: 166
+    originalLookupLabel: 12174
+  - name: ctx_rh_s_temporal_transverse
+    lookupLabel: 167
+    originalLookupLabel: 12175

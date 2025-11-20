@@ -1,0 +1,90 @@
+key: JansenRit1995
+year: 1995
+doi: 10.1007/BF00199471
+derived_from: JansenBrandt1993
+
+simulation_experiments:
+  - id: 1
+    label: "Spontaneous activity in a single column model"
+    description: "Jansen-Rit Neural Mass Model"
+    dynamics:
+      - Hypoactive Noise
+    model:
+      name: JansenRit
+      parameters:
+        A:
+          value: 3.25
+          unit: mV
+        B:
+          value: 22
+          unit: mV
+        C:
+          value: 135
+          explored_values: [68, 128, 135, 270, 675, 1350]
+        v0:
+          value: 6
+          unit: mV
+        a:
+          value: 0.1
+          unit: ms^-1
+        b:
+          value: 0.05
+          unit: ms^-1
+        # e0:
+        #   value: 0.0025
+        #   unit: s^-1
+        r:
+          value: 0.56
+          unit: mV^-1
+    integration:
+      method: RungeKutta4thOrder
+      duration: 
+  - id: 2
+    dynamics:
+      - Low frequency periodic or quasi-periodic output
+    model:
+      name: JansenRit
+      parameters:
+        - name: A
+          value: 3.12
+        - name: B
+          value: 24
+        - name: C
+          value: 108
+  - id: 3
+    dynamics:
+      - default (alpha activity)
+    model:
+      name: JansenRit
+      parameters:
+        - name: a
+          comment: 100s^-1
+          value: # 100s^-1 # This needs a fix
+        - name: b
+          comment: 50s^-1
+          value: #50s^-1 # This needs a fix
+        - name: v_0
+          value: 6
+        - name: e_0
+          comment: 2.5s^-1
+          value: # 2.5s^-1  # This needs a fix
+        - name: r
+          value: 0.56
+        - name: C
+          value: 135
+        - name: A
+          value: 3.25
+        - name: B
+          value: 22
+  - id: 4
+    dynamics:
+      - Oscillating output
+    model:
+      name: JansenRit
+      parameters:
+        - name: A
+          value: 3.25
+        - name: B
+          value: 22
+        - name: v_0
+          value: 6

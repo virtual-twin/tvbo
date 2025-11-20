@@ -1,0 +1,43 @@
+name: Sakarya
+references:
+- Li2015
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  a:
+    name: a
+    value: 1.0
+    description: Linear growth coefficient a.
+  b:
+    name: b
+    value: 1.0
+    description: Constant drive term b.
+  m:
+    name: m
+    value: 1.0
+    description: Nonlinear coupling coefficient m.
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a*x + y + y*z
+      latex: false
+    initial_value: -2.8976045
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: -x*z + y*z
+      latex: false
+    initial_value: 3.8877978
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: -z - m*x*y + b
+      latex: false
+    initial_value: 3.07465
+description: |-
+  Four-wing strange attractor born via merging of bistable attractors; exhibits
+  robust chaos and symmetry-related lobe structure transitions under parameter variation.
+number_of_modes: 1

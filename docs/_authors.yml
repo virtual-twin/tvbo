@@ -1,0 +1,81 @@
+affiliations:
+    - id: 1
+      name: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+      address: Charitéplatz 1, 10117, Berlin, Germany
+    - id: 2
+      name: Department of Neurology with Experimental Neurology, Charité - Universitätsmedizin Berlin (Corporate member of Freie Universität Berlin and Humboldt Universität zu Berlin)
+      address: Charitéplatz 1, 10117, Berlin, Germany
+    - id: 3
+      name: Bernstein Focus State Dependencies of Learning and Bernstein Center for Computational Neuroscience
+      address: Berlin, Germany
+    - id: 4
+      name: Einstein Center for Neurosciences Berlin
+      address: Charitéplatz 1, 10117, Berlin, Germany
+    - id: 5
+      name: Einstein Center Digital Future
+      address: Wilhelmstraße 67, 10117, Berlin, Germany
+
+authors:
+    - name: Leon Martin
+      orcid: 0000-0002-2599-0165
+      affiliations:
+          - ref: 1
+          - ref: 2
+      corresponding: true
+      email: leon.martin@charite.de
+    - name: Konstantin Bülau
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Marius Pille
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Rico Schmitt
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Christoph Hüttl
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Jil Meier
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Halgurd Taher
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Dionysios Perdikis
+      affiliations:
+          - ref: 1
+          - ref: 2
+    - name: Michael Schirner
+      affiliations:
+          - ref: 1
+          - ref: 2
+          - ref: 3
+          - ref: 4
+          - ref: 5
+    - name: Leon Stefanovski
+      affiliations:
+          - ref: 1
+          - ref: 2
+      attributes:
+          colastauthor: true
+    - name: Petra Ritter
+      affiliations:
+          - ref: 1
+          - ref: 2
+          - ref: 3
+          - ref: 4
+          - ref: 5
+      corresponding: true
+      email: petra.ritter@charite.de
+      attributes:
+          colastauthor: true
+
+author-notes:
+    - id: †
+      text: "The authors contributed equally to this work as co-last authors."

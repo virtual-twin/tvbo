@@ -1,0 +1,106 @@
+name: Antidots
+references:
+- Datseris2019
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  d0:
+    name: d0
+    value: 0.5
+    description: Effective antidot diameter.
+  c:
+    name: c
+    value: 0.2
+    description: Smoothing factor c.
+  B:
+    name: B
+    value: 1.0
+    description: Magnetic field strength (normalized).
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: vx
+      latex: false
+    initial_value: 0.5
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: vy
+      latex: false
+    initial_value: 0.5
+  vx:
+    name: vx
+    equation:
+      lhs: Derivative(vx, t)
+      rhs: 2*sqrt(2)*B*vy - Ux
+      latex: false
+    initial_value: 0.25
+  vy:
+    name: vy
+    equation:
+      lhs: Derivative(vy, t)
+      rhs: -2*sqrt(2)*B*vx - Uy
+      latex: false
+    initial_value: 0.25
+derived_variables:
+  xt:
+    name: xt
+    equation:
+      lhs: xt
+      rhs: (x % 1.0) - 0.5
+      latex: false
+  yt:
+    name: yt
+    equation:
+      lhs: yt
+      rhs: (y % 1.0) - 0.5
+      latex: false
+  rho:
+    name: rho
+    equation:
+      lhs: rho
+      rhs: sqrt(xt**2 + yt**2)
+      latex: false
+  Ux:
+    name: Ux
+    equation:
+      lhs: Ux
+      latex: false
+    conditional: true
+    cases:
+      - condition: rho < (0.5*d0 + c)
+        equation:
+          lhs: Ux
+          rhs: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*xt
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: Ux
+          rhs: 0
+          latex: false
+  Uy:
+    name: Uy
+    equation:
+      lhs: Uy
+      latex: false
+    conditional: true
+    cases:
+      - condition: rho < (0.5*d0 + c)
+        equation:
+          lhs: Uy
+          rhs: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*yt
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: Uy
+          rhs: 0
+          latex: false
+description: |-
+  Hamiltonian antidot lattice (periodic Sinai-like billiard) with smooth circular
+  repulsive potentials and perpendicular magnetic field. Models guiding center
+  dynamics and magnetotransport phenomena in mesoscopic systems. Smooth radial
+  repulsion implemented as a quartic polynomial potential inside radius (d0/2 + c)
+  matching the original implementation (Datseris 2019); outside region force is zero.
+number_of_modes: 1

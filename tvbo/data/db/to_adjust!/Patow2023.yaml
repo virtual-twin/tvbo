@@ -1,0 +1,165 @@
+key: Patow2023 # For reference to literature.bib file
+title: Whole-brain modeling of the differential influences of amyloid-beta and tau in Alzheimer’s disease
+year: 2023
+doi: 10.1186/s13195-023-01349-9
+sample:
+  groups:
+    - AD
+    - MCI
+    - HC
+
+simulation_experiments:
+  - id: 1
+    description: "Healthy Control (HC) Network Model"
+    dynamics:
+      - Noisy spontaneous activity with low firing rate (H_e ~ 3 Hz)
+    model:
+      label: ReducedWongWangExcInh_AbetaTau
+      modified: yes
+      derived_from:
+        label: ReducedWongWangExcInh
+      parameters:
+        - label: a_E
+          value: 310
+        - label: b_E
+          value: 125
+        - label: d_E
+          value: 0.16
+        - label: tau_E
+          value: 100
+        - label: W_E
+          value: 1
+        - label: a_I
+          value: 615
+        - label: b_I
+          value: 177
+        - label: d_I
+          value: 0.087
+        - label: tau_I
+          value: 10
+        - label: W_I
+          value: 0.7
+        - label: gamma
+          value: 0.000641
+        - label: J_NMDA
+          value: 0.15
+        - label: I_0
+          value: 0.382
+        - label: J_N
+          free: yes
+          heterogeneous: yes
+          comment: "Adjusted for each node such that the firing rate of the excitatory pools H_E remains clamped at 3Hz even when receiving excitatory input from the rest of the network."
+
+          # New Parameters
+        - label: b_E_Abeta
+          free: yes
+          reported_optimum: 0.1
+        - label: s_E_abeta
+          free: yes
+          domain:
+            lo: 0
+          reported_optimum: 1.7
+          comment: Abeta produces impaired glutamate reuptake
+        - label: b_E_tau
+          free: yes
+          reported_optimum: -0.5
+        - label: s_E_tau
+          free: yes
+          domain:
+            hi: 0
+          comment: Tau binds to synaptogyrin-3, reducing excitatory synaptic neurotransmission
+          reported_optimum: -2.8
+        - label: b_I_Abeta
+          free: yes
+          reported_optimum: 0.3
+        - label: s_I_abeta
+          free: yes
+          domain:
+            hi: 0
+          comment: Abeta produces inhibitory GABAergic interneuron dysfunction
+          reported_optimum: -3.1
+
+      # New Functions
+      functions:
+        - label: M_E
+          equation: (1+b_E_Abeta + s_E_abeta * Abeta) (1 + b_E_tau + s_E_tau * tau)
+          definition: Excitatory gain factor
+        - label: M_I
+          equation: (1+b_I_Abeta + s_I_abeta * Abeta)
+          definition: Inhibitory gain factor
+        - label: r_E
+          equation: M_E * r_E
+          definition: Excitatory firing rate affected by amyloid-beta and tau
+        - label: r_I
+          equation: M_I * r_I
+          definition: Inhibitory firing rate affected by amyloid-beta
+
+    connectivity:
+      parcellation:
+        label: HCP-MMP1
+        number_of_regions: 379
+
+    coupling:
+      parameters:
+        - label: G
+          description: "Global coupling scaling"
+          free: yes
+          domain:
+            lo: 0
+            hi: 5.5
+            step: 0.05
+          reported_optimum: 3.1
+
+    integration:
+      method: Euler-Maruyama
+      step_size: 1
+      duration: 435000
+      noise:
+        gaussian: true
+        parameters:
+          - label: sigma
+          - value: 0.01
+
+    monitors:
+      - label: Generalized Hemodynamic Model
+        imaging_modality: BOLD
+
+  - id: 2
+    description: "Mild Cognitive Impairment (MCI) Network Model"
+    model:
+      label: ReducedWongWangExcInh_AbetaTau
+      modified: yes
+      derived_from:
+        label: ReducedWongWangExcInh
+      parameters:
+        # New Parameters
+        - label: b_E_Abeta
+          free: yes
+          reported_optimum: 0.4
+        - label: s_E_abeta
+          free: yes
+          domain:
+            lo: 0
+          reported_optimum: 1.7
+          comment: Abeta produces impaired glutamate reuptake
+        - label: b_E_tau
+          free: yes
+          reported_optimum: -0.5
+
+        - label: s_E_tau
+          free: yes
+          domain:
+            hi: 0
+          comment: Tau binds to synaptogyrin-3, reducing excitatory synaptic neurotransmission
+          reported_optimum: -2.8
+
+        - label: b_I_Abeta
+          free: yes
+          reported_optimum: -0.1
+
+        - label: s_I_abeta
+          free: yes
+          domain:
+            hi: 0
+          comment: Abeta produces inhibitory GABAergic interneuron dysfunction
+          reported_optimum: -2.1

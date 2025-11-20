@@ -1,0 +1,137 @@
+name: HodgkinHuxley
+references:
+- HodgkinHuxley1952
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  Cm:
+    name: Cm
+    value: 1.0
+    description: Membrane capacitance (uF/cm^2).
+  gNa:
+    name: gNa
+    value: 120.0
+    description: Maximum sodium conductance.
+  gK:
+    name: gK
+    value: 36.0
+    description: Maximum potassium conductance.
+  gL:
+    name: gL
+    value: 0.3
+    description: Leak conductance.
+  ENa:
+    name: ENa
+    value: 50.0
+    description: Sodium reversal potential (mV).
+  EK:
+    name: EK
+    value: -77.0
+    description: Potassium reversal potential (mV).
+  EL:
+    name: EL
+    value: -54.387
+    description: Leak reversal potential (mV).
+  Iext:
+    name: Iext
+    value: 10.0
+    description: External applied current (uA/cm^2).
+state_variables:
+  V:
+    name: V
+    equation:
+      lhs: Derivative(V, t)
+      rhs: ( - gNa*m**3*h*(V - ENa) - gK*n**4*(V - EK) - gL*(V - EL) + Iext ) / Cm
+      latex: false
+    initial_value: -65.0
+  m:
+    name: m
+    equation:
+      lhs: Derivative(m, t)
+      rhs: alpha_m*(1 - m) - beta_m*m
+      latex: false
+    initial_value: 0.0529
+  h:
+    name: h
+    equation:
+      lhs: Derivative(h, t)
+      rhs: alpha_h*(1 - h) - beta_h*h
+      latex: false
+    initial_value: 0.5961
+  n:
+    name: n
+    equation:
+      lhs: Derivative(n, t)
+      rhs: alpha_n*(1 - n) - beta_n*n
+      latex: false
+    initial_value: 0.3177
+derived_variables:
+  alpha_m:
+    name: alpha_m
+    equation:
+      lhs: alpha_m
+      rhs: (0.1*(V + 40))/(1 - exp(-(V + 40)/10))
+      latex: false
+    conditional: false
+  beta_m:
+    name: beta_m
+    equation:
+      lhs: beta_m
+      rhs: 4*exp(-(V + 65)/18)
+      latex: false
+    conditional: false
+  alpha_h:
+    name: alpha_h
+    equation:
+      lhs: alpha_h
+      rhs: 0.07*exp(-(V + 65)/20)
+      latex: false
+    conditional: false
+  beta_h:
+    name: beta_h
+    equation:
+      lhs: beta_h
+      rhs: 1/(1 + exp(-(V + 35)/10))
+      latex: false
+    conditional: false
+  alpha_n:
+    name: alpha_n
+    equation:
+      lhs: alpha_n
+      rhs: (0.01*(V + 55))/(1 - exp(-(V + 55)/10))
+      latex: false
+    conditional: false
+  beta_n:
+    name: beta_n
+    equation:
+      lhs: beta_n
+      rhs: 0.125*exp(-(V + 65)/80)
+      latex: false
+    conditional: false
+  INa:
+    name: INa
+    equation:
+      lhs: INa
+      rhs: gNa*m**3*h*(V - ENa)
+      latex: false
+    conditional: false
+  IK:
+    name: IK
+    equation:
+      lhs: IK
+      rhs: gK*n**4*(V - EK)
+      latex: false
+    conditional: false
+  IL:
+    name: IL
+    equation:
+      lhs: IL
+      rhs: gL*(V - EL)
+      latex: false
+    conditional: false
+description: |-
+  Canonical conductance-based neuron model capturing the biophysical basis of the
+  action potential via voltage-gated sodium and potassium currents and a passive leak.
+  Fast activation/inactivation (m,h) of sodium and slower potassium activation (n)
+  shape spike initiation, refractory period, and repetitive firing under sustained
+  current injection.
+number_of_modes: 1

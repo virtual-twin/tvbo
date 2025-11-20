@@ -1,0 +1,702 @@
+name: DesikanKilliany
+coordinateSpace:
+  name: MNI-ICBM152-Nonlinear-2009c
+  abbreviation: MNI152NLin2009c
+terminology:
+  entities:
+    left-cerebellum-cortex:
+      name: left-cerebellum-cortex
+      lookupLabel: 1
+      originalLookupLabel: 8
+      center:
+        x: -24.40642428142428
+        y: -61.91204150579151
+        z: -36.62557646932647
+    left-thalamus:
+      name: left-thalamus
+      lookupLabel: 2
+      originalLookupLabel: 10
+      center:
+        x: -11.500183217295714
+        y: -18.458226456577506
+        z: 7.141168926346651
+    left-caudate:
+      name: left-caudate
+      lookupLabel: 3
+      originalLookupLabel: 11
+      center:
+        x: -12.735150095805835
+        y: 10.40195869704067
+        z: 9.836491377474985
+    left-putamen:
+      name: left-putamen
+      lookupLabel: 4
+      originalLookupLabel: 12
+      center:
+        x: -25.96036489462095
+        y: 1.3513683548285655
+        z: 0.1748977665932614
+    left-pallidum:
+      name: left-pallidum
+      lookupLabel: 5
+      originalLookupLabel: 13
+      center:
+        x: -20.477836213373408
+        y: -4.457926371149512
+        z: -0.817430503380919
+    brain-stem:
+      name: brain-stem
+      lookupLabel: 6
+      originalLookupLabel: 16
+      center:
+        x: -6.0589560918871825
+        y: -30.443442861296887
+        z: -33.16363768537366
+    left-hippocampus:
+      name: left-hippocampus
+      lookupLabel: 7
+      originalLookupLabel: 17
+      center:
+        x: -25.205718041406513
+        y: -21.822543542556687
+        z: -13.643608281301354
+    left-amygdala:
+      name: left-amygdala
+      lookupLabel: 8
+      originalLookupLabel: 18
+      center:
+        x: -22.85378973105135
+        y: -4.4596577017114925
+        z: -19.27041564792176
+    left-accumbens-area:
+      name: left-accumbens-area
+      lookupLabel: 9
+      originalLookupLabel: 26
+      center:
+        x: -8.33931240657698
+        y: 11.461883408071742
+        z: -7.768310911808669
+    left-ventraldc:
+      name: left-ventraldc
+      lookupLabel: 10
+      originalLookupLabel: 28
+      center:
+        x: -10.237206308336013
+        y: -14.780978435790146
+        z: -10.105889925973614
+    right-cerebellum-cortex:
+      name: right-cerebellum-cortex
+      lookupLabel: 11
+      originalLookupLabel: 47
+      center:
+        x: 24.792715621526185
+        y: -61.53569607009743
+        z: -36.70357679984306
+    right-thalamus:
+      name: right-thalamus
+      lookupLabel: 12
+      originalLookupLabel: 49
+      center:
+        x: 11.61273313153012
+        y: -16.875695732838594
+        z: 7.132701884581579
+    right-caudate:
+      name: right-caudate
+      lookupLabel: 13
+      originalLookupLabel: 50
+      center:
+        x: 13.286608260325409
+        y: 11.799958281184814
+        z: 9.694201084689198
+    right-putamen:
+      name: right-putamen
+      lookupLabel: 14
+      originalLookupLabel: 51
+      center:
+        x: 26.567430416730744
+        y: 3.172689527910194
+        z: -0.39351068737505557
+    right-pallidum:
+      name: right-pallidum
+      lookupLabel: 15
+      originalLookupLabel: 52
+      center:
+        x: 21.271406127258444
+        y: -2.800471327572666
+        z: -0.939905734485464
+    right-hippocampus:
+      name: right-hippocampus
+      lookupLabel: 16
+      originalLookupLabel: 53
+      center:
+        x: 26.533618477331046
+        y: -20.720273738237807
+        z: -13.792130025662956
+    right-amygdala:
+      name: right-amygdala
+      lookupLabel: 17
+      originalLookupLabel: 54
+      center:
+        x: 23.278780068728523
+        y: -3.0472508591065264
+        z: -19.627147766323027
+    right-accumbens-area:
+      name: right-accumbens-area
+      lookupLabel: 18
+      originalLookupLabel: 58
+      center:
+        x: 8.52184769038702
+        y: 12.62921348314606
+        z: -7.15106117353308
+    right-ventraldc:
+      name: right-ventraldc
+      lookupLabel: 19
+      originalLookupLabel: 60
+      center:
+        x: 10.595841864860603
+        y: -14.210899354229014
+        z: -10.174988187116085
+    ctx-lh-bankssts:
+      name: ctx-lh-bankssts
+      lookupLabel: 20
+      originalLookupLabel: 1001
+      center:
+        x: -53.39756532066508
+        y: -45.79423990498812
+        z: 8.515142517814724
+    ctx-lh-caudalanteriorcingulate:
+      name: ctx-lh-caudalanteriorcingulate
+      lookupLabel: 21
+      originalLookupLabel: 1002
+      center:
+        x: -4.973120728929388
+        y: 21.2359908883827
+        z: 27.031890660592254
+    ctx-lh-caudalmiddlefrontal:
+      name: ctx-lh-caudalmiddlefrontal
+      lookupLabel: 22
+      originalLookupLabel: 1003
+      center:
+        x: -36.74404027949034
+        y: 11.222975750102762
+        z: 49.34001233045623
+    ctx-lh-cuneus:
+      name: ctx-lh-cuneus
+      lookupLabel: 23
+      originalLookupLabel: 1005
+      center:
+        x: -6.846679081315955
+        y: -78.28739913097455
+        z: 21.713842333954062
+    ctx-lh-entorhinal:
+      name: ctx-lh-entorhinal
+      lookupLabel: 24
+      originalLookupLabel: 1006
+      center:
+        x: -24.201298701298697
+        y: -4.779220779220779
+        z: -32.824675324675326
+    ctx-lh-fusiform:
+      name: ctx-lh-fusiform
+      lookupLabel: 25
+      originalLookupLabel: 1007
+      center:
+        x: -34.905548705302095
+        y: -44.133497739416356
+        z: -20.642005754212903
+    ctx-lh-inferiorparietal:
+      name: ctx-lh-inferiorparietal
+      lookupLabel: 26
+      originalLookupLabel: 1008
+      center:
+        x: -40.60552268244576
+        y: -70.56233421750663
+        z: 33.03631911854724
+    ctx-lh-inferiortemporal:
+      name: ctx-lh-inferiortemporal
+      lookupLabel: 27
+      originalLookupLabel: 1009
+      center:
+        x: -50.56490037085926
+        y: -31.539128795021682
+        z: -24.869193538248787
+    ctx-lh-isthmuscingulate:
+      name: ctx-lh-isthmuscingulate
+      lookupLabel: 28
+      originalLookupLabel: 1010
+      center:
+        x: -6.529188558085224
+        y: -45.38412142440164
+        z: 19.773204903677765
+    ctx-lh-lateraloccipital:
+      name: ctx-lh-lateraloccipital
+      lookupLabel: 29
+      originalLookupLabel: 1011
+      center:
+        x: -30.96147730557965
+        y: -88.63045677941602
+        z: 1.6724486845909183
+    ctx-lh-lateralorbitofrontal:
+      name: ctx-lh-lateralorbitofrontal
+      lookupLabel: 30
+      originalLookupLabel: 1012
+      center:
+        x: -24.359540971168443
+        y: 31.971452959028824
+        z: -18.02959028831563
+    ctx-lh-lingual:
+      name: ctx-lh-lingual
+      lookupLabel: 31
+      originalLookupLabel: 1013
+      center:
+        x: -14.154186134612956
+        y: -67.35004419749968
+        z: -4.748453087511052
+    ctx-lh-medialorbitofrontal:
+      name: ctx-lh-medialorbitofrontal
+      lookupLabel: 32
+      originalLookupLabel: 1014
+      center:
+        x: -5.935648896068926
+        y: 34.539310716208945
+        z: -17.127355950457726
+    ctx-lh-middletemporal:
+      name: ctx-lh-middletemporal
+      lookupLabel: 33
+      originalLookupLabel: 1015
+      center:
+        x: -57.95826158826365
+        y: -21.837385494868798
+        z: -14.932295612645497
+    ctx-lh-parahippocampal:
+      name: ctx-lh-parahippocampal
+      lookupLabel: 34
+      originalLookupLabel: 1016
+      center:
+        x: -23.94569839712136
+        y: -30.401701014066077
+        z: -18.63591756624141
+    ctx-lh-paracentral:
+      name: ctx-lh-paracentral
+      lookupLabel: 35
+      originalLookupLabel: 1017
+      center:
+        x: -6.365271728839232
+        y: -28.35845483809885
+        z: 58.75932588524901
+    ctx-lh-parsopercularis:
+      name: ctx-lh-parsopercularis
+      lookupLabel: 36
+      originalLookupLabel: 1018
+      center:
+        x: -47.72817428060478
+        y: 15.508372622337845
+        z: 14.426597301251832
+    ctx-lh-parsorbitalis:
+      name: ctx-lh-parsorbitalis
+      lookupLabel: 37
+      originalLookupLabel: 1019
+      center:
+        x: -43.20521541950114
+        y: 41.39909297052154
+        z: -12.979875283446717
+    ctx-lh-parstriangularis:
+      name: ctx-lh-parstriangularis
+      lookupLabel: 38
+      originalLookupLabel: 1020
+      center:
+        x: -47.245463049579044
+        y: 31.71487371375116
+        z: 3.1206735266604255
+    ctx-lh-pericalcarine:
+      name: ctx-lh-pericalcarine
+      lookupLabel: 39
+      originalLookupLabel: 1021
+      center:
+        x: -12.091287878787881
+        y: -80.11666666666667
+        z: 6.467045454545456
+    ctx-lh-postcentral:
+      name: ctx-lh-postcentral
+      lookupLabel: 40
+      originalLookupLabel: 1022
+      center:
+        x: -46.6283493218657
+        y: -22.266953357591802
+        z: 44.24892490903076
+    ctx-lh-posteriorcingulate:
+      name: ctx-lh-posteriorcingulate
+      lookupLabel: 41
+      originalLookupLabel: 1023
+      center:
+        x: -5.396387832699617
+        y: -18.092205323193923
+        z: 39.02614068441065
+    ctx-lh-precentral:
+      name: ctx-lh-precentral
+      lookupLabel: 42
+      originalLookupLabel: 1024
+      center:
+        x: -43.05403462529204
+        y: -6.9650751812136775
+        z: 42.54927215000299
+    ctx-lh-precuneus:
+      name: ctx-lh-precuneus
+      lookupLabel: 43
+      originalLookupLabel: 1025
+      center:
+        x: -8.467257583861851
+        y: -59.011920226178646
+        z: 38.991289065484835
+    ctx-lh-rostralanteriorcingulate:
+      name: ctx-lh-rostralanteriorcingulate
+      lookupLabel: 44
+      originalLookupLabel: 1026
+      center:
+        x: -4.612650433809122
+        y: 36.28575426812202
+        z: -0.7903722362160579
+    ctx-lh-rostralmiddlefrontal:
+      name: ctx-lh-rostralmiddlefrontal
+      lookupLabel: 45
+      originalLookupLabel: 1027
+      center:
+        x: -33.5027973031129
+        y: 46.39257877875005
+        z: 17.839477836752266
+    ctx-lh-superiorfrontal:
+      name: ctx-lh-superiorfrontal
+      lookupLabel: 46
+      originalLookupLabel: 1028
+      center:
+        x: -11.28868552412645
+        y: 30.465201675368633
+        z: 43.95478799701647
+    ctx-lh-superiorparietal:
+      name: ctx-lh-superiorparietal
+      lookupLabel: 47
+      originalLookupLabel: 1029
+      center:
+        x: -23.471579751254637
+        y: -64.13031856862317
+        z: 51.99874536329915
+    ctx-lh-superiortemporal:
+      name: ctx-lh-superiortemporal
+      lookupLabel: 48
+      originalLookupLabel: 1030
+      center:
+        x: -53.72980147099486
+        y: -11.545484709395566
+        z: -3.700215672178288
+    ctx-lh-supramarginal:
+      name: ctx-lh-supramarginal
+      lookupLabel: 49
+      originalLookupLabel: 1031
+      center:
+        x: -55.0221420142986
+        y: -39.35781217463733
+        z: 35.114735892274595
+    ctx-lh-frontalpole:
+      name: ctx-lh-frontalpole
+      lookupLabel: 50
+      originalLookupLabel: 1032
+      center:
+        x: -7.600335852225015
+        y: 67.47607052896726
+        z: -10.203190596137702
+    ctx-lh-temporalpole:
+      name: ctx-lh-temporalpole
+      lookupLabel: 51
+      originalLookupLabel: 1033
+      center:
+        x: -28.46723182262798
+        y: 13.661232474731008
+        z: -37.038800130420604
+    ctx-lh-transversetemporal:
+      name: ctx-lh-transversetemporal
+      lookupLabel: 52
+      originalLookupLabel: 1034
+      center:
+        x: -44.806090739589806
+        y: -21.555003107520193
+        z: 9.389061528899944
+    ctx-lh-insula:
+      name: ctx-lh-insula
+      lookupLabel: 53
+      originalLookupLabel: 1035
+      center:
+        x: -36.0443006470881
+        y: 0.8967645594823352
+        z: -0.4175211548033815
+    ctx-rh-bankssts:
+      name: ctx-rh-bankssts
+      lookupLabel: 54
+      originalLookupLabel: 2001
+      center:
+        x: 54.35591814159292
+        y: -40.31692477876106
+        z: 9.907356194690266
+    ctx-rh-caudalanteriorcingulate:
+      name: ctx-rh-caudalanteriorcingulate
+      lookupLabel: 55
+      originalLookupLabel: 2002
+      center:
+        x: 5.119630812921542
+        y: 22.472843450479246
+        z: 27.414625488107916
+    ctx-rh-caudalmiddlefrontal:
+      name: ctx-rh-caudalmiddlefrontal
+      lookupLabel: 56
+      originalLookupLabel: 2003
+      center:
+        x: 36.84884792626727
+        y: 14.019662058371722
+        z: 49.388940092165896
+    ctx-rh-cuneus:
+      name: ctx-rh-cuneus
+      lookupLabel: 57
+      originalLookupLabel: 2005
+      center:
+        x: 8.293982544786402
+        y: -78.26917776757006
+        z: 22.761828203950387
+    ctx-rh-entorhinal:
+      name: ctx-rh-entorhinal
+      lookupLabel: 58
+      originalLookupLabel: 2006
+      center:
+        x: 23.822523881347408
+        y: -4.82352941176471
+        z: -33.72800402212167
+    ctx-rh-fusiform:
+      name: ctx-rh-fusiform
+      lookupLabel: 59
+      originalLookupLabel: 2007
+      center:
+        x: 33.99211931192272
+        y: -37.66155410558427
+        z: -22.865604609778835
+    ctx-rh-inferiorparietal:
+      name: ctx-rh-inferiorparietal
+      lookupLabel: 60
+      originalLookupLabel: 2008
+      center:
+        x: 46.338160087341265
+        y: -63.07378038269263
+        z: 32.69166235706487
+    ctx-rh-inferiortemporal:
+      name: ctx-rh-inferiortemporal
+      lookupLabel: 61
+      originalLookupLabel: 2009
+      center:
+        x: 50.51963177348489
+        y: -27.11786038077969
+        z: -27.183834298068206
+    ctx-rh-isthmuscingulate:
+      name: ctx-rh-isthmuscingulate
+      lookupLabel: 62
+      originalLookupLabel: 2010
+      center:
+        x: 7.688529244747301
+        y: -43.68313458262351
+        z: 20.111300397501424
+    ctx-rh-lateraloccipital:
+      name: ctx-rh-lateraloccipital
+      lookupLabel: 63
+      originalLookupLabel: 2011
+      center:
+        x: 35.092215077301944
+        y: -83.91161581611712
+        z: 0.8458065398823322
+    ctx-rh-lateralorbitofrontal:
+      name: ctx-rh-lateralorbitofrontal
+      lookupLabel: 64
+      originalLookupLabel: 2012
+      center:
+        x: 23.58775710088149
+        y: 32.155827619980414
+        z: -18.290401567091088
+    ctx-rh-lingual:
+      name: ctx-rh-lingual
+      lookupLabel: 65
+      originalLookupLabel: 2013
+      center:
+        x: 14.48061104582844
+        y: -65.48108108108109
+        z: -3.4635722679200995
+    ctx-rh-medialorbitofrontal:
+      name: ctx-rh-medialorbitofrontal
+      lookupLabel: 66
+      originalLookupLabel: 2014
+      center:
+        x: -1.0
+        y: 27.0
+        z: -17.0
+    ctx-rh-middletemporal:
+      name: ctx-rh-middletemporal
+      lookupLabel: 67
+      originalLookupLabel: 2015
+      center:
+        x: 57.996066433566426
+        y: -19.82498751248751
+        z: -15.695179820179817
+    ctx-rh-parahippocampal:
+      name: ctx-rh-parahippocampal
+      lookupLabel: 68
+      originalLookupLabel: 2016
+      center:
+        x: 25.07764198418404
+        y: -28.98562185478073
+        z: -18.8842559309849
+    ctx-rh-paracentral:
+      name: ctx-rh-paracentral
+      lookupLabel: 69
+      originalLookupLabel: 2017
+      center:
+        x: 7.240244969378821
+        y: -26.09606299212598
+        z: 58.74033245844271
+    ctx-rh-parsopercularis:
+      name: ctx-rh-parsopercularis
+      lookupLabel: 70
+      originalLookupLabel: 2018
+      center:
+        x: 48.45660237388725
+        y: 16.0600890207715
+        z: 13.343842729970333
+    ctx-rh-parsorbitalis:
+      name: ctx-rh-parsorbitalis
+      lookupLabel: 71
+      originalLookupLabel: 2019
+      center:
+        x: 43.11352447147408
+        y: 42.51752099623516
+        z: -13.376773819866784
+    ctx-rh-parstriangularis:
+      name: ctx-rh-parstriangularis
+      lookupLabel: 72
+      originalLookupLabel: 2020
+      center:
+        x: 49.07252506265664
+        y: 32.37045739348372
+        z: 4.812030075187977
+    ctx-rh-pericalcarine:
+      name: ctx-rh-pericalcarine
+      lookupLabel: 73
+      originalLookupLabel: 2021
+      center:
+        x: 13.270567375886529
+        y: -78.05602836879433
+        z: 8.123404255319144
+    ctx-rh-postcentral:
+      name: ctx-rh-postcentral
+      lookupLabel: 74
+      originalLookupLabel: 2022
+      center:
+        x: 47.432493177074974
+        y: -18.782469096163112
+        z: 43.82693851340504
+    ctx-rh-posteriorcingulate:
+      name: ctx-rh-posteriorcingulate
+      lookupLabel: 75
+      originalLookupLabel: 2023
+      center:
+        x: 5.84615384615384
+        y: -16.45428156748912
+        z: 39.15135807588638
+    ctx-rh-precentral:
+      name: ctx-rh-precentral
+      lookupLabel: 76
+      originalLookupLabel: 2024
+      center:
+        x: 44.28920433776045
+        y: -4.543986840502015
+        z: 42.76501766784452
+    ctx-rh-precuneus:
+      name: ctx-rh-precuneus
+      lookupLabel: 77
+      originalLookupLabel: 2025
+      center:
+        x: 10.294996842326853
+        y: -57.70963441162024
+        z: 38.6811451827942
+    ctx-rh-rostralanteriorcingulate:
+      name: ctx-rh-rostralanteriorcingulate
+      lookupLabel: 78
+      originalLookupLabel: 2026
+      center:
+        x: 4.951359084406292
+        y: 37.200286123032896
+        z: 1.9409871244635184
+    ctx-rh-rostralmiddlefrontal:
+      name: ctx-rh-rostralmiddlefrontal
+      lookupLabel: 79
+      originalLookupLabel: 2027
+      center:
+        x: 34.467899190581306
+        y: 47.87601177336276
+        z: 16.53233075791023
+    ctx-rh-superiorfrontal:
+      name: ctx-rh-superiorfrontal
+      lookupLabel: 80
+      originalLookupLabel: 2028
+      center:
+        x: 11.909999999999997
+        y: 31.74030487804879
+        z: 43.47411585365853
+    ctx-rh-superiorparietal:
+      name: ctx-rh-superiorparietal
+      lookupLabel: 81
+      originalLookupLabel: 2029
+      center:
+        x: 25.160497364198946
+        y: -63.0392505157002
+        z: 53.294407517763005
+    ctx-rh-superiortemporal:
+      name: ctx-rh-superiortemporal
+      lookupLabel: 82
+      originalLookupLabel: 2030
+      center:
+        x: 54.669730604694195
+        y: -6.946583420048555
+        z: -5.236963810845182
+    ctx-rh-supramarginal:
+      name: ctx-rh-supramarginal
+      lookupLabel: 83
+      originalLookupLabel: 2031
+      center:
+        x: 55.918280691299174
+        y: -30.966775923718714
+        z: 35.97683253873659
+    ctx-rh-frontalpole:
+      name: ctx-rh-frontalpole
+      lookupLabel: 84
+      originalLookupLabel: 2032
+      center:
+        x: 8.367959034381855
+        y: 67.15727871250914
+        z: -13.155084125822967
+    ctx-rh-temporalpole:
+      name: ctx-rh-temporalpole
+      lookupLabel: 85
+      originalLookupLabel: 2033
+      center:
+        x: 28.28962962962963
+        y: 15.050000000000011
+        z: -35.056666666666665
+    ctx-rh-transversetemporal:
+      name: ctx-rh-transversetemporal
+      lookupLabel: 86
+      originalLookupLabel: 2034
+      center:
+        x: 45.68185516680228
+        y: -17.853539462978034
+        z: 8.748576078112293
+    ctx-rh-insula:
+      name: ctx-rh-insula
+      lookupLabel: 87
+      originalLookupLabel: 2035
+      center:
+        x: 34.85538959185615
+        y: 3.414898677575877
+        z: -2.5362953096755803

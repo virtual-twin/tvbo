@@ -1,0 +1,53 @@
+name: QuadrupoleBosonHamiltonian
+references:
+- Eisenberg1975
+- Baran1998
+- MiclutaCampeanu2018
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  A:
+    name: A
+    value: 1.0
+    description: Harmonic scaling parameter A.
+  B:
+    name: B
+    value: 0.55
+    description: Cubic interaction coefficient B.
+  D:
+    name: D
+    value: 0.4
+    description: Quartic interaction coefficient D.
+state_variables:
+  q0:
+    name: q0
+    equation:
+      lhs: Derivative(q0, t)
+      rhs: A*p0
+      latex: false
+    initial_value: 0.0
+  p0:
+    name: p0
+    equation:
+      lhs: Derivative(p0, t)
+      rhs: -A*q0 - 3*B/ sqrt(2)*(q2**2 - q0**2) - D*q0*(q0**2 + q2**2)
+      latex: false
+    initial_value: -2.5830294658973876
+  q2:
+    name: q2
+    equation:
+      lhs: Derivative(q2, t)
+      rhs: A*p2
+      latex: false
+    initial_value: 1.3873470962626937
+  p2:
+    name: p2
+    equation:
+      lhs: Derivative(p2, t)
+      rhs: -q2*(A + 3*sqrt(2)*B*q0 + D*(q0**2 + q2**2))
+      latex: false
+    initial_value: -4.743416490252585
+description: |-
+  Conservative Hamiltonian system modeling quadrupole surface vibrations in a nuclear
+  context. Adds a quartic term to Henon–Heiles-like structure producing energy-dependent
+  chaoticity. Default initial condition is chaotic.
+number_of_modes: 1

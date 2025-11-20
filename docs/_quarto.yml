@@ -1,0 +1,137 @@
+project:
+  type: website
+  pre-render:
+    # Use the project virtualenv Python to ensure required packages are available
+    - python scripts/tvbo_package_struct.py
+    - python -m quartodoc build --config api/_quartodoc_config.yml
+    - python scripts/generate_datamodel_docs.py
+    # - python scripts/generate_yaml_examples.py
+    - python scripts/fix_mermaid_blocks.py
+    - python scripts/tvbo_package_struct.py --post
+  post-render:
+    - python scripts/generate_browser.py
+  render:
+    - index.qmd
+    - browser.qmd
+    - api/index.qmd
+    - api/*.qmd
+    - datamodel/*.qmd
+    # - datamodel/examples/**/*.qmd
+    - "!_archive/*"
+  output-dir: _site
+
+# Use our nested sidebar and sections at render time
+metadata-files:
+    - api/_sidebar.yml
+
+# Note: quartodoc generates the API sidebar; datamodel uses gen-doc
+
+website:
+    title: "TVB-O Documentation"
+    favicon: "_static/tvbo_python_square.svg"
+    image: "_static/tvbo_python_square.svg"
+
+    repo-url: https://github.com/TVB-Ontology/tvbo-python
+    issue-url: https://github.com/TVB-Ontology/tvbo-python/new/choose
+    repo-actions: [edit, issue]
+    page-navigation: true
+
+    navbar:
+        logo: _static/tvbo_python_square.svg
+        logo-altg: "tvbo-python logo"
+
+        left:
+            - href: index.qmd
+              text: Home
+            - text: "API Documentation"
+              href: api/index.qmd
+            - text: "Data Model"
+              href: datamodel/index.qmd
+            - text: "Browser"
+              href: browser.qmd
+
+        tools:
+            - icon: github
+              href: https://github.com/leon-k-martin/tvbo
+              text: tvbo GitHub
+
+    sidebar:
+        - id: about
+          collapse-level: 1
+          contents:
+              - text: "Home"
+                href: index.qmd
+              - text: "API Documentation"
+                href: api/index.qmd
+        - id: datamodel
+          title: "Data Model"
+          collapse-level: 2
+          contents:
+              - text: "Overview"
+                href: datamodel/index.qmd
+              - text: "Examples"
+                href: datamodel/examples/index.qmd
+              - section: "Core Classes"
+                contents:
+                  - datamodel/SimulationExperiment.qmd
+                  - datamodel/Dynamics.qmd
+                  - datamodel/Network.qmd
+                  - datamodel/Connectome.qmd
+              - section: "Monitoring & Observation"
+                contents:
+                  - datamodel/Monitor.qmd
+                  - datamodel/ObservationModel.qmd
+              - section: "Parameters & Variables"
+                contents:
+                  - datamodel/Parameter.qmd
+                  - datamodel/StateVariable.qmd
+
+
+    page-footer:
+        center: |
+            © 2024 Charité - Universitätsmedizin Berlin
+        right:
+            - icon: twitter
+              href: https://twitter.com/quarto_pub
+              aria-label: Quarto Twitter
+            - icon: github
+              href: https://github.com/quarto-dev/quarto-cli
+              aria-label: Quarto GitHub
+
+format:
+    html:
+        theme: cosmo
+        css: styles.css
+        toc: true
+        code-copy: true
+        code-overflow: wrap
+        code-fold: false
+        # include-after-body: js.html
+        include-in-header:
+            - text: |
+                  <script src="//unpkg.com/3d-force-graph"></script>
+        grid:
+          sidebar-width: 250px
+          body-width: 900px
+          margin-width: 300px
+        out-width: "100%"
+
+fig-align: center
+
+execute:
+    enabled: true
+    cache: true
+    freeze: auto
+
+markdown:
+    extensions: [myst]
+    myst:
+        enable_extensions:
+            [
+                "dollarmath",
+                "amsmath",
+                "deflist",
+                "html_admonition",
+                "html_image",
+                "colon_fence",
+            ]

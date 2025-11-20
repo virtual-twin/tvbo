@@ -1,0 +1,25 @@
+name: TentMap
+references:
+- Ott2002
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+system_type: discrete
+parameters:
+  mu:
+    name: mu
+    value: 2.0
+    description: Slope parameter μ ∈ [0,2].
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      latex: false
+      conditionals:
+        - condition: x < 0.5
+          expression: mu*x
+        - condition: x >= 0.5
+          expression: mu*(1 - x)
+    initial_value: 0.25
+description: |-
+  Piecewise-linear tent map on [0,1]. At μ=2 it is conjugate to the logistic map with r=4.
+number_of_modes: 1

@@ -1,0 +1,22 @@
+name: BetaTransformationMap
+references:
+- Ott2002
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+system_type: discrete
+parameters:
+  beta:
+    name: beta
+    value: 2.0
+    description: Expansion factor β; Lyapunov exponent ln(β).
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: (beta*x) % 1
+      latex: false
+    initial_value: 0.25
+description: |-
+  The β-transformation (generalized Bernoulli map): x_{n+1} = (β x_n) mod 1. For β=2 it
+  is the dyadic map with symbolic dynamics given by binary shift.
+number_of_modes: 1

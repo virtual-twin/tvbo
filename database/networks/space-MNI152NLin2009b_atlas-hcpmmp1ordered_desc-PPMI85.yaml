@@ -1,0 +1,39 @@
+type: network
+label: hcpmmp1ordered (PPMI85)
+name: hcpmmp1ordered (PPMI85)
+parcellation:
+  atlas:
+    name: hcpmmp1ordered
+tractogram: PPMI85
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85_lengths.csv
+number_of_regions: 379
+space: MNI152NLin2009b
+weights_min: 0.0
+weights_max: 12801.0
+weights_mean: 6.574599174330449
+weights_median: 0.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 1280.1
+  - 2560.2
+  - 3840.2999999999997
+  - 5120.4
+  - 6400.5
+  - 7680.599999999999
+  - 8960.699999999999
+  - 10240.8
+  - 11520.9
+  - 12801.0
+  counts:
+  - 143587
+  - 40
+  - 10
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 2
+  - 2

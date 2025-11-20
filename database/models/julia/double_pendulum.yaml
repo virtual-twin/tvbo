@@ -1,0 +1,77 @@
+name: DoublePendulum
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+parameters:
+  G:
+    name: G
+    value: 10.0
+    description: Gravitational acceleration.
+  L1:
+    name: L1
+    value: 1.0
+    description: Length of first rod.
+  L2:
+    name: L2
+    value: 1.0
+    description: Length of second rod.
+  M1:
+    name: M1
+    value: 1.0
+    description: Mass of first bob.
+  M2:
+    name: M2
+    value: 1.0
+    description: Mass of second bob.
+state_variables:
+  theta1:
+    name: theta1
+    description: Angle of first pendulum (θ₁).
+    equation:
+      lhs: Derivative(theta1, t)
+      rhs: omega1
+      latex: false
+    initial_value: 1.5707963267948966
+  omega1:
+    name: omega1
+    description: Angular velocity of first pendulum (ω₁).
+    equation:
+      lhs: Derivative(omega1, t)
+      rhs: (M2*(cos(phi)*(L1*omega1**2*sin(phi) + G*sin(theta2)) + L2*omega2**2*sin(phi)) - (M1 + M2)*G*sin(theta1))/(L1*Delta)
+      latex: false
+    initial_value: 0.0
+  theta2:
+    name: theta2
+    description: Angle of second pendulum (θ₂).
+    equation:
+      lhs: Derivative(theta2, t)
+      rhs: omega2
+      latex: false
+    initial_value: 0.0
+  omega2:
+    name: omega2
+    description: Angular velocity of second pendulum (ω₂).
+    equation:
+      lhs: Derivative(omega2, t)
+      rhs: (-(M2*L2*omega2**2*sin(phi)*cos(phi)) + (M1 + M2)*(G*(sin(theta1)*cos(phi) - sin(theta2)) - L1*omega1**2*sin(phi)))/(L2*Delta)
+      latex: false
+    initial_value: 0.5
+derived_variables:
+  phi:
+    name: phi
+    equation:
+      lhs: phi
+      rhs: theta2 - theta1
+      latex: false
+    conditional: false
+  Delta:
+    name: Delta
+    equation:
+      lhs: Delta
+      rhs: (M1 + M2) - M2*cos(phi)**2
+      latex: false
+    conditional: false
+description: |-
+  Famous chaotic double pendulum (planar) with two point masses connected by
+  massless rods. The ordering of variables is [θ₁, ω₁, θ₂, ω₂]. Shows sensitive
+  dependence and rich energy-dependent phase space structure. The auxiliary
+  variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equations.
+number_of_modes: 1

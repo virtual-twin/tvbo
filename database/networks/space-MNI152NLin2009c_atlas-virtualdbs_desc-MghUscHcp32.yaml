@@ -1,0 +1,39 @@
+type: network
+label: virtualdbs (MghUscHcp32)
+name: virtualdbs (MghUscHcp32)
+parcellation:
+  atlas:
+    name: virtualdbs
+tractogram: MghUscHcp32
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32_lengths.csv
+number_of_regions: 370
+space: MNI152NLin2009c
+weights_min: 0.0
+weights_max: 9461.0
+weights_mean: 17.813571950328708
+weights_median: 0.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 946.1
+  - 1892.2
+  - 2838.3
+  - 3784.4
+  - 4730.5
+  - 5676.6
+  - 6622.7
+  - 7568.8
+  - 8514.9
+  - 9461.0
+  counts:
+  - 136520
+  - 282
+  - 52
+  - 12
+  - 10
+  - 8
+  - 6
+  - 2
+  - 2
+  - 6

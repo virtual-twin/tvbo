@@ -1,0 +1,160 @@
+name: GastSchmidtKnosche_SD
+parameters:
+  Delta:
+    name: Delta
+    definition: Half-width of heterogeneous noise distribution
+    value: 2.0
+    domain:
+      lo: 0.0
+      hi: 10.0
+      step: 0.01
+    description: Half-width of heterogeneous noise distribution
+  I:
+    name: I
+    definition: External homogeneous current
+    value: 0.0
+    domain:
+      lo: -10.0
+      hi: 10.0
+      step: 0.01
+    description: External homogeneous current
+  J:
+    name: J
+    definition: Synaptic weight
+    value: 21.2132
+    domain:
+      lo: -25.0
+      hi: 25.0
+      step: 0.01
+    description: Synaptic weight
+  alpha:
+    name: alpha
+    definition: adaptation rate
+    value: 0.5
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.1
+    description: adaptation rate
+  cr:
+    name: cr
+    definition: It is the weight on Coupling through variable r.
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.1
+    description: It is the weight on Coupling through variable r
+  cv:
+    name: cv
+    definition: It is the weight on Coupling through variable V.
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.1
+    description: It is the weight on Coupling through variable V
+  eta:
+    name: eta
+    definition: Mean of heterogeneous noise distribution
+    value: -6.0
+    domain:
+      lo: -10.0
+      hi: 10.0
+      step: 0.0001
+    description: Mean of heterogeneous noise distribution
+  tau_A:
+    name: tau_A
+    definition: Adaptation time scale
+    value: 10.0
+    domain:
+      lo: 0.0
+      hi: 15.0
+      step: 0.01
+    description: Adaptation time scale
+  tau:
+    name: tau
+    definition: Characteristic time
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 15.0
+      step: 0.01
+    description: Characteristic time
+description: "4D model describing the Ott-Antonsen reduction of infinite all-to-all\
+  \ \n    coupled QIF neurons (Theta-neurons) with Synaptic Depression adaptation\
+  \ \n    mechanisms [Gastetal_2020]_.\n\n    The two state variables :math:`r` and\
+  \ :math:`V` represent the average firing rate and \n    the average membrane potential\
+  \ of our QIF neurons.\n    :math:`A` and :math:`B` are respectively the adaptation\
+  \ variable and its derivative.\n\n    The equations of the infinite QIF 2D population\
+  \ model read\n    \n    .. math::\n            \\dot{r} &= 1/\\tau (\\Delta/(\\\
+  pi \\tau) + 2 V r)\\\\\n            \\dot{V} &= 1/\\tau (V^2 - \\tau^2 \\pi^2 r^2\
+  \ + \\eta + J \\tau r (1 - A) + I)\\\\ \n            \\dot{A} &= 1/\\tau_A (B)\\\
+  \\\n            \\dot{B} &= 1/\\tau_A (-2 B - A + \\alpha  r) \\\\\n\n    .. [Gastetal_2020]\
+  \ Gast, R., Schmidt, H., & Knösche, T. R. (2020). A mean-field description of bursting\
+  \ dynamics in spiking neural networks with short-term adaptation. *Neural Computation*,\
+  \ 32(9), 1615-1634."
+references:
+- Gast2020
+coupling_terms:
+  c_pop0:
+    name: c_pop0
+  c_pop1:
+    name: c_pop1
+state_variables:
+  A:
+    name: A
+    domain:
+      lo: 0.0
+      hi: 0.4
+    description: ''
+    equation:
+      lhs: Derivative(A, t)
+      rhs: B/tau_A
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  B:
+    name: B
+    domain:
+      lo: -0.2
+      hi: 0.3
+    description: ''
+    equation:
+      lhs: Derivative(B, t)
+      rhs: (-A - 2*B + alpha*r)/tau_A
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  V:
+    name: V
+    domain:
+      lo: -3.0
+      hi: 0.3
+    description: ''
+    equation:
+      lhs: Derivative(V, t)
+      rhs: (I + J*r*tau*(1 - A) + V**2 + c_pop0*cr + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.1
+  r:
+    name: r
+    domain:
+      lo: 0.0
+      hi: 4.0
+    description: ''
+    equation:
+      lhs: Derivative(r, t)
+      rhs: (Delta/(pi*tau) + 2*V*r)/tau
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    boundaries:
+      lo: 0.0
+      hi: .inf
+    initial_value: 0.1
+number_of_modes: 1

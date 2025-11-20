@@ -1,0 +1,108 @@
+---
+jupyter: python3
+---
+
+```{python}
+import os
+from os.path import dirname, abspath, join
+import pandas as pd
+import networkx as nx
+```
+
+```{python}
+wd = "/Users/leonmartin/work/TVBO/TVBGO/Tripletts_with_keywords"
+os.listdir(wd)
+```
+
+```{python}
+kw2tvbo = pd.read_csv(join(wd, "Model_parameter_keywords_TVB3_2_final.csv"), sep=';')
+go2kw =  pd.read_csv(join(wd, "GO_terms_keywords_TVBO3_2_final.csv"), sep=';')
+
+kw2tvbo
+```
+
+```{python}
+kw2tvbo.Keyword.unique()
+```
+
+```{python}
+go2kw.Keyword.unique()
+```
+
+```{python}
+# Select keyword annotation only from definition.
+kw2tvbo = kw2tvbo[kw2tvbo.Property == "skos:definition"]
+```
+
+```{python}
+go2kw.sort_values('Class')
+```
+
+```{python}
+g = nx.Graph()
+```
+
+```{python}
+for i, r in go2kw.iterrows():
+    g.add_node(r.Class, type='GO')
+    g.add_node(r.Keyword, type='keyword')
+    g.add_edge(r.Class, r.Keyword, type='go2kw')
+
+for i, r in kw2tvbo.iterrows():
+    g.add_node(r.Class, type='TVBO')
+    g.add_node(r.Keyword, type='keyword')
+    g.add_edge(r.Class, r.Keyword, type="tvbo2kw")
+
+g.add_edge("GABA", "inhibitory")
+g.add_edge("excitatory", "excitation")
+```
+
+```{python}
+nx.draw(g)
+```
+
+```{python}
+for source, target, attr in g.edges(data=True):
+    target
+```
+
+```{python}
+g[target]
+```
+
+```{python}
+import matplotlib.pyplot as plt
+# create number for each group to allow use of colormap
+from itertools import count
+#nodes = list()
+#for source, target, attr in g.edges(data=True):
+#    if attr['type'] == 'tvbo2kw':
+#        nodes.append(source)
+#        nodes.append(target)
+
+# g = g.subgraph(nodes)
+
+# get unique groups
+groups = set(nx.get_node_attributes(g,'type').values())
+mapping = dict(zip(sorted(groups),count()))
+nodes = g.nodes()
+colors = [mapping[g.nodes[n]['type']] for n in nodes]
+
+# drawing nodes and edges separately so we can capture collection for colobar
+plt.figure(figsize=(50,50))
+pos = nx.spring_layout(g)
+ec = nx.draw_networkx_edges(g, pos, alpha=0.2)
+nc = nx.draw_networkx_nodes(g, pos, nodelist=nodes, node_color=colors, node_size=100, cmap=plt.cm.jet)
+nx.draw_networkx_labels(g, pos, font_size=5)
+
+plt.colorbar(nc, shrink=.2)
+plt.axis('off')
+plt.savefig("go-keywords-tvbo.svg")
+plt.show()
+```
+
+```{python}
+groups
+```
+
+

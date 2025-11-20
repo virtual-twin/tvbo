@@ -1,0 +1,78 @@
+key: Sanz-LeonJirsa2015
+year: 2015
+doi: 10.3389/fninf.2013.00010
+
+simulation_experiments:
+  - id: 1
+    description: "Jansen-Rit Neural Mass Model"
+    model:
+      label: JansenRit
+      parameters:
+        - label: He
+          value: 3.25
+          comment: Maximum amplitude of the excitatory postsynaptic population response
+        - label: Hi
+          value: 22
+          unit: mV
+          comment: Maximum amplitude of the inhibitory postsynaptic population response
+        - label: rate_constant_excitatory
+          value: 0.1
+          unit: ms^-1
+          comment: Rate constant for postsynaptic population response to excitatory input
+        - label: Ki
+          value: 0.05
+          unit: m^5-1
+          comment: Rate constant for postsynaptic population response to inhibitory input
+        - label: gamma1
+          value: 135
+          comment: Connectivity constant pyramidal to spiny stellate
+        - label: gamma2
+          value: 108
+          comment: Connectivity constant spiny stellate to pyramidal
+        - label: gamma3
+          value: 33.75
+          comment: Connectivity constant pyramidal to inhibitory interneurons
+        - label: gamma4
+          value: 33.75
+          comment: Connectivity constant inhibitory interneurons to pyramidal
+        - label: gamma5
+          value: 15
+          comment: Recurrent connectivity constant of the interneurons
+        - label: U
+          value: 0.12
+          unit: ms^-1
+        - label: P
+          value: 0.12
+          unit: ms^-1
+        - label: Q
+          value: 0.12
+          unit: ms^-1
+        - label: e0
+          value: 0.0025
+          unit: ms^-1
+        - label: rho1
+          value: 6
+          unit: mV
+        - label: rho2
+          value: 0.56
+          unit: mV^-1
+
+      # How would those be defined? @LeonMartin
+
+      # properties:
+      #   d: 12
+      #   m: 3
+      #   o: 1
+      #   n:
+      #     values: [2, 4, 6]
+      #     description: n1=2, n2=4, n3=4+2
+      #   Cvar:
+      #     values: ["V2", "V3", "V6"] # V2, V3 OR V6
+      #   Svar:
+      #     values: ["gamma1", "gamma2", "gamma4"] # gamma1, gamma2 OR gamma4
+      #   VOIBOLD:
+      #     values: ["V2-V3", "V4-V5", "V6 and V7"] # V2-V3, V4-V5 OR V6 and V7
+      #   VOiM/EEG:
+      #     values: ["V2-V3"]
+      #   alphabif:
+      #     value: ["P", "Q", "U"]

@@ -1,0 +1,101 @@
+---
+title: The Virtual Brain Ontology
+---
+
+## Welcome to `tvbo`!
+
+:::: {.columns}
+
+::: {.column width='80%'}
+
+`tvbo` is a python library to access the knowledge representation system (i.e.ontology) and data model for the neuroinformatics platform The Virtual Brain (TVB).
+
+<button class="button">Get Started</button>
+<button class="button button_blue">Live-preview</button>
+
+:::
+
+::: {.column width="20%"}
+![](_static/tvbo_favicon.png)
+:::
+
+::::
+
+
+```{=html}
+<div class="button-container">
+    <a href="https://tvbo.charite.de" class="card-button">
+        <h3>🧠 TVB-O GUI</h3>
+        <p>Launch the interactive web interface for exploring TVB-O models and data.</p>
+    </a>
+    <a href="https://tvbo.charite.de/manuscript" class="card-button">
+        <h3>📜 Manuscript</h3>
+        <p>Read the publication introducing the TVB-O framework and its applications.</p>
+    </a>
+    <a href="https://tvbo.charite.de/metadata-schema" class="card-button">
+        <h3>🗂️ Metadata Schema</h3>
+        <p>Explore the structured schema specification underlying TVB-O resources.</p>
+    </a>
+</div>
+```
+
+---
+
+## Quickstart
+
+:::: {.panel-tabset}
+### Python Installation:
+```bash
+pip install tvbo
+```
+For more installation options, see the [Installation Guide](installation.md).
+
+### Model Specification:
+```yaml
+name: LorenzAttractor
+parameters:
+    sigma:
+        value: 10
+        label: Prandtl number
+    rho:
+        label: Rayleigh number
+        value: 28
+    beta:
+        value: 2.6666666666666665
+state_variables:
+    X:
+        equation:
+        lhs: \dot{X}
+        rhs: sigma * (Y - X)
+    Y:
+        equation:
+        lhs: \dot{Y}
+        rhs: X * (rho - Z) - Y
+    Z:
+        equation:
+        lhs: \dot{Z}
+        rhs: X * Y - beta * Z
+```
+### Run Dynamics
+
+```{python}
+from tvbo import Dynamics, SimulationExperiment
+
+lorenz = Dynamics(
+    parameters={
+        "sigma": {"value": 10.0},
+        "rho": {"value": 28.0},
+        "beta": {"value": 8 / 3},
+    },
+    state_variables={
+        "X": {"equation": {"rhs": "sigma * (Y - X)"}},
+        "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
+        "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
+    },
+)
+
+SimulationExperiment(local_dynamics=lorenz).run(duration=1000).plot()
+
+```
+
+::::

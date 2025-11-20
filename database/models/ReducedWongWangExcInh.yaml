@@ -1,0 +1,298 @@
+name: ReducedWongWangExcInh
+parameters:
+  G:
+    name: G
+    definition: Global coupling scaling
+    value: 2.0
+    domain:
+      lo: 0.0
+      hi: 10.0
+      step: 0.01
+    description: Global coupling scaling
+  I_ext:
+    name: I_ext
+    definition: External stimulation parameter for evoked potential simulated activity
+      applied to the excitatory population firing rate IE (Deco et al., 2014).
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.001
+    description: External stimulation parameter for evoked potential simulated activity
+      applied to the excitatory population firing rate IE (Deco et al
+  I_o:
+    name: I_o
+    definition: Effective external input parameter to the excitatory E and inhibitory
+      I population (Deco et al., 2014).
+    value: 0.382
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.001
+    description: Effective external input parameter to the excitatory E and inhibitory
+      I population (Deco et al
+    unit: nA
+  J_N:
+    name: J_N
+    definition: Excitatory synaptic coupling parameter (Deco et al., 2014).
+    value: 0.15
+    domain:
+      lo: 0.001
+      hi: 0.5
+      step: 0.001
+    description: Excitatory synaptic coupling parameter (Deco et al
+  J_i:
+    name: J_i
+    definition: Local feedback inhibitory synaptic coupling to the excitatory population
+      firing rate IE (Deco et al., 2014).
+    value: 1.0
+    domain:
+      lo: 0.001
+      hi: 2.0
+      step: 0.001
+    description: Local feedback inhibitory synaptic coupling to the excitatory population
+      firing rate IE (Deco et al
+  W_e:
+    name: W_e
+    definition: Excitatory population external input scaling weight
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 2.0
+      step: 0.01
+    description: Excitatory population external input scaling weight
+  W_i:
+    name: W_i
+    definition: Inhibitory population external input scaling weight
+    value: 0.7
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Inhibitory population external input scaling weight
+  a_e:
+    name: a_e
+    definition: Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco
+      et al., 2014).
+    value: 310.0
+    domain:
+      lo: 0.0
+      hi: 500.0
+      step: 1.0
+    description: Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco
+      et al
+    unit: nC^-1
+  a_i:
+    name: a_i
+    definition: Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the
+      inhibitory population (Deco et al., 2014).
+    value: 615.0
+    domain:
+      lo: 0.0
+      hi: 1000.0
+      step: 1.0
+    description: Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the
+      inhibitory population (Deco et al
+    unit: nC^-1
+  b_e:
+    name: b_e
+    definition: Shift parameter of the sigmoid function HE_RWW_EI of the excitatory
+      population (Deco et al., 2014).
+    value: 125.0
+    domain:
+      lo: 0.0
+      hi: 200.0
+      step: 1.0
+    description: Shift parameter of the sigmoid function HE_RWW_EI of the excitatory
+      population (Deco et al
+    unit: Hz
+  b_i:
+    name: b_i
+    definition: Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory
+      population (Deco et al., 2014).
+    value: 177.0
+    domain:
+      lo: 0.0
+      hi: 200.0
+      step: 1.0
+    description: Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory
+      population (Deco et al
+    unit: Hz
+  d_e:
+    name: d_e
+    definition: Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory
+      population (Deco et al., 2014).
+    value: 0.16
+    domain:
+      lo: 0.0
+      hi: 0.2
+      step: 0.001
+    description: Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory
+      population (Deco et al
+    unit: s
+  d_i:
+    name: d_i
+    definition: Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory
+      population (Deco et al., 2014).
+    value: 0.087
+    domain:
+      lo: 0.0
+      hi: 0.2
+      step: 0.001
+    description: Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory
+      population (Deco et al
+    unit: s
+  gamma_e:
+    name: gamma_e
+    definition: Excitatory population kinetic parameter
+    value: 0.000641
+    domain:
+      lo: 0.0
+      hi: 0.001
+      step: 1.0e-05
+    description: Excitatory population kinetic parameter
+  gamma_i:
+    name: gamma_i
+    definition: Inhibitory population kinetic parameter
+    value: 0.001
+    domain:
+      lo: 0.0
+      hi: 0.002
+      step: 1.0e-05
+    description: Inhibitory population kinetic parameter
+  lamda:
+    name: lamda
+    definition: Inhibitory global coupling scaling
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Inhibitory global coupling scaling
+  tau_e:
+    name: tau_e
+    definition: Kinetic parameter  that represents the decay times for NMDA synapses
+      (Deco et al., 2014). Excitatory population NMDA decay time constant.
+    value: 100.0
+    domain:
+      lo: 50.0
+      hi: 150.0
+      step: 1.0
+    description: Kinetic parameter  that represents the decay times for NMDA synapses
+      (Deco et al
+    unit: ms
+  tau_i:
+    name: tau_i
+    definition: Kinetic parameter that represents the decay times for inhibitory GABA
+      synapses (Deco et al., 2014).
+    value: 10.0
+    domain:
+      lo: 5.0
+      hi: 100.0
+      step: 1.0
+    description: Kinetic parameter that represents the decay times for inhibitory
+      GABA synapses (Deco et al
+    unit: ms
+  w_p:
+    name: w_p
+    definition: Excitatory population recurrence weight
+    value: 1.4
+    domain:
+      lo: 0.0
+      hi: 2.0
+      step: 0.01
+    description: Excitatory population recurrence weight
+description: Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional
+  (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics
+  of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory
+  (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These
+  neurons are organized into an inhibitory population accounting for 20% of the neurons
+  and an excitatory population accounting for 80% of the neurons.
+references:
+- Deco2014
+derived_variables:
+  J_N_S_e:
+    name: J_N_S_e
+    equation:
+      lhs: J_N_S_e
+      rhs: J_N*S_e
+      latex: false
+    conditional: false
+  coupling:
+    name: coupling
+    equation:
+      lhs: coupling
+      rhs: G*J_N*(S_e*local_coupling + c_glob)
+      latex: false
+    conditional: false
+  x_e:
+    name: x_e
+    description: Input current to the excitatory population (Deco et al., 2014).
+    equation:
+      lhs: x_e
+      rhs: a_e*(I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling) - b_e
+      latex: false
+    conditional: false
+  x_i:
+    name: x_i
+    description: Input current to the inhibitory population (Deco et al., 2014).
+    equation:
+      lhs: x_i
+      rhs: a_i*(I_o*W_i + J_N_S_e - S_i + coupling*lamda) - b_i
+      latex: false
+    conditional: false
+  H_e:
+    name: H_e
+    description: Sigmoid function that computes the averaged firing rate of the excitatory
+      neuron population IE_RWW_EI (Deco et al., 2014; Abbott & Chance, 2005).
+    equation:
+      lhs: H_e
+      rhs: x_e/(1 - exp(-d_e*x_e))
+      latex: false
+    conditional: false
+  H_i:
+    name: H_i
+    description: Sigmoid function that computes the averaged firing rate of the inhibitory
+      neuron population II_RWW (Deco et al., 2014; Abbott & Chance, 2005).
+    equation:
+      lhs: H_i
+      rhs: x_i/(1 - exp(-d_i*x_i))
+      latex: false
+    conditional: false
+coupling_terms:
+  c_glob:
+    name: c_glob
+state_variables:
+  S_e:
+    name: S_e
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: State-variable of the Reduced WongWang_EI model (Deco et al
+    equation:
+      lhs: Derivative(S_e, t)
+      rhs: H_e*gamma_e*(1 - S_e) - S_e/tau_e
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    boundaries:
+      lo: 0.0
+      hi: 1.0
+    initial_value: 0.1
+  S_i:
+    name: S_i
+    domain:
+      lo: 0.0
+      hi: 1.0
+    description: State-variable of the Reduced WongWang_EI model (Deco et al
+    equation:
+      lhs: Derivative(S_i, t)
+      rhs: H_i*gamma_i - S_i/tau_i
+      latex: false
+    variable_of_interest: true
+    coupling_variable: false
+    boundaries:
+      lo: 0.0
+      hi: 1.0
+    initial_value: 0.1
+number_of_modes: 1

@@ -1,0 +1,39 @@
+type: network
+label: hcpmmp1 (dTOR)
+name: hcpmmp1 (dTOR)
+parcellation:
+  atlas:
+    name: hcpmmp1
+tractogram: dTOR
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR_lengths.csv
+number_of_regions: 379
+space: MNI152NLin2009b
+weights_min: 0.0
+weights_max: 182165.0
+weights_mean: 122.98396697321796
+weights_median: 0.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 18216.5
+  - 36433.0
+  - 54649.5
+  - 72866.0
+  - 91082.5
+  - 109299.0
+  - 127515.5
+  - 145732.0
+  - 163948.5
+  - 182165.0
+  counts:
+  - 143589
+  - 40
+  - 6
+  - 0
+  - 0
+  - 0
+  - 0
+  - 2
+  - 2
+  - 2

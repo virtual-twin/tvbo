@@ -1,0 +1,151 @@
+---
+title: "TVB-O Browser"
+toc: false
+page-layout: full
+---
+
+```{=html}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="browser/styles.css" rel="stylesheet">
+<link href="browser/builder.css" rel="stylesheet">
+
+<style>
+/* Additional embedded styles for Quarto integration */
+.tvbo-browser-container {
+    margin: -20px -20px 0 -20px;
+    min-height: calc(100vh - 200px);
+}
+</style>
+
+<div class="tvbo-browser-container">
+    <div class="browser-header">
+        <div style="display: flex; align-items: center; justify-content: space-between; max-width: 1400px; margin: 0 auto;">
+            <div style="flex: 1;">
+                <h1 id="appTitle" style="display: none;"></h1>
+                <p id="appDescription" style="margin: 0;">Search and explore TVB-O models, atlases, studies, and networks</p>
+            </div>
+            <button id="openModelBuilder" class="modal-btn" style="background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; font-weight: 700; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);">
+                🧠 Model Builder
+            </button>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" id="searchBox" class="search-box" placeholder="Search names, titles, DOI...">
+        <div class="performance-info" id="performanceInfo">Ready</div>
+    </div>
+    <div class="main-content">
+        <div class="sidebar" id="facetsSidebar">
+            <!-- Facets will be generated here -->
+        </div>
+        <div class="results-area">
+            <div class="results-header">
+                <div class="results-count" id="resultsCount">Loading...</div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <label for="sortSelect" style="color:#4a5568; font-size:0.95rem;">Sort</label>
+                    <select id="sortSelect" class="sort-select">
+                        <option value="relevance">Relevance</option>
+                        <option value="az">A → Z</option>
+                        <option value="za">Z → A</option>
+                    </select>
+                    <button class="clear-filters" id="clearFilters">Clear All Filters</button>
+                </div>
+            </div>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <div class="modal-title" id="modalTitle">Details</div>
+            <div class="modal-actions">
+                <button class="modal-btn" id="modalDownload" title="Download metadata YAML">Download YAML</button>
+                <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+            </div>
+        </div>
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+</div>
+
+<!-- Model Builder Modal (will be populated by model_builder.js) -->
+<div id="builderModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog" style="max-width: 1000px;">
+        <div class="modal-header">
+            <div class="modal-title">🧠 Model Builder</div>
+            <div class="modal-actions">
+                <button class="modal-close" id="builderClose" aria-label="Close">×</button>
+            </div>
+        </div>
+        <div class="modal-content" id="builderContent">
+            <!-- Content will be injected by model_builder.js -->
+        </div>
+    </div>
+</div>
+
+<!-- Load external data -->
+<script src="browser/data.js"></script>
+<script src="browser/schema.js"></script>
+
+<!-- Markdown renderer -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- MathJax for LaTeX rendering -->
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+    },
+    svg: { fontCache: 'global', scale: 1 }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<script src="browser/browser.js"></script>
+<script src="browser/model_builder.js"></script>
+
+<script>
+// Connect Model Builder button to modal
+document.addEventListener('DOMContentLoaded', function() {
+    const openBtn = document.getElementById('openModelBuilder');
+    if (openBtn && typeof openBuilderModal === 'function') {
+        openBtn.addEventListener('click', function() {
+            openBuilderModal();
+        });
+    }
+
+    // Close modals when clicking backdrop
+    const builderModal = document.getElementById('builderModal');
+    if (builderModal) {
+        const backdrop = builderModal.querySelector('.modal-backdrop');
+        const closeBtn = document.getElementById('builderClose');
+
+        if (backdrop) {
+            backdrop.addEventListener('click', function() {
+                if (typeof closeBuilderModal === 'function') {
+                    closeBuilderModal();
+                } else {
+                    builderModal.classList.add('hidden');
+                }
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                if (typeof closeBuilderModal === 'function') {
+                    closeBuilderModal();
+                } else {
+                    builderModal.classList.add('hidden');
+                }
+            });
+        }
+    }
+});
+</script>
+```

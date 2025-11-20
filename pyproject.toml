@@ -1,0 +1,129 @@
+[project.optional-dependencies]
+julia = ["julia>=0.5.7"]
+api = [
+    # API server extras (install with: pip install tvbo[api])
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "docker >=7.1.0",
+]
+tvb = [
+    # TVB integration extras (install with: pip install tvbo[tvb])
+    "tvb-library",
+    "tvb-framework",
+]
+knowledge = [
+    # Knowledge base extras (install with: pip install tvbo[knowledge])
+    "neurommsig-knowledge @ git+https://github.com/neurommsig/neurommsig-knowledge.git",
+]
+all = [
+    # Install all optional features
+    # API
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "docker >=7.1.0",
+    # TVB
+    "tvb-library",
+    "tvb-framework",
+    # Knowledge
+    "neurommsig-knowledge @ git+https://github.com/neurommsig/neurommsig-knowledge.git",
+    "quartodoc",
+    "ipykernel",
+    "nbformat",
+    "nbclient",
+    "jupyter-cache",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tvbo"
+dynamic = ["version"]
+description = "The Virtual Brain Ontology"
+readme = "README.md"
+license = { text = "EUPL-1.2" }
+authors = [{ name = "Leon Martin", email = "leon.martin@bih-charite.de" }]
+requires-python = ">=3.6"
+dependencies = [
+    # Core scientific stack
+    "scipy >=1.15.0",
+    "numpy >=2.0.0",
+    "setuptools >=80.3.1",
+    "pandas >=2.2.3",
+
+    # Data models
+    "pydantic >=2.6.0",
+
+    # Neuroscience
+    "pyNeuroML >=1.3.15",
+    "PyLEMS >=0.6.7",
+    "tvb-data >=2.0",
+
+    # Ontologies
+    "owlready2 >=0.47",
+    "rdflib >=7.1.1",
+    "goatools >=1.4.12",
+
+    # Visualization
+    "matplotlib >=3.10.0",
+    "networkx >=3.4.2",
+    "pydot >=3.0.3",
+
+    # ML
+    "jax >=0.6.0",
+    "equinox >=0.11.12",
+
+    # Templating
+    "mako >=1.3.10",
+    "autopep8 >=2.3.2",
+    "black >=25.9.0",
+
+    # Misc
+    "bibtexparser >=1.4.2",
+    "simple_colors >=0.1",
+    "wget >=3.2",
+    "PyPDF2 >=3.0.1",
+    "pybids >=0.18.1",
+    "pybel >=0.14.10",
+    "sympy >=1.13.0",
+    "cairocffi >=1.7.1",
+    "cairosvg >=2.7.1",
+    "pdf2image >=1.17.0",
+    "fuzzywuzzy >=0.18.0",
+    "python-Levenshtein >=0.26.1",
+    "linkml >=1.8.5",
+    "unicodeit >=0.7.5",
+    "dipy >=1.10.0",
+    "h5py >=3.12.1",
+    "pybtex >=0.24.0",
+    "librosa >=0.10.2.post1",
+    "lark >=1.2.2",
+    "pypandoc >=1.15",
+    # Documentation generation utilities
+    "PyYAML >=6.0.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.envs.dev]
+dependencies = [
+    "black",
+    "flake8",
+    "pytest",
+    "pytest-cov",
+    "mypy",
+    "nbformat>=5.10.0",
+    "nbclient>=0.10.0",
+]
+
+[project.urls]
+homepage = "https://git.bihealth.org/martinl/tvbo"
+bug-tracker = "https://git.bihealth.org/martinl/tvbo/issues"
+
+[tool.hatch.build]
+include = ["tvbo/**", "README.md"]
+
+[tool.hatch.version]
+path = "tvbo/__init__.py"

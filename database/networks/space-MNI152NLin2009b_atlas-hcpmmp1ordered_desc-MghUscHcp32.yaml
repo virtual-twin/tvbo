@@ -1,0 +1,39 @@
+type: network
+label: hcpmmp1ordered (MghUscHcp32)
+name: hcpmmp1ordered (MghUscHcp32)
+parcellation:
+  atlas:
+    name: hcpmmp1ordered
+tractogram: MghUscHcp32
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32_lengths.csv
+number_of_regions: 379
+space: MNI152NLin2009b
+weights_min: 0.0
+weights_max: 21800.0
+weights_mean: 17.905430900648145
+weights_median: 0.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 2180.0
+  - 4360.0
+  - 6540.0
+  - 8720.0
+  - 10900.0
+  - 13080.0
+  - 15260.0
+  - 17440.0
+  - 19620.0
+  - 21800.0
+  counts:
+  - 143553
+  - 52
+  - 26
+  - 4
+  - 2
+  - 0
+  - 0
+  - 0
+  - 0
+  - 4

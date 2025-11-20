@@ -1,0 +1,39 @@
+type: network
+label: Yeo17 (MghUscHcp32)
+name: Yeo17 (MghUscHcp32)
+parcellation:
+  atlas:
+    name: Yeo17
+tractogram: MghUscHcp32
+weights: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-MghUscHcp32_weights.csv
+lengths: /Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-MghUscHcp32_lengths.csv
+number_of_regions: 17
+space: MNI152
+weights_min: 0.0
+weights_max: 35376.0
+weights_mean: 4745.038062283737
+weights_median: 1244.0
+weights_histogram:
+  bins:
+  - 0.0
+  - 3537.6
+  - 7075.2
+  - 10612.8
+  - 14150.4
+  - 17688.0
+  - 21225.6
+  - 24763.2
+  - 28300.8
+  - 31838.399999999998
+  - 35376.0
+  counts:
+  - 183
+  - 42
+  - 16
+  - 14
+  - 14
+  - 8
+  - 4
+  - 4
+  - 0
+  - 4
