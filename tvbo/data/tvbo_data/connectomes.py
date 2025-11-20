@@ -63,12 +63,19 @@ class Connectome(tvbo_datamodel.Connectome):
         elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
             kwargs["number_of_regions"] = kwargs["number_of_nodes"]
 
-        # Determine number of nodes for default connectome
-        n_nodes = kwargs.get("number_of_nodes") or kwargs.get("number_of_regions") or 1
-
         # Priority 1: Use weights/lengths from kwargs if provided (already there)
         has_weights = "weights" in kwargs
         has_lengths = "lengths" in kwargs
+
+        # Infer n_nodes from numpy arrays if provided
+        n_nodes = kwargs.get("number_of_nodes") or kwargs.get("number_of_regions")
+        if n_nodes is None:
+            if has_weights and isinstance(kwargs["weights"], np.ndarray):
+                n_nodes = kwargs["weights"].shape[0]
+            elif has_lengths and isinstance(kwargs["lengths"], np.ndarray):
+                n_nodes = kwargs["lengths"].shape[0]
+            else:
+                n_nodes = 1
 
         # Priority 2: Load normative data if parcellation/atlas specified and no weights/lengths
         if not has_weights and not has_lengths:
