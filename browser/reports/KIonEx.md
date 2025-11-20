@@ -135,6 +135,6 @@ $$
 
 
 ## References
-Citation key 'Rabuffo2024' not found.
-
 Citation key 'Depannemaecker2023' not found.
+
+Citation key 'Rabuffo2024' not found.
