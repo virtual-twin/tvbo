@@ -20,7 +20,7 @@ connectome_data = BIDSLayout(
 available_connectomes = bids_utils.get_unique_entity_values(connectome_data, "desc")
 
 
-def get_normative_connectome_data(atlas, desc):
+def get_normative_connectome_data(atlas, desc) -> tvbo_datamodel.Matrix:
     fweights = connectome_data.get(
         suffix="weights",
         extension="csv",
@@ -51,17 +51,30 @@ class Connectome(tvbo_datamodel.Connectome):
     - Back-compat: metadata property returns self; labels provided as property.
     """
 
-    def __init__(
-        self, metadata: tvbo_datamodel.Connectome | dict | None = None, **kwargs
-    ):
-        if "number_of_regions" in kwargs:
-            kwargs["number_of_nodes"] = kwargs["number_of_regions"]
-        elif "number_of_nodes" in kwargs:
-            kwargs["number_of_regions"] = kwargs["number_of_nodes"]
+    def __init__(self, **kwargs):
         # Accept raw arrays; convert to Matrix before delegating to datamodel
-        w_in = kwargs.get("weights", None)
-        l_in = kwargs.get("lengths", None)
-        if isinstance(w_in, np.ndarray):
+        # Load normative connectome data if parcellation/atlas is specified
+        if "parcellation" in kwargs and kwargs["parcellation"].get("atlas"):
+            atlas_name = kwargs["parcellation"]["atlas"].get("name")
+            tractogram = kwargs.get("tractogram", "dTOR")
+            w_in, l_in = get_normative_connectome_data(atlas_name, tractogram)
+            kwargs["weights"] = w_in
+            kwargs["lengths"] = l_in
+            # Infer number of regions from the loaded weights
+            if "number_of_regions" not in kwargs and "number_of_nodes" not in kwargs:
+                if hasattr(w_in, "dataLocation") and w_in.dataLocation:
+                    w_arr = pd.read_csv(w_in.dataLocation, header=None).values
+                    kwargs["number_of_regions"] = w_arr.shape[0]
+                    kwargs["number_of_nodes"] = w_arr.shape[0]
+
+        # Sync number_of_regions and number_of_nodes if one is provided
+        if "number_of_regions" in kwargs and "number_of_nodes" not in kwargs:
+            kwargs["number_of_nodes"] = kwargs["number_of_regions"]
+        elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
+            kwargs["number_of_regions"] = kwargs["number_of_nodes"]
+
+        if "weights" in kwargs and isinstance(kwargs["weights"], np.ndarray):
+            w_in = kwargs["weights"]
             kwargs["weights"] = tvbo_datamodel.Matrix(
                 x=tvbo_datamodel.BrainRegionSeries(
                     values=[str(i) for i in range(w_in.shape[0])]
@@ -71,7 +84,9 @@ class Connectome(tvbo_datamodel.Connectome):
                 ),
                 values=w_in.reshape(-1).astype(float).tolist(),
             )
-        if isinstance(l_in, np.ndarray):
+
+        if "lengths" in kwargs and isinstance(kwargs["lengths"], np.ndarray):
+            l_in = kwargs["lengths"]
             kwargs["lengths"] = tvbo_datamodel.Matrix(
                 x=tvbo_datamodel.BrainRegionSeries(
                     values=[str(i) for i in range(l_in.shape[0])]
@@ -82,76 +97,25 @@ class Connectome(tvbo_datamodel.Connectome):
                 values=l_in.reshape(-1).astype(float).tolist(),
             )
 
-        # If metadata not provided, construct from kwargs
-        if metadata is None:
-            if "conduction_speed" not in kwargs or not kwargs["conduction_speed"]:
-                kwargs.update(
-                    {
-                        "conduction_speed": tvbo_datamodel.Parameter(
-                            name="conduction_speed", label="v", value=3.0, unit="mm/ms"
-                        )
-                    }
-                )
-            super().__init__(**kwargs)
-        else:
-            if isinstance(metadata, dict):
-                super().__init__(**metadata)
-            else:
-                # Copy all fields from provided datamodel
-                data = as_dict(metadata)
-                super().__init__(**data)
+        super().__init__(**kwargs)
 
-        # If atlas is provided or in metadata, ensure parcellation exists
-        atlas = kwargs.pop("atlas", None)
-        if atlas and not self.parcellation:
-            self.parcellation = tvbo_datamodel.Parcellation(
-                atlas=tvbo_datamodel.BrainAtlas(name=atlas)
-            )
-
-        # If no arrays provided, try to load from BIDS if atlas/desc is known
-        desc = kwargs.pop("desc", None)
-        if desc is None:
-            if isinstance(self.tractogram, str):
-                desc = self.tractogram
-            elif self.tractogram is not None:
-                desc = getattr(self.tractogram, "name", "dTOR")
-            else:
-                desc = "dTOR"
-        desc = str(desc)
-
-        atlas_name = (
-            self.parcellation.atlas.name
-            if self.parcellation is not None and self.parcellation.atlas is not None
-            else atlas
-        )
-
-        # If matrices are missing and atlas/desc known, set normative CSVs via dataLocation
-        if atlas_name and (self.weights is None or self.lengths is None):
-            w, l = get_normative_connectome_data(atlas_name, desc)
-            if self.weights is None:
-                self.weights = w
-            if self.lengths is None:
-                self.lengths = l
-
-            self.number_of_regions = self.weights_matrix.shape[0]
-            # Keep number_of_nodes in sync with number_of_regions
-            try:
-                self.number_of_nodes = int(self.number_of_regions)
-            except Exception:
-                pass
-
-        if not hasattr(self, "conduction_speed") or self.conduction_speed is None:
+        if not self.conduction_speed:
             self.conduction_speed = tvbo_datamodel.Parameter(
                 name="conduction_speed", label="v", value=3.0, unit="mm/ms"
             )
-        # Final safety sync: if regions is defined but nodes is missing/None -> copy
-        try:
-            if getattr(self, "number_of_regions", None) is not None and getattr(
-                self, "number_of_nodes", None
-            ) in (None, 0):
-                self.number_of_nodes = int(self.number_of_regions)
-        except Exception:
-            pass
+
+    @classmethod
+    def from_datamodel(cls, datamodel: tvbo_datamodel.Connectome) -> "Connectome":
+        """Create a Connectome instance from a tvbo_datamodel.Connectome object.
+
+        Args:
+            datamodel: A tvbo_datamodel.Connectome instance
+
+        Returns:
+            A new Connectome instance with all fields copied from the datamodel
+        """
+        data = as_dict(datamodel)
+        return cls(**data)
 
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name, value):
@@ -203,8 +167,8 @@ class Connectome(tvbo_datamodel.Connectome):
     def tree_flatten(self):
         """Return children and auxiliary data for JAX pytree support.
 
-        Children: (weights,) so JAX can map/transform numerical payloads.
-        Aux data: (lengths, metadata_dict) to fully restore the object.
+        Children: (weights, lengths) so JAX can map/transform numerical payloads.
+        Aux data: metadata dict WITHOUT the array data to avoid duplication.
         """
         # Convert metadata to a JSON string for stable equality in JAX
         import json as _json
@@ -231,8 +195,46 @@ class Connectome(tvbo_datamodel.Connectome):
             return str(o)
 
         # children are the heavy numeric arrays; keep arrays out of aux
-        children = (self.weights_matrix, self.lengths_matrix)
-        meta_json = _json.dumps(as_dict(self), sort_keys=True, default=_jsonable)
+        # Always return arrays to maintain consistent tree structure
+        # If weights/lengths are None, use empty arrays with proper shape based on number_of_regions
+
+        # Check if we have cached PyTree data (from a previous unflatten)
+        if hasattr(self, "_pytree_data") and self._pytree_data is not None:
+            weights_arr, lengths_arr = self._pytree_data
+        else:
+            # First flatten or normal object - compute arrays from metadata
+            if self.weights is not None:
+                weights_arr = self.weights_matrix
+            elif hasattr(self, "number_of_regions") and self.number_of_regions:
+                weights_arr = jnp.zeros(
+                    (self.number_of_regions, self.number_of_regions)
+                )
+            else:
+                weights_arr = jnp.zeros((1, 1))
+
+            if self.lengths is not None:
+                lengths_arr = self.lengths_matrix
+            elif hasattr(self, "number_of_regions") and self.number_of_regions:
+                lengths_arr = jnp.zeros(
+                    (self.number_of_regions, self.number_of_regions)
+                )
+            else:
+                lengths_arr = jnp.zeros((1, 1))
+
+        children = (weights_arr, lengths_arr)
+
+        # Get full metadata but exclude weights/lengths to avoid embedding arrays
+        meta_dict = as_dict(self)
+        # Remove weights, lengths, parcellation, and cache attributes from metadata
+        # Parcellation is excluded to prevent reloading data during unflatten
+        meta_dict_without_arrays = {
+            k: v
+            for k, v in meta_dict.items()
+            if k not in ("weights", "lengths", "parcellation", "_pytree_data")
+        }
+        meta_json = _json.dumps(
+            meta_dict_without_arrays, sort_keys=True, default=_jsonable
+        )
         aux = (meta_json,)
         return children, aux
 
@@ -242,15 +244,19 @@ class Connectome(tvbo_datamodel.Connectome):
 
         (meta_json,) = aux_data
         (weights, lengths) = children
-        # Reconstruct from metadata dict
+        # Reconstruct from metadata dict (which doesn't include weights/lengths/parcellation)
         meta_dict = _json.loads(meta_json)
+        
+        # Don't try to reconstruct Matrix objects from the arrays here
+        # because during JAX tracing, we can't convert tracers to Python lists.
+        # Instead, we'll create a minimal object and rely on _pytree_data for array access.
+        # The weights_matrix and lengths_matrix properties will use _pytree_data if available.
+        
         obj = cls(**meta_dict)
 
-        # If matrices missing, set from provided arrays
-        if obj.weights is None and weights is not None:
-            obj.weights = obj._matrix_from_array(weights)
-        if obj.lengths is None and lengths is not None:
-            obj.lengths = obj._matrix_from_array(lengths)
+        # Store the array children as a tuple using object.__setattr__
+        # This is what weights_matrix and lengths_matrix will use
+        object.__setattr__(obj, "_pytree_data", (weights, lengths))
 
         return obj
 
@@ -278,6 +284,10 @@ class Connectome(tvbo_datamodel.Connectome):
         the returned matrix is the result of applying that function to the raw
         weights using any provided `parameters` as keyword arguments.
         """
+        # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
+        if hasattr(self, "_pytree_data") and self._pytree_data is not None:
+            return self._pytree_data[0]
+
         wm = self.weights
         if wm is not None:
             if isinstance(wm, list):
@@ -342,6 +352,10 @@ class Connectome(tvbo_datamodel.Connectome):
 
     @property
     def lengths_matrix(self):
+        # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
+        if hasattr(self, "_pytree_data") and self._pytree_data is not None:
+            return self._pytree_data[1]
+
         lm = self.lengths
         if lm is not None:
             if getattr(lm, "values", None):
@@ -426,11 +440,19 @@ class Connectome(tvbo_datamodel.Connectome):
         self.normalization = Equation(rhs=equation_rhs)
 
     def plot_weights(self, ax, cmap="magma", log=False):
+        from matplotlib.colors import LogNorm
+        import numpy as np
+        
+        weights = self.weights_matrix
         if log:
-            weights = np.log1p(self.weights_matrix)
+            # Use LogNorm with vmin set to smallest non-zero value to avoid white holes
+            nonzero_weights = weights[weights > 0]
+            vmin = nonzero_weights.min() if nonzero_weights.size > 0 else 1e-10
+            vmax = weights.max() if weights.max() > 0 else 1.0
+            norm = LogNorm(vmin=vmin, vmax=vmax)
         else:
-            weights = self.weights_matrix
-        im = ax.imshow(weights, cmap=cmap, interpolation="none")
+            norm = None
+        im = ax.imshow(weights, cmap=cmap, interpolation="none", norm=norm)
         ax.set_title("weights")
         ax.set_box_aspect(1)
         return im
@@ -441,10 +463,10 @@ class Connectome(tvbo_datamodel.Connectome):
         ax.set_box_aspect(1)
         return im
 
-    def plot_matrix(self, cmap="magma"):
+    def plot_matrix(self, log_weights=False, cmap="magma"):
         fig, axs = plt.subplots(ncols=2, sharey=True)
 
-        w = self.plot_weights(axs[0], cmap=cmap)
+        w = self.plot_weights(axs[0], cmap=cmap, log=log_weights)
         fig.colorbar(w, ax=axs[0], shrink=0.5)
 
         l = self.plot_lengths(axs[1], cmap=cmap)
@@ -709,3 +731,8 @@ class Connectome(tvbo_datamodel.Connectome):
 
         plt.close()
         return fig
+
+    def normalize(self):
+        self.normalization = tvbo_datamodel.Equation(
+            rhs="(W - W_min) / (W_max - W_min)"
+        )
