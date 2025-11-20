@@ -1,17 +1,18 @@
-from typing import Dict, List, Tuple, Optional, Union, Any, Callable
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import jax.numpy as jnp
-from jax import Array as JaxArray
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.axes import Axes
 import networkx as nx
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout
+from jax import Array as JaxArray
 from jax.tree_util import register_pytree_node_class
 from jsonasobj2 import as_dict
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 from tvbo.data.tvbo_data import CONNECTOME_DIR, bids_utils
 from tvbo.datamodel import tvbo_datamodel
@@ -25,7 +26,9 @@ connectome_data = BIDSLayout(
 available_connectomes = bids_utils.get_unique_entity_values(connectome_data, "desc")
 
 
-def get_normative_connectome_data(atlas: str, desc: str) -> Tuple[tvbo_datamodel.Matrix, tvbo_datamodel.Matrix]:
+def get_normative_connectome_data(
+    atlas: str, desc: str
+) -> Tuple[tvbo_datamodel.Matrix, tvbo_datamodel.Matrix]:
     """Load normative connectivity matrices from BIDS dataset.
 
     Parameters
@@ -44,7 +47,7 @@ def get_normative_connectome_data(atlas: str, desc: str) -> Tuple[tvbo_datamodel
 
     Examples
     --------
-    ```{python}
+    ```python
     weights, lengths = get_normative_connectome_data("DesikanKilliany", "dTOR")
     ```
     """
@@ -78,6 +81,7 @@ class Connectome(tvbo_datamodel.Connectome):
     Examples
     --------
     ```{python}
+    from tvbo import Connectome
     # Load atlas-based connectome
     sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
     sc.plot_matrix()
@@ -103,7 +107,7 @@ class Connectome(tvbo_datamodel.Connectome):
         ----------
         **kwargs : Any
             Connectome initialization arguments. Common parameters:
-            
+
             - parcellation : dict
                 Parcellation info with atlas name, e.g., {"atlas": {"name": "DesikanKilliany"}}
             - weights : np.ndarray or Matrix
@@ -120,7 +124,7 @@ class Connectome(tvbo_datamodel.Connectome):
         Notes
         -----
         Initialization follows priority order:
-        
+
         1. Use provided weights/lengths arrays
         2. Load from atlas if parcellation specified
         3. Create default matrices as fallback
@@ -130,7 +134,7 @@ class Connectome(tvbo_datamodel.Connectome):
         ```{python}
         # From atlas
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        
+
         # From arrays
         import numpy as np
         sc = Connectome(weights=np.random.rand(68, 68), number_of_regions=68)
@@ -252,7 +256,7 @@ class Connectome(tvbo_datamodel.Connectome):
         --------
         ```{python}
         from tvbo.datamodel import tvbo_datamodel
-        dm = tvbo_datamodel.Connectome(...)
+        dm = tvbo_datamodel.Connectome(number_of_nodes=10)
         sc = Connectome.from_datamodel(dm)
         ```
         """
@@ -397,7 +401,7 @@ class Connectome(tvbo_datamodel.Connectome):
         meta_dict = as_dict(self)
         # as_dict can return various dict-like structures
         if not isinstance(meta_dict, dict):
-            meta_dict = dict(meta_dict) if hasattr(meta_dict, '__iter__') else {}
+            meta_dict = dict(meta_dict) if hasattr(meta_dict, "__iter__") else {}
         # Remove weights, lengths, parcellation, and cache attributes from metadata
         # Parcellation is excluded to prevent reloading data during unflatten
         meta_dict_without_arrays = {
@@ -412,7 +416,9 @@ class Connectome(tvbo_datamodel.Connectome):
         return children, aux  # type: ignore[return-value]
 
     @classmethod
-    def tree_unflatten(cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]) -> "Connectome":
+    def tree_unflatten(
+        cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]
+    ) -> "Connectome":
         import json as _json
 
         (meta_json,) = aux_data
@@ -439,7 +445,9 @@ class Connectome(tvbo_datamodel.Connectome):
         return self
 
     # ---- Numeric accessors (compute on demand; no extra attributes) ----
-    def _matrix_from_array(self, arr: Union[np.ndarray, JaxArray]) -> tvbo_datamodel.Matrix:
+    def _matrix_from_array(
+        self, arr: Union[np.ndarray, JaxArray]
+    ) -> tvbo_datamodel.Matrix:
         arr = jnp.array(arr)
         N0, N1 = arr.shape
         x = tvbo_datamodel.BrainRegionSeries(values=[str(i) for i in range(N0)])
@@ -496,7 +504,12 @@ class Connectome(tvbo_datamodel.Connectome):
                     else self.number_of_regions
                 )
                 # Type guard: ensure dimensions are valid integers
-                if nx_ is not None and ny_ is not None and isinstance(nx_, int) and isinstance(ny_, int):
+                if (
+                    nx_ is not None
+                    and ny_ is not None
+                    and isinstance(nx_, int)
+                    and isinstance(ny_, int)
+                ):
                     W = np.array(wm.values, dtype=float).reshape(nx_, ny_)
                 else:
                     W = None
@@ -587,7 +600,12 @@ class Connectome(tvbo_datamodel.Connectome):
                     else self.number_of_regions
                 )
                 # Type guard: ensure dimensions are valid integers
-                if nx_ is not None and ny_ is not None and isinstance(nx_, int) and isinstance(ny_, int):
+                if (
+                    nx_ is not None
+                    and ny_ is not None
+                    and isinstance(nx_, int)
+                    and isinstance(ny_, int)
+                ):
                     return np.array(lm.values, dtype=float).reshape(nx_, ny_)
             if getattr(lm, "dataLocation", None):
                 return pd.read_csv(lm.dataLocation, header=None).values.astype(float)  # type: ignore[arg-type,attr-defined]
@@ -626,9 +644,7 @@ class Connectome(tvbo_datamodel.Connectome):
     def __str__(self) -> str:
         parc = getattr(self, "parcellation", None)
         if parc and hasattr(parc, "atlas") and hasattr(parc.atlas, "name"):  # type: ignore[attr-defined]
-            return (
-                f"Connectome-{parc.atlas.name}({self.number_of_regions})"  # type: ignore[attr-defined]
-            )
+            return f"Connectome-{parc.atlas.name}({self.number_of_regions})"  # type: ignore[attr-defined]
         return f"Connectome(N={self.number_of_regions})"
 
     def __repr__(self) -> str:
@@ -674,7 +690,9 @@ class Connectome(tvbo_datamodel.Connectome):
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
         return Atlas(atlas_data)
 
-    def compute_delays(self, conduction_speed: Union[str, float] = "default") -> Union[np.ndarray, JaxArray]:
+    def compute_delays(
+        self, conduction_speed: Union[str, float] = "default"
+    ) -> Union[np.ndarray, JaxArray]:
         """Calculate signal propagation delays between regions.
 
         Parameters
@@ -734,7 +752,7 @@ class Connectome(tvbo_datamodel.Connectome):
         ```
         """
         if format == "tvb":
-            from tvb import datatypes  # type: ignore[import-not-found]
+            from tvb.datatypes.connectivity import Connectivity  # type: ignore[import-not-found]
 
             # Ensure TVB receives plain NumPy arrays (no JAX tracers)
             _weights = np.asarray(self.weights_matrix, dtype=float)
@@ -743,7 +761,7 @@ class Connectome(tvbo_datamodel.Connectome):
             cs_param = getattr(self, "conduction_speed", None)
             cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0  # type: ignore[attr-defined]
             _speed = np.asarray([cs_value], dtype=float)
-            tvb_conn = datatypes.connectivity.Connectivity(  # type: ignore[attr-defined]
+            tvb_conn = Connectivity(  # type: ignore[attr-defined]
                 weights=_weights,
                 tract_lengths=_lengths,
                 centres=_centres,
@@ -753,7 +771,9 @@ class Connectome(tvbo_datamodel.Connectome):
             tvb_conn.configure()
             return tvb_conn
 
-    def normalize_weights(self, equation_rhs: str = "(W - W_min) / (W_max - W_min)") -> None:
+    def normalize_weights(
+        self, equation_rhs: str = "(W - W_min) / (W_max - W_min)"
+    ) -> None:
         """Set normalization equation for connection weights.
 
         Parameters
@@ -876,8 +896,7 @@ class Connectome(tvbo_datamodel.Connectome):
         --------
         ```{python}
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        fig = sc.plot_matrix(log_weights=True)
-        fig.savefig("connectivity_matrices.png")
+        sc.plot_matrix(log_weights=True)
         ```
         """
         fig, axs = plt.subplots(ncols=2, sharey=True)
@@ -891,7 +910,9 @@ class Connectome(tvbo_datamodel.Connectome):
         plt.close()
         return fig
 
-    def calculate_delays(self, conduction_speed: Optional[float] = None) -> Union[np.ndarray, JaxArray]:
+    def calculate_delays(
+        self, conduction_speed: Optional[float] = None
+    ) -> Union[np.ndarray, JaxArray]:
         """Calculate signal propagation delays between regions.
 
         Parameters
@@ -912,8 +933,11 @@ class Connectome(tvbo_datamodel.Connectome):
         Examples
         --------
         ```{python}
+        import matplotlib.pyplot as plt
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         delays = sc.calculate_delays(conduction_speed=3.0)
+        plt.imshow(delays, cmap='viridis')
+        plt.colorbar(label='Delay (ms)')
         ```
 
         See Also
@@ -1071,12 +1095,12 @@ class Connectome(tvbo_datamodel.Connectome):
         ```{python}
         import matplotlib.pyplot as plt
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        
+
         # Simple graph
         fig, ax = plt.subplots(figsize=(10, 10))
         mappable = sc.plot_graph(ax, threshold_percentile=75)
         plt.colorbar(mappable, ax=ax)
-        
+
         # Anatomical layout
         fig, ax = plt.subplots()
         sc.plot_graph(ax, plot_brain="horizontal", node_labels=False)
@@ -1104,7 +1128,9 @@ class Connectome(tvbo_datamodel.Connectome):
         W = self.weights_matrix
         if W is None:
             W = np.zeros((1, 1))
-        G = self.create_graph(weight_threshold=float(np.percentile(W, threshold_percentile)))
+        G = self.create_graph(
+            weight_threshold=float(np.percentile(W, threshold_percentile))
+        )
 
         # Generate positions for nodes
         if pos == "spring":
@@ -1280,11 +1306,8 @@ class Connectome(tvbo_datamodel.Connectome):
         --------
         ```{python}
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        fig = sc.plot_overview(
-            log_weights=True,
-            graph_kwargs={"threshold_percentile": 80, "node_labels": False}
-        )
-        fig.savefig("connectome_overview.png", dpi=300, bbox_inches="tight")
+        sc.plot_overview(
+            log_weights=True)
         ```
 
         See Also
@@ -1294,15 +1317,22 @@ class Connectome(tvbo_datamodel.Connectome):
         """
 
         fig, axs = plt.subplots(ncols=3, layout="tight", figsize=(15, 5))
-        if graph_kwargs and "edge_cmap" not in graph_kwargs:
-            graph_kwargs["edge_cmap"] = "magma"
-        elif not graph_kwargs:
-            graph_kwargs = {"edge_cmap": "magma"}
 
-        g = self.plot_graph(axs[0], **graph_kwargs)  # type: ignore[arg-type]
+        # Ensure kwargs are not None before unpacking
+        if weights_kwargs is None:
+            weights_kwargs = {}
+        if lengths_kwargs is None:
+            lengths_kwargs = {}
+        if graph_kwargs is None:
+            graph_kwargs = {}
+
+        if "edge_cmap" not in graph_kwargs:
+            graph_kwargs["edge_cmap"] = "magma"
+
+        g = self.plot_graph(axs[0], **graph_kwargs)
         axs[0].axis("off")
-        w = self.plot_weights(axs[1], log=log_weights, **weights_kwargs)  # type: ignore[arg-type]
-        l = self.plot_lengths(axs[2], **lengths_kwargs)  # type: ignore[arg-type]
+        w = self.plot_weights(axs[1], log=log_weights, **weights_kwargs)
+        l = self.plot_lengths(axs[2], **lengths_kwargs)
         axs[2].sharey(axs[1])
 
         c1 = fig.colorbar(g, ax=axs[0], shrink=0.5, pad=-0.05)  # type: ignore[arg-type]
