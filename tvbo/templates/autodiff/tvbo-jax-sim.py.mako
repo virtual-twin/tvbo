@@ -2,7 +2,6 @@
 <%
     from tvbo.export.code import render_expression
     jaxcode = lambda expr: render_expression(expr, format='jax')
-    from tvb.simulator.monitors import AfferentCoupling
     import numpy as np
 
     integration = experiment.integration if hasattr(experiment, 'integration') else None
@@ -19,7 +18,6 @@
         monitors_seq = experiment.monitors() if callable(_mon) else (_mon.values() if hasattr(_mon, 'values') else (_mon or []))
     except TypeError:
         monitors_seq = _mon.values() if hasattr(_mon, 'values') else (_mon or [])
-    monitor_node_coupling = _builtins.any([isinstance(monitor, AfferentCoupling) for monitor in monitors_seq])
     model = experiment.local_dynamics
     coupling = experiment.coupling
     integration = experiment.integration
@@ -127,11 +125,7 @@ def kernel(state):
     latest_carry, res = jax.lax.scan(op, ics, (time_steps, noise))
 
     ## Extract trace and node_coupling if present
-    % if monitor_node_coupling:
-    trace, node_coupling = res
-    % else:
     trace = res
-    % endif
 
     ## Extract new initial conditions if needed
     % if return_new_ics:

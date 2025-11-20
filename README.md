@@ -1,11 +1,10 @@
-<a href="imgs/tvbo_logo.png">
-    <img src="imgs/tvbo_logo.png" alt="TVBO logo" title="TVBO" align="right" height="100" />
-</a>
+
+<img src="https://raw.githubusercontent.com/virtual-twin/tvbo/main/imgs/tvbo_logo.png" alt="TVBO logo" title="TVBO" align="right" height="100" />
 
 # The Virtual Brain Ontology
 [![Python package](https://github.com/virtual-twin/tvbo/workflows/Python%20package/badge.svg)](https://github.com/virtual-twin/tvbo/actions?query=workflow%3A%22Python+package%22)
 [![PyPI version](https://img.shields.io/pypi/v/tvbo.svg)](https://pypi.org/project/tvbo/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/tvbo.svg)](https://pypi.org/project/tvbo/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/tvbo)](https://pypi.org/project/tvbo/)
 [![License](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](LICENSE)
 
 `tvbo` is a Python library to access the knowledge representation system (i.e., ontology) and data model for the neuroinformatics platform The Virtual Brain (TVB).
