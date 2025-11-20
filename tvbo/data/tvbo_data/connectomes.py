@@ -1364,7 +1364,7 @@ class Connectome(tvbo_datamodel.Connectome):
         return fig
 
     def normalize(self) -> None:
-        """Apply min-max normalization to connection weights.
+        """Add min-max normalization of connection weights to metadata.
 
         Sets normalization equation to scale weights to [0, 1] range.
         Equivalent to `normalize_weights("(W - W_min) / (W_max - W_min)")`.
