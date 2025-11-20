@@ -50,6 +50,6 @@ $$
 
 
 ## References
-Citation key 'Proix2014' not found.
-
 Citation key 'Proix2017' not found.
+
+Citation key 'Proix2014' not found.

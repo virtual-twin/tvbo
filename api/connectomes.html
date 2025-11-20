@@ -200,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.data.tvbo_data.connectomes.Connectome" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome">Connectome</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome(metadata<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Direct datamodel Connectome with properties for arrays and helpers.</p>
 <ul>
 <li>Stores only schema fields; arrays and helpers are properties with light caching.</li>
@@ -234,16 +234,76 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel">from_datamodel</a></td>
+<td>Create a Connectome instance from a tvbo_datamodel.Connectome object.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten">tree_flatten</a></td>
 <td>Return children and auxiliary data for JAX pytree support.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel">from_datamodel</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a Connectome instance from a tvbo_datamodel.Connectome object.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 30%">
+<col style="width: 43%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>datamodel</td>
+<td>tvbo_datamodel.Connectome</td>
+<td>A tvbo_datamodel.Connectome instance</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 13%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>Connectome</td>
+<td>A new Connectome instance with all fields copied from the datamodel</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten">tree_flatten</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return children and auxiliary data for JAX pytree support.</p>
-<p>Children: (weights,) so JAX can map/transform numerical payloads. Aux data: (lengths, metadata_dict) to fully restore the object.</p>
+<p>Children: (weights, lengths) so JAX can map/transform numerical payloads. Aux data: metadata dict WITHOUT the array data to avoid duplication.</p>
 
 
 </section>
