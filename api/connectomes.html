@@ -194,18 +194,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.data.tvbo_data.connectomes.Connectome">Connectome</a></td>
-<td>Direct datamodel Connectome with properties for arrays and helpers.</td>
+<td>Structural connectivity data with weights, lengths, and visualization tools.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.data.tvbo_data.connectomes.Connectome" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome">Connectome</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Direct datamodel Connectome with properties for arrays and helpers.</p>
-<ul>
-<li>Stores only schema fields; arrays and helpers are properties with light caching.</li>
-<li>Back-compat: metadata property returns self; labels provided as property.</li>
-</ul>
+<p>Structural connectivity data with weights, lengths, and visualization tools.</p>
+<p>Represents brain structural connectivity including connection weights, tract lengths, and spatial information. Supports loading normative connectomes from atlases or custom data, with JAX pytree compatibility.</p>
+<section id="examples" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load atlas-based connectome</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom connectome from arrays</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(weights<span class="op">=</span>np.random.rand(<span class="dv">10</span>, <span class="dv">10</span>), number_of_regions<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.calculate_delays(conduction_speed<span class="op">=</span><span class="fl">3.0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="see-also" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h4>
+<p>weights_matrix : Access connection weights as array lengths_matrix : Access tract lengths as array plot_graph : Visualize as network graph plot_overview : Complete visualization with matrices and graph</p>
+</section>
 <section id="attributes" class="level4">
 <h4 class="anchored" data-anchor-id="attributes">Attributes</h4>
 <table class="caption-top table">
@@ -245,7 +257,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.from_datamodel">from_datamodel</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a Connectome instance from a tvbo_datamodel.Connectome object.</p>
 <section id="parameters" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
@@ -301,7 +313,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.tvbo_data.connectomes.Connectome.tree_flatten">tree_flatten</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.tvbo_data.connectomes.Connectome.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return children and auxiliary data for JAX pytree support.</p>
 <p>Children: (weights, lengths) so JAX can map/transform numerical payloads. Aux data: metadata dict WITHOUT the array data to avoid duplication.</p>
 
