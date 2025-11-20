@@ -40,15 +40,18 @@ import jax.numpy as jnp
 <%include file="/tvbo-jax-coupling.py.mako" />
 <%include file="/tvbo-jax-dfuns.py.mako" />
 <%include file="/tvbo-jax-integrate.py.mako" />
-<%include file="/jax-monitors.py.mako" />
+## <%include file="/jax-monitors.py.mako" />
 <%include file="/jax-noise.py.mako" />
 <%namespace name="monitors" file="/jax-monitors.py.mako"/>
 <%namespace name="utils" file="/jax-utils.py.mako"/>
 
 ## Monitors
-% for i, monitor in enumerate(monitors_seq):
-${monitors.create_monitor(i, monitor, dt)}
-% endfor
+## % for i, monitor in enumerate(monitors_seq):
+## ${monitors.create_monitor(i, monitor, dt)}
+## % endfor
+def monitor_raw(time_steps, trace, params, t_offset = 0):
+    dt = ${dt}
+    return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw")
 
 ## Transformation for derived parameters
 def transform_parameters(_p):
