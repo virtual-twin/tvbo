@@ -26,6 +26,28 @@ available_connectomes = bids_utils.get_unique_entity_values(connectome_data, "de
 
 
 def get_normative_connectome_data(atlas: str, desc: str) -> Tuple[tvbo_datamodel.Matrix, tvbo_datamodel.Matrix]:
+    """Load normative connectivity matrices from BIDS dataset.
+
+    Parameters
+    ----------
+    atlas : str
+        Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux")
+    desc : str
+        Description/type of the connectome data (e.g., "dTOR", "dMRT")
+
+    Returns
+    -------
+    weights : tvbo_datamodel.Matrix
+        Connection strength matrix
+    lengths : tvbo_datamodel.Matrix
+        Tract length matrix
+
+    Examples
+    --------
+    ```{python}
+    weights, lengths = get_normative_connectome_data("DesikanKilliany", "dTOR")
+    ```
+    """
     fweights = connectome_data.get(
         suffix="weights",
         extension="csv",
@@ -55,7 +77,7 @@ class Connectome(tvbo_datamodel.Connectome):
 
     Examples
     --------
-    ```python
+    ```{python}
     # Load atlas-based connectome
     sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
     sc.plot_matrix()
@@ -75,10 +97,44 @@ class Connectome(tvbo_datamodel.Connectome):
     """
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize Connectome with priority order:
-        1. weights/lengths from kwargs (if provided)
-        2. Load from parcellation/atlas (if provided and weights/lengths not given)
-        3. Create default connectome based on number_of_nodes (fallback)
+        """Initialize a Connectome instance.
+
+        Parameters
+        ----------
+        **kwargs : Any
+            Connectome initialization arguments. Common parameters:
+            
+            - parcellation : dict
+                Parcellation info with atlas name, e.g., {"atlas": {"name": "DesikanKilliany"}}
+            - weights : np.ndarray or Matrix
+                Connection weights matrix (N x N)
+            - lengths : np.ndarray or Matrix
+                Tract lengths matrix (N x N)
+            - number_of_regions : int
+                Number of brain regions
+            - conduction_speed : Parameter or float
+                Signal propagation speed (default: 3.0 mm/ms)
+            - tractogram : str
+                Tractography method (default: "dTOR")
+
+        Notes
+        -----
+        Initialization follows priority order:
+        
+        1. Use provided weights/lengths arrays
+        2. Load from atlas if parcellation specified
+        3. Create default matrices as fallback
+
+        Examples
+        --------
+        ```{python}
+        # From atlas
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        
+        # From arrays
+        import numpy as np
+        sc = Connectome(weights=np.random.rand(68, 68), number_of_regions=68)
+        ```
         """
         # Sync number_of_regions and number_of_nodes early
         if "number_of_regions" in kwargs and "number_of_nodes" not in kwargs:
@@ -180,13 +236,25 @@ class Connectome(tvbo_datamodel.Connectome):
 
     @classmethod
     def from_datamodel(cls, datamodel: tvbo_datamodel.Connectome) -> "Connectome":
-        """Create a Connectome instance from a tvbo_datamodel.Connectome object.
+        """Create a Connectome from a datamodel instance.
 
-        Args:
-            datamodel: A tvbo_datamodel.Connectome instance
+        Parameters
+        ----------
+        datamodel : tvbo_datamodel.Connectome
+            Source datamodel Connectome instance
 
-        Returns:
-            A new Connectome instance with all fields copied from the datamodel
+        Returns
+        -------
+        Connectome
+            New Connectome with fields copied from datamodel
+
+        Examples
+        --------
+        ```{python}
+        from tvbo.datamodel import tvbo_datamodel
+        dm = tvbo_datamodel.Connectome(...)
+        sc = Connectome.from_datamodel(dm)
+        ```
         """
         data = as_dict(datamodel)
         # as_dict returns a dict-like object that works with **kwargs
@@ -240,6 +308,26 @@ class Connectome(tvbo_datamodel.Connectome):
                 pass
 
     def to_yaml(self, filepath: Optional[str] = None) -> str:
+        """Serialize Connectome to YAML format.
+
+        Parameters
+        ----------
+        filepath : str, optional
+            Path to save YAML file. If None, returns YAML string.
+
+        Returns
+        -------
+        str
+            YAML representation of the Connectome
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        yaml_str = sc.to_yaml()
+        sc.to_yaml("connectome.yaml")  # Save to file
+        ```
+        """
         from tvbo.utils import to_yaml as _to_yaml
 
         return _to_yaml(self, filepath)
@@ -362,12 +450,28 @@ class Connectome(tvbo_datamodel.Connectome):
 
     @property
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
-        """Return weights matrix as ndarray.
+        """Connection weights matrix as numpy/JAX array.
 
-        If a normalization Equation is defined in metadata (self.normalization)
-        and provides a callable in `pycode` (e.g., "lambda W, eps=1e-12: ..."),
-        the returned matrix is the result of applying that function to the raw
-        weights using any provided `parameters` as keyword arguments.
+        Returns the (N x N) matrix of connection strengths between regions.
+        If normalization is defined, applies the normalization equation.
+
+        Returns
+        -------
+        np.ndarray or jax.Array, optional
+            Connection weights matrix (N x N), or None if unavailable
+
+        Notes
+        -----
+        If `self.normalization` contains an equation, the weights are
+        transformed according to that equation before being returned.
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        W = sc.weights_matrix
+        print(f"Shape: {W.shape}, Mean: {W.mean():.3f}")
+        ```
         """
         format = "jax"
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
@@ -445,6 +549,24 @@ class Connectome(tvbo_datamodel.Connectome):
 
     @property
     def lengths_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
+        """Tract length matrix as numpy/JAX array.
+
+        Returns the (N x N) matrix of physical distances (tract lengths)
+        between brain regions in millimeters.
+
+        Returns
+        -------
+        np.ndarray or jax.Array, optional
+            Tract lengths matrix (N x N) in mm, or None if unavailable
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        L = sc.lengths_matrix
+        print(f"Mean length: {L.mean():.1f} mm")
+        ```
+        """
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
@@ -478,6 +600,21 @@ class Connectome(tvbo_datamodel.Connectome):
 
     @property
     def labels(self) -> Dict[str, str]:
+        """Brain region labels from atlas.
+
+        Returns
+        -------
+        dict of str to str
+            Mapping from region names to lookup labels
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        labels = sc.labels
+        print(f"Number of labeled regions: {len(labels)}")
+        ```
+        """
         atlas = self.get_atlas()
         if atlas.metadata.terminology:
             return {
@@ -499,9 +636,38 @@ class Connectome(tvbo_datamodel.Connectome):
 
     @property
     def atlas(self) -> Any:
+        """Brain atlas associated with this connectome.
+
+        Returns
+        -------
+        Atlas
+            Atlas object containing parcellation metadata
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        atlas = sc.atlas
+        print(atlas.region_labels)
+        ```
+        """
         return self.get_atlas()
 
     def get_atlas(self) -> Any:
+        """Retrieve the Atlas object for this connectome.
+
+        Returns
+        -------
+        Atlas
+            Atlas instance with parcellation metadata and terminology
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        atlas = sc.get_atlas()
+        ```
+        """
         from tvbo.data.tvbo_data.atlases import Atlas
 
         parc = getattr(self, "parcellation", None)
@@ -509,6 +675,32 @@ class Connectome(tvbo_datamodel.Connectome):
         return Atlas(atlas_data)
 
     def compute_delays(self, conduction_speed: Union[str, float] = "default") -> Union[np.ndarray, JaxArray]:
+        """Calculate signal propagation delays between regions.
+
+        Parameters
+        ----------
+        conduction_speed : str or float, default="default"
+            Signal propagation speed in mm/ms. If "default", uses
+            `self.conduction_speed.value` (typically 3.0 mm/ms)
+
+        Returns
+        -------
+        np.ndarray or jax.Array
+            Delay matrix (N x N) in milliseconds
+
+        Raises
+        ------
+        ValueError
+            If lengths matrix is not available
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        delays = sc.compute_delays(conduction_speed=4.0)
+        print(f"Mean delay: {delays.mean():.2f} ms")
+        ```
+        """
         if conduction_speed == "default":
             cs_param = getattr(self, "conduction_speed", None)
             if cs_param and hasattr(cs_param, "value"):
@@ -521,6 +713,26 @@ class Connectome(tvbo_datamodel.Connectome):
         return lengths / conduction_speed  # type: ignore[operator]
 
     def execute(self, format: str = "tvb") -> Any:
+        """Convert connectome to simulator-specific format.
+
+        Parameters
+        ----------
+        format : str, default="tvb"
+            Target format. Currently supports "tvb" (The Virtual Brain)
+
+        Returns
+        -------
+        Any
+            Connectivity object in the specified format
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        tvb_conn = sc.execute(format="tvb")
+        # Use with TVB simulator
+        ```
+        """
         if format == "tvb":
             from tvb import datatypes  # type: ignore[import-not-found]
 
@@ -542,11 +754,56 @@ class Connectome(tvbo_datamodel.Connectome):
             return tvb_conn
 
     def normalize_weights(self, equation_rhs: str = "(W - W_min) / (W_max - W_min)") -> None:
+        """Set normalization equation for connection weights.
+
+        Parameters
+        ----------
+        equation_rhs : str, default="(W - W_min) / (W_max - W_min)"
+            Right-hand side of normalization equation. Can reference W, W_min, W_max
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc.normalize_weights("W / W_max")  # Normalize to [0, 1]
+        normalized = sc.weights_matrix  # Returns normalized weights
+        ```
+
+        Notes
+        -----
+        The normalization is applied when accessing `weights_matrix` property.
+        """
         from tvbo.datamodel.tvbo_datamodel import Equation
 
         self.normalization = Equation(rhs=equation_rhs)
 
     def plot_weights(self, ax: Axes, cmap: str = "magma", log: bool = False) -> Any:
+        """Plot connection weights matrix as heatmap.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes to plot on
+        cmap : str, default="magma"
+            Matplotlib colormap name
+        log : bool, default=False
+            If True, use logarithmic color scale
+
+        Returns
+        -------
+        matplotlib.image.AxesImage
+            Image object for adding colorbar
+
+        Examples
+        --------
+        ```{python}
+        import matplotlib.pyplot as plt
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        fig, ax = plt.subplots()
+        im = sc.plot_weights(ax, log=True)
+        plt.colorbar(im, ax=ax)
+        ```
+        """
         import numpy as np
         from matplotlib.colors import LogNorm
 
@@ -568,6 +825,30 @@ class Connectome(tvbo_datamodel.Connectome):
         return im
 
     def plot_lengths(self, ax: Axes, cmap: str = "magma") -> Any:
+        """Plot tract lengths matrix as heatmap.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes to plot on
+        cmap : str, default="magma"
+            Matplotlib colormap name
+
+        Returns
+        -------
+        matplotlib.image.AxesImage
+            Image object for adding colorbar
+
+        Examples
+        --------
+        ```{python}
+        import matplotlib.pyplot as plt
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        fig, ax = plt.subplots()
+        im = sc.plot_lengths(ax)
+        plt.colorbar(im, ax=ax, label="mm")
+        ```
+        """
         lengths = self.lengths_matrix
         if lengths is None:
             lengths = np.zeros((1, 1))
@@ -577,6 +858,28 @@ class Connectome(tvbo_datamodel.Connectome):
         return im
 
     def plot_matrix(self, log_weights: bool = False, cmap: str = "magma") -> Figure:
+        """Plot both weights and lengths matrices side by side.
+
+        Parameters
+        ----------
+        log_weights : bool, default=False
+            If True, use log scale for weights colormap
+        cmap : str, default="magma"
+            Matplotlib colormap name
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Figure containing both matrix plots
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        fig = sc.plot_matrix(log_weights=True)
+        fig.savefig("connectivity_matrices.png")
+        ```
+        """
         fig, axs = plt.subplots(ncols=2, sharey=True)
 
         w = self.plot_weights(axs[0], cmap=cmap, log=log_weights)
@@ -589,6 +892,34 @@ class Connectome(tvbo_datamodel.Connectome):
         return fig
 
     def calculate_delays(self, conduction_speed: Optional[float] = None) -> Union[np.ndarray, JaxArray]:
+        """Calculate signal propagation delays between regions.
+
+        Parameters
+        ----------
+        conduction_speed : float, optional
+            Conduction speed in mm/ms. If None, uses `self.conduction_speed.value`
+
+        Returns
+        -------
+        np.ndarray or jax.Array
+            Delay matrix (N x N) in milliseconds
+
+        Raises
+        ------
+        ValueError
+            If lengths matrix is not available
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        delays = sc.calculate_delays(conduction_speed=3.0)
+        ```
+
+        See Also
+        --------
+        compute_delays : Alternative method with string "default" option
+        """
         if conduction_speed is None:
             cs_param = getattr(self, "conduction_speed", None)
             if cs_param and hasattr(cs_param, "value"):
@@ -601,6 +932,26 @@ class Connectome(tvbo_datamodel.Connectome):
         return lengths / conduction_speed  # type: ignore[operator]
 
     def create_graph(self, weight_threshold: float = 0) -> nx.MultiDiGraph:
+        """Create NetworkX graph from connectivity matrices.
+
+        Parameters
+        ----------
+        weight_threshold : float, default=0
+            Minimum weight for including an edge in the graph
+
+        Returns
+        -------
+        networkx.MultiDiGraph
+            Directed multigraph with 'weight' and 'delay' edge attributes
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        G = sc.create_graph(weight_threshold=0.1)
+        print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
+        ```
+        """
         W = self.weights_matrix
         D = self.calculate_delays()
         # Use MultiDiGraph to allow asymmetric and multiple parallel edges
@@ -617,6 +968,22 @@ class Connectome(tvbo_datamodel.Connectome):
         return G
 
     def get_centers(self) -> Dict[int, Tuple[float, float, float]]:
+        """Get 3D spatial coordinates of brain region centers.
+
+        Returns
+        -------
+        dict of int to tuple of float
+            Mapping from region index to (x, y, z) coordinates in mm
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        centers = sc.get_centers()
+        for idx, (x, y, z) in centers.items():
+            print(f"Region {idx}: ({x:.1f}, {y:.1f}, {z:.1f})")
+        ```
+        """
         labels = []
         ids = []
         centers = []
@@ -655,6 +1022,66 @@ class Connectome(tvbo_datamodel.Connectome):
         node_kwargs: Optional[Dict[str, Any]] = None,
         fontsize: float = 8,
     ) -> Union[Figure, cm.ScalarMappable]:
+        """Visualize connectome as network graph.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Axes to plot on. If None, creates new figure
+        node_cmap : str or Colormap, default="viridis"
+            Colormap for node colors
+        edge_cmap : str or Colormap, default="viridis"
+            Colormap for edge colors
+        node_colors : str, default="in-strength"
+            Node coloring scheme: "in-strength" or "node"
+        node_size : str or float, default="in-strength"
+            Node size scheme: "in-strength" or numeric value
+        threshold_percentile : float, default=0
+            Only show edges above this percentile of weights
+        pos_scaling : float, default=1
+            Scaling factor for spring layout positions
+        node_labels : bool, default=True
+            Whether to show node index labels
+        edge_labels : bool, default=True
+            Whether to show edge weight labels
+        log_in_strength : bool, default=True
+            Use log scale for in-strength calculations
+        node_size_scaling : float, default=100
+            Scaling factor for node sizes
+        edge_color : str, default="weight"
+            Edge attribute to use for coloring
+        pos : str or dict, default="spring"
+            Node positions: "spring" for automatic layout or dict of positions
+        plot_brain : str, optional
+            Brain view for anatomical layout: "horizontal", "sagittal", or "coronal"
+        edge_kwargs : dict, optional
+            Additional arguments passed to nx.draw_networkx_edges
+        node_kwargs : dict, optional
+            Additional arguments passed to nx.draw_networkx_nodes
+        fontsize : float, default=8
+            Font size for labels
+
+        Returns
+        -------
+        Figure or ScalarMappable
+            Figure if ax is None, otherwise ScalarMappable for colorbar
+
+        Examples
+        --------
+        ```{python}
+        import matplotlib.pyplot as plt
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        
+        # Simple graph
+        fig, ax = plt.subplots(figsize=(10, 10))
+        mappable = sc.plot_graph(ax, threshold_percentile=75)
+        plt.colorbar(mappable, ax=ax)
+        
+        # Anatomical layout
+        fig, ax = plt.subplots()
+        sc.plot_graph(ax, plot_brain="horizontal", node_labels=False)
+        ```
+        """
 
         if edge_kwargs is None:
             edge_kwargs = {}
@@ -828,6 +1255,43 @@ class Connectome(tvbo_datamodel.Connectome):
         graph_kwargs: Optional[Dict[str, Any]] = None,
         log_weights: bool = False,
     ) -> Figure:
+        """Create comprehensive visualization with graph and matrices.
+
+        Produces a three-panel figure showing network graph, weights matrix,
+        and lengths matrix with synchronized colorbars and formatting.
+
+        Parameters
+        ----------
+        weights_kwargs : dict, optional
+            Keyword arguments passed to `plot_weights`
+        lengths_kwargs : dict, optional
+            Keyword arguments passed to `plot_lengths`
+        graph_kwargs : dict, optional
+            Keyword arguments passed to `plot_graph`
+        log_weights : bool, default=False
+            Use logarithmic scale for weights
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Figure with three subplots (graph, weights, lengths)
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        fig = sc.plot_overview(
+            log_weights=True,
+            graph_kwargs={"threshold_percentile": 80, "node_labels": False}
+        )
+        fig.savefig("connectome_overview.png", dpi=300, bbox_inches="tight")
+        ```
+
+        See Also
+        --------
+        plot_graph : Network graph visualization
+        plot_matrix : Side-by-side matrix visualization
+        """
 
         fig, axs = plt.subplots(ncols=3, layout="tight", figsize=(15, 5))
         if graph_kwargs and "edge_cmap" not in graph_kwargs:
@@ -870,6 +1334,23 @@ class Connectome(tvbo_datamodel.Connectome):
         return fig
 
     def normalize(self) -> None:
+        """Apply min-max normalization to connection weights.
+
+        Sets normalization equation to scale weights to [0, 1] range.
+        Equivalent to `normalize_weights("(W - W_min) / (W_max - W_min)")`.
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc.normalize()
+        normalized_weights = sc.weights_matrix  # Now in [0, 1] range
+        ```
+
+        See Also
+        --------
+        normalize_weights : Set custom normalization equation
+        """
         self.normalization = tvbo_datamodel.Equation(
             rhs="(W - W_min) / (W_max - W_min)"
         )
