@@ -1,3 +1,4 @@
+# Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 # Stage 1: Build
 FROM python:3.12-slim AS builder
 

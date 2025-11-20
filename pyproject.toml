@@ -1,3 +1,4 @@
+# Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [project.optional-dependencies]
 julia = ["julia>=0.5.7"]
 api = [

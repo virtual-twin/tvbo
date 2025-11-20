@@ -1,3 +1,5 @@
+# Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
+
 IMAGE_NAME=tvbo
 IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
