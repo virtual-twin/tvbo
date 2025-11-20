@@ -45,7 +45,7 @@ description = "The Virtual Brain Ontology"
 readme = "README.md"
 license = { text = "EUPL-1.2" }
 authors = [{ name = "Leon Martin", email = "leon.martin@bih-charite.de" }]
-requires-python = ">=3.6"
+requires-python = ">=3.11"
 dependencies = [
     # Core scientific stack
     "scipy >=1.15.0",

@@ -25,16 +25,16 @@ title: The Virtual Brain Ontology
 ```{=html}
 <div class="button-container">
     <a href="https://tvbo.charite.de" class="card-button">
-        <h3>🧠 TVB-O GUI</h3>
-        <p>Launch the interactive web interface for exploring TVB-O models and data.</p>
+        <h3><i class="fa-solid fa-brain" aria-hidden="true"></i> TVB-O GUI</h3>
+        <p>Open the hosted web app to explore TVB‑O models, datasets, and simulations.</p>
     </a>
-    <a href="https://tvbo.charite.de/manuscript" class="card-button">
-        <h3>📜 Manuscript</h3>
-        <p>Read the publication introducing the TVB-O framework and its applications.</p>
+    <a href="/browser" class="card-button">
+        <h3><i class="fa-solid fa-compass" aria-hidden="true"></i> Model Browser</h3>
+        <p>Browse models, parameters, and equations. Inspect relationships and components interactively.</p>
     </a>
-    <a href="https://tvbo.charite.de/metadata-schema" class="card-button">
-        <h3>🗂️ Metadata Schema</h3>
-        <p>Explore the structured schema specification underlying TVB-O resources.</p>
+    <a href="/datamodel" class="card-button">
+        <h3><i class="fa-solid fa-diagram-project" aria-hidden="true"></i> Metadata Schema</h3>
+        <p>Explore the TVB‑O metadata schema: classes, fields, and constraints used across resources.</p>
     </a>
 </div>
 ```
@@ -76,6 +76,28 @@ state_variables:
         lhs: \dot{Z}
         rhs: X * Y - beta * Z
 ```
+### Generate Code
+```{python}
+from tvbo import Dynamics, SimulationExperiment
+from IPython.display import Markdown
+lorenz = Dynamics(
+    parameters={
+        "sigma": {"value": 10.0},
+        "rho": {"value": 28.0},
+        "beta": {"value": 8 / 3},
+    },
+    state_variables={
+        "X": {"equation": {"rhs": "sigma * (Y - X)"}},
+        "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
+        "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
+    },
+)
+
+code = SimulationExperiment(local_dynamics=lorenz).render_code('jax')
+
+Markdown("```python" + code + "```")
+```
+
 ### Run Dynamics
 
 ```{python}

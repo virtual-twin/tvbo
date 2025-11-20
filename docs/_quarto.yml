@@ -89,7 +89,7 @@ website:
 
     page-footer:
         center: |
-            © 2024 Charité - Universitätsmedizin Berlin
+            © 2025 Charité - Universitätsmedizin Berlin
         right:
             - icon: twitter
               href: https://twitter.com/quarto_pub
@@ -109,6 +109,7 @@ format:
         # include-after-body: js.html
         include-in-header:
             - text: |
+                  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
                   <script src="//unpkg.com/3d-force-graph"></script>
         grid:
           sidebar-width: 250px
