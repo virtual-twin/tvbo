@@ -1,0 +1,84 @@
+cff-version: 1.2.0
+message: "If you use tvbo, please cite the software and the preprint below."
+title: "The Virtual Brain Ontology (tvbo)"
+abstract: |
+  TVB-O (The Virtual Brain Ontology) is a Python package for understanding and generating
+  large-scale brain network models, integrating data, simulation components and ontological
+  knowledge representations.
+version: "0.2.0"
+date-released: 2025-11-20
+license: EUPL-1.2
+repository-code: "https://github.com/virtual-twin/tvbo"
+url: "https://github.com/virtual-twin/tvbo"
+keywords:
+  - neuroscience
+  - brain-simulation
+  - ontology
+  - computational-neuroscience
+  - python
+authors:
+  - given-names: Leon
+    family-names: Martin
+    orcid: "https://orcid.org/0000-0002-2599-0165"
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+    email: leon.martin@charite.de
+  - given-names: Konstantin
+    family-names: Bülau
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Marius
+    family-names: Pille
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Rico Andre
+    family-names: Schmitt
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Christoph
+    family-names: Hüttl
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Jil M
+    family-names: Meier
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Halgurd
+    family-names: Taher
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Dionysios
+    family-names: Perdikis
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Michael
+    family-names: Schirner
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+  - given-names: Petra
+    family-names: Ritter
+    affiliation: Berlin Institute of Health (BIH) at Charité - Universitätsmedizin Berlin
+    email: petra.ritter@charite.de
+preferred-citation:
+  type: article
+  title: "The Virtual Brain Ontology: A Digital Knowledge Framework for Reproducible Brain Network Modeling"
+  authors:
+    - given-names: Leon
+      family-names: Martin
+      orcid: "https://orcid.org/0000-0002-2599-0165"
+    - given-names: Konstantin
+      family-names: Bülau
+    - given-names: Marius
+      family-names: Pille
+    - given-names: Rico Andre
+      family-names: Schmitt
+    - given-names: Christoph
+      family-names: Hüttl
+    - given-names: Jil M
+      family-names: Meier
+    - given-names: Halgurd
+      family-names: Taher
+    - given-names: Dionysios
+      family-names: Perdikis
+    - given-names: Michael
+      family-names: Schirner
+    - given-names: Petra
+      family-names: Ritter
+  journal: bioRxiv
+  doi: 10.1101/2025.11.19.689211
+  publisher: Cold Spring Harbor Laboratory
+  year: 2025
+  month: 11
+  url: "https://doi.org/10.1101/2025.11.19.689211"
+references: []
