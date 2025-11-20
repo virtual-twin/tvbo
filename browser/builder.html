@@ -1,0 +1,228 @@
+<div id="builderModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog" style="max-width: 980px;">
+    <div class="modal-header">
+      <div class="modal-title">Brain Network Model Builder</div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="builderCopyPython">Copy Python</button>
+        <button class="modal-btn" id="builderDownloadYaml">Download YAML</button>
+        <button class="modal-close" id="builderClose" aria-label="Close">×</button>
+      </div>
+    </div>
+    <div class="modal-content" id="builderContent"></div>
+  </div>
+</div>
+
+<template id="builderContentTpl">
+  <div>
+    <div class="builder-field">
+      <label>Experiment Name</label>
+      <input id="builderSpecName" class="builder-input" placeholder="MyNetworkModelSpec" />
+    </div>
+    <div class="builder-field">
+      <label>Description</label>
+      <textarea id="builderNotes" class="builder-text" rows="3" placeholder="Optional description or provenance"></textarea>
+    </div>
+    <div class="builder-field">
+      <span class="pill">Output is a metadata specification composed from your selections.</span>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div>
+    <div class="builder-field">
+      <div class="builder-subtitle" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Local Dynamics</span>
+        <button class="modal-btn" id="copyModelBtn">Copy Model</button>
+      </div>
+      <select id="builderModel" class="builder-select">
+        <option value="">— select local dynamics —</option>
+      </select>
+    </div>
+
+    <div class="builder-field">
+      <div class="builder-subtitle" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Parameters</span>
+        <label style="display:flex; align-items:center; gap:6px; font-size: 0.9em; color:#4a5568;">
+          <input type="checkbox" id="toggleEqPreview" /> Show LaTeX preview
+        </label>
+      </div>
+      <div id="modelParamsRows" class="builder-rows"></div>
+      <div class="builder-actions">
+        <button class="modal-btn" id="addModelParam">Add parameter</button>
+      </div>
+    </div>
+
+    <div class="builder-field">
+      <div class="builder-subtitle">Derived Parameters</div>
+      <div id="derivedParamsRows" class="builder-rows"></div>
+      <div class="builder-actions">
+        <button class="modal-btn" id="addDerivedParam">Add derived parameter</button>
+      </div>
+    </div>
+
+    <div class="builder-field">
+      <div class="builder-subtitle">Functions</div>
+      <div id="functionsRows" class="builder-rows"></div>
+      <div class="builder-actions">
+        <button class="modal-btn" id="addFunction">Add function</button>
+      </div>
+    </div>
+
+    <div class="builder-field">
+      <div class="builder-subtitle">State Equations</div>
+      <div id="stateEqRows" class="builder-rows"></div>
+      <div class="builder-actions">
+        <button class="modal-btn" id="addStateEquation">Add state equation</button>
+      </div>
+    </div>
+
+    <div class="builder-field">
+      <div class="builder-subtitle">Derived Variables</div>
+      <div id="derivedVarsRows" class="builder-rows"></div>
+      <div class="builder-actions">
+        <button class="modal-btn" id="addDerivedVariable">Add derived variable</button>
+      </div>
+    </div>
+
+    <div class="builder-field">
+      <div class="builder-subtitle">Output Transforms</div>
+      <div id="outputTransformsRows" class="builder-rows"></div>
+      <div class="builder-actions">
+        <button class="modal-btn" id="addOutputTransform">Add output transform</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div>
+    <div class="builder-field">
+      <div class="builder-subtitle" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Network</span>
+        <button class="modal-btn" id="copyConnBtn">Copy Connectivity</button>
+      </div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:8px; color:#374151;">
+        <label style="display:flex; gap:6px; align-items:center;"><input type="radio" name="netMode" id="netModeExisting" checked /> Use existing</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="radio" name="netMode" id="netModeToy" /> Custom: Toy network</label>
+      </div>
+
+      <div id="netExistingWrap" class="builder-field">
+        <div class="builder-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="builder-field">
+            <label>Tractogram</label>
+            <select id="builderTract" class="builder-select"><option value="">— select tractogram —</option></select>
+          </div>
+          <div class="builder-field">
+            <label>Atlas</label>
+            <select id="builderAtlas" class="builder-select"><option value="">— select atlas —</option></select>
+          </div>
+        </div>
+        <div id="netInfo" class="net-info" style="display:none; margin-top:10px;">
+          <img id="netThumb" class="net-thumb" alt="thumbnail" />
+          <div style="flex:1;">
+            <div style="font-weight:600; color:#111827;" id="netLabel"></div>
+            <div class="mini-kv">
+              <div>Regions:</div><div id="netRegions">–</div>
+              <div>Mean w:</div><div id="netMean">–</div>
+              <div>Min/Max w:</div><div id="netMinMax">–</div>
+            </div>
+          </div>
+          <canvas id="netHist" class="mini-hist"></canvas>
+          <div><span id="netDetailsLink" class="link">View details</span></div>
+        </div>
+      </div>
+
+      <div id="netToyWrap" class="builder-grid" style="display:none; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="builder-field">
+          <label>Number of regions (≤ 50 recommended)</label>
+          <input id="toyN" class="builder-input" type="number" min="2" max="200" value="10" />
+        </div>
+        <div class="builder-field">
+          <label>Topology</label>
+          <select id="toyType" class="builder-select">
+            <option value="ring">Ring</option>
+            <option value="line">Line</option>
+            <option value="star">Star</option>
+            <option value="complete">Complete</option>
+            <option value="erdos">Erdős–Rényi</option>
+          </select>
+        </div>
+        <div class="builder-field"><label>Edge weight</label><input id="toyWeight" class="builder-input" type="number" step="0.01" value="1.0" /></div>
+        <div class="builder-field"><label>Edge length</label><input id="toyLength" class="builder-input" type="number" step="0.01" value="1.0" /></div>
+        <div class="builder-field" id="toyProbWrap" style="display:none;"><label>Probability p (Erdős–Rényi)</label><input id="toyP" class="builder-input" type="number" min="0" max="1" step="0.01" value="0.2" /></div>
+        <div class="builder-field" style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="toySelfLoops" /><label for="toySelfLoops" style="margin:0; font-weight:500; color:#374151;">Allow self-loops</label></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div>
+    <div class="builder-field">
+      <div class="builder-subtitle" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Coupling</span>
+        <button class="modal-btn" id="copyCouplingBtn">Copy Coupling</button>
+      </div>
+    </div>
+    <div class="builder-field">
+      <label>Coupling Preset (from data/CouplingFunctions)</label>
+      <select id="builderCoupling" class="builder-select"><option value="">— select coupling —</option></select>
+    </div>
+    <div class="builder-grid" style="grid-template-columns: 2fr 1fr 1fr auto; gap: 12px; align-items: end;">
+      <div class="builder-field"><label>Name</label><input id="builderCouplingName" class="builder-input" placeholder="e.g., Linear, Scaling, Sigmoidal..." /></div>
+      <div class="builder-field" style="display:flex; align-items:center; gap:8px; padding-bottom: 4px;"><input type="checkbox" id="couplingSparse" /><label for="couplingSparse" style="margin:0; font-weight:500; color:#374151;">Sparse</label></div>
+      <div class="builder-field" style="display:flex; align-items:center; gap:8px; padding-bottom: 4px;"><input type="checkbox" id="couplingDelayed" /><label for="couplingDelayed" style="margin:0; font-weight:500; color:#374151;">Delayed</label></div>
+      <div class="builder-actions" style="margin:0;"><button class="modal-btn" id="resetCouplingFromPreset" title="Reset below fields from selected preset">Reset</button></div>
+    </div>
+    <div class="builder-field">
+      <div class="builder-subtitle">Coupling Parameters</div>
+      <div id="couplingParamsRows" class="builder-rows"></div>
+      <div class="builder-actions"><button class="modal-btn" id="addCouplingParam">Add parameter</button></div>
+    </div>
+    <div class="builder-field">
+      <div class="builder-subtitle" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Coupling Expressions</span>
+        <label style="display:flex; align-items:center; gap:6px; font-size: 0.9em; color:#4a5568;"><input type="checkbox" id="toggleCouplingEqPreview" /> Show LaTeX preview</label>
+      </div>
+      <div class="builder-rows">
+        <div class="builder-row" id="couplingPreRow" style="grid-template-columns: 1fr 1fr auto;">
+          <input class="builder-input" id="couplingPreLhs" placeholder="lhs (e.g., pre)" />
+          <input class="builder-input" id="couplingPreRhs" placeholder="rhs (e.g., x_j * w)" />
+          <div style="align-self:center; color:#4b5563; font-size: 0.9em;">pre_expression</div>
+          <div id="couplingPrePreview" class="eq-preview"></div>
+        </div>
+        <div class="builder-row" id="couplingPostRow" style="grid-template-columns: 1fr 1fr auto;">
+          <input class="builder-input" id="couplingPostLhs" placeholder="lhs (e.g., post)" />
+          <input class="builder-input" id="couplingPostRhs" placeholder="rhs (e.g., a * gx + b)" />
+          <div style="align-self:center; color:#4b5563; font-size: 0.9em;">post_expression</div>
+          <div id="couplingPostPreview" class="eq-preview"></div>
+        </div>
+        <div class="plot-box" style="margin-top:6px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; color:#374151;">
+            <span style="font-weight:600;">Coupling curve (gx → post)</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label style="display:flex; align-items:center; gap:6px; font-size: 0.9em; color:#4a5568;">gx min <input id="gxMin" type="number" class="builder-input" style="width:80px;" value="-2" step="0.1"/></label>
+              <label style="display:flex; align-items:center; gap:6px; font-size: 0.9em; color:#4a5568;">gx max <input id="gxMax" type="number" class="builder-input" style="width:80px;" value="2" step="0.1"/></label>
+            </div>
+          </div>
+          <canvas id="couplingPlot" style="width:100%; height:140px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+    <button class="modal-btn" id="generateSpec">Generate Spec</button>
+    <span style="color:#4a5568;">Preview (YAML)</span>
+    <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+      <button class="modal-btn" id="copySpecBtn" title="Copy preview YAML to clipboard">Copy</button>
+      <button class="modal-btn" id="downloadSpecBtn" title="Download preview YAML">Download</button>
+      <button class="modal-btn" id="toggleSpecExpand" title="Toggle expanded preview height">Expand</button>
+    </div>
+  </div>
+  <div id="specPreview" class="preview" style="margin-top:8px; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size: 12.5px; line-height: 1.35; overflow: auto;"></div>
+</template>

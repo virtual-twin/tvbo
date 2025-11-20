@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TVB-O Browser</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <link href="builder.css" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico">
+    <link rel="shortcut icon" href="favicon.ico">
+
+</head>
+
+<body class="tvbo-standalone">
+    <div class="container">
+        <div class="header">
+            <img class="header-logo" src="favicon.ico" alt="TVB-O logo">
+            <h1 id="appTitle">TVB-O Browser</h1>
+            <p id="appDescription">Schema-driven search with high performance</p>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchBox" class="search-box" placeholder="Search products...">
+            <div class="performance-info" id="performanceInfo">Ready</div>
+        </div>
+        <div class="main-content">
+            <div class="sidebar" id="facetsSidebar">
+                <!-- Facets will be generated here -->
+            </div>
+            <div class="results-area">
+                <div class="results-header">
+                    <div class="results-count" id="resultsCount">Loading...</div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <label for="sortSelect" style="color:#4a5568; font-size:0.95rem;">Sort</label>
+                        <select id="sortSelect" class="sort-select">
+                            <option value="relevance">Relevance</option>
+                            <option value="az">A → Z</option>
+                            <option value="za">Z → A</option>
+                        </select>
+                        <button class="clear-filters" id="clearFilters">Clear All Filters</button>
+                    </div>
+                </div>
+                <div class="results-grid" id="resultsGrid"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal root -->
+    <div id="detailsModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Details</div>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="modalDownload" title="Download metadata YAML">Download YAML</button>
+                    <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+                </div>
+            </div>
+            <div class="modal-content" id="modalContent"></div>
+        </div>
+    </div>
+    <!-- Load external data -->
+    <script src="data.js"></script>
+    <script src="schema.js"></script>
+    <!-- Markdown renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            svg: { fontCache: 'global', scale: 1 }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="browser.js"></script>
+    <script src="model_builder.js"></script>
+</body>
+
+</html>

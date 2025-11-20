@@ -1,0 +1,66 @@
+
+
+# Slot: noise 
+
+
+
+URI: [tvbo:noise](http://www.thevirtualbrain.org/tvb-o/noise)
+Alias: noise
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StateVariable](StateVariable.qmd) |  |  no  |
+| [Integrator](Integrator.qmd) |  |  no  |
+| [FieldStateVariable](FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+* Range: [xsd:string](http://www.w3.org/2001/XMLSchema#string)
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:noise |
+| native | tvbo:noise |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: noise
+alias: noise
+domain_of:
+- StateVariable
+- Integrator
+range: string
+
+```
+</details>

@@ -1,0 +1,79 @@
+
+
+# Slot: coordinate 
+
+
+_3D coordinate of the contact center in the defined coordinate space_
+
+
+
+
+
+URI: [tvbo_dbs:coordinate](http://www.thevirtualbrain.org/tvb-o/dbs/coordinate)
+Alias: coordinate
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Contact](Contact.qmd) | Individual contact on a DBS electrode |  no  |
+
+
+
+
+
+
+## Properties
+
+* Range: [Coordinate](Coordinate.qmd)
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+### Schema Source
+
+
+* from schema: http://www.thevirtualbrain.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:coordinate |
+| native | tvbo_dbs:coordinate |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coordinate
+description: 3D coordinate of the contact center in the defined coordinate space
+from_schema: http://www.thevirtualbrain.org/tvbo/dbs
+rank: 1000
+alias: coordinate
+owner: Contact
+domain_of:
+- Contact
+range: Coordinate
+
+```
+</details>

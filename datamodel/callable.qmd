@@ -1,0 +1,73 @@
+
+
+# Slot: callable 
+
+
+
+URI: [tvbo:callable](http://www.thevirtualbrain.org/tvb-o/callable)
+Alias: callable
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Function](Function.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+* Range: [Callable](Callable.qmd)
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:callable |
+| native | tvbo:callable |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: callable
+from_schema: https://w3id.org/tvbo
+rank: 1000
+alias: callable
+owner: Function
+domain_of:
+- Function
+range: Callable
+
+```
+</details>

@@ -1,0 +1,74 @@
+
+
+# Slot: stimulus 
+
+
+
+URI: [tvbo:stimulus](http://www.thevirtualbrain.org/tvb-o/stimulus)
+Alias: stimulus
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](Dynamics.qmd) |  |  no  |
+| [NeuralMassModel](NeuralMassModel.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+* Range: [Stimulus](Stimulus.qmd)
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:stimulus |
+| native | tvbo:stimulus |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: stimulus
+from_schema: https://w3id.org/tvbo
+rank: 1000
+alias: stimulus
+owner: Dynamics
+domain_of:
+- Dynamics
+range: Stimulus
+
+```
+</details>

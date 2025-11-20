@@ -1,0 +1,73 @@
+
+
+# Slot: network 
+
+
+
+URI: [tvbo:network](http://www.thevirtualbrain.org/tvb-o/network)
+Alias: network
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+* Range: [Connectome](Connectome.qmd)
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:network |
+| native | tvbo:network |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: network
+from_schema: https://w3id.org/tvbo
+rank: 1000
+alias: network
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Connectome
+
+```
+</details>

@@ -1,0 +1,76 @@
+
+
+# Slot: modelfitting 
+
+
+
+URI: [tvbo:modelfitting](http://www.thevirtualbrain.org/tvb-o/modelfitting)
+Alias: modelfitting
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+* Range: [ModelFitting](ModelFitting.qmd)
+
+* Multivalued: True
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:modelfitting |
+| native | tvbo:modelfitting |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: modelfitting
+from_schema: https://w3id.org/tvbo
+rank: 1000
+alias: modelfitting
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: ModelFitting
+multivalued: true
+
+```
+</details>

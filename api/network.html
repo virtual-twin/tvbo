@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>network – TVB-O Documentation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="//unpkg.com/3d-force-graph"></script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../_static/tvbo_python_square.svg" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">TVB-O Documentation</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../api/index.html"> 
+<span class="menu-text">API Documentation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../datamodel/index.html"> 
+<span class="menu-text">Data Model</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../browser.html"> 
+<span class="menu-text">Browser</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/leon-k-martin/tvbo" title="tvbo GitHub" class="quarto-navigation-tool px-1" aria-label="tvbo GitHub"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#plotting-functions-for-visualizing-networks" id="toc-plotting-functions-for-visualizing-networks" class="nav-link active" data-scroll-target="#plotting-functions-for-visualizing-networks">Plotting functions for visualizing networks</a></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
+  <ul class="collapse">
+  <li><a href="#tvbo.plot.network.add_arrow" id="toc-tvbo.plot.network.add_arrow" class="nav-link" data-scroll-target="#tvbo.plot.network.add_arrow">add_arrow</a></li>
+  <li><a href="#tvbo.plot.network.compute_bezier_midpoint" id="toc-tvbo.plot.network.compute_bezier_midpoint" class="nav-link" data-scroll-target="#tvbo.plot.network.compute_bezier_midpoint">compute_bezier_midpoint</a></li>
+  <li><a href="#tvbo.plot.network.compute_midpoint" id="toc-tvbo.plot.network.compute_midpoint" class="nav-link" data-scroll-target="#tvbo.plot.network.compute_midpoint">compute_midpoint</a></li>
+  <li><a href="#tvbo.plot.network.count_directed_edges" id="toc-tvbo.plot.network.count_directed_edges" class="nav-link" data-scroll-target="#tvbo.plot.network.count_directed_edges">count_directed_edges</a></li>
+  <li><a href="#tvbo.plot.network.create_colormap_legend" id="toc-tvbo.plot.network.create_colormap_legend" class="nav-link" data-scroll-target="#tvbo.plot.network.create_colormap_legend">create_colormap_legend</a></li>
+  <li><a href="#tvbo.plot.network.draw_custom_arrows" id="toc-tvbo.plot.network.draw_custom_arrows" class="nav-link" data-scroll-target="#tvbo.plot.network.draw_custom_arrows">draw_custom_arrows</a></li>
+  <li><a href="#tvbo.plot.network.draw_custom_nodes" id="toc-tvbo.plot.network.draw_custom_nodes" class="nav-link" data-scroll-target="#tvbo.plot.network.draw_custom_nodes">draw_custom_nodes</a></li>
+  <li><a href="#tvbo.plot.network.draw_edge_labels" id="toc-tvbo.plot.network.draw_edge_labels" class="nav-link" data-scroll-target="#tvbo.plot.network.draw_edge_labels">draw_edge_labels</a></li>
+  <li><a href="#tvbo.plot.network.draw_edges" id="toc-tvbo.plot.network.draw_edges" class="nav-link" data-scroll-target="#tvbo.plot.network.draw_edges">draw_edges</a></li>
+  <li><a href="#tvbo.plot.network.draw_legend" id="toc-tvbo.plot.network.draw_legend" class="nav-link" data-scroll-target="#tvbo.plot.network.draw_legend">draw_legend</a></li>
+  <li><a href="#tvbo.plot.network.draw_nodes" id="toc-tvbo.plot.network.draw_nodes" class="nav-link" data-scroll-target="#tvbo.plot.network.draw_nodes">draw_nodes</a></li>
+  <li><a href="#tvbo.plot.network.get_ax" id="toc-tvbo.plot.network.get_ax" class="nav-link" data-scroll-target="#tvbo.plot.network.get_ax">get_ax</a></li>
+  <li><a href="#tvbo.plot.network.get_categories_from_graph" id="toc-tvbo.plot.network.get_categories_from_graph" class="nav-link" data-scroll-target="#tvbo.plot.network.get_categories_from_graph">get_categories_from_graph</a></li>
+  <li><a href="#tvbo.plot.network.get_category_from_graph" id="toc-tvbo.plot.network.get_category_from_graph" class="nav-link" data-scroll-target="#tvbo.plot.network.get_category_from_graph">get_category_from_graph</a></li>
+  <li><a href="#tvbo.plot.network.get_edge_color_mapping" id="toc-tvbo.plot.network.get_edge_color_mapping" class="nav-link" data-scroll-target="#tvbo.plot.network.get_edge_color_mapping">get_edge_color_mapping</a></li>
+  <li><a href="#tvbo.plot.network.get_labels" id="toc-tvbo.plot.network.get_labels" class="nav-link" data-scroll-target="#tvbo.plot.network.get_labels">get_labels</a></li>
+  <li><a href="#tvbo.plot.network.get_layout" id="toc-tvbo.plot.network.get_layout" class="nav-link" data-scroll-target="#tvbo.plot.network.get_layout">get_layout</a></li>
+  <li><a href="#tvbo.plot.network.get_node_color_and_cmap" id="toc-tvbo.plot.network.get_node_color_and_cmap" class="nav-link" data-scroll-target="#tvbo.plot.network.get_node_color_and_cmap">get_node_color_and_cmap</a></li>
+  <li><a href="#tvbo.plot.network.get_node_color_mapping" id="toc-tvbo.plot.network.get_node_color_mapping" class="nav-link" data-scroll-target="#tvbo.plot.network.get_node_color_mapping">get_node_color_mapping</a></li>
+  <li><a href="#tvbo.plot.network.get_node_size" id="toc-tvbo.plot.network.get_node_size" class="nav-link" data-scroll-target="#tvbo.plot.network.get_node_size">get_node_size</a></li>
+  <li><a href="#tvbo.plot.network.hierarchy_pos" id="toc-tvbo.plot.network.hierarchy_pos" class="nav-link" data-scroll-target="#tvbo.plot.network.hierarchy_pos">hierarchy_pos</a></li>
+  <li><a href="#tvbo.plot.network.n1n2_edgecounts" id="toc-tvbo.plot.network.n1n2_edgecounts" class="nav-link" data-scroll-target="#tvbo.plot.network.n1n2_edgecounts">n1n2_edgecounts</a></li>
+  <li><a href="#tvbo.plot.network.plot_multidigraph" id="toc-tvbo.plot.network.plot_multidigraph" class="nav-link" data-scroll-target="#tvbo.plot.network.plot_multidigraph">plot_multidigraph</a></li>
+  <li><a href="#tvbo.plot.network.plot_ontology_graph" id="toc-tvbo.plot.network.plot_ontology_graph" class="nav-link" data-scroll-target="#tvbo.plot.network.plot_ontology_graph">plot_ontology_graph</a></li>
+  <li><a href="#tvbo.plot.network.plot_tvbo_graph" id="toc-tvbo.plot.network.plot_tvbo_graph" class="nav-link" data-scroll-target="#tvbo.plot.network.plot_tvbo_graph">plot_tvbo_graph</a></li>
+  <li><a href="#tvbo.plot.network.relabel_graph" id="toc-tvbo.plot.network.relabel_graph" class="nav-link" data-scroll-target="#tvbo.plot.network.relabel_graph">relabel_graph</a></li>
+  <li><a href="#tvbo.plot.network.reverse_edges" id="toc-tvbo.plot.network.reverse_edges" class="nav-link" data-scroll-target="#tvbo.plot.network.reverse_edges">reverse_edges</a></li>
+  <li><a href="#tvbo.plot.network.set_axis_limits" id="toc-tvbo.plot.network.set_axis_limits" class="nav-link" data-scroll-target="#tvbo.plot.network.set_axis_limits">set_axis_limits</a></li>
+  <li><a href="#tvbo.plot.network.set_plt_params" id="toc-tvbo.plot.network.set_plt_params" class="nav-link" data-scroll-target="#tvbo.plot.network.set_plt_params">set_plt_params</a></li>
+  <li><a href="#tvbo.plot.network.validate_parameters" id="toc-tvbo.plot.network.validate_parameters" class="nav-link" data-scroll-target="#tvbo.plot.network.validate_parameters">validate_parameters</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/api/network.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">network</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><code>plot.network</code></p>
+<section id="plotting-functions-for-visualizing-networks" class="level2 doc-section doc-section-plotting-functions-for-visualizing-networks">
+<h2 class="doc-section doc-section-plotting-functions-for-visualizing-networks anchored" data-anchor-id="plotting-functions-for-visualizing-networks">Plotting functions for visualizing networks</h2>
+<div id="25e2d1ca" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> plot</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>plot.network.plot_model(<span class="st">'Generic2dOscillator'</span>, ax<span class="op">=</span>ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="network_files/figure-html/cell-2-output-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.add_arrow">add_arrow</a></td>
+<td>add an arrow to a line.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.compute_bezier_midpoint">compute_bezier_midpoint</a></td>
+<td>Compute the midpoint of a quadratic Bézier curve at a given t.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.compute_midpoint">compute_midpoint</a></td>
+<td>Compute the midpoint of a quadratic Bézier curve.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.count_directed_edges">count_directed_edges</a></td>
+<td>Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.create_colormap_legend">create_colormap_legend</a></td>
+<td>Create a space-efficient legend for given edge and node colormap dictionaries.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.draw_custom_arrows">draw_custom_arrows</a></td>
+<td>Draw custom arrows on a graph <code>G</code> with given positions and styles.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.draw_custom_nodes">draw_custom_nodes</a></td>
+<td>Custom function to draw nodes as text in a network graph.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.draw_edge_labels">draw_edge_labels</a></td>
+<td>A function to draw the edge labels on the graph. The labels are extracted from the edge attributes</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.draw_edges">draw_edges</a></td>
+<td>A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.draw_legend">draw_legend</a></td>
+<td>A function to draw the legend on the graph. The legend is created based on the node types and</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.draw_nodes">draw_nodes</a></td>
+<td>A function to draw the nodes on the graph with specified attributes such as color, size, and using a specified colormap.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.get_ax">get_ax</a></td>
+<td>A function to get the ax for the plot. If ax is None, a new figure and ax are created using the specified figsize.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.get_categories_from_graph">get_categories_from_graph</a></td>
+<td>Retrieve all unique categories from the graph’s nodes.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.get_category_from_graph">get_category_from_graph</a></td>
+<td>Retrieve the category of a given node from the graph.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.get_edge_color_mapping">get_edge_color_mapping</a></td>
+<td>Generate a color mapping for edges in graph G based on their specified attribute.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.get_labels">get_labels</a></td>
+<td>Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True,</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.get_layout">get_layout</a></td>
+<td>Get the layout positions for the nodes in the graph.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.get_node_color_and_cmap">get_node_color_and_cmap</a></td>
+<td>A function to get the node colors and the colormap based on node attributes such as type or degree.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.get_node_color_mapping">get_node_color_mapping</a></td>
+<td>Generate a color mapping for nodes in graph G based on their specified attribute.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.get_node_size">get_node_size</a></td>
+<td>A function to get the node size for the graph, which can be determined by various parameters including</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.hierarchy_pos">hierarchy_pos</a></td>
+<td>If the graph is a DAG this will return the positions to plot this in a hierarchical layout.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.n1n2_edgecounts">n1n2_edgecounts</a></td>
+<td>Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.plot_multidigraph">plot_multidigraph</a></td>
+<td>Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.plot_ontology_graph">plot_ontology_graph</a></td>
+<td>Plot the ontology graph using matplotlib.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.plot_tvbo_graph">plot_tvbo_graph</a></td>
+<td>A function to plot a TVBO graph with various customizable parameters.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.relabel_graph">relabel_graph</a></td>
+<td>A function to relabel the nodes of the graph if a relabel dictionary is provided.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.reverse_edges">reverse_edges</a></td>
+<td>Reverse the coordinates of the positions in the pos dictionary.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.set_axis_limits">set_axis_limits</a></td>
+<td>Set the axis limits based on node positions.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.plot.network.set_plt_params">set_plt_params</a></td>
+<td>A function to set certain plt parameters.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.plot.network.validate_parameters">validate_parameters</a></td>
+<td>A function to validate and set default values for various parameters.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.plot.network.add_arrow" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.add_arrow">add_arrow</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plot.network.add_arrow(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    line,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    ax,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    position<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">'right'</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>add an arrow to a line.</p>
+<p>line: Line2D object position: x-position of the arrow. If None, mean of xdata is taken direction: ‘left’ or ‘right’ color: if None, line color is taken. label: label for arrow</p>
+</section>
+<section id="tvbo.plot.network.compute_bezier_midpoint" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.compute_bezier_midpoint">compute_bezier_midpoint</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>plot.network.compute_bezier_midpoint(p0, p1, p2, t<span class="op">=</span><span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compute the midpoint of a quadratic Bézier curve at a given t.</p>
+<p>Parameters: - p0, p1, p2: Control points of the Bézier curve. - t: The parameter at which to evaluate the midpoint (default is 0.5 for true midpoint).</p>
+<p>Returns: - tuple of (x, y) coordinates of the midpoint.</p>
+</section>
+<section id="tvbo.plot.network.compute_midpoint" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.compute_midpoint">compute_midpoint</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>plot.network.compute_midpoint(start, end, rad)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compute the midpoint of a quadratic Bézier curve.</p>
+<p>Parameters: - start: tuple of (x, y) coordinates of the start point. - end: tuple of (x, y) coordinates of the end point. - rad: curvature radius as a percentage.</p>
+<p>Returns: - tuple of (x, y) coordinates of the midpoint.</p>
+</section>
+<section id="tvbo.plot.network.count_directed_edges" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.count_directed_edges">count_directed_edges</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>plot.network.count_directed_edges(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u).</p>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 28%">
+<col style="width: 64%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>Dict[Tuple[Any, Any], int]</td>
+<td>Dict[Tuple[Any, Any], int]: Mapping (u, v) → count of edges from u to v.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.plot.network.create_colormap_legend" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.create_colormap_legend">create_colormap_legend</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>plot.network.create_colormap_legend(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    edge_colmap<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    node_colmap<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    fontsize<span class="op">=</span><span class="dv">12</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    title_fontsize<span class="op">=</span><span class="dv">14</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    edge_cols<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    node_cols<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a space-efficient legend for given edge and node colormap dictionaries.</p>
+<p>Args: edge_colmap (dict): A dictionary where keys are labels and values are RGBA tuples for edges. node_colmap (dict): A dictionary where keys are labels and values are RGBA tuples for nodes. ax (matplotlib.axes.Axes, optional): Matplotlib axes object to draw the legend on. If None, a new figure is created. fontsize (int, optional): Font size for the legend labels. title_fontsize (int, optional): Font size for the legend titles.</p>
+</section>
+<section id="tvbo.plot.network.draw_custom_arrows" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.draw_custom_arrows">draw_custom_arrows</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>plot.network.draw_custom_arrows(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    G,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    pos,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    edge_width<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    edge_colors<span class="op">=</span><span class="st">'grey'</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    edge_labels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    scatter_edges<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    color_by<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    return_color_mapping<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    radius<span class="op">=-</span><span class="fl">0.3</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw custom arrows on a graph <code>G</code> with given positions and styles.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 2%">
+<col style="width: 3%">
+<col style="width: 92%">
+<col style="width: 1%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>networkx.Graph</td>
+<td>The graph on which arrows will be drawn.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>pos</td>
+<td>dict</td>
+<td>A dictionary with nodes as keys and positions as values. Positions should be tuples of (x, y) coordinates.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>edge_width</td>
+<td>int</td>
+<td>Width of the edges. Defaults to 1.</td>
+<td><code>1</code></td>
+</tr>
+<tr class="even">
+<td>ax</td>
+<td>matplotlib.axes.Axes</td>
+<td>Matplotlib axes object to draw the arrows on. If None, the current axes will be used. Defaults to None.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>edge_colors</td>
+<td>str or list</td>
+<td>Color(s) of the edges. If a single string, all edges will have the same color. If a list, it should be the same length as the number of edges. Defaults to “grey”.</td>
+<td><code>'grey'</code></td>
+</tr>
+<tr class="even">
+<td>scatter_edges</td>
+<td>bool</td>
+<td>If True, scatter multiple edges between nodes to make them distinguishable. Defaults to False.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td>Any</td>
+<td>Additional keyword arguments to customize arrow properties. This can include: connectionstyle (str, optional): The connection style of the arrows. More info: https://matplotlib.org/stable/gallery/userdemo/connectionstyle_demo.html. Defaults to “arc3, rad=-0.3”. arrowstyle (str, optional): The style of the arrow. Defaults to “-|&gt;,head_length=0.4,head_width=0.2”. mutation_scale (float, optional): The scale factor for the arrow head. Defaults to 10.0. shrinkA (float, optional): Shrink factor at the start of the arrow. Defaults to 15. shrinkB (float, optional): Shrink factor at the end of the arrow. Defaults to 15.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 23%">
+<col style="width: 70%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>Optional[Dict[Any, Any]]</td>
+<td>Optional[Dict[Any, Any]]: Color mapping if return_color_mapping is True, otherwise None.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="example" class="level4 doc-section doc-section-example">
+<h4 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h4>
+<div id="8df3f843" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.plot.network <span class="im">import</span> draw_custom_arrows, draw_custom_nodes</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.DiGraph()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>G.add_edges_from([(<span class="dv">0</span>, <span class="dv">1</span>, {<span class="st">"type"</span>: <span class="dv">1</span>}), (<span class="dv">1</span>, <span class="dv">2</span>, {<span class="st">"type"</span>: <span class="dv">2</span>}), (<span class="dv">0</span>, <span class="dv">2</span>, {<span class="st">"type"</span>: <span class="dv">3</span>})])</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>pos <span class="op">=</span> {<span class="dv">0</span>: (<span class="dv">0</span>, <span class="dv">0</span>), <span class="dv">1</span>: (<span class="dv">1</span>, <span class="dv">1</span>), <span class="dv">2</span>: (<span class="dv">2</span>, <span class="dv">0</span>)}</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>draw_custom_nodes(G, pos, ax<span class="op">=</span>ax)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>draw_custom_arrows(G, pos, ax<span class="op">=</span>ax, color_by<span class="op">=</span><span class="st">"type"</span>, edge_colors<span class="op">=</span><span class="st">"viridis"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>ax.axis(<span class="st">"off"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="network_files/figure-html/cell-3-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="notes" class="level4 doc-section doc-section-notes">
+<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h4>
+<p>This function uses <code>FancyArrowPatch</code> from <code>matplotlib.patches</code> to draw arrows.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.draw_custom_nodes" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.draw_custom_nodes">draw_custom_nodes</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>plot.network.draw_custom_nodes(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    G,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    pos,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    labels<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    font_size<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    node_colors<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.8</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    facecolor<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    edgecolor<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Custom function to draw nodes as text in a network graph.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters:</h4>
+<p>G : networkx.Graph The graph on which nodes will be drawn. pos : dict A dictionary with nodes as keys and positions as values. Positions should be tuples of (x, y) coordinates. labels : dict, optional A dictionary with node labels. If None, nodes are labeled with node names. font_size : int, optional The font size of the node labels (default is 10). ax : matplotlib.axes.Axes, optional Matplotlib axes object to draw the nodes on. If None, the current axes will be used (default is None). node_colors : dict or str, optional A dictionary specifying the color for each node or a single color for all nodes (default is None).</p>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns:</h4>
+<p>list A list of text objects for the node labels.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.draw_edge_labels" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.draw_edge_labels">draw_edge_labels</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>plot.network.draw_edge_labels(g, pos, ax, params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary.</p>
+<p>Parameters: g (networkx.Graph): The graph on which the edge labels are to be drawn. pos (dict): The positions of the nodes. ax (matplotlib.axes._axes.Axes): The ax on which the edge labels are to be drawn. params (dict): A dictionary with various parameters including ‘edge_font_size’.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.draw_edges" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.draw_edges">draw_edges</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>plot.network.draw_edges(g, pos, ax, params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges.</p>
+<p>Parameters: g (networkx.Graph): The graph on which the edges are to be drawn. pos (dict): The positions of the nodes. ax (matplotlib.axes._axes.Axes): The ax on which the edges are to be drawn. params (dict): A dictionary with various parameters including ‘colored_edges’ and ‘edge_width’.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.draw_legend" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.draw_legend">draw_legend</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>plot.network.draw_legend(g, ax, params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the ‘tvb_colors’ parameter in the params dictionary.</p>
+<p>Parameters: g (networkx.Graph): The graph on which the legend is to be drawn. ax (matplotlib.axes._axes.Axes): The ax on which the legend is to be drawn. params (dict): A dictionary with various parameters including ‘tvb_colors’ and ‘c_order’.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.draw_nodes" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.draw_nodes">draw_nodes</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>plot.network.draw_nodes(g, pos, node_color, cmap, node_size, ax, params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to draw the nodes on the graph with specified attributes such as color, size, and using a specified colormap. Additional parameters like linewidth and alpha are taken from the params dictionary.</p>
+<p>Parameters: g (networkx.Graph): The graph on which the nodes are to be drawn. pos (dict): The positions of the nodes. node_color: The color of the nodes, specified either as a single color or a list of colors. cmap: The colormap for the nodes. node_size: The size of the nodes, specified either as a single size or a list of sizes. ax (matplotlib.axes._axes.Axes): The ax on which the nodes are to be drawn. params (dict): A dictionary with various parameters including ‘alpha’ and ‘node_linewidth’.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.get_ax" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_ax">get_ax</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_ax(ax, figsize)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to get the ax for the plot. If ax is None, a new figure and ax are created using the specified figsize.</p>
+<p>Parameters: ax (matplotlib.axes._axes.Axes or None): The ax parameter passed to the function. If None, a new ax is created. figsize (tuple): The size of the figure, specified as a tuple of width and height.</p>
+<p>Returns: matplotlib.axes._axes.Axes: The ax for the plot.</p>
+</section>
+<section id="tvbo.plot.network.get_categories_from_graph" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_categories_from_graph">get_categories_from_graph</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_categories_from_graph(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Retrieve all unique categories from the graph’s nodes.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters:</h4>
+<p>G : networkx.Graph The graph from which categories are to be retrieved.</p>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns:</h4>
+<p>list A sorted list of unique categories from the graph.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.get_category_from_graph" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_category_from_graph">get_category_from_graph</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_category_from_graph(G, node)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Retrieve the category of a given node from the graph.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters:</h4>
+<p>G : networkx.Graph The graph containing the node. node : hashable The node for which the category is to be retrieved.</p>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns:</h4>
+<p>str The category of the node.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.get_edge_color_mapping" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_edge_color_mapping">get_edge_color_mapping</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_edge_color_mapping(G, colormap<span class="op">=</span><span class="st">'viridis'</span>, color_by<span class="op">=</span><span class="st">'type'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a color mapping for edges in graph G based on their specified attribute.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters:</h4>
+<p>G : networkx.Graph The graph containing the edges with the specified attribute. colormap : str, optional The name of the colormap to use (default is ‘viridis’). color_by : str, optional The edge attribute to color by (default is ‘type’).</p>
+</section>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns:</h4>
+<p>edge_colors : dict A dictionary mapping edge attributes to colors.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.get_labels" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_labels">get_labels</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_labels(g, label_as_symbol)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True, the labels are formatted as LaTeX symbols. Additionally, specific substrings (“_RWW”) are removed from the labels.</p>
+<p>Parameters: g (networkx.Graph): The graph object containing the nodes for which labels are to be generated. label_as_symbol (bool): A flag indicating whether to format the labels as LaTeX symbols.</p>
+<p>Returns: dict: A dictionary where keys are node names and values are the corresponding labels.</p>
+</section>
+<section id="tvbo.plot.network.get_layout" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_layout">get_layout</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_layout(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    G,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    layout_type<span class="op">=</span><span class="st">'spring'</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    k_factor<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    save_pos<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    use_precomputed_pos<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Get the layout positions for the nodes in the graph.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters:</h4>
+<p>G : networkx.Graph The graph for which the layout positions are calculated. layout_type : str, optional The type of layout algorithm to use (‘spring’, ‘kamada’, etc.) (default is “spring”). k_factor : float, optional Scaling factor for the layout algorithm (default is 1). save_pos : str, optional Path to save the computed positions to a file (default is None). use_precomputed_pos : str, optional Path to a file with precomputed positions (default is None).</p>
+</section>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns:</h4>
+<p>dict A dictionary with nodes as keys and positions as values.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.get_node_color_and_cmap" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_node_color_and_cmap">get_node_color_and_cmap</h3>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_node_color_and_cmap(g, params<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to get the node colors and the colormap based on node attributes such as type or degree.</p>
+<p>Parameters: g (networkx.Graph): The graph for which the node colors and colormap are to be generated. params (dict): A dictionary with various parameters including node_filling and tvb_colors.</p>
+<p>Returns: tuple: A tuple with the node colors and the colormap.</p>
+</section>
+<section id="tvbo.plot.network.get_node_color_mapping" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_node_color_mapping">get_node_color_mapping</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_node_color_mapping(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    G,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    node_colors<span class="op">=</span><span class="st">'math_type'</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    colors<span class="op">=</span><span class="st">'tvb'</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    return_categories<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a color mapping for nodes in graph G based on their specified attribute.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters:</h4>
+<p>G : networkx.Graph The graph containing the nodes with the specified attribute. node_colors : str, optional The node attribute to color by (default is ‘math_type’). colors : str, optional The color scheme to use (default is ‘tvb’).</p>
+</section>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns:</h4>
+<p>node_color_dict : dict A dictionary mapping node attributes to colors. categories : dict A dictionary mapping nodes to their categories.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.get_node_size" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.get_node_size">get_node_size</h3>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>plot.network.get_node_size(g, params<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to get the node size for the graph, which can be determined by various parameters including the degree of the nodes, the length of the labels, or a specified factor.</p>
+<p>Parameters: g (networkx.Graph): The graph for which the node size is to be generated. pos (dict): The positions of the nodes. labels (dict): The labels of the nodes. params (dict): A dictionary with various parameters including ‘node_size_by’ and ‘node_size_factor’.</p>
+<p>Returns: list or int: A list with the node sizes or a single integer representing a uniform node size for all nodes.</p>
+</section>
+<section id="tvbo.plot.network.hierarchy_pos" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.hierarchy_pos">hierarchy_pos</h3>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>plot.network.hierarchy_pos(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    G,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    root<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    width<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    vert_gap<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    hor_gap<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    vert_loc<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    xcenter<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">'down'</span>,</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    vert_scatter<span class="op">=</span><span class="fl">0.0</span>,</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If the graph is a DAG this will return the positions to plot this in a hierarchical layout.</p>
+<p>G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root xcenter: horizontal location of root direction: ‘down’ for top-down layout, ‘up’ for bottom-up layout vert_scatter: vertical scatter factor for nodes on the same level</p>
+</section>
+<section id="tvbo.plot.network.n1n2_edgecounts" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.n1n2_edgecounts">n1n2_edgecounts</h3>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>plot.network.n1n2_edgecounts(G, n1, n2, edge_counts<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1).</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 28%">
+<col style="width: 47%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>networkx.Graph or MultiGraph</td>
+<td>Input graph.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>n1</td>
+<td>hashable</td>
+<td>First node identifier.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>n2</td>
+<td>hashable</td>
+<td>Second node identifier.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>edge_counts</td>
+<td>dict</td>
+<td>Precomputed output from count_directed_edges(G).</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>int</td>
+<td>int</td>
+<td>Number of edges between n1 and n2, regardless of direction.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.plot.network.plot_multidigraph" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.plot_multidigraph">plot_multidigraph</h3>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>plot.network.plot_multidigraph(G, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 29%">
+<col style="width: 44%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>networkx.MultiDiGraph</td>
+<td>The MultiDiGraph to be plotted.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>figsize</td>
+<td>Tuple[int, int]</td>
+<td>Figure size. Defaults to (12, 8).</td>
+<td><code>(12, 8)</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-9" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.plot.network.plot_ontology_graph" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.plot_ontology_graph">plot_ontology_graph</h3>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>plot.network.plot_ontology_graph(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    G,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    node_size_factor<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    draw_labels<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    edge_width<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    k_factor<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    colors<span class="op">=</span><span class="st">'viridis'</span>,</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    edge_colors<span class="op">=</span><span class="st">'grey'</span>,</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    preferred_label<span class="op">=</span><span class="st">'symbol'</span>,</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    alternative_label<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    font_size<span class="op">=</span><span class="dv">12</span>,</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    legend<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    edge_legend<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>    colorby<span class="op">=</span><span class="st">'category'</span>,</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the ontology graph using matplotlib.</p>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 14%">
+<col style="width: 64%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>networkx.DiGraph</td>
+<td>A directed graph representation of the ontology.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>node_size_factor</td>
+<td>int</td>
+<td>Factor by which node size is multiplied. Defaults to 10.</td>
+<td><code>10</code></td>
+</tr>
+<tr class="odd">
+<td>draw_labels</td>
+<td>bool</td>
+<td>Whether to draw node labels. Defaults to False.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>edge_width</td>
+<td>float</td>
+<td>Width of the edges. Defaults to 1.0.</td>
+<td><code>1.0</code></td>
+</tr>
+<tr class="odd">
+<td>k_factor</td>
+<td>float</td>
+<td>Scaling factor for the layout algorithm. Defaults to 1.</td>
+<td><code>1</code></td>
+</tr>
+<tr class="even">
+<td>colors</td>
+<td>str or list</td>
+<td>Color map or list of colors for nodes. Defaults to “viridis”.</td>
+<td><code>'viridis'</code></td>
+</tr>
+<tr class="odd">
+<td>edge_colors</td>
+<td>str or list</td>
+<td>Color map or list of colors for edges. Defaults to “grey”.</td>
+<td><code>'grey'</code></td>
+</tr>
+<tr class="even">
+<td>preferred_label</td>
+<td>str</td>
+<td>Node attribute to use as the preferred label. Defaults to “symbol”.</td>
+<td><code>'symbol'</code></td>
+</tr>
+<tr class="odd">
+<td>alternative_label</td>
+<td>str</td>
+<td>Node attribute to use as the alternative label. Defaults to “label”.</td>
+<td><code>'label'</code></td>
+</tr>
+<tr class="even">
+<td>font_size</td>
+<td>int</td>
+<td>Font size for labels. Defaults to 12.</td>
+<td><code>12</code></td>
+</tr>
+<tr class="odd">
+<td>legend</td>
+<td>bool</td>
+<td>Whether to draw the legend. Defaults to True.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td>edge_legend</td>
+<td>bool</td>
+<td>Whether to include edge types in the legend. Defaults to True.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>ax</td>
+<td>matplotlib.axes.Axes</td>
+<td>Matplotlib axes object to draw the graph on. If None, a new figure is created. Defaults to None.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>colorby</td>
+<td>str</td>
+<td>Node attribute to determine the node colors. Defaults to “category”.</td>
+<td><code>'category'</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td>Any</td>
+<td>Additional keyword arguments for node and edge drawing functions.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.plot.network.plot_tvbo_graph" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.plot_tvbo_graph">plot_tvbo_graph</h3>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>plot.network.plot_tvbo_graph(g, ax<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to plot a TVBO graph with various customizable parameters.</p>
+<p>Parameters: g (networkx.Graph): The graph to be plotted. kwargs: Various other optional parameters to customize the plot.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.relabel_graph" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.relabel_graph">relabel_graph</h3>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>plot.network.relabel_graph(g, relabel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to relabel the nodes of the graph if a relabel dictionary is provided.</p>
+<p>Parameters: g (networkx.Graph): The graph to be relabeled. relabel (dict): A dictionary with the relabeling information.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.reverse_edges" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.reverse_edges">reverse_edges</h3>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>plot.network.reverse_edges(pos)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Reverse the coordinates of the positions in the pos dictionary.</p>
+<section id="parameters-10" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters:</h4>
+<p>pos : dict A dictionary with nodes as keys and (x, y) coordinates as values.</p>
+</section>
+<section id="returns-10" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns:</h4>
+<p>dict A dictionary with nodes as keys and reversed (y, x) coordinates as values.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.set_axis_limits" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.set_axis_limits">set_axis_limits</h3>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>plot.network.set_axis_limits(pos, ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Set the axis limits based on node positions.</p>
+<section id="parameters-11" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters:</h4>
+<p>pos : dict A dictionary with nodes as keys and positions as values. ax : matplotlib.axes.Axes The matplotlib axes object to set the limits on.</p>
+</section>
+</section>
+<section id="tvbo.plot.network.set_plt_params" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.set_plt_params">set_plt_params</h3>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>plot.network.set_plt_params(rc_params<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to set certain plt parameters.</p>
+<p>Returns: None</p>
+</section>
+<section id="tvbo.plot.network.validate_parameters" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.plot.network.validate_parameters">validate_parameters</h3>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>plot.network.validate_parameters(params<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function to validate and set default values for various parameters.</p>
+<p>Parameters: params (dict): The parameters passed to the function.</p>
+<p>Returns: dict: The validated and updated parameters.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2024 Charité - Universitätsmedizin Berlin</p>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/api/network.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/quarto_pub">
+      <i class="bi bi-twitter" role="img" aria-label="Quarto Twitter">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/quarto-dev/quarto-cli">
+      <i class="bi bi-github" role="img" aria-label="Quarto GitHub">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
