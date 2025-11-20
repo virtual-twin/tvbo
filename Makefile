@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release all
+.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release release all
 all: build save
 
 build:
@@ -112,4 +112,18 @@ pypi-release:
 	@python -m twine check dist/*
 	@python -m twine upload dist/*
 	@echo "✓ Release uploaded to PyPI"
+
+release:
+	@echo "Creating GitHub release..."
+	@VERSION=$$(grep '^__version__' tvbo/__init__.py | cut -d'"' -f2); \
+	echo "Current version: $$VERSION"; \
+	git add -A; \
+	git commit -m "Release v$$VERSION" || true; \
+	git push; \
+	gh release create "v$$VERSION" \
+		--title "v$$VERSION" \
+		--notes "See CHANGELOG.md for details" \
+		--generate-notes; \
+	echo "✓ GitHub release v$$VERSION created"
+	@echo "✓ GitHub Actions will automatically publish to PyPI"
 
