@@ -554,9 +554,6 @@ classes:
       initial_value:
         range: float
         ifabsent: float(0.1)
-      initial_conditions:
-        range: float
-        multivalued: true
       history:
         range: TimeSeries
 
@@ -1157,6 +1154,7 @@ classes:
       initial_value:
         description: "Constant initial value for the field."
         range: float
+        ifabsent: float(0.1)
       initial_expression:
         description: "Analytic initial condition for the field."
         range: Equation

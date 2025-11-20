@@ -94,7 +94,10 @@ lorenz = Dynamics(
 )
 
 code = SimulationExperiment(local_dynamics=lorenz).render_code('jax')
+```
 
+**output**:
+```{pythony}
 Markdown("```python" + code + "```")
 ```
 
@@ -119,5 +122,4 @@ lorenz = Dynamics(
 SimulationExperiment(local_dynamics=lorenz).run(duration=1000).plot()
 
 ```
-
 ::::
