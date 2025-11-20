@@ -114,13 +114,26 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
 
 ## Return for scan: carry, result
 % if delayed:
-    cvar = ${array_input(np.array([i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]))}
+    <%
+    cvar_list = [i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]
+    %>
+    %if len(cvar_list) > 0:
+    cvar = ${array_input(np.array(cvar_list))}
     % if small_dt:
     history = history.at[:, t, :].set(next_state[cvar, :])
     % else:
     _h = jnp.roll(history, -1, axis=1)
     history = _h.at[:, -1, :].set(next_state[cvar, :])
     % endif
+    %else:
+    ## When no coupling variables are defined, store all state variables in history
+    % if small_dt:
+    history = history.at[:, t, :].set(next_state)
+    % else:
+    _h = jnp.roll(history, -1, axis=1)
+    history = _h.at[:, -1, :].set(next_state)
+    % endif
+    %endif
 % endif
 ## Return for scan coupling if monitored
 % if monitor_node_coupling:

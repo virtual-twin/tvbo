@@ -75,7 +75,7 @@ def transform_parameters(_p):
 ## ${par}, \
 ## % endfor
 ## )
-c_vars = ${utils.array_input(np.array(cvar))}
+c_vars = ${utils.array_input(np.array(cvar))}.astype(jnp.int32)
 
 ## Main Function
 ## def kernel(initial_conditions, weights, delay_indices, dt, nt, noise, params_integrate, params_monitors):
@@ -84,12 +84,17 @@ def kernel(state):
     # problem dimensions
     n_nodes = ${experiment.network.number_of_regions}
     n_svar = ${len(experiment.local_dynamics.state_variables)}
-    n_cvar = ${len(cvar)}
+    n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.local_dynamics.state_variables)}
     n_modes = ${experiment.local_dynamics.number_of_modes}
     nh = ${experiment.horizon}
 
     %if any_delays:
+    %if len(cvar) > 0:
     current_state, history = (state.initial_conditions.data[-1], state.initial_conditions.data[-nh:, c_vars].transpose(1, 0, 2, 3))
+    %else:
+    ## When no coupling variables are defined, use all state variables for history
+    current_state, history = (state.initial_conditions.data[-1], state.initial_conditions.data[-nh:, :].transpose(1, 0, 2, 3))
+    %endif
     % if small_dt:
         history = jnp.concatenate([jnp.empty((n_cvar, state.nt, n_nodes, n_modes)), history], axis = 1)
     %endif
@@ -100,9 +105,9 @@ def kernel(state):
     ics = (history, current_state)
     weights = state.network.weights_matrix
 
-    dn = jnp.arange(n_nodes) * jnp.ones((n_nodes, n_nodes)).astype(int)
-    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(int)
-    di = -1 * idelays -1
+    dn = jnp.arange(int(n_nodes)) * jnp.ones((int(n_nodes), int(n_nodes))).astype(jnp.int32)
+    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(jnp.int32)
+    di = -1 * idelays - 1
     delay_indices = (di, dn)
 
     dt = state.dt
