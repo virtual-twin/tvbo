@@ -104,6 +104,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
 <script src="//unpkg.com/3d-force-graph"></script>
 
 
@@ -236,16 +237,16 @@ Live-preview
 </div>
 <div class="button-container">
     <a href="https://tvbo.charite.de" class="card-button">
-        <h3 class="anchored">🧠 TVB-O GUI</h3>
-        <p>Launch the interactive web interface for exploring TVB-O models and data.</p>
+        <h3 class="anchored"><i class="fa-solid fa-brain" aria-hidden="true"></i> TVB-O GUI</h3>
+        <p>Open the hosted web app to explore TVB‑O models, datasets, and simulations.</p>
     </a>
     <a href="./browser" class="card-button">
-        <h3 class="anchored"> Model Browser</h3>
-        <p>Read the publication introducing the TVB-O framework and its applications.</p>
+        <h3 class="anchored"><i class="fa-solid fa-compass" aria-hidden="true"></i> Model Browser</h3>
+        <p>Browse models, parameters, and equations. Inspect relationships and components interactively.</p>
     </a>
     <a href="./datamodel" class="card-button">
-        <h3 class="anchored">🗂️ Metadata Schema</h3>
-        <p>Explore the structured schema specification underlying TVB-O resources.</p>
+        <h3 class="anchored"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i> Metadata Schema</h3>
+        <p>Explore the TVB‑O metadata schema: classes, fields, and constraints used across resources.</p>
     </a>
 </div>
 <hr>
@@ -253,7 +254,7 @@ Live-preview
 <section id="quickstart" class="level2">
 <h2 class="anchored" data-anchor-id="quickstart">Quickstart</h2>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Python Installation:</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Model Specification:</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Run Dynamics</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Python Installation:</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Model Specification:</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Generate Code</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false">Run Dynamics</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install tvbo</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -285,9 +286,9 @@ Live-preview
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> X * Y - beta * Z</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
-<div id="0629629d" class="cell" data-execution_count="1">
+<div id="94f10bca" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>lorenz <span class="op">=</span> Dynamics(</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>{</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"sigma"</span>: {<span class="st">"value"</span>: <span class="fl">10.0</span>},</span>
@@ -301,11 +302,197 @@ Live-preview
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    },</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>SimulationExperiment(local_dynamics<span class="op">=</span>lorenz).run(duration<span class="op">=</span><span class="dv">1000</span>).plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="1">
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> SimulationExperiment(local_dynamics<span class="op">=</span>lorenz).render_code(<span class="st">'jax'</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>Markdown(<span class="st">"```python"</span> <span class="op">+</span> code <span class="op">+</span> <span class="st">"```"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="1">
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> namedtuple</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.scipy <span class="im">as</span> jsp</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.data.types <span class="im">import</span> TimeSeries</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cfun(weights, history, current_state, p, delay_indices, t):</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    n_node <span class="op">=</span> weights.shape[<span class="dv">0</span>]</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    a, b <span class="op">=</span> p.a, p.b</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    x_j <span class="op">=</span> jnp.array([</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    pre <span class="op">=</span> x_j</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Restore collapsed dimension if necessary</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    pre <span class="op">=</span> pre.reshape(<span class="op">-</span><span class="dv">1</span>, n_node, n_node)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> op(x): <span class="cf">return</span> jnp.<span class="bu">sum</span>(weights <span class="op">*</span> x, axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    gx <span class="op">=</span> jax.vmap(op, in_axes<span class="op">=</span><span class="dv">0</span>)(pre)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> b <span class="op">+</span> a<span class="op">*</span>gx</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dfun(current_state, cX, _p, local_coupling<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    sigma, rho, beta <span class="op">=</span> _p.sigma, _p.rho, _p.beta</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># unpack coupling terms and states as in dfun</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> current_state[<span class="dv">0</span>]</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> current_state[<span class="dv">1</span>]</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    Z <span class="op">=</span> current_state[<span class="dv">2</span>]</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># compute internal states for dfun</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jnp.array([</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>        sigma<span class="op">*</span>(Y <span class="op">-</span> X),  <span class="co"># X</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span>Y <span class="op">+</span> X<span class="op">*</span>(rho <span class="op">-</span> Z),  <span class="co"># Y</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>        X<span class="op">*</span>Y <span class="op">-</span> Z<span class="op">*</span>beta,  <span class="co"># Z</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> integrate(state, weights, dt, params_integrate, delay_indices, external_input):</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="co">    Heun Integration</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="co">    ================</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    t, noise <span class="op">=</span> external_input, <span class="dv">0</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    params_dfun, params_cfun, params_stimulus <span class="op">=</span> params_integrate</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>    history, current_state <span class="op">=</span> state</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    stimulus <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>    cX <span class="op">=</span> jax.vmap(cfun, in_axes<span class="op">=</span>(<span class="va">None</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="va">None</span>, <span class="va">None</span>, <span class="va">None</span>), out_axes<span class="op">=-</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>                  <span class="dv">1</span>)(weights, history, current_state, params_cfun, delay_indices, t)</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>    dX0 <span class="op">=</span> dfun(current_state, cX, params_dfun)</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> current_state</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate intermediate step X1</span></span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>    X1 <span class="op">=</span> X <span class="op">+</span> dX0 <span class="op">*</span> dt <span class="op">+</span> noise <span class="op">+</span> stimulus <span class="op">*</span> dt</span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate derivative X1</span></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>    dX1 <span class="op">=</span> dfun(X1, cX, params_dfun)</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate the state change dX</span></span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>    dX <span class="op">=</span> (dX0 <span class="op">+</span> dX1) <span class="op">*</span> (dt <span class="op">/</span> <span class="dv">2</span>)</span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a>    next_state <span class="op">=</span> current_state <span class="op">+</span> (dX)</span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>    cvar <span class="op">=</span> jnp.array([])</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>    _h <span class="op">=</span> jnp.roll(history, <span class="op">-</span><span class="dv">1</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>    history <span class="op">=</span> _h.at[:, <span class="op">-</span><span class="dv">1</span>, :].<span class="bu">set</span>(next_state[cvar, :])</span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (history, next_state), next_state</span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> g(dt, nt, n_svar, n_nodes, n_modes, seed<span class="op">=</span><span class="dv">0</span>, sigma_vec<span class="op">=</span><span class="va">None</span>, sigma<span class="op">=</span><span class="fl">0.0</span>, state<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Standard Gaussian white noise using xi ~ N(0,1).</span></span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns (nt, n_svar, n_nodes, n_modes): sqrt(dt) * sigma * xi.</span></span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a><span class="co">    - sigma_vec: optional per-state sigma (length n_svar).</span></span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a><span class="co">    - sigma: scalar fallback when sigma_vec is None.</span></span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a><span class="co">    - state: optional current state placeholder for future correlative noise.</span></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>    key <span class="op">=</span> jax.random.PRNGKey(<span class="bu">int</span>(seed))</span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>    xi <span class="op">=</span> jax.random.normal(key, (nt, n_svar, n_nodes, n_modes))</span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> sigma_vec <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>        sigma_b <span class="op">=</span> jnp.asarray(sigma_vec)[<span class="va">None</span>, ..., <span class="va">None</span>, <span class="va">None</span>]</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>        sigma_b <span class="op">=</span> jnp.asarray(sigma)</span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>    noise <span class="op">=</span> jnp.sqrt(dt) <span class="op">*</span> sigma_b <span class="op">*</span> xi</span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> noise</span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> transform_parameters(_p):</span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a>    sigma, rho, beta <span class="op">=</span> _p.sigma, _p.rho, _p.beta</span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> _p</span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a>c_vars <span class="op">=</span> jnp.array([])</span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> kernel(state):</span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a>    <span class="co"># problem dimensions</span></span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a>    n_nodes <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a>    n_svar <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a>    n_cvar <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a>    n_modes <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a>    nh <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a>    <span class="co"># history = current_state</span></span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a>    current_state, history <span class="op">=</span> (state.initial_conditions.data[<span class="op">-</span><span class="dv">1</span>], <span class="va">None</span>)</span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>    ics <span class="op">=</span> (history, current_state)</span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a>    weights <span class="op">=</span> state.network.weights_matrix</span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a>    dn <span class="op">=</span> jnp.arange(n_nodes) <span class="op">*</span> jnp.ones((n_nodes, n_nodes)).astype(<span class="bu">int</span>)</span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a>    idelays <span class="op">=</span> jnp.<span class="bu">round</span>(state.network.lengths_matrix <span class="op">/</span></span>
+<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a>                        state.network.conduction_speed.value <span class="op">/</span> state.dt).astype(<span class="bu">int</span>)</span>
+<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a>    di <span class="op">=</span> <span class="op">-</span><span class="dv">1</span> <span class="op">*</span> idelays <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a>    delay_indices <span class="op">=</span> (di, dn)</span>
+<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a>    dt <span class="op">=</span> state.dt</span>
+<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a>    nt <span class="op">=</span> state.nt</span>
+<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a>    time_steps <span class="op">=</span> jnp.arange(<span class="dv">0</span>, nt)</span>
+<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-132"><a href="#cb4-132" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Generate batch noise using xi with per-state sigma_vec.</span></span>
+<span id="cb4-133"><a href="#cb4-133" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Prefer state-provided sigma_vec (supports vmapped sweeps); fallback to experiment-level constants.</span></span>
+<span id="cb4-134"><a href="#cb4-134" aria-hidden="true" tabindex="-1"></a>    seed <span class="op">=</span> <span class="bu">getattr</span>(state.noise, <span class="st">'seed'</span>, <span class="dv">0</span>) <span class="cf">if</span> <span class="bu">hasattr</span>(</span>
+<span id="cb4-135"><a href="#cb4-135" aria-hidden="true" tabindex="-1"></a>        state.noise, <span class="st">'seed'</span>) <span class="cf">else</span> <span class="dv">0</span></span>
+<span id="cb4-136"><a href="#cb4-136" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb4-137"><a href="#cb4-137" aria-hidden="true" tabindex="-1"></a>        sigma_vec_runtime <span class="op">=</span> <span class="bu">getattr</span>(state.noise, <span class="st">'sigma_vec'</span>, <span class="va">None</span>)</span>
+<span id="cb4-138"><a href="#cb4-138" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb4-139"><a href="#cb4-139" aria-hidden="true" tabindex="-1"></a>        sigma_vec_runtime <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb4-140"><a href="#cb4-140" aria-hidden="true" tabindex="-1"></a>    sigma_vec <span class="op">=</span> sigma_vec_runtime <span class="cf">if</span> sigma_vec_runtime <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="cf">else</span> jnp.array([</span>
+<span id="cb4-141"><a href="#cb4-141" aria-hidden="true" tabindex="-1"></a>                                                                                  <span class="fl">0.</span>, <span class="fl">0.</span>, <span class="fl">0.</span>])</span>
+<span id="cb4-142"><a href="#cb4-142" aria-hidden="true" tabindex="-1"></a>    noise <span class="op">=</span> g(dt, nt, n_svar, n_nodes, n_modes, seed<span class="op">=</span>seed, sigma_vec<span class="op">=</span>sigma_vec)</span>
+<span id="cb4-143"><a href="#cb4-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-144"><a href="#cb4-144" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> transform_parameters(state.parameters.local_dynamics)</span>
+<span id="cb4-145"><a href="#cb4-145" aria-hidden="true" tabindex="-1"></a>    params_integrate <span class="op">=</span> (p, state.parameters.coupling, state.stimulus)</span>
+<span id="cb4-146"><a href="#cb4-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-147"><a href="#cb4-147" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> op(ics, external_input): <span class="cf">return</span> integrate(ics, weights,</span>
+<span id="cb4-148"><a href="#cb4-148" aria-hidden="true" tabindex="-1"></a>                                                  dt, params_integrate, delay_indices, external_input)</span>
+<span id="cb4-149"><a href="#cb4-149" aria-hidden="true" tabindex="-1"></a>    latest_carry, res <span class="op">=</span> jax.lax.scan(op, ics, (time_steps, noise))</span>
+<span id="cb4-150"><a href="#cb4-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-151"><a href="#cb4-151" aria-hidden="true" tabindex="-1"></a>    trace <span class="op">=</span> res</span>
+<span id="cb4-152"><a href="#cb4-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-153"><a href="#cb4-153" aria-hidden="true" tabindex="-1"></a>    t_offset <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-154"><a href="#cb4-154" aria-hidden="true" tabindex="-1"></a>    time_steps <span class="op">=</span> time_steps <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb4-155"><a href="#cb4-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-156"><a href="#cb4-156" aria-hidden="true" tabindex="-1"></a>    labels_dimensions <span class="op">=</span> {</span>
+<span id="cb4-157"><a href="#cb4-157" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Time"</span>: <span class="va">None</span>,</span>
+<span id="cb4-158"><a href="#cb4-158" aria-hidden="true" tabindex="-1"></a>        <span class="st">"State Variable"</span>: [<span class="st">'X'</span>, <span class="st">'Y'</span>, <span class="st">'Z'</span>],</span>
+<span id="cb4-159"><a href="#cb4-159" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Space"</span>: [<span class="st">'0'</span>],</span>
+<span id="cb4-160"><a href="#cb4-160" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Mode"</span>: [<span class="st">'m0'</span>],</span>
+<span id="cb4-161"><a href="#cb4-161" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-162"><a href="#cb4-162" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> TimeSeries(time<span class="op">=</span>(time_steps <span class="op">+</span> t_offset) <span class="op">*</span> dt, data<span class="op">=</span>trace, title<span class="op">=</span><span class="st">"Raw"</span>, sample_period<span class="op">=</span>dt, labels_dimensions<span class="op">=</span>labels_dimensions)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
+<div id="2b21d290" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>lorenz <span class="op">=</span> Dynamics(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>{</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"sigma"</span>: {<span class="st">"value"</span>: <span class="fl">10.0</span>},</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"rho"</span>: {<span class="st">"value"</span>: <span class="fl">28.0</span>},</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"beta"</span>: {<span class="st">"value"</span>: <span class="dv">8</span> <span class="op">/</span> <span class="dv">3</span>},</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    state_variables<span class="op">=</span>{</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"X"</span>: {<span class="st">"equation"</span>: {<span class="st">"rhs"</span>: <span class="st">"sigma * (Y - X)"</span>}},</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Y"</span>: {<span class="st">"equation"</span>: {<span class="st">"rhs"</span>: <span class="st">"X * (rho - Z) - Y"</span>}},</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Z"</span>: {<span class="st">"equation"</span>: {<span class="st">"rhs"</span>: <span class="st">"X * Y - beta * Z"</span>}},</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>SimulationExperiment(local_dynamics<span class="op">=</span>lorenz).run(duration<span class="op">=</span><span class="dv">1000</span>).plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="2">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/cell-2-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="index_files/figure-html/cell-3-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -733,7 +920,7 @@ Live-preview
       &nbsp;
     </div>   
     <div class="nav-footer-center">
-<p>© 2024 Charité - Universitätsmedizin Berlin</p>
+<p>© 2025 Charité - Universitätsmedizin Berlin</p>
 <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
