@@ -200,43 +200,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/CommonCoordinateSpace.html">CommonCoordinateSpace</a></td>
-<td>A schema for representing a version of a common coordinate space</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Distribution.html">Distribution</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/ParcellationEntity.html">ParcellationEntity</a></td>
 <td>A schema for representing a parcellation entity, which is an anatomical locat…</td>
 <td>no</td>
 </tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
+<td><a href="../../datamodel/classes/ObservationModel.html">ObservationModel</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
+<td><a href="../../datamodel/classes/Monitor.html">Monitor</a></td>
+<td>Observation model for monitoring simulation output with optional processing p…</td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/NeuralMassModel.html">NeuralMassModel</a></td>
 <td></td>
 <td>no</td>
 </tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td></td>
-<td>no</td>
-</tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
-<td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
+<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
@@ -245,32 +235,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>yes</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Coupling.html">Coupling</a></td>
-<td></td>
-<td>yes</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
 <td>Identity information about a software package independent of a specific versi…</td>
 <td>no</td>
 </tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/ObservationModel.html">ObservationModel</a></td>
-<td></td>
-<td>no</td>
-</tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/DBSProtocol.html">DBSProtocol</a></td>
-<td>A protocol describing DBS therapy, potentially bilateral or multi-lead</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
-<td>Metadata about a clinical score or scale</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DownsamplingModel.html">DownsamplingModel</a></td>
+<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -285,18 +255,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Monitor.html">Monitor</a></td>
-<td>Observation model for monitoring simulation output with optional processing p…</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/DBSProtocol.html">DBSProtocol</a></td>
+<td>A protocol describing DBS therapy, potentially bilateral or multi-lead</td>
 <td>no</td>
 </tr>
 <tr class="odd">
@@ -305,17 +265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DataInjection.html">DataInjection</a></td>
-<td>External data injected into the observation pipeline</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
+<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -323,6 +273,56 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="../../datamodel/classes/BrainAtlas.html">BrainAtlas</a></td>
 <td>A schema for representing a version of a brain atlas</td>
 <td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/CommonCoordinateSpace.html">CommonCoordinateSpace</a></td>
+<td>A schema for representing a version of a common coordinate space</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Distribution.html">Distribution</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DownsamplingModel.html">DownsamplingModel</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
+<td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
+<td>Metadata about a clinical score or scale</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DataInjection.html">DataInjection</a></td>
+<td>External data injected into the observation pipeline</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Coupling.html">Coupling</a></td>
+<td></td>
+<td>yes</td>
 </tr>
 </tbody>
 </table>
