@@ -1,0 +1,121 @@
+---
+jupyter: python3
+---
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from IPython.display import HTML
+```
+
+```{python}
+import yaml
+from tvbo import Dynamics, SimulationExperiment
+
+# Pendulum System
+dynamics_yaml = """
+name: PendulumSystem
+description: A simple damped pendulum system for demonstrating TVBO capabilities.
+parameters:
+    c:
+        description: Damping coefficient
+        value: 0.001
+        unit: 1/ms
+    omega0:
+        description: Natural frequency
+        value: 0.01
+        unit: rad/ms
+    L:
+        description: Length of the pendulum
+        unit: m
+        value: 1.0
+state_variables:
+    theta:
+        description: Angle of the pendulum
+        unit: rad
+        initial_value: 1.0
+        equation:
+            rhs: omega
+    omega:
+        description: Angular velocity
+        unit: rad/ms
+        initial_value: 0.0
+        equation:
+            rhs: -c*omega - omega0**2 * sin(theta)
+output_transforms:
+    x:
+        description: X coordinate of the pendulum bob
+        unit: m
+        equation:
+            rhs: L * sin(theta)
+    y:
+        description: Y coordinate of the pendulum bob
+        unit: m
+        equation:
+            rhs: -L * cos(theta)
+"""
+
+pendulum = SimulationExperiment(
+    local_dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),
+
+)
+pendulum.integration.step_size = 0.1
+pendulum.integration.duration= 5000
+results = pendulum.run()
+```
+
+```{python}
+#| echo: false
+x = results.get_state_variable("x").data.squeeze()
+y = results.get_state_variable("y").data.squeeze()
+time = results.time
+dt = pendulum.integration.step_size
+
+target_fps = 20
+skip_frames = max(1, int(1000 / target_fps / dt))
+actual_interval = dt * skip_frames
+
+fig, axs = plt.subplots(1, 2, layout="compressed", figsize=(10, 3))
+
+ax_pendulum = axs[0]
+ax_pendulum.set_xlim(-1.5, 1.5)
+ax_pendulum.set_ylim(-1.5, 0.5)
+ax_pendulum.set_aspect("equal")
+ax_pendulum.set_xlabel("x")
+ax_pendulum.set_ylabel("y")
+
+(line,) = ax_pendulum.plot([], [], "o-")
+
+ax_timeseries = axs[1]
+results.plot(ax=ax_timeseries)
+time_line = ax_timeseries.axvline(x=0)
+
+
+def init():
+    line.set_data([], [])
+    time_line.set_xdata([0])
+    return line, time_line
+
+
+def animate(i):
+    line.set_data([0, x[i]], [0, y[i]])
+    time_line.set_xdata([time[i]])
+    return line, time_line
+
+
+frame_indices = range(0, len(time), skip_frames)
+ani = animation.FuncAnimation(
+    fig,
+    animate,
+    init_func=init,
+    frames=frame_indices,
+    interval=actual_interval,
+    blit=True,
+    repeat=True,
+)
+
+plt.close()
+HTML(ani.to_jshtml())
+```
+

@@ -135,6 +135,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../../installation.html"> 
+<span class="menu-text">Installation</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../../api/index.html"> 
 <span class="menu-text">API Documentation</span></a>
   </li>  
@@ -144,8 +148,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../browser.html"> 
-<span class="menu-text">Browser</span></a>
+<span class="menu-text">Knowledge Browser</span></a>
   </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Usage</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
+        <li>
+    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.qmd">
+ <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -199,52 +214,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td><a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
+<td>Identity information about a software package independent of a specific versi…</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SimulationStudy.html">SimulationStudy</a></td>
+<td><a href="../../datamodel/classes/RandomStream.html">RandomStream</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/DownsamplingModel.html">DownsamplingModel</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/PDE.html">PDE</a></td>
-<td>Partial differential equation problem definition</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/ObservationModel.html">ObservationModel</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a></td>
-<td>Specification of a coupling input channel for multi-coupling dynamics</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Dynamics.html">Dynamics</a></td>
+<td><a href="../../datamodel/classes/BoundaryCondition.html">BoundaryCondition</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -254,32 +239,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/RegionMapping.html">RegionMapping</a></td>
-<td>Maps vertices to parent regions for hierarchical/aggregated coupling</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
-<td>Adjacency matrix of a network</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/SpatialField.html">SpatialField</a></td>
+<td><a href="../../datamodel/classes/DownsamplingModel.html">DownsamplingModel</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
+<td><a href="../../datamodel/classes/Dynamics.html">Dynamics</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -289,27 +254,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Monitor.html">Monitor</a></td>
-<td>Observation model for monitoring simulation output with optional processing p…</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/BoundaryCondition.html">BoundaryCondition</a></td>
+<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -319,22 +264,92 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
-<td>Identity information about a software package independent of a specific versi…</td>
+<td><a href="../../datamodel/classes/Monitor.html">Monitor</a></td>
+<td>Observation model for monitoring simulation output with optional processing p…</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Network.html">Network</a></td>
-<td>Complete network specification combining dynamics, graph topology, and coupli…</td>
+<td><a href="../../datamodel/classes/Callable.html">Callable</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/RandomStream.html">RandomStream</a></td>
+<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
+<td>Adjacency matrix of a network</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/SpatialField.html">SpatialField</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ModelFitting.html">ModelFitting</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a></td>
+<td>Specification of a coupling input channel for multi-coupling dynamics</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/PDE.html">PDE</a></td>
+<td>Partial differential equation problem definition</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ObservationModel.html">ObservationModel</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Network.html">Network</a></td>
+<td>Complete network specification combining dynamics, graph topology, and coupli…</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -344,23 +359,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
-<td>Metadata about a clinical score or scale</td>
+<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
+<td><a href="../../datamodel/classes/SimulationStudy.html">SimulationStudy</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Callable.html">Callable</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/RegionMapping.html">RegionMapping</a></td>
+<td>Maps vertices to parent regions for hierarchical/aggregated coupling</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/ModelFitting.html">ModelFitting</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
+<td>Metadata about a clinical score or scale</td>
 <td>no</td>
 </tr>
 </tbody>
