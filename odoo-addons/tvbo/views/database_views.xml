@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Neural Model Views -->
+    <record id="view_neural_model_tree" model="ir.ui.view">
+        <field name="name">tvbo.neural.model.tree</field>
+        <field name="model">tvbo.neural_model</field>
+        <field name="arch" type="xml">
+            <tree string="Neural Models">
+                <field name="name"/>
+                <field name="description"/>
+                <field name="number_of_modes"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_neural_model_form" model="ir.ui.view">
+        <field name="name">tvbo.neural.model.form</field>
+        <field name="model">tvbo.neural_model</field>
+        <field name="arch" type="xml">
+            <form string="Neural Model">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="number_of_modes"/>
+                    </group>
+                    <notebook>
+                        <page string="Parameters">
+                            <field name="parameter_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="value"/>
+                                    <field name="description"/>
+                                    <field name="unit"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="State Variables">
+                            <field name="state_variable_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="description"/>
+                                    <field name="initial_value"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_neural_model_list" model="ir.actions.act_window">
+        <field name="name">Neural Models</field>
+        <field name="res_model">tvbo.neural_model</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Integrator Views -->
+    <record id="view_integrator_tree" model="ir.ui.view">
+        <field name="name">tvbo.integrator.tree</field>
+        <field name="model">tvbo.integrator</field>
+        <field name="arch" type="xml">
+            <tree string="Integrators">
+                <field name="name"/>
+                <field name="method"/>
+                <field name="step_size"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_integrator_form" model="ir.ui.view">
+        <field name="name">tvbo.integrator.form</field>
+        <field name="model">tvbo.integrator</field>
+        <field name="arch" type="xml">
+            <form string="Integrator">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="method"/>
+                        <field name="step_size"/>
+                        <field name="duration"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_integrator_list" model="ir.actions.act_window">
+        <field name="name">Integrators</field>
+        <field name="res_model">tvbo.integrator</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Network Views -->
+    <record id="view_network_tree" model="ir.ui.view">
+        <field name="name">tvbo.network.tree</field>
+        <field name="model">tvbo.connectivity_network</field>
+        <field name="arch" type="xml">
+            <tree string="Networks">
+                <field name="name"/>
+                <field name="description"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_network_list" model="ir.actions.act_window">
+        <field name="name">Connectivity Networks</field>
+        <field name="res_model">tvbo.connectivity_network</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Study Views -->
+    <record id="view_study_tree" model="ir.ui.view">
+        <field name="name">tvbo.study.tree</field>
+        <field name="model">tvbo.simulation_study</field>
+        <field name="arch" type="xml">
+            <tree string="Studies">
+                <field name="name"/>
+                <field name="description"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_study_list" model="ir.actions.act_window">
+        <field name="name">Research Studies</field>
+        <field name="res_model">tvbo.simulation_study</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Atlas Views -->
+    <record id="view_atlas_tree" model="ir.ui.view">
+        <field name="name">tvbo.atlas.tree</field>
+        <field name="model">tvbo.brain_atlas</field>
+        <field name="arch" type="xml">
+            <tree string="Brain Atlases">
+                <field name="name"/>
+                <field name="description"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_atlas_list" model="ir.actions.act_window">
+        <field name="name">Brain Atlases</field>
+        <field name="res_model">tvbo.brain_atlas</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+</odoo>

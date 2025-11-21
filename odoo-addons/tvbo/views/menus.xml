@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main TVBO Menu -->
+    <menuitem id="menu_tvbo_root"
+              name="TVBO Database"
+              sequence="10"
+              web_icon="tvbo,static/description/icon.png"/>
+
+    <!-- Database submenu -->
+    <menuitem id="menu_tvbo_database"
+              name="Browse Database"
+              parent="menu_tvbo_root"
+              sequence="10"/>
+
+    <!-- Neural Models -->
+    <menuitem id="menu_neural_models"
+              name="Neural Models"
+              parent="menu_tvbo_database"
+              action="action_neural_model_list"
+              sequence="10"/>
+
+    <!-- Integrators -->
+    <menuitem id="menu_integrators"
+              name="Integrators"
+              parent="menu_tvbo_database"
+              action="action_integrator_list"
+              sequence="20"/>
+
+    <!-- Networks -->
+    <menuitem id="menu_networks"
+              name="Connectivity Networks"
+              parent="menu_tvbo_database"
+              action="action_network_list"
+              sequence="30"/>
+
+    <!-- Studies -->
+    <menuitem id="menu_studies"
+              name="Research Studies"
+              parent="menu_tvbo_database"
+              action="action_study_list"
+              sequence="40"/>
+
+    <!-- Atlases -->
+    <menuitem id="menu_atlases"
+              name="Brain Atlases"
+              parent="menu_tvbo_database"
+              action="action_atlas_list"
+              sequence="50"/>
+
+</odoo>
