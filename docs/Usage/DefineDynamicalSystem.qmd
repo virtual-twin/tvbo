@@ -1,6 +1,17 @@
 ---
+title: Defining Dynamical Systems
 jupyter: python3
 ---
+
+This guide demonstrates how to define and simulate dynamical systems using TVBO's specification language.
+
+## Example: Damped Pendulum
+
+We'll create a simple damped pendulum system to illustrate the key concepts.
+
+### System Specification
+
+Define the pendulum dynamics using YAML format with parameters, state variables, and output transforms:
 
 ```{python}
 #| echo: false
@@ -65,6 +76,15 @@ pendulum = SimulationExperiment(
 results = pendulum.run(duration=5_000)
 ```
 
+The system consists of:
+- **Parameters**: Physical constants (damping, frequency, length)
+- **State variables**: Time-evolving quantities (angle θ, angular velocity ω)
+- **Output transforms**: Computed observables (Cartesian coordinates x, y)
+
+### Visualization
+
+Real-time animation of the pendulum motion alongside the time series data:
+
 ```{python}
 # | echo: false
 x = results.get_state_variable("x").data.squeeze()
@@ -115,9 +135,14 @@ ani = animation.FuncAnimation(
 )
 
 plt.close()
-from IPython.display import HTML, display
 
-html_output = ani.to_jshtml()
-display(HTML(f'<div style="max-width: 200px;">{html_output}</div>'))
+# Save animation to file
+import os
+os.makedirs("_output", exist_ok=True)
+ani.save("_output/pendulum_animation.html", writer="html")
+
+# Display saved animation
+from IPython.display import IFrame
+IFrame("_output/pendulum_animation.html", width=700, height=300)
 ```
 
