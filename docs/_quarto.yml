@@ -12,10 +12,15 @@ project:
     - python scripts/generate_browser.py
   render:
     - index.qmd
+    - installation.md
     - browser.qmd
     - api/index.qmd
     - api/*.qmd
-    - datamodel/*.qmd
+    - datamodel/index.qmd
+    - datamodel/classes/*.qmd
+    - datamodel/slots/*.qmd
+    - datamodel/enums/*.qmd
+    - datamodel/schemas/*.qmd
     # - datamodel/examples/**/*.qmd
     - "!_archive/*"
   output-dir: _site
@@ -43,12 +48,24 @@ website:
         left:
             - href: index.qmd
               text: Home
+            - href: installation.md
+              text: Installation
             - text: "API Documentation"
               href: api/index.qmd
             - text: "Data Model"
               href: datamodel/index.qmd
-            - text: "Browser"
+            - text: "Knowledge Browser"
               href: browser.qmd
+            - text: "Usage"
+              menu:
+                  - text: "Defining Dynamical Systems"
+                    href: Usage/DefineDynamicalSystem.qmd
+                #   - text: "Setting up Simulation Experiments"
+                #     href: Usage/SetupSimulationExperiments.qmd
+                #   - text: "Running Simulations"
+                #     href: Usage/RunSimulations.qmd
+                #   - text: "Analyzing Results"
+                #     href: Usage/AnalyzeResults.qmd
 
         tools:
             - icon: github
@@ -69,22 +86,21 @@ website:
           contents:
               - text: "Overview"
                 href: datamodel/index.qmd
-              - text: "Examples"
-                href: datamodel/examples/index.qmd
+              # - text: "Examples"
+              #   href: datamodel/examples/index.qmd
               - section: "Core Classes"
                 contents:
-                  - datamodel/SimulationExperiment.qmd
-                  - datamodel/Dynamics.qmd
-                  - datamodel/Network.qmd
-                  - datamodel/Connectome.qmd
+                  - datamodel/classes/SimulationExperiment.qmd
+                  - datamodel/classes/Dynamics.qmd
+                  - datamodel/classes/Network.qmd
+                  - datamodel/classes/Connectome.qmd
               - section: "Monitoring & Observation"
                 contents:
-                  - datamodel/Monitor.qmd
-                  - datamodel/ObservationModel.qmd
+                  - datamodel/classes/ObservationModel.qmd
               - section: "Parameters & Variables"
                 contents:
-                  - datamodel/Parameter.qmd
-                  - datamodel/StateVariable.qmd
+                  - datamodel/classes/Parameter.qmd
+                  - datamodel/classes/StateVariable.qmd
 
 
     page-footer:
