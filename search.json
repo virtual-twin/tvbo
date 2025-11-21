@@ -11,7 +11,7 @@
     "href": "Usage/DefineDynamicalSystem.html#example-damped-pendulum",
     "title": "Defining Dynamical Systems",
     "section": "Example: Damped Pendulum",
-    "text": "Example: Damped Pendulum\nWe’ll create a simple damped pendulum system to illustrate the key concepts.\n\nSystem Specification\nDefine the pendulum Dynamics using YAML format with Parameters, state variables, and output transforms:\n\nimport yaml\nfrom tvbo import Dynamics, SimulationExperiment\n\n# Pendulum System\ndynamics_yaml = \"\"\"\nname: PendulumSystem\ndescription: A simple damped pendulum system for demonstrating TVBO capabilities.\nparameters:\n    c:\n        description: Damping coefficient\n        value: 0.001\n        unit: 1/ms\n    omega0:\n        description: Natural frequency\n        value: 0.01\n        unit: rad/ms\n    L:\n        description: Length of the pendulum\n        unit: m\n        value: 1.0\nstate_variables:\n    theta:\n        description: Angle of the pendulum\n        unit: rad\n        initial_value: 1.0\n        equation:\n            rhs: omega\n    omega:\n        description: Angular velocity\n        unit: rad/ms\n        initial_value: 0.0\n        equation:\n            rhs: -c*omega - omega0**2 * sin(theta)\noutput_transforms:\n    x:\n        description: X coordinate of the pendulum bob\n        unit: m\n        equation:\n            rhs: L * sin(theta)\n    y:\n        description: Y coordinate of the pendulum bob\n        unit: m\n        equation:\n            rhs: -L * cos(theta)\n\"\"\"\n\npendulum = SimulationExperiment(\n    local_dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),\n\n)\nresults = pendulum.run(duration=5_000)\n\nThe system consists of: - Parameters: Physical constants (damping, frequency, length) - State variables: Time-evolving quantities (angle θ, angular velocity ω) - Output transforms: Computed observables (Cartesian coordinates x, y)\n\n\nVisualization\nReal-time animation of the pendulum motion alongside the time series data:"
+    "text": "Example: Damped Pendulum\nWe’ll create a simple damped pendulum system to illustrate the key concepts.\n\n\nSystem Specification\nDefine the pendulum Dynamics using YAML format with Parameters, state variables, and output transforms:\n\nimport yaml\nfrom tvbo import Dynamics, SimulationExperiment\n\n# Pendulum System\ndynamics_yaml = \"\"\"\nname: PendulumSystem\ndescription: A simple damped pendulum system for demonstrating TVBO capabilities.\nparameters:\n    c:\n        description: Damping coefficient\n        value: 0.001\n        unit: 1/ms\n    omega0:\n        description: Natural frequency\n        value: 0.01\n        unit: rad/ms\n    L:\n        description: Length of the pendulum\n        unit: m\n        value: 1.0\nstate_variables:\n    theta:\n        description: Angle of the pendulum\n        unit: rad\n        initial_value: 1.0\n        equation:\n            rhs: omega\n    omega:\n        description: Angular velocity\n        unit: rad/ms\n        initial_value: 0.0\n        equation:\n            rhs: -c*omega - omega0**2 * sin(theta)\noutput_transforms:\n    x:\n        description: X coordinate of the pendulum bob\n        unit: m\n        equation:\n            rhs: L * sin(theta)\n    y:\n        description: Y coordinate of the pendulum bob\n        unit: m\n        equation:\n            rhs: -L * cos(theta)\n\"\"\"\n\npendulum = SimulationExperiment(\n    local_dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),\n\n)\nresults = pendulum.run(duration=5_000)\n\nThe system consists of: - Parameters: Physical constants (damping, frequency, length) - State variables: Time-evolving quantities (angle θ, angular velocity ω) - Output transforms: Computed observables (Cartesian coordinates x, y)\n\n\nVisualization\nReal-time animation of the pendulum motion alongside the time series data:"
   },
   {
     "objectID": "datamodel/slots/year.html",
@@ -60,14 +60,14 @@
     "href": "datamodel/slots/x.html",
     "title": "Slot: x",
     "section": "",
-    "text": "URI: tvbo:slot/x Alias: x\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:x\n\n\nnative\ntvbo:x\n\n\n\n\n\n\n\nname: x\nalias: x\ndomain_of:\n- Coordinate\n- Matrix\nrange: string"
+    "text": "URI: tvbo:slot/x Alias: x\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:x\n\n\nnative\ntvbo:x\n\n\n\n\n\n\n\nname: x\nalias: x\ndomain_of:\n- Coordinate\n- Matrix\nrange: string"
   },
   {
     "objectID": "datamodel/slots/x.html#applicable-classes",
     "href": "datamodel/slots/x.html#applicable-classes",
     "title": "Slot: x",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\nMatrix\nAdjacency matrix of a network\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno"
   },
   {
     "objectID": "datamodel/slots/x.html#properties",
@@ -179,14 +179,14 @@
     "href": "datamodel/slots/versionIdentifier.html",
     "title": "Slot: versionIdentifier",
     "section": "",
-    "text": "Enter the version identifier of this brain atlas or coordinate space version.\nURI: atom:slot/versionIdentifier Alias: versionIdentifier\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:versionIdentifier\n\n\nnative\natom:versionIdentifier\n\n\n\n\n\n\n\nname: versionIdentifier\ndescription: Enter the version identifier of this brain atlas or coordinate space\n  version.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: versionIdentifier\ndomain_of:\n- BrainAtlas\n- ParcellationEntity\n- ParcellationTerminology\nrange: string"
+    "text": "Enter the version identifier of this brain atlas or coordinate space version.\nURI: atom:slot/versionIdentifier Alias: versionIdentifier\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:versionIdentifier\n\n\nnative\natom:versionIdentifier\n\n\n\n\n\n\n\nname: versionIdentifier\ndescription: Enter the version identifier of this brain atlas or coordinate space\n  version.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: versionIdentifier\ndomain_of:\n- BrainAtlas\n- ParcellationEntity\n- ParcellationTerminology\nrange: string"
   },
   {
     "objectID": "datamodel/slots/versionIdentifier.html#applicable-classes",
     "href": "datamodel/slots/versionIdentifier.html#applicable-classes",
     "title": "Slot: versionIdentifier",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno"
   },
   {
     "objectID": "datamodel/slots/versionIdentifier.html#properties",
@@ -263,14 +263,14 @@
     "href": "datamodel/slots/values.html",
     "title": "Slot: values",
     "section": "",
-    "text": "URI: tvbo:slot/values Alias: values\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nSpatialField\n\nno\n\n\nBrainRegionSeries\nA series whose values represent latitude\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:values\n\n\nnative\ntvbo:values\n\n\n\n\n\n\n\nname: values\nalias: values\ndomain_of:\n- Matrix\n- BrainRegionSeries\n- DataInjection\n- SpatialField\nrange: string"
+    "text": "URI: tvbo:slot/values Alias: values\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBrainRegionSeries\nA series whose values represent latitude\nno\n\n\nSpatialField\n\nno\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:values\n\n\nnative\ntvbo:values\n\n\n\n\n\n\n\nname: values\nalias: values\ndomain_of:\n- Matrix\n- BrainRegionSeries\n- DataInjection\n- SpatialField\nrange: string"
   },
   {
     "objectID": "datamodel/slots/values.html#applicable-classes",
     "href": "datamodel/slots/values.html#applicable-classes",
     "title": "Slot: values",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nSpatialField\n\nno\n\n\nBrainRegionSeries\nA series whose values represent latitude\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBrainRegionSeries\nA series whose values represent latitude\nno\n\n\nSpatialField\n\nno\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nMatrix\nAdjacency matrix of a network\nno"
   },
   {
     "objectID": "datamodel/slots/values.html#properties",
@@ -340,14 +340,14 @@
     "href": "datamodel/slots/unit.html",
     "title": "Slot: unit",
     "section": "",
-    "text": "URI: tvbo:slot/unit Alias: unit\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSpatialField\n\nno\n\n\nTimeSeries\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nDerivedVariable\n\nno\n\n\nIntegrator\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nNDArray\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:unit\n\n\nnative\ntvbo:unit\n\n\n\n\n\n\n\nname: unit\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: unit\ndomain_of:\n- CommonCoordinateSpace\n- StateVariable\n- Parameter\n- DerivedParameter\n- DerivedVariable\n- Integrator\n- TimeSeries\n- NDArray\n- SpatialField\nrange: string"
+    "text": "URI: tvbo:slot/unit Alias: unit\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nNDArray\n\nno\n\n\nStateVariable\n\nno\n\n\nTimeSeries\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nParameter\n\nno\n\n\nIntegrator\n\nno\n\n\nSpatialField\n\nno\n\n\nDerivedVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:unit\n\n\nnative\ntvbo:unit\n\n\n\n\n\n\n\nname: unit\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: unit\ndomain_of:\n- CommonCoordinateSpace\n- StateVariable\n- Parameter\n- DerivedParameter\n- DerivedVariable\n- Integrator\n- TimeSeries\n- NDArray\n- SpatialField\nrange: string"
   },
   {
     "objectID": "datamodel/slots/unit.html#applicable-classes",
     "href": "datamodel/slots/unit.html#applicable-classes",
     "title": "Slot: unit",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSpatialField\n\nno\n\n\nTimeSeries\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nDerivedVariable\n\nno\n\n\nIntegrator\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nNDArray\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nNDArray\n\nno\n\n\nStateVariable\n\nno\n\n\nTimeSeries\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nParameter\n\nno\n\n\nIntegrator\n\nno\n\n\nSpatialField\n\nno\n\n\nDerivedVariable\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/unit.html#properties",
@@ -592,14 +592,14 @@
     "href": "datamodel/slots/time_dependent.html",
     "title": "Slot: time_dependent",
     "section": "",
-    "text": "URI: tvbo:slot/time_dependent Alias: time_dependent\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBoundaryCondition\n\nno\n\n\nSpatialField\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:time_dependent\n\n\nnative\ntvbo:time_dependent\n\n\n\n\n\n\n\nname: time_dependent\nalias: time_dependent\ndomain_of:\n- TemporalApplicableEquation\n- SpatialField\n- BoundaryCondition\nrange: string"
+    "text": "URI: tvbo:slot/time_dependent Alias: time_dependent\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nSpatialField\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:time_dependent\n\n\nnative\ntvbo:time_dependent\n\n\n\n\n\n\n\nname: time_dependent\nalias: time_dependent\ndomain_of:\n- TemporalApplicableEquation\n- SpatialField\n- BoundaryCondition\nrange: string"
   },
   {
     "objectID": "datamodel/slots/time_dependent.html#applicable-classes",
     "href": "datamodel/slots/time_dependent.html#applicable-classes",
     "title": "Slot: time_dependent",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBoundaryCondition\n\nno\n\n\nSpatialField\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nSpatialField\n\nno"
   },
   {
     "objectID": "datamodel/slots/time_dependent.html#properties",
@@ -1089,14 +1089,14 @@
     "href": "datamodel/slots/source.html",
     "title": "Slot: source",
     "section": "",
-    "text": "URI: tvbo:slot/source Alias: source\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nArgumentMapping\nMaps function arguments to pipeline inputs/outputs\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:source\n\n\nnative\ntvbo:source\n\n\n\n\n\n\n\nname: source\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: source\ndomain_of:\n- ArgumentMapping\n- Dynamics\nrange: string"
+    "text": "URI: tvbo:slot/source Alias: source\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nArgumentMapping\nMaps function arguments to pipeline inputs/outputs\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:source\n\n\nnative\ntvbo:source\n\n\n\n\n\n\n\nname: source\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: source\ndomain_of:\n- ArgumentMapping\n- Dynamics\nrange: string"
   },
   {
     "objectID": "datamodel/slots/source.html#applicable-classes",
     "href": "datamodel/slots/source.html#applicable-classes",
     "title": "Slot: source",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nArgumentMapping\nMaps function arguments to pipeline inputs/outputs\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nArgumentMapping\nMaps function arguments to pipeline inputs/outputs\nno\n\n\nNeuralMassModel\n\nno"
   },
   {
     "objectID": "datamodel/slots/source.html#properties",
@@ -1418,14 +1418,14 @@
     "href": "datamodel/slots/requirements.html",
     "title": "Slot: requirements",
     "section": "",
-    "text": "URI: tvbo:slot/requirements Alias: requirements\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nPDESolver\n\nno\n\n\nFunction\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\n\n\n\n\n\nRange: SoftwareRequirement\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:requirements\n\n\nnative\ntvbo:requirements\n\n\n\n\n\n\n\nname: requirements\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: requirements\ndomain_of:\n- Function\n- SoftwareEnvironment\n- PDESolver\nrange: SoftwareRequirement\nmultivalued: true"
+    "text": "URI: tvbo:slot/requirements Alias: requirements\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nPDESolver\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nFunction\n\nno\n\n\n\n\n\n\n\nRange: SoftwareRequirement\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:requirements\n\n\nnative\ntvbo:requirements\n\n\n\n\n\n\n\nname: requirements\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: requirements\ndomain_of:\n- Function\n- SoftwareEnvironment\n- PDESolver\nrange: SoftwareRequirement\nmultivalued: true"
   },
   {
     "objectID": "datamodel/slots/requirements.html#applicable-classes",
     "href": "datamodel/slots/requirements.html#applicable-classes",
     "title": "Slot: requirements",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nPDESolver\n\nno\n\n\nFunction\n\nno\n\n\nSoftwareEnvironment\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nPDESolver\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nFunction\n\nno"
   },
   {
     "objectID": "datamodel/slots/requirements.html#properties",
@@ -1460,14 +1460,14 @@
     "href": "datamodel/slots/reported_optimum.html",
     "title": "Slot: reported_optimum",
     "section": "",
-    "text": "URI: tvbo:slot/reported_optimum Alias: reported_optimum\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:reported_optimum\n\n\nnative\ntvbo:reported_optimum\n\n\n\n\n\n\n\nname: reported_optimum\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: reported_optimum\ndomain_of:\n- Parameter\nrange: float"
+    "text": "URI: tvbo:slot/reported_optimum Alias: reported_optimum\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:reported_optimum\n\n\nnative\ntvbo:reported_optimum\n\n\n\n\n\n\n\nname: reported_optimum\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: reported_optimum\ndomain_of:\n- Parameter\nrange: float"
   },
   {
     "objectID": "datamodel/slots/reported_optimum.html#applicable-classes",
     "href": "datamodel/slots/reported_optimum.html#applicable-classes",
     "title": "Slot: reported_optimum",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/reported_optimum.html#properties",
@@ -2209,14 +2209,14 @@
     "href": "datamodel/slots/ontologyIdentifier.html",
     "title": "Slot: ontologyIdentifier",
     "section": "",
-    "text": "Enter the internationalized resource identifier (IRI) to the related ontological terms.\nURI: atom:atlas/hasIlxId Alias: ontologyIdentifier\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\n\n\n\n\n\nRange: xsd:string\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:atlas/hasIlxId\n\n\nnative\natom:ontologyIdentifier\n\n\n\n\n\n\n\nname: ontologyIdentifier\ndescription: Enter the internationalized resource identifier (IRI) to the related\n  ontological terms.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nslot_uri: atom:atlas/hasIlxId\nalias: ontologyIdentifier\ndomain_of:\n- ParcellationEntity\n- ParcellationTerminology\nrange: string\nmultivalued: true"
+    "text": "Enter the internationalized resource identifier (IRI) to the related ontological terms.\nURI: atom:atlas/hasIlxId Alias: ontologyIdentifier\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\n\n\n\n\n\nRange: xsd:string\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:atlas/hasIlxId\n\n\nnative\natom:ontologyIdentifier\n\n\n\n\n\n\n\nname: ontologyIdentifier\ndescription: Enter the internationalized resource identifier (IRI) to the related\n  ontological terms.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nslot_uri: atom:atlas/hasIlxId\nalias: ontologyIdentifier\ndomain_of:\n- ParcellationEntity\n- ParcellationTerminology\nrange: string\nmultivalued: true"
   },
   {
     "objectID": "datamodel/slots/ontologyIdentifier.html#applicable-classes",
     "href": "datamodel/slots/ontologyIdentifier.html#applicable-classes",
     "title": "Slot: ontologyIdentifier",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno"
   },
   {
     "objectID": "datamodel/slots/ontologyIdentifier.html#properties",
@@ -2923,14 +2923,14 @@
     "href": "datamodel/slots/license.html",
     "title": "Slot: license",
     "section": "",
-    "text": "Linked type for the license of the brain atlas or coordinate space version.\nURI: atom:slot/license Alias: license\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nSoftwareRequirement\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:license\n\n\nnative\natom:license\n\n\n\n\n\n\n\nname: license\ndescription: Linked type for the license of the brain atlas or coordinate space version.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: license\ndomain_of:\n- CommonCoordinateSpace\n- SoftwareRequirement\n- SoftwarePackage\nrange: string"
+    "text": "Linked type for the license of the brain atlas or coordinate space version.\nURI: atom:slot/license Alias: license\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nSoftwareRequirement\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:license\n\n\nnative\natom:license\n\n\n\n\n\n\n\nname: license\ndescription: Linked type for the license of the brain atlas or coordinate space version.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: license\ndomain_of:\n- CommonCoordinateSpace\n- SoftwareRequirement\n- SoftwarePackage\nrange: string"
   },
   {
     "objectID": "datamodel/slots/license.html#applicable-classes",
     "href": "datamodel/slots/license.html#applicable-classes",
     "title": "Slot: license",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nSoftwareRequirement\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nSoftwareRequirement\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno"
   },
   {
     "objectID": "datamodel/slots/license.html#properties",
@@ -2965,14 +2965,14 @@
     "href": "datamodel/slots/lefthandside.html",
     "title": "Slot: lefthandside",
     "section": "",
-    "text": "URI: tvbo:slot/lefthandside Alias: lhs\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:lefthandside\n\n\nnative\ntvbo:lefthandside\n\n\n\n\n\n\n\nname: lefthandside\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: lhs\nowner: Equation\ndomain_of:\n- Equation\nrange: string"
+    "text": "URI: tvbo:slot/lefthandside Alias: lhs\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:lefthandside\n\n\nnative\ntvbo:lefthandside\n\n\n\n\n\n\n\nname: lefthandside\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: lhs\nowner: Equation\ndomain_of:\n- Equation\nrange: string"
   },
   {
     "objectID": "datamodel/slots/lefthandside.html#applicable-classes",
     "href": "datamodel/slots/lefthandside.html#applicable-classes",
     "title": "Slot: lefthandside",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno"
   },
   {
     "objectID": "datamodel/slots/lefthandside.html#properties",
@@ -3007,14 +3007,14 @@
     "href": "datamodel/slots/label.html",
     "title": "Slot: label",
     "section": "",
-    "text": "URI: tvbo:slot/label Alias: label\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nSpatialField\n\nno\n\n\nDynamics\n\nno\n\n\nSimulationStudy\n\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nDifferentialOperator\n\nno\n\n\nDerivedParameter\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nStimulus\n\nno\n\n\nNDArray\n\nno\n\n\nRandomStream\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nPDESolver\n\nno\n\n\nModelFitting\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nParcellation\n\nno\n\n\nEquation\n\nno\n\n\nSpatialDomain\n\nno\n\n\nContact\nIndividual contact on a DBS electrode\nno\n\n\nFittingTarget\n\nno\n\n\nTimeSeries\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nCoupling\n\nno\n\n\nCostFunction\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nSimulationExperiment\n\nno\n\n\nMesh\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:label\n\n\nnative\ntvbo:label\n\n\n\n\n\n\n\nname: label\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: label\ndomain_of:\n- ParcellationTerminology\n- Dataset\n- Contact\n- Equation\n- Stimulus\n- Parcellation\n- Matrix\n- Network\n- Dynamics\n- StateVariable\n- Parameter\n- Function\n- RandomStream\n- CostFunction\n- FittingTarget\n- ModelFitting\n- Monitor\n- Coupling\n- RegionMapping\n- SimulationExperiment\n- SimulationStudy\n- TimeSeries\n- SoftwareEnvironment\n- NDArray\n- SpatialDomain\n- Mesh\n- SpatialField\n- FieldStateVariable\n- DifferentialOperator\n- BoundaryCondition\n- PDESolver\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/label Alias: label\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nMesh\n\nno\n\n\nTimeSeries\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSimulationExperiment\n\nno\n\n\nSpatialDomain\n\nno\n\n\nNDArray\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nStateVariable\n\nno\n\n\nCostFunction\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nModelFitting\n\nno\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nEquation\n\nno\n\n\nDifferentialOperator\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nContact\nIndividual contact on a DBS electrode\nno\n\n\nCoupling\n\nno\n\n\nRandomStream\n\nno\n\n\nSpatialField\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nFittingTarget\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nSimulationStudy\n\nno\n\n\nParcellation\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nPDESolver\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:label\n\n\nnative\ntvbo:label\n\n\n\n\n\n\n\nname: label\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: label\ndomain_of:\n- ParcellationTerminology\n- Dataset\n- Contact\n- Equation\n- Stimulus\n- Parcellation\n- Matrix\n- Network\n- Dynamics\n- StateVariable\n- Parameter\n- Function\n- RandomStream\n- CostFunction\n- FittingTarget\n- ModelFitting\n- Monitor\n- Coupling\n- RegionMapping\n- SimulationExperiment\n- SimulationStudy\n- TimeSeries\n- SoftwareEnvironment\n- NDArray\n- SpatialDomain\n- Mesh\n- SpatialField\n- FieldStateVariable\n- DifferentialOperator\n- BoundaryCondition\n- PDESolver\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/label.html#applicable-classes",
     "href": "datamodel/slots/label.html#applicable-classes",
     "title": "Slot: label",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nSpatialField\n\nno\n\n\nDynamics\n\nno\n\n\nSimulationStudy\n\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nDifferentialOperator\n\nno\n\n\nDerivedParameter\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nStimulus\n\nno\n\n\nNDArray\n\nno\n\n\nRandomStream\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nPDESolver\n\nno\n\n\nModelFitting\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nParcellation\n\nno\n\n\nEquation\n\nno\n\n\nSpatialDomain\n\nno\n\n\nContact\nIndividual contact on a DBS electrode\nno\n\n\nFittingTarget\n\nno\n\n\nTimeSeries\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nCoupling\n\nno\n\n\nCostFunction\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nSimulationExperiment\n\nno\n\n\nMesh\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nMesh\n\nno\n\n\nTimeSeries\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSimulationExperiment\n\nno\n\n\nSpatialDomain\n\nno\n\n\nNDArray\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nStateVariable\n\nno\n\n\nCostFunction\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nModelFitting\n\nno\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nEquation\n\nno\n\n\nDifferentialOperator\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nContact\nIndividual contact on a DBS electrode\nno\n\n\nCoupling\n\nno\n\n\nRandomStream\n\nno\n\n\nSpatialField\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nFittingTarget\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nSimulationStudy\n\nno\n\n\nParcellation\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nPDESolver\n\nno\n\n\nParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/label.html#properties",
@@ -3385,14 +3385,14 @@
     "href": "datamodel/slots/hemisphere.html",
     "title": "Slot: hemisphere",
     "section": "",
-    "text": "URI: tvbo_dbs:slot/hemisphere Alias: hemisphere\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo_dbs:hemisphere\n\n\nnative\ntvbo_dbs:hemisphere\n\n\n\n\n\n\n\nname: hemisphere\nalias: hemisphere\ndomain_of:\n- ParcellationEntity\n- Electrode\nrange: string"
+    "text": "URI: tvbo_dbs:slot/hemisphere Alias: hemisphere\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo_dbs:hemisphere\n\n\nnative\ntvbo_dbs:hemisphere\n\n\n\n\n\n\n\nname: hemisphere\nalias: hemisphere\ndomain_of:\n- ParcellationEntity\n- Electrode\nrange: string"
   },
   {
     "objectID": "datamodel/slots/hemisphere.html#applicable-classes",
     "href": "datamodel/slots/hemisphere.html#applicable-classes",
     "title": "Slot: hemisphere",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno"
   },
   {
     "objectID": "datamodel/slots/hemisphere.html#properties",
@@ -3791,14 +3791,14 @@
     "href": "datamodel/slots/explored_values.html",
     "title": "Slot: explored_values",
     "section": "",
-    "text": "URI: tvbo:slot/explored_values Alias: explored_values\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:explored_values\n\n\nnative\ntvbo:explored_values\n\n\n\n\n\n\n\nname: explored_values\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: explored_values\nowner: Parameter\ndomain_of:\n- Parameter\nrange: float\nmultivalued: true"
+    "text": "URI: tvbo:slot/explored_values Alias: explored_values\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:explored_values\n\n\nnative\ntvbo:explored_values\n\n\n\n\n\n\n\nname: explored_values\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: explored_values\nowner: Parameter\ndomain_of:\n- Parameter\nrange: float\nmultivalued: true"
   },
   {
     "objectID": "datamodel/slots/explored_values.html#applicable-classes",
     "href": "datamodel/slots/explored_values.html#applicable-classes",
     "title": "Slot: explored_values",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/explored_values.html#properties",
@@ -3833,14 +3833,14 @@
     "href": "datamodel/slots/equation.html",
     "title": "Slot: equation",
     "section": "",
-    "text": "URI: tvbo:Equation Alias: equation\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nNoise\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nDistribution\n\nno\n\n\nFittingTarget\n\nno\n\n\nFunction\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nDerivedVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDifferentialOperator\n\nno\n\n\nObservationModel\n\nno\n\n\nCase\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\nCostFunction\n\nno\n\n\nStimulus\n\nno\n\n\n\n\n\n\n\nRange: Equation\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:Equation\n\n\nnative\ntvbo:equation\n\n\n\n\n\n\n\nname: equation\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nslot_uri: tvbo:Equation\nalias: equation\ndomain_of:\n- Stimulus\n- ObservationModel\n- StateVariable\n- Distribution\n- Parameter\n- Function\n- Case\n- DerivedParameter\n- DerivedVariable\n- Noise\n- CostFunction\n- FittingTarget\n- Monitor\n- DifferentialOperator\nrange: Equation"
+    "text": "URI: tvbo:Equation Alias: equation\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nDerivedVariable\n\nno\n\n\nStimulus\n\nno\n\n\nObservationModel\n\nno\n\n\nDistribution\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nCase\n\nno\n\n\nCostFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nNoise\n\nno\n\n\nParameter\n\nno\n\n\nFunction\n\nno\n\n\nDerivedParameter\n\nno\n\n\nDifferentialOperator\n\nno\n\n\n\n\n\n\n\nRange: Equation\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:Equation\n\n\nnative\ntvbo:equation\n\n\n\n\n\n\n\nname: equation\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nslot_uri: tvbo:Equation\nalias: equation\ndomain_of:\n- Stimulus\n- ObservationModel\n- StateVariable\n- Distribution\n- Parameter\n- Function\n- Case\n- DerivedParameter\n- DerivedVariable\n- Noise\n- CostFunction\n- FittingTarget\n- Monitor\n- DifferentialOperator\nrange: Equation"
   },
   {
     "objectID": "datamodel/slots/equation.html#applicable-classes",
     "href": "datamodel/slots/equation.html#applicable-classes",
     "title": "Slot: equation",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nNoise\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nDistribution\n\nno\n\n\nFittingTarget\n\nno\n\n\nFunction\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nDerivedVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDifferentialOperator\n\nno\n\n\nObservationModel\n\nno\n\n\nCase\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\nCostFunction\n\nno\n\n\nStimulus\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nDerivedVariable\n\nno\n\n\nStimulus\n\nno\n\n\nObservationModel\n\nno\n\n\nDistribution\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nCase\n\nno\n\n\nCostFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nNoise\n\nno\n\n\nParameter\n\nno\n\n\nFunction\n\nno\n\n\nDerivedParameter\n\nno\n\n\nDifferentialOperator\n\nno"
   },
   {
     "objectID": "datamodel/slots/equation.html#properties",
@@ -3875,14 +3875,14 @@
     "href": "datamodel/slots/environment.html",
     "title": "Slot: environment",
     "section": "",
-    "text": "URI: tvbo:slot/environment Alias: environment\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSimulationExperiment\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nPDESolver\n\nno\n\n\nObservationModel\n\nno\n\n\n\n\n\n\n\nRange: SoftwareEnvironment\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:environment\n\n\nnative\ntvbo:environment\n\n\n\n\n\n\n\nname: environment\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: environment\ndomain_of:\n- ObservationModel\n- Monitor\n- SimulationExperiment\n- PDESolver\nrange: SoftwareEnvironment"
+    "text": "URI: tvbo:slot/environment Alias: environment\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nObservationModel\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nSimulationExperiment\n\nno\n\n\nPDESolver\n\nno\n\n\n\n\n\n\n\nRange: SoftwareEnvironment\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:environment\n\n\nnative\ntvbo:environment\n\n\n\n\n\n\n\nname: environment\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: environment\ndomain_of:\n- ObservationModel\n- Monitor\n- SimulationExperiment\n- PDESolver\nrange: SoftwareEnvironment"
   },
   {
     "objectID": "datamodel/slots/environment.html#applicable-classes",
     "href": "datamodel/slots/environment.html#applicable-classes",
     "title": "Slot: environment",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSimulationExperiment\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nPDESolver\n\nno\n\n\nObservationModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nObservationModel\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nSimulationExperiment\n\nno\n\n\nPDESolver\n\nno"
   },
   {
     "objectID": "datamodel/slots/environment.html#properties",
@@ -4127,14 +4127,14 @@
     "href": "datamodel/slots/duration.html",
     "title": "Slot: duration",
     "section": "",
-    "text": "URI: tvbo:slot/duration Alias: duration\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nIntegrator\n\nno\n\n\nStimulus\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:duration\n\n\nnative\ntvbo:duration\n\n\n\n\n\n\n\nname: duration\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: float(1000)\nalias: duration\ndomain_of:\n- Stimulus\n- Integrator\nrange: float"
+    "text": "URI: tvbo:slot/duration Alias: duration\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nIntegrator\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:duration\n\n\nnative\ntvbo:duration\n\n\n\n\n\n\n\nname: duration\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: float(1000)\nalias: duration\ndomain_of:\n- Stimulus\n- Integrator\nrange: float"
   },
   {
     "objectID": "datamodel/slots/duration.html#applicable-classes",
     "href": "datamodel/slots/duration.html#applicable-classes",
     "title": "Slot: duration",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nIntegrator\n\nno\n\n\nStimulus\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nIntegrator\n\nno"
   },
   {
     "objectID": "datamodel/slots/duration.html#properties",
@@ -4211,14 +4211,14 @@
     "href": "datamodel/slots/doi.html",
     "title": "Slot: doi",
     "section": "",
-    "text": "URI: tvbo:slot/doi Alias: doi\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nSimulationStudy\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:doi\n\n\nnative\ntvbo:doi\n\n\n\n\n\n\n\nname: doi\nalias: doi\ndomain_of:\n- SimulationStudy\n- SoftwarePackage\nrange: string"
+    "text": "URI: tvbo:slot/doi Alias: doi\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSimulationStudy\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:doi\n\n\nnative\ntvbo:doi\n\n\n\n\n\n\n\nname: doi\nalias: doi\ndomain_of:\n- SimulationStudy\n- SoftwarePackage\nrange: string"
   },
   {
     "objectID": "datamodel/slots/doi.html#applicable-classes",
     "href": "datamodel/slots/doi.html#applicable-classes",
     "title": "Slot: doi",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nSimulationStudy\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSimulationStudy\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno"
   },
   {
     "objectID": "datamodel/slots/doi.html#properties",
@@ -4323,14 +4323,14 @@
     "href": "datamodel/slots/description.html",
     "title": "Slot: description",
     "section": "",
-    "text": "URI: tvbo:slot/description Alias: description\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nSpatialField\n\nno\n\n\nDynamics\n\nno\n\n\nSimulationStudy\n\nno\n\n\nDerivedVariable\n\nno\n\n\nObservationModel\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedParameter\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nStimulus\n\nno\n\n\nNDArray\n\nno\n\n\nRandomStream\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nPDESolver\n\nno\n\n\nModelFitting\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSpatialDomain\n\nno\n\n\nTimeSeries\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nSimulationExperiment\n\nno\n\n\nMesh\n\nno\n\n\nCallable\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:description\n\n\nnative\ntvbo:description\n\n\n\n\n\n\n\nname: description\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: description\ndomain_of:\n- ClinicalScore\n- Stimulus\n- Matrix\n- Network\n- ObservationModel\n- Dynamics\n- StateVariable\n- Parameter\n- CouplingInput\n- Function\n- Callable\n- DerivedParameter\n- DerivedVariable\n- RandomStream\n- ModelFitting\n- Monitor\n- RegionMapping\n- SimulationExperiment\n- SimulationStudy\n- TimeSeries\n- SoftwareEnvironment\n- SoftwareRequirement\n- SoftwarePackage\n- NDArray\n- SpatialDomain\n- Mesh\n- SpatialField\n- FieldStateVariable\n- BoundaryCondition\n- PDESolver\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/description Alias: description\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nMesh\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nTimeSeries\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSimulationExperiment\n\nno\n\n\nSpatialDomain\n\nno\n\n\nNDArray\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nModelFitting\n\nno\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nCallable\n\nno\n\n\nRandomStream\n\nno\n\n\nSpatialField\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nBoundaryCondition\n\nno\n\n\nSimulationStudy\n\nno\n\n\nObservationModel\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nPDESolver\n\nno\n\n\nParameter\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:description\n\n\nnative\ntvbo:description\n\n\n\n\n\n\n\nname: description\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: description\ndomain_of:\n- ClinicalScore\n- Stimulus\n- Matrix\n- Network\n- ObservationModel\n- Dynamics\n- StateVariable\n- Parameter\n- CouplingInput\n- Function\n- Callable\n- DerivedParameter\n- DerivedVariable\n- RandomStream\n- ModelFitting\n- Monitor\n- RegionMapping\n- SimulationExperiment\n- SimulationStudy\n- TimeSeries\n- SoftwareEnvironment\n- SoftwareRequirement\n- SoftwarePackage\n- NDArray\n- SpatialDomain\n- Mesh\n- SpatialField\n- FieldStateVariable\n- BoundaryCondition\n- PDESolver\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/description.html#applicable-classes",
     "href": "datamodel/slots/description.html#applicable-classes",
     "title": "Slot: description",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nSpatialField\n\nno\n\n\nDynamics\n\nno\n\n\nSimulationStudy\n\nno\n\n\nDerivedVariable\n\nno\n\n\nObservationModel\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedParameter\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nStimulus\n\nno\n\n\nNDArray\n\nno\n\n\nRandomStream\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nPDESolver\n\nno\n\n\nModelFitting\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSpatialDomain\n\nno\n\n\nTimeSeries\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nSimulationExperiment\n\nno\n\n\nMesh\n\nno\n\n\nCallable\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nMesh\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nTimeSeries\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSimulationExperiment\n\nno\n\n\nSpatialDomain\n\nno\n\n\nNDArray\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nModelFitting\n\nno\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nCallable\n\nno\n\n\nRandomStream\n\nno\n\n\nSpatialField\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nBoundaryCondition\n\nno\n\n\nSimulationStudy\n\nno\n\n\nObservationModel\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nPDESolver\n\nno\n\n\nParameter\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/description.html#properties",
@@ -4365,14 +4365,14 @@
     "href": "datamodel/slots/derived_parameters.html",
     "title": "Slot: derived_parameters",
     "section": "",
-    "text": "URI: tvbo:slot/derived_parameters Alias: derived_parameters\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:derived_parameters\n\n\nnative\ntvbo:derived_parameters\n\n\n\n\n\n\n\nname: derived_parameters\nalias: derived_parameters\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/derived_parameters Alias: derived_parameters\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:derived_parameters\n\n\nnative\ntvbo:derived_parameters\n\n\n\n\n\n\n\nname: derived_parameters\nalias: derived_parameters\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/derived_parameters.html#applicable-classes",
     "href": "datamodel/slots/derived_parameters.html#applicable-classes",
     "title": "Slot: derived_parameters",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno"
   },
   {
     "objectID": "datamodel/slots/derived_parameters.html#properties",
@@ -4484,14 +4484,14 @@
     "href": "datamodel/slots/definition.html",
     "title": "Slot: definition",
     "section": "",
-    "text": "URI: tvbo:slot/definition Alias: definition\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nFittingTarget\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nDifferentialOperator\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:definition\n\n\nnative\ntvbo:definition\n\n\n\n\n\n\n\nname: definition\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: definition\ndomain_of:\n- Equation\n- StateVariable\n- Parameter\n- Function\n- FittingTarget\n- DifferentialOperator\nrange: string"
+    "text": "URI: tvbo:slot/definition Alias: definition\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nStateVariable\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nParameter\n\nno\n\n\nEquation\n\nno\n\n\nFunction\n\nno\n\n\nDerivedParameter\n\nno\n\n\nDifferentialOperator\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:definition\n\n\nnative\ntvbo:definition\n\n\n\n\n\n\n\nname: definition\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: definition\ndomain_of:\n- Equation\n- StateVariable\n- Parameter\n- Function\n- FittingTarget\n- DifferentialOperator\nrange: string"
   },
   {
     "objectID": "datamodel/slots/definition.html#applicable-classes",
     "href": "datamodel/slots/definition.html#applicable-classes",
     "title": "Slot: definition",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nFittingTarget\n\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nDifferentialOperator\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nStateVariable\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nParameter\n\nno\n\n\nEquation\n\nno\n\n\nFunction\n\nno\n\n\nDerivedParameter\n\nno\n\n\nDifferentialOperator\n\nno"
   },
   {
     "objectID": "datamodel/slots/definition.html#properties",
@@ -4526,14 +4526,14 @@
     "href": "datamodel/slots/default.html",
     "title": "Slot: default",
     "section": "",
-    "text": "URI: tvbo:slot/default Alias: default\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:default\n\n\nnative\ntvbo:default\n\n\n\n\n\n\n\nname: default\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: default\ndomain_of:\n- Parameter\nrange: string"
+    "text": "URI: tvbo:slot/default Alias: default\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:default\n\n\nnative\ntvbo:default\n\n\n\n\n\n\n\nname: default\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: default\ndomain_of:\n- Parameter\nrange: string"
   },
   {
     "objectID": "datamodel/slots/default.html#applicable-classes",
     "href": "datamodel/slots/default.html#applicable-classes",
     "title": "Slot: default",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/default.html#properties",
@@ -4603,14 +4603,14 @@
     "href": "datamodel/slots/dataLocation.html",
     "title": "Slot: dataLocation",
     "section": "",
-    "text": "Add the location of the data file containing the parcellation terminology.\nURI: atom:slot/dataLocation Alias: dataLocation\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nNDArray\n\nno\n\n\nRandomStream\n\nno\n\n\nMesh\n\nno\n\n\nTimeSeries\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nSoftwareRequirement\n\nno\n\n\nStimulus\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:dataLocation\n\n\nnative\natom:dataLocation\n\n\n\n\n\n\n\nname: dataLocation\ndescription: Add the location of the data file containing the parcellation terminology.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: dataLocation\ndomain_of:\n- ParcellationTerminology\n- Stimulus\n- Matrix\n- RandomStream\n- RegionMapping\n- TimeSeries\n- SoftwareEnvironment\n- SoftwareRequirement\n- NDArray\n- Mesh\nrange: string"
+    "text": "Add the location of the data file containing the parcellation terminology.\nURI: atom:slot/dataLocation Alias: dataLocation\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nNDArray\n\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nMesh\n\nno\n\n\nTimeSeries\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nRandomStream\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:dataLocation\n\n\nnative\natom:dataLocation\n\n\n\n\n\n\n\nname: dataLocation\ndescription: Add the location of the data file containing the parcellation terminology.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: dataLocation\ndomain_of:\n- ParcellationTerminology\n- Stimulus\n- Matrix\n- RandomStream\n- RegionMapping\n- TimeSeries\n- SoftwareEnvironment\n- SoftwareRequirement\n- NDArray\n- Mesh\nrange: string"
   },
   {
     "objectID": "datamodel/slots/dataLocation.html#applicable-classes",
     "href": "datamodel/slots/dataLocation.html#applicable-classes",
     "title": "Slot: dataLocation",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nNDArray\n\nno\n\n\nRandomStream\n\nno\n\n\nMesh\n\nno\n\n\nTimeSeries\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nSoftwareRequirement\n\nno\n\n\nStimulus\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStimulus\n\nno\n\n\nNDArray\n\nno\n\n\nParcellationTerminology\nA schema for representing a parcellation terminology, which consists of parce…\nno\n\n\nMesh\n\nno\n\n\nTimeSeries\n\nno\n\n\nRegionMapping\nMaps vertices to parent regions for hierarchical/aggregated coupling\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nRandomStream\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nSoftwareEnvironment\n\nno"
   },
   {
     "objectID": "datamodel/slots/dataLocation.html#properties",
@@ -4855,14 +4855,14 @@
     "href": "datamodel/slots/coordinate_space.html",
     "title": "Slot: coordinate_space",
     "section": "",
-    "text": "URI: tvbo:slot/coordinate_space Alias: coordinate_space\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nSubject\nHuman or animal subject receiving DBS\nno\n\n\nEField\nSimulated electric field from DBS modeling\nno\n\n\nSpatialDomain\n\nno\n\n\nMesh\n\nno\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:coordinate_space\n\n\nnative\ntvbo:coordinate_space\n\n\n\n\n\n\n\nname: coordinate_space\nalias: coordinate_space\ndomain_of:\n- Dataset\n- Subject\n- Electrode\n- EField\n- SpatialDomain\n- Mesh\nrange: string"
+    "text": "URI: tvbo:slot/coordinate_space Alias: coordinate_space\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nMesh\n\nno\n\n\nSubject\nHuman or animal subject receiving DBS\nno\n\n\nEField\nSimulated electric field from DBS modeling\nno\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno\n\n\nSpatialDomain\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:coordinate_space\n\n\nnative\ntvbo:coordinate_space\n\n\n\n\n\n\n\nname: coordinate_space\nalias: coordinate_space\ndomain_of:\n- Dataset\n- Subject\n- Electrode\n- EField\n- SpatialDomain\n- Mesh\nrange: string"
   },
   {
     "objectID": "datamodel/slots/coordinate_space.html#applicable-classes",
     "href": "datamodel/slots/coordinate_space.html#applicable-classes",
     "title": "Slot: coordinate_space",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nSubject\nHuman or animal subject receiving DBS\nno\n\n\nEField\nSimulated electric field from DBS modeling\nno\n\n\nSpatialDomain\n\nno\n\n\nMesh\n\nno\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nMesh\n\nno\n\n\nSubject\nHuman or animal subject receiving DBS\nno\n\n\nEField\nSimulated electric field from DBS modeling\nno\n\n\nDataset\nCollection of data related to a specific DBS study\nno\n\n\nElectrode\nImplanted DBS electrode and contact geometry\nno\n\n\nSpatialDomain\n\nno"
   },
   {
     "objectID": "datamodel/slots/coordinate_space.html#properties",
@@ -5100,14 +5100,14 @@
     "href": "datamodel/slots/comment.html",
     "title": "Slot: comment",
     "section": "",
-    "text": "URI: tvbo:slot/comment Alias: comment\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:comment\n\n\nnative\ntvbo:comment\n\n\n\n\n\n\n\nname: comment\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: comment\nowner: Parameter\ndomain_of:\n- Parameter\nrange: string"
+    "text": "URI: tvbo:slot/comment Alias: comment\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:comment\n\n\nnative\ntvbo:comment\n\n\n\n\n\n\n\nname: comment\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: comment\nowner: Parameter\ndomain_of:\n- Parameter\nrange: string"
   },
   {
     "objectID": "datamodel/slots/comment.html#applicable-classes",
     "href": "datamodel/slots/comment.html#applicable-classes",
     "title": "Slot: comment",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/comment.html#properties",
@@ -5681,14 +5681,14 @@
     "href": "datamodel/slots/acronym.html",
     "title": "Slot: acronym",
     "section": "",
-    "text": "URI: tvbo:slot/acronym Alias: acronym\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDownsamplingModel\n\nno\n\n\nFunction\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nObservationModel\n\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:acronym\n\n\nnative\ntvbo:acronym\n\n\n\n\n\n\n\nname: acronym\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: acronym\ndomain_of:\n- ClinicalScale\n- ClinicalScore\n- ObservationModel\n- Function\n- Monitor\nrange: string"
+    "text": "URI: tvbo:slot/acronym Alias: acronym\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nObservationModel\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nDownsamplingModel\n\nno\n\n\nFunction\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:acronym\n\n\nnative\ntvbo:acronym\n\n\n\n\n\n\n\nname: acronym\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: acronym\ndomain_of:\n- ClinicalScale\n- ClinicalScore\n- ObservationModel\n- Function\n- Monitor\nrange: string"
   },
   {
     "objectID": "datamodel/slots/acronym.html#applicable-classes",
     "href": "datamodel/slots/acronym.html#applicable-classes",
     "title": "Slot: acronym",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDownsamplingModel\n\nno\n\n\nFunction\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nObservationModel\n\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nObservationModel\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nDownsamplingModel\n\nno\n\n\nFunction\n\nno"
   },
   {
     "objectID": "datamodel/slots/acronym.html#properties",
@@ -5723,14 +5723,14 @@
     "href": "datamodel/slots/abbreviation.html",
     "title": "Slot: abbreviation",
     "section": "",
-    "text": "Slot for the abbreviation of a resource.\nURI: atom:slot/abbreviation Alias: abbreviation\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:abbreviation\n\n\nnative\natom:abbreviation\n\n\n\n\n\n\n\nname: abbreviation\ndescription: Slot for the abbreviation of a resource.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: abbreviation\ndomain_of:\n- BrainAtlas\n- CommonCoordinateSpace\n- ParcellationEntity\nrange: string"
+    "text": "Slot for the abbreviation of a resource.\nURI: atom:slot/abbreviation Alias: abbreviation\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:abbreviation\n\n\nnative\natom:abbreviation\n\n\n\n\n\n\n\nname: abbreviation\ndescription: Slot for the abbreviation of a resource.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: abbreviation\ndomain_of:\n- BrainAtlas\n- CommonCoordinateSpace\n- ParcellationEntity\nrange: string"
   },
   {
     "objectID": "datamodel/slots/abbreviation.html#applicable-classes",
     "href": "datamodel/slots/abbreviation.html#applicable-classes",
     "title": "Slot: abbreviation",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno"
   },
   {
     "objectID": "datamodel/slots/abbreviation.html#properties",
@@ -10722,14 +10722,14 @@
     "href": "datamodel/slots/boundaries.html",
     "title": "Slot: boundaries",
     "section": "",
-    "text": "URI: tvbo:slot/boundaries Alias: boundaries\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\n\n\n\n\n\nRange: Range\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:boundaries\n\n\nnative\ntvbo:boundaries\n\n\n\n\n\n\n\nname: boundaries\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: boundaries\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: Range"
+    "text": "URI: tvbo:slot/boundaries Alias: boundaries\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\n\n\n\n\n\nRange: Range\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:boundaries\n\n\nnative\ntvbo:boundaries\n\n\n\n\n\n\n\nname: boundaries\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: boundaries\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: Range"
   },
   {
     "objectID": "datamodel/slots/boundaries.html#applicable-classes",
     "href": "datamodel/slots/boundaries.html#applicable-classes",
     "title": "Slot: boundaries",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/boundaries.html#properties",
@@ -10974,14 +10974,14 @@
     "href": "datamodel/slots/condition.html",
     "title": "Slot: condition",
     "section": "",
-    "text": "URI: tvbo:slot/condition Alias: condition\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nCase\n\nno\n\n\nConditionalBlock\nA single condition and its corresponding equation segment\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:condition\n\n\nnative\ntvbo:condition\n\n\n\n\n\n\n\nname: condition\nalias: condition\ndomain_of:\n- ConditionalBlock\n- Case\nrange: string"
+    "text": "URI: tvbo:slot/condition Alias: condition\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nConditionalBlock\nA single condition and its corresponding equation segment\nno\n\n\nCase\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:condition\n\n\nnative\ntvbo:condition\n\n\n\n\n\n\n\nname: condition\nalias: condition\ndomain_of:\n- ConditionalBlock\n- Case\nrange: string"
   },
   {
     "objectID": "datamodel/slots/condition.html#applicable-classes",
     "href": "datamodel/slots/condition.html#applicable-classes",
     "title": "Slot: condition",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nCase\n\nno\n\n\nConditionalBlock\nA single condition and its corresponding equation segment\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nConditionalBlock\nA single condition and its corresponding equation segment\nno\n\n\nCase\n\nno"
   },
   {
     "objectID": "datamodel/slots/condition.html#properties",
@@ -11009,14 +11009,14 @@
     "href": "datamodel/slots/conditionals.html",
     "title": "Slot: conditionals",
     "section": "",
-    "text": "Conditional logic for piecewise equations.\nURI: tvbo:slot/conditionals Alias: conditionals\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: ConditionalBlock\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:conditionals\n\n\nnative\ntvbo:conditionals\n\n\n\n\n\n\n\nname: conditionals\ndescription: Conditional logic for piecewise equations.\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: conditionals\nowner: Equation\ndomain_of:\n- Equation\nrange: ConditionalBlock\nmultivalued: true"
+    "text": "Conditional logic for piecewise equations.\nURI: tvbo:slot/conditionals Alias: conditionals\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\n\n\n\n\n\nRange: ConditionalBlock\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:conditionals\n\n\nnative\ntvbo:conditionals\n\n\n\n\n\n\n\nname: conditionals\ndescription: Conditional logic for piecewise equations.\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: conditionals\nowner: Equation\ndomain_of:\n- Equation\nrange: ConditionalBlock\nmultivalued: true"
   },
   {
     "objectID": "datamodel/slots/conditionals.html#applicable-classes",
     "href": "datamodel/slots/conditionals.html#applicable-classes",
     "title": "Slot: conditionals",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno"
   },
   {
     "objectID": "datamodel/slots/conditionals.html#properties",
@@ -11177,14 +11177,14 @@
     "href": "datamodel/slots/coordinateSpace.html",
     "title": "Slot: coordinateSpace",
     "section": "",
-    "text": "Add the common coordinate space used for this brain atlas version.\nURI: atom:slot/coordinateSpace Alias: coordinateSpace\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\n\n\n\n\n\nRange: CommonCoordinateSpace\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:coordinateSpace\n\n\nnative\natom:coordinateSpace\n\n\n\n\n\n\n\nname: coordinateSpace\ndescription: Add the common coordinate space used for this brain atlas version.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: coordinateSpace\ndomain_of:\n- Coordinate\n- BrainAtlas\nrange: CommonCoordinateSpace"
+    "text": "Add the common coordinate space used for this brain atlas version.\nURI: atom:slot/coordinateSpace Alias: coordinateSpace\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\n\n\n\n\n\nRange: CommonCoordinateSpace\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:coordinateSpace\n\n\nnative\natom:coordinateSpace\n\n\n\n\n\n\n\nname: coordinateSpace\ndescription: Add the common coordinate space used for this brain atlas version.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nalias: coordinateSpace\ndomain_of:\n- Coordinate\n- BrainAtlas\nrange: CommonCoordinateSpace"
   },
   {
     "objectID": "datamodel/slots/coordinateSpace.html#applicable-classes",
     "href": "datamodel/slots/coordinateSpace.html#applicable-classes",
     "title": "Slot: coordinateSpace",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno"
   },
   {
     "objectID": "datamodel/slots/coordinateSpace.html#properties",
@@ -11387,14 +11387,14 @@
     "href": "datamodel/slots/coupling_variable.html",
     "title": "Slot: coupling_variable",
     "section": "",
-    "text": "URI: tvbo:slot/coupling_variable Alias: coupling_variable\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:coupling_variable\n\n\nnative\ntvbo:coupling_variable\n\n\n\n\n\n\n\nname: coupling_variable\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: 'False'\nalias: coupling_variable\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: boolean"
+    "text": "URI: tvbo:slot/coupling_variable Alias: coupling_variable\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:coupling_variable\n\n\nnative\ntvbo:coupling_variable\n\n\n\n\n\n\n\nname: coupling_variable\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: 'False'\nalias: coupling_variable\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: boolean"
   },
   {
     "objectID": "datamodel/slots/coupling_variable.html#applicable-classes",
     "href": "datamodel/slots/coupling_variable.html#applicable-classes",
     "title": "Slot: coupling_variable",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/coupling_variable.html#properties",
@@ -11597,14 +11597,14 @@
     "href": "datamodel/slots/delayed.html",
     "title": "Slot: delayed",
     "section": "",
-    "text": "URI: tvbo:slot/delayed Alias: delayed\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nIntegrator\n\nno\n\n\nCoupling\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:delayed\n\n\nnative\ntvbo:delayed\n\n\n\n\n\n\n\nname: delayed\nalias: delayed\ndomain_of:\n- Integrator\n- Coupling\nrange: string"
+    "text": "URI: tvbo:slot/delayed Alias: delayed\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nCoupling\n\nno\n\n\nIntegrator\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:delayed\n\n\nnative\ntvbo:delayed\n\n\n\n\n\n\n\nname: delayed\nalias: delayed\ndomain_of:\n- Integrator\n- Coupling\nrange: string"
   },
   {
     "objectID": "datamodel/slots/delayed.html#applicable-classes",
     "href": "datamodel/slots/delayed.html#applicable-classes",
     "title": "Slot: delayed",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nIntegrator\n\nno\n\n\nCoupling\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nCoupling\n\nno\n\n\nIntegrator\n\nno"
   },
   {
     "objectID": "datamodel/slots/delayed.html#properties",
@@ -11716,14 +11716,14 @@
     "href": "datamodel/slots/derived_variables.html",
     "title": "Slot: derived_variables",
     "section": "",
-    "text": "URI: tvbo:slot/derived_variables Alias: derived_variables\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:derived_variables\n\n\nnative\ntvbo:derived_variables\n\n\n\n\n\n\n\nname: derived_variables\nalias: derived_variables\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/derived_variables Alias: derived_variables\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:derived_variables\n\n\nnative\ntvbo:derived_variables\n\n\n\n\n\n\n\nname: derived_variables\nalias: derived_variables\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/derived_variables.html#applicable-classes",
     "href": "datamodel/slots/derived_variables.html#applicable-classes",
     "title": "Slot: derived_variables",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno"
   },
   {
     "objectID": "datamodel/slots/derived_variables.html#properties",
@@ -11877,14 +11877,14 @@
     "href": "datamodel/slots/domain.html",
     "title": "Slot: domain",
     "section": "",
-    "text": "URI: tvbo:slot/domain Alias: domain\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\n\n\n\n\n\nRange: Range\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:domain\n\n\nnative\ntvbo:domain\n\n\n\n\n\n\n\nname: domain\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: domain\ndomain_of:\n- ClinicalScale\n- ClinicalScore\n- StateVariable\n- Parameter\n- PDE\nrange: Range"
+    "text": "URI: tvbo:slot/domain Alias: domain\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nStateVariable\n\nno\n\n\nParameter\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: Range\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:domain\n\n\nnative\ntvbo:domain\n\n\n\n\n\n\n\nname: domain\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: domain\ndomain_of:\n- ClinicalScale\n- ClinicalScore\n- StateVariable\n- Parameter\n- PDE\nrange: Range"
   },
   {
     "objectID": "datamodel/slots/domain.html#applicable-classes",
     "href": "datamodel/slots/domain.html#applicable-classes",
     "title": "Slot: domain",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nStateVariable\n\nno\n\n\nParameter\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/domain.html#properties",
@@ -11961,14 +11961,14 @@
     "href": "datamodel/slots/dynamics.html",
     "title": "Slot: dynamics",
     "section": "",
-    "text": "URI: tvbo:slot/dynamics Alias: dynamics\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSimulationExperiment\n\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:dynamics\n\n\nnative\ntvbo:dynamics\n\n\n\n\n\n\n\nname: dynamics\nalias: dynamics\ndomain_of:\n- Network\n- SimulationExperiment\nrange: string"
+    "text": "URI: tvbo:slot/dynamics Alias: dynamics\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nSimulationExperiment\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:dynamics\n\n\nnative\ntvbo:dynamics\n\n\n\n\n\n\n\nname: dynamics\nalias: dynamics\ndomain_of:\n- Network\n- SimulationExperiment\nrange: string"
   },
   {
     "objectID": "datamodel/slots/dynamics.html#applicable-classes",
     "href": "datamodel/slots/dynamics.html#applicable-classes",
     "title": "Slot: dynamics",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSimulationExperiment\n\nno\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nNetwork\nComplete network specification combining dynamics, graph topology, and coupli…\nno\n\n\nSimulationExperiment\n\nno"
   },
   {
     "objectID": "datamodel/slots/dynamics.html#properties",
@@ -12122,14 +12122,14 @@
     "href": "datamodel/slots/engine.html",
     "title": "Slot: engine",
     "section": "",
-    "text": "Primary engine (must appear in environment.requirements; migration target replacing deprecated ‘software’).\nURI: tvbo:slot/engine Alias: engine\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: SoftwareRequirement\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:engine\n\n\nnative\ntvbo:engine\n\n\n\n\n\n\n\nname: engine\ndescription: Primary engine (must appear in environment.requirements; migration target\n  replacing deprecated 'software').\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: engine\nowner: Equation\ndomain_of:\n- Equation\nrange: SoftwareRequirement"
+    "text": "Primary engine (must appear in environment.requirements; migration target replacing deprecated ‘software’).\nURI: tvbo:slot/engine Alias: engine\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\n\n\n\n\n\nRange: SoftwareRequirement\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:engine\n\n\nnative\ntvbo:engine\n\n\n\n\n\n\n\nname: engine\ndescription: Primary engine (must appear in environment.requirements; migration target\n  replacing deprecated 'software').\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: engine\nowner: Equation\ndomain_of:\n- Equation\nrange: SoftwareRequirement"
   },
   {
     "objectID": "datamodel/slots/engine.html#applicable-classes",
     "href": "datamodel/slots/engine.html#applicable-classes",
     "title": "Slot: engine",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno"
   },
   {
     "objectID": "datamodel/slots/engine.html#properties",
@@ -12367,14 +12367,14 @@
     "href": "datamodel/slots/free.html",
     "title": "Slot: free",
     "section": "",
-    "text": "URI: tvbo:slot/free Alias: free\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:free\n\n\nnative\ntvbo:free\n\n\n\n\n\n\n\nname: free\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: free\nowner: Parameter\ndomain_of:\n- Parameter\nrange: boolean"
+    "text": "URI: tvbo:slot/free Alias: free\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:free\n\n\nnative\ntvbo:free\n\n\n\n\n\n\n\nname: free\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: free\nowner: Parameter\ndomain_of:\n- Parameter\nrange: boolean"
   },
   {
     "objectID": "datamodel/slots/free.html#applicable-classes",
     "href": "datamodel/slots/free.html#applicable-classes",
     "title": "Slot: free",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/free.html#properties",
@@ -12444,14 +12444,14 @@
     "href": "datamodel/slots/functions.html",
     "title": "Slot: functions",
     "section": "",
-    "text": "URI: tvbo:slot/functions Alias: functions\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:functions\n\n\nnative\ntvbo:functions\n\n\n\n\n\n\n\nname: functions\nalias: functions\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/functions Alias: functions\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:functions\n\n\nnative\ntvbo:functions\n\n\n\n\n\n\n\nname: functions\nalias: functions\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/functions.html#applicable-classes",
     "href": "datamodel/slots/functions.html#applicable-classes",
     "title": "Slot: functions",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno"
   },
   {
     "objectID": "datamodel/slots/functions.html#properties",
@@ -12689,14 +12689,14 @@
     "href": "datamodel/slots/heterogeneous.html",
     "title": "Slot: heterogeneous",
     "section": "",
-    "text": "URI: tvbo:slot/heterogeneous Alias: heterogeneous\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:heterogeneous\n\n\nnative\ntvbo:heterogeneous\n\n\n\n\n\n\n\nname: heterogeneous\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: heterogeneous\nowner: Parameter\ndomain_of:\n- Parameter\nrange: boolean"
+    "text": "URI: tvbo:slot/heterogeneous Alias: heterogeneous\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:heterogeneous\n\n\nnative\ntvbo:heterogeneous\n\n\n\n\n\n\n\nname: heterogeneous\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: heterogeneous\nowner: Parameter\ndomain_of:\n- Parameter\nrange: boolean"
   },
   {
     "objectID": "datamodel/slots/heterogeneous.html#applicable-classes",
     "href": "datamodel/slots/heterogeneous.html#applicable-classes",
     "title": "Slot: heterogeneous",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/heterogeneous.html#properties",
@@ -12731,14 +12731,14 @@
     "href": "datamodel/slots/history.html",
     "title": "Slot: history",
     "section": "",
-    "text": "URI: tvbo:slot/history Alias: history\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\n\n\n\n\n\nRange: TimeSeries\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:history\n\n\nnative\ntvbo:history\n\n\n\n\n\n\n\nname: history\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: history\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: TimeSeries"
+    "text": "URI: tvbo:slot/history Alias: history\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\n\n\n\n\n\nRange: TimeSeries\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:history\n\n\nnative\ntvbo:history\n\n\n\n\n\n\n\nname: history\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: history\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: TimeSeries"
   },
   {
     "objectID": "datamodel/slots/history.html#applicable-classes",
     "href": "datamodel/slots/history.html#applicable-classes",
     "title": "Slot: history",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/history.html#properties",
@@ -12857,14 +12857,14 @@
     "href": "datamodel/slots/initial_value.html",
     "title": "Slot: initial_value",
     "section": "",
-    "text": "URI: tvbo:slot/initial_value Alias: initial_value\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nSpatialField\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:initial_value\n\n\nnative\ntvbo:initial_value\n\n\n\n\n\n\n\nname: initial_value\nalias: initial_value\ndomain_of:\n- StateVariable\n- SpatialField\nrange: string"
+    "text": "URI: tvbo:slot/initial_value Alias: initial_value\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nSpatialField\n\nno\n\n\nFieldStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:initial_value\n\n\nnative\ntvbo:initial_value\n\n\n\n\n\n\n\nname: initial_value\nalias: initial_value\ndomain_of:\n- StateVariable\n- SpatialField\nrange: string"
   },
   {
     "objectID": "datamodel/slots/initial_value.html#applicable-classes",
     "href": "datamodel/slots/initial_value.html#applicable-classes",
     "title": "Slot: initial_value",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nSpatialField\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nSpatialField\n\nno\n\n\nFieldStateVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/initial_value.html#properties",
@@ -13060,14 +13060,14 @@
     "href": "datamodel/slots/latex.html",
     "title": "Slot: latex",
     "section": "",
-    "text": "URI: tvbo:slot/latex Alias: latex\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:latex\n\n\nnative\ntvbo:latex\n\n\n\n\n\n\n\nname: latex\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: 'False'\nalias: latex\nowner: Equation\ndomain_of:\n- Equation\nrange: boolean"
+    "text": "URI: tvbo:slot/latex Alias: latex\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:latex\n\n\nnative\ntvbo:latex\n\n\n\n\n\n\n\nname: latex\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: 'False'\nalias: latex\nowner: Equation\ndomain_of:\n- Equation\nrange: boolean"
   },
   {
     "objectID": "datamodel/slots/latex.html#applicable-classes",
     "href": "datamodel/slots/latex.html#applicable-classes",
     "title": "Slot: latex",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno"
   },
   {
     "objectID": "datamodel/slots/latex.html#properties",
@@ -13270,14 +13270,14 @@
     "href": "datamodel/slots/mesh.html",
     "title": "Slot: mesh",
     "section": "",
-    "text": "URI: tvbo:slot/mesh Alias: mesh\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nSpatialField\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:mesh\n\n\nnative\ntvbo:mesh\n\n\n\n\n\n\n\nname: mesh\nalias: mesh\ndomain_of:\n- SpatialField\n- FieldStateVariable\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/mesh Alias: mesh\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSpatialField\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:mesh\n\n\nnative\ntvbo:mesh\n\n\n\n\n\n\n\nname: mesh\nalias: mesh\ndomain_of:\n- SpatialField\n- FieldStateVariable\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/mesh.html#applicable-classes",
     "href": "datamodel/slots/mesh.html#applicable-classes",
     "title": "Slot: mesh",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nSpatialField\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSpatialField\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno"
   },
   {
     "objectID": "datamodel/slots/mesh.html#properties",
@@ -13515,14 +13515,14 @@
     "href": "datamodel/slots/name.html",
     "title": "Slot: name",
     "section": "",
-    "text": "Enter the name of this entity.\nURI: atom:atlas/hasName Alias: name\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nyes\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nDerivedVariable\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nObservationModel\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedParameter\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nDBSProtocol\nA protocol describing DBS therapy, potentially bilateral or multi-lead\nno\n\n\nNeuralMassModel\n\nno\n\n\nDistribution\n\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nCoupling\n\nyes\n\n\nCallable\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nSoftwareRequirement\n\nno\n\n\nParameter\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\n\n\n\n\n\nRange: xsd:string\nRequired: True\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:atlas/hasName\n\n\nnative\natom:name\n\n\n\n\n\n\n\nname: name\ndescription: Enter the name of this entity.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nslot_uri: atom:atlas/hasName\nalias: name\ndomain_of:\n- BrainAtlas\n- CommonCoordinateSpace\n- ParcellationEntity\n- DBSProtocol\n- ClinicalScale\n- ClinicalScore\n- ObservationModel\n- DataInjection\n- Dynamics\n- StateVariable\n- Distribution\n- Parameter\n- CouplingInput\n- Function\n- Callable\n- DerivedParameter\n- DerivedVariable\n- Monitor\n- Coupling\n- SoftwareEnvironment\n- SoftwareRequirement\n- SoftwarePackage\nrange: string\nrequired: true"
+    "text": "Enter the name of this entity.\nURI: atom:atlas/hasName Alias: name\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nDistribution\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nDBSProtocol\nA protocol describing DBS therapy, potentially bilateral or multi-lead\nno\n\n\nDynamics\n\nyes\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nCallable\n\nno\n\n\nCoupling\n\nyes\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nObservationModel\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nParameter\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\nRequired: True\n\n\n\n\n\n\n\nfrom schema: https://openminds.ebrains.eu/sands/BrainAtlas\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\natom:atlas/hasName\n\n\nnative\natom:name\n\n\n\n\n\n\n\nname: name\ndescription: Enter the name of this entity.\nfrom_schema: https://openminds.ebrains.eu/sands/BrainAtlas\nslot_uri: atom:atlas/hasName\nalias: name\ndomain_of:\n- BrainAtlas\n- CommonCoordinateSpace\n- ParcellationEntity\n- DBSProtocol\n- ClinicalScale\n- ClinicalScore\n- ObservationModel\n- DataInjection\n- Dynamics\n- StateVariable\n- Distribution\n- Parameter\n- CouplingInput\n- Function\n- Callable\n- DerivedParameter\n- DerivedVariable\n- Monitor\n- Coupling\n- SoftwareEnvironment\n- SoftwareRequirement\n- SoftwarePackage\nrange: string\nrequired: true"
   },
   {
     "objectID": "datamodel/slots/name.html#applicable-classes",
     "href": "datamodel/slots/name.html#applicable-classes",
     "title": "Slot: name",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nyes\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nDerivedVariable\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nObservationModel\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedParameter\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nDBSProtocol\nA protocol describing DBS therapy, potentially bilateral or multi-lead\nno\n\n\nNeuralMassModel\n\nno\n\n\nDistribution\n\nno\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nCoupling\n\nyes\n\n\nCallable\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nSoftwareRequirement\n\nno\n\n\nParameter\n\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBrainAtlas\nA schema for representing a version of a brain atlas\nno\n\n\nDistribution\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nDataInjection\nExternal data injected into the observation pipeline\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nStateVariable\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\nDBSProtocol\nA protocol describing DBS therapy, potentially bilateral or multi-lead\nno\n\n\nDynamics\n\nyes\n\n\nClinicalScore\nMetadata about a clinical score or scale\nno\n\n\nCallable\n\nno\n\n\nCoupling\n\nyes\n\n\nParcellationEntity\nA schema for representing a parcellation entity, which is an anatomical locat…\nno\n\n\nFunction\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nCouplingInput\nSpecification of a coupling input channel for multi-coupling dynamics\nno\n\n\nObservationModel\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nCommonCoordinateSpace\nA schema for representing a version of a common coordinate space\nno\n\n\nParameter\n\nno\n\n\nSoftwarePackage\nIdentity information about a software package independent of a specific versi…\nno\n\n\nDerivedVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/name.html#properties",
@@ -13641,14 +13641,14 @@
     "href": "datamodel/slots/noise.html",
     "title": "Slot: noise",
     "section": "",
-    "text": "URI: tvbo:slot/noise Alias: noise\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nIntegrator\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:noise\n\n\nnative\ntvbo:noise\n\n\n\n\n\n\n\nname: noise\nalias: noise\ndomain_of:\n- StateVariable\n- Integrator\nrange: string"
+    "text": "URI: tvbo:slot/noise Alias: noise\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nIntegrator\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:noise\n\n\nnative\ntvbo:noise\n\n\n\n\n\n\n\nname: noise\nalias: noise\ndomain_of:\n- StateVariable\n- Integrator\nrange: string"
   },
   {
     "objectID": "datamodel/slots/noise.html#applicable-classes",
     "href": "datamodel/slots/noise.html#applicable-classes",
     "title": "Slot: noise",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nIntegrator\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nIntegrator\n\nno"
   },
   {
     "objectID": "datamodel/slots/noise.html#properties",
@@ -14054,14 +14054,14 @@
     "href": "datamodel/slots/parameters.html",
     "title": "Slot: parameters",
     "section": "",
-    "text": "URI: tvbo:slot/parameters Alias: parameters\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nDynamics\n\nno\n\n\nNoise\n\nno\n\n\nObservationModel\n\nno\n\n\nDistribution\n\nno\n\n\nFittingTarget\n\nno\n\n\nCoupling\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nIntegrator\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nCostFunction\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nStimulus\n\nno\n\n\n\n\n\n\n\nRange: Parameter\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:parameters\n\n\nnative\ntvbo:parameters\n\n\n\n\n\n\n\nname: parameters\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: parameters\ndomain_of:\n- Equation\n- Stimulus\n- TemporalApplicableEquation\n- ObservationModel\n- Dynamics\n- Distribution\n- Noise\n- CostFunction\n- FittingTarget\n- Integrator\n- Monitor\n- Coupling\n- PDE\nrange: Parameter\nmultivalued: true\ninlined: false"
+    "text": "URI: tvbo:slot/parameters Alias: parameters\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nStimulus\n\nno\n\n\nObservationModel\n\nno\n\n\nDistribution\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nCostFunction\n\nno\n\n\nCoupling\n\nno\n\n\nDynamics\n\nno\n\n\nNoise\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nIntegrator\n\nno\n\n\nEquation\n\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: Parameter\nMultivalued: True\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:parameters\n\n\nnative\ntvbo:parameters\n\n\n\n\n\n\n\nname: parameters\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: parameters\ndomain_of:\n- Equation\n- Stimulus\n- TemporalApplicableEquation\n- ObservationModel\n- Dynamics\n- Distribution\n- Noise\n- CostFunction\n- FittingTarget\n- Integrator\n- Monitor\n- Coupling\n- PDE\nrange: Parameter\nmultivalued: true\ninlined: false"
   },
   {
     "objectID": "datamodel/slots/parameters.html#applicable-classes",
     "href": "datamodel/slots/parameters.html#applicable-classes",
     "title": "Slot: parameters",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nDynamics\n\nno\n\n\nNoise\n\nno\n\n\nObservationModel\n\nno\n\n\nDistribution\n\nno\n\n\nFittingTarget\n\nno\n\n\nCoupling\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nNeuralMassModel\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nIntegrator\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nCostFunction\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nStimulus\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nStimulus\n\nno\n\n\nObservationModel\n\nno\n\n\nDistribution\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\nDownsamplingModel\n\nno\n\n\nCostFunction\n\nno\n\n\nCoupling\n\nno\n\n\nDynamics\n\nno\n\n\nNoise\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nIntegrator\n\nno\n\n\nEquation\n\nno\n\n\nNeuralMassModel\n\nno"
   },
   {
     "objectID": "datamodel/slots/parameters.html#properties",
@@ -14138,14 +14138,14 @@
     "href": "datamodel/slots/period.html",
     "title": "Slot: period",
     "section": "",
-    "text": "URI: tvbo:slot/period Alias: period\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nDownsamplingModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:period\n\n\nnative\ntvbo:period\n\n\n\n\n\n\n\nname: period\nalias: period\ndomain_of:\n- DownsamplingModel\n- Monitor\nrange: string"
+    "text": "URI: tvbo:slot/period Alias: period\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDownsamplingModel\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:period\n\n\nnative\ntvbo:period\n\n\n\n\n\n\n\nname: period\nalias: period\ndomain_of:\n- DownsamplingModel\n- Monitor\nrange: string"
   },
   {
     "objectID": "datamodel/slots/period.html#applicable-classes",
     "href": "datamodel/slots/period.html#applicable-classes",
     "title": "Slot: period",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno\n\n\nDownsamplingModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDownsamplingModel\n\nno\n\n\nMonitor\nObservation model for monitoring simulation output with optional processing p…\nno"
   },
   {
     "objectID": "datamodel/slots/period.html#properties",
@@ -14299,14 +14299,14 @@
     "href": "datamodel/slots/pycode.html",
     "title": "Slot: pycode",
     "section": "",
-    "text": "URI: tvbo:slot/pycode Alias: pycode\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nNoise\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:pycode\n\n\nnative\ntvbo:pycode\n\n\n\n\n\n\n\nname: pycode\nalias: pycode\ndomain_of:\n- Equation\n- Noise\nrange: string"
+    "text": "URI: tvbo:slot/pycode Alias: pycode\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\nNoise\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:pycode\n\n\nnative\ntvbo:pycode\n\n\n\n\n\n\n\nname: pycode\nalias: pycode\ndomain_of:\n- Equation\n- Noise\nrange: string"
   },
   {
     "objectID": "datamodel/slots/pycode.html#applicable-classes",
     "href": "datamodel/slots/pycode.html#applicable-classes",
     "title": "Slot: pycode",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nNoise\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\nNoise\n\nno"
   },
   {
     "objectID": "datamodel/slots/pycode.html#properties",
@@ -14628,14 +14628,14 @@
     "href": "datamodel/slots/righthandside.html",
     "title": "Slot: righthandside",
     "section": "",
-    "text": "URI: tvbo:slot/righthandside Alias: rhs\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:righthandside\n\n\nnative\ntvbo:righthandside\n\n\n\n\n\n\n\nname: righthandside\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: rhs\nowner: Equation\ndomain_of:\n- Equation\nrange: string"
+    "text": "URI: tvbo:slot/righthandside Alias: rhs\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:righthandside\n\n\nnative\ntvbo:righthandside\n\n\n\n\n\n\n\nname: righthandside\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: rhs\nowner: Equation\ndomain_of:\n- Equation\nrange: string"
   },
   {
     "objectID": "datamodel/slots/righthandside.html#applicable-classes",
     "href": "datamodel/slots/righthandside.html#applicable-classes",
     "title": "Slot: righthandside",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nEquation\n\nno\n\n\nTemporalApplicableEquation\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nTemporalApplicableEquation\n\nno\n\n\nEquation\n\nno"
   },
   {
     "objectID": "datamodel/slots/righthandside.html#properties",
@@ -15041,14 +15041,14 @@
     "href": "datamodel/slots/state_variables.html",
     "title": "Slot: state_variables",
     "section": "",
-    "text": "URI: tvbo:slot/state_variables Alias: state_variables\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:state_variables\n\n\nnative\ntvbo:state_variables\n\n\n\n\n\n\n\nname: state_variables\nalias: state_variables\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
+    "text": "URI: tvbo:slot/state_variables Alias: state_variables\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:state_variables\n\n\nnative\ntvbo:state_variables\n\n\n\n\n\n\n\nname: state_variables\nalias: state_variables\ndomain_of:\n- Dynamics\n- PDE\nrange: string"
   },
   {
     "objectID": "datamodel/slots/state_variables.html#applicable-classes",
     "href": "datamodel/slots/state_variables.html#applicable-classes",
     "title": "Slot: state_variables",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nDynamics\n\nno\n\n\nNeuralMassModel\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDynamics\n\nno\n\n\nPDE\nPartial differential equation problem definition\nno\n\n\nNeuralMassModel\n\nno"
   },
   {
     "objectID": "datamodel/slots/state_variables.html#properties",
@@ -15160,14 +15160,14 @@
     "href": "datamodel/slots/stimulation_variable.html",
     "title": "Slot: stimulation_variable",
     "section": "",
-    "text": "URI: tvbo:slot/stimulation_variable Alias: stimulation_variable\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:stimulation_variable\n\n\nnative\ntvbo:stimulation_variable\n\n\n\n\n\n\n\nname: stimulation_variable\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: stimulation_variable\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: boolean"
+    "text": "URI: tvbo:slot/stimulation_variable Alias: stimulation_variable\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:stimulation_variable\n\n\nnative\ntvbo:stimulation_variable\n\n\n\n\n\n\n\nname: stimulation_variable\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: stimulation_variable\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: boolean"
   },
   {
     "objectID": "datamodel/slots/stimulation_variable.html#applicable-classes",
     "href": "datamodel/slots/stimulation_variable.html#applicable-classes",
     "title": "Slot: stimulation_variable",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/stimulation_variable.html#properties",
@@ -15251,14 +15251,14 @@
     "href": "datamodel/slots/symbol.html",
     "title": "Slot: symbol",
     "section": "",
-    "text": "URI: tvbo:slot/symbol Alias: symbol\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nDerivedVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:symbol\n\n\nnative\ntvbo:symbol\n\n\n\n\n\n\n\nname: symbol\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: symbol\ndomain_of:\n- StateVariable\n- Parameter\n- DerivedParameter\n- DerivedVariable\n- FittingTarget\nrange: string"
+    "text": "URI: tvbo:slot/symbol Alias: symbol\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nParameter\n\nno\n\n\nDerivedVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:symbol\n\n\nnative\ntvbo:symbol\n\n\n\n\n\n\n\nname: symbol\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: symbol\ndomain_of:\n- StateVariable\n- Parameter\n- DerivedParameter\n- DerivedVariable\n- FittingTarget\nrange: string"
   },
   {
     "objectID": "datamodel/slots/symbol.html#applicable-classes",
     "href": "datamodel/slots/symbol.html#applicable-classes",
     "title": "Slot: symbol",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\nDerivedVariable\n\nno\n\n\nDerivedParameter\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFittingTarget\n\nno\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\nParameter\n\nno\n\n\nDerivedVariable\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/symbol.html#properties",
@@ -15748,14 +15748,14 @@
     "href": "datamodel/slots/value.html",
     "title": "Slot: value",
     "section": "",
-    "text": "URI: tvbo:slot/value Alias: value\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:value\n\n\nnative\ntvbo:value\n\n\n\n\n\n\n\nname: value\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: value\ndomain_of:\n- Parameter\n- BoundaryCondition\nrange: float"
+    "text": "URI: tvbo:slot/value Alias: value\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nBoundaryCondition\n\nno\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno\n\n\n\n\n\n\n\nRange: xsd:float\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:value\n\n\nnative\ntvbo:value\n\n\n\n\n\n\n\nname: value\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nalias: value\ndomain_of:\n- Parameter\n- BoundaryCondition\nrange: float"
   },
   {
     "objectID": "datamodel/slots/value.html#applicable-classes",
     "href": "datamodel/slots/value.html#applicable-classes",
     "title": "Slot: value",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nDerivedParameter\n\nno\n\n\nBoundaryCondition\n\nno\n\n\nParameter\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nBoundaryCondition\n\nno\n\n\nParameter\n\nno\n\n\nDerivedParameter\n\nno"
   },
   {
     "objectID": "datamodel/slots/value.html#properties",
@@ -15790,14 +15790,14 @@
     "href": "datamodel/slots/variable_of_interest.html",
     "title": "Slot: variable_of_interest",
     "section": "",
-    "text": "URI: tvbo:slot/variable_of_interest Alias: variable_of_interest\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:variable_of_interest\n\n\nnative\ntvbo:variable_of_interest\n\n\n\n\n\n\n\nname: variable_of_interest\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: 'True'\nalias: variable_of_interest\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: boolean"
+    "text": "URI: tvbo:slot/variable_of_interest Alias: variable_of_interest\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno\n\n\n\n\n\n\n\nRange: xsd:boolean\n\n\n\n\n\n\n\nfrom schema: https://w3id.org/tvbo\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:variable_of_interest\n\n\nnative\ntvbo:variable_of_interest\n\n\n\n\n\n\n\nname: variable_of_interest\nfrom_schema: https://w3id.org/tvbo\nrank: 1000\nifabsent: 'True'\nalias: variable_of_interest\nowner: StateVariable\ndomain_of:\n- StateVariable\nrange: boolean"
   },
   {
     "objectID": "datamodel/slots/variable_of_interest.html#applicable-classes",
     "href": "datamodel/slots/variable_of_interest.html#applicable-classes",
     "title": "Slot: variable_of_interest",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nFieldStateVariable\n\nno\n\n\nStateVariable\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nStateVariable\n\nno\n\n\nFieldStateVariable\n\nno"
   },
   {
     "objectID": "datamodel/slots/variable_of_interest.html#properties",
@@ -15832,14 +15832,14 @@
     "href": "datamodel/slots/version.html",
     "title": "Slot: version",
     "section": "",
-    "text": "URI: tvbo:slot/version Alias: version\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nSoftwareRequirement\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:version\n\n\nnative\ntvbo:version\n\n\n\n\n\n\n\nname: version\nalias: version\ndomain_of:\n- ClinicalScale\n- SoftwareEnvironment\n- SoftwareRequirement\nrange: string"
+    "text": "URI: tvbo:slot/version Alias: version\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSoftwareRequirement\n\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:version\n\n\nnative\ntvbo:version\n\n\n\n\n\n\n\nname: version\nalias: version\ndomain_of:\n- ClinicalScale\n- SoftwareEnvironment\n- SoftwareRequirement\nrange: string"
   },
   {
     "objectID": "datamodel/slots/version.html#applicable-classes",
     "href": "datamodel/slots/version.html#applicable-classes",
     "title": "Slot: version",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nSoftwareRequirement\n\nno\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nSoftwareEnvironment\n\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nClinicalScale\nA clinical assessment inventory or structured scale composed of multiple scor…\nno\n\n\nSoftwareEnvironment\n\nno\n\n\nSoftwareRequirement\n\nno"
   },
   {
     "objectID": "datamodel/slots/version.html#properties",
@@ -15993,14 +15993,14 @@
     "href": "datamodel/slots/y.html",
     "title": "Slot: y",
     "section": "",
-    "text": "URI: tvbo:slot/y Alias: y\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:y\n\n\nnative\ntvbo:y\n\n\n\n\n\n\n\nname: y\nalias: y\ndomain_of:\n- Coordinate\n- Matrix\nrange: string"
+    "text": "URI: tvbo:slot/y Alias: y\n\n\n\n\n\n\nName\nDescription\nModifies Slot\n\n\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\n\n\n\n\n\nRange: xsd:string\n\n\n\n\n\n\n\n\n\n\nMapping Type\nMapped Value\n\n\n\n\nself\ntvbo:y\n\n\nnative\ntvbo:y\n\n\n\n\n\n\n\nname: y\nalias: y\ndomain_of:\n- Coordinate\n- Matrix\nrange: string"
   },
   {
     "objectID": "datamodel/slots/y.html#applicable-classes",
     "href": "datamodel/slots/y.html#applicable-classes",
     "title": "Slot: y",
     "section": "",
-    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno\n\n\nMatrix\nAdjacency matrix of a network\nno"
+    "text": "Name\nDescription\nModifies Slot\n\n\n\n\nMatrix\nAdjacency matrix of a network\nno\n\n\nCoordinate\nA 3D coordinate with X, Y, Z values\nno"
   },
   {
     "objectID": "datamodel/slots/y.html#properties",
