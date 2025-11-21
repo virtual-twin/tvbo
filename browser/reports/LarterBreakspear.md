@@ -88,8 +88,8 @@ $$
 
 
 ## References
-Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.
-
 Breakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.
+
+Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.
 
 Breakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.
