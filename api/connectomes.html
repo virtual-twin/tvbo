@@ -220,7 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Represents brain structural connectivity including connection weights, tract lengths, and spatial information. Supports loading normative connectomes from atlases or custom data, with JAX pytree compatibility.</p>
 <section id="examples" class="level4 doc-section doc-section-examples">
 <h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h4>
-<div id="b6bd2fda" class="cell" data-execution_count="1">
+<div id="b6bd2fda" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Connectome</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Load atlas-based connectome</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
@@ -359,7 +359,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-1" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h6>
-<div id="b47123b6" class="cell" data-execution_count="2">
+<div id="b47123b6" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.calculate_delays(conduction_speed<span class="op">=</span><span class="fl">3.0</span>)</span>
@@ -397,7 +397,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-2" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-2">Examples</h6>
-<div id="9992bb61" class="cell" data-execution_count="3">
+<div id="9992bb61" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.compute_delays(conduction_speed<span class="op">=</span><span class="fl">4.0</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean delay: </span><span class="sc">{</span>delays<span class="sc">.</span>mean()<span class="sc">:.2f}</span><span class="ss"> ms"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -421,7 +421,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-3" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-3">Examples</h6>
-<div id="5075029d" class="cell" data-execution_count="4">
+<div id="5075029d" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> sc.create_graph(weight_threshold<span class="op">=</span><span class="fl">0.1</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Nodes: </span><span class="sc">{</span>G<span class="sc">.</span>number_of_nodes()<span class="sc">}</span><span class="ss">, Edges: </span><span class="sc">{</span>G<span class="sc">.</span>number_of_edges()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -445,7 +445,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-4" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-4">Examples</h6>
-<div id="c858a7ea" class="cell" data-execution_count="5">
+<div id="c858a7ea" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>tvb_conn <span class="op">=</span> sc.execute(<span class="bu">format</span><span class="op">=</span><span class="st">"tvb"</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Use with TVB simulator</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -466,7 +466,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-5" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-5">Examples</h6>
-<div id="82d0bf67" class="cell" data-execution_count="6">
+<div id="82d0bf67" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel <span class="im">import</span> tvbo_datamodel</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>dm <span class="op">=</span> tvbo_datamodel.Connectome(number_of_nodes<span class="op">=</span><span class="dv">10</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome.from_datamodel(dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -483,7 +483,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-6" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-6">Examples</h6>
-<div id="a1d09a4c" class="cell" data-execution_count="7">
+<div id="a1d09a4c" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>atlas <span class="op">=</span> sc.get_atlas()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -499,7 +499,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-7" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-7">Examples</h6>
-<div id="dd1c63b7" class="cell" data-execution_count="8">
+<div id="dd1c63b7" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>centers <span class="op">=</span> sc.get_centers()</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, (x, y, z) <span class="kw">in</span> centers.items():</span>
@@ -603,7 +603,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 <p>Sets normalization equation to scale weights to [0, 1] range. Equivalent to <code>normalize_weights("(W - W_min) / (W_max - W_min)")</code>.</p>
 <section id="examples-8" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-8">Examples</h6>
-<div id="b12768dc" class="cell" data-execution_count="9">
+<div id="b12768dc" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>sc.normalize()</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>normalized_weights <span class="op">=</span> sc.weights_matrix  <span class="co"># Now in [0, 1] range</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -626,7 +626,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-9" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-9">Examples</h6>
-<div id="063a7a22" class="cell" data-execution_count="10">
+<div id="063a7a22" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>sc.normalize_weights(<span class="st">"W / W_max"</span>)  <span class="co"># Normalize to [0, 1]</span></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>normalized <span class="op">=</span> sc.weights_matrix  <span class="co"># Returns normalized weights</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -669,7 +669,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-10" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-10">Examples</h6>
-<div id="bbfb095f" class="cell" data-execution_count="11">
+<div id="bbfb095f" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -712,7 +712,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-11" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-11">Examples</h6>
-<div id="d9293313" class="cell" data-execution_count="12">
+<div id="d9293313" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
@@ -745,7 +745,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-12" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-12">Examples</h6>
-<div id="1d61ac79" class="cell" data-execution_count="13">
+<div id="1d61ac79" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix(log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="13">
@@ -778,7 +778,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-13" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-13">Examples</h6>
-<div id="ab08dba0" class="cell" data-execution_count="14">
+<div id="ab08dba0" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>sc.plot_overview(</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -810,7 +810,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-14" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-14">Examples</h6>
-<div id="026e0ec9" class="cell" data-execution_count="15">
+<div id="026e0ec9" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
@@ -840,7 +840,7 @@ Region 86: (34.9, 3.4, -2.5)</code></pre>
 </section>
 <section id="examples-15" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-15">Examples</h6>
-<div id="aff964a1" class="cell" data-execution_count="16">
+<div id="aff964a1" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> sc.to_yaml()</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>sc.to_yaml(<span class="st">"connectome.yaml"</span>)  <span class="co"># Save to file</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
