@@ -21,10 +21,13 @@ EXPOSE 8888
 
 ENTRYPOINT ["bash", "-c", "\
     MODE=${MODE:-api}; \
+    echo 'Starting TVBO container in '$MODE' mode...'; \
     if [ \"$MODE\" = \"api\" ]; then \
+    echo 'Launching API server on port 8000...'; \
     exec uvicorn tvbo.api.main:app --host 0.0.0.0 --port 8000; \
     elif [ \"$MODE\" = \"jupyter\" ]; then \
+    echo 'Launching Jupyter Lab on port 8888...'; \
     exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''; \
     else \
-    echo 'Mode not recognized. Exiting.'; \
+    echo 'ERROR: Mode not recognized. Use MODE=api or MODE=jupyter'; \
     exit 1; fi"]
