@@ -1,14 +1,13 @@
 # Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
-version: '3.8'
 
 services:
   tvbo-api:
-    build: .
+    image: tvbo:latest
     container_name: tvbo-api
     environment:
       - MODE=api
     ports:
-      - "8000:8000"
+      - "8100:8000"
     networks:
       - tvbo-network
     restart: unless-stopped
@@ -28,6 +27,7 @@ services:
 
   odoo:
     image: odoo:19
+    platform: linux/amd64
     container_name: odoo
     depends_on:
       - postgres
@@ -36,7 +36,7 @@ services:
       - USER=odoo
       - PASSWORD=odoo
     ports:
-      - "8069:8069"
+      - "8169:8069"
     volumes:
       - odoo-web-data:/var/lib/odoo
       - ./odoo-config:/etc/odoo

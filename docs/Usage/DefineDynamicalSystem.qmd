@@ -9,6 +9,8 @@ This guide demonstrates how to define and simulate a Dynamical System using TVBO
 
 We'll create a simple damped pendulum system to illustrate the key concepts.
 
+![](_output/anim1.gif)
+
 ### System Specification
 
 Define the pendulum [Dynamics](/datamodel/classes/Dynamics.html) using YAML format with [Parameter](/datamodel/classes/Parameter.html)s, [state variables](/datamodel/classes/StateVariable.html), and [output transforms](/datamodel/slots/output_transforms.html):
@@ -136,4 +138,4 @@ plt.close()
 ani.save("_output/anim1.gif", writer="pillow", fps=target_fps)
 ```
 
-![](_output/anim1.gif)
+
