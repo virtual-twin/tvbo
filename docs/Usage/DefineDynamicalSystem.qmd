@@ -17,7 +17,7 @@ Define the pendulum dynamics using YAML format with parameters, state variables,
 #| echo: false
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from IPython.display import HTML
+from IPython.display import HTML, Image
 import bsplot
 bsplot.style.use('tvbo')
 ```
@@ -111,12 +111,10 @@ ax_timeseries = axs[1]
 results.plot(ax=ax_timeseries)
 time_line = ax_timeseries.axvline(x=0)
 
-
 def init():
     line.set_data([], [])
     time_line.set_xdata([0])
     return line, time_line
-
 
 def animate(i):
     line.set_data([0, x[i]], [0, y[i]])
@@ -137,12 +135,6 @@ ani = animation.FuncAnimation(
 plt.close()
 
 # Save animation to file
-import os
-os.makedirs("_output", exist_ok=True)
-ani.save("_output/pendulum_animation.html", writer="html")
-
-# Display saved animation
-from IPython.display import IFrame
-IFrame("_output/pendulum_animation.html", width=700, height=300)
+ani.save("_output/anim1.gif", writer="pillow", fps=10)
+Image("_output/anim1.gif")
 ```
-
