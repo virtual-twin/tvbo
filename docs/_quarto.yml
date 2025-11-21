@@ -14,14 +14,9 @@ project:
     - index.qmd
     - installation.md
     - browser.qmd
-    - api/index.qmd
-    - api/*.qmd
-    - datamodel/index.qmd
-    - datamodel/classes/*.qmd
-    - datamodel/slots/*.qmd
-    - datamodel/enums/*.qmd
-    - datamodel/schemas/*.qmd
-    # - datamodel/examples/**/*.qmd
+    - api/**/*.qmd
+    - datamodel/**/*.qmd
+    - Usage/*.qmd
     - "!_archive/*"
   output-dir: _site
 
@@ -101,7 +96,6 @@ website:
                 contents:
                   - datamodel/classes/Parameter.qmd
                   - datamodel/classes/StateVariable.qmd
-
 
     page-footer:
         center: |

@@ -7,6 +7,8 @@ jupyter: python3
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from IPython.display import HTML
+import bsplot
+bsplot.style.use('tvbo')
 ```
 
 ```{python}
@@ -60,13 +62,11 @@ pendulum = SimulationExperiment(
     local_dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),
 
 )
-pendulum.integration.step_size = 0.1
-pendulum.integration.duration= 5000
-results = pendulum.run()
+results = pendulum.run(duration=5_000)
 ```
 
 ```{python}
-#| echo: false
+# | echo: false
 x = results.get_state_variable("x").data.squeeze()
 y = results.get_state_variable("y").data.squeeze()
 time = results.time
@@ -76,7 +76,7 @@ target_fps = 20
 skip_frames = max(1, int(1000 / target_fps / dt))
 actual_interval = dt * skip_frames
 
-fig, axs = plt.subplots(1, 2, layout="compressed", figsize=(10, 3))
+fig, axs = plt.subplots(1, 2, layout="compressed", figsize=(7, 2.5))
 
 ax_pendulum = axs[0]
 ax_pendulum.set_xlim(-1.5, 1.5)
@@ -103,7 +103,6 @@ def animate(i):
     time_line.set_xdata([time[i]])
     return line, time_line
 
-
 frame_indices = range(0, len(time), skip_frames)
 ani = animation.FuncAnimation(
     fig,
@@ -116,6 +115,9 @@ ani = animation.FuncAnimation(
 )
 
 plt.close()
-HTML(ani.to_jshtml())
+from IPython.display import HTML, display
+
+html_output = ani.to_jshtml()
+display(HTML(f'<div style="max-width: 200px;">{html_output}</div>'))
 ```
 

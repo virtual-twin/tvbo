@@ -324,6 +324,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, jax.")
 
     def run(self, format="jax", initial_conditions=None, **kwargs):
+        if 'duration' in kwargs:
+            self.integration.duration = kwargs.pop('duration')
+
         self.configure()
         simulation_data = Bunch()
 
