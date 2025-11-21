@@ -203,9 +203,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div>
 <pre class="mermaid mermaid-js"> classDiagram
     class NeuralMassModel
-    click NeuralMassModel href "../../classes/NeuralMassModel/"
+    click NeuralMassModel href "../NeuralMassModel/"
       Dynamics &lt;|-- NeuralMassModel
-        click Dynamics href "../../classes/Dynamics/"
+        click Dynamics href "../Dynamics/"
       
       NeuralMassModel : coupling_inputs
         
@@ -214,7 +214,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" CouplingInput : coupling_inputs
-        click CouplingInput href "../../classes/CouplingInput/"
+        click CouplingInput href "../CouplingInput/"
     
 
         
@@ -225,7 +225,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" Parameter : coupling_terms
-        click Parameter href "../../classes/Parameter/"
+        click Parameter href "../Parameter/"
     
 
         
@@ -236,7 +236,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" NeuralMassModel : derived_from_model
-        click NeuralMassModel href "../../classes/NeuralMassModel/"
+        click NeuralMassModel href "../NeuralMassModel/"
     
 
         
@@ -247,7 +247,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" DerivedParameter : derived_parameters
-        click DerivedParameter href "../../classes/DerivedParameter/"
+        click DerivedParameter href "../DerivedParameter/"
     
 
         
@@ -258,7 +258,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" DerivedVariable : derived_variables
-        click DerivedVariable href "../../classes/DerivedVariable/"
+        click DerivedVariable href "../DerivedVariable/"
     
 
         
@@ -280,7 +280,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" Function : functions
-        click Function href "../../classes/Function/"
+        click Function href "../Function/"
     
 
         
@@ -324,7 +324,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" Parameter : local_coupling_term
-        click Parameter href "../../classes/Parameter/"
+        click Parameter href "../Parameter/"
     
 
         
@@ -335,7 +335,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" NeuralMassModel : modes
-        click NeuralMassModel href "../../classes/NeuralMassModel/"
+        click NeuralMassModel href "../NeuralMassModel/"
     
 
         
@@ -379,7 +379,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" DerivedVariable : output_transforms
-        click DerivedVariable href "../../classes/DerivedVariable/"
+        click DerivedVariable href "../DerivedVariable/"
     
 
         
@@ -390,7 +390,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" Parameter : parameters
-        click Parameter href "../../classes/Parameter/"
+        click Parameter href "../Parameter/"
     
 
         
@@ -423,7 +423,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" StateVariable : state_variables
-        click StateVariable href "../../classes/StateVariable/"
+        click StateVariable href "../StateVariable/"
     
 
         
@@ -434,7 +434,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" Stimulus : stimulus
-        click Stimulus href "../../classes/Stimulus/"
+        click Stimulus href "../Stimulus/"
     
 
         
