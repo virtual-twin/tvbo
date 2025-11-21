@@ -1,1663 +1,1667 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/types.html</loc>
-    <lastmod>2025-11-21T17:40:23.213Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/Usage/DefineDynamicalSystem.html</loc>
+    <lastmod>2025-11-21T17:45:40.589Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/tvb-datamodel.html</loc>
-    <lastmod>2025-11-21T17:40:23.214Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/tvb_dbs.html</loc>
+    <lastmod>2025-11-21T17:46:01.482Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/SystemType.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/SANDS.html</loc>
+    <lastmod>2025-11-21T17:46:01.482Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/RequirementRole.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/SpecimenEnum.html</loc>
+    <lastmod>2025-11-21T17:46:02.231Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/OperationType.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/OperatorType.html</loc>
+    <lastmod>2025-11-21T17:46:02.413Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/ImagingModality.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/NoiseType.html</loc>
+    <lastmod>2025-11-21T17:46:02.236Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/EnvironmentType.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/Hemisphere.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/DiscretizationMethod.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/ElementType.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/z.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/BoundaryConditionType.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/y.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/year.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/weights.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/x.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/volume_data.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/weighting.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/version_spec.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/vertex_to_region.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/version.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/versionIdentifier.html</loc>
+    <lastmod>2025-11-21T17:46:02.442Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/variable_of_interest.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/variables_of_interest.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/value.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/values.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/update_expression.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/url.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/transient_time.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/unit.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/trajectory.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/transformation.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tolerances.html</loc>
-    <lastmod>2025-11-21T17:40:24.149Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tractogram.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/timing_info.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/title.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_scale.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/timepoint.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_integrator.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_post_surgery.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_dependent.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/terminology.html</loc>
-    <lastmod>2025-11-21T17:40:24.147Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/threshold_applied.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/targets.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tensor_coefficient.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tail.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/target_structure.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/symbol.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/system_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/subject_id.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/subjects.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/stimulation_variable.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/stimulus.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/steps.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/stimulation.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/step.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/step_size.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/state_variables.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/state_wise_sigma.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sources.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sparse.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/source_code.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/source_url.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/solver.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/source.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/size.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/software.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/shape.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/simulation_experiments.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/settings.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sex.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/score.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/seed.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/scale.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/scipy_ode_base.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sample.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sampling_rate.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/righthandside.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/role.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/repository.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/requirements.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/relatedUBERONTerm.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/reported_optimum.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/regional_connectivity.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/regions.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/region_labels.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/region_mapping.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/references.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/region.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/recon_path.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/reference.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/quantity_kind.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/random_state.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pycode.html</loc>
-    <lastmod>2025-11-21T17:40:24.144Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/qualname.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/protocols.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pulse_width.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pre_expression.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/preconditioner.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/platform.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/post_expression.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/period.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pipeline.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/parent_score.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/percent_change.html</loc>
+    <lastmod>2025-11-21T17:46:02.442Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/parameters.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/parcellation.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/output_transforms.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/package.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/output.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/output_alias.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/order.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/originalLookupLabel.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/operators.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/optional.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/operation_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/operator_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/on_region.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/ontologyIdentifier.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_regions.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_stages.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_modes.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_nodes.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/normalization.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/notes.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/noise.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/noise_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/node_dynamics_mapping.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/node_labels.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/network.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/node_dynamics.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/name.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/nativeUnit.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/n_regions.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/n_vertices.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modules.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/monitors.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modified.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/module.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modelfitting.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modes.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/mode.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/model.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/mesh.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/method.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lookupLabel.html</loc>
-    <lastmod>2025-11-21T17:40:24.147Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/manufacturer.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/local_dynamics.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/local_states.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lo.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/local_coupling_term.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lengths.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/license.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/latex.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lefthandside.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/key.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/label.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/iri.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/isVersionOf.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/intensity.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/intermediate_expressions.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/input_mapping.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/integration.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/initial_value.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/inner_coupling.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/incoming_states.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/initial_expression.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/id.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/imaging_modality.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/history.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/homepage.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/heterogeneous.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hi.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/head.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hemisphere.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/has_reference.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hash.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/handedness.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hasParent.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/graph.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/groups.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/generation_function.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/geometry.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/functions.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/gaussian.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/function.html</loc>
-    <lastmod>2025-11-21T17:40:24.144Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/function_argument.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/free.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/frequency.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/field_dynamics.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/file.html</loc>
+    <lastmod>2025-11-21T17:46:02.033Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/expression.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/field.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/evaluator.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/explored_values.html</loc>
+    <lastmod>2025-11-21T17:46:02.413Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/environment_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/equation.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/entities.html</loc>
-    <lastmod>2025-11-21T17:40:24.144Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/environment.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/engine.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/ensure_shape.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/element_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/elements.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/electrode_reference.html</loc>
-    <lastmod>2025-11-21T17:40:24.149Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/electrodes.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/efield.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/electrode_id.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dynamics.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/ecosystem.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dtype.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/duration.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/domain.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dt.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/distribution.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/doi.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dimension.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/discretization.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/diagnosis.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/digitalIdentifier.html</loc>
+    <lastmod>2025-11-21T17:46:02.012Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_variables.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/description.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_from_model.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_parameters.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derivatives.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_from.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/delayed.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dependencies.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/defaultImage.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/definition.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dataset_id.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/default.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/data_injections.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/data_source.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/data.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dataLocation.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_variable.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/couplings.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_inputs.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_terms.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_function.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/correlation.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/cost_function.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinates.html</loc>
-    <lastmod>2025-11-21T17:40:24.144Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/correlated.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinateSpace.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinate_space.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/container_image.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinate.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/contact_id.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/contacts.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/connectivity.html</loc>
-    <lastmod>2025-11-21T17:40:24.147Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/constant_value.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/conditionals.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/conduction_speed.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/condition.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/conditional.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/color.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/comment.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/clinical_scores.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coefficient.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/center_coordinates.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/clinical_improvement.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/cases.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/center.html</loc>
+    <lastmod>2025-11-21T17:46:02.442Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/build_hash.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/callable.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/boundaries.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/boundary_conditions.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/baseline_value.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/bc_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/author.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/axesOrigin.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/arguments.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/atlas.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/apply_on_dimension.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/argument_mappings.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/amplitude.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/anatomicalAxesOrientation.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/aggregation.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/alternateName.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/additive.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/age.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/active_contacts.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/additional_equations.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/absolute_value.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/acronym.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/TimeSeries.html</loc>
-    <lastmod>2025-11-21T17:40:24.139Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/abbreviation.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Subject.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/TemporalApplicableEquation.html</loc>
+    <lastmod>2025-11-21T17:46:02.402Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/StimulationSetting.html</loc>
-    <lastmod>2025-11-21T17:40:24.134Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Stimulus.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SpatialField.html</loc>
-    <lastmod>2025-11-21T17:40:24.136Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/StateVariable.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SoftwareRequirement.html</loc>
-    <lastmod>2025-11-21T17:40:24.133Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SpatialDomain.html</loc>
+    <lastmod>2025-11-21T17:46:02.402Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SoftwareEnvironment.html</loc>
-    <lastmod>2025-11-21T17:40:24.133Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SoftwarePackage.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SimulationExperiment.html</loc>
-    <lastmod>2025-11-21T17:40:24.136Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SimulationStudy.html</loc>
+    <lastmod>2025-11-21T17:46:02.406Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/RegionMapping.html</loc>
-    <lastmod>2025-11-21T17:40:24.141Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Sample.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/RandomStream.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Range.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ParcellationTerminology.html</loc>
-    <lastmod>2025-11-21T17:40:24.134Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ProcessingStep.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Parcellation.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ParcellationEntity.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/PDESolver.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Parameter.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ObservationModel.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/PDE.html</loc>
+    <lastmod>2025-11-21T17:46:02.406Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/NeuralMassModel.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Noise.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/NDArray.html</loc>
-    <lastmod>2025-11-21T17:40:24.134Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Network.html</loc>
+    <lastmod>2025-11-21T17:46:02.406Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ModelFitting.html</loc>
-    <lastmod>2025-11-21T17:40:24.135Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Monitor.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Matrix.html</loc>
-    <lastmod>2025-11-21T17:40:24.133Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Mesh.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Function.html</loc>
-    <lastmod>2025-11-21T17:40:24.131Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Integrator.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/FieldStateVariable.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/FittingTarget.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Electrode.html</loc>
-    <lastmod>2025-11-21T17:40:24.136Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Equation.html</loc>
+    <lastmod>2025-11-21T17:46:02.409Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Dynamics.html</loc>
-    <lastmod>2025-11-21T17:40:24.134Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/EField.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Distribution.html</loc>
-    <lastmod>2025-11-21T17:40:24.137Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DownsamplingModel.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DerivedVariable.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DifferentialOperator.html</loc>
+    <lastmod>2025-11-21T17:46:02.409Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Dataset.html</loc>
-    <lastmod>2025-11-21T17:40:24.135Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DerivedParameter.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DBSProtocol.html</loc>
-    <lastmod>2025-11-21T17:40:24.132Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DataInjection.html</loc>
+    <lastmod>2025-11-21T17:46:02.409Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Coupling.html</loc>
-    <lastmod>2025-11-21T17:40:24.131Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/CouplingInput.html</loc>
+    <lastmod>2025-11-21T17:46:02.409Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Coordinate.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/CostFunction.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Connectome.html</loc>
-    <lastmod>2025-11-21T17:40:24.136Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Contact.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/CommonCoordinateSpace.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ConditionalBlock.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ClinicalScale.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ClinicalScore.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Case.html</loc>
-    <lastmod>2025-11-21T17:40:24.136Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ClinicalImprovement.html</loc>
+    <lastmod>2025-11-21T17:46:02.402Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/BrainRegionSeries.html</loc>
-    <lastmod>2025-11-21T17:40:24.141Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Callable.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/BoundaryCondition.html</loc>
-    <lastmod>2025-11-21T17:40:24.131Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/BrainAtlas.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/index.html</loc>
-    <lastmod>2025-11-21T17:40:24.130Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ArgumentMapping.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/types.html</loc>
-    <lastmod>2025-11-20T18:07:52.622Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/tvbo_datamodel.html</loc>
-    <lastmod>2025-11-20T18:07:52.694Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/tvbgo.html</loc>
-    <lastmod>2025-11-20T18:07:52.848Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/templater.html</loc>
-    <lastmod>2025-11-20T18:07:52.726Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/study.html</loc>
-    <lastmod>2025-11-20T18:07:52.831Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/query.html</loc>
-    <lastmod>2025-11-20T18:07:52.831Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/perturbation.html</loc>
-    <lastmod>2025-11-20T18:07:52.873Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/parcellation.html</loc>
-    <lastmod>2025-11-20T18:07:52.872Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/ontology_api.html</loc>
-    <lastmod>2025-11-20T18:07:52.610Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/observation.html</loc>
-    <lastmod>2025-11-20T18:07:52.870Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/network.html</loc>
-    <lastmod>2025-11-21T17:40:22.328Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/metadata.html</loc>
-    <lastmod>2025-11-20T18:07:52.891Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/localdynamics.html</loc>
-    <lastmod>2025-11-20T18:07:52.862Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/literature.html</loc>
-    <lastmod>2025-11-20T18:07:52.880Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/lems_loader.html</loc>
-    <lastmod>2025-11-20T18:07:52.876Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/integration.html</loc>
-    <lastmod>2025-11-20T18:07:52.861Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/functions.html</loc>
-    <lastmod>2025-11-20T18:07:52.903Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/expression.html</loc>
-    <lastmod>2025-11-20T18:07:52.875Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/equations.html</loc>
-    <lastmod>2025-11-20T18:07:52.858Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/constants.html</loc>
-    <lastmod>2025-11-20T18:07:52.754Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/config.html</loc>
-    <lastmod>2025-11-20T18:07:52.754Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/compgraph.html</loc>
-    <lastmod>2025-11-20T18:07:52.955Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/bifurcation_diagram.html</loc>
-    <lastmod>2025-11-20T18:07:52.903Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/bids_utils.html</loc>
-    <lastmod>2025-11-20T18:07:52.627Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/analysis.html</loc>
-    <lastmod>2025-11-20T18:07:52.902Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/browser.html</loc>
-    <lastmod>2025-11-20T10:10:27.820Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/index.html</loc>
-    <lastmod>2025-11-20T17:57:08.280Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/installation.html</loc>
-    <lastmod>2025-11-21T17:37:59.395Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/index.html</loc>
-    <lastmod>2025-11-21T17:40:21.941Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/atlases.html</loc>
-    <lastmod>2025-11-20T18:07:52.624Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/bifurcation.html</loc>
-    <lastmod>2025-11-20T18:07:52.606Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/code.html</loc>
-    <lastmod>2025-11-20T18:07:52.718Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/computation_utils.html</loc>
-    <lastmod>2025-11-20T18:07:52.964Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/connectomes.html</loc>
-    <lastmod>2025-11-20T18:25:29.459Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/db.html</loc>
-    <lastmod>2025-11-20T18:07:52.755Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/experiment.html</loc>
-    <lastmod>2025-11-20T18:07:52.719Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/freesurfer.html</loc>
-    <lastmod>2025-11-20T18:07:52.837Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/graph.html</loc>
-    <lastmod>2025-11-20T18:07:52.766Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/julia.html</loc>
-    <lastmod>2025-11-20T18:07:52.965Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/lemsgenerator.html</loc>
-    <lastmod>2025-11-20T18:07:52.719Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/llm.html</loc>
-    <lastmod>2025-11-20T18:07:52.883Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/main.html</loc>
-    <lastmod>2025-11-20T18:07:52.606Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/misc_loader.html</loc>
-    <lastmod>2025-11-20T18:07:52.892Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/nlp.html</loc>
-    <lastmod>2025-11-20T18:07:52.901Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/ontology.html</loc>
-    <lastmod>2025-11-20T18:07:52.828Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/ontology_utils.html</loc>
-    <lastmod>2025-11-20T18:07:52.966Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/pdf.html</loc>
-    <lastmod>2025-11-20T18:07:52.902Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/properties.html</loc>
-    <lastmod>2025-11-20T18:07:52.955Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/report.html</loc>
-    <lastmod>2025-11-20T18:07:52.726Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/summary_table.html</loc>
-    <lastmod>2025-11-20T18:07:52.961Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/tractograms.html</loc>
-    <lastmod>2025-11-20T18:07:52.654Z</lastmod>
-  </url>
-  <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/tvbids.html</loc>
-    <lastmod>2025-11-20T18:07:52.741Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/utils.html</loc>
+    <lastmod>2025-11-21T17:46:00.600Z</lastmod>
   </url>
   <url>
     <loc>https://virtual-twin.github.io/tvbo/api/tvbopydantic.html</loc>
     <lastmod>2025-11-20T18:07:52.717Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/api/utils.html</loc>
-    <lastmod>2025-11-21T17:40:22.330Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/tvbids.html</loc>
+    <lastmod>2025-11-20T18:07:52.741Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ArgumentMapping.html</loc>
-    <lastmod>2025-11-21T17:40:24.141Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/tractograms.html</loc>
+    <lastmod>2025-11-20T18:07:52.654Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/BrainAtlas.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/summary_table.html</loc>
+    <lastmod>2025-11-20T18:07:52.961Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Callable.html</loc>
-    <lastmod>2025-11-21T17:40:24.135Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/report.html</loc>
+    <lastmod>2025-11-20T18:07:52.726Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ClinicalImprovement.html</loc>
-    <lastmod>2025-11-21T17:40:24.131Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/properties.html</loc>
+    <lastmod>2025-11-20T18:07:52.955Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ClinicalScore.html</loc>
-    <lastmod>2025-11-21T17:40:24.135Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/pdf.html</loc>
+    <lastmod>2025-11-20T18:07:52.902Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ConditionalBlock.html</loc>
-    <lastmod>2025-11-21T17:40:24.139Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/ontology_utils.html</loc>
+    <lastmod>2025-11-20T18:07:52.966Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Contact.html</loc>
-    <lastmod>2025-11-21T17:40:24.132Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/ontology.html</loc>
+    <lastmod>2025-11-20T18:07:52.828Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/CostFunction.html</loc>
-    <lastmod>2025-11-21T17:40:24.139Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/nlp.html</loc>
+    <lastmod>2025-11-20T18:07:52.901Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/CouplingInput.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/misc_loader.html</loc>
+    <lastmod>2025-11-20T18:07:52.892Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DataInjection.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/main.html</loc>
+    <lastmod>2025-11-20T18:07:52.606Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DerivedParameter.html</loc>
-    <lastmod>2025-11-21T17:40:24.137Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/llm.html</loc>
+    <lastmod>2025-11-20T18:07:52.883Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DifferentialOperator.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/lemsgenerator.html</loc>
+    <lastmod>2025-11-20T18:07:52.719Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DownsamplingModel.html</loc>
-    <lastmod>2025-11-21T17:40:24.141Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/julia.html</loc>
+    <lastmod>2025-11-20T18:07:52.965Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/EField.html</loc>
-    <lastmod>2025-11-21T17:40:24.136Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/graph.html</loc>
+    <lastmod>2025-11-20T18:07:52.766Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Equation.html</loc>
-    <lastmod>2025-11-21T17:40:24.140Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/freesurfer.html</loc>
+    <lastmod>2025-11-20T18:07:52.837Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/FittingTarget.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/experiment.html</loc>
+    <lastmod>2025-11-20T18:07:52.719Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Integrator.html</loc>
-    <lastmod>2025-11-21T17:40:24.133Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/db.html</loc>
+    <lastmod>2025-11-20T18:07:52.755Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Mesh.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/connectomes.html</loc>
+    <lastmod>2025-11-20T18:25:29.459Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Monitor.html</loc>
-    <lastmod>2025-11-21T17:40:24.141Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/computation_utils.html</loc>
+    <lastmod>2025-11-20T18:07:52.964Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Network.html</loc>
-    <lastmod>2025-11-21T17:40:24.137Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/code.html</loc>
+    <lastmod>2025-11-20T18:07:52.718Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Noise.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/bifurcation.html</loc>
+    <lastmod>2025-11-20T18:07:52.606Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/PDE.html</loc>
-    <lastmod>2025-11-21T17:40:24.137Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/atlases.html</loc>
+    <lastmod>2025-11-20T18:07:52.624Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Parameter.html</loc>
-    <lastmod>2025-11-21T17:40:24.139Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/index.html</loc>
+    <lastmod>2025-11-21T17:46:00.243Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ParcellationEntity.html</loc>
-    <lastmod>2025-11-21T17:40:24.138Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/installation.html</loc>
+    <lastmod>2025-11-21T17:42:35.649Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ProcessingStep.html</loc>
-    <lastmod>2025-11-21T17:40:24.135Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/index.html</loc>
+    <lastmod>2025-11-20T17:57:08.280Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Range.html</loc>
-    <lastmod>2025-11-21T17:40:24.137Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/browser.html</loc>
+    <lastmod>2025-11-20T10:10:27.820Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Sample.html</loc>
-    <lastmod>2025-11-21T17:40:24.142Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/analysis.html</loc>
+    <lastmod>2025-11-20T18:07:52.902Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SimulationStudy.html</loc>
-    <lastmod>2025-11-21T17:40:24.137Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/bids_utils.html</loc>
+    <lastmod>2025-11-20T18:07:52.627Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SoftwarePackage.html</loc>
-    <lastmod>2025-11-21T17:40:24.132Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/bifurcation_diagram.html</loc>
+    <lastmod>2025-11-20T18:07:52.903Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SpatialDomain.html</loc>
-    <lastmod>2025-11-21T17:40:24.131Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/compgraph.html</loc>
+    <lastmod>2025-11-20T18:07:52.955Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/StateVariable.html</loc>
-    <lastmod>2025-11-21T17:40:24.141Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/config.html</loc>
+    <lastmod>2025-11-20T18:07:52.754Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Stimulus.html</loc>
-    <lastmod>2025-11-21T17:40:24.139Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/constants.html</loc>
+    <lastmod>2025-11-20T18:07:52.754Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/TemporalApplicableEquation.html</loc>
-    <lastmod>2025-11-21T17:40:24.131Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/equations.html</loc>
+    <lastmod>2025-11-20T18:07:52.858Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/abbreviation.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/expression.html</loc>
+    <lastmod>2025-11-20T18:07:52.875Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/acronym.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/functions.html</loc>
+    <lastmod>2025-11-20T18:07:52.903Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/additional_equations.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/integration.html</loc>
+    <lastmod>2025-11-20T18:07:52.861Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/age.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/lems_loader.html</loc>
+    <lastmod>2025-11-20T18:07:52.876Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/alternateName.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/literature.html</loc>
+    <lastmod>2025-11-20T18:07:52.880Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/anatomicalAxesOrientation.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/localdynamics.html</loc>
+    <lastmod>2025-11-20T18:07:52.862Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/argument_mappings.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/metadata.html</loc>
+    <lastmod>2025-11-20T18:07:52.891Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/atlas.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/network.html</loc>
+    <lastmod>2025-11-21T17:46:00.598Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/axesOrigin.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/observation.html</loc>
+    <lastmod>2025-11-20T18:07:52.870Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/bc_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/ontology_api.html</loc>
+    <lastmod>2025-11-20T18:07:52.610Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/boundary_conditions.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/parcellation.html</loc>
+    <lastmod>2025-11-20T18:07:52.872Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/callable.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/perturbation.html</loc>
+    <lastmod>2025-11-20T18:07:52.873Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/center.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/query.html</loc>
+    <lastmod>2025-11-20T18:07:52.831Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/clinical_improvement.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/study.html</loc>
+    <lastmod>2025-11-20T18:07:52.831Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coefficient.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/templater.html</loc>
+    <lastmod>2025-11-20T18:07:52.726Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/comment.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/tvbgo.html</loc>
+    <lastmod>2025-11-20T18:07:52.848Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/conditional.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/tvbo_datamodel.html</loc>
+    <lastmod>2025-11-20T18:07:52.694Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/conduction_speed.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/api/types.html</loc>
+    <lastmod>2025-11-20T18:07:52.622Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/constant_value.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/index.html</loc>
+    <lastmod>2025-11-21T17:46:02.401Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/contacts.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/BoundaryCondition.html</loc>
+    <lastmod>2025-11-21T17:46:02.402Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinate.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/BrainRegionSeries.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinate_space.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Case.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/correlated.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ClinicalScale.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/cost_function.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/CommonCoordinateSpace.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_function.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Connectome.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_terms.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Coordinate.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/couplings.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Coupling.html</loc>
+    <lastmod>2025-11-21T17:46:02.402Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dataLocation.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DBSProtocol.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/data_source.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Dataset.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/default.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/DerivedVariable.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/definition.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Distribution.html</loc>
+    <lastmod>2025-11-21T17:46:02.406Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dependencies.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Dynamics.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_from.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Electrode.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_parameters.html</loc>
-    <lastmod>2025-11-21T17:40:24.156Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/FieldStateVariable.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/description.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Function.html</loc>
+    <lastmod>2025-11-21T17:46:02.402Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/digitalIdentifier.html</loc>
-    <lastmod>2025-11-21T17:40:23.741Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Matrix.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/discretization.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ModelFitting.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/doi.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/NDArray.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dt.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/NeuralMassModel.html</loc>
+    <lastmod>2025-11-21T17:46:02.407Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/duration.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ObservationModel.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/ecosystem.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/PDESolver.html</loc>
+    <lastmod>2025-11-21T17:46:02.409Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/electrode_id.html</loc>
-    <lastmod>2025-11-21T17:40:24.149Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Parcellation.html</loc>
+    <lastmod>2025-11-21T17:46:02.409Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/electrodes.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/ParcellationTerminology.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/elements.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/RandomStream.html</loc>
+    <lastmod>2025-11-21T17:46:02.411Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/ensure_shape.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/RegionMapping.html</loc>
+    <lastmod>2025-11-21T17:46:02.410Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/environment.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SimulationExperiment.html</loc>
+    <lastmod>2025-11-21T17:46:02.406Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/equation.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SoftwareEnvironment.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/explored_values.html</loc>
-    <lastmod>2025-11-21T17:40:24.144Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SoftwareRequirement.html</loc>
+    <lastmod>2025-11-21T17:46:02.403Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/field.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/SpatialField.html</loc>
+    <lastmod>2025-11-21T17:46:02.405Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/file.html</loc>
-    <lastmod>2025-11-21T17:40:23.763Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/StimulationSetting.html</loc>
+    <lastmod>2025-11-21T17:46:02.404Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/frequency.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/Subject.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/function_argument.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/classes/TimeSeries.html</loc>
+    <lastmod>2025-11-21T17:46:02.408Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/gaussian.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/absolute_value.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/geometry.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/active_contacts.html</loc>
+    <lastmod>2025-11-21T17:46:02.442Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/groups.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/additive.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hasParent.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/aggregation.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hash.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/amplitude.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hemisphere.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/apply_on_dimension.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/hi.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/arguments.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/homepage.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/author.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/imaging_modality.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/baseline_value.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/initial_expression.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/boundaries.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/inner_coupling.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/build_hash.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/integration.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/cases.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/intermediate_expressions.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/center_coordinates.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/isVersionOf.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/clinical_scores.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/label.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/color.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lefthandside.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/condition.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/license.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/conditionals.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/local_coupling_term.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/connectivity.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/local_states.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/contact_id.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/manufacturer.html</loc>
-    <lastmod>2025-11-21T17:40:24.172Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/container_image.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/method.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinateSpace.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/model.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coordinates.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modes.html</loc>
-    <lastmod>2025-11-21T17:40:24.173Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/correlation.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/module.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/monitors.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_inputs.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/n_vertices.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/coupling_variable.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/nativeUnit.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/data.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/node_dynamics.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/data_injections.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/node_labels.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dataset_id.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/noise_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/defaultImage.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/notes.html</loc>
-    <lastmod>2025-11-21T17:40:24.147Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/delayed.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_nodes.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derivatives.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_stages.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_from_model.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/ontologyIdentifier.html</loc>
-    <lastmod>2025-11-21T17:40:24.153Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/derived_variables.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/operator_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/diagnosis.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/optional.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dimension.html</loc>
+    <lastmod>2025-11-21T17:46:02.419Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/originalLookupLabel.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/distribution.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/output_alias.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/domain.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/package.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dtype.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/parcellation.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/dynamics.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/percent_change.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/efield.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pipeline.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/electrode_reference.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/post_expression.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/element_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/preconditioner.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/engine.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pulse_width.html</loc>
-    <lastmod>2025-11-21T17:40:24.147Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/entities.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/qualname.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/environment_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/random_state.html</loc>
-    <lastmod>2025-11-21T17:40:24.171Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/evaluator.html</loc>
+    <lastmod>2025-11-21T17:46:02.442Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/reference.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/expression.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/region.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/field_dynamics.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/region_mapping.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/free.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/regions.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/function.html</loc>
+    <lastmod>2025-11-21T17:46:02.413Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/reported_optimum.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/functions.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/requirements.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/generation_function.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/role.html</loc>
-    <lastmod>2025-11-21T17:40:24.151Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/graph.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sampling_rate.html</loc>
-    <lastmod>2025-11-21T17:40:24.155Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/handedness.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/scipy_ode_base.html</loc>
-    <lastmod>2025-11-21T17:40:24.148Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/has_reference.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/seed.html</loc>
-    <lastmod>2025-11-21T17:40:24.168Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/head.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sex.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/heterogeneous.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/simulation_experiments.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/history.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/software.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/id.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/source.html</loc>
-    <lastmod>2025-11-21T17:40:24.163Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/incoming_states.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/source_url.html</loc>
-    <lastmod>2025-11-21T17:40:24.169Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/initial_value.html</loc>
+    <lastmod>2025-11-21T17:46:02.434Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sparse.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/input_mapping.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/state_wise_sigma.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/intensity.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/step_size.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/iri.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/stimulation.html</loc>
-    <lastmod>2025-11-21T17:40:24.149Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/key.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/stimulus.html</loc>
-    <lastmod>2025-11-21T17:40:24.165Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/latex.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/subjects.html</loc>
-    <lastmod>2025-11-21T17:40:24.161Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lengths.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/system_type.html</loc>
-    <lastmod>2025-11-21T17:40:24.158Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lo.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/target_structure.html</loc>
-    <lastmod>2025-11-21T17:40:24.164Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/local_dynamics.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tensor_coefficient.html</loc>
-    <lastmod>2025-11-21T17:40:24.166Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/lookupLabel.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/threshold_applied.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/mesh.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_dependent.html</loc>
-    <lastmod>2025-11-21T17:40:24.146Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/mode.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_post_surgery.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modelfitting.html</loc>
+    <lastmod>2025-11-21T17:46:02.420Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/timepoint.html</loc>
-    <lastmod>2025-11-21T17:40:24.167Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modified.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/title.html</loc>
-    <lastmod>2025-11-21T17:40:24.160Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/modules.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tractogram.html</loc>
-    <lastmod>2025-11-21T17:40:24.154Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/n_regions.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/transformation.html</loc>
-    <lastmod>2025-11-21T17:40:24.152Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/name.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/unit.html</loc>
-    <lastmod>2025-11-21T17:40:24.150Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/network.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/url.html</loc>
-    <lastmod>2025-11-21T17:40:24.170Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/node_dynamics_mapping.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/values.html</loc>
-    <lastmod>2025-11-21T17:40:24.159Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/noise.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/variables_of_interest.html</loc>
-    <lastmod>2025-11-21T17:40:24.147Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/normalization.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/versionIdentifier.html</loc>
-    <lastmod>2025-11-21T17:40:24.174Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_modes.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/vertex_to_region.html</loc>
-    <lastmod>2025-11-21T17:40:24.162Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/number_of_regions.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/weighting.html</loc>
-    <lastmod>2025-11-21T17:40:24.149Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/on_region.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/x.html</loc>
-    <lastmod>2025-11-21T17:40:24.157Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/operation_type.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/year.html</loc>
-    <lastmod>2025-11-21T17:40:24.145Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/operators.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/BoundaryConditionType.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/order.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/ElementType.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/output.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/Hemisphere.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/output_transforms.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/NoiseType.html</loc>
-    <lastmod>2025-11-21T17:40:23.963Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/parameters.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/OperatorType.html</loc>
-    <lastmod>2025-11-21T17:40:24.143Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/parent_score.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/SpecimenEnum.html</loc>
-    <lastmod>2025-11-21T17:40:23.957Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/period.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/SANDS.html</loc>
-    <lastmod>2025-11-21T17:40:23.213Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/platform.html</loc>
+    <lastmod>2025-11-21T17:46:02.418Z</lastmod>
   </url>
   <url>
-    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/tvb_dbs.html</loc>
-    <lastmod>2025-11-21T17:40:23.214Z</lastmod>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pre_expression.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/protocols.html</loc>
+    <lastmod>2025-11-21T17:46:02.441Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/pycode.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/quantity_kind.html</loc>
+    <lastmod>2025-11-21T17:46:02.414Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/recon_path.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/references.html</loc>
+    <lastmod>2025-11-21T17:46:02.437Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/region_labels.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/regional_connectivity.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/relatedUBERONTerm.html</loc>
+    <lastmod>2025-11-21T17:46:02.433Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/repository.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/righthandside.html</loc>
+    <lastmod>2025-11-21T17:46:02.432Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sample.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/scale.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/score.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/settings.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/shape.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/size.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/solver.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/source_code.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/sources.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/state_variables.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/step.html</loc>
+    <lastmod>2025-11-21T17:46:02.415Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/steps.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/stimulation_variable.html</loc>
+    <lastmod>2025-11-21T17:46:02.426Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/subject_id.html</loc>
+    <lastmod>2025-11-21T17:46:02.436Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/symbol.html</loc>
+    <lastmod>2025-11-21T17:46:02.430Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tail.html</loc>
+    <lastmod>2025-11-21T17:46:02.439Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/targets.html</loc>
+    <lastmod>2025-11-21T17:46:02.424Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/terminology.html</loc>
+    <lastmod>2025-11-21T17:46:02.416Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_integrator.html</loc>
+    <lastmod>2025-11-21T17:46:02.428Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/time_scale.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/timing_info.html</loc>
+    <lastmod>2025-11-21T17:46:02.429Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/tolerances.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/trajectory.html</loc>
+    <lastmod>2025-11-21T17:46:02.421Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/transient_time.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/update_expression.html</loc>
+    <lastmod>2025-11-21T17:46:02.438Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/value.html</loc>
+    <lastmod>2025-11-21T17:46:02.417Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/variable_of_interest.html</loc>
+    <lastmod>2025-11-21T17:46:02.440Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/version.html</loc>
+    <lastmod>2025-11-21T17:46:02.435Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/version_spec.html</loc>
+    <lastmod>2025-11-21T17:46:02.431Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/volume_data.html</loc>
+    <lastmod>2025-11-21T17:46:02.423Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/weights.html</loc>
+    <lastmod>2025-11-21T17:46:02.422Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/y.html</loc>
+    <lastmod>2025-11-21T17:46:02.425Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/slots/z.html</loc>
+    <lastmod>2025-11-21T17:46:02.427Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/DiscretizationMethod.html</loc>
+    <lastmod>2025-11-21T17:46:02.413Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/EnvironmentType.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/ImagingModality.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/OperationType.html</loc>
+    <lastmod>2025-11-21T17:46:02.413Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/RequirementRole.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/enums/SystemType.html</loc>
+    <lastmod>2025-11-21T17:46:02.412Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/tvb-datamodel.html</loc>
+    <lastmod>2025-11-21T17:46:01.482Z</lastmod>
+  </url>
+  <url>
+    <loc>https://virtual-twin.github.io/tvbo/datamodel/schemas/types.html</loc>
+    <lastmod>2025-11-21T17:46:01.482Z</lastmod>
   </url>
 </urlset>
