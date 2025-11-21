@@ -200,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div>
 <pre class="mermaid mermaid-js"> classDiagram
     class ModelFitting
-    click ModelFitting href "../ModelFitting/"
+    click ModelFitting href "./ModelFitting.html"
       ModelFitting : cost_function
         
           
@@ -208,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ModelFitting --&gt; "0..1" CostFunction : cost_function
-        click CostFunction href "../CostFunction/"
+        click CostFunction href "./CostFunction.html"
     
 
         
@@ -219,7 +219,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ModelFitting --&gt; "0..1" String : description
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -230,7 +230,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ModelFitting --&gt; "0..1" String : label
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -241,7 +241,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ModelFitting --&gt; "*" FittingTarget : targets
-        click FittingTarget href "../FittingTarget/"
+        click FittingTarget href "./FittingTarget.html"
     
 
         

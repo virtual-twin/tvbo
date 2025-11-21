@@ -201,7 +201,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div>
 <pre class="mermaid mermaid-js"> classDiagram
     class ProcessingStep
-    click ProcessingStep href "../ProcessingStep/"
+    click ProcessingStep href "./ProcessingStep.html"
       ProcessingStep : apply_on_dimension
         
           
@@ -209,7 +209,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "0..1" String : apply_on_dimension
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -220,7 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "0..1" String : ensure_shape
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -231,7 +231,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "1" Function : function
-        click Function href "../Function/"
+        click Function href "./Function.html"
     
 
         
@@ -242,7 +242,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "*" ArgumentMapping : input_mapping
-        click ArgumentMapping href "../ArgumentMapping/"
+        click ArgumentMapping href "./ArgumentMapping.html"
     
 
         
@@ -253,7 +253,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "0..1" OperationType : operation_type
-        click OperationType href "../../enums/OperationType/"
+        click OperationType href "../../enums/OperationType.html"
     
 
         
@@ -264,7 +264,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "0..1" Integer : order
-        click Integer href "../http://www.w3.org/2001/XMLSchema#integer/"
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
     
 
         
@@ -275,7 +275,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "0..1" String : output_alias
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -286,7 +286,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         ProcessingStep --&gt; "*" StateVariable : variables_of_interest
-        click StateVariable href "../StateVariable/"
+        click StateVariable href "./StateVariable.html"
     
 
         

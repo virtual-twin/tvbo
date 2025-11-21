@@ -203,9 +203,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div>
 <pre class="mermaid mermaid-js"> classDiagram
     class NeuralMassModel
-    click NeuralMassModel href "../NeuralMassModel/"
+    click NeuralMassModel href "./NeuralMassModel.html"
       Dynamics &lt;|-- NeuralMassModel
-        click Dynamics href "../Dynamics/"
+        click Dynamics href "./Dynamics.html"
       
       NeuralMassModel : coupling_inputs
         
@@ -214,7 +214,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" CouplingInput : coupling_inputs
-        click CouplingInput href "../CouplingInput/"
+        click CouplingInput href "./CouplingInput.html"
     
 
         
@@ -225,7 +225,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" Parameter : coupling_terms
-        click Parameter href "../Parameter/"
+        click Parameter href "./Parameter.html"
     
 
         
@@ -236,7 +236,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" NeuralMassModel : derived_from_model
-        click NeuralMassModel href "../NeuralMassModel/"
+        click NeuralMassModel href "./NeuralMassModel.html"
     
 
         
@@ -247,7 +247,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" DerivedParameter : derived_parameters
-        click DerivedParameter href "../DerivedParameter/"
+        click DerivedParameter href "./DerivedParameter.html"
     
 
         
@@ -258,7 +258,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" DerivedVariable : derived_variables
-        click DerivedVariable href "../DerivedVariable/"
+        click DerivedVariable href "./DerivedVariable.html"
     
 
         
@@ -269,7 +269,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" String : description
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -280,7 +280,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" Function : functions
-        click Function href "../Function/"
+        click Function href "./Function.html"
     
 
         
@@ -291,7 +291,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" String : has_reference
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -302,7 +302,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" String : iri
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -313,7 +313,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" String : label
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -324,7 +324,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" Parameter : local_coupling_term
-        click Parameter href "../Parameter/"
+        click Parameter href "./Parameter.html"
     
 
         
@@ -335,7 +335,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" NeuralMassModel : modes
-        click NeuralMassModel href "../NeuralMassModel/"
+        click NeuralMassModel href "./NeuralMassModel.html"
     
 
         
@@ -346,7 +346,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" Boolean : modified
-        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean/"
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
     
 
         
@@ -357,7 +357,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "1" String : name
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -368,7 +368,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" Integer : number_of_modes
-        click Integer href "../http://www.w3.org/2001/XMLSchema#integer/"
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
     
 
         
@@ -379,7 +379,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" DerivedVariable : output_transforms
-        click DerivedVariable href "../DerivedVariable/"
+        click DerivedVariable href "./DerivedVariable.html"
     
 
         
@@ -390,7 +390,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" Parameter : parameters
-        click Parameter href "../Parameter/"
+        click Parameter href "./Parameter.html"
     
 
         
@@ -401,7 +401,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" String : references
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -412,7 +412,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" String : source
-        click String href "../http://www.w3.org/2001/XMLSchema#string/"
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
     
 
         
@@ -423,7 +423,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "*" StateVariable : state_variables
-        click StateVariable href "../StateVariable/"
+        click StateVariable href "./StateVariable.html"
     
 
         
@@ -434,7 +434,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" Stimulus : stimulus
-        click Stimulus href "../Stimulus/"
+        click Stimulus href "./Stimulus.html"
     
 
         
@@ -445,7 +445,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         
         
         NeuralMassModel --&gt; "0..1" SystemType : system_type
-        click SystemType href "../../enums/SystemType/"
+        click SystemType href "../../enums/SystemType.html"
     
 
         
