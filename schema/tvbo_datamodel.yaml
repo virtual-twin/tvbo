@@ -17,6 +17,9 @@ default_prefix: tvbo
 default_range: string
 
 slots:
+  name:
+    range: string
+    key: true
   time_scale:
     range: string
     ifabsent: "ms"
@@ -60,7 +63,7 @@ slots:
   parameters:
     range: Parameter
     multivalued: true
-    inlined: false
+    inlined: true
   equation:
     slot_uri: tvbo:Equation
     range: Equation
@@ -558,23 +561,28 @@ classes:
       derived_parameters:
         multivalued: true
         range: DerivedParameter
+        inlined: true
       derived_variables:
         multivalued: true
         range: DerivedVariable
+        inlined: true
       coupling_terms:
         multivalued: true
         range: Parameter
+        inlined: true
       coupling_inputs:
         multivalued: true
         range: CouplingInput
       state_variables:
         multivalued: true
         range: StateVariable
+        inlined: true
       modified:
         range: boolean
       output_transforms:
         multivalued: true
         range: DerivedVariable
+        inlined: true
       derived_from_model:
         range: NeuralMassModel
       number_of_modes:
@@ -585,6 +593,7 @@ classes:
       functions:
         multivalued: true
         range: Function
+        inlined: true
       stimulus:
         range: Stimulus
       modes:

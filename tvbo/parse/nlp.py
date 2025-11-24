@@ -29,7 +29,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import PyPDF2
+import pypdf
 import spacy
 from spacy.cli import download
 # from transformers import BertForTokenClassification, BertTokenizer
@@ -67,7 +67,7 @@ def extract_text_from_pdf(file_path):
     # Open the PDF file in binary mode
     with open(file_path, "rb") as file:
         # Create a PDF reader object
-        reader = PyPDF2.PdfReader(file)
+        reader = pypdf.PdfReader(file)
 
         # Initialize an empty string to store the extracted text
         text = ""
@@ -98,7 +98,7 @@ def get_pdf_page(pdf_path, pagenum):
         Extracted text from the specified PDF page. Hyphens at line breaks ("-\\n") are replaced with an empty string.
     """
     with open(pdf_path, "rb") as file:
-        reader = PyPDF2.PdfReader(file)
+        reader = pypdf.PdfReader(file)
         num_pages = len(reader.pages)
         page = reader.pages[pagenum]
         return page.extract_text()
@@ -125,7 +125,7 @@ def extract_methods_from_pdf(pdf_path):
     """
 
     with open(pdf_path, "rb") as file:
-        reader = PyPDF2.PdfReader(file)
+        reader = pypdf.PdfReader(file)
         num_pages = len(reader.pages)
 
         methods_section = ""

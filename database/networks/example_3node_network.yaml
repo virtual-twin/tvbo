@@ -8,7 +8,7 @@ coupling_library:
     name: "excitatory"
     label: "Excitatory Linear Coupling"
     coupling_function:
-      righthandside: "a * x"
+      rhs: "a * x"
       parameters:
         - name: "a"
           value: 1.0
@@ -18,7 +18,7 @@ coupling_library:
     name: "inhibitory"
     label: "Inhibitory Sigmoidal Coupling"
     coupling_function:
-      righthandside: "-1.0 / (1.0 + exp(-a * (x - theta)))"
+      rhs: "-1.0 / (1.0 + exp(-a * (x - theta)))"
       parameters:
         - name: "a"
           value: 0.5
