@@ -298,59 +298,133 @@ classes:
         # implements:
         #   - linkml:elements
 
-  Connectome:
-    class_uri: tvbo:Connectivity
-    aliases:
-      - Graph
-    attributes:
-      number_of_regions:
-        range: integer
-        ifabsent: integer(1)
-      number_of_nodes:
-        range: integer
-        ifabsent: integer(1)
-      parcellation:
-        range: Parcellation
-      tractogram:
-        range: string
-      weights:
-        range: Matrix
-      lengths:
-        range: Matrix
-      normalization:
-        range: Equation
-      conduction_speed:
-        range: Parameter
-      node_labels:
-        multivalued: true
-        range: string
-
   Network:
-    # tree_root: true[]
-    description: "Complete network specification combining dynamics, graph topology, and coupling configurations"
+    class_uri: tvbo:Network
+    aliases:
+      - Connectome
+      - Graph
+      - Connectivity
+    description: "Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility)."
     slots:
       - label
       - description
     attributes:
-      dynamics:
-        range: Dynamics
-        description: "Homogeneous dynamics: single Dynamics model applied to all nodes"
-      node_dynamics:
+      # New node/edge-based representation
+      nodes:
         multivalued: true
-        range: Dynamics
-        description: "Heterogeneous dynamics: list of Dynamics models, one per node or mapped by node_dynamics_mapping"
-      node_dynamics_mapping:
+        range: Node
+        inlined_as_list: true
+        description: "List of nodes with individual dynamics (optional, for heterogeneous networks)"
+      edges:
         multivalued: true
-        range: integer
-        description: "Maps each node to a Dynamics model index in node_dynamics list (if heterogeneous)"
-      graph:
-        range: Connectome
-        required: true
-        description: "Network topology with weights, delays, and connectivity structure"
-      couplings:
+        range: Edge
+        inlined_as_list: true
+        description: "List of directed edges with coupling references (optional, for explicit edge definition)"
+      coupling_library:
         multivalued: true
         range: Coupling
-        description: "Named coupling configurations matching dynamics.coupling_inputs (e.g., instant, delayed)"
+        description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
+      
+      # Connectome/matrix-based attributes (backward compatibility)
+      number_of_regions:
+        range: integer
+        ifabsent: integer(1)
+        description: "Number of regions (backward compatibility)"
+      number_of_nodes:
+        range: integer
+        ifabsent: integer(1)
+        description: "Number of nodes in the network"
+      parcellation:
+        range: Parcellation
+        description: "Brain parcellation/atlas reference"
+      tractogram:
+        range: string
+        description: "Reference to tractography data"
+      weights:
+        range: Matrix
+        description: "Adjacency/weight matrix (backward compatibility with Connectome)"
+      lengths:
+        range: Matrix
+        description: "Distance/length matrix (backward compatibility with Connectome)"
+      normalization:
+        range: Equation
+        description: "Normalization equation for connectivity weights"
+      node_labels:
+        multivalued: true
+        range: string
+        description: "Labels for nodes/regions"
+      
+      # Shared global parameters
+      global_coupling_strength:
+        range: Parameter
+        description: "Global scaling factor for all coupling weights"
+      conduction_speed:
+        range: Parameter
+        description: "Conduction speed for computing delays from distances"
+
+  Node:
+    class_uri: tvbo:Node
+    description: "A node in a network with its own dynamics and properties"
+    slots:
+      - label
+      - description
+    attributes:
+      id:
+        range: integer
+        required: true
+        description: "Unique node identifier"
+      dynamics:
+        range: Dynamics
+        required: true
+        description: "Dynamics model governing this node's behavior"
+      position:
+        range: Coordinate
+        description: "Spatial coordinates (x, y, z) of the node"
+      region:
+        range: string
+        description: "Brain region or anatomical label"
+      parameters:
+        multivalued: true
+        range: Parameter
+        description: "Node-specific parameter overrides"
+      initial_state:
+        multivalued: true
+        range: float
+        description: "Initial values for state variables"
+
+  Edge:
+    class_uri: tvbo:Edge
+    description: "A directed edge in a network with coupling and connectivity properties"
+    slots:
+      - label
+      - description
+    attributes:
+      source:
+        range: integer
+        required: true
+        description: "Source node ID"
+      target:
+        range: integer
+        required: true
+        description: "Target node ID"
+      coupling:
+        range: Coupling
+        required: true
+        description: "Coupling function applied on this edge (can be shared across edges)"
+      weight:
+        range: float
+        ifabsent: float(1.0)
+        description: "Connection strength/weight"
+      delay:
+        range: float
+        ifabsent: float(0.0)
+        description: "Transmission delay (ms or specified time unit)"
+      distance:
+        range: float
+        description: "Physical distance between nodes (e.g., tract length in mm)"
+      tract_properties:
+        range: string
+        description: "Additional tract metadata or reference to tractography data"
 
   ObservationModel:
     class_uri: tvbo:ObservationModel
@@ -859,7 +933,7 @@ classes:
         range: RegionMapping
         description: "For hierarchical coupling: vertex-to-region mapping for aggregation"
       regional_connectivity:
-        range: Connectome
+        range: Network
         description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
       aggregation:
         any_of:
@@ -922,9 +996,9 @@ classes:
       integration:
         range: Integrator
       connectivity:
-        range: Connectome
+        range: Network
       network:
-        range: Connectome
+        range: Network
       coupling:
         range: Coupling
       monitors:
