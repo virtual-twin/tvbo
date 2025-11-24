@@ -324,7 +324,7 @@ classes:
         multivalued: true
         range: Coupling
         description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
-      
+
       # Connectome/matrix-based attributes (backward compatibility)
       number_of_regions:
         range: integer
@@ -353,7 +353,7 @@ classes:
         multivalued: true
         range: string
         description: "Labels for nodes/regions"
-      
+
       # Shared global parameters
       global_coupling_strength:
         range: Parameter

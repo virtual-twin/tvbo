@@ -26,10 +26,8 @@ derived_parameters = [
 functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
 %>
 
-# ${model.name}
+${'## ' + model.name}
 ${model.description if model.description else ""}
-
-${"## Equations"}
 
 % if derived_parameters:
 ${"### Derived Parameters"}
@@ -52,7 +50,7 @@ ${"### Output Transforms"}
 ${'\n'.join([f"$$\n{latex(eq, mul_symbol='*')}\n$$" for eq in output_transforms])}
 % endif
 
-${"## Parameters"}
+${"### Parameters"}
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

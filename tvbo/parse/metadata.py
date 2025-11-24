@@ -536,7 +536,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
             join(odir, f"exp-{experiment_id}_desc-connectome_lengths.csv")
         )
 
-    network_metadata = tvbo_datamodel.Connectome(
+    network_metadata = tvbo_datamodel.Network(
         number_of_regions=sim.connectivity.number_of_regions,
         weights=(
             tvbo_datamodel.Matrix(

@@ -11,10 +11,12 @@ TVB-O is a Python package for understanding and generating large-scale brain net
 import logging
 import os
 import shutil
+import tempfile
 
 ROOT = os.path.dirname(__file__)
 
-tempdir = os.path.join(os.path.dirname(__file__), ".temp")
+# Use system temp directory for compatibility with containerized environments
+tempdir = os.path.join(tempfile.gettempdir(), "tvbo")
 os.makedirs(tempdir, exist_ok=True)
 
 logging.disable(logging.CRITICAL)
