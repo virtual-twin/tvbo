@@ -234,20 +234,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.monitors = meta_list
 
     def configure(self):
-        # Disable delayed logic if the connectome has no path lengths
+        # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
         try:
             conn = (
-                Connectome(self.network)
+                self.network
                 if getattr(self, "network", None) is not None
                 else None
             )
             L = conn.lengths_matrix if conn is not None else None
-            if L is not None and np.allclose(L, 0):
+            if L is not None and (np.allclose(L, 0) or np.allclose(L.max() / conn.conduction_speed.value, 0)):
+                print("Connectome has no path lengths or conduction speed is infinite; ")
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
                     self.coupling.delayed = False
-        except Exception:
+        except Exception as e:
+            print(f"Error configuring experiment: {e}")
             # Best-effort; keep defaults if anything goes wrong
             pass
 
