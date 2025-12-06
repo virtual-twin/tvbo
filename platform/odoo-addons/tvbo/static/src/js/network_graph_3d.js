@@ -317,17 +317,17 @@
    */
   function fitCameraToNodes() {
     let box;
-    
+
     if (brainMeshVisible && brainMesh) {
       // Brain mesh is visible - show full brain extent
       // MNI brain extent (approximate bounding box)
       // X: -80 to +80 (left-right)
-      // Y: -110 to +80 (posterior-anterior)  
+      // Y: -110 to +80 (posterior-anterior)
       // Z: -60 to +90 (inferior-superior)
       const brainMin = new THREE.Vector3(-80, -110, -60);
       const brainMax = new THREE.Vector3(80, 80, 90);
       box = new THREE.Box3(brainMin, brainMax);
-      
+
       // Expand to include all nodes if they exist
       if (nodeMeshes.length > 0) {
         nodeMeshes.forEach(m => box.expandByObject(m));
@@ -353,16 +353,16 @@
 
     // Position camera with padding (1.2x the max dimension)
     const distance = maxDim * 1.2;
-    
+
     // Sagittal view: camera on +X axis, looking at center
     camera.position.set(center.x + distance, center.y, center.z);
     camera.up.set(0, 0, 1); // Z is up in MNI space
-    
+
     if (controls) {
       controls.target.copy(center);
       controls.update();
     }
-    
+
     console.log('[NetworkGraph3D] Camera fit, brainMeshVisible:', brainMeshVisible, 'distance:', distance);
   }
 
