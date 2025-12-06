@@ -8,6 +8,13 @@ DB_NAME=${DB_NAME:-tvbo}
 
 export PGPASSWORD="$DB_PASSWORD"
 
+# Install tvbo from mounted source if available
+if [ -f /mnt/tvbo-src/pyproject.toml ]; then
+    echo "Installing tvbo from mounted source..."
+    pip install --break-system-packages -e /mnt/tvbo-src 2>&1 | tail -10
+    echo "tvbo installed successfully"
+fi
+
 # Wait for PostgreSQL to be ready (explicitly hit the default "postgres" DB so we don't fail when the target DB is missing)
 until pg_isready -h "$DB_HOST" -U "$DB_USER" -d postgres > /dev/null 2>&1; do
   echo "Waiting for PostgreSQL at $DB_HOST..."
