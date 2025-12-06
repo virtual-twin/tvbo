@@ -400,7 +400,7 @@ class ModelConfiguratorController(http.Controller):
                 'error': str(e)
             }
 
-    @http.route('/tvbo/configurator/run', type='json', auth='public', website=True, csrf=False)
+    @http.route('/tvbo/configurator/run', type='jsonrpc', auth='public', website=True, csrf=False)
     def run_simulation(self, **kwargs):
         """
         Run a simulation experiment by proxying to the TVBO API container.
