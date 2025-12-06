@@ -404,23 +404,28 @@ class ModelConfiguratorController(http.Controller):
     def run_simulation(self, **kwargs):
         """
         Run a simulation experiment by proxying to the TVBO API container.
-
-        Expects a JSON payload with:
-        - experiment: dict with experiment configuration (Pydantic-compatible)
-        - duration: float (optional, override integration duration)
-        - step_size: float (optional, override integration step size)
-        - backend: str ('jax' or 'tvb')
         """
         import requests
         import os
 
         try:
-            experiment_data = kwargs.get('experiment', {})
-            duration = kwargs.get('duration', 1000)
-            step_size = kwargs.get('step_size', 0.1)
-            backend = kwargs.get('backend', 'jax')
+            experiment_data = kwargs.get('experiment')
+            duration = kwargs.get('duration')
+            step_size = kwargs.get('step_size')
+            backend = kwargs.get('backend')
+
+            # MVP: Fail explicitly if required params missing
+            if not experiment_data:
+                return {'success': False, 'error': 'No experiment data provided'}
+            if duration is None:
+                return {'success': False, 'error': 'duration is required'}
+            if step_size is None:
+                return {'success': False, 'error': 'step_size is required'}
+            if not backend:
+                return {'success': False, 'error': 'backend is required'}
 
             _logger.info(f"Running simulation: duration={duration}ms, step_size={step_size}ms, backend={backend}")
+            _logger.info(f"Experiment data: {experiment_data}")
 
             # Build the request payload for TVBO API
             payload = {
@@ -431,32 +436,41 @@ class ModelConfiguratorController(http.Controller):
             }
 
             # Call the TVBO API container
-            # In Docker Compose, the service name is 'tvbo-api' on port 8000
             tvbo_api_url = os.environ.get('TVBO_API_URL', 'http://tvbo-api:8000')
+            _logger.info(f"Calling TVBO API at {tvbo_api_url}/experiment/run")
+            
             response = requests.post(
                 f'{tvbo_api_url}/experiment/run',
                 json=payload,
-                timeout=300  # 5 minute timeout for long simulations
+                timeout=300
             )
 
-            if response.status_code == 200:
-                result = response.json()
-                return {
-                    'success': True,
-                    'data': result.get('data'),
-                    'time': result.get('time'),
-                    'state_variables': result.get('state_variables', []),
-                    'region_labels': result.get('region_labels', []),
-                    'sample_period': result.get('sample_period'),
-                    'message': 'Simulation completed successfully'
-                }
-            else:
-                error_msg = response.json().get('detail', response.text)
+            _logger.info(f"TVBO API response status: {response.status_code}")
+            result = response.json()
+            _logger.info(f"TVBO API response keys: {list(result.keys())}")
+            _logger.info(f"TVBO API success: {result.get('success')}")
+            
+            if response.status_code != 200:
+                error_msg = result.get('detail', response.text)
                 _logger.error(f"TVBO API error: {error_msg}")
-                return {
-                    'success': False,
-                    'error': f'TVBO API error: {error_msg}'
-                }
+                return {'success': False, 'error': f'TVBO API error: {error_msg}'}
+                
+            if not result.get('success'):
+                error_msg = result.get('error', 'Unknown error from TVBO API')
+                _logger.error(f"TVBO API returned failure: {error_msg}")
+                return {'success': False, 'error': error_msg}
+
+            # MVP: No fallbacks - pass through exactly what API returns
+            _logger.info(f"Returning data with {len(result.get('data', []))} time points")
+            return {
+                'success': True,
+                'data': result.get('data'),
+                'time': result.get('time'),
+                'state_variables': result.get('state_variables'),
+                'region_labels': result.get('region_labels'),
+                'sample_period': result.get('sample_period'),
+                'message': 'Simulation completed successfully'
+            }
 
         except requests.exceptions.ConnectionError:
             _logger.error("Cannot connect to TVBO API container")

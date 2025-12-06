@@ -12,15 +12,24 @@
   const DEBUG = true;
   const log = (...args) => { if (DEBUG && console && console.log) console.log('[ModelBuilder]', ...args); };
 
-  function initializeBuilder() {
-    // Load data
-    STATE.data = window.searchData || [];
-    STATE.dataLoaded = true;
-    log('Initializing builder with data:', { count: STATE.data.length });
+  // Global error handler to help debug issues
+  window.addEventListener('error', function(event) {
+    console.error('[ModelBuilder] Global error caught:', event.message, 'at', event.filename, ':', event.lineno);
+  });
 
-    const content = document.getElementById('builderContent');
-    if (content) {
-      renderBuilder(content);
+  function initializeBuilder() {
+    try {
+      // Load data
+      STATE.data = window.searchData || [];
+      STATE.dataLoaded = true;
+      log('Initializing builder with data:', { count: STATE.data.length });
+
+      const content = document.getElementById('builderContent');
+      if (content) {
+        renderBuilder(content);
+      }
+    } catch (err) {
+      console.error('[ModelBuilder] Error in initializeBuilder:', err);
     }
   }
 
@@ -489,70 +498,70 @@
   }
 
   function collectSpec(section, lists) {
-    const name = section.querySelector('#builderSpecName').value.trim() || 'MyCustomModel';
-    const description = section.querySelector('#builderNotes').value.trim() || '';
+    const name = section.querySelector('#builderSpecName')?.value?.trim() || 'MyCustomModel';
+    const description = section.querySelector('#builderNotes')?.value?.trim() || '';
     const systemType = section.querySelector('#builderSystemType')?.value || 'continuous';
 
     const modelParams = Array.from(section.querySelectorAll('#modelParamsRows .builder-row')).map(row => {
-      const domain_lo = parseMaybeNumber(row.querySelector('.p-domain-lo')?.value.trim());
-      const domain_hi = parseMaybeNumber(row.querySelector('.p-domain-hi')?.value.trim());
+      const domain_lo = parseMaybeNumber(row.querySelector('.p-domain-lo')?.value?.trim());
+      const domain_hi = parseMaybeNumber(row.querySelector('.p-domain-hi')?.value?.trim());
       const domain = (domain_lo !== undefined || domain_hi !== undefined) ? { lo: domain_lo, hi: domain_hi } : undefined;
 
       return {
-        name: row.querySelector('.p-name').value.trim(),
-        value: parseMaybeNumber(row.querySelector('.p-value').value.trim()),
-        unit: row.querySelector('.p-unit').value.trim() || undefined,
-        symbol: row.querySelector('.p-symbol')?.value.trim() || undefined,
+        name: row.querySelector('.p-name')?.value?.trim() || '',
+        value: parseMaybeNumber(row.querySelector('.p-value')?.value?.trim()),
+        unit: row.querySelector('.p-unit')?.value?.trim() || undefined,
+        symbol: row.querySelector('.p-symbol')?.value?.trim() || undefined,
         domain: domain
       };
     }).filter(p => p.name);
 
     const derivedParams = Array.from(section.querySelectorAll('#derivedParamsRows .builder-row')).map(row => ({
-      name: row.querySelector('.dp-name').value.trim(),
-      unit: row.querySelector('.dp-unit')?.value.trim() || undefined,
+      name: row.querySelector('.dp-name')?.value?.trim() || '',
+      unit: row.querySelector('.dp-unit')?.value?.trim() || undefined,
       equation: {
-        rhs: row.querySelector('.dp-expr').value.trim() || undefined
+        rhs: row.querySelector('.dp-expr')?.value?.trim() || undefined
       }
     })).filter(p => p.name);
 
     const stateVars = Array.from(section.querySelectorAll('#stateEqRows .builder-row')).map(row => ({
-      name: row.querySelector('.sv-name').value.trim(),
-      symbol: row.querySelector('.sv-symbol')?.value.trim() || undefined,
-      unit: row.querySelector('.sv-unit')?.value.trim() || undefined,
-      initial_value: parseMaybeNumber(row.querySelector('.sv-initial')?.value.trim()),
+      name: row.querySelector('.sv-name')?.value?.trim() || '',
+      symbol: row.querySelector('.sv-symbol')?.value?.trim() || undefined,
+      unit: row.querySelector('.sv-unit')?.value?.trim() || undefined,
+      initial_value: parseMaybeNumber(row.querySelector('.sv-initial')?.value?.trim()),
       variable_of_interest: row.querySelector('.sv-voi')?.checked || false,
       coupling_variable: row.querySelector('.sv-coupling')?.checked || false,
       equation: {
-        rhs: row.querySelector('.sv-expr').value.trim() || undefined
+        rhs: row.querySelector('.sv-expr')?.value?.trim() || undefined
       }
     })).filter(e => e.name);
 
     const derivedVars = Array.from(section.querySelectorAll('#derivedVarsRows .builder-row')).map(row => ({
-      name: row.querySelector('.dv-name').value.trim(),
-      unit: row.querySelector('.dv-unit')?.value.trim() || undefined,
+      name: row.querySelector('.dv-name')?.value?.trim() || '',
+      unit: row.querySelector('.dv-unit')?.value?.trim() || undefined,
       equation: {
-        rhs: row.querySelector('.dv-expr').value.trim() || undefined
+        rhs: row.querySelector('.dv-expr')?.value?.trim() || undefined
       }
     })).filter(e => e.name);
 
     const outputTransforms = Array.from(section.querySelectorAll('#outputTransformsRows .builder-row')).map(row => ({
-      name: row.querySelector('.ot-name').value.trim(),
-      unit: row.querySelector('.ot-unit')?.value.trim() || undefined,
+      name: row.querySelector('.ot-name')?.value?.trim() || '',
+      unit: row.querySelector('.ot-unit')?.value?.trim() || undefined,
       equation: {
-        rhs: row.querySelector('.ot-expr').value.trim() || undefined
+        rhs: row.querySelector('.ot-expr')?.value?.trim() || undefined
       }
     })).filter(e => e.name);
 
     const functions = Array.from(section.querySelectorAll('#functionsRows .builder-row')).map(row => ({
-      name: row.querySelector('.fn-name').value.trim(),
+      name: row.querySelector('.fn-name')?.value?.trim() || '',
       equation: {
-        rhs: row.querySelector('.fn-expr').value.trim() || undefined
+        rhs: row.querySelector('.fn-expr')?.value?.trim() || undefined
       }
     })).filter(f => f.name);
 
     const couplingTerms = Array.from(section.querySelectorAll('#couplingTermsRows .builder-row')).map(row => ({
-      name: row.querySelector('.ct-name').value.trim(),
-      value: parseMaybeNumber(row.querySelector('.ct-value').value.trim())
+      name: row.querySelector('.ct-name')?.value?.trim() || '',
+      value: parseMaybeNumber(row.querySelector('.ct-value')?.value?.trim())
     })).filter(c => c.name);
 
     return {
@@ -1981,7 +1990,7 @@
           if (unit) sv.unit = unit;
           if (initial) sv.initial_value = parseFloat(initial);
           if (voi !== undefined) sv.variable_of_interest = voi;
-          if (coupling !== undefined) sv.receives_coupling = coupling;
+          if (coupling !== undefined) sv.coupling_variable = coupling;
           config.state_variables.push(sv);
         }
       });
@@ -2278,7 +2287,7 @@
           if (sv.unit) yaml += `\n        unit: "${sv.unit}"`;
           if (sv.initial_value !== undefined) yaml += `\n        initial_value: ${sv.initial_value}`;
           if (sv.variable_of_interest !== undefined) yaml += `\n        variable_of_interest: ${sv.variable_of_interest}`;
-          if (sv.receives_coupling !== undefined) yaml += `\n        receives_coupling: ${sv.receives_coupling}`;
+          if (sv.coupling_variable !== undefined) yaml += `\n        coupling_variable: ${sv.coupling_variable}`;
         });
       }
 
@@ -2495,16 +2504,21 @@
    * @returns {Object} Experiment configuration for TVBO API
    */
   function collectFullExperiment() {
-    log('Collecting full experiment configuration...');
+    console.log('[ModelBuilder] collectFullExperiment called');
 
-    // 1. Collect local dynamics (REQUIRED: at least model name)
+    // 1. Collect local dynamics (REQUIRED)
     const dynamicsConfig = collectDynamicsConfig();
+    console.log('[ModelBuilder] dynamicsConfig:', dynamicsConfig);
+    
+    if (!dynamicsConfig.model && !dynamicsConfig.name) {
+      throw new Error('No model selected. Please select or configure a model.');
+    }
+    
     const local_dynamics = {
-      name: dynamicsConfig.model || dynamicsConfig.name || 'Generic2dOscillator',
+      name: dynamicsConfig.model || dynamicsConfig.name,
     };
 
     // Collect parameters from the model builder UI
-    // Classes: p-name, p-value, p-unit, p-symbol, p-domain-lo, p-domain-hi
     const paramRows = document.querySelectorAll('#modelParamsRows .builder-row');
     if (paramRows.length > 0) {
       local_dynamics.parameters = [];
@@ -2550,7 +2564,7 @@
           if (unit) sv.unit = unit;
           if (initial) sv.initial_value = parseFloat(initial);
           if (voi !== undefined) sv.variable_of_interest = voi;
-          if (coupling !== undefined) sv.receives_coupling = coupling;
+          if (coupling !== undefined) sv.coupling_variable = coupling;
           local_dynamics.state_variables.push(sv);
         }
       });
@@ -2608,59 +2622,90 @@
       });
     }
 
-    // 2. Collect network (REQUIRED: nodes and edges)
+    // 2. Collect network (REQUIRED)
     const networkConfig = collectNetworkConfig();
-    const modelName = local_dynamics.name || 'Generic2dOscillator';
-    const couplingName = document.getElementById('couplingFunction')?.value || 'Linear';
+    console.log('[ModelBuilder] networkConfig:', networkConfig);
+    
+    const modelName = local_dynamics.name;
+    const couplingName = document.getElementById('couplingFunction')?.value;
+    
+    if (!networkConfig || networkConfig.mode === 'not configured') {
+      throw new Error('No network configured. Please configure a network in the Network tab.');
+    }
+
+    // Build network using matrix format (compatible with API)
+    const nNodes = networkConfig.number_of_nodes || networkConfig.nodes?.length || 2;
+    
+    // Initialize weights and lengths matrices as flat arrays (row-major order)
+    const weights = new Array(nNodes * nNodes).fill(0.0);
+    const lengths = new Array(nNodes * nNodes).fill(0.0);
+    
+    // Populate from edges
+    if (networkConfig.edges && networkConfig.edges.length > 0) {
+      networkConfig.edges.forEach(e => {
+        const src = parseInt(e.source);
+        const tgt = parseInt(e.target);
+        if (src >= 0 && src < nNodes && tgt >= 0 && tgt < nNodes) {
+          const idx = src * nNodes + tgt;
+          weights[idx] = e.weight ?? 1.0;
+          // Use delay as length proxy, or compute from positions if available
+          lengths[idx] = e.delay ?? 10.0;
+        }
+      });
+    }
+    
+    // Build region labels from nodes if available
+    const regionLabels = [];
+    if (networkConfig.nodes && networkConfig.nodes.length > 0) {
+      networkConfig.nodes.forEach((n, idx) => {
+        regionLabels.push(n.label || `Region_${idx}`);
+      });
+    }
 
     const network = {
-      label: networkConfig.label || 'WebNetwork',
-      number_of_regions: networkConfig.number_of_nodes || networkConfig.nodes?.length || 2,
-      global_coupling_strength: networkConfig.global_coupling_strength || 1.0,
-      conduction_speed: networkConfig.conduction_speed || 3.0,
+      label: networkConfig.label,
+      number_of_regions: nNodes,
+      weights: { values: weights },
+      lengths: { values: lengths },
+      node_labels: regionLabels.length > 0 ? regionLabels : undefined,
     };
-
-    if (networkConfig.nodes && networkConfig.nodes.length > 0) {
-      network.nodes = networkConfig.nodes.map((n, idx) => ({
-        id: n.id ?? idx,
-        label: n.label || `Node_${idx}`,
-        position: n.position || { x: 0, y: 0, z: 0 },
-        dynamics: n.dynamics || modelName,  // Required: use node's dynamics or default to selected model
-      }));
+    
+    // Add global parameters if specified
+    if (networkConfig.global_coupling_strength) {
+      network.global_coupling_strength = { value: networkConfig.global_coupling_strength };
     }
-
-    if (networkConfig.edges && networkConfig.edges.length > 0) {
-      network.edges = networkConfig.edges.map(e => ({
-        source: e.source,
-        target: e.target,
-        coupling: e.coupling || couplingName,  // Required: use edge's coupling or default
-        weight: e.weight ?? 1.0,
-        delay: e.delay ?? 0.0,
-      }));
+    if (networkConfig.conduction_speed) {
+      network.conduction_speed = { value: networkConfig.conduction_speed };
     }
+    
+    console.log('[ModelBuilder] Built network:', network);
 
-    // 3. Collect integration (OPTIONAL: has defaults)
+    // 3. Collect integration (REQUIRED)
     const integrationConfig = collectIntegrationConfig();
+    console.log('[ModelBuilder] integrationConfig:', integrationConfig);
+    
     const integration = {
-      method: integrationConfig.method || 'Heun',
-      step_size: integrationConfig.step_size || 0.1,
-      duration: integrationConfig.duration || 1000.0,
+      method: integrationConfig.method,
+      step_size: integrationConfig.step_size,
+      duration: integrationConfig.duration,
     };
 
-    // 4. Collect coupling (OPTIONAL: defaults to Linear)
-    // Check for coupling selection in the UI
+    // 4. Collect coupling
     const couplingSelect = document.getElementById('couplingFunction');
     const globalCouplingInput = document.getElementById('globalCoupling') || document.getElementById('customGlobalCoupling');
     const coupling = {
-      name: couplingSelect?.value || 'Linear',
-      global_coupling: globalCouplingInput?.value ? parseFloat(globalCouplingInput.value) : 1.0,
+      name: couplingSelect?.value,
+      global_coupling: globalCouplingInput?.value ? parseFloat(globalCouplingInput.value) : undefined,
     };
+    console.log('[ModelBuilder] coupling:', coupling);
 
-    // 5. Collect monitors (OPTIONAL: defaults to Raw)
-    const monitors = collectObservationModelsConfig() || [{ name: 'Raw', period: 1.0 }];
+    // 5. Collect monitors (optional)
+    const monitors = collectObservationModelsConfig();
+    console.log('[ModelBuilder] monitors:', monitors);
 
-    // 6. Collect stimulus (OPTIONAL: can be null)
+    // 6. Collect stimulus (optional)
     const stimulus = collectStimulusConfig();
+    console.log('[ModelBuilder] stimulus:', stimulus);
 
     // Build the full experiment object
     const experiment = {
@@ -2697,6 +2742,7 @@
   }
 
   async function runSimulation() {
+    console.log('[ModelBuilder] ========== SIMULATION START ==========');
     log('Running simulation...');
 
     const runBtn = document.getElementById('runSimulationBtn');
@@ -2710,6 +2756,7 @@
     const duration = parseFloat(document.getElementById('runDuration')?.value) || 1000;
     const stepSize = parseFloat(document.getElementById('runStepSize')?.value) || 0.1;
     const backend = document.getElementById('runBackend')?.value || 'jax';
+    console.log('[ModelBuilder] Run parameters:', { duration, stepSize, backend });
 
     // Reset UI
     errorDiv.style.display = 'none';
@@ -2721,7 +2768,9 @@
 
     try {
       // Collect the full experiment configuration
+      console.log('[ModelBuilder] Collecting experiment configuration...');
       const experiment = collectFullExperiment();
+      console.log('[ModelBuilder] Collected experiment:', JSON.stringify(experiment, null, 2));
       log('Experiment config:', experiment);
 
       progressBar.style.width = '20%';
@@ -2750,30 +2799,65 @@
       statusText.textContent = 'Processing results...';
 
       const result = await response.json();
+      console.log('[ModelBuilder] Raw API response:', result);
 
       if (result.error) {
-        throw new Error(result.error.message || result.error.data?.message || 'Unknown error');
+        console.error('[ModelBuilder] API returned error:', result.error);
+        throw new Error(result.error.message || result.error.data?.message || 'API returned error');
       }
 
       const data = result.result;
-
+      console.log('[ModelBuilder] Result data:', data);
+      
+      // MVP: Fail explicitly if data is missing
+      if (!data) {
+        throw new Error('API returned empty result. Check Odoo logs.');
+      }
       if (!data.success) {
-        throw new Error(data.error || 'Simulation failed');
+        console.error('[ModelBuilder] Simulation failed:', data.error);
+        throw new Error(data.error);
+      }
+      if (!data.data) {
+        throw new Error('Simulation returned no data array');
+      }
+      if (!data.time) {
+        throw new Error('Simulation returned no time array');
+      }
+      if (!data.state_variables) {
+        throw new Error('Simulation returned no state_variables');
       }
 
-      // Store results
+      console.log('[ModelBuilder] data.data length:', data.data.length);
+      console.log('[ModelBuilder] data.time length:', data.time.length);
+      console.log('[ModelBuilder] data.state_variables:', data.state_variables);
+      console.log('[ModelBuilder] data.region_labels:', data.region_labels);
+
+      // Store results - no fallbacks, fail if data missing
       simulationResults = {
-        data: data.data,  // Shape: [time, state_vars, regions, modes]
+        data: data.data,
         time: data.time,
-        stateVariables: data.state_variables || ['V'],
-        regionLabels: data.region_labels || [],
-        samplePeriod: data.sample_period || stepSize,
+        stateVariables: data.state_variables,
+        regionLabels: data.region_labels,
+        samplePeriod: data.sample_period,
       };
+      console.log('[ModelBuilder] Stored simulationResults:', {
+        dataShape: simulationResults.data ? `[${simulationResults.data.length}]` : 'null',
+        timeLength: simulationResults.time?.length,
+        stateVariables: simulationResults.stateVariables,
+        regionLabels: simulationResults.regionLabels,
+        samplePeriod: simulationResults.samplePeriod,
+      });
+      // Log first data point for debugging
+      if (simulationResults.data && simulationResults.data.length > 0) {
+        console.log('[ModelBuilder] First time point data:', simulationResults.data[0]);
+        console.log('[ModelBuilder] Data structure: data[time][stateVar][region][mode]');
+      }
 
       progressBar.style.width = '100%';
       statusText.textContent = 'Complete!';
 
       // Populate plot controls
+      console.log('[ModelBuilder] Calling populatePlotControls...');
       populatePlotControls();
 
       // Show results and plot
@@ -2803,48 +2887,70 @@
   }
 
   function populatePlotControls() {
-    if (!simulationResults) return;
+    console.log('[ModelBuilder] populatePlotControls called, simulationResults:', simulationResults);
+    if (!simulationResults) {
+      throw new Error('populatePlotControls called but simulationResults is null');
+    }
 
     const stateVarSelect = document.getElementById('plotStateVar');
     const regionsSelect = document.getElementById('plotRegions');
-
-    // Populate state variables
-    if (stateVarSelect) {
-      stateVarSelect.innerHTML = simulationResults.stateVariables
-        .map((sv, i) => `<option value="${i}">${sv}</option>`)
-        .join('');
+    
+    if (!stateVarSelect) {
+      throw new Error('plotStateVar select element not found');
+    }
+    if (!regionsSelect) {
+      throw new Error('plotRegions select element not found');
     }
 
-    // Populate regions
-    if (regionsSelect) {
-      const labels = simulationResults.regionLabels.length > 0
-        ? simulationResults.regionLabels
-        : simulationResults.data[0]?.[0]?.map((_, i) => `Region ${i}`) || [];
+    // Populate state variables - no fallback
+    stateVarSelect.innerHTML = simulationResults.stateVariables
+      .map((sv, i) => `<option value="${i}">${sv}</option>`)
+      .join('');
+    console.log('[ModelBuilder] State var options populated:', simulationResults.stateVariables);
 
-      regionsSelect.innerHTML = labels
-        .map((label, i) => `<option value="${i}" ${i < 5 ? 'selected' : ''}>${label}</option>`)
-        .join('');
-    }
+    // Populate regions - generate labels if not provided by API
+    const nRegions = simulationResults.data[0][0].length;
+    const labels = simulationResults.regionLabels.length > 0
+      ? simulationResults.regionLabels
+      : Array.from({length: nRegions}, (_, i) => `Region ${i}`);
+    console.log('[ModelBuilder] Region labels for dropdown:', labels);
+
+    regionsSelect.innerHTML = labels
+      .map((label, i) => `<option value="${i}" ${i < 5 ? 'selected' : ''}>${label}</option>`)
+      .join('');
   }
 
   function updatePlot() {
-    if (!simulationResults || !simulationResults.data) {
-      log('No simulation results to plot');
-      return;
+    console.log('[ModelBuilder] updatePlot called, simulationResults:', simulationResults);
+    if (!simulationResults) {
+      throw new Error('updatePlot called but simulationResults is null');
+    }
+    if (!simulationResults.data) {
+      throw new Error('updatePlot called but simulationResults.data is null');
+    }
+    if (!simulationResults.time) {
+      throw new Error('updatePlot called but simulationResults.time is null');
     }
 
-    const plotType = document.getElementById('plotType')?.value || 'timeseries';
-    const stateVarIdx = parseInt(document.getElementById('plotStateVar')?.value) || 0;
+    const plotTypeSelect = document.getElementById('plotType');
+    const stateVarSelect = document.getElementById('plotStateVar');
     const regionsSelect = document.getElementById('plotRegions');
-    const selectedRegions = regionsSelect
-      ? Array.from(regionsSelect.selectedOptions).map(o => parseInt(o.value))
-      : [0];
-
     const container = document.getElementById('plotContainer');
-    if (!container) return;
+    
+    if (!plotTypeSelect) throw new Error('plotType select not found');
+    if (!stateVarSelect) throw new Error('plotStateVar select not found');
+    if (!regionsSelect) throw new Error('plotRegions select not found');
+    if (!container) throw new Error('plotContainer not found');
+
+    const plotType = plotTypeSelect.value;
+    const stateVarIdx = parseInt(stateVarSelect.value);
+    const selectedRegions = Array.from(regionsSelect.selectedOptions).map(o => parseInt(o.value));
+    
+    console.log('[ModelBuilder] Plot settings:', { plotType, stateVarIdx, selectedRegions });
+    console.log('[ModelBuilder] Plot container dimensions:', container.clientWidth, 'x', container.clientHeight);
 
     const time = simulationResults.time;
-    const data = simulationResults.data;  // [time, state_vars, regions, modes]
+    const data = simulationResults.data;
 
     if (plotType === 'timeseries') {
       plotTimeSeries(container, time, data, stateVarIdx, selectedRegions);
@@ -2975,8 +3081,8 @@
     svg += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#333" stroke-width="1"/>`;
 
     // Labels
-    svg += `<text x="${margin.left / 2}" y="${height / 2}" text-anchor="middle" transform="rotate(-90, ${margin.left / 2}, ${height / 2})" font-size="12">${simulationResults.stateVariables[1] || 'SV2'}</text>`;
-    svg += `<text x="${margin.left + plotWidth / 2}" y="${height - 5}" text-anchor="middle" font-size="12">${simulationResults.stateVariables[0] || 'SV1'}</text>`;
+    svg += `<text x="${margin.left / 2}" y="${height / 2}" text-anchor="middle" transform="rotate(-90, ${margin.left / 2}, ${height / 2})" font-size="12">${simulationResults.stateVariables?.[1] || 'SV2'}</text>`;
+    svg += `<text x="${margin.left + plotWidth / 2}" y="${height - 5}" text-anchor="middle" font-size="12">${simulationResults.stateVariables?.[0] || 'SV1'}</text>`;
 
     svg += '</svg>';
     container.innerHTML = svg;

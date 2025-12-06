@@ -93,6 +93,9 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
     The experiment dict should match the YAML schema and is passed
     directly to SimulationExperiment for initialization.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         from tvbo.export.experiment import SimulationExperiment
 
@@ -101,17 +104,52 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         step_size = request.step_size or 0.1
         backend = request.backend or "jax"
 
+        logger.info("=" * 60)
+        logger.info("EXPERIMENT RUN REQUEST")
+        logger.info("=" * 60)
+        logger.info(f"Duration: {duration}, Step size: {step_size}, Backend: {backend}")
+        logger.info(f"Input experiment data:\n{exp_data}")
+
         # Pass schema dict directly to SimulationExperiment
         experiment = SimulationExperiment(**exp_data)
+        
+        # Debug: Check parsed experiment via to_yaml()
+        try:
+            yaml_output = experiment.to_yaml()
+            logger.info("=" * 60)
+            logger.info("PARSED EXPERIMENT (to_yaml()):")
+            logger.info("=" * 60)
+            logger.info(f"\n{yaml_output}")
+        except Exception as yaml_err:
+            logger.warning(f"Could not generate to_yaml(): {yaml_err}")
+
+        # Debug: Log key components
+        logger.info(f"local_dynamics type: {type(experiment.local_dynamics)}")
+        logger.info(f"local_dynamics: {experiment.local_dynamics}")
+        if experiment.local_dynamics:
+            logger.info(f"  - name: {experiment.local_dynamics.name}")
+            logger.info(f"  - state_variables: {experiment.local_dynamics.state_variables}")
+            logger.info(f"  - parameters: {experiment.local_dynamics.parameters}")
+        logger.info(f"network type: {type(experiment.network)}")
+        logger.info(f"network: {experiment.network}")
+        if experiment.network:
+            logger.info(f"  - number_of_regions: {getattr(experiment.network, 'number_of_regions', 'N/A')}")
 
         # Run simulation
+        logger.info("Starting simulation run...")
         ts = experiment.run(format=backend, duration=duration)
+        logger.info(f"Simulation complete. TimeSeries data shape: {ts.data.shape}")
+        logger.info(f"TimeSeries time shape: {ts.time.shape}")
 
         # Extract results
         time_arr = ts.time.tolist() if hasattr(ts.time, 'tolist') else list(ts.time)
         data_arr = ts.data.tolist() if hasattr(ts.data, 'tolist') else ts.data
+        
+        logger.info(f"time_arr length: {len(time_arr)}")
+        logger.info(f"data_arr type: {type(data_arr)}, length: {len(data_arr) if isinstance(data_arr, list) else 'N/A'}")
 
         state_vars = list(experiment.local_dynamics.state_variables.keys()) if experiment.local_dynamics and experiment.local_dynamics.state_variables else ['V']
+        logger.info(f"state_variables: {state_vars}")
 
         region_labels = []
         if hasattr(experiment.network, 'region_labels') and experiment.network.region_labels is not None:
@@ -119,6 +157,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         else:
             n_reg = experiment.network.number_of_regions if hasattr(experiment.network, 'number_of_regions') else ts.data.shape[2]
             region_labels = [f'Region_{i}' for i in range(n_reg)]
+        logger.info(f"region_labels: {region_labels}")
 
         return RunExperimentResponse(
             success=True,
@@ -133,6 +172,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
     except Exception as e:
         import traceback
         error_msg = f"{str(e)}\n{traceback.format_exc()}"
+        logger.error(f"EXPERIMENT RUN ERROR: {error_msg}")
         return RunExperimentResponse(
             success=False,
             error=error_msg,

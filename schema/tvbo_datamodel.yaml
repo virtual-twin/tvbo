@@ -389,8 +389,8 @@ classes:
       dynamics:
         range: Dynamics
         required: true
-        description: "Dynamics model governing this node's behavior"
-        inlined: true
+        description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition."
+        inlined: false
       position:
         range: Coordinate
         description: "Spatial coordinates (x, y, z) of the node"
@@ -1052,9 +1052,13 @@ classes:
       local_dynamics:
         range: Dynamics # Lumped, per-node dynamics (ODE/SDE/DDE/SDDE)
         inlined: true
+        description: "Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)"
       dynamics:
         multivalued: true
-        range: string
+        range: Dynamics
+        inlined: true
+        inlined_as_list: true
+        description: "Dictionary of dynamics models keyed by name. Nodes reference these by name."
       integration:
         range: Integrator
         inlined: true
