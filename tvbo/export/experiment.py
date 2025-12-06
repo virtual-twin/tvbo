@@ -262,19 +262,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             network = getattr(self, "network", None)
             if network is None:
                 return
-            
+
             # Get the network as a Connectome (it might already be one)
             if isinstance(network, Connectome):
                 conn = network
             else:
                 conn = Connectome(network)
-            
+
             # Try to get lengths matrix
             try:
                 L = conn.lengths_matrix
             except Exception:
                 L = None
-            
+
             # Disable delays if lengths are None or all zeros
             if L is None or np.allclose(L, 0):
                 if getattr(self, "integration", None) is not None:
