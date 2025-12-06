@@ -643,12 +643,16 @@ def add_to_parameters_collection(key: str, value: tvbo_datamodel.Parameter, path
     for part in path:  # Traverse the entire path
         if part == "parameters":
             continue
-        if part not in current_level:
-            current_level[part] = Bunch()  # Create a new Bunch if not present
+        # Convert integer keys to strings for JAX pytree compatibility
+        part_key = str(part) if isinstance(part, int) else part
+        if part_key not in current_level:
+            current_level[part_key] = Bunch()  # Create a new Bunch if not present
 
         if part != key:
-            current_level = current_level[part]  # Move deeper into the nested Bunch
-    current_level[key] = value.value
+            current_level = current_level[part_key]  # Move deeper into the nested Bunch
+    # Convert final key to string if it's an integer
+    final_key = str(key) if isinstance(key, int) else key
+    current_level[final_key] = value.value
 
 
 def traverse_metadata(

@@ -259,20 +259,32 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def configure(self):
         # Disable delayed logic if the connectome has no path lengths
         try:
-            conn = (
-                Connectome(self.network)
-                if getattr(self, "network", None) is not None
-                else None
-            )
-            L = conn.lengths_matrix if conn is not None else None
-            if L is not None and np.allclose(L, 0):
+            network = getattr(self, "network", None)
+            if network is None:
+                return
+            
+            # Get the network as a Connectome (it might already be one)
+            if isinstance(network, Connectome):
+                conn = network
+            else:
+                conn = Connectome(network)
+            
+            # Try to get lengths matrix
+            try:
+                L = conn.lengths_matrix
+            except Exception:
+                L = None
+            
+            # Disable delays if lengths are None or all zeros
+            if L is None or np.allclose(L, 0):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
                     self.coupling.delayed = False
-        except Exception:
+        except Exception as e:
             # Best-effort; keep defaults if anything goes wrong
-            pass
+            import warnings
+            warnings.warn(f"Could not configure delays: {e}")
 
     def add_stimulus(self, stimulus):
         import owlready2 as owl
