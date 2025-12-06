@@ -1,5 +1,5 @@
 # Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 LABEL maintainer="Leon Martin <leon.martin@bih-charite.de>"
 
