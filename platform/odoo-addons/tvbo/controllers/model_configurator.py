@@ -399,3 +399,80 @@ class ModelConfiguratorController(http.Controller):
                 'success': False,
                 'error': str(e)
             }
+
+    @http.route('/tvbo/configurator/run', type='json', auth='public', website=True, csrf=False)
+    def run_simulation(self, **kwargs):
+        """
+        Run a simulation experiment by proxying to the TVBO API container.
+
+        Expects a JSON payload with:
+        - experiment: dict with experiment configuration (Pydantic-compatible)
+        - duration: float (optional, override integration duration)
+        - step_size: float (optional, override integration step size)
+        - backend: str ('jax' or 'tvb')
+        """
+        import requests
+        import os
+
+        try:
+            experiment_data = kwargs.get('experiment', {})
+            duration = kwargs.get('duration', 1000)
+            step_size = kwargs.get('step_size', 0.1)
+            backend = kwargs.get('backend', 'jax')
+
+            _logger.info(f"Running simulation: duration={duration}ms, step_size={step_size}ms, backend={backend}")
+
+            # Build the request payload for TVBO API
+            payload = {
+                'experiment': experiment_data,
+                'duration': float(duration),
+                'step_size': float(step_size),
+                'backend': backend,
+            }
+
+            # Call the TVBO API container
+            # In Docker Compose, the service name is 'tvbo-api' on port 8000
+            tvbo_api_url = os.environ.get('TVBO_API_URL', 'http://tvbo-api:8000')
+            response = requests.post(
+                f'{tvbo_api_url}/experiment/run',
+                json=payload,
+                timeout=300  # 5 minute timeout for long simulations
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                return {
+                    'success': True,
+                    'data': result.get('data'),
+                    'time': result.get('time'),
+                    'state_variables': result.get('state_variables', []),
+                    'region_labels': result.get('region_labels', []),
+                    'sample_period': result.get('sample_period'),
+                    'message': 'Simulation completed successfully'
+                }
+            else:
+                error_msg = response.json().get('detail', response.text)
+                _logger.error(f"TVBO API error: {error_msg}")
+                return {
+                    'success': False,
+                    'error': f'TVBO API error: {error_msg}'
+                }
+
+        except requests.exceptions.ConnectionError:
+            _logger.error("Cannot connect to TVBO API container")
+            return {
+                'success': False,
+                'error': 'Cannot connect to TVBO API. Please ensure the tvbo-api container is running.'
+            }
+        except requests.exceptions.Timeout:
+            _logger.error("TVBO API request timed out")
+            return {
+                'success': False,
+                'error': 'Simulation timed out. Try reducing the duration or increasing step size.'
+            }
+        except Exception as e:
+            _logger.error(f"Error running simulation: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': str(e)
+            }

@@ -53,6 +53,11 @@
                                     Preview
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="run-tab" data-bs-toggle="tab" data-bs-target="#run-panel" type="button" role="tab">
+                                    <i class="fa fa-play"></i> Run
+                                </button>
+                            </li>
                         </ul>
 
                         <!-- Tab Content -->
@@ -338,6 +343,111 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Run Tab -->
+                            <div class="tab-pane fade" id="run-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>Run Simulation</strong></p>
+                                        <p>Execute your simulation experiment and visualize the results.</p>
+                                    </div>
+
+                                    <!-- Run Controls -->
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Simulation Settings</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Duration (ms)</label>
+                                                    <input type="number" id="runDuration" class="form-control" value="1000" min="1" step="100"/>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Step Size (ms)</label>
+                                                    <input type="number" id="runStepSize" class="form-control" value="0.1" min="0.001" step="0.01"/>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Backend</label>
+                                                    <select id="runBackend" class="form-select">
+                                                        <option value="jax" selected="selected">JAX (GPU/CPU)</option>
+                                                        <option value="tvb">TVB (NumPy)</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 d-flex align-items-end">
+                                                    <button id="runSimulationBtn" class="btn btn-success w-100">
+                                                        <i class="fa fa-play"></i> Run Simulation
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Status and Progress -->
+                                    <div id="runStatus" class="mb-4" style="display: none;">
+                                        <div class="alert alert-secondary">
+                                            <div class="d-flex align-items-center">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                    <span class="visually-hidden">Running...</span>
+                                                </div>
+                                                <span id="runStatusText">Initializing simulation...</span>
+                                            </div>
+                                            <div class="progress mt-2" style="height: 6px;">
+                                                <div id="runProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Error Display -->
+                                    <div id="runError" class="alert alert-danger" style="display: none;"></div>
+
+                                    <!-- Results Section -->
+                                    <div id="runResults" style="display: none;">
+                                        <div class="card mb-4">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">Simulation Results</h5>
+                                                <div>
+                                                    <button id="downloadResultsBtn" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fa fa-download"></i> Download Data
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Plot Controls -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">State Variable</label>
+                                                        <select id="plotStateVar" class="form-select"></select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Regions</label>
+                                                        <select id="plotRegions" class="form-select" multiple="multiple" size="4"></select>
+                                                        <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Plot Type</label>
+                                                        <select id="plotType" class="form-select">
+                                                            <option value="timeseries">Time Series</option>
+                                                            <option value="phasespace">Phase Space</option>
+                                                            <option value="heatmap">Heatmap</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Plot Container -->
+                                                <div id="plotContainer" style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px;"></div>
+
+                                                <!-- Simulation Info -->
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <div id="simInfo" class="text-muted small"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -365,7 +475,7 @@
                 <script type="text/javascript">
                     console.log('[DEBUG] network_graph_3d.js loaded, NetworkGraph3D:', typeof window.NetworkGraph3D);
                 </script>
-                <script type="text/javascript" src="/tvbo/static/src/js/model_builder.js?v=16"></script>
+                <script type="text/javascript" src="/tvbo/static/src/js/model_builder.js?v=19"></script>
 
                 <script type="text/javascript">
                     console.log('[DEBUG] All scripts loaded, checking THREE:', typeof THREE);

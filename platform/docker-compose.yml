@@ -45,6 +45,7 @@ services:
       - USER=odoo
       - PASSWORD=odoo
       - TVBO_TEMPDIR=/tmp/tvbo
+      - PYTHONPATH=/mnt/tvbo-src
     ports:
       - "8169:8069"
     volumes:
@@ -53,6 +54,8 @@ services:
       - ./odoo-addons:/mnt/extra-addons
       - ./init-odoo.sh:/init-odoo.sh:ro
       - ../imgs:/mnt/imgs:ro
+      # Mount tvbo source for development
+      - ..:/mnt/tvbo-src:ro
     networks:
       - tvbo-network
     restart: unless-stopped

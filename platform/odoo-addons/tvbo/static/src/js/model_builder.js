@@ -1929,10 +1929,115 @@
     const modelName = modelSelect?.value;
     const specName = document.getElementById('builderSpecName')?.value?.trim();
 
-    // Only return configured values
+    // Start with basic config
     const config = {};
     if (modelName) config.model = modelName;
     if (specName) config.name = specName;
+
+    // Collect parameters from the model builder UI
+    // Classes: p-name, p-value, p-unit, p-symbol, p-domain-lo, p-domain-hi
+    const paramRows = document.querySelectorAll('#modelParamsRows .builder-row');
+    if (paramRows.length > 0) {
+      config.parameters = [];
+      paramRows.forEach(row => {
+        const name = row.querySelector('.p-name')?.value;
+        const value = row.querySelector('.p-value')?.value;
+        const unit = row.querySelector('.p-unit')?.value;
+        const symbol = row.querySelector('.p-symbol')?.value;
+        const domainLo = row.querySelector('.p-domain-lo')?.value;
+        const domainHi = row.querySelector('.p-domain-hi')?.value;
+        if (name) {
+          const param = { name: name };
+          if (value) param.value = parseFloat(value);
+          if (unit) param.unit = unit;
+          if (symbol) param.symbol = symbol;
+          if (domainLo || domainHi) {
+            param.domain = {};
+            if (domainLo) param.domain.lo = parseFloat(domainLo);
+            if (domainHi) param.domain.hi = parseFloat(domainHi);
+          }
+          config.parameters.push(param);
+        }
+      });
+    }
+
+    // Collect state variables from the model builder UI
+    // Classes: sv-name, sv-expr, sv-symbol, sv-unit, sv-initial, sv-voi, sv-coupling
+    const svRows = document.querySelectorAll('#stateEqRows .builder-row');
+    if (svRows.length > 0) {
+      config.state_variables = [];
+      svRows.forEach(row => {
+        const name = row.querySelector('.sv-name')?.value;
+        const expr = row.querySelector('.sv-expr')?.value;
+        const symbol = row.querySelector('.sv-symbol')?.value;
+        const unit = row.querySelector('.sv-unit')?.value;
+        const initial = row.querySelector('.sv-initial')?.value;
+        const voi = row.querySelector('.sv-voi')?.checked;
+        const coupling = row.querySelector('.sv-coupling')?.checked;
+        if (name) {
+          const sv = { name: name };
+          if (expr) sv.equation = { rhs: expr };
+          if (symbol) sv.symbol = symbol;
+          if (unit) sv.unit = unit;
+          if (initial) sv.initial_value = parseFloat(initial);
+          if (voi !== undefined) sv.variable_of_interest = voi;
+          if (coupling !== undefined) sv.receives_coupling = coupling;
+          config.state_variables.push(sv);
+        }
+      });
+    }
+
+    // Collect derived parameters
+    // Classes: dp-name, dp-expr, dp-unit
+    const dpRows = document.querySelectorAll('#derivedParamsRows .builder-row');
+    if (dpRows.length > 0) {
+      config.derived_parameters = [];
+      dpRows.forEach(row => {
+        const name = row.querySelector('.dp-name')?.value;
+        const expr = row.querySelector('.dp-expr')?.value;
+        const unit = row.querySelector('.dp-unit')?.value;
+        if (name) {
+          const dp = { name: name };
+          if (expr) dp.equation = { rhs: expr };
+          if (unit) dp.unit = unit;
+          config.derived_parameters.push(dp);
+        }
+      });
+    }
+
+    // Collect derived variables
+    // Classes: dv-name, dv-expr, dv-unit
+    const dvRows = document.querySelectorAll('#derivedVarsRows .builder-row');
+    if (dvRows.length > 0) {
+      config.derived_variables = [];
+      dvRows.forEach(row => {
+        const name = row.querySelector('.dv-name')?.value;
+        const expr = row.querySelector('.dv-expr')?.value;
+        const unit = row.querySelector('.dv-unit')?.value;
+        if (name) {
+          const dv = { name: name };
+          if (expr) dv.equation = { rhs: expr };
+          if (unit) dv.unit = unit;
+          config.derived_variables.push(dv);
+        }
+      });
+    }
+
+    // Collect functions
+    // Classes: fn-name, fn-expr
+    const fnRows = document.querySelectorAll('#functionsRows .builder-row');
+    if (fnRows.length > 0) {
+      config.functions = [];
+      fnRows.forEach(row => {
+        const name = row.querySelector('.fn-name')?.value;
+        const expr = row.querySelector('.fn-expr')?.value;
+        if (name) {
+          const fn = { name: name };
+          if (expr) fn.equation = { rhs: expr };
+          config.functions.push(fn);
+        }
+      });
+    }
 
     return config;
   }
@@ -2143,9 +2248,68 @@
     // Dynamics - only show if configured
     const dynamics = exp.dynamics;
     if (dynamics && (dynamics.model || dynamics.name)) {
-      yaml += `\n\n  dynamics:`;
-      if (dynamics.model) yaml += `\n    model: ${dynamics.model}`;
-      if (dynamics.name) yaml += `\n    name: ${dynamics.name}`;
+      yaml += `\n\n  local_dynamics:`;
+      if (dynamics.model) yaml += `\n    name: ${dynamics.model}`;
+      else if (dynamics.name) yaml += `\n    name: ${dynamics.name}`;
+
+      // Show parameters if available
+      if (dynamics.parameters && dynamics.parameters.length > 0) {
+        yaml += `\n    parameters:`;
+        dynamics.parameters.forEach(p => {
+          yaml += `\n      - name: ${p.name}`;
+          if (p.value !== undefined) yaml += `\n        value: ${p.value}`;
+          if (p.unit) yaml += `\n        unit: "${p.unit}"`;
+          if (p.symbol) yaml += `\n        symbol: "${p.symbol}"`;
+          if (p.domain) {
+            yaml += `\n        domain:`;
+            if (p.domain.lo !== undefined) yaml += `\n          lo: ${p.domain.lo}`;
+            if (p.domain.hi !== undefined) yaml += `\n          hi: ${p.domain.hi}`;
+          }
+        });
+      }
+
+      // Show state variables if available
+      if (dynamics.state_variables && dynamics.state_variables.length > 0) {
+        yaml += `\n    state_variables:`;
+        dynamics.state_variables.forEach(sv => {
+          yaml += `\n      - name: ${sv.name}`;
+          if (sv.equation && sv.equation.rhs) yaml += `\n        equation: "${sv.equation.rhs}"`;
+          if (sv.symbol) yaml += `\n        symbol: "${sv.symbol}"`;
+          if (sv.unit) yaml += `\n        unit: "${sv.unit}"`;
+          if (sv.initial_value !== undefined) yaml += `\n        initial_value: ${sv.initial_value}`;
+          if (sv.variable_of_interest !== undefined) yaml += `\n        variable_of_interest: ${sv.variable_of_interest}`;
+          if (sv.receives_coupling !== undefined) yaml += `\n        receives_coupling: ${sv.receives_coupling}`;
+        });
+      }
+
+      // Show derived parameters if available
+      if (dynamics.derived_parameters && dynamics.derived_parameters.length > 0) {
+        yaml += `\n    derived_parameters:`;
+        dynamics.derived_parameters.forEach(dp => {
+          yaml += `\n      - name: ${dp.name}`;
+          if (dp.equation && dp.equation.rhs) yaml += `\n        equation: "${dp.equation.rhs}"`;
+          if (dp.unit) yaml += `\n        unit: "${dp.unit}"`;
+        });
+      }
+
+      // Show derived variables if available
+      if (dynamics.derived_variables && dynamics.derived_variables.length > 0) {
+        yaml += `\n    derived_variables:`;
+        dynamics.derived_variables.forEach(dv => {
+          yaml += `\n      - name: ${dv.name}`;
+          if (dv.equation && dv.equation.rhs) yaml += `\n        equation: "${dv.equation.rhs}"`;
+          if (dv.unit) yaml += `\n        unit: "${dv.unit}"`;
+        });
+      }
+
+      // Show functions if available
+      if (dynamics.functions && dynamics.functions.length > 0) {
+        yaml += `\n    functions:`;
+        dynamics.functions.forEach(fn => {
+          yaml += `\n      - name: ${fn.name}`;
+          if (fn.equation && fn.equation.rhs) yaml += `\n        equation: "${fn.equation.rhs}"`;
+        });
+      }
     }
 
     // Network - only show if there's actual configured content
@@ -2278,6 +2442,677 @@
     return yaml;
   }
 
+  // ============================================
+  // SIMULATION RUNNER
+  // ============================================
+
+  let simulationResults = null;
+
+  /**
+   * Collect the full experiment configuration for running a simulation.
+   *
+   * REQUIRED fields (must be configured):
+   *   - local_dynamics.name: Model name (e.g., 'Generic2dOscillator', 'JansenRit')
+   *     Source: Model tab -> Base Model dropdown OR custom model name
+   *
+   *   - network.nodes: At least 2 nodes with positions
+   *     Source: Network tab -> Custom network nodes
+   *     Each node needs: id, label, position {x, y, z}
+   *
+   *   - network.edges: Connections between nodes
+   *     Source: Network tab -> Edges section
+   *     Each edge needs: source, target, weight
+   *
+   * OPTIONAL fields (have sensible defaults):
+   *   - local_dynamics.parameters: Model parameters
+   *     Default: Uses model's default parameter values
+   *
+   *   - integration.method: Integrator type
+   *     Default: 'Heun'
+   *     Options: Euler, Heun, Dopri5, Dopri853
+   *
+   *   - integration.step_size: Time step in ms
+   *     Default: 0.1 (can be overridden in Run tab)
+   *
+   *   - integration.duration: Simulation duration in ms
+   *     Default: 1000.0 (can be overridden in Run tab)
+   *
+   *   - coupling.name: Coupling function
+   *     Default: 'Linear'
+   *
+   *   - coupling.global_coupling: Global coupling strength
+   *     Default: 1.0
+   *
+   *   - network.conduction_speed: Signal propagation speed (m/s)
+   *     Default: 3.0
+   *
+   *   - monitors: Observation models / monitors
+   *     Default: Raw monitor with period=1.0
+   *
+   *   - stimulus: External stimulation
+   *     Default: None
+   *
+   * @returns {Object} Experiment configuration for TVBO API
+   */
+  function collectFullExperiment() {
+    log('Collecting full experiment configuration...');
+
+    // 1. Collect local dynamics (REQUIRED: at least model name)
+    const dynamicsConfig = collectDynamicsConfig();
+    const local_dynamics = {
+      name: dynamicsConfig.model || dynamicsConfig.name || 'Generic2dOscillator',
+    };
+
+    // Collect parameters from the model builder UI
+    // Classes: p-name, p-value, p-unit, p-symbol, p-domain-lo, p-domain-hi
+    const paramRows = document.querySelectorAll('#modelParamsRows .builder-row');
+    if (paramRows.length > 0) {
+      local_dynamics.parameters = [];
+      paramRows.forEach(row => {
+        const name = row.querySelector('.p-name')?.value;
+        const value = row.querySelector('.p-value')?.value;
+        const unit = row.querySelector('.p-unit')?.value;
+        const symbol = row.querySelector('.p-symbol')?.value;
+        const domainLo = row.querySelector('.p-domain-lo')?.value;
+        const domainHi = row.querySelector('.p-domain-hi')?.value;
+        if (name) {
+          const param = { name: name };
+          if (value) param.value = parseFloat(value);
+          if (unit) param.unit = unit;
+          if (symbol) param.symbol = symbol;
+          if (domainLo || domainHi) {
+            param.domain = {};
+            if (domainLo) param.domain.lo = parseFloat(domainLo);
+            if (domainHi) param.domain.hi = parseFloat(domainHi);
+          }
+          local_dynamics.parameters.push(param);
+        }
+      });
+    }
+
+    // Collect state variables from the model builder UI
+    // Classes: sv-name, sv-expr, sv-symbol, sv-unit, sv-initial, sv-voi, sv-coupling
+    const svRows = document.querySelectorAll('#stateEqRows .builder-row');
+    if (svRows.length > 0) {
+      local_dynamics.state_variables = [];
+      svRows.forEach(row => {
+        const name = row.querySelector('.sv-name')?.value;
+        const expr = row.querySelector('.sv-expr')?.value;
+        const symbol = row.querySelector('.sv-symbol')?.value;
+        const unit = row.querySelector('.sv-unit')?.value;
+        const initial = row.querySelector('.sv-initial')?.value;
+        const voi = row.querySelector('.sv-voi')?.checked;
+        const coupling = row.querySelector('.sv-coupling')?.checked;
+        if (name) {
+          const sv = { name: name };
+          if (expr) sv.equation = { rhs: expr };
+          if (symbol) sv.symbol = symbol;
+          if (unit) sv.unit = unit;
+          if (initial) sv.initial_value = parseFloat(initial);
+          if (voi !== undefined) sv.variable_of_interest = voi;
+          if (coupling !== undefined) sv.receives_coupling = coupling;
+          local_dynamics.state_variables.push(sv);
+        }
+      });
+    }
+
+    // Collect derived parameters
+    // Classes: dp-name, dp-expr, dp-unit
+    const dpRows = document.querySelectorAll('#derivedParamsRows .builder-row');
+    if (dpRows.length > 0) {
+      local_dynamics.derived_parameters = [];
+      dpRows.forEach(row => {
+        const name = row.querySelector('.dp-name')?.value;
+        const expr = row.querySelector('.dp-expr')?.value;
+        const unit = row.querySelector('.dp-unit')?.value;
+        if (name) {
+          const dp = { name: name };
+          if (expr) dp.equation = { rhs: expr };
+          if (unit) dp.unit = unit;
+          local_dynamics.derived_parameters.push(dp);
+        }
+      });
+    }
+
+    // Collect derived variables
+    // Classes: dv-name, dv-expr, dv-unit
+    const dvRows = document.querySelectorAll('#derivedVarsRows .builder-row');
+    if (dvRows.length > 0) {
+      local_dynamics.derived_variables = [];
+      dvRows.forEach(row => {
+        const name = row.querySelector('.dv-name')?.value;
+        const expr = row.querySelector('.dv-expr')?.value;
+        const unit = row.querySelector('.dv-unit')?.value;
+        if (name) {
+          const dv = { name: name };
+          if (expr) dv.equation = { rhs: expr };
+          if (unit) dv.unit = unit;
+          local_dynamics.derived_variables.push(dv);
+        }
+      });
+    }
+
+    // Collect functions
+    // Classes: fn-name, fn-expr
+    const fnRows = document.querySelectorAll('#functionsRows .builder-row');
+    if (fnRows.length > 0) {
+      local_dynamics.functions = [];
+      fnRows.forEach(row => {
+        const name = row.querySelector('.fn-name')?.value;
+        const expr = row.querySelector('.fn-expr')?.value;
+        if (name) {
+          const fn = { name: name };
+          if (expr) fn.equation = { rhs: expr };
+          local_dynamics.functions.push(fn);
+        }
+      });
+    }
+
+    // 2. Collect network (REQUIRED: nodes and edges)
+    const networkConfig = collectNetworkConfig();
+    const network = {
+      label: networkConfig.label || 'WebNetwork',
+      number_of_regions: networkConfig.number_of_nodes || networkConfig.nodes?.length || 2,
+      global_coupling: networkConfig.global_coupling_strength || 1.0,
+      conduction_speed: networkConfig.conduction_speed || 3.0,
+    };
+
+    if (networkConfig.nodes && networkConfig.nodes.length > 0) {
+      network.nodes = networkConfig.nodes.map((n, idx) => ({
+        id: n.id ?? idx,
+        label: n.label || `Node_${idx}`,
+        position: n.position || { x: 0, y: 0, z: 0 },
+        dynamics: n.dynamics || undefined,
+      }));
+    }
+
+    if (networkConfig.edges && networkConfig.edges.length > 0) {
+      network.edges = networkConfig.edges.map(e => ({
+        source: e.source,
+        target: e.target,
+        weight: e.weight ?? 1.0,
+        delay: e.delay ?? 0.0,
+      }));
+    }
+
+    // 3. Collect integration (OPTIONAL: has defaults)
+    const integrationConfig = collectIntegrationConfig();
+    const integration = {
+      method: integrationConfig.method || 'Heun',
+      step_size: integrationConfig.step_size || 0.1,
+      duration: integrationConfig.duration || 1000.0,
+    };
+
+    // 4. Collect coupling (OPTIONAL: defaults to Linear)
+    // Check for coupling selection in the UI
+    const couplingSelect = document.getElementById('couplingFunction');
+    const globalCouplingInput = document.getElementById('globalCoupling') || document.getElementById('customGlobalCoupling');
+    const coupling = {
+      name: couplingSelect?.value || 'Linear',
+      global_coupling: globalCouplingInput?.value ? parseFloat(globalCouplingInput.value) : 1.0,
+    };
+
+    // 5. Collect monitors (OPTIONAL: defaults to Raw)
+    const monitors = collectObservationModelsConfig() || [{ name: 'Raw', period: 1.0 }];
+
+    // 6. Collect stimulus (OPTIONAL: can be null)
+    const stimulus = collectStimulusConfig();
+
+    // Build the full experiment object
+    const experiment = {
+      label: document.getElementById('builderSpecName')?.value || 'WebExperiment',
+      local_dynamics: local_dynamics,
+      network: network,
+      integration: integration,
+      coupling: coupling,
+      monitors: monitors,
+    };
+
+    if (stimulus) {
+      experiment.stimulus = stimulus;
+    }
+
+    log('Collected experiment:', experiment);
+    return experiment;
+  }
+
+  function initializeRunTab() {
+    log('Initializing Run tab');
+
+    const runBtn = document.getElementById('runSimulationBtn');
+    const plotTypeSelect = document.getElementById('plotType');
+    const plotStateVarSelect = document.getElementById('plotStateVar');
+    const plotRegionsSelect = document.getElementById('plotRegions');
+    const downloadBtn = document.getElementById('downloadResultsBtn');
+
+    runBtn?.addEventListener('click', runSimulation);
+    plotTypeSelect?.addEventListener('change', updatePlot);
+    plotStateVarSelect?.addEventListener('change', updatePlot);
+    plotRegionsSelect?.addEventListener('change', updatePlot);
+    downloadBtn?.addEventListener('click', downloadResults);
+  }
+
+  async function runSimulation() {
+    log('Running simulation...');
+
+    const runBtn = document.getElementById('runSimulationBtn');
+    const statusDiv = document.getElementById('runStatus');
+    const statusText = document.getElementById('runStatusText');
+    const progressBar = document.getElementById('runProgress');
+    const errorDiv = document.getElementById('runError');
+    const resultsDiv = document.getElementById('runResults');
+
+    // Get run parameters
+    const duration = parseFloat(document.getElementById('runDuration')?.value) || 1000;
+    const stepSize = parseFloat(document.getElementById('runStepSize')?.value) || 0.1;
+    const backend = document.getElementById('runBackend')?.value || 'jax';
+
+    // Reset UI
+    errorDiv.style.display = 'none';
+    resultsDiv.style.display = 'none';
+    statusDiv.style.display = 'block';
+    runBtn.disabled = true;
+    progressBar.style.width = '10%';
+    statusText.textContent = 'Collecting experiment configuration...';
+
+    try {
+      // Collect the full experiment configuration
+      const experiment = collectFullExperiment();
+      log('Experiment config:', experiment);
+
+      progressBar.style.width = '20%';
+      statusText.textContent = 'Sending to TVBO API...';
+
+      // Call the Odoo endpoint which proxies to TVBO API
+      const response = await fetch('/tvbo/configurator/run', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'call',
+          params: {
+            experiment: experiment,
+            duration: duration,
+            step_size: stepSize,
+            backend: backend,
+          },
+          id: Date.now(),
+        }),
+      });
+
+      progressBar.style.width = '80%';
+      statusText.textContent = 'Processing results...';
+
+      const result = await response.json();
+
+      if (result.error) {
+        throw new Error(result.error.message || result.error.data?.message || 'Unknown error');
+      }
+
+      const data = result.result;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Simulation failed');
+      }
+
+      // Store results
+      simulationResults = {
+        data: data.data,  // Shape: [time, state_vars, regions, modes]
+        time: data.time,
+        stateVariables: data.state_variables || ['V'],
+        regionLabels: data.region_labels || [],
+        samplePeriod: data.sample_period || stepSize,
+      };
+
+      progressBar.style.width = '100%';
+      statusText.textContent = 'Complete!';
+
+      // Populate plot controls
+      populatePlotControls();
+
+      // Show results and plot
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+        resultsDiv.style.display = 'block';
+        updatePlot();
+
+        // Update info
+        const infoDiv = document.getElementById('simInfo');
+        if (infoDiv) {
+          const nT = simulationResults.time?.length || 0;
+          const nSV = simulationResults.stateVariables?.length || 0;
+          const nR = simulationResults.regionLabels?.length || 0;
+          infoDiv.textContent = `Duration: ${duration}ms | Step: ${stepSize}ms | Time points: ${nT} | State variables: ${nSV} | Regions: ${nR}`;
+        }
+      }, 500);
+
+    } catch (err) {
+      log('Simulation error:', err);
+      statusDiv.style.display = 'none';
+      errorDiv.style.display = 'block';
+      errorDiv.textContent = `Error: ${err.message}`;
+    } finally {
+      runBtn.disabled = false;
+    }
+  }
+
+  function populatePlotControls() {
+    if (!simulationResults) return;
+
+    const stateVarSelect = document.getElementById('plotStateVar');
+    const regionsSelect = document.getElementById('plotRegions');
+
+    // Populate state variables
+    if (stateVarSelect) {
+      stateVarSelect.innerHTML = simulationResults.stateVariables
+        .map((sv, i) => `<option value="${i}">${sv}</option>`)
+        .join('');
+    }
+
+    // Populate regions
+    if (regionsSelect) {
+      const labels = simulationResults.regionLabels.length > 0
+        ? simulationResults.regionLabels
+        : simulationResults.data[0]?.[0]?.map((_, i) => `Region ${i}`) || [];
+
+      regionsSelect.innerHTML = labels
+        .map((label, i) => `<option value="${i}" ${i < 5 ? 'selected' : ''}>${label}</option>`)
+        .join('');
+    }
+  }
+
+  function updatePlot() {
+    if (!simulationResults || !simulationResults.data) {
+      log('No simulation results to plot');
+      return;
+    }
+
+    const plotType = document.getElementById('plotType')?.value || 'timeseries';
+    const stateVarIdx = parseInt(document.getElementById('plotStateVar')?.value) || 0;
+    const regionsSelect = document.getElementById('plotRegions');
+    const selectedRegions = regionsSelect
+      ? Array.from(regionsSelect.selectedOptions).map(o => parseInt(o.value))
+      : [0];
+
+    const container = document.getElementById('plotContainer');
+    if (!container) return;
+
+    const time = simulationResults.time;
+    const data = simulationResults.data;  // [time, state_vars, regions, modes]
+
+    if (plotType === 'timeseries') {
+      plotTimeSeries(container, time, data, stateVarIdx, selectedRegions);
+    } else if (plotType === 'phasespace') {
+      plotPhaseSpace(container, data, selectedRegions);
+    } else if (plotType === 'heatmap') {
+      plotHeatmap(container, time, data, stateVarIdx);
+    }
+  }
+
+  function plotTimeSeries(container, time, data, stateVarIdx, regions) {
+    // Create SVG-based time series plot
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const margin = { top: 20, right: 80, bottom: 40, left: 60 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+
+    // Extract data for selected state variable and regions
+    const traces = regions.map(regionIdx => {
+      const values = time.map((_, tIdx) => {
+        // data shape: [time, state_vars, regions, modes]
+        const val = data[tIdx]?.[stateVarIdx]?.[regionIdx]?.[0];
+        return val !== undefined ? val : 0;
+      });
+      return { regionIdx, values };
+    });
+
+    // Find data range
+    const allValues = traces.flatMap(t => t.values);
+    const yMin = Math.min(...allValues);
+    const yMax = Math.max(...allValues);
+    const yRange = yMax - yMin || 1;
+
+    const xScale = (t) => margin.left + (t / time[time.length - 1]) * plotWidth;
+    const yScale = (v) => margin.top + plotHeight - ((v - yMin) / yRange) * plotHeight;
+
+    // Colors for different regions
+    const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf'];
+
+    let svg = `<svg width="${width}" height="${height}" style="background: white;">`;
+
+    // Grid lines
+    for (let i = 0; i <= 5; i++) {
+      const y = margin.top + (plotHeight / 5) * i;
+      const yVal = yMax - (yRange / 5) * i;
+      svg += `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+      svg += `<text x="${margin.left - 5}" y="${y + 4}" text-anchor="end" font-size="11" fill="#666">${yVal.toFixed(2)}</text>`;
+    }
+
+    // X axis labels
+    const numXLabels = 5;
+    for (let i = 0; i <= numXLabels; i++) {
+      const tVal = (time[time.length - 1] / numXLabels) * i;
+      const x = xScale(tVal);
+      svg += `<text x="${x}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#666">${tVal.toFixed(0)} ms</text>`;
+    }
+
+    // Plot traces
+    traces.forEach((trace, idx) => {
+      const color = colors[idx % colors.length];
+      const points = trace.values.map((v, i) => `${xScale(time[i])},${yScale(v)}`).join(' ');
+      svg += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+
+      // Legend
+      const legendY = margin.top + idx * 20;
+      svg += `<rect x="${width - margin.right + 10}" y="${legendY}" width="12" height="12" fill="${color}"/>`;
+      const label = simulationResults.regionLabels[trace.regionIdx] || `Region ${trace.regionIdx}`;
+      svg += `<text x="${width - margin.right + 26}" y="${legendY + 10}" font-size="11" fill="#333">${label}</text>`;
+    });
+
+    // Axes
+    svg += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#333" stroke-width="1"/>`;
+    svg += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#333" stroke-width="1"/>`;
+
+    // Axis labels
+    const svName = simulationResults.stateVariables[parseInt(document.getElementById('plotStateVar')?.value) || 0] || 'Value';
+    svg += `<text x="${margin.left / 2}" y="${height / 2}" text-anchor="middle" transform="rotate(-90, ${margin.left / 2}, ${height / 2})" font-size="12" fill="#333">${svName}</text>`;
+    svg += `<text x="${margin.left + plotWidth / 2}" y="${height - 2}" text-anchor="middle" font-size="12" fill="#333">Time (ms)</text>`;
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+  }
+
+  function plotPhaseSpace(container, data, regions) {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+
+    // Need at least 2 state variables for phase space
+    if (simulationResults.stateVariables.length < 2) {
+      container.innerHTML = '<div class="alert alert-warning">Phase space plot requires at least 2 state variables.</div>';
+      return;
+    }
+
+    const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'];
+
+    // Extract first two state variables for all selected regions
+    const traces = regions.slice(0, 5).map(regionIdx => {
+      const xVals = data.map(t => t[0]?.[regionIdx]?.[0] || 0);
+      const yVals = data.map(t => t[1]?.[regionIdx]?.[0] || 0);
+      return { regionIdx, xVals, yVals };
+    });
+
+    const allX = traces.flatMap(t => t.xVals);
+    const allY = traces.flatMap(t => t.yVals);
+    const xMin = Math.min(...allX), xMax = Math.max(...allX);
+    const yMin = Math.min(...allY), yMax = Math.max(...allY);
+    const xRange = xMax - xMin || 1;
+    const yRange = yMax - yMin || 1;
+
+    const xScale = (v) => margin.left + ((v - xMin) / xRange) * plotWidth;
+    const yScale = (v) => margin.top + plotHeight - ((v - yMin) / yRange) * plotHeight;
+
+    let svg = `<svg width="${width}" height="${height}" style="background: white;">`;
+
+    // Plot traces
+    traces.forEach((trace, idx) => {
+      const color = colors[idx % colors.length];
+      const points = trace.xVals.map((x, i) => `${xScale(x)},${yScale(trace.yVals[i])}`).join(' ');
+      svg += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="1" opacity="0.8"/>`;
+    });
+
+    // Axes
+    svg += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#333" stroke-width="1"/>`;
+    svg += `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#333" stroke-width="1"/>`;
+
+    // Labels
+    svg += `<text x="${margin.left / 2}" y="${height / 2}" text-anchor="middle" transform="rotate(-90, ${margin.left / 2}, ${height / 2})" font-size="12">${simulationResults.stateVariables[1] || 'SV2'}</text>`;
+    svg += `<text x="${margin.left + plotWidth / 2}" y="${height - 5}" text-anchor="middle" font-size="12">${simulationResults.stateVariables[0] || 'SV1'}</text>`;
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+  }
+
+  function plotHeatmap(container, time, data, stateVarIdx) {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const margin = { top: 20, right: 100, bottom: 40, left: 80 };
+
+    const nTime = time.length;
+    const nRegions = data[0]?.[stateVarIdx]?.length || 0;
+
+    if (nTime === 0 || nRegions === 0) {
+      container.innerHTML = '<div class="alert alert-warning">No data for heatmap.</div>';
+      return;
+    }
+
+    // Downsample if too many time points
+    const maxTimePoints = 500;
+    const timeStep = Math.max(1, Math.floor(nTime / maxTimePoints));
+    const sampledTime = time.filter((_, i) => i % timeStep === 0);
+    const sampledData = data.filter((_, i) => i % timeStep === 0);
+
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const cellWidth = plotWidth / sampledTime.length;
+    const cellHeight = plotHeight / nRegions;
+
+    // Find data range
+    let vMin = Infinity, vMax = -Infinity;
+    sampledData.forEach(t => {
+      for (let r = 0; r < nRegions; r++) {
+        const v = t[stateVarIdx]?.[r]?.[0] || 0;
+        vMin = Math.min(vMin, v);
+        vMax = Math.max(vMax, v);
+      }
+    });
+    const vRange = vMax - vMin || 1;
+
+    // Color function (blue-white-red)
+    const colorScale = (v) => {
+      const norm = (v - vMin) / vRange;
+      if (norm < 0.5) {
+        const t = norm * 2;
+        return `rgb(${Math.round(59 + 196 * t)}, ${Math.round(76 + 179 * t)}, ${Math.round(192 - 47 * t)})`;
+      } else {
+        const t = (norm - 0.5) * 2;
+        return `rgb(255, ${Math.round(255 - 155 * t)}, ${Math.round(145 - 115 * t)})`;
+      }
+    };
+
+    let svg = `<svg width="${width}" height="${height}" style="background: white;">`;
+
+    // Draw cells
+    sampledData.forEach((t, tIdx) => {
+      for (let r = 0; r < nRegions; r++) {
+        const v = t[stateVarIdx]?.[r]?.[0] || 0;
+        const x = margin.left + tIdx * cellWidth;
+        const y = margin.top + r * cellHeight;
+        svg += `<rect x="${x}" y="${y}" width="${cellWidth + 0.5}" height="${cellHeight + 0.5}" fill="${colorScale(v)}"/>`;
+      }
+    });
+
+    // Y axis labels (regions)
+    const maxLabels = 20;
+    const labelStep = Math.max(1, Math.floor(nRegions / maxLabels));
+    for (let r = 0; r < nRegions; r += labelStep) {
+      const y = margin.top + r * cellHeight + cellHeight / 2;
+      const label = simulationResults.regionLabels[r] || `${r}`;
+      svg += `<text x="${margin.left - 5}" y="${y + 4}" text-anchor="end" font-size="10" fill="#333">${label}</text>`;
+    }
+
+    // X axis labels (time)
+    for (let i = 0; i <= 4; i++) {
+      const tIdx = Math.floor(i * (sampledTime.length - 1) / 4);
+      const x = margin.left + tIdx * cellWidth;
+      svg += `<text x="${x}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#333">${sampledTime[tIdx]?.toFixed(0) || 0} ms</text>`;
+    }
+
+    // Colorbar
+    const cbX = width - margin.right + 20;
+    const cbHeight = plotHeight;
+    for (let i = 0; i < 50; i++) {
+      const v = vMax - (i / 49) * vRange;
+      const y = margin.top + (i / 49) * cbHeight;
+      svg += `<rect x="${cbX}" y="${y}" width="20" height="${cbHeight / 49 + 1}" fill="${colorScale(v)}"/>`;
+    }
+    svg += `<text x="${cbX + 25}" y="${margin.top + 10}" font-size="10">${vMax.toFixed(2)}</text>`;
+    svg += `<text x="${cbX + 25}" y="${margin.top + cbHeight}" font-size="10">${vMin.toFixed(2)}</text>`;
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+  }
+
+  function downloadResults() {
+    if (!simulationResults) {
+      alert('No simulation results to download.');
+      return;
+    }
+
+    // Convert to CSV
+    const time = simulationResults.time;
+    const data = simulationResults.data;
+    const stateVars = simulationResults.stateVariables;
+    const regions = simulationResults.regionLabels;
+    const nRegions = data[0]?.[0]?.length || 0;
+
+    // Header
+    let csv = 'time';
+    for (let sv = 0; sv < stateVars.length; sv++) {
+      for (let r = 0; r < nRegions; r++) {
+        const regionLabel = regions[r] || `region_${r}`;
+        csv += `,${stateVars[sv]}_${regionLabel}`;
+      }
+    }
+    csv += '\n';
+
+    // Data rows
+    for (let t = 0; t < time.length; t++) {
+      csv += time[t].toFixed(4);
+      for (let sv = 0; sv < stateVars.length; sv++) {
+        for (let r = 0; r < nRegions; r++) {
+          const val = data[t]?.[sv]?.[r]?.[0] || 0;
+          csv += `,${val}`;
+        }
+      }
+      csv += '\n';
+    }
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'simulation_results.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
 
   // Initialize all tabs on DOM ready
   document.addEventListener('DOMContentLoaded', function() {
@@ -2297,6 +3132,9 @@
     });
     document.getElementById('preview-tab')?.addEventListener('shown.bs.tab', function() {
       initializePreviewTab();
+    });
+    document.getElementById('run-tab')?.addEventListener('shown.bs.tab', function() {
+      initializeRunTab();
     });
   });
 })();
