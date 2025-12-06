@@ -16,59 +16,88 @@
                             </div>
                         </div>
 
-                        <!-- Tabs Navigation -->
-                        <ul class="nav nav-tabs" id="configTabs" role="tablist" style="margin-bottom: 20px;">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-panel" type="button" role="tab">
-                                    General
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="dynamics-tab" data-bs-toggle="tab" data-bs-target="#dynamics-panel" type="button" role="tab">
-                                    Dynamics
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network-panel" type="button" role="tab">
-                                    Network
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="integration-tab" data-bs-toggle="tab" data-bs-target="#integration-panel" type="button" role="tab">
-                                    Integration
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="observation-tab" data-bs-toggle="tab" data-bs-target="#observation-panel" type="button" role="tab">
-                                    Observation Models
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="stimulus-tab" data-bs-toggle="tab" data-bs-target="#stimulus-panel" type="button" role="tab">
-                                    Stimulus
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-panel" type="button" role="tab">
-                                    Preview
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="run-tab" data-bs-toggle="tab" data-bs-target="#run-panel" type="button" role="tab">
-                                    <i class="fa fa-play"></i> Run
-                                </button>
-                            </li>
-                        </ul>
+                        <!-- Main Layout -->
+                        <div class="configurator-main-layout">
+                            <!-- Tabs Navigation - full width -->
+                            <ul class="nav nav-tabs" id="configTabs" role="tablist" style="margin-bottom: 20px;">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-panel" type="button" role="tab">
+                                        General
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="dynamics-tab" data-bs-toggle="tab" data-bs-target="#dynamics-panel" type="button" role="tab">
+                                        Dynamics
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network-panel" type="button" role="tab">
+                                        Network
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="integration-tab" data-bs-toggle="tab" data-bs-target="#integration-panel" type="button" role="tab">
+                                        Integration
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="observation-tab" data-bs-toggle="tab" data-bs-target="#observation-panel" type="button" role="tab">
+                                        Observation Models
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="stimulus-tab" data-bs-toggle="tab" data-bs-target="#stimulus-panel" type="button" role="tab">
+                                        Stimulus
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-panel" type="button" role="tab">
+                                        Preview
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="run-tab" data-bs-toggle="tab" data-bs-target="#run-panel" type="button" role="tab">
+                                        <i class="fa fa-play"></i> Run
+                                    </button>
+                                </li>
+                            </ul>
 
-                        <!-- Tab Content -->
-                        <div class="tab-content" id="configTabContent">
-                            <!-- General Tab -->
-                            <div class="tab-pane fade show active" id="general-panel" role="tabpanel">
-                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>General Configuration</strong></p>
-                                        <p>Basic metadata for your simulation experiment.</p>
+                        <!-- Tab Content with Grid layout for Network Viewer -->
+                        <div class="tab-content" id="configTabContent" style="display: grid; grid-template-columns: 1fr 340px; grid-template-rows: auto 1fr; gap: 20px;">
+                            <!-- Network Viewer - fixed in top-right grid cell -->
+                            <div class="network-viewer-panel" style="grid-column: 2; grid-row: 1 / 3;">
+                                <div class="card" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: sticky; top: 80px; max-height: calc(100vh - 100px);">
+                                    <div class="card-header py-2" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; border-radius: 8px 8px 0 0;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span style="font-size: 0.85rem; font-weight: 500;">
+                                                <i class="fa fa-project-diagram me-1"></i>3D Network
+                                            </span>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-light btn-sm py-0 px-1" id="persistentToggleBrainMesh" title="Toggle brain mesh" style="font-size: 0.75rem;">
+                                                    🧠
+                                                </button>
+                                                <button class="btn btn-outline-light btn-sm py-0 px-1" id="persistentResetCamera" title="Reset camera" style="font-size: 0.75rem;">
+                                                    ⟲
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <div class="card-body p-0" style="height: 250px; overflow: hidden;">
+                                        <div id="persistentNetworkGraph3D" style="width: 100%; height: 100%; background: #1a1a2e;"></div>
+                                    </div>
+                                    <div class="card-footer py-1 px-2" style="background: #f8f9fa; border-top: 1px solid #dee2e6;">
+                                        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.7rem; color: #6c757d;">
+                                            <span id="networkViewerNodeCount">Nodes: 0</span>
+                                            <span id="networkViewerEdgeCount">Edges: 0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- General Tab -->
+                            <div class="tab-pane fade show active" id="general-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">General Configuration</h5>
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold">Experiment Name</label>
@@ -92,27 +121,17 @@
                             </div>
 
                             <!-- Dynamics Tab -->
-                            <div class="tab-pane fade" id="dynamics-panel" role="tabpanel">
-                                <div id="configuratorContainer">
-                                    <div class="alert alert-info">
-                                        <p><strong>Dynamics Configuration</strong></p>
-                                        <ul>
-                                            <li>Configure the neural mass model or dynamics</li>
-                                            <li>Select from existing models and modify parameters</li>
-                                            <li>Preview LaTeX equations in real-time</li>
-                                        </ul>
-                                    </div>
+                            <div class="tab-pane fade" id="dynamics-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div id="configuratorContainer"></div>
+                                    <div id="builderContent"></div>
                                 </div>
-                                <div id="builderContent" style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
                             </div>
 
                             <!-- Network Tab -->
-                            <div class="tab-pane fade" id="network-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="network-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>Network Configuration</strong></p>
-                                        <p>Define the network topology for your simulation.</p>
-                                    </div>
+                                    <h5 class="mb-3" style="color: #1f2937;">Network Configuration</h5>
 
                                     <!-- Network Mode Selection -->
                                     <div class="mb-4">
@@ -273,34 +292,17 @@
                             </div>
 
                             <!-- Integration Tab -->
-                            <div class="tab-pane fade" id="integration-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="integration-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>Integration Configuration</strong></p>
-                                        <ul>
-                                            <li>Configure the numerical integrator</li>
-                                            <li>Define simulation duration and time step</li>
-                                        </ul>
-                                    </div>
-
-                                    <h4>Integrator</h4>
+                                    <h5 class="mb-3" style="color: #1f2937;">Integration Configuration</h5>
                                     <div id="integratorContent"></div>
                                 </div>
                             </div>
 
                             <!-- Observation Models Tab -->
-                            <div class="tab-pane fade" id="observation-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="observation-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>Observation Models Configuration</strong></p>
-                                        <ul>
-                                            <li>Add multiple observation models (monitors)</li>
-                                            <li>Compose them as a processing pipeline (DAG)</li>
-                                            <li>Define sampling periods and modalities</li>
-                                        </ul>
-                                    </div>
-
-                                    <h4>Active Observation Models</h4>
+                                    <h5 class="mb-3" style="color: #1f2937;">Observation Models</h5>
                                     <div id="observationModelsContainer" style="margin-bottom: 20px;">
                                         <div id="observationModelsList"></div>
                                     </div>
@@ -316,28 +318,17 @@
                             </div>
 
                             <!-- Stimulus Tab -->
-                            <div class="tab-pane fade" id="stimulus-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="stimulus-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>Stimulus Configuration</strong></p>
-                                        <ul>
-                                            <li>Add external stimulation to the simulation</li>
-                                            <li>Configure stimulus parameters and target regions</li>
-                                        </ul>
-                                    </div>
-
+                                    <h5 class="mb-3" style="color: #1f2937;">Stimulus Configuration</h5>
                                     <div id="stimulusContent"></div>
                                 </div>
                             </div>
 
                             <!-- Preview Tab -->
-                            <div class="tab-pane fade" id="preview-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="preview-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>Configuration Preview</strong></p>
-                                        <p>Review your complete simulation experiment configuration below.</p>
-                                    </div>
-
+                                    <h5 class="mb-3" style="color: #1f2937;">Configuration Preview</h5>
                                     <div id="previewContent">
                                         <pre id="previewYaml" style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;"></pre>
                                     </div>
@@ -345,12 +336,9 @@
                             </div>
 
                             <!-- Run Tab -->
-                            <div class="tab-pane fade" id="run-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="run-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="alert alert-info">
-                                        <p><strong>Run Simulation</strong></p>
-                                        <p>Execute your simulation experiment and visualize the results.</p>
-                                    </div>
+                                    <h5 class="mb-3" style="color: #1f2937;">Run Simulation</h5>
 
                                     <!-- Run Controls -->
                                     <div class="card mb-4">
@@ -459,6 +447,8 @@
                                 </div>
                             </div>
                         </div>
+                        </div>
+                        <!-- End of main layout -->
                     </div>
                 </div>
 

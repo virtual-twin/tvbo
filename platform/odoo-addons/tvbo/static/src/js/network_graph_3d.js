@@ -301,31 +301,69 @@
       }
     });
 
-    // Auto-fit camera if we have nodes
-    if (nodeMeshes.length > 0) {
-      fitCameraToNodes();
-    }
+    // Auto-fit camera to show brain extent (always, even with 0 nodes)
+    fitCameraToNodes();
+
+    // Update node/edge count display in persistent panel
+    const nodeCountEl = document.getElementById('networkViewerNodeCount');
+    const edgeCountEl = document.getElementById('networkViewerEdgeCount');
+    if (nodeCountEl) nodeCountEl.textContent = `Nodes: ${nodeMeshes.length}`;
+    if (edgeCountEl) edgeCountEl.textContent = `Edges: ${edgeLines.length}`;
   }
 
   /**
-   * Fit camera to show all nodes
+   * Fit camera to show full brain mesh extent (with padding)
+   * If brain mesh is disabled, zooms to fit nodes only
    */
   function fitCameraToNodes() {
-    if (nodeMeshes.length === 0) return;
-
-    const box = new THREE.Box3();
-    nodeMeshes.forEach(m => box.expandByObject(m));
+    let box;
+    
+    if (brainMeshVisible && brainMesh) {
+      // Brain mesh is visible - show full brain extent
+      // MNI brain extent (approximate bounding box)
+      // X: -80 to +80 (left-right)
+      // Y: -110 to +80 (posterior-anterior)  
+      // Z: -60 to +90 (inferior-superior)
+      const brainMin = new THREE.Vector3(-80, -110, -60);
+      const brainMax = new THREE.Vector3(80, 80, 90);
+      box = new THREE.Box3(brainMin, brainMax);
+      
+      // Expand to include all nodes if they exist
+      if (nodeMeshes.length > 0) {
+        nodeMeshes.forEach(m => box.expandByObject(m));
+      }
+    } else {
+      // Brain mesh disabled - zoom to nodes only
+      if (nodeMeshes.length === 0) {
+        // No nodes and no brain mesh - use default brain extent
+        const brainMin = new THREE.Vector3(-80, -110, -60);
+        const brainMax = new THREE.Vector3(80, 80, 90);
+        box = new THREE.Box3(brainMin, brainMax);
+      } else {
+        box = new THREE.Box3();
+        nodeMeshes.forEach(m => box.expandByObject(m));
+        // Add some padding around nodes
+        box.expandByScalar(20);
+      }
+    }
 
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
 
-    if (maxDim > 0) {
-      const distance = maxDim * 2;
-      camera.position.set(center.x + distance, center.y + distance * 0.5, center.z + distance);
+    // Position camera with padding (1.2x the max dimension)
+    const distance = maxDim * 1.2;
+    
+    // Sagittal view: camera on +X axis, looking at center
+    camera.position.set(center.x + distance, center.y, center.z);
+    camera.up.set(0, 0, 1); // Z is up in MNI space
+    
+    if (controls) {
       controls.target.copy(center);
       controls.update();
     }
+    
+    console.log('[NetworkGraph3D] Camera fit, brainMeshVisible:', brainMeshVisible, 'distance:', distance);
   }
 
   /**
@@ -517,26 +555,20 @@
       brainMeshVisible = !brainMeshVisible;
       brainMesh.visible = brainMeshVisible;
       console.log('[NetworkGraph3D] Brain mesh visibility set to:', brainMeshVisible);
+      // Adjust camera based on new visibility
+      fitCameraToNodes();
     } else {
       console.warn('[NetworkGraph3D] Brain mesh not available');
     }
   }
 
   /**
-   * Reset camera to default position (looking at origin)
+   * Reset camera to default position showing full brain extent
    */
   function resetCamera() {
     console.log('[NetworkGraph3D] resetCamera called');
-    // MNI space: camera on +X, looking at brain center, Z is up
-    const brainCenterY = -17;
-    const brainCenterZ = 5;
-    camera.position.set(250, brainCenterY, brainCenterZ);
-    camera.up.set(0, 0, 1); // Z is up in MNI space
-    camera.lookAt(0, brainCenterY, brainCenterZ);
-    if (controls) {
-      controls.target.set(0, brainCenterY, brainCenterZ);
-      controls.update();
-    }
+    // Use the same brain-extent fitting as fitCameraToNodes
+    fitCameraToNodes();
   }
 
   /**
@@ -544,15 +576,26 @@
    */
   function initNetworkGraph() {
     console.log('[NetworkGraph3D] initNetworkGraph called');
-    const container = document.getElementById('networkGraph3D');
+    // Use persistent container (always visible in right panel)
+    const containerId = 'persistentNetworkGraph3D';
+    const container = document.getElementById(containerId);
     if (!container) {
-      console.warn('[NetworkGraph3D] Container #networkGraph3D not found, will retry...');
+      // Fallback to old container for backwards compatibility
+      const oldContainer = document.getElementById('networkGraph3D');
+      if (oldContainer) {
+        console.log('[NetworkGraph3D] Using fallback container #networkGraph3D');
+        return initWithContainer('networkGraph3D');
+      }
+      console.warn('[NetworkGraph3D] No container found, will retry...');
       return;
     }
     console.log('[NetworkGraph3D] Container found, initializing scene...');
+    return initWithContainer(containerId);
+  }
 
+  function initWithContainer(containerId) {
     // Initialize scene
-    const result = initScene('networkGraph3D');
+    const result = initScene(containerId);
     if (!result) {
       console.error('[NetworkGraph3D] Failed to initialize scene');
       return;
@@ -567,9 +610,9 @@
     scene.add(axesHelper);
     console.log('[NetworkGraph3D] Added axes helper');
 
-    // Wire up controls
-    const toggleBtn = document.getElementById('toggleBrainMesh');
-    const resetBtn = document.getElementById('resetCamera');
+    // Wire up controls - try persistent buttons first, then fallback
+    const toggleBtn = document.getElementById('persistentToggleBrainMesh') || document.getElementById('toggleBrainMesh');
+    const resetBtn = document.getElementById('persistentResetCamera') || document.getElementById('resetCamera');
     console.log('[NetworkGraph3D] Toggle brain button:', toggleBtn ? 'found' : 'not found');
     console.log('[NetworkGraph3D] Reset camera button:', resetBtn ? 'found' : 'not found');
 
@@ -614,14 +657,18 @@
       console.log('[NetworkGraph3D] Already initialized, skipping');
       return;
     }
-    const container = document.getElementById('networkGraph3D');
+    // Check persistent container first, then fallback
+    let container = document.getElementById('persistentNetworkGraph3D');
+    if (!container) {
+      container = document.getElementById('networkGraph3D');
+    }
     if (!container) {
       console.log('[NetworkGraph3D] Container not found yet');
       return;
     }
     // Check if container is visible (has dimensions)
     if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-      console.log('[NetworkGraph3D] Container has no dimensions (probably hidden tab)');
+      console.log('[NetworkGraph3D] Container has no dimensions (probably hidden)');
       return;
     }
     initialized = true;
