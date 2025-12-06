@@ -113,10 +113,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     @classmethod
     def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
         """Create a SimulationExperiment from a Pydantic model instance.
-        
+
         Args:
             pyd_obj: A Pydantic BaseModel instance (e.g., from tvbo.datamodel.tvbopydantic)
-        
+
         Returns:
             SimulationExperiment instance
         """
