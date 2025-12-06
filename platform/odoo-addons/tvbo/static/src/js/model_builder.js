@@ -2795,7 +2795,7 @@
     const plotType = document.getElementById('plotType')?.value;
     const hint = document.getElementById('stateVarHint');
     const plotTypeHint = document.getElementById('plotTypeHint');
-    
+
     if (hint) {
       if (plotType === 'phasespace') {
         hint.textContent = 'Select exactly 2 variables for X and Y axes';
