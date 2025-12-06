@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" ?>
+<odoo>
+    <data noupdate="1">
+        <record id="integrator_dopri853" model="tvbo.integrator">
+            <field name="name">Dopri853</field>
+            <field name="method">Dopri853</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+        <record id="integrator_vode" model="tvbo.integrator">
+            <field name="name">VODE</field>
+            <field name="method">VODE</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+        <record id="integrator_euler" model="tvbo.integrator">
+            <field name="name">Euler</field>
+            <field name="method">Euler</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+        <record id="integrator_heun" model="tvbo.integrator">
+            <field name="name">Heun</field>
+            <field name="method">Heun</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+        <record id="integrator_identity" model="tvbo.integrator">
+            <field name="name">Identity</field>
+            <field name="method">Identity</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+        <record id="integrator_dopri5" model="tvbo.integrator">
+            <field name="name">Dopri5</field>
+            <field name="method">Dopri5</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+        <record id="integrator_rungekutta4thorder" model="tvbo.integrator">
+            <field name="name">RungeKutta4thOrder</field>
+            <field name="method">RungeKutta4thOrder</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+        </record>
+    </data>
+</odoo>

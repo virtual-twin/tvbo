@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Custom favicon -->
+    <template id="tvbo_favicon" inherit_id="web.layout" name="TVBO Favicon">
+        <xpath expr="//link[@rel='shortcut icon']" position="replace">
+            <link rel="shortcut icon" href="/tvbo/static/src/img/favicon.png" type="image/png"/>
+        </xpath>
+    </template>
+
+    <!-- Override website homepage -->
+    <record id="website.homepage" model="ir.ui.view">
+        <field name="name">TVBO Homepage</field>
+        <field name="type">qweb</field>
+        <field name="key">website.homepage</field>
+        <field name="arch" type="xml">
+            <t t-name="website.homepage">
+                <t t-call="website.layout">
+                    <div id="wrap" class="oe_structure oe_empty">
+                        <!-- Hero Section -->
+                        <section class="s_cover pt-5 pb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="container">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-12 text-center">
+                                        <img src="/tvbo/static/src/img/logo.png" alt="TVBO Logo" style="max-width: 200px; margin-bottom: 2rem; filter: brightness(0) invert(1);"/>
+                                        <h1 class="display-3 text-white font-weight-bold mb-4">
+                                            The Virtual Brain Ontology
+                                        </h1>
+                                        <p class="lead text-white mb-5" style="font-size: 1.25rem; opacity: 0.95;">
+                                            Standardized computational models and neuroinformatic resources for brain simulation research
+                                        </p>
+                                        <div class="mt-5">
+                                            <a href="/web" class="btn btn-light btn-lg me-3" style="color: #667eea; font-weight: 600; padding: 0.75rem 2rem;">Explore Database</a>
+                                            <a href="https://tvbo-docs.charite.de" class="btn btn-outline-light btn-lg" style="font-weight: 600; padding: 0.75rem 2rem;">Documentation</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Features Section -->
+                        <section class="pt-5 pb-5" style="background-color: #f8f9fa;">
+                            <div class="container">
+                                <h2 class="text-center mb-5" style="font-size: 2.5rem; color: #2C3E50;">Core Resources</h2>
+                                <div class="row">
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card h-100 shadow-sm" style="border: none; border-top: 4px solid #667eea;">
+                                            <div class="card-body text-center">
+                                                <div style="font-size: 2.5rem; color: #667eea; margin-bottom: 1rem;">⚙️</div>
+                                                <h3 class="card-title">Neural Models</h3>
+                                                <p class="card-text text-muted">
+                                                    Curated computational models of neural dynamics including conductance-based and rate-coded neurons
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card h-100 shadow-sm" style="border: none; border-top: 4px solid #764ba2;">
+                                            <div class="card-body text-center">
+                                                <div style="font-size: 2.5rem; color: #764ba2; margin-bottom: 1rem;">🧠</div>
+                                                <h3 class="card-title">Brain Networks</h3>
+                                                <p class="card-text text-muted">
+                                                    Structural and functional connectivity networks from diverse primate and human populations
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card h-100 shadow-sm" style="border: none; border-top: 4px solid #667eea;">
+                                            <div class="card-body text-center">
+                                                <div style="font-size: 2.5rem; color: #667eea; margin-bottom: 1rem;">📊</div>
+                                                <h3 class="card-title">Research Studies</h3>
+                                                <p class="card-text text-muted">
+                                                    Validated simulation protocols and experimental datasets for reproducible computational neuroscience
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- About Section -->
+                        <section class="pt-5 pb-5">
+                            <div class="container">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-6 mb-4 mb-lg-0">
+                                        <h2 style="font-size: 2rem; color: #2C3E50; margin-bottom: 1.5rem;">
+                                            Standardized Resources for Computational Neuroscience
+                                        </h2>
+                                        <p class="text-muted mb-3">
+                                            TVBO provides a comprehensive ontology and database of brain simulation models, connectivity networks, and research data structured according to international standards and best practices.
+                                        </p>
+                                        <p class="text-muted mb-3">
+                                            Our resources enable researchers to:
+                                        </p>
+                                        <ul class="text-muted" style="line-height: 2;">
+                                            <li>✓ Access validated neural models with standardized parameters</li>
+                                            <li>✓ Retrieve curated brain network data from multiple sources</li>
+                                            <li>✓ Replicate published simulation studies</li>
+                                            <li>✓ Contribute new models and datasets to the community</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="card shadow-lg" style="border: none; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);">
+                                            <div class="card-body p-4" style="text-align: center;">
+                                                <div style="font-size: 4rem; margin-bottom: 1rem;">🔬</div>
+                                                <h4 class="mb-3">Open Science Platform</h4>
+                                                <p class="text-muted mb-0">
+                                                    Supporting FAIR principles: Findable, Accessible, Interoperable, and Reusable research data
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- CTA Section -->
+                        <section class="pt-5 pb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col-lg-8 mx-auto text-center text-white">
+                                        <h2 class="mb-4" style="font-size: 2rem;">Ready to Get Started?</h2>
+                                        <p class="lead mb-5">
+                                            Explore our database, browse models, or access the documentation to learn more about TVBO resources.
+                                        </p>
+                                        <div>
+                                            <a href="/web" class="btn btn-light btn-lg me-3" style="color: #667eea; font-weight: 600; padding: 0.75rem 2rem;">Go to Database</a>
+                                            <a href="https://github.com/virtual-twin/tvbo" class="btn btn-outline-light btn-lg" style="font-weight: 600; padding: 0.75rem 2rem;">GitHub Repository</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </t>
+            </t>
+        </field>
+    </record>
+
+</odoo>

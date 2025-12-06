@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="connectome_space_mni152nlin2009c_atlas_desikankillianyranked_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_tpl_mghuschcp32_atlas_desikankilliany_desc_ranked" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">ranked</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_virtualdbs_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">370</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_tpl_mghuschcp32_atlas_destrieux_desc_ranked" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">ranked</field>
+        </record>
+
+        <record id="connectome_space_mni152_atlas_yeo17_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">17</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_virtualdbs_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">370</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009b_atlas_hcpmmp1_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_destrieux_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_destrieuxranked_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009b_atlas_hcpmmp1ordered_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_atlas_schaefer1000_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009b_atlas_hcpmmp1_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_atlas_schaefer100017networks_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009casym_atlas_hocpa_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">48</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_atlas_schaefer100017networks_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_atlas_schaefer100017networks_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_destrieuxranked_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152_atlas_yeo17_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">17</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009casym_atlas_hcpex_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">427</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_atlas_schaefer1000_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_atlas_schaefer1000_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_desikankilliany_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_desikankillianyranked_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009b_atlas_hcpmmp1_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009b_atlas_hcpmmp1ordered_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_destrieux_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152_atlas_yeo17_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">17</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_desikankilliany_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_destrieuxranked_desc_dtor" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">dTOR</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009b_atlas_hcpmmp1ordered_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_destrieux_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_fslmni152_tpl_mghuschcp32_atlas_schaefer1000_desc_17networks" model="tvbo.connectome">
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">17Networks</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_desikankilliany_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_virtualdbs_desc_ppmi85" model="tvbo.connectome">
+            <field name="number_of_regions">370</field>
+            <field name="tractogram">PPMI85</field>
+        </record>
+
+        <record id="connectome_space_mni152nlin2009c_atlas_desikankillianyranked_desc_mghuschcp32" model="tvbo.connectome">
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">MghUscHcp32</field>
+        </record>
+
+    </data>
+</odoo>

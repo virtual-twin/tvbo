@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main TVBO Menu -->
+    <menuitem id="menu_tvbo_root"
+              name="TVBO Database"
+              sequence="10"
+              groups="base.group_user"
+              web_icon="tvbo,static/description/icon.png"/>
+
+    <!-- Database submenu -->
+    <menuitem id="menu_tvbo_database"
+              name="Browse Database"
+              parent="menu_tvbo_root"
+              sequence="10"/>
+
+    <!-- Neural Mass Models -->
+    <menuitem id="menu_neural_mass_model"
+              name="Neural Mass Models"
+              parent="menu_tvbo_database"
+              action="action_neural_mass_model_list"
+              sequence="10"/>
+
+    <!-- Integrators -->
+    <menuitem id="menu_integrator"
+              name="Integrators"
+              parent="menu_tvbo_database"
+              action="action_integrator_list"
+              sequence="20"/>
+
+    <!-- Research Studies -->
+    <menuitem id="menu_simulation_study"
+              name="Research Studies"
+              parent="menu_tvbo_database"
+              action="action_simulation_study_list"
+              sequence="30"/>
+
+    <!-- Coupling Functions -->
+    <menuitem id="menu_coupling"
+              name="Coupling Functions"
+              parent="menu_tvbo_database"
+              action="action_coupling_list"
+              sequence="40"/>
+
+</odoo>

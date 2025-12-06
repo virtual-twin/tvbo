@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="operator_type_gradient" model="tvbo.operator_type">
+            <field name="name">Gradient</field>
+            <field name="technical_name">gradient</field>
+        </record>
+
+        <record id="operator_type_divergence" model="tvbo.operator_type">
+            <field name="name">Divergence</field>
+            <field name="technical_name">divergence</field>
+        </record>
+
+        <record id="operator_type_laplacian" model="tvbo.operator_type">
+            <field name="name">Laplacian</field>
+            <field name="technical_name">laplacian</field>
+        </record>
+
+        <record id="operator_type_curl" model="tvbo.operator_type">
+            <field name="name">Curl</field>
+            <field name="technical_name">curl</field>
+        </record>
+
+    </data>
+</odoo>

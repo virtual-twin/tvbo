@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="requirement_role_engine" model="tvbo.requirement_role">
+            <field name="name">Engine</field>
+            <field name="technical_name">engine</field>
+            <field name="description">Primary simulation/processing engine</field>
+        </record>
+
+        <record id="requirement_role_runtime" model="tvbo.requirement_role">
+            <field name="name">Runtime</field>
+            <field name="technical_name">runtime</field>
+            <field name="description">General runtime dependency</field>
+        </record>
+
+        <record id="requirement_role_analysis" model="tvbo.requirement_role">
+            <field name="name">Analysis</field>
+            <field name="technical_name">analysis</field>
+            <field name="description">Post-processing / analysis tool</field>
+        </record>
+
+        <record id="requirement_role_dev" model="tvbo.requirement_role">
+            <field name="name">Dev</field>
+            <field name="technical_name">dev</field>
+            <field name="description">Development / build dependency</field>
+        </record>
+
+        <record id="requirement_role_optional" model="tvbo.requirement_role">
+            <field name="name">Optional</field>
+            <field name="technical_name">optional</field>
+            <field name="description">Optional or extra feature dependency</field>
+        </record>
+
+    </data>
+</odoo>

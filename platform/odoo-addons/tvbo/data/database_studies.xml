@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="study_hansen2015" model="tvbo.simulation_study">
+            <field name="label">Hansen2015</field>
+            <field name="key">Hansen2015</field>
+        </record>
+
+        <record id="study_cakan2020" model="tvbo.simulation_study">
+            <field name="label">Cakan2020</field>
+            <field name="key">Cakan2020</field>
+        </record>
+
+        <record id="study_cakanobermayer" model="tvbo.simulation_study">
+            <field name="label">CakanObermayer</field>
+            <field name="key">Cakan2020</field>
+        </record>
+
+        <record id="study_deco2014" model="tvbo.simulation_study">
+            <field name="label">Deco2014</field>
+            <field name="key">Deco2014</field>
+        </record>
+
+        <record id="study_stefanovski2019" model="tvbo.simulation_study">
+            <field name="label">Stefanovski2019</field>
+            <field name="key">Stefanovski2019</field>
+        </record>
+
+        <record id="study_cabral2011" model="tvbo.simulation_study">
+            <field name="label">Cabral2011</field>
+            <field name="key">Cabral2011</field>
+        </record>
+
+        <record id="study_jansen1995" model="tvbo.simulation_study">
+            <field name="label">Jansen1995</field>
+            <field name="description">Single- and double-column Jansen-Rit neural mass models, parameter exploration, and evoked potentials with delayed inter-column synaptic filtering.</field>
+            <field name="key">Jansen1995</field>
+        </record>
+
+        <record id="study_schirner2023" model="tvbo.simulation_study">
+            <field name="label">Schirner2023</field>
+            <field name="key">Schirner2023</field>
+        </record>
+
+        <record id="study_zimmermann2018" model="tvbo.simulation_study">
+            <field name="label">Zimmermann2018</field>
+            <field name="key">Zimmermann2018</field>
+        </record>
+
+        <record id="study_breakspear2003" model="tvbo.simulation_study">
+            <field name="label">Breakspear2003</field>
+            <field name="key">Breakspear2003</field>
+        </record>
+
+        <record id="study_cortes2013" model="tvbo.simulation_study">
+            <field name="label">Cortes2013</field>
+            <field name="key">Cortes2013</field>
+        </record>
+
+        <record id="study_larter1999" model="tvbo.simulation_study">
+            <field name="label">Larter1999</field>
+            <field name="key">Larter1999</field>
+        </record>
+
+    </data>
+</odoo>

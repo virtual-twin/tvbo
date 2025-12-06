@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Neural Mass Models Views -->
+    <record id="view_neural_mass_model_list" model="ir.ui.view">
+        <field name="name">tvbo.neural_mass_model.list</field>
+        <field name="model">tvbo.neural_mass_model</field>
+        <field name="arch" type="xml">
+            <list string="Neural Mass Models">
+                <field name="name"/>
+                <field name="label"/>
+                <field name="description"/>
+                <field name="has_reference"/>
+                <field name="iri"/>
+                <field name="source"/>
+                <field name="references"/>
+                <field name="number_of_modes"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_neural_mass_model_form" model="ir.ui.view">
+        <field name="name">tvbo.neural_mass_model.form</field>
+        <field name="model">tvbo.neural_mass_model</field>
+        <field name="arch" type="xml">
+            <form string="Neural Mass Models">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="label"/>
+                        <field name="description"/>
+                        <field name="has_reference"/>
+                        <field name="iri"/>
+                        <field name="parameters"/>
+                        <field name="source"/>
+                        <field name="references"/>
+                        <field name="derived_parameters"/>
+                        <field name="derived_variables"/>
+                        <field name="coupling_terms"/>
+                        <field name="coupling_inputs"/>
+                        <field name="state_variables"/>
+                        <field name="output_transforms"/>
+                        <field name="derived_from_model"/>
+                        <field name="number_of_modes"/>
+                        <field name="local_coupling_term"/>
+                        <field name="functions"/>
+                        <field name="stimulus"/>
+                        <field name="modes"/>
+                        <field name="system_type"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_neural_mass_model_list" model="ir.actions.act_window">
+        <field name="name">Neural Mass Models</field>
+        <field name="res_model">tvbo.neural_mass_model</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Integrators Views -->
+    <record id="view_integrator_list" model="ir.ui.view">
+        <field name="name">tvbo.integrator.list</field>
+        <field name="model">tvbo.integrator</field>
+        <field name="arch" type="xml">
+            <list string="Integrators">
+                <field name="time_scale"/>
+                <field name="unit"/>
+                <field name="duration"/>
+                <field name="method"/>
+                <field name="step_size"/>
+                <field name="steps"/>
+                <field name="state_wise_sigma"/>
+                <field name="transient_time"/>
+                <field name="scipy_ode_base"/>
+                <field name="number_of_stages"/>
+                <field name="delayed"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_integrator_form" model="ir.ui.view">
+        <field name="name">tvbo.integrator.form</field>
+        <field name="model">tvbo.integrator</field>
+        <field name="arch" type="xml">
+            <form string="Integrators">
+                <sheet>
+                    <group>
+                        <field name="time_scale"/>
+                        <field name="unit"/>
+                        <field name="parameters"/>
+                        <field name="duration"/>
+                        <field name="method"/>
+                        <field name="step_size"/>
+                        <field name="steps"/>
+                        <field name="noise"/>
+                        <field name="state_wise_sigma"/>
+                        <field name="transient_time"/>
+                        <field name="scipy_ode_base"/>
+                        <field name="number_of_stages"/>
+                        <field name="intermediate_expressions"/>
+                        <field name="update_expression"/>
+                        <field name="delayed"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_integrator_list" model="ir.actions.act_window">
+        <field name="name">Integrators</field>
+        <field name="res_model">tvbo.integrator</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Research Studies Views -->
+    <record id="view_simulation_study_list" model="ir.ui.view">
+        <field name="name">tvbo.simulation_study.list</field>
+        <field name="model">tvbo.simulation_study</field>
+        <field name="arch" type="xml">
+            <list string="Research Studies">
+                <field name="label"/>
+                <field name="title"/>
+                <field name="description"/>
+                <field name="key"/>
+                <field name="year"/>
+                <field name="doi"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_simulation_study_form" model="ir.ui.view">
+        <field name="name">tvbo.simulation_study.form</field>
+        <field name="model">tvbo.simulation_study</field>
+        <field name="arch" type="xml">
+            <form string="Research Studies">
+                <sheet>
+                    <group>
+                        <field name="label"/>
+                        <field name="title"/>
+                        <field name="description"/>
+                        <field name="model"/>
+                        <field name="key"/>
+                        <field name="year"/>
+                        <field name="doi"/>
+                        <field name="sample"/>
+                        <field name="simulation_experiments"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_simulation_study_list" model="ir.actions.act_window">
+        <field name="name">Research Studies</field>
+        <field name="res_model">tvbo.simulation_study</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Coupling Functions Views -->
+    <record id="view_coupling_list" model="ir.ui.view">
+        <field name="name">tvbo.coupling.list</field>
+        <field name="model">tvbo.coupling</field>
+        <field name="arch" type="xml">
+            <list string="Coupling Functions">
+                <field name="name"/>
+                <field name="label"/>
+                <field name="sparse"/>
+                <field name="delayed"/>
+                <field name="aggregation"/>
+                <field name="distribution"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_coupling_form" model="ir.ui.view">
+        <field name="name">tvbo.coupling.form</field>
+        <field name="model">tvbo.coupling</field>
+        <field name="arch" type="xml">
+            <form string="Coupling Functions">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="label"/>
+                        <field name="parameters"/>
+                        <field name="coupling_function"/>
+                        <field name="sparse"/>
+                        <field name="pre_expression"/>
+                        <field name="post_expression"/>
+                        <field name="incoming_states"/>
+                        <field name="local_states"/>
+                        <field name="delayed"/>
+                        <field name="inner_coupling"/>
+                        <field name="region_mapping"/>
+                        <field name="regional_connectivity"/>
+                        <field name="aggregation"/>
+                        <field name="distribution"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_coupling_list" model="ir.actions.act_window">
+        <field name="name">Coupling Functions</field>
+        <field name="res_model">tvbo.coupling</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

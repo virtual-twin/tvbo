@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="update_expr_dopri853" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_dopri853" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+        </record>
+        <record id="update_expr_dopri853" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_dopri853"/>
+        </record>
+
+        <record id="integrator_dopri853" model="tvbo.integrator">
+            <field name="method">Dopri853</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">1</field>
+            <field name="scipy_ode_base">true</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_dopri853"/>
+        </record>
+
+        <record id="update_expr_vode" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_vode" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+        </record>
+        <record id="update_expr_vode" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_vode"/>
+        </record>
+
+        <record id="integrator_vode" model="tvbo.integrator">
+            <field name="method">VODE</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">1</field>
+            <field name="scipy_ode_base">true</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_vode"/>
+        </record>
+
+        <record id="update_expr_euler" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_euler" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+            <field name="righthandside">dX0 * dt</field>
+        </record>
+        <record id="update_expr_euler" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_euler"/>
+        </record>
+
+        <record id="integrator_euler" model="tvbo.integrator">
+            <field name="method">Euler</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">1</field>
+            <field name="scipy_ode_base">false</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_euler"/>
+        </record>
+
+        <record id="update_expr_heun" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_heun" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+            <field name="righthandside">(dX0 + dX1) * (dt / 2)</field>
+        </record>
+        <record id="update_expr_heun" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_heun"/>
+        </record>
+
+        <record id="integrator_heun" model="tvbo.integrator">
+            <field name="method">Heun</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">1</field>
+            <field name="scipy_ode_base">false</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_heun"/>
+        </record>
+
+        <record id="update_expr_identity" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_identity" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+            <field name="righthandside">dX0</field>
+        </record>
+        <record id="update_expr_identity" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_identity"/>
+        </record>
+
+        <record id="integrator_identity" model="tvbo.integrator">
+            <field name="method">Identity</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">1</field>
+            <field name="scipy_ode_base">false</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_identity"/>
+        </record>
+
+        <record id="update_expr_dopri5" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_dopri5" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+        </record>
+        <record id="update_expr_dopri5" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_dopri5"/>
+        </record>
+
+        <record id="integrator_dopri5" model="tvbo.integrator">
+            <field name="method">Dopri5</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">1</field>
+            <field name="scipy_ode_base">true</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_dopri5"/>
+        </record>
+
+        <record id="update_expr_rungekutta4thorder" model="tvbo.derived_variable">
+            <field name="name">dX</field>
+        </record>
+        <record id="eq_update_expr_rungekutta4thorder" model="tvbo.equation">
+            <field name="lefthandside">X_{t+1}</field>
+            <field name="righthandside">(dt / 6) * (dX0 + 2.0 * dX1 + 2.0 * dX2 + dX3)</field>
+        </record>
+        <record id="update_expr_rungekutta4thorder" model="tvbo.derived_variable">
+            <field name="equation" ref="eq_update_expr_rungekutta4thorder"/>
+        </record>
+
+        <record id="integrator_rungekutta4thorder" model="tvbo.integrator">
+            <field name="method">RungeKutta4thOrder</field>
+            <field name="step_size">0.01220703125</field>
+            <field name="duration">1000.0</field>
+            <field name="transient_time">0.0</field>
+            <field name="number_of_stages">4</field>
+            <field name="scipy_ode_base">false</field>
+            <field name="delayed">true</field>
+            <field name="update_expression" ref="update_expr_rungekutta4thorder"/>
+        </record>
+
+    </data>
+</odoo>

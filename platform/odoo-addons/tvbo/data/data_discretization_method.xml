@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="discretization_method_FDM" model="tvbo.discretization_method">
+            <field name="name">Fdm</field>
+            <field name="technical_name">FDM</field>
+            <field name="description">Finite Difference Method</field>
+        </record>
+
+        <record id="discretization_method_FEM" model="tvbo.discretization_method">
+            <field name="name">Fem</field>
+            <field name="technical_name">FEM</field>
+            <field name="description">Finite Element Method</field>
+        </record>
+
+        <record id="discretization_method_FVM" model="tvbo.discretization_method">
+            <field name="name">Fvm</field>
+            <field name="technical_name">FVM</field>
+            <field name="description">Finite Volume Method</field>
+        </record>
+
+        <record id="discretization_method_Spectral" model="tvbo.discretization_method">
+            <field name="name">Spectral</field>
+            <field name="technical_name">Spectral</field>
+        </record>
+
+    </data>
+</odoo>

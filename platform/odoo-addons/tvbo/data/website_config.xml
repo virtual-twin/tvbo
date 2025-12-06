@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Update default website with TVBO branding and homepage -->
+        <record id="website.default_website" model="website">
+            <field name="name">TVBO - The Virtual Brain Ontology</field>
+            <field name="homepage_id" ref="website.homepage"/>
+        </record>
+
+        <!-- Update company info -->
+        <record id="base.main_company" model="res.company">
+            <field name="name">Charité Universitätsmedizin Berlin</field>
+            <field name="website">https://github.com/virtual-twin/tvbo</field>
+        </record>
+
+    </data>
+</odoo>

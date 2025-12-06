@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="operation_type_select" model="tvbo.operation_type">
+            <field name="name">Select</field>
+            <field name="technical_name">select</field>
+        </record>
+
+        <record id="operation_type_temporal_average" model="tvbo.operation_type">
+            <field name="name">Temporal Average</field>
+            <field name="technical_name">temporal_average</field>
+        </record>
+
+        <record id="operation_type_subsample" model="tvbo.operation_type">
+            <field name="name">Subsample</field>
+            <field name="technical_name">subsample</field>
+        </record>
+
+        <record id="operation_type_projection" model="tvbo.operation_type">
+            <field name="name">Projection</field>
+            <field name="technical_name">projection</field>
+        </record>
+
+        <record id="operation_type_reference_subtract" model="tvbo.operation_type">
+            <field name="name">Reference Subtract</field>
+            <field name="technical_name">reference_subtract</field>
+        </record>
+
+        <record id="operation_type_convolution" model="tvbo.operation_type">
+            <field name="name">Convolution</field>
+            <field name="technical_name">convolution</field>
+        </record>
+
+        <record id="operation_type_node_coupling" model="tvbo.operation_type">
+            <field name="name">Node Coupling</field>
+            <field name="technical_name">node_coupling</field>
+        </record>
+
+        <record id="operation_type_custom_transform" model="tvbo.operation_type">
+            <field name="name">Custom Transform</field>
+            <field name="technical_name">custom_transform</field>
+        </record>
+
+    </data>
+</odoo>

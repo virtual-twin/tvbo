@@ -1,0 +1,49 @@
+/* Builder UI styles extracted from JS */
+.builder-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.builder-field { margin-bottom: 12px; }
+.builder-field label { display: block; font-weight: 600; color: #4a5568; margin-bottom: 6px; }
+.builder-input, .builder-select, .builder-text { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+.builder-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: 8px; align-items: center; }
+.builder-rows { display: flex; flex-direction: column; gap: 8px; }
+.builder-actions { display: flex; gap: 8px; margin-top: 8px; }
+.builder-subtitle { font-weight: 700; color: #2d3748; margin: 14px 0 6px; }
+.preview { background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; padding: 12px; border-radius: 8px; overflow: auto; max-height: 70vh; min-height: 30vh; resize: vertical; }
+.preview.expanded { max-height: none; }
+.hr { height: 1px; background: #e2e8f0; margin: 16px 0; }
+.pill { background: #eef2ff; color: #3730a3; padding: 2px 8px; border-radius: 9999px; font-size: 12px; display: inline-block; border: 1px solid #c7d2fe; }
+.info-btn { width: 20px; height: 20px; border-radius: 9999px; border: 1px solid #94a3b8; color: #334155; background: #eef2ff; font-weight: 700; line-height: 18px; text-align: center; cursor: pointer; padding: 0; }
+.param-desc { display: none; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; font-size: 0.9em; }
+.net-info { display:flex; align-items:center; gap:12px; padding: 10px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; }
+.net-thumb { width: 56px; height: 56px; object-fit: cover; border-radius:6px; border:1px solid #e5e7eb; background:#fff; }
+.mini-kv { display:grid; grid-template-columns: auto auto; gap: 2px 8px; font-size: 0.9em; color:#334155; }
+.mini-hist { width: 180px; height: 60px; background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; }
+.link { color:#2563eb; cursor:pointer; text-decoration:underline; }
+.modal-sm { position: fixed; inset: 0; display:none; align-items:center; justify-content:center; z-index:2000; }
+.modal-sm .backdrop { position:absolute; inset:0; background: rgba(0,0,0,.3); }
+.modal-sm .dialog { position:relative; background:#fff; border-radius:8px; width: min(640px, 92vw); padding:16px; box-shadow: 0 10px 24px rgba(0,0,0,.25); }
+.plot-box { background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:8px; }
+.eq-expr-wrap { display:flex; flex-direction:column; gap:4px; align-items:flex-start; width:100%; }
+#builderModal .eq-preview { grid-column: 1 / 3; display:block; width:100%; font-size: 0.6em; line-height: 1.2; color:#1f2937; white-space:normal; word-break:break-word; overflow:visible; min-height: 0; }
+#builderModal { z-index: 2000 !important; }
+#builderModal .modal-backdrop { z-index: 1; }
+#builderModal .modal-dialog { z-index: 2; position: relative; }
+
+/* Builder modal: larger, fills viewport height, content scrolls */
+#builderModal .modal-dialog {
+  max-width: 1200px !important;
+  width: min(1200px, 95vw) !important;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+#builderModal .modal-header { flex: 0 0 auto; }
+#builderModal .modal-content {
+  flex: 1 1 auto;
+  max-height: none;
+  overflow: auto;
+}
+/* Prefer giving preview plenty of vertical space inside builder */
+#builderModal #specPreview {
+  min-height: 35vh;
+  max-height: calc(100% - 180px);
+}

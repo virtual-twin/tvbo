@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="model_configurator_template" name="Model Configurator">
+            <t t-call="website.layout">
+                <div id="wrap" class="oe_structure">
+                    <div class="container-fluid" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+                        <div class="header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb;">
+                            <h1 style="margin: 0; color: #1f2937; font-size: 2rem;">Simulation Experiment Configurator</h1>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="builderCopyPython" class="btn btn-secondary">Copy Python</button>
+                                <button id="builderDownloadYaml" class="btn btn-secondary">Download YAML</button>
+                                <t t-if="not request.env.user._is_public()">
+                                    <button id="saveModelBtn" class="btn btn-success">Save to Database</button>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Tabs Navigation -->
+                        <ul class="nav nav-tabs" id="configTabs" role="tablist" style="margin-bottom: 20px;">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="dynamics-tab" data-bs-toggle="tab" data-bs-target="#dynamics-panel" type="button" role="tab">
+                                    Dynamics
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network-panel" type="button" role="tab">
+                                    Network
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="integration-tab" data-bs-toggle="tab" data-bs-target="#integration-panel" type="button" role="tab">
+                                    Integration
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="observation-tab" data-bs-toggle="tab" data-bs-target="#observation-panel" type="button" role="tab">
+                                    Observation Models
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="stimulus-tab" data-bs-toggle="tab" data-bs-target="#stimulus-panel" type="button" role="tab">
+                                    Stimulus
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-panel" type="button" role="tab">
+                                    Preview
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="configTabContent">
+                            <!-- Dynamics Tab -->
+                            <div class="tab-pane fade show active" id="dynamics-panel" role="tabpanel">
+                                <div id="configuratorContainer">
+                                    <div class="alert alert-info">
+                                        <p><strong>Dynamics Configuration</strong></p>
+                                        <ul>
+                                            <li>Configure the neural mass model or dynamics</li>
+                                            <li>Select from existing models and modify parameters</li>
+                                            <li>Preview LaTeX equations in real-time</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div id="builderContent" style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                            </div>
+
+                            <!-- Network Tab -->
+                            <div class="tab-pane fade" id="network-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>Network Configuration</strong></p>
+                                        <ul>
+                                            <li>Select or configure network connectivity</li>
+                                            <li>Configure coupling functions</li>
+                                        </ul>
+                                    </div>
+
+                                    <h4>Connectivity</h4>
+                                    <div id="networkContent"></div>
+
+                                    <hr style="margin: 30px 0;"/>
+
+                                    <h4>Coupling</h4>
+                                    <div id="couplingContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Integration Tab -->
+                            <div class="tab-pane fade" id="integration-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>Integration Configuration</strong></p>
+                                        <ul>
+                                            <li>Configure the numerical integrator</li>
+                                            <li>Define simulation duration and time step</li>
+                                        </ul>
+                                    </div>
+
+                                    <h4>Integrator</h4>
+                                    <div id="integratorContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Observation Models Tab -->
+                            <div class="tab-pane fade" id="observation-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>Observation Models Configuration</strong></p>
+                                        <ul>
+                                            <li>Add multiple observation models (monitors)</li>
+                                            <li>Compose them as a processing pipeline (DAG)</li>
+                                            <li>Define sampling periods and modalities</li>
+                                        </ul>
+                                    </div>
+
+                                    <h4>Active Observation Models</h4>
+                                    <div id="observationModelsContainer" style="margin-bottom: 20px;">
+                                        <div id="observationModelsList"></div>
+                                    </div>
+
+                                    <div class="builder-actions">
+                                        <button class="btn btn-primary" id="addObservationModel">Add Observation Model</button>
+                                    </div>
+
+                                    <hr style="margin: 30px 0;"/>
+
+                                    <div id="monitorsContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Stimulus Tab -->
+                            <div class="tab-pane fade" id="stimulus-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>Stimulus Configuration</strong></p>
+                                        <ul>
+                                            <li>Add external stimulation to the simulation</li>
+                                            <li>Configure stimulus parameters and target regions</li>
+                                        </ul>
+                                    </div>
+
+                                    <div id="stimulusContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Tab -->
+                            <div class="tab-pane fade" id="preview-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>Configuration Preview</strong></p>
+                                        <p>Review your complete simulation experiment configuration below.</p>
+                                    </div>
+
+                                    <div id="previewContent">
+                                        <pre id="previewYaml" style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load MathJax -->
+                <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async=""></script>
+
+                <!-- Load builder CSS and JS -->
+                <link rel="stylesheet" href="/tvbo/static/src/css/builder.css?v=4"/>
+                <script type="text/javascript" src="/tvbo/static/src/js/model_builder.js?v=4"></script>
+
+                <script type="text/javascript">
+                    // Make models data available globally
+                    window.searchData = <t t-out="models_json"/>;
+                    window.integratorsData = <t t-out="integrators_json"/>;
+                    window.couplingsData = <t t-out="couplings_json"/>;
+                    window.monitorsData = <t t-out="monitors_json"/>;
+                    window.networksData = <t t-out="networks_json"/>;
+
+                        // Initialize the configurator
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const saveBtn = document.getElementById('saveModelBtn');
+                        const copyBtn = document.getElementById('builderCopyPython');
+                        const downloadBtn = document.getElementById('builderDownloadYaml');
+
+                        // Initialize tabs manually
+                        const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+                        tabs.forEach(tab => {
+                            tab.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const target = this.getAttribute('data-bs-target');
+
+                                // Hide all tab panes
+                                document.querySelectorAll('.tab-pane').forEach(pane => {
+                                    pane.classList.remove('show', 'active');
+                                });
+
+                                // Remove active from all tabs
+                                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(t => {
+                                    t.classList.remove('active');
+                                });
+
+                                // Show selected tab pane
+                                const targetPane = document.querySelector(target);
+                                if (targetPane) {
+                                    targetPane.classList.add('show', 'active');
+                                }
+
+                                // Mark current tab as active
+                                this.classList.add('active');
+                            });
+                        });
+
+                        // Initialize builder on page load
+                        if (window.initializeBuilder) {
+                            window.initializeBuilder();
+                        }
+
+                        // Copy Python functionality
+                        if (copyBtn) {
+                            copyBtn.addEventListener('click', function() {
+                                if (window.copyPythonCode) {
+                                    window.copyPythonCode();
+                                }
+                            });
+                        }
+
+                        // Download YAML functionality
+                        if (downloadBtn) {
+                            downloadBtn.addEventListener('click', function() {
+                                if (window.downloadYaml) {
+                                    window.downloadYaml();
+                                }
+                            });
+                        }
+
+                        // Save to database functionality
+                        if (saveBtn) {
+                            saveBtn.addEventListener('click', function() {
+                                const section = document.getElementById('builderContent');
+                                if (!section) {
+                                    alert('Please configure a model first');
+                                    return;
+                                }
+
+                                // Collect the model spec
+                                if (typeof collectSpec !== 'function') {
+                                    alert('Model builder not loaded properly');
+                                    return;
+                                }
+
+                                const spec = collectSpec(section, {
+                                    models: window.searchData || [],
+                                    networks: [],
+                                    couplings: []
+                                });
+
+                                if (!spec || !spec.model || !spec.model.name) {
+                                    alert('Please provide at least a model name');
+                                    return;
+                                }
+
+                                // Show loading
+                                saveBtn.disabled = true;
+                                saveBtn.textContent = 'Saving...';
+
+                                // Send to server
+                                fetch('/tvbo/configurator/save', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        jsonrpc: '2.0',
+                                        method: 'call',
+                                        params: {
+                                            model_data: spec.model
+                                        }
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    saveBtn.disabled = false;
+                                    saveBtn.textContent = 'Save to Database';
+
+                                    if (data.result &amp;&amp; data.result.success) {
+                                        alert(data.result.message || 'Model saved successfully!');
+                                        window.location.reload();
+                                    } else {
+                                        alert('Error: ' + (data.result ? data.result.error : 'Unknown error'));
+                                    }
+                                })
+                                .catch(error => {
+                                    saveBtn.disabled = false;
+                                    saveBtn.textContent = 'Save to Database';
+                                    alert('Error saving model: ' + error.message);
+                                });
+                            });
+                        }
+                    });
+                </script>
+            </t>
+        </template>
+
+        <!-- Menu item -->
+        <record id="menu_model_configurator" model="website.menu">
+            <field name="name">Simulation Configurator</field>
+            <field name="url">/tvbo/configurator</field>
+            <field name="parent_id" ref="website.main_menu"/>
+            <field name="sequence" type="int">50</field>
+        </record>
+    </data>
+</odoo>
