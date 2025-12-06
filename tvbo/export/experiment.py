@@ -107,6 +107,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return cls(**dm._as_dict)
 
     @classmethod
+    def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
+        """Create a SimulationExperiment from a Pydantic model instance.
+        
+        Args:
+            pyd_obj: A Pydantic BaseModel instance (e.g., from tvbo.datamodel.tvbopydantic)
+        
+        Returns:
+            SimulationExperiment instance
+        """
+        if hasattr(pyd_obj, 'model_dump'):
+            # Pydantic v2
+            return cls(**pyd_obj.model_dump(exclude_none=True))
+        elif hasattr(pyd_obj, 'dict'):
+            # Pydantic v1
+            return cls(**pyd_obj.dict(exclude_none=True))
+        else:
+            raise TypeError(f"Expected a Pydantic model, got {type(pyd_obj)}")
+
+    @classmethod
     def from_tvb_simulator(cls, tvb_simulator):
         return cls.from_datamodel(metadata.simulator2metadata(tvb_simulator))
 
