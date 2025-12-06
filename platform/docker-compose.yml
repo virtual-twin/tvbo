@@ -14,6 +14,9 @@ services:
       - MODE=api
     ports:
       - "8100:8000"
+    volumes:
+      # Mount tvbo source for development (live code changes)
+      - ..:/app:ro
     networks:
       - tvbo-network
     restart: unless-stopped
