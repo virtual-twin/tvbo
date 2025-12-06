@@ -17,6 +17,7 @@ access_tvbo_conditional_block,tvbo.conditional_block,model_tvbo_conditional_bloc
 access_tvbo_stimulus,tvbo.stimulus,model_tvbo_stimulus,base.group_user,1,1,1,1
 access_tvbo_temporal_applicable_equation,tvbo.temporal_applicable_equation,model_tvbo_temporal_applicable_equation,base.group_user,1,1,1,1
 access_tvbo_parcellation,tvbo.parcellation,model_tvbo_parcellation,base.group_user,1,1,1,1
+access_tvbo_tractogram,tvbo.tractogram,model_tvbo_tractogram,base.group_user,1,1,1,1
 access_tvbo_matrix,tvbo.matrix,model_tvbo_matrix,base.group_user,1,1,1,1
 access_tvbo_brain_region_series,tvbo.brain_region_series,model_tvbo_brain_region_series,base.group_user,1,1,1,1
 access_tvbo_network,tvbo.network,model_tvbo_network,base.group_user,1,1,1,1

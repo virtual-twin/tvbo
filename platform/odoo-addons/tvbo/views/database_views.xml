@@ -274,6 +274,46 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <!-- Tractograms Views -->
+    <record id="view_tractogram_list" model="ir.ui.view">
+        <field name="name">tvbo.tractogram.list</field>
+        <field name="model">tvbo.tractogram</field>
+        <field name="arch" type="xml">
+            <list string="Tractograms">
+                <field name="name"/>
+                <field name="label"/>
+                <field name="number_of_subjects"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tractogram_form" model="ir.ui.view">
+        <field name="name">tvbo.tractogram.form</field>
+        <field name="model">tvbo.tractogram</field>
+        <field name="arch" type="xml">
+            <form string="Tractograms">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="label"/>
+                        <field name="description"/>
+                        <field name="data_source"/>
+                        <field name="number_of_subjects"/>
+                        <field name="acquisition"/>
+                        <field name="processing_pipeline"/>
+                        <field name="reference"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tractogram_list" model="ir.actions.act_window">
+        <field name="name">Tractograms</field>
+        <field name="res_model">tvbo.tractogram</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
     <!-- Parcellations Views -->
     <record id="view_parcellation_list" model="ir.ui.view">
         <field name="name">tvbo.parcellation.list</field>

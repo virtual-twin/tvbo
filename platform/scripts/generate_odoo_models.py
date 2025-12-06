@@ -235,6 +235,15 @@ def generate_database_views(
                 "isVersionOf", "coordinateSpace"
             ],
         },
+        "tractogram": {
+            "display_name": "Tractograms",
+            "list_fields": ["name", "label", "number_of_subjects"],
+            "form_fields": [
+                "name", "label", "description",
+                "data_source", "number_of_subjects",
+                "acquisition", "processing_pipeline", "reference"
+            ],
+        },
         "parcellation": {
             "display_name": "Parcellations",
             "list_fields": ["label", "atlas", "data_source"],

@@ -416,21 +416,31 @@
                                                 <!-- Plot Controls -->
                                                 <div class="row mb-3">
                                                     <div class="col-md-4">
-                                                        <label class="form-label">State Variable</label>
-                                                        <select id="plotStateVar" class="form-select"></select>
+                                                        <label class="form-label">State Variables</label>
+                                                        <div id="plotStateVars" style="max-height: 120px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px; background: #fff;">
+                                                            <!-- Checkboxes will be populated dynamically -->
+                                                        </div>
+                                                        <small id="stateVarHint" class="text-muted">Select variables to plot</small>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <label class="form-label">Regions</label>
-                                                        <select id="plotRegions" class="form-select" multiple="multiple" size="4"></select>
-                                                        <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                                                        <div id="plotRegions" style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px; background: #fff;">
+                                                            <!-- Checkboxes will be populated dynamically -->
+                                                        </div>
+                                                        <div class="mt-1">
+                                                            <button type="button" class="btn btn-sm btn-link p-0" id="selectAllRegions">Select All</button>
+                                                            <span class="text-muted mx-1">|</span>
+                                                            <button type="button" class="btn btn-sm btn-link p-0" id="selectNoneRegions">Select None</button>
+                                                        </div>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <label class="form-label">Plot Type</label>
                                                         <select id="plotType" class="form-select">
                                                             <option value="timeseries">Time Series</option>
-                                                            <option value="phasespace">Phase Space</option>
-                                                            <option value="heatmap">Heatmap</option>
+                                                            <option value="phasespace">Phase Space (2 vars)</option>
+                                                            <option value="heatmap">Heatmap (1 var)</option>
                                                         </select>
+                                                        <small id="plotTypeHint" class="text-muted"></small>
                                                     </div>
                                                 </div>
 

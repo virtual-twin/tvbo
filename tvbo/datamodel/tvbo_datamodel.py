@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-06T23:48:58
+# Generation date: 2025-12-07T00:05:13
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -76,6 +76,10 @@ DEFAULT_ = TVBO
 # Types
 
 # Class references
+class TractogramName(extended_str):
+    pass
+
+
 class ObservationModelName(extended_str):
     pass
 
@@ -371,6 +375,57 @@ class Parcellation(YAMLRoot):
 
         if self.data_source is not None and not isinstance(self.data_source, str):
             self.data_source = str(self.data_source)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Tractogram(YAMLRoot):
+    """
+    Reference to tractography/diffusion MRI data used to derive structural connectivity
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Tractogram"]
+    class_class_curie: ClassVar[str] = "tvbo:Tractogram"
+    class_name: ClassVar[str] = "Tractogram"
+    class_model_uri: ClassVar[URIRef] = TVBO.Tractogram
+
+    name: Union[str, TractogramName] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    data_source: Optional[str] = None
+    number_of_subjects: Optional[int] = None
+    acquisition: Optional[str] = None
+    processing_pipeline: Optional[str] = None
+    reference: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, TractogramName):
+            self.name = TractogramName(self.name)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.data_source is not None and not isinstance(self.data_source, str):
+            self.data_source = str(self.data_source)
+
+        if self.number_of_subjects is not None and not isinstance(self.number_of_subjects, int):
+            self.number_of_subjects = int(self.number_of_subjects)
+
+        if self.acquisition is not None and not isinstance(self.acquisition, str):
+            self.acquisition = str(self.acquisition)
+
+        if self.processing_pipeline is not None and not isinstance(self.processing_pipeline, str):
+            self.processing_pipeline = str(self.processing_pipeline)
+
+        if self.reference is not None and not isinstance(self.reference, str):
+            self.reference = str(self.reference)
 
         super().__post_init__(**kwargs)
 
@@ -3617,6 +3672,21 @@ slots.parcellation__data_source = Slot(uri=TVBO.data_source, name="parcellation_
 
 slots.parcellation__atlas = Slot(uri=TVBO.atlas, name="parcellation__atlas", curie=TVBO.curie('atlas'),
                    model_uri=TVBO.parcellation__atlas, domain=None, range=Union[dict, BrainAtlas])
+
+slots.tractogram__data_source = Slot(uri=TVBO.data_source, name="tractogram__data_source", curie=TVBO.curie('data_source'),
+                   model_uri=TVBO.tractogram__data_source, domain=None, range=Optional[str])
+
+slots.tractogram__number_of_subjects = Slot(uri=TVBO.number_of_subjects, name="tractogram__number_of_subjects", curie=TVBO.curie('number_of_subjects'),
+                   model_uri=TVBO.tractogram__number_of_subjects, domain=None, range=Optional[int])
+
+slots.tractogram__acquisition = Slot(uri=TVBO.acquisition, name="tractogram__acquisition", curie=TVBO.curie('acquisition'),
+                   model_uri=TVBO.tractogram__acquisition, domain=None, range=Optional[str])
+
+slots.tractogram__processing_pipeline = Slot(uri=TVBO.processing_pipeline, name="tractogram__processing_pipeline", curie=TVBO.curie('processing_pipeline'),
+                   model_uri=TVBO.tractogram__processing_pipeline, domain=None, range=Optional[str])
+
+slots.tractogram__reference = Slot(uri=TVBO.reference, name="tractogram__reference", curie=TVBO.curie('reference'),
+                   model_uri=TVBO.tractogram__reference, domain=None, range=Optional[str])
 
 slots.matrix__x = Slot(uri=TVBO.x, name="matrix__x", curie=TVBO.curie('x'),
                    model_uri=TVBO.matrix__x, domain=None, range=Optional[Union[dict, BrainRegionSeries]])

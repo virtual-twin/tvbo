@@ -302,6 +302,7 @@ class BrainAtlas(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -342,6 +343,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -395,6 +397,7 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -434,6 +437,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -490,6 +494,7 @@ class Dataset(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -589,6 +594,7 @@ class Contact(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -646,6 +652,7 @@ class DBSProtocol(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -686,6 +693,7 @@ class ClinicalScale(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -708,7 +716,7 @@ class ClinicalScale(ConfiguredBaseModel):
                        'StateVariable',
                        'Parameter',
                        'PDE']} })
-    reference: Optional[str] = Field(default=None, description="""DOI, PMID or persistent identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore']} })
+    reference: Optional[str] = Field(default=None, description="""DOI, PMID or persistent identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
 
 
 class ClinicalScore(ConfiguredBaseModel):
@@ -728,6 +736,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -746,6 +755,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -782,7 +792,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'StateVariable',
                        'Parameter',
                        'PDE']} })
-    reference: Optional[str] = Field(default=None, description="""PubMed ID, DOI, or other reference to the score definition""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore']} })
+    reference: Optional[str] = Field(default=None, description="""PubMed ID, DOI, or other reference to the score definition""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
     scale: Optional[ClinicalScale] = Field(default=None, description="""The scale this score belongs to, if applicable""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore']} })
     parent_score: Optional[ClinicalScore] = Field(default=None, description="""If this score is a subscore of a broader composite""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore']} })
 
@@ -835,6 +845,7 @@ class Equation(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -935,6 +946,7 @@ class Stimulus(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -983,6 +995,7 @@ class Stimulus(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1042,6 +1055,7 @@ class TemporalApplicableEquation(Equation):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1093,6 +1107,7 @@ class Parcellation(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1123,22 +1138,46 @@ class Parcellation(ConfiguredBaseModel):
                        'PDE']} })
     region_labels: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
     center_coordinates: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
-    data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'DataInjection']} })
+    data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'DataInjection']} })
     atlas: BrainAtlas = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
 
 
-class Matrix(ConfiguredBaseModel):
+class Tractogram(ConfiguredBaseModel):
     """
-    Adjacency matrix of a network.
+    Reference to tractography/diffusion MRI data used to derive structural connectivity
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Tractogram', 'from_schema': 'https://w3id.org/tvbo'})
 
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'ObservationModel',
+                       'DataInjection',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Monitor',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1169,6 +1208,89 @@ class Matrix(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'ObservationModel',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'Monitor',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    data_source: Optional[str] = Field(default=None, description="""Path or URI to the tractography data file""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'DataInjection']} })
+    number_of_subjects: Optional[int] = Field(default=None, description="""Number of subjects in the tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
+    acquisition: Optional[str] = Field(default=None, description="""Acquisition protocol or scanner information""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
+    processing_pipeline: Optional[str] = Field(default=None, description="""Processing pipeline used to generate the tractography""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
+    reference: Optional[str] = Field(default=None, description="""Publication or DOI reference for this tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
+
+
+class Matrix(ConfiguredBaseModel):
+    """
+    Adjacency matrix of a network.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'RandomStream',
+                       'CostFunction',
+                       'FittingTarget',
+                       'ModelFitting',
+                       'Monitor',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1238,6 +1360,7 @@ class Network(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1268,6 +1391,7 @@ class Network(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1326,6 +1450,7 @@ class Node(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1356,6 +1481,7 @@ class Node(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1420,6 +1546,7 @@ class Edge(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1450,6 +1577,7 @@ class Edge(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1499,6 +1627,7 @@ class ObservationModel(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -1522,6 +1651,7 @@ class ObservationModel(ConfiguredBaseModel):
                        'Monitor']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1621,6 +1751,7 @@ class DataInjection(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -1637,7 +1768,7 @@ class DataInjection(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
-    data_source: Optional[str] = Field(default=None, description="""Source of the data (file, array, generated)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'DataInjection']} })
+    data_source: Optional[str] = Field(default=None, description="""Source of the data (file, array, generated)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'DataInjection']} })
     values: Optional[AnyShapeArray[float]] = Field(default=None, description="""Actual data values (for small arrays)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'DataInjection', 'SpatialField']} })
     shape: Optional[list[int]] = Field(default=[], description="""Shape of the injected data""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection', 'Parameter', 'NDArray']} })
     generation_function: Optional[Function] = Field(default=None, description="""Function to generate the data (e.g., np.arange)""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection']} })
@@ -1664,6 +1795,7 @@ class DownsamplingModel(ObservationModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -1687,6 +1819,7 @@ class DownsamplingModel(ObservationModel):
                        'Monitor']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1774,6 +1907,7 @@ class Dynamics(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -1797,6 +1931,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1842,6 +1977,7 @@ class Dynamics(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1904,6 +2040,7 @@ class NeuralMassModel(Dynamics):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -1927,6 +2064,7 @@ class NeuralMassModel(Dynamics):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -1972,6 +2110,7 @@ class NeuralMassModel(Dynamics):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2030,6 +2169,7 @@ class StateVariable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2057,6 +2197,7 @@ class StateVariable(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2098,6 +2239,7 @@ class StateVariable(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2171,6 +2313,7 @@ class Distribution(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2229,6 +2372,7 @@ class Parameter(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2251,6 +2395,7 @@ class Parameter(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2300,6 +2445,7 @@ class Parameter(ConfiguredBaseModel):
     reported_optimum: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2374,6 +2520,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2392,6 +2539,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2435,6 +2583,7 @@ class Function(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2462,6 +2611,7 @@ class Function(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2513,6 +2663,7 @@ class Function(ConfiguredBaseModel):
                        'DifferentialOperator']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2561,6 +2712,7 @@ class Callable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2579,6 +2731,7 @@ class Callable(ConfiguredBaseModel):
                        'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2644,6 +2797,7 @@ class DerivedParameter(Parameter):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2667,6 +2821,7 @@ class DerivedParameter(Parameter):
                        'FittingTarget']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2728,6 +2883,7 @@ class DerivedParameter(Parameter):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2786,6 +2942,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -2809,6 +2966,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'FittingTarget']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2921,6 +3079,7 @@ class RandomStream(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -2951,6 +3110,7 @@ class RandomStream(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3003,6 +3163,7 @@ class CostFunction(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3071,6 +3232,7 @@ class FittingTarget(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3150,6 +3312,7 @@ class ModelFitting(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3180,6 +3343,7 @@ class ModelFitting(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3269,6 +3433,7 @@ class Monitor(ObservationModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -3291,6 +3456,7 @@ class Monitor(ObservationModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3340,6 +3506,7 @@ class Monitor(ObservationModel):
                        'Monitor']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3410,6 +3577,7 @@ class Coupling(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -3433,6 +3601,7 @@ class Coupling(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3503,6 +3672,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3533,6 +3703,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3595,6 +3766,7 @@ class SimulationExperiment(ConfiguredBaseModel):
     id: int = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3633,6 +3805,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3688,6 +3861,7 @@ class SimulationStudy(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3720,6 +3894,7 @@ class SimulationStudy(ConfiguredBaseModel):
     model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3768,6 +3943,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3798,6 +3974,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3870,6 +4047,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3900,6 +4078,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -3947,6 +4126,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -3987,6 +4167,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -4005,6 +4186,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4074,6 +4256,7 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -4092,6 +4275,7 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4141,6 +4325,7 @@ class NDArray(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4171,6 +4356,7 @@ class NDArray(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4234,6 +4420,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4264,6 +4451,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4314,6 +4502,7 @@ class Mesh(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4344,6 +4533,7 @@ class Mesh(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4405,6 +4595,7 @@ class SpatialField(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4435,6 +4626,7 @@ class SpatialField(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4495,6 +4687,7 @@ class FieldStateVariable(StateVariable):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4525,6 +4718,7 @@ class FieldStateVariable(StateVariable):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4564,6 +4758,7 @@ class FieldStateVariable(StateVariable):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Tractogram',
                        'ObservationModel',
                        'DataInjection',
                        'Dynamics',
@@ -4638,6 +4833,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4702,6 +4898,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4732,6 +4929,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4781,6 +4979,7 @@ class PDESolver(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4811,6 +5010,7 @@ class PDESolver(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4866,6 +5066,7 @@ class PDE(ConfiguredBaseModel):
                        'Equation',
                        'Stimulus',
                        'Parcellation',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4896,6 +5097,7 @@ class PDE(ConfiguredBaseModel):
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
+                       'Tractogram',
                        'Matrix',
                        'Network',
                        'Node',
@@ -4981,6 +5183,7 @@ ConditionalBlock.model_rebuild()
 Stimulus.model_rebuild()
 TemporalApplicableEquation.model_rebuild()
 Parcellation.model_rebuild()
+Tractogram.model_rebuild()
 Matrix.model_rebuild()
 BrainRegionSeries.model_rebuild()
 Network.model_rebuild()

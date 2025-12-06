@@ -201,6 +201,22 @@ class Parcellation(models.Model):
     atlas = fields.Many2one(comodel_name='tvbo.brain_atlas', required=True)
 
 
+class Tractogram(models.Model):
+    _name = 'tvbo.tractogram'
+    _description = 'Reference to tractography/diffusion MRI data used to derive structural connectivity'
+
+    _rec_name = 'name'
+
+    name = fields.Char(required=True, index=True)
+    label = fields.Char(index=True)
+    description = fields.Text()
+    data_source = fields.Char(string='Path or URI to the tractography data file')
+    number_of_subjects = fields.Integer(string='Number of subjects in the tractography dataset')
+    acquisition = fields.Char(string='Acquisition protocol or scanner information')
+    processing_pipeline = fields.Char(string='Processing pipeline used to generate the tractography')
+    reference = fields.Char(string='Publication or DOI reference for this tractography dataset')
+
+
 class Matrix(models.Model):
     _name = 'tvbo.matrix'
     _description = 'Adjacency matrix of a network.'
@@ -255,7 +271,7 @@ class Node(models.Model):
     label = fields.Char(index=True)
     description = fields.Text()
     record_id = fields.Integer(string='Unique node identifier', required=True)
-    dynamics = fields.Many2one(comodel_name='tvbo.dynamics', string="Dynamics model governing this node's behavior", required=True)
+    dynamics = fields.Many2one(comodel_name='tvbo.dynamics', string="Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.")
     position = fields.Many2one(comodel_name='tvbo.coordinate', string='Spatial coordinates (x, y, z) of the node')
     region = fields.Char(string='Brain region or anatomical label')
     parameters = fields.Many2many(comodel_name='tvbo.parameter', relation='tvbo_node_parameters_rel', string='Node-specific parameter overrides')
@@ -695,8 +711,8 @@ class SimulationExperiment(models.Model):
     description = fields.Text()
     additional_equations = fields.Many2many(comodel_name='tvbo.equation', relation='tvbo_simulation_experiment_additional_equations_rel')
     label = fields.Char(index=True)
-    local_dynamics = fields.Many2one(comodel_name='tvbo.dynamics')
-    dynamics = fields.Text()
+    local_dynamics = fields.Many2one(comodel_name='tvbo.dynamics', string='Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)')
+    dynamics = fields.Many2many(comodel_name='tvbo.dynamics', relation='tvbo_simulation_experiment_dynamics_rel', string='Dictionary of dynamics models keyed by name. Nodes reference these by name.')
     integration = fields.Many2one(comodel_name='tvbo.integrator')
     connectivity = fields.Many2one(comodel_name='tvbo.network')
     network = fields.Many2one(comodel_name='tvbo.network')
