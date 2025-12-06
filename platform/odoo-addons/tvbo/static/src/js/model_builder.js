@@ -2610,10 +2610,13 @@
 
     // 2. Collect network (REQUIRED: nodes and edges)
     const networkConfig = collectNetworkConfig();
+    const modelName = local_dynamics.name || 'Generic2dOscillator';
+    const couplingName = document.getElementById('couplingFunction')?.value || 'Linear';
+
     const network = {
       label: networkConfig.label || 'WebNetwork',
       number_of_regions: networkConfig.number_of_nodes || networkConfig.nodes?.length || 2,
-      global_coupling: networkConfig.global_coupling_strength || 1.0,
+      global_coupling_strength: networkConfig.global_coupling_strength || 1.0,
       conduction_speed: networkConfig.conduction_speed || 3.0,
     };
 
@@ -2622,7 +2625,7 @@
         id: n.id ?? idx,
         label: n.label || `Node_${idx}`,
         position: n.position || { x: 0, y: 0, z: 0 },
-        dynamics: n.dynamics || undefined,
+        dynamics: n.dynamics || modelName,  // Required: use node's dynamics or default to selected model
       }));
     }
 
@@ -2630,6 +2633,7 @@
       network.edges = networkConfig.edges.map(e => ({
         source: e.source,
         target: e.target,
+        coupling: e.coupling || couplingName,  // Required: use edge's coupling or default
         weight: e.weight ?? 1.0,
         delay: e.delay ?? 0.0,
       }));

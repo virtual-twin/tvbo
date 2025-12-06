@@ -130,7 +130,7 @@ def import_yaml_model(
                 {
                     "label": td_name,
                     "value": str(sv.equation.rhs),
-                    "symbol": str(sv.equation.lhs) if sv.equation.lhs else sv.name,
+                    "symbol": str(sv.equation.lhs) if sv.equation.lhs else str(sv.name),
                 },
                 sv_class,
             )

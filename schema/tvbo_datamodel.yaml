@@ -191,10 +191,12 @@ classes:
         description: Conditional logic for piecewise equations.
         range: ConditionalBlock
         multivalued: true
+        inlined: true
         # alias: cases
       engine:
         range: SoftwareRequirement
         description: "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software')."
+        inlined: true
       pycode:
         range: string
         description: Python code for the equation.
@@ -255,6 +257,7 @@ classes:
       atlas:
         required: true
         range: BrainAtlas
+        inlined: true
 
   # Network:
   #   slots:
@@ -327,6 +330,7 @@ classes:
         multivalued: true
         range: Coupling
         description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
+        inlined: true
 
       # Connectome/matrix-based attributes (backward compatibility)
       number_of_regions:
@@ -340,18 +344,22 @@ classes:
       parcellation:
         range: Parcellation
         description: "Brain parcellation/atlas reference"
+        inlined: true
       tractogram:
         range: string
         description: "Reference to tractography data"
       weights:
         range: Matrix
         description: "Adjacency/weight matrix (backward compatibility with Connectome)"
+        inlined: true
       lengths:
         range: Matrix
         description: "Distance/length matrix (backward compatibility with Connectome)"
+        inlined: true
       normalization:
         range: Equation
         description: "Normalization equation for connectivity weights"
+        inlined: true
       node_labels:
         multivalued: true
         range: string
@@ -361,9 +369,11 @@ classes:
       global_coupling_strength:
         range: Parameter
         description: "Global scaling factor for all coupling weights"
+        inlined: true
       conduction_speed:
         range: Parameter
         description: "Conduction speed for computing delays from distances"
+        inlined: true
 
   Node:
     class_uri: tvbo:Node
@@ -380,9 +390,11 @@ classes:
         range: Dynamics
         required: true
         description: "Dynamics model governing this node's behavior"
+        inlined: true
       position:
         range: Coordinate
         description: "Spatial coordinates (x, y, z) of the node"
+        inlined: true
       region:
         range: string
         description: "Brain region or anatomical label"
@@ -414,6 +426,7 @@ classes:
         range: Coupling
         required: true
         description: "Coupling function applied on this edge (can be shared across edges)"
+        inlined: true
       weight:
         range: float
         ifabsent: float(1.0)
@@ -441,6 +454,7 @@ classes:
     attributes:
       transformation:
         range: Function
+        inlined: true
       pipeline:
         description: "Ordered sequence of processing functions"
         multivalued: true
@@ -450,14 +464,17 @@ classes:
         description: "External data added to the pipeline (e.g., timepoints, kernels)"
         multivalued: true
         range: DataInjection
+        inlined: true
       argument_mappings:
         description: "How inputs/outputs connect between pipeline steps"
         multivalued: true
         range: ArgumentMapping
+        inlined: true
       derivatives:
         description: "Side computations (e.g., functional connectivity)"
         multivalued: true
         range: DerivedVariable
+        inlined: true
 
   ProcessingStep:
     description: "A single processing step in an observation model pipeline or standalone operation"
@@ -470,6 +487,7 @@ classes:
         required: true
         description: "Function or transformation to apply"
         alias: transformation
+        inlined: true
       operation_type:
         description: "Kind of operation to perform (e.g., subsample, projection, convolution)."
         range: OperationType
@@ -478,6 +496,7 @@ classes:
         description: "Maps function arguments to pipeline data/outputs"
         multivalued: true
         range: ArgumentMapping
+        inlined: true
       output_alias:
         description: "Optional name for this step's output (default: function name)"
         range: string
@@ -491,6 +510,7 @@ classes:
         description: "Optional per-step variable selection"
         multivalued: true
         range: StateVariable
+        inlined: true
 
   DataInjection:
     description: "External data injected into the observation pipeline"
@@ -513,6 +533,7 @@ classes:
       generation_function:
         description: "Function to generate the data (e.g., np.arange)"
         range: Function
+        inlined: true
 
   ArgumentMapping:
     description: "Maps function arguments to pipeline inputs/outputs"
@@ -573,6 +594,7 @@ classes:
       coupling_inputs:
         multivalued: true
         range: CouplingInput
+        inlined: true
       state_variables:
         multivalued: true
         range: StateVariable
@@ -596,9 +618,11 @@ classes:
         inlined: true
       stimulus:
         range: Stimulus
+        inlined: true
       modes:
         multivalued: true
         range: NeuralMassModel
+        inlined: true
       system_type:
         range: SystemType
 
@@ -630,15 +654,18 @@ classes:
         ifabsent: false
       noise:
         range: Noise
+        inlined: true
       stimulation_variable:
         range: boolean
       boundaries:
         range: Range
+        inlined: true
       initial_value:
         range: float
         ifabsent: float(0.1)
       history:
         range: TimeSeries
+        inlined: true
 
   Distribution:
     slots:
@@ -649,9 +676,11 @@ classes:
       dependencies:
         multivalued: true
         range: Parameter
+        inlined: true
 
       correlation:
         range: Matrix
+        inlined: true
 
   Parameter:
     class_uri: tvbo:Parameter
@@ -710,12 +739,15 @@ classes:
       arguments:
         multivalued: true
         range: Parameter
+        inlined: true
       output:
         range: Equation
+        inlined: true
       source_code:
         range: string
       callable:
         range: Callable
+        inlined: true
 
   Callable:
     slots:
@@ -728,6 +760,7 @@ classes:
         range: string
       software:
         range: SoftwareRequirement
+        inlined: true
 
   Case:
     attributes:
@@ -735,6 +768,7 @@ classes:
         range: string
       equation:
         range: Equation
+        inlined: true
 
   DerivedParameter:
     is_a: Parameter
@@ -755,6 +789,7 @@ classes:
       cases:
         multivalued: true
         range: Case
+        inlined: true
     slots:
       - name
       - symbol
@@ -787,12 +822,15 @@ classes:
         ifabsent: integer(42)
       random_state:
         range: RandomStream
+        inlined: true
       intensity:
         description: "Optional scalar or vector intensity parameter for noise."
         range: Parameter
+        inlined: true
       function:
         description: "Optional functional form of the noise (callable specification)."
         range: Function
+        inlined: true
       pycode:
         description: "Inline Python code representation of the noise process."
         range: string
@@ -800,6 +838,7 @@ classes:
         description: "State variables this noise applies to; if omitted, applies globally."
         multivalued: true
         range: StateVariable
+        inlined: true
 
   RandomStream:
     class_uri: tvbo:RandomStream
@@ -830,8 +869,10 @@ classes:
       targets:
         multivalued: true
         range: FittingTarget
+        inlined: true
       cost_function:
         range: CostFunction
+        inlined: true
 
   Integrator:
     slots:
@@ -849,6 +890,7 @@ classes:
         range: integer
       noise:
         range: Noise
+        inlined: true
       state_wise_sigma:
         range: float
         multivalued: true
@@ -864,8 +906,10 @@ classes:
       intermediate_expressions:
         multivalued: true
         range: DerivedVariable
+        inlined: true
       update_expression:
         range: DerivedVariable
+        inlined: true
       delayed:
         range: boolean
         ifabsent: true
@@ -913,6 +957,7 @@ classes:
       coupling_function:
         range: Equation
         description: "Mathematical function defining the coupling"
+        inlined: true
       sparse:
         range: boolean
         ifabsent: false
@@ -920,15 +965,19 @@ classes:
       pre_expression:
         range: Equation
         description: "Pre-processing expression applied before coupling"
+        inlined: true
       post_expression:
         range: Equation
         description: "Post-processing expression applied after coupling"
+        inlined: true
       incoming_states:
         range: StateVariable
         description: "State variables from connected nodes (source)"
+        inlined: true
       local_states:
         range: StateVariable
         description: "State variables from local node (target)"
+        inlined: true
       delayed:
         range: boolean
         ifabsent: true
@@ -938,12 +987,15 @@ classes:
       inner_coupling:
         range: Coupling
         description: "For hierarchical coupling: inner coupling applied at regional level"
+        inlined: true
       region_mapping:
         range: RegionMapping
         description: "For hierarchical coupling: vertex-to-region mapping for aggregation"
+        inlined: true
       regional_connectivity:
         range: Network
         description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
+        inlined: true
       aggregation:
         any_of:
           - range: string
@@ -999,35 +1051,46 @@ classes:
         range: string
       local_dynamics:
         range: Dynamics # Lumped, per-node dynamics (ODE/SDE/DDE/SDDE)
+        inlined: true
       dynamics:
         multivalued: true
         range: string
       integration:
         range: Integrator
+        inlined: true
       connectivity:
         range: Network
+        inlined: true
       network:
         range: Network
+        inlined: true
       coupling:
         range: Coupling
+        inlined: true
       monitors:
         multivalued: true
         range: Monitor # Now Monitor is_a ObservationModel
+        inlined: true
       stimulation:
         range: Stimulus
+        inlined: true
       field_dynamics:
         range: PDE # Distributed, spatially resolved dynamics (PDE)
+        inlined: true
       modelfitting:
         multivalued: true
         range: ModelFitting
+        inlined: true
       # Either reference a full reusable environment (preferred) or, for
       # legacy/simple cases, a single software requirement.
       environment:
         range: SoftwareEnvironment
         description: "Execution environment (collection of requirements)."
+        inlined: true
       software:
         range: SoftwareRequirement
         description: "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
+        inlined: true
       references:
         multivalued: true
         range: string
@@ -1063,8 +1126,10 @@ classes:
     attributes:
       data:
         range: Matrix
+        inlined: true
       time:
         range: Matrix
+        inlined: true
       sampling_rate:
         range: float
       unit:
@@ -1098,7 +1163,7 @@ classes:
         description: "Constituent software/module requirements that define this environment."
         multivalued: true
         range: SoftwareRequirement
-        inlined: false
+        inlined: true
 
     comments:
       - "An environment now aggregates one or more SoftwareRequirement entries."
