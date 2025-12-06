@@ -68,8 +68,19 @@ def get_display_fields_for_model(
     # Get all slots for this class
     class_slots = list(class_def.get("slots", []))
 
-    # Get attributes
-    class_attributes = class_def.get("attributes", {})
+    # Get attributes - handle both dict and list formats
+    raw_attributes = class_def.get("attributes", {})
+    if isinstance(raw_attributes, list):
+        # Convert list of dicts to dict (SANDS schema format)
+        class_attributes = {}
+        for attr in raw_attributes:
+            if isinstance(attr, dict):
+                for k, v in attr.items():
+                    class_attributes[k] = v if isinstance(v, dict) else {}
+            elif isinstance(attr, str):
+                class_attributes[attr] = {}
+    else:
+        class_attributes = raw_attributes or {}
 
     # Handle inheritance - get parent slots and attributes
     if all_classes and "is_a" in class_def:
@@ -77,7 +88,17 @@ def get_display_fields_for_model(
         parent_def = all_classes.get(parent_name)
         if parent_def:
             parent_slots = parent_def.get("slots", [])
-            parent_attributes = parent_def.get("attributes", {})
+            raw_parent_attrs = parent_def.get("attributes", {})
+            if isinstance(raw_parent_attrs, list):
+                parent_attributes = {}
+                for attr in raw_parent_attrs:
+                    if isinstance(attr, dict):
+                        for k, v in attr.items():
+                            parent_attributes[k] = v if isinstance(v, dict) else {}
+                    elif isinstance(attr, str):
+                        parent_attributes[attr] = {}
+            else:
+                parent_attributes = raw_parent_attrs or {}
             # Add parent slots to the beginning
             class_slots = list(parent_slots) + class_slots
             # Merge parent attributes
@@ -118,21 +139,23 @@ def get_display_fields_for_model(
             ):
                 display_fields.append(slot_name)
 
-    # Add attributes
+    # Add attributes - only include simple types that will definitely exist in Odoo model
     for attr_name, attr_def in class_attributes.items():
         if attr_name in display_fields:
             continue
         if attr_name in RESERVED_FIELD_NAMES:
             continue
+        if not isinstance(attr_def, dict):
+            continue
         attr_range = attr_def.get("range", "string")
-        # For form views with relations, include all fields
-        # For list views without relations, only include simple types
-        if (
-            include_relations
-            or attr_range in simple_types
-            or attr_range in TYPE_MAPPING
-        ):
+        # Only include simple types that definitely map to Odoo fields
+        # Exclude complex types (other classes) as they may not be properly created
+        if attr_range in simple_types or attr_range in TYPE_MAPPING:
             display_fields.append(attr_name)
+        elif include_relations and attr_range and attr_range not in simple_types:
+            # For relations, only include if it's a known class that likely exists
+            # Skip nested/complex types that may fail
+            pass  # Be conservative - skip relations in auto-generated views
 
     # Ensure we have at least one field
     if not display_fields:
@@ -150,13 +173,110 @@ def generate_database_views(
 ) -> None:
     """Generate database_views.xml and menus.xml for key models dynamically from schemas."""
 
-    # Models we want to create views for (based on database files)
+    # Models we want to create views for with their known fields
+    # Only include fields that definitely exist in the Odoo models
     target_models = {
-        "neural_mass_model": "Neural Mass Models",
-        "integrator": "Integrators",
-        "connectome": "Connectivity Networks",
-        "simulation_study": "Research Studies",
-        "coupling": "Coupling Functions",
+        "neural_mass_model": {
+            "display_name": "Neural Mass Models",
+            "list_fields": ["name", "label", "number_of_modes"],
+            "form_fields": [
+                "name", "label", "description", "number_of_modes",
+                "parameters", "state_variables", "derived_parameters",
+                "derived_variables", "coupling_inputs", "coupling_terms",
+                "system_type", "functions", "stimulus", "modes",
+                "source", "references", "iri", "has_reference"
+            ],
+        },
+        "integrator": {
+            "display_name": "Integrators",
+            "list_fields": ["method", "step_size", "duration", "delayed"],
+            "form_fields": [
+                "method", "step_size", "duration", "steps",
+                "time_scale", "unit", "noise", "state_wise_sigma",
+                "transient_time", "scipy_ode_base", "number_of_stages",
+                "intermediate_expressions", "update_expression",
+                "delayed", "parameters"
+            ],
+        },
+        "network": {
+            "display_name": "Connectivity Networks",
+            "list_fields": ["label", "number_of_regions", "tractogram", "parcellation"],
+            "form_fields": [
+                "label", "description", "number_of_regions", "number_of_nodes",
+                "tractogram", "parcellation", "nodes", "edges", "coupling_library",
+                "weights", "lengths", "normalization", "node_labels",
+                "global_coupling_strength", "conduction_speed"
+            ],
+        },
+        "simulation_study": {
+            "display_name": "Research Studies",
+            "list_fields": ["label", "title", "year", "doi"],
+            "form_fields": [
+                "label", "title", "description", "year", "doi", "key",
+                "model", "sample", "simulation_experiments"
+            ],
+        },
+        "coupling": {
+            "display_name": "Coupling Functions",
+            "list_fields": ["name", "label", "sparse", "delayed"],
+            "form_fields": [
+                "name", "label", "parameters", "coupling_function",
+                "sparse", "pre_expression", "post_expression",
+                "incoming_states", "local_states", "delayed",
+                "inner_coupling", "region_mapping", "regional_connectivity",
+                "aggregation", "distribution"
+            ],
+        },
+        "brain_atlas": {
+            "display_name": "Brain Atlases",
+            "list_fields": ["name", "abbreviation", "versionIdentifier"],
+            "form_fields": [
+                "name", "abbreviation", "author", "versionIdentifier",
+                "isVersionOf", "coordinateSpace"
+            ],
+        },
+        "parcellation": {
+            "display_name": "Parcellations",
+            "list_fields": ["label", "atlas", "data_source"],
+            "form_fields": [
+                "label", "atlas", "data_source",
+                "region_labels", "center_coordinates"
+            ],
+        },
+        "simulation_experiment": {
+            "display_name": "Simulation Experiments",
+            "list_fields": ["label", "model", "network"],
+            "form_fields": [
+                "label", "description", "record_id",
+                "model", "local_dynamics", "dynamics",
+                "integration", "connectivity", "network", "coupling",
+                "monitors", "stimulation", "field_dynamics",
+                "modelfitting", "environment", "software",
+                "additional_equations", "references"
+            ],
+        },
+        "monitor": {
+            "display_name": "Monitors",
+            "list_fields": ["name", "label", "period"],
+            "form_fields": [
+                "name", "label", "acronym", "description",
+                "time_scale", "parameters", "equation",
+                "environment", "period", "imaging_modality"
+            ],
+        },
+        "dynamics": {
+            "display_name": "Dynamics",
+            "list_fields": ["name", "label", "number_of_modes"],
+            "form_fields": [
+                "name", "label", "description", "number_of_modes",
+                "parameters", "state_variables", "derived_parameters",
+                "derived_variables", "coupling_inputs", "coupling_terms",
+                "system_type", "functions", "stimulus", "modes",
+                "source", "references", "iri", "has_reference",
+                "is_modified", "output_transforms", "derived_from_model",
+                "local_coupling_term"
+            ],
+        },
     }
 
     views_content = ['<?xml version="1.0" encoding="utf-8"?>', "<odoo>"]
@@ -182,39 +302,10 @@ def generate_database_views(
     )
 
     sequence = 10
-    for model_name, display_name in target_models.items():
-        # Find the class definition
-        class_def = None
-        class_key = None
-
-        # Convert snake_case to CamelCase for lookup
-        from_snake = "".join(word.capitalize() for word in model_name.split("_"))
-
-        for key, definition in all_classes.items():
-            if camel_to_snake(key) == model_name or key.lower() == model_name.lower():
-                class_def = definition
-                class_key = key
-                break
-
-        if not class_def:
-            print(
-                f"⚠ Warning: Could not find schema definition for {model_name}, skipping views"
-            )
-            continue
-
-        # Get display fields dynamically from schema
-        # For list views: only simple fields (no relations)
-        list_fields = get_display_fields_for_model(
-            class_key, class_def, all_slots, all_classes, include_relations=False
-        )
-        # For form views: ALL fields including relations
-        form_fields = get_display_fields_for_model(
-            class_key, class_def, all_slots, all_classes, include_relations=True
-        )
-
-        if not form_fields:
-            print(f"⚠ Warning: No displayable fields found for {model_name}, skipping")
-            continue
+    for model_name, model_config in target_models.items():
+        display_name = model_config["display_name"]
+        list_fields = model_config["list_fields"]
+        form_fields = model_config["form_fields"]
 
         model_tech = f"tvbo.{model_name}"
         action_id = f"action_{model_name}_list"
@@ -794,8 +885,11 @@ def main():
         website_files.append("data/website_config.xml")
     if (module_dir / "views" / "website_templates.xml").exists():
         website_files.append("views/website_templates.xml")
+    # Manually created template files - preserve these
+    if (module_dir / "views" / "configurator_templates.xml").exists():
+        website_files.append("views/configurator_templates.xml")
 
-    # Check for view and menu files
+    # Check for view and menu files (auto-generated)
     view_files = []
     if (module_dir / "views" / "database_views.xml").exists():
         view_files.append("views/database_views.xml")

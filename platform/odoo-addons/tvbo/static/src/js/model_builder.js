@@ -32,20 +32,22 @@
 
     root.innerHTML = `
       <div>
-        <div class="builder-field">
-          <label>Model Name</label>
-          <input id="builderSpecName" class="builder-input" placeholder="MyCustomModel" />
+        <div class="builder-field" style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: end;">
+          <div>
+            <label>Model Name</label>
+            <input id="builderSpecName" class="builder-input" placeholder="MyCustomModel" />
+          </div>
+          <div>
+            <label>System Type</label>
+            <select id="builderSystemType" class="builder-select">
+              <option value="continuous">Continuous (ODE/SDE)</option>
+              <option value="discrete">Discrete (Maps)</option>
+            </select>
+          </div>
         </div>
         <div class="builder-field">
           <label>Description</label>
-          <textarea id="builderNotes" class="builder-text" rows="3" placeholder="Optional description"></textarea>
-        </div>
-        <div class="builder-field">
-          <label>System Type</label>
-          <select id="builderSystemType" class="builder-select">
-            <option value="continuous">Continuous (ODE/SDE)</option>
-            <option value="discrete">Discrete (Maps)</option>
-          </select>
+          <textarea id="builderNotes" class="builder-text" rows="2" placeholder="Optional description"></textarea>
         </div>
       </div>
 
@@ -1487,286 +1489,382 @@
   }
 
   function initializeNetworkTab() {
-    const content = document.getElementById('networkContent');
-    if (!content) return;
+    // Handle mode switching between Custom and Brain Network
+    const customPanel = document.getElementById('customNetworkPanel');
+    const brainPanel = document.getElementById('brainNetworkPanel');
+    const modeRadios = document.querySelectorAll('input[name="networkMode"]');
 
-    const networks = window.networksData || [];
-    content.innerHTML = `
-      <div class="builder-field">
-        <label>Network Configuration Mode</label>
-        <select id="networkMode" class="builder-select">
-          <option value="standard">Standard Network (Tractogram + Parcellation)</option>
-          <option value="yaml">Load from YAML File</option>
-          <option value="custom">Custom Network (Node/Edge Builder)</option>
+    if (!customPanel || !brainPanel) return;
+
+    // Mode switching
+    modeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'custom') {
+          customPanel.style.display = 'block';
+          brainPanel.style.display = 'none';
+        } else if (e.target.value === 'brain') {
+          customPanel.style.display = 'none';
+          brainPanel.style.display = 'block';
+        }
+      });
+    });
+
+    // Populate tractogram dropdown from database
+    const tractogramSelect = document.getElementById('brainTractogram');
+    if (tractogramSelect && window.tractogramsData) {
+      window.tractogramsData.forEach(tractogram => {
+        const option = document.createElement('option');
+        option.value = tractogram;
+        option.textContent = tractogram;
+        tractogramSelect.appendChild(option);
+      });
+      // Add custom option at the end
+      const customOption = document.createElement('option');
+      customOption.value = 'custom';
+      customOption.textContent = 'Custom (upload below)';
+      tractogramSelect.appendChild(customOption);
+    }
+
+    // Populate parcellation dropdown from database
+    const parcellationSelect = document.getElementById('brainParcellation');
+    if (parcellationSelect && window.parcellationsData) {
+      window.parcellationsData.forEach(parc => {
+        const option = document.createElement('option');
+        option.value = parc.id;
+        option.textContent = parc.label;
+        parcellationSelect.appendChild(option);
+      });
+      // Add custom option at the end
+      const customOption = document.createElement('option');
+      customOption.value = 'custom';
+      customOption.textContent = 'Custom (upload below)';
+      parcellationSelect.appendChild(customOption);
+    }
+
+    // Initialize Custom Network node/edge builders
+    initializeCustomNetworkBuilder();
+
+    // Initialize file upload handlers
+    initializeNetworkFileUploads();
+  }
+
+  function initializeCustomNetworkBuilder() {
+    const nodesContainer = document.getElementById('customNetworkNodes');
+    const edgesContainer = document.getElementById('customNetworkEdges');
+    const addNodeBtn = document.getElementById('addCustomNode');
+    const addEdgeBtn = document.getElementById('addCustomEdge');
+
+    if (!nodesContainer || !edgesContainer) return;
+
+    // Prevent multiple initializations
+    if (addNodeBtn?.dataset.initialized === 'true') return;
+    if (addNodeBtn) addNodeBtn.dataset.initialized = 'true';
+    if (addEdgeBtn) addEdgeBtn.dataset.initialized = 'true';
+
+    // Helper to get current nodes for edge dropdowns
+    function getCurrentNodes() {
+      const nodes = [];
+      nodesContainer.querySelectorAll('.builder-row').forEach(row => {
+        const id = row.dataset.nodeId || row.querySelector('.node-id')?.value || '';
+        const label = row.querySelector('.node-label')?.value || '';
+        nodes.push({ id, label: label || `Node ${id}` });
+      });
+      return nodes;
+    }
+
+    // Update all edge source/target dropdowns when nodes change
+    function updateEdgeNodeOptions() {
+      const nodes = getCurrentNodes();
+      edgesContainer.querySelectorAll('.edge-source-select, .edge-target-select').forEach(select => {
+        const currentValue = select.value;
+        // Clear all but first option
+        while (select.options.length > 1) {
+          select.remove(1);
+        }
+        // Add node options
+        nodes.forEach(node => {
+          const option = document.createElement('option');
+          option.value = node.id;
+          option.textContent = `${node.id}: ${node.label}`;
+          select.appendChild(option);
+        });
+        // Restore value if still valid
+        select.value = currentValue;
+      });
+    }
+
+    function createNodeRow(id = 0, label = '', x = '', y = '', z = '', dynamics = '') {
+      // Get available models for the dropdown
+      const allModels = window.searchData || [
+        {name: 'Generic2dOscillator'}, {name: 'JansenRit'}, {name: 'WilsonCowan'}, {name: 'Epileptor'}
+      ];
+
+      const row = document.createElement('div');
+      row.className = 'builder-row mb-2 p-2 border rounded bg-light d-flex align-items-center gap-2';
+      row.dataset.nodeId = id;
+      row.innerHTML = `
+        <span class="badge bg-secondary py-2 px-3 flex-shrink-0">Node ${id}</span>
+        <input type="hidden" class="node-id" value="${id}"/>
+        <input class="form-control form-control-sm node-label" style="width: 120px;" value="${escapeAttr(label)}" placeholder="Label"/>
+        <select class="form-select form-select-sm node-dynamics" style="width: 150px;">
+          <option value="">Use configured model</option>
+          ${allModels.map(m => {
+            const name = m.name || m.label || m;
+            return `<option value="${escapeAttr(name)}" ${dynamics === name ? 'selected' : ''}>${escapeHtml(name)}</option>`;
+          }).join('')}
         </select>
-      </div>
+        <input type="number" step="0.1" class="form-control form-control-sm node-x" style="width: 70px;" value="${x}" placeholder="X"/>
+        <input type="number" step="0.1" class="form-control form-control-sm node-y" style="width: 70px;" value="${y}" placeholder="Y"/>
+        <input type="number" step="0.1" class="form-control form-control-sm node-z" style="width: 70px;" value="${z}" placeholder="Z"/>
+        <button class="btn btn-sm btn-outline-danger flex-shrink-0" title="Remove">×</button>
+      `;
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        renumberNodes();
+        updateEdgeNodeOptions();
+        updateGraph3D();
+      });
+      row.querySelector('.node-label').addEventListener('input', updateEdgeNodeOptions);
+      // Update 3D graph when coordinates change
+      ['node-x', 'node-y', 'node-z'].forEach(cls => {
+        row.querySelector('.' + cls)?.addEventListener('input', updateGraph3D);
+      });
+      return row;
+    }
 
-      <div id="networkConfigContainer"></div>
-    `;
-
-    const modeSelect = content.querySelector('#networkMode');
-    const configContainer = content.querySelector('#networkConfigContainer');
-
-    function renderNetworkConfig(mode) {
-      if (mode === 'standard') {
-        configContainer.innerHTML = `
-          <div class="builder-field">
-            <label>Select Existing Network</label>
-            <select id="networkSelect" class="builder-select">
-              <option value="">— Select existing network —</option>
-              ${networks.map(n => `<option value="${n.id}">${escapeHtml(n.label || n.name)}</option>`).join('')}
-            </select>
-          </div>
-
-          <div class="hr"></div>
-          <div style="font-weight: bold; margin-bottom: 10px;">Or Configure New Network</div>
-
-          <div class="builder-field">
-            <label>Parcellation/Atlas</label>
-            <select id="networkParcellation" class="builder-select">
-              <option value="">— Select parcellation —</option>
-              <option value="desikan-killiany">Desikan-Killiany</option>
-              <option value="destrieux">Destrieux</option>
-              <option value="hcp-mmp1">HCP-MMP1</option>
-              <option value="yeo7">Yeo 7 Networks</option>
-              <option value="yeo17">Yeo 17 Networks</option>
-            </select>
-          </div>
-
-          <div class="builder-field">
-            <label>Tractogram/Connectivity Source</label>
-            <select id="networkTractogram" class="builder-select">
-              <option value="">— Select tractogram —</option>
-              <option value="dti">DTI-based</option>
-              <option value="dsi">DSI-based</option>
-              <option value="hcp">HCP Average</option>
-              <option value="custom">Custom Upload</option>
-            </select>
-          </div>
-
-          <div class="builder-field">
-            <label>Number of Regions</label>
-            <input id="networkNumRegions" type="number" class="builder-input" placeholder="84" value="84" />
-          </div>
-
-          <div class="builder-field">
-            <label>Global Coupling Strength</label>
-            <input id="networkGlobalCoupling" type="number" step="0.01" class="builder-input" placeholder="1.0" value="1.0" />
-          </div>
-
-          <div class="builder-field">
-            <label>Conduction Speed (mm/ms)</label>
-            <input id="networkConductionSpeed" type="number" step="0.1" class="builder-input" placeholder="3.0" value="3.0" />
-          </div>
-
-          <div class="builder-field">
-            <label>Normalization</label>
-            <select id="networkNormalization" class="builder-select">
-              <option value="">None</option>
-              <option value="region">By Region</option>
-              <option value="max">By Maximum</option>
-              <option value="tract_length">By Tract Length</option>
-            </select>
-          </div>
-        `;
-      } else if (mode === 'yaml') {
-        configContainer.innerHTML = `
-          <div class="builder-field">
-            <label>Upload Network YAML File</label>
-            <input type="file" id="networkYamlFile" accept=".yaml,.yml" class="builder-input" />
-          </div>
-
-          <div class="builder-field">
-            <label>Or Paste YAML Content</label>
-            <textarea id="networkYamlContent" class="builder-text" rows="15" placeholder="Paste YAML network definition here...
-Example:
-label: My Network
-nodes:
-  - id: 0
-    label: Node_A
-    dynamics:
-      name: Generic2dOscillator
-      dataLocation: database/models/Generic2dOscillator.yaml
-    position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-edges:
-  - source: 0
-    target: 1
-    weight: 0.8
-    delay: 2.0"></textarea>
-          </div>
-
-          <div class="builder-actions">
-            <button class="btn btn-sm btn-primary" id="parseNetworkYaml">Parse & Load YAML</button>
-          </div>
-
-          <div id="yamlParseResult" style="margin-top: 10px;"></div>
-        `;
-
-        const fileInput = document.getElementById('networkYamlFile');
-        fileInput?.addEventListener('change', function(e) {
-          const file = e.target.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-              document.getElementById('networkYamlContent').value = event.target.result;
-            };
-            reader.readAsText(file);
-          }
-        });
-
-        document.getElementById('parseNetworkYaml')?.addEventListener('click', function() {
-          const yamlContent = document.getElementById('networkYamlContent').value;
-          if (!yamlContent.trim()) {
-            alert('Please provide YAML content');
-            return;
-          }
-
-          // In a real implementation, this would parse YAML and populate the network
-          const resultDiv = document.getElementById('yamlParseResult');
-          resultDiv.innerHTML = '<div class="alert alert-success">YAML parsed successfully! Network loaded.</div>';
-
-          // Store parsed network data
-          window.currentNetworkConfig = {
-            mode: 'yaml',
-            content: yamlContent
-          };
-        });
-      } else if (mode === 'custom') {
-        configContainer.innerHTML = `
-          <div class="alert alert-info">
-            <strong>Custom Network Builder</strong><br/>
-            Define nodes with individual dynamics and edges with specific coupling configurations.
-          </div>
-
-          <div class="builder-field">
-            <label>Network Label</label>
-            <input id="customNetworkLabel" class="builder-input" placeholder="My Custom Network" />
-          </div>
-
-          <div class="builder-field">
-            <label>Network Description</label>
-            <textarea id="customNetworkDesc" class="builder-text" rows="2" placeholder="Optional description"></textarea>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="builder-field">
-            <div class="builder-subtitle" style="display:flex; justify-content:space-between; align-items:center;">
-              <span>Nodes</span>
-              <span style="font-size: 0.85em; color: #666;">Define network nodes with positions and dynamics</span>
-            </div>
-            <div id="customNetworkNodes" class="builder-rows"></div>
-            <div class="builder-actions">
-              <button class="btn btn-sm btn-secondary" id="addCustomNode">Add Node</button>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="builder-field">
-            <div class="builder-subtitle" style="display:flex; justify-content:space-between; align-items:center;">
-              <span>Edges</span>
-              <span style="font-size: 0.85em; color: #666;">Define connections between nodes</span>
-            </div>
-            <div id="customNetworkEdges" class="builder-rows"></div>
-            <div class="builder-actions">
-              <button class="btn btn-sm btn-secondary" id="addCustomEdge">Add Edge</button>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="builder-field">
-            <h5>Global Network Parameters</h5>
-
-            <label>Global Coupling Strength</label>
-            <input id="customGlobalCoupling" type="number" step="0.01" class="builder-input" placeholder="1.0" value="1.0" />
-          </div>
-
-          <div class="builder-field">
-            <label>Conduction Speed (mm/ms)</label>
-            <input id="customConductionSpeed" type="number" step="0.1" class="builder-input" placeholder="3.0" value="3.0" />
-          </div>
-        `;
-
-        const nodesContainer = document.getElementById('customNetworkNodes');
-        const edgesContainer = document.getElementById('customNetworkEdges');
-
-        function createNodeRow(id = 0, label = '', region = '', x = 0, y = 0, z = 0, dynamics = '') {
-          const row = document.createElement('div');
-          row.className = 'builder-row';
-          row.innerHTML = `
-            <div style="display: grid; grid-template-columns: 60px 1fr 1fr 80px 80px 80px 1fr 40px; gap: 8px; align-items: center;">
-              <input type="number" class="builder-input node-id" value="${id}" placeholder="ID" />
-              <input class="builder-input node-label" value="${escapeAttr(label)}" placeholder="Label" />
-              <input class="builder-input node-region" value="${escapeAttr(region)}" placeholder="Region" />
-              <input type="number" step="0.1" class="builder-input node-x" value="${x}" placeholder="X" />
-              <input type="number" step="0.1" class="builder-input node-y" value="${y}" placeholder="Y" />
-              <input type="number" step="0.1" class="builder-input node-z" value="${z}" placeholder="Z" />
-              <select class="builder-select node-dynamics">
-                <option value="">— Select dynamics —</option>
-                ${(window.searchData || []).filter(m => m.type === 'model').map(m =>
-                  `<option value="${escapeAttr(m.key || m.name)}" ${dynamics === (m.key || m.name) ? 'selected' : ''}>${escapeHtml(m.title || m.name)}</option>`
-                ).join('')}
-              </select>
-              <button class="btn btn-sm btn-danger" style="padding: 4px 8px;">×</button>
-            </div>
-          `;
-          row.querySelector('button').addEventListener('click', () => row.remove());
-          return row;
-        }
-
-        function createEdgeRow(source = 0, target = 1, weight = 1.0, delay = 0, distance = 0, couplingType = 'Linear') {
-          const row = document.createElement('div');
-          row.className = 'builder-row';
-          row.innerHTML = `
-            <div style="display: grid; grid-template-columns: 80px 80px 100px 100px 100px 1fr 40px; gap: 8px; align-items: center;">
-              <input type="number" class="builder-input edge-source" value="${source}" placeholder="Source" />
-              <input type="number" class="builder-input edge-target" value="${target}" placeholder="Target" />
-              <input type="number" step="0.01" class="builder-input edge-weight" value="${weight}" placeholder="Weight" />
-              <input type="number" step="0.1" class="builder-input edge-delay" value="${delay}" placeholder="Delay (ms)" />
-              <input type="number" step="0.1" class="builder-input edge-distance" value="${distance}" placeholder="Distance (mm)" />
-              <select class="builder-select edge-coupling">
-                <option value="Linear" ${couplingType === 'Linear' ? 'selected' : ''}>Linear</option>
-                <option value="Sigmoidal" ${couplingType === 'Sigmoidal' ? 'selected' : ''}>Sigmoidal</option>
-                <option value="HyperbolicTangent" ${couplingType === 'HyperbolicTangent' ? 'selected' : ''}>Hyperbolic Tangent</option>
-                <option value="PreSigmoidal" ${couplingType === 'PreSigmoidal' ? 'selected' : ''}>Pre-Sigmoidal</option>
-                <option value="Scaling" ${couplingType === 'Scaling' ? 'selected' : ''}>Scaling</option>
-              </select>
-              <button class="btn btn-sm btn-danger" style="padding: 4px 8px;">×</button>
-            </div>
-          `;
-          row.querySelector('button').addEventListener('click', () => row.remove());
-          return row;
-        }
-
-        // Add initial rows
-        nodesContainer.appendChild(createNodeRow(0, 'Node_0', 'Region_A', 0, 0, 0));
-        nodesContainer.appendChild(createNodeRow(1, 'Node_1', 'Region_B', 10, 0, 0));
-
-        edgesContainer.appendChild(createEdgeRow(0, 1, 0.8, 2.0, 10.0, 'Linear'));
-
-        document.getElementById('addCustomNode')?.addEventListener('click', () => {
-          const nodes = nodesContainer.querySelectorAll('.builder-row');
-          const nextId = nodes.length;
-          nodesContainer.appendChild(createNodeRow(nextId, `Node_${nextId}`, '', 0, 0, 0));
-        });
-
-        document.getElementById('addCustomEdge')?.addEventListener('click', () => {
-          edgesContainer.appendChild(createEdgeRow(0, 1, 1.0, 0, 0, 'Linear'));
-        });
+    // Update 3D visualization
+    function updateGraph3D() {
+      if (window.NetworkGraph3D && window.NetworkGraph3D.update) {
+        window.NetworkGraph3D.update();
       }
     }
 
-    // Initial render
-    renderNetworkConfig('standard');
+    // Renumber nodes after deletion to keep IDs sequential
+    function renumberNodes() {
+      const rows = nodesContainer.querySelectorAll('.builder-row');
+      rows.forEach((row, idx) => {
+        row.dataset.nodeId = idx;
+        row.querySelector('.node-id').value = idx;
+        row.querySelector('.badge').textContent = `Node ${idx}`;
+      });
+    }
 
-    // Mode change handler
-    modeSelect.addEventListener('change', (e) => {
-      renderNetworkConfig(e.target.value);
+    // Get configured coupling from the Network tab
+    function getConfiguredCoupling() {
+      const couplingSelect = document.querySelector('#couplingContent select');
+      return couplingSelect?.value || 'Linear';
+    }
+
+    function createEdgeRow(source = '', target = '', weight = '', delay = '', couplingType = '') {
+      const nodes = getCurrentNodes();
+      const configuredCoupling = getConfiguredCoupling();
+      const selectedCoupling = couplingType || '';
+
+      const allCouplings = window.couplingsData || [
+        {name: 'Linear'}, {name: 'Sigmoidal'}, {name: 'Difference'}, {name: 'Kuramoto'}
+      ];
+
+      const row = document.createElement('div');
+      row.className = 'builder-row mb-2 p-2 border rounded bg-light d-flex align-items-center gap-2';
+      row.innerHTML = `
+        <select class="form-select form-select-sm edge-source-select" style="width: 150px;">
+          <option value="">Source...</option>
+          ${nodes.map(n => `<option value="${escapeAttr(n.id)}" ${source == n.id ? 'selected' : ''}>${n.id}: ${escapeHtml(n.label)}</option>`).join('')}
+        </select>
+        <span class="text-muted">→</span>
+        <select class="form-select form-select-sm edge-target-select" style="width: 150px;">
+          <option value="">Target...</option>
+          ${nodes.map(n => `<option value="${escapeAttr(n.id)}" ${target == n.id ? 'selected' : ''}>${n.id}: ${escapeHtml(n.label)}</option>`).join('')}
+        </select>
+        <input type="number" step="0.01" class="form-control form-control-sm edge-weight" style="width: 80px;" value="${weight}" placeholder="Weight"/>
+        <input type="number" step="0.1" class="form-control form-control-sm edge-delay" style="width: 80px;" value="${delay}" placeholder="Delay"/>
+        <select class="form-select form-select-sm edge-coupling flex-grow-1">
+          <option value="">Use configured (${escapeHtml(configuredCoupling)})</option>
+          ${allCouplings.map(c => {
+            const name = c.name || c.label || c;
+            return `<option value="${escapeAttr(name)}" ${selectedCoupling === name ? 'selected' : ''}>${escapeHtml(name)}</option>`;
+          }).join('')}
+        </select>
+        <button class="btn btn-sm btn-outline-danger flex-shrink-0" title="Remove">×</button>
+      `;
+      row.querySelector('button').addEventListener('click', () => row.remove());
+      return row;
+    }
+
+    // Add initial node if empty
+    if (nodesContainer.children.length === 0) {
+      nodesContainer.appendChild(createNodeRow(0, '', '', '', '', ''));
+    }
+
+    // No default edges - user adds when they have multiple nodes
+    if (edgesContainer.children.length === 0) {
+      // Empty by default
+    }
+
+    addNodeBtn?.addEventListener('click', () => {
+      const nodes = nodesContainer.querySelectorAll('.builder-row');
+      const nextId = nodes.length;
+      nodesContainer.appendChild(createNodeRow(nextId, '', '', '', '', ''));
+      updateEdgeNodeOptions();
+    });
+
+    addEdgeBtn?.addEventListener('click', () => {
+      edgesContainer.appendChild(createEdgeRow('', '', '', '', ''));
+    });
+
+    // Random network generator
+    const generateRandomBtn = document.getElementById('generateRandomNetwork');
+    const randomNodeCountInput = document.getElementById('randomNodeCount');
+
+    // Actual surface vertices extracted from mni152_2009.obj
+    // These are EXACT coordinates from the brain mesh file
+    const brainSurfaceCoords = [
+      [-65.5, -4.5, 16.5], [-63.9, -2.5, -5.5], [-62.0, -5.5, 6.6], [-60.0, -26.4, 48.5],
+      [-57.7, -58.0, -22.5], [-55.0, -66.0, -16.7], [-53.6, 9.5, 42.0], [-52.8, -59.5, 20.0],
+      [-51.1, -62.5, 7.5], [-49.5, -78.5, 32.0], [-48.5, -45.8, -27.0], [-47.0, 14.9, -40.0],
+      [-46.0, -49.5, -44.5], [-45.0, -46.1, -41.0], [-44.0, -49.0, -11.3], [-43.0, -26.9, -28.5],
+      [-42.5, 53.5, 19.1], [-41.0, 31.0, -17.5], [-39.5, 16.5, 28.0], [-38.0, -25.5, -11.5],
+      [-36.5, -17.2, 41.0], [-35.0, 22.2, -7.5], [-33.1, -6.5, 57.0], [-32.5, 55.6, 7.0],
+      [-30.5, -54.5, 44.0], [-29.5, 31.3, 49.0], [-28.8, 29.0, 54.5], [-28.0, 34.5, 49.0],
+      [-26.6, -13.5, -23.5], [-24.0, -55.5, -19.5], [-23.3, -46.0, -19.5], [-22.0, -29.3, 77.0],
+      [-21.0, -64.4, 70.0], [-18.5, -35.7, 5.5], [-18.0, 2.5, 68.8], [-16.5, -89.9, 29.5],
+      [-15.0, 14.5, -18.0], [-14.0, 12.5, 21.5], [-13.0, -35.5, 12.0], [-12.0, 65.0, -12.9],
+      [-11.3, -42.0, -29.0], [-10.0, -62.5, -40.1], [-9.5, 46.0, 8.3], [-8.0, 6.9, 12.5],
+      [-7.0, -2.5, -15.6], [-5.5, 7.0, 28.7], [-4.5, -52.5, 30.6], [-4.0, 62.0, -5.0],
+      [-3.0, 51.0, 11.8], [-2.5, -43.9, 48.5], [-2.0, 63.0, 19.5], [-1.0, -47.7, -6.5],
+      [-0.4, 31.5, -19.5], [0.5, -60.0, 6.4], [1.5, 57.0, 34.5], [2.0, 21.2, 6.5],
+      [2.5, -47.5, 38.5], [3.0, -17.9, -43.5], [3.4, 63.5, -23.0], [4.5, -89.8, 2.5],
+      [5.5, -74.5, -27.6], [6.0, -74.7, -17.0], [7.5, 31.5, 25.1], [8.6, 73.0, 8.5],
+      [9.5, -85.0, 44.3], [10.5, -30.5, -2.0], [12.5, -7.2, 75.0], [14.0, -98.0, 20.5],
+      [15.5, 66.5, -0.7], [17.0, -33.8, -3.0], [18.2, -45.0, -17.0], [19.5, -62.5, 70.4],
+      [20.5, 16.9, -26.0], [22.0, 32.0, -17.9], [23.5, 27.0, 61.5], [25.2, -36.5, -17.0],
+      [26.0, -96.8, 19.5], [27.0, -43.0, -56.7], [29.1, -1.5, -37.5], [30.8, -77.0, 30.5],
+      [33.0, 65.5, -12.5], [37.3, 31.0, 34.0], [39.3, -12.5, 3.5], [40.2, 0.5, 60.5],
+      [41.0, -12.5, -38.6], [42.0, 41.8, 31.0], [43.5, -81.0, -35.9], [45.8, -45.5, -44.5],
+      [47.5, -80.6, 12.5], [49.0, 49.0, 5.3], [49.5, -3.5, 55.6], [51.0, -31.5, 28.7],
+      [52.3, 10.0, 5.5], [53.0, -22.5, 42.5], [54.5, -64.0, 13.5], [56.0, 37.9, 5.0],
+      [58.9, -13.5, -38.0], [61.0, -56.5, 37.9], [62.0, -29.0, 40.5], [71.7, -35.5, -2.5],
+    ];
+
+    generateRandomBtn?.addEventListener('click', () => {
+      const count = parseInt(randomNodeCountInput?.value) || 5;
+      const nodeCount = Math.max(2, Math.min(count, brainSurfaceCoords.length)); // Clamp to available coords
+
+      console.log('[ModelBuilder] Generating uniform network with', nodeCount, 'nodes using farthest-point sampling');
+
+      // Clear existing nodes and edges
+      nodesContainer.innerHTML = '';
+      edgesContainer.innerHTML = '';
+
+      // Farthest-point sampling for uniform distribution across cortex
+      // Start with a random point, then iteratively pick the point farthest from all selected points
+      const selectedIndices = [];
+      const selectedCoords = [];
+
+      // Helper: Euclidean distance squared
+      const distSq = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2;
+
+      // Start with a random first point
+      const firstIdx = Math.floor(Math.random() * brainSurfaceCoords.length);
+      selectedIndices.push(firstIdx);
+      selectedCoords.push(brainSurfaceCoords[firstIdx]);
+
+      // Iteratively select the point farthest from all already-selected points
+      while (selectedCoords.length < nodeCount) {
+        let maxMinDist = -1;
+        let bestIdx = -1;
+
+        for (let i = 0; i < brainSurfaceCoords.length; i++) {
+          if (selectedIndices.includes(i)) continue;
+
+          // Find minimum distance to any selected point
+          let minDist = Infinity;
+          for (const sel of selectedCoords) {
+            const d = distSq(brainSurfaceCoords[i], sel);
+            if (d < minDist) minDist = d;
+          }
+
+          // Track the point with the maximum minimum distance
+          if (minDist > maxMinDist) {
+            maxMinDist = minDist;
+            bestIdx = i;
+          }
+        }
+
+        if (bestIdx >= 0) {
+          selectedIndices.push(bestIdx);
+          selectedCoords.push(brainSurfaceCoords[bestIdx]);
+        }
+      }
+
+      // Generate nodes at uniformly distributed brain surface positions
+      const nodes = [];
+      for (let i = 0; i < nodeCount; i++) {
+        const [x, y, z] = selectedCoords[i];
+        const label = `Region ${i + 1}`;
+        nodes.push({ id: i, x, y, z, label });
+        nodesContainer.appendChild(createNodeRow(i, label, x.toString(), y.toString(), z.toString(), ''));
+      }
+
+      // Generate random edges (small-world-ish: each node connects to ~2-4 others)
+      const edgeSet = new Set();
+      for (let i = 0; i < nodeCount; i++) {
+        const numConnections = 2 + Math.floor(Math.random() * 3); // 2-4 connections
+        for (let c = 0; c < numConnections; c++) {
+          const target = Math.floor(Math.random() * nodeCount);
+          if (target !== i) {
+            const edgeKey = i < target ? `${i}-${target}` : `${target}-${i}`;
+            if (!edgeSet.has(edgeKey)) {
+              edgeSet.add(edgeKey);
+              const weight = (0.5 + Math.random() * 0.5).toFixed(2);
+              const delay = (1 + Math.random() * 5).toFixed(1);
+              edgesContainer.appendChild(createEdgeRow(i.toString(), target.toString(), weight, delay, ''));
+            }
+          }
+        }
+      }
+
+      console.log('[ModelBuilder] Generated', nodeCount, 'nodes and', edgeSet.size, 'edges');
+
+      // Update edge dropdowns and 3D visualization
+      updateEdgeNodeOptions();
+      updateGraph3D();
+    });
+  }
+
+  function initializeNetworkFileUploads() {
+    // YAML upload for custom network
+    const yamlUpload = document.getElementById('networkYamlUpload');
+    yamlUpload?.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          // Store the YAML content
+          window.customNetworkYaml = event.target.result;
+          alert('Network YAML loaded successfully!');
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    // Brain network file uploads
+    const tractogramUpload = document.getElementById('brainTractogramUpload');
+    tractogramUpload?.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        window.brainTractogramFile = file;
+        alert(`Tractogram file loaded: ${file.name}`);
+      }
+    });
+
+    const parcellationUpload = document.getElementById('brainParcellationUpload');
+    parcellationUpload?.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        window.brainParcellationFile = file;
+        alert(`Parcellation file loaded: ${file.name}`);
+      }
     });
   }
 
@@ -1799,10 +1897,19 @@ edges:
     const previewElement = document.getElementById('previewYaml');
     if (!previewElement) return;
 
+    // Get experiment-level fields from the new card above tabs
+    const expName = document.getElementById('experimentName')?.value?.trim();
+    const expLabel = document.getElementById('experimentLabel')?.value?.trim();
+    const expDescription = document.getElementById('experimentDescription')?.value?.trim();
+    const expReferences = document.getElementById('experimentReferences')?.value?.trim();
+
     // Collect configuration from all tabs
     const config = {
       simulation_experiment: {
-        name: 'Configured Experiment',
+        name: expName || 'Simulation Experiment',
+        label: expLabel || undefined,
+        description: expDescription || undefined,
+        references: expReferences || undefined,
         dynamics: collectDynamicsConfig(),
         network: collectNetworkConfig(),
         integration: collectIntegrationConfig(),
@@ -1817,45 +1924,52 @@ edges:
   }
 
   function collectDynamicsConfig() {
-    const modelSelect = document.getElementById('modelSelect');
-    return {
-      model: modelSelect?.value || 'not configured',
-      // Add more dynamics fields as needed
-    };
+    // Try both possible element IDs for model selection
+    const modelSelect = document.getElementById('modelSelect') || document.getElementById('builderModel');
+    const modelName = modelSelect?.value;
+    const specName = document.getElementById('builderSpecName')?.value?.trim();
+
+    // Only return configured values
+    const config = {};
+    if (modelName) config.model = modelName;
+    if (specName) config.name = specName;
+
+    return config;
   }
 
   function collectNetworkConfig() {
-    const networkMode = document.getElementById('networkMode')?.value || 'standard';
+    // Check which mode is selected via radio buttons
+    const customRadio = document.getElementById('networkModeCustom');
+    const brainRadio = document.getElementById('networkModeBrain');
 
-    if (networkMode === 'standard') {
-      const networkSelect = document.getElementById('networkSelect');
-      const parcellation = document.getElementById('networkParcellation');
-      const tractogram = document.getElementById('networkTractogram');
-      const numRegions = document.getElementById('networkNumRegions');
-      const globalCoupling = document.getElementById('networkGlobalCoupling');
-      const conductionSpeed = document.getElementById('networkConductionSpeed');
-      const normalization = document.getElementById('networkNormalization');
+    // Determine mode from radio buttons, fallback to old select for backwards compat
+    let networkMode = 'custom';
+    if (brainRadio?.checked) {
+      networkMode = 'brain';
+    } else if (customRadio?.checked) {
+      networkMode = 'custom';
+    } else {
+      // Fallback to old select element
+      networkMode = document.getElementById('networkMode')?.value || 'custom';
+    }
+
+    if (networkMode === 'brain') {
+      const tractogram = document.getElementById('brainTractogram');
+      const parcellation = document.getElementById('brainParcellation');
+      const numRegions = document.getElementById('brainNumRegions');
+      const globalCoupling = document.getElementById('brainGlobalCoupling');
+      const conductionSpeed = document.getElementById('brainConductionSpeed');
 
       return {
-        mode: 'standard',
-        network_id: networkSelect?.value || undefined,
-        parcellation: parcellation?.value || undefined,
+        mode: 'brain',
         tractogram: tractogram?.value || undefined,
+        parcellation: parcellation?.value || undefined,
         number_of_regions: numRegions?.value ? parseInt(numRegions.value) : undefined,
         global_coupling_strength: globalCoupling?.value ? parseFloat(globalCoupling.value) : undefined,
-        conduction_speed: conductionSpeed?.value ? parseFloat(conductionSpeed.value) : undefined,
-        normalization: normalization?.value || undefined
-      };
-    } else if (networkMode === 'yaml') {
-      const yamlContent = document.getElementById('networkYamlContent')?.value;
-      return {
-        mode: 'yaml',
-        yaml_content: yamlContent || undefined,
-        source: 'yaml_file'
+        conduction_speed: conductionSpeed?.value ? parseFloat(conductionSpeed.value) : undefined
       };
     } else if (networkMode === 'custom') {
       const label = document.getElementById('customNetworkLabel')?.value;
-      const description = document.getElementById('customNetworkDesc')?.value;
       const globalCoupling = document.getElementById('customGlobalCoupling')?.value;
       const conductionSpeed = document.getElementById('customConductionSpeed')?.value;
 
@@ -1864,7 +1978,6 @@ edges:
       const nodes = Array.from(nodeRows).map(row => ({
         id: parseInt(row.querySelector('.node-id')?.value) || 0,
         label: row.querySelector('.node-label')?.value || '',
-        region: row.querySelector('.node-region')?.value || undefined,
         position: {
           x: parseFloat(row.querySelector('.node-x')?.value) || 0,
           y: parseFloat(row.querySelector('.node-y')?.value) || 0,
@@ -1881,20 +1994,32 @@ edges:
       // Collect edges
       const edgeRows = document.querySelectorAll('#customNetworkEdges .builder-row');
       const edges = Array.from(edgeRows).map(row => ({
-        source: parseInt(row.querySelector('.edge-source')?.value) || 0,
-        target: parseInt(row.querySelector('.edge-target')?.value) || 1,
+        source: parseInt(row.querySelector('.edge-source-select')?.value) || 0,
+        target: parseInt(row.querySelector('.edge-target-select')?.value) || 1,
         weight: parseFloat(row.querySelector('.edge-weight')?.value) || 1.0,
         delay: parseFloat(row.querySelector('.edge-delay')?.value) || 0,
-        distance: parseFloat(row.querySelector('.edge-distance')?.value) || 0,
         coupling: {
           name: row.querySelector('.edge-coupling')?.value || 'Linear'
         }
       }));
 
+      // Check if YAML was uploaded
+      if (window.customNetworkYaml) {
+        return {
+          mode: 'yaml',
+          yaml_content: window.customNetworkYaml,
+          source: 'yaml_file'
+        };
+      }
+
+      // Only return if nodes defined
+      if (nodes.length === 0) {
+        return { mode: 'not configured' };
+      }
+
       return {
         mode: 'custom',
         label: label || 'Custom Network',
-        description: description || undefined,
         nodes: nodes,
         edges: edges,
         number_of_nodes: nodes.length,
@@ -1910,11 +2035,14 @@ edges:
     const integratorMethod = document.getElementById('integratorMethod');
     const stepSize = document.getElementById('integratorStepSize');
     const duration = document.getElementById('integratorDuration');
-    return {
-      method: integratorMethod?.value || 'not configured',
-      step_size: stepSize?.value || 'not configured',
-      duration: duration?.value || 'not configured',
-    };
+
+    // Only return configured values
+    const config = {};
+    if (integratorMethod?.value) config.method = integratorMethod.value;
+    if (stepSize?.value) config.step_size = parseFloat(stepSize.value);
+    if (duration?.value) config.duration = parseFloat(duration.value);
+
+    return config;
   }
 
   function collectObservationModelsConfig() {
@@ -1974,152 +2102,178 @@ edges:
         models.push(modelConfig);
       });
     }
-    return models.length > 0 ? models : ['not configured'];
-  }  function collectStimulusConfig() {
+    return models.length > 0 ? models : null;
+  }
+
+  function collectStimulusConfig() {
     const stimulusType = document.getElementById('stimulusType');
     const amplitude = document.getElementById('stimulusAmplitude');
-    return {
-      type: stimulusType?.value || 'none',
-      amplitude: amplitude?.value || 'not configured',
-    };
+    const regions = document.getElementById('stimulusRegions');
+
+    // Only return configured values, skip if no stimulus type selected
+    if (!stimulusType?.value || stimulusType.value === '' || stimulusType.value === 'none') {
+      return null;
+    }
+
+    const config = { type: stimulusType.value };
+    if (amplitude?.value) config.amplitude = parseFloat(amplitude.value);
+    if (regions?.value) config.target_regions = regions.value.split(',').map(r => parseInt(r.trim())).filter(r => !isNaN(r));
+
+    return config;
   }
 
   function generateYamlPreview(config) {
-    let yaml = `simulation_experiment:
-  name: ${config.simulation_experiment.name}
+    const exp = config.simulation_experiment;
+    let yaml = 'simulation_experiment:';
 
-  dynamics:
-    model: ${config.simulation_experiment.dynamics.model}
-
-  network:`;
-
-    // Handle different network modes
-    const networkConfig = config.simulation_experiment.network;
-    if (networkConfig.mode === 'custom') {
-      yaml += `\n    label: ${networkConfig.label}`;
-      if (networkConfig.description) yaml += `\n    description: ${networkConfig.description}`;
-      yaml += `\n    number_of_nodes: ${networkConfig.number_of_nodes}`;
-      yaml += `\n    global_coupling_strength: ${networkConfig.global_coupling_strength}`;
-      yaml += `\n    conduction_speed: ${networkConfig.conduction_speed}`;
-
-      if (networkConfig.nodes && networkConfig.nodes.length > 0) {
-        yaml += `\n    nodes:`;
-        networkConfig.nodes.forEach(node => {
-          yaml += `\n      - id: ${node.id}`;
-          yaml += `\n        label: ${node.label}`;
-          if (node.region) yaml += `\n        region: ${node.region}`;
-          yaml += `\n        position:`;
-          yaml += `\n          x: ${node.position.x}`;
-          yaml += `\n          y: ${node.position.y}`;
-          yaml += `\n          z: ${node.position.z}`;
-          if (node.dynamics.name) {
-            yaml += `\n        dynamics:`;
-            yaml += `\n          name: ${node.dynamics.name}`;
-            if (node.dynamics.dataLocation) {
-              yaml += `\n          dataLocation: ${node.dynamics.dataLocation}`;
-            }
-          }
-        });
-      }
-
-      if (networkConfig.edges && networkConfig.edges.length > 0) {
-        yaml += `\n    edges:`;
-        networkConfig.edges.forEach(edge => {
-          yaml += `\n      - source: ${edge.source}`;
-          yaml += `\n        target: ${edge.target}`;
-          yaml += `\n        weight: ${edge.weight}`;
-          yaml += `\n        delay: ${edge.delay}`;
-          yaml += `\n        distance: ${edge.distance}`;
-          if (edge.coupling && edge.coupling.name) {
-            yaml += `\n        coupling:`;
-            yaml += `\n          name: ${edge.coupling.name}`;
-          }
-        });
-      }
-    } else if (networkConfig.mode === 'yaml') {
-      yaml += `\n    # Network loaded from YAML file`;
-      yaml += `\n    yaml_source: true`;
-    } else if (networkConfig.mode === 'standard') {
-      if (networkConfig.network_id) {
-        yaml += `\n    network_id: ${networkConfig.network_id}`;
-      }
-      if (networkConfig.parcellation) yaml += `\n    parcellation: ${networkConfig.parcellation}`;
-      if (networkConfig.tractogram) yaml += `\n    tractogram: ${networkConfig.tractogram}`;
-      if (networkConfig.number_of_regions) yaml += `\n    number_of_regions: ${networkConfig.number_of_regions}`;
-      if (networkConfig.global_coupling_strength) yaml += `\n    global_coupling_strength: ${networkConfig.global_coupling_strength}`;
-      if (networkConfig.conduction_speed) yaml += `\n    conduction_speed: ${networkConfig.conduction_speed}`;
-      if (networkConfig.normalization) yaml += `\n    normalization: ${networkConfig.normalization}`;
-    } else {
-      yaml += `\n    connectivity: ${networkConfig.network || 'not configured'}`;
-      yaml += `\n    coupling: ${networkConfig.coupling || 'not configured'}`;
+    // Basic experiment fields
+    if (exp.name) {
+      yaml += `\n  name: "${exp.name}"`;
+    }
+    if (exp.label) {
+      yaml += `\n  label: "${exp.label}"`;
+    }
+    if (exp.description) {
+      yaml += `\n  description: "${exp.description}"`;
+    }
+    if (exp.references) {
+      yaml += `\n  references: "${exp.references}"`;
     }
 
-    yaml += `
+    // Dynamics - only show if configured
+    const dynamics = exp.dynamics;
+    if (dynamics && (dynamics.model || dynamics.name)) {
+      yaml += `\n\n  dynamics:`;
+      if (dynamics.model) yaml += `\n    model: ${dynamics.model}`;
+      if (dynamics.name) yaml += `\n    name: ${dynamics.name}`;
+    }
 
-  integration:
-    method: ${config.simulation_experiment.integration.method}
-    step_size: ${config.simulation_experiment.integration.step_size}
-    duration: ${config.simulation_experiment.integration.duration}
+    // Network - only show if there's actual configured content
+    const networkConfig = exp.network;
+    const hasNetworkContent = networkConfig && (
+      networkConfig.mode === 'custom' ||
+      networkConfig.mode === 'yaml' ||
+      networkConfig.mode === 'brain' ||
+      (networkConfig.mode === 'standard' && (
+        networkConfig.network_id ||
+        networkConfig.parcellation ||
+        networkConfig.tractogram ||
+        networkConfig.number_of_regions ||
+        networkConfig.global_coupling_strength ||
+        networkConfig.conduction_speed
+      ))
+    );
 
-  monitors:`;
+    if (hasNetworkContent) {
+      yaml += `\n\n  network:`;
 
-    if (Array.isArray(config.simulation_experiment.observation_models) &&
-        config.simulation_experiment.observation_models.length > 0 &&
-        config.simulation_experiment.observation_models[0] !== 'not configured') {
-      config.simulation_experiment.observation_models.forEach(m => {
+      if (networkConfig.mode === 'brain') {
+        if (networkConfig.tractogram) yaml += `\n    tractogram: "${networkConfig.tractogram}"`;
+        if (networkConfig.parcellation) yaml += `\n    parcellation: "${networkConfig.parcellation}"`;
+        if (networkConfig.number_of_regions) yaml += `\n    number_of_regions: ${networkConfig.number_of_regions}`;
+        if (networkConfig.global_coupling_strength) yaml += `\n    global_coupling_strength: ${networkConfig.global_coupling_strength}`;
+        if (networkConfig.conduction_speed) yaml += `\n    conduction_speed: ${networkConfig.conduction_speed}`;
+      } else if (networkConfig.mode === 'custom') {
+        if (networkConfig.label) yaml += `\n    label: "${networkConfig.label}"`;
+        if (networkConfig.number_of_nodes) yaml += `\n    number_of_nodes: ${networkConfig.number_of_nodes}`;
+        if (networkConfig.global_coupling_strength) yaml += `\n    global_coupling_strength: ${networkConfig.global_coupling_strength}`;
+        if (networkConfig.conduction_speed) yaml += `\n    conduction_speed: ${networkConfig.conduction_speed}`;
+
+        if (networkConfig.nodes && networkConfig.nodes.length > 0) {
+          yaml += `\n    nodes:`;
+          networkConfig.nodes.forEach(node => {
+            yaml += `\n      - id: ${node.id}`;
+            if (node.label) yaml += `\n        label: "${node.label}"`;
+            if (node.region) yaml += `\n        region: "${node.region}"`;
+            if (node.position) {
+              yaml += `\n        position:`;
+              yaml += `\n          x: ${node.position.x}`;
+              yaml += `\n          y: ${node.position.y}`;
+              yaml += `\n          z: ${node.position.z}`;
+            }
+            if (node.dynamics && node.dynamics.name) {
+              yaml += `\n        dynamics:`;
+              yaml += `\n          name: ${node.dynamics.name}`;
+              if (node.dynamics.dataLocation) {
+                yaml += `\n          dataLocation: ${node.dynamics.dataLocation}`;
+              }
+            }
+          });
+        }
+
+        if (networkConfig.edges && networkConfig.edges.length > 0) {
+          yaml += `\n    edges:`;
+          networkConfig.edges.forEach(edge => {
+            yaml += `\n      - source: ${edge.source}`;
+            yaml += `\n        target: ${edge.target}`;
+            if (edge.weight) yaml += `\n        weight: ${edge.weight}`;
+            if (edge.delay) yaml += `\n        delay: ${edge.delay}`;
+            if (edge.coupling && edge.coupling.name) {
+              yaml += `\n        coupling:`;
+              yaml += `\n          name: ${edge.coupling.name}`;
+            }
+          });
+        }
+      } else if (networkConfig.mode === 'yaml') {
+        yaml += `\n    # Network loaded from YAML file`;
+        yaml += `\n    source: yaml_file`;
+      } else if (networkConfig.mode === 'standard') {
+        if (networkConfig.network_id) yaml += `\n    name: ${networkConfig.network_id}`;
+        if (networkConfig.parcellation) yaml += `\n    parcellation: "${networkConfig.parcellation}"`;
+        if (networkConfig.tractogram) yaml += `\n    tractogram: "${networkConfig.tractogram}"`;
+        if (networkConfig.number_of_regions) yaml += `\n    number_of_regions: ${networkConfig.number_of_regions}`;
+        if (networkConfig.global_coupling_strength) yaml += `\n    global_coupling_strength: ${networkConfig.global_coupling_strength}`;
+        if (networkConfig.conduction_speed) yaml += `\n    conduction_speed: ${networkConfig.conduction_speed}`;
+        if (networkConfig.normalization) yaml += `\n    normalization: "${networkConfig.normalization}"`;
+      }
+    }
+
+    // Integration - only show configured fields
+    const integration = exp.integration;
+    if (integration && Object.keys(integration).length > 0) {
+      yaml += `\n\n  integration:`;
+      if (integration.method) yaml += `\n    method: ${integration.method}`;
+      if (integration.step_size) yaml += `\n    step_size: ${integration.step_size}`;
+      if (integration.duration) yaml += `\n    duration: ${integration.duration}`;
+    }
+
+    // Monitors - only show if configured
+    const monitors = exp.observation_models;
+    if (monitors && Array.isArray(monitors) && monitors.length > 0) {
+      yaml += `\n\n  monitors:`;
+      monitors.forEach(m => {
         yaml += `\n    - name: ${m.name}`;
-        yaml += `\n      monitor_type: ${m.monitor_type}`;
-        yaml += `\n      period: ${m.period}`;
+        if (m.monitor_type) yaml += `\n      monitor_type: ${m.monitor_type}`;
+        if (m.period) yaml += `\n      period: ${m.period}`;
+        if (m.label) yaml += `\n      label: "${m.label}"`;
+        if (m.acronym) yaml += `\n      acronym: "${m.acronym}"`;
+        if (m.description) yaml += `\n      description: "${m.description}"`;
+        if (m.imaging_modality) yaml += `\n      imaging_modality: "${m.imaging_modality}"`;
 
-        // Add optional Monitor/ObservationModel fields
-        if (m.label) yaml += `\n      label: ${m.label}`;
-        if (m.acronym) yaml += `\n      acronym: ${m.acronym}`;
-        if (m.description) yaml += `\n      description: ${m.description}`;
-        if (m.imaging_modality) yaml += `\n      imaging_modality: ${m.imaging_modality}`;
-
-        // Add pipeline
         if (m.pipeline && m.pipeline.length > 0) {
           yaml += `\n      pipeline:`;
           m.pipeline.forEach(step => {
             yaml += `\n        - order: ${step.order}`;
             yaml += `\n          operation_type: ${step.operation_type}`;
             if (step.function) yaml += `\n          function: ${step.function}`;
-            if (step.output_alias) yaml += `\n          output_alias: ${step.output_alias}`;
+            if (step.output_alias) yaml += `\n          output_alias: "${step.output_alias}"`;
             if (step.apply_on_dimension) yaml += `\n          apply_on_dimension: ${step.apply_on_dimension}`;
             if (step.ensure_shape) yaml += `\n          ensure_shape: ${step.ensure_shape}`;
           });
         }
-
-        // Add other ObservationModel attributes
-        if (m.data_injections && m.data_injections.length > 0) {
-          yaml += `\n      data_injections:`;
-          m.data_injections.forEach(inj => {
-            yaml += `\n        - name: ${inj.name}`;
-          });
-        }
-        if (m.argument_mappings && m.argument_mappings.length > 0) {
-          yaml += `\n      argument_mappings:`;
-          m.argument_mappings.forEach(map => {
-            yaml += `\n        - function_argument: ${map.function_argument}`;
-            yaml += `\n          source: ${map.source}`;
-          });
-        }
-        if (m.derivatives && m.derivatives.length > 0) {
-          yaml += `\n      derivatives:`;
-          m.derivatives.forEach(deriv => {
-            yaml += `\n        - name: ${deriv.name}`;
-          });
-        }
       });
-    } else {
-      yaml += `\n    ${config.simulation_experiment.observation_models}`;
     }
 
-    yaml += `
-
-  stimulus:
-    type: ${config.simulation_experiment.stimulus.type}
-    amplitude: ${config.simulation_experiment.stimulus.amplitude}`;
+    // Stimulus - only show if configured
+    const stimulus = exp.stimulus;
+    if (stimulus && stimulus.type && stimulus.type !== 'none') {
+      yaml += `\n\n  stimulation:`;
+      yaml += `\n    type: ${stimulus.type}`;
+      if (stimulus.amplitude) yaml += `\n    amplitude: ${stimulus.amplitude}`;
+      if (stimulus.target_regions && stimulus.target_regions.length > 0) {
+        yaml += `\n    target_regions: [${stimulus.target_regions.join(', ')}]`;
+      }
+    }
 
     return yaml;
   }

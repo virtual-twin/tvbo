@@ -19,7 +19,12 @@
                         <!-- Tabs Navigation -->
                         <ul class="nav nav-tabs" id="configTabs" role="tablist" style="margin-bottom: 20px;">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="dynamics-tab" data-bs-toggle="tab" data-bs-target="#dynamics-panel" type="button" role="tab">
+                                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-panel" type="button" role="tab">
+                                    General
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="dynamics-tab" data-bs-toggle="tab" data-bs-target="#dynamics-panel" type="button" role="tab">
                                     Dynamics
                                 </button>
                             </li>
@@ -52,8 +57,37 @@
 
                         <!-- Tab Content -->
                         <div class="tab-content" id="configTabContent">
+                            <!-- General Tab -->
+                            <div class="tab-pane fade show active" id="general-panel" role="tabpanel">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div class="alert alert-info">
+                                        <p><strong>General Configuration</strong></p>
+                                        <p>Basic metadata for your simulation experiment.</p>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Experiment Name</label>
+                                            <input type="text" id="experimentName" class="form-control" placeholder="My Simulation Experiment"/>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Label</label>
+                                            <input type="text" id="experimentLabel" class="form-control" placeholder="Short identifier"/>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">Description</label>
+                                            <textarea id="experimentDescription" class="form-control" rows="3" placeholder="Optional description of this simulation experiment"></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">References (DOI/PMID)</label>
+                                            <input type="text" id="experimentReferences" class="form-control" placeholder="e.g., 10.1234/example or PMID:12345678 (comma-separated for multiple)"/>
+                                            <small class="text-muted">Enter DOI or PMID identifiers, separated by commas for multiple references.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Dynamics Tab -->
-                            <div class="tab-pane fade show active" id="dynamics-panel" role="tabpanel">
+                            <div class="tab-pane fade" id="dynamics-panel" role="tabpanel">
                                 <div id="configuratorContainer">
                                     <div class="alert alert-info">
                                         <p><strong>Dynamics Configuration</strong></p>
@@ -72,18 +106,163 @@
                                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                     <div class="alert alert-info">
                                         <p><strong>Network Configuration</strong></p>
-                                        <ul>
-                                            <li>Select or configure network connectivity</li>
-                                            <li>Configure coupling functions</li>
-                                        </ul>
+                                        <p>Define the network topology for your simulation.</p>
                                     </div>
 
-                                    <h4>Connectivity</h4>
-                                    <div id="networkContent"></div>
+                                    <!-- Network Mode Selection -->
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Network Mode</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="networkMode" id="networkModeCustom" value="custom" checked="checked"/>
+                                            <label class="btn btn-outline-primary" for="networkModeCustom">Custom Network</label>
+
+                                            <input type="radio" class="btn-check" name="networkMode" id="networkModeBrain" value="brain"/>
+                                            <label class="btn btn-outline-primary" for="networkModeBrain">Brain Network</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Custom Network Panel -->
+                                    <div id="customNetworkPanel">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Custom Network Definition</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Upload YAML option -->
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Upload Network YAML (optional)</label>
+                                                    <input type="file" id="networkYamlUpload" class="form-control" accept=".yaml,.yml"/>
+                                                    <small class="text-muted">Upload a YAML file defining your network structure.</small>
+                                                </div>
+
+                                                <hr/>
+
+                                                <p class="text-muted">Or define manually:</p>
+
+                                                <!-- Network metadata -->
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Network Label</label>
+                                                        <input type="text" id="customNetworkLabel" class="form-control" placeholder="My Custom Network"/>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Global Coupling</label>
+                                                        <input type="number" id="customGlobalCoupling" class="form-control" step="0.01" value="1.0"/>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Conduction Speed</label>
+                                                        <input type="number" id="customConductionSpeed" class="form-control" step="0.1" value="3.0"/>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Random Network Generator -->
+                                                <div class="d-flex align-items-center gap-2 mb-3">
+                                                    <label class="form-label mb-0">Random Network:</label>
+                                                    <input type="number" id="randomNodeCount" class="form-control form-control-sm" style="width: 80px;" value="5" min="2" max="100" placeholder="# nodes"/>
+                                                    <button class="btn btn-sm btn-success" id="generateRandomNetwork">Generate</button>
+                                                </div>
+
+                                                <!-- Nodes -->
+                                                <h6>Nodes</h6>
+                                                <div id="customNetworkNodes" class="mb-3"></div>
+                                                <button class="btn btn-sm btn-outline-primary mb-4" id="addCustomNode">+ Add Node</button>
+
+                                                <!-- Edges -->
+                                                <h6>Edges</h6>
+                                                <div id="customNetworkEdges" class="mb-3"></div>
+                                                <button class="btn btn-sm btn-outline-primary mb-4" id="addCustomEdge">+ Add Edge</button>
+
+                                                <!-- 3D Graph Preview -->
+                                                <h6>3D Network Preview</h6>
+                                                <div class="card mb-3">
+                                                    <div class="card-body p-0 position-relative">
+                                                        <div id="networkGraph3D" style="width: 100%; height: 400px; background: #1a1a2e; border-radius: 4px;"></div>
+                                                        <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button class="btn btn-outline-light" id="toggleBrainMesh" title="Toggle brain mesh">
+                                                                    🧠
+                                                                </button>
+                                                                <button class="btn btn-outline-light" id="resetCamera" title="Reset camera">
+                                                                    ⟲
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="position-absolute bottom-0 start-0 p-2 text-white small" style="z-index: 10;">
+                                                            <span class="badge bg-secondary">Click node to edit • Drag to rotate • Scroll to zoom</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Brain Network Panel -->
+                                    <div id="brainNetworkPanel" style="display: none;">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Brain Network Configuration</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Normative options -->
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Normative Tractogram</label>
+                                                        <select id="brainTractogram" class="form-select">
+                                                            <option value="">— Select tractogram —</option>
+                                                            <!-- Populated dynamically from window.tractogramsData -->
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Parcellation</label>
+                                                        <select id="brainParcellation" class="form-select">
+                                                            <option value="">— Select parcellation —</option>
+                                                            <!-- Populated dynamically from window.parcellationsData -->
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <hr/>
+
+                                                <!-- Upload custom files -->
+                                                <h6>Upload Custom Files (optional)</h6>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Upload Tractogram</label>
+                                                        <input type="file" id="brainTractogramUpload" class="form-control" accept=".nii,.nii.gz,.trk,.tck"/>
+                                                        <small class="text-muted">Supported: .nii, .nii.gz, .trk, .tck</small>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Upload Parcellation</label>
+                                                        <input type="file" id="brainParcellationUpload" class="form-control" accept=".nii,.nii.gz,.annot,.gii"/>
+                                                        <small class="text-muted">Supported: .nii, .nii.gz, .annot, .gii</small>
+                                                    </div>
+                                                </div>
+
+                                                <hr/>
+
+                                                <!-- Additional parameters -->
+                                                <h6>Network Parameters</h6>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Number of Regions</label>
+                                                        <input type="number" id="brainNumRegions" class="form-control" placeholder="Auto-detected"/>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Global Coupling</label>
+                                                        <input type="number" id="brainGlobalCoupling" class="form-control" step="0.01" value="1.0"/>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Conduction Speed (m/s)</label>
+                                                        <input type="number" id="brainConductionSpeed" class="form-control" step="0.1" value="3.0"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <hr style="margin: 30px 0;"/>
 
-                                    <h4>Coupling</h4>
+                                    <h4>Coupling Function</h4>
                                     <div id="couplingContent"></div>
                                 </div>
                             </div>
@@ -166,9 +345,33 @@
                 <!-- Load MathJax -->
                 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async=""></script>
 
+                <!-- IMMEDIATE TEST - this should appear in console right away -->
+                <script type="text/javascript">
+                    console.log('=== TVBO CONFIGURATOR JS START ===');
+                    window.TVBO_JS_LOADED = true;
+                </script>
+
+                <!-- Load Three.js for 3D visualization (r128 with global OrbitControls) -->
+                <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
                 <!-- Load builder CSS and JS -->
                 <link rel="stylesheet" href="/tvbo/static/src/css/builder.css?v=4"/>
-                <script type="text/javascript" src="/tvbo/static/src/js/model_builder.js?v=4"></script>
+<script type="text/javascript">
+                    console.log('[DEBUG] About to load network_graph_3d.js');
+                </script>
+                <script type="text/javascript" src="/tvbo/static/src/js/network_graph_3d.js?v=11"></script>
+                <script type="text/javascript">
+                    console.log('[DEBUG] network_graph_3d.js loaded, NetworkGraph3D:', typeof window.NetworkGraph3D);
+                </script>
+                <script type="text/javascript" src="/tvbo/static/src/js/model_builder.js?v=16"></script>
+
+                <script type="text/javascript">
+                    console.log('[DEBUG] All scripts loaded, checking THREE:', typeof THREE);
+                    console.log('[DEBUG] Checking THREE.OrbitControls:', typeof THREE?.OrbitControls);
+                    console.log('[DEBUG] Checking THREE.OBJLoader:', typeof THREE?.OBJLoader);
+                </script>
 
                 <script type="text/javascript">
                     // Make models data available globally
@@ -177,6 +380,8 @@
                     window.couplingsData = <t t-out="couplings_json"/>;
                     window.monitorsData = <t t-out="monitors_json"/>;
                     window.networksData = <t t-out="networks_json"/>;
+                    window.tractogramsData = <t t-out="tractograms_json"/>;
+                    window.parcellationsData = <t t-out="parcellations_json"/>;
 
                         // Initialize the configurator
                     document.addEventListener('DOMContentLoaded', function() {
@@ -209,6 +414,16 @@
 
                                 // Mark current tab as active
                                 this.classList.add('active');
+
+                                // Initialize 3D graph when Network tab is shown
+                                if (target === '#network-panel') {
+                                    console.log('[TAB] Network panel activated, initializing 3D graph...');
+                                    setTimeout(function() {
+                                        if (window.NetworkGraph3D &amp;&amp; window.NetworkGraph3D.init) {
+                                            window.NetworkGraph3D.init();
+                                        }
+                                    }, 100);
+                                }
                             });
                         });
 

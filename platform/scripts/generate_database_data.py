@@ -445,7 +445,7 @@ def generate_integrator_data_xml(yaml_files: List[Path], output_file: Path):
 
 
 def generate_network_data_xml(yaml_files: List[Path], output_file: Path):
-    """Generate XML data file for connectivity networks (Connectome records)."""
+    """Generate XML data file for connectivity networks (Network records)."""
     lines = [
         '<?xml version="1.0" encoding="utf-8"?>',
         '<odoo>',
@@ -453,6 +453,40 @@ def generate_network_data_xml(yaml_files: List[Path], output_file: Path):
         ''
     ]
 
+    # Collect unique atlases to create BrainAtlas and Parcellation records first
+    atlases = {}
+    for yaml_file in yaml_files:
+        try:
+            with open(yaml_file) as f:
+                data = yaml.safe_load(f)
+            if data and 'parcellation' in data and 'atlas' in data['parcellation']:
+                atlas_name = data['parcellation']['atlas'].get('name', '')
+                if atlas_name and atlas_name not in atlases:
+                    atlases[atlas_name] = sanitize_xml_id(atlas_name)
+        except Exception:
+            pass
+
+    # Create BrainAtlas records first (Parcellation depends on them)
+    for atlas_name, atlas_id in atlases.items():
+        lines.extend([
+            f'        <record id="brain_atlas_{atlas_id}" model="tvbo.brain_atlas">',
+            f'            <field name="name">{escape_xml(atlas_name)}</field>',
+            '        </record>',
+            ''
+        ])
+
+    # Create Parcellation records (which reference BrainAtlas via 'atlas' field)
+    # Note: Parcellation model only has 'label', not 'name'
+    for atlas_name, atlas_id in atlases.items():
+        lines.extend([
+            f'        <record id="parcellation_{atlas_id}" model="tvbo.parcellation">',
+            f'            <field name="label">{escape_xml(atlas_name)}</field>',
+            f'            <field name="atlas" ref="brain_atlas_{atlas_id}"/>',
+            '        </record>',
+            ''
+        ])
+
+    # Now create network records
     for yaml_file in yaml_files:
         try:
             with open(yaml_file) as f:
@@ -461,12 +495,16 @@ def generate_network_data_xml(yaml_files: List[Path], output_file: Path):
             if not data:
                 continue
 
-            connectome_id = sanitize_xml_id(yaml_file.stem)
-            xml_id = f"connectome_{connectome_id}"
+            network_id = sanitize_xml_id(yaml_file.stem)
+            xml_id = f"network_{network_id}"
 
-            lines.extend([
-                f'        <record id="{xml_id}" model="tvbo.connectome">',
-            ])
+            lines.append(f'        <record id="{xml_id}" model="tvbo.network">')
+
+            # Network model only has 'label', not 'name'
+            if 'label' in data:
+                lines.append(f'            <field name="label">{escape_xml(data["label"])}</field>')
+            elif 'name' in data:
+                lines.append(f'            <field name="label">{escape_xml(data["name"])}</field>')
 
             if 'number_of_regions' in data:
                 lines.append(f'            <field name="number_of_regions">{data["number_of_regions"]}</field>')
@@ -476,6 +514,13 @@ def generate_network_data_xml(yaml_files: List[Path], output_file: Path):
 
             if 'tractogram' in data:
                 lines.append(f'            <field name="tractogram">{escape_xml(data["tractogram"])}</field>')
+
+            # Link to parcellation by atlas name
+            if 'parcellation' in data and 'atlas' in data['parcellation']:
+                atlas_name = data['parcellation']['atlas'].get('name', '')
+                if atlas_name:
+                    atlas_id = sanitize_xml_id(atlas_name)
+                    lines.append(f'            <field name="parcellation" ref="parcellation_{atlas_id}"/>')
 
             # node_labels as Text field
             if 'node_labels' in data:
@@ -646,12 +691,14 @@ def generate_coupling_function_data_xml(yaml_files: List[Path], output_file: Pat
 def main():
     """Main entry point."""
     project_root = Path(__file__).parent.parent
-    database_dir = project_root / 'database'
+    # Database is in the main repo root, not platform/
+    database_dir = project_root.parent / 'database'
     output_dir = project_root / 'odoo-addons' / 'tvbo' / 'data'
 
     output_dir.mkdir(exist_ok=True)
 
     print("Generating Odoo data files from TVBO database...")
+    print(f"Database directory: {database_dir}")
     print()
 
     data_files = []

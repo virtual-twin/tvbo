@@ -19,7 +19,7 @@ class ModelConfiguratorController(http.Controller):
             integrators = request.env['tvbo.integrator'].sudo().search([])
             couplings = request.env['tvbo.coupling'].sudo().search([])
             monitors = request.env['tvbo.monitor'].sudo().search([])
-            networks = request.env['tvbo.connectome'].sudo().search([])
+            networks = request.env['tvbo.network'].sudo().search([])
             _logger.info(f"Found {len(models)} neural mass models, {len(integrators)} integrators, {len(couplings)} couplings, {len(monitors)} monitors, {len(networks)} networks")
 
             # Prepare model data for JS
@@ -219,16 +219,31 @@ class ModelConfiguratorController(http.Controller):
 
             # Prepare network data
             network_data = []
+            tractograms_set = set()
+            parcellations_set = set()
             for network in networks:
                 try:
                     network_dict = {
                         'id': network.id,
                         'label': network.label or f'Network_{network.id}',
                         'number_of_regions': network.number_of_regions,
+                        'tractogram': network.tractogram or '',
+                        'parcellation': network.parcellation.label if network.parcellation else '',
+                        'parcellation_id': network.parcellation.id if network.parcellation else None,
                     }
                     network_data.append(network_dict)
+
+                    # Collect unique tractograms and parcellations
+                    if network.tractogram:
+                        tractograms_set.add(network.tractogram)
+                    if network.parcellation and network.parcellation.label:
+                        parcellations_set.add((network.parcellation.id, network.parcellation.label))
                 except Exception as e:
                     _logger.error(f"Error processing network: {e}")
+
+            # Convert to list for JSON
+            tractograms_data = sorted(list(tractograms_set))
+            parcellations_data = [{'id': p[0], 'label': p[1]} for p in sorted(parcellations_set, key=lambda x: x[1])]
 
             return request.render('tvbo.model_configurator_template', {
                 'models_json': Markup(json.dumps(model_data)),
@@ -236,6 +251,8 @@ class ModelConfiguratorController(http.Controller):
                 'couplings_json': Markup(json.dumps(coupling_data)),
                 'monitors_json': Markup(json.dumps(monitor_data)),
                 'networks_json': Markup(json.dumps(network_data)),
+                'tractograms_json': Markup(json.dumps(tractograms_data)),
+                'parcellations_json': Markup(json.dumps(parcellations_data)),
             })
         except Exception as e:
             _logger.error(f"Error in model_configurator: {e}", exc_info=True)
@@ -245,7 +262,11 @@ class ModelConfiguratorController(http.Controller):
                 'couplings_json': Markup('[]'),
                 'monitors_json': Markup('[]'),
                 'networks_json': Markup('[]'),
-            })    @http.route('/tvbo/configurator/save', type='jsonrpc', auth='user', website=True, csrf=True)
+                'tractograms_json': Markup('[]'),
+                'parcellations_json': Markup('[]'),
+            })
+
+    @http.route('/tvbo/configurator/save', type='jsonrpc', auth='user', website=True, csrf=True)
     def save_model(self, **kwargs):
         """Save a new neural mass model configuration to database"""
         try:
