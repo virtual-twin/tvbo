@@ -95,7 +95,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
     """
     import logging
     logger = logging.getLogger(__name__)
-    
+
     try:
         from tvbo.export.experiment import SimulationExperiment
 
@@ -112,7 +112,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
 
         # Pass schema dict directly to SimulationExperiment
         experiment = SimulationExperiment(**exp_data)
-        
+
         # Debug: Check parsed experiment via to_yaml()
         try:
             yaml_output = experiment.to_yaml()
@@ -144,7 +144,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         # Extract results
         time_arr = ts.time.tolist() if hasattr(ts.time, 'tolist') else list(ts.time)
         data_arr = ts.data.tolist() if hasattr(ts.data, 'tolist') else ts.data
-        
+
         logger.info(f"time_arr length: {len(time_arr)}")
         logger.info(f"data_arr type: {type(data_arr)}, length: {len(data_arr) if isinstance(data_arr, list) else 'N/A'}")
 

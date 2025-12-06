@@ -438,7 +438,7 @@ class ModelConfiguratorController(http.Controller):
             # Call the TVBO API container
             tvbo_api_url = os.environ.get('TVBO_API_URL', 'http://tvbo-api:8000')
             _logger.info(f"Calling TVBO API at {tvbo_api_url}/experiment/run")
-            
+
             response = requests.post(
                 f'{tvbo_api_url}/experiment/run',
                 json=payload,
@@ -449,12 +449,12 @@ class ModelConfiguratorController(http.Controller):
             result = response.json()
             _logger.info(f"TVBO API response keys: {list(result.keys())}")
             _logger.info(f"TVBO API success: {result.get('success')}")
-            
+
             if response.status_code != 200:
                 error_msg = result.get('detail', response.text)
                 _logger.error(f"TVBO API error: {error_msg}")
                 return {'success': False, 'error': f'TVBO API error: {error_msg}'}
-                
+
             if not result.get('success'):
                 error_msg = result.get('error', 'Unknown error from TVBO API')
                 _logger.error(f"TVBO API returned failure: {error_msg}")

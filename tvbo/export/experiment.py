@@ -84,6 +84,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
 
+        # If dynamics list is empty, populate from local_dynamics
+        if not getattr(self, "dynamics", None) and getattr(self, "local_dynamics", None):
+            self.dynamics = [self.local_dynamics]
+
         # Defaults
         if not getattr(self, "monitors", None):
             from tvbo.datamodel.tvbo_datamodel import Monitor

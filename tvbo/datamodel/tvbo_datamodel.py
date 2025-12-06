@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-06T23:23:01
+# Generation date: 2025-12-06T23:30:25
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -532,9 +532,9 @@ class Node(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Node
 
     id: int = None
-    dynamics: Union[str, DynamicsName] = None
     label: Optional[str] = None
     description: Optional[str] = None
+    dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
     parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
@@ -546,16 +546,14 @@ class Node(YAMLRoot):
         if not isinstance(self.id, int):
             self.id = int(self.id)
 
-        if self._is_empty(self.dynamics):
-            self.MissingRequiredField("dynamics")
-        if not isinstance(self.dynamics, DynamicsName):
-            self.dynamics = DynamicsName(self.dynamics)
-
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
+            self.dynamics = DynamicsName(self.dynamics)
 
         if self.position is not None and not isinstance(self.position, Coordinate):
             self.position = Coordinate(**as_dict(self.position))
@@ -3675,7 +3673,7 @@ slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie('id'),
                    model_uri=TVBO.node__id, domain=None, range=int)
 
 slots.node__dynamics = Slot(uri=TVBO.dynamics, name="node__dynamics", curie=TVBO.curie('dynamics'),
-                   model_uri=TVBO.node__dynamics, domain=None, range=Union[str, DynamicsName])
+                   model_uri=TVBO.node__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
 
 slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO.curie('position'),
                    model_uri=TVBO.node__position, domain=None, range=Optional[Union[dict, Coordinate]])

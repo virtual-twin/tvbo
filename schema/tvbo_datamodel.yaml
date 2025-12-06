@@ -388,8 +388,8 @@ classes:
         description: "Unique node identifier"
       dynamics:
         range: Dynamics
-        required: true
-        description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition."
+        required: false
+        description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics."
         inlined: false
       position:
         range: Coordinate

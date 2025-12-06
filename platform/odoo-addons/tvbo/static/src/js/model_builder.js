@@ -2509,11 +2509,11 @@
     // 1. Collect local dynamics (REQUIRED)
     const dynamicsConfig = collectDynamicsConfig();
     console.log('[ModelBuilder] dynamicsConfig:', dynamicsConfig);
-    
+
     if (!dynamicsConfig.model && !dynamicsConfig.name) {
       throw new Error('No model selected. Please select or configure a model.');
     }
-    
+
     const local_dynamics = {
       name: dynamicsConfig.model || dynamicsConfig.name,
     };
@@ -2625,21 +2625,21 @@
     // 2. Collect network (REQUIRED)
     const networkConfig = collectNetworkConfig();
     console.log('[ModelBuilder] networkConfig:', networkConfig);
-    
+
     const modelName = local_dynamics.name;
     const couplingName = document.getElementById('couplingFunction')?.value;
-    
+
     if (!networkConfig || networkConfig.mode === 'not configured') {
       throw new Error('No network configured. Please configure a network in the Network tab.');
     }
 
     // Build network using matrix format (compatible with API)
     const nNodes = networkConfig.number_of_nodes || networkConfig.nodes?.length || 2;
-    
+
     // Initialize weights and lengths matrices as flat arrays (row-major order)
     const weights = new Array(nNodes * nNodes).fill(0.0);
     const lengths = new Array(nNodes * nNodes).fill(0.0);
-    
+
     // Populate from edges
     if (networkConfig.edges && networkConfig.edges.length > 0) {
       networkConfig.edges.forEach(e => {
@@ -2653,7 +2653,7 @@
         }
       });
     }
-    
+
     // Build region labels from nodes if available
     const regionLabels = [];
     if (networkConfig.nodes && networkConfig.nodes.length > 0) {
@@ -2669,7 +2669,7 @@
       lengths: { values: lengths },
       node_labels: regionLabels.length > 0 ? regionLabels : undefined,
     };
-    
+
     // Add global parameters if specified
     if (networkConfig.global_coupling_strength) {
       network.global_coupling_strength = { value: networkConfig.global_coupling_strength };
@@ -2677,13 +2677,13 @@
     if (networkConfig.conduction_speed) {
       network.conduction_speed = { value: networkConfig.conduction_speed };
     }
-    
+
     console.log('[ModelBuilder] Built network:', network);
 
     // 3. Collect integration (REQUIRED)
     const integrationConfig = collectIntegrationConfig();
     console.log('[ModelBuilder] integrationConfig:', integrationConfig);
-    
+
     const integration = {
       method: integrationConfig.method,
       step_size: integrationConfig.step_size,
@@ -2808,7 +2808,7 @@
 
       const data = result.result;
       console.log('[ModelBuilder] Result data:', data);
-      
+
       // MVP: Fail explicitly if data is missing
       if (!data) {
         throw new Error('API returned empty result. Check Odoo logs.');
@@ -2894,7 +2894,7 @@
 
     const stateVarSelect = document.getElementById('plotStateVar');
     const regionsSelect = document.getElementById('plotRegions');
-    
+
     if (!stateVarSelect) {
       throw new Error('plotStateVar select element not found');
     }
@@ -2936,7 +2936,7 @@
     const stateVarSelect = document.getElementById('plotStateVar');
     const regionsSelect = document.getElementById('plotRegions');
     const container = document.getElementById('plotContainer');
-    
+
     if (!plotTypeSelect) throw new Error('plotType select not found');
     if (!stateVarSelect) throw new Error('plotStateVar select not found');
     if (!regionsSelect) throw new Error('plotRegions select not found');
@@ -2945,7 +2945,7 @@
     const plotType = plotTypeSelect.value;
     const stateVarIdx = parseInt(stateVarSelect.value);
     const selectedRegions = Array.from(regionsSelect.selectedOptions).map(o => parseInt(o.value));
-    
+
     console.log('[ModelBuilder] Plot settings:', { plotType, stateVarIdx, selectedRegions });
     console.log('[ModelBuilder] Plot container dimensions:', container.clientWidth, 'x', container.clientHeight);
 
