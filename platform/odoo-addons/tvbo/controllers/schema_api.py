@@ -1,39 +1,58 @@
 # -*- coding: utf-8 -*-
 from odoo import http
-from tvbo.datamodel.tvbopydantic import (
-    Monitor,
-    ObservationModel,
-    ProcessingStep,
-    DataInjection,
-    ArgumentMapping,
-    ImagingModality,
-    OperationType,
-)
-from pydantic.fields import FieldInfo
 from typing import get_origin, get_args, Union
 
-PYDANTIC_AVAILABLE = True
+# Lazy import flag - imports are deferred to avoid circular import with tvbo package
+_pydantic_classes = None
+
+
+def _get_pydantic_classes():
+    """Lazily import Pydantic classes to avoid circular import."""
+    global _pydantic_classes
+    if _pydantic_classes is None:
+        try:
+            # Import from the main tvbo package (not the Odoo addon)
+            import sys
+            # Ensure we're importing from the installed tvbo package, not the addon
+            import importlib
+            tvbo_datamodel = importlib.import_module('tvbo.datamodel.tvbopydantic')
+            from pydantic.fields import FieldInfo
+
+            _pydantic_classes = {
+                'Monitor': tvbo_datamodel.Monitor,
+                'ObservationModel': tvbo_datamodel.ObservationModel,
+                'ProcessingStep': tvbo_datamodel.ProcessingStep,
+                'DataInjection': tvbo_datamodel.DataInjection,
+                'ArgumentMapping': tvbo_datamodel.ArgumentMapping,
+                'ImagingModality': tvbo_datamodel.ImagingModality,
+                'OperationType': tvbo_datamodel.OperationType,
+                'FieldInfo': FieldInfo,
+            }
+        except ImportError:
+            _pydantic_classes = {}
+    return _pydantic_classes
 
 
 class SchemaAPIController(http.Controller):
 
     @http.route(
         "/tvbo/api/schema/model/<string:model_name>",
-        type="json",
+        type="jsonrpc",
         auth="user",
         methods=["GET"],
     )
     def get_model_schema(self, model_name, **kwargs):
         """Get Pydantic schema for a given model class"""
-        if not PYDANTIC_AVAILABLE:
+        pydantic_classes = _get_pydantic_classes()
+        if not pydantic_classes:
             return {"error": "Pydantic models not available"}
 
         model_map = {
-            "Monitor": Monitor,
-            "ObservationModel": ObservationModel,
-            "ProcessingStep": ProcessingStep,
-            "DataInjection": DataInjection,
-            "ArgumentMapping": ArgumentMapping,
+            "Monitor": pydantic_classes.get('Monitor'),
+            "ObservationModel": pydantic_classes.get('ObservationModel'),
+            "ProcessingStep": pydantic_classes.get('ProcessingStep'),
+            "DataInjection": pydantic_classes.get('DataInjection'),
+            "ArgumentMapping": pydantic_classes.get('ArgumentMapping'),
         }
 
         model_class = model_map.get(model_name)
@@ -57,7 +76,7 @@ class SchemaAPIController(http.Controller):
 
         return schema
 
-    def _process_field(self, field_name, field_info: FieldInfo):
+    def _process_field(self, field_name, field_info):
         """Process a single Pydantic field"""
         field_type = field_info.annotation
 
@@ -132,18 +151,24 @@ class SchemaAPIController(http.Controller):
         else:
             return "unknown"
 
-    @http.route("/tvbo/api/schema/enums", type="json", auth="user", methods=["GET"])
+    @http.route("/tvbo/api/schema/enums", type="jsonrpc", auth="user", methods=["GET"])
     def get_enums(self, **kwargs):
         """Get all available enum types"""
-        if not PYDANTIC_AVAILABLE:
+        pydantic_classes = _get_pydantic_classes()
+        if not pydantic_classes:
             return {"error": "Pydantic models not available"}
 
-        return {
-            "ImagingModality": [
-                {"value": v.value, "label": v.name, "doc": v.__doc__}
+        ImagingModality = pydantic_classes.get('ImagingModality')
+        OperationType = pydantic_classes.get('OperationType')
+
+        result = {}
+        if ImagingModality:
+            result["ImagingModality"] = [
+                {"value": v.value, "label": v.name, "doc": getattr(v, '__doc__', '')}
                 for v in ImagingModality
-            ],
-            "OperationType": [
+            ]
+        if OperationType:
+            result["OperationType"] = [
                 {"value": v.value, "label": v.name} for v in OperationType
-            ],
-        }
+            ]
+        return result

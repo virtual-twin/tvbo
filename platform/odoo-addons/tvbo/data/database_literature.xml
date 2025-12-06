@@ -255,7 +255,7 @@
     <record id="literature_alonso2006" model="tvbo.literature_reference">
       <field name="title">Polymerization of hyperphosphorylated tau into filaments eliminates its inhibitory activity</field>
       <field name="key">Alonso2006</field>
-      <field name="doi">10.1073pnas.0603214103</field>
+      <field name="doi">10.1073pnas.0603214103</field>
       <field name="authors">Alonso, Alejandra and Li, Bin and Grundke-Iqbal, Inge and Iqbal, Khalid and Purpura, Dominick</field>
       <field name="year">2006</field>
     </record>
@@ -11005,7 +11005,7 @@
     <record id="literature_subramanian2021" model="tvbo.literature_reference">
       <field name="title">Gene set enrichment analysis: A knowledge-based approach for interpreting genome-wide expression profiles</field>
       <field name="key">Subramanian2021</field>
-      <field name="doi">10.1073pnas.0506580102</field>
+      <field name="doi">10.1073pnas.0506580102</field>
       <field name="authors">Subramanian, Aravind and Tamayo, Pablo and Mootha, Vamsi and Mukherjee, Sayan and Ebert, Benjamin and Gillette, Michael and Paulovich, Amanda and Pomeroy, Scott and Golub, Todd and Lander, Eric and Mesirov, Jill</field>
       <field name="year">2021</field>
     </record>
@@ -11237,7 +11237,7 @@
       <field name="year">2024</field>
     </record>
     <record id="literature_tarr2014" model="tvbo.literature_reference">
-      <field name="title">Music and social bonding: â€œself-otherâ€ merging and neurohormonal mechanisms</field>
+      <field name="title">Music and social bonding: â€œself-otherâ€ merging and neurohormonal mechanisms</field>
       <field name="key">Tarr2014</field>
       <field name="doi">10.3389/fpsyg.2014.01096</field>
       <field name="journal">Frontiers in Psychology</field>

@@ -73,26 +73,26 @@
     <record id="action_literature_reference" model="ir.actions.act_window">
         <field name="name">Literature</field>
         <field name="res_model">tvbo.literature_reference</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <record id="action_mesh_term" model="ir.actions.act_window">
         <field name="name">MeSH Terms</field>
         <field name="res_model">tvbo.mesh_term</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_tvbo_literature"
-              name="Literature"
+              name="Literature References"
               parent="menu_tvbo_database"
               action="action_literature_reference"
               sequence="70"/>
 
     <menuitem id="menu_tvbo_mesh_terms"
               name="MeSH Terms"
-              parent="menu_tvbo_literature"
+              parent="menu_tvbo_database"
               action="action_mesh_term"
-              sequence="80"/>
+              sequence="75"/>
 
     <!-- Extend SimulationStudy form to show linked references -->
     <record id="view_simulation_study_form_literature" model="ir.ui.view">

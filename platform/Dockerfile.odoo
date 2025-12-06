@@ -5,6 +5,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y python3-pip && \
     python3 -m pip install --break-system-packages --ignore-installed tvbo tvboptim pydantic pypdf && \
+    # Pin PyPDF/PyPDF2 per Python version to satisfy Odoo and distro expectations
+    python3 -m pip install --break-system-packages "PyPDF2==1.26.0; python_version <= '3.10'" && \
+    python3 -m pip install --break-system-packages "PyPDF2==2.12.1; python_version > '3.10' and python_version < '3.13'" && \
+    python3 -m pip install --break-system-packages "PyPDF==5.4.0; python_version >= '3.13'" && \
     mkdir -p /usr/local/lib/python3.12/dist-packages/tvbo/.temp && \
     chown -R odoo:odoo /usr/local/lib/python3.12/dist-packages/tvbo/.temp && \
     apt-get clean && rm -rf /var/lib/apt/lists/*

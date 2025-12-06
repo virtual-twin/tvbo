@@ -7,13 +7,105 @@
         </xpath>
     </template>
 
-    <!-- Override website homepage -->
-    <record id="website.homepage" model="ir.ui.view">
+    <!-- TVBO Custom Header - Replace default website header -->
+    <template id="tvbo_header" inherit_id="website.layout" name="TVBO Custom Header">
+        <xpath expr="//header" position="replace">
+            <header class="o_header_standard" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <nav class="navbar navbar-expand-lg">
+                    <div class="container">
+                        <a class="navbar-brand d-flex align-items-center" href="/" style="color: white; font-weight: 700; font-size: 1.25rem;">
+                            <img src="/tvbo/static/src/img/logo.png" alt="TVBO" style="height: 32px; margin-right: 10px; filter: brightness(0) invert(1);" onerror="this.style.display='none'"/>
+                            TVBO
+                        </a>
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#tvbo-navbar" style="border-color: rgba(255,255,255,0.5);">
+                            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="tvbo-navbar">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/" style="color: rgba(255,255,255,0.9);">Home</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/tvbo/models" style="color: rgba(255,255,255,0.9);">Models</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/tvbo/networks" style="color: rgba(255,255,255,0.9);">Networks</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/tvbo/integrators" style="color: rgba(255,255,255,0.9);">Integrators</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/tvbo/studies" style="color: rgba(255,255,255,0.9);">Studies</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="https://tvbo-docs.charite.de" target="_blank" style="color: rgba(255,255,255,0.9);">Docs</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link btn btn-light btn-sm ms-2" href="/web/login" style="color: #667eea; padding: 0.375rem 1rem;">Sign In</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+        </xpath>
+    </template>
+
+    <!-- TVBO Custom Footer - Replace default website footer -->
+    <template id="tvbo_footer" inherit_id="website.layout" name="TVBO Custom Footer">
+        <xpath expr="//footer" position="replace">
+            <footer style="background-color: #2C3E50; color: rgba(255,255,255,0.8); padding: 3rem 0 1.5rem;">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <h5 style="color: white; font-weight: 600; margin-bottom: 1rem;">TVBO</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.7;">
+                                The Virtual Brain Ontology provides standardized computational models and neuroinformatic resources for brain simulation research.
+                            </p>
+                        </div>
+                        <div class="col-md-2 mb-4">
+                            <h6 style="color: white; font-weight: 600; margin-bottom: 1rem;">Resources</h6>
+                            <ul style="list-style: none; padding: 0; font-size: 0.9rem; line-height: 2;">
+                                <li><a href="/tvbo/models" style="color: rgba(255,255,255,0.7); text-decoration: none;">Models</a></li>
+                                <li><a href="/tvbo/networks" style="color: rgba(255,255,255,0.7); text-decoration: none;">Networks</a></li>
+                                <li><a href="/tvbo/integrators" style="color: rgba(255,255,255,0.7); text-decoration: none;">Integrators</a></li>
+                                <li><a href="/tvbo/studies" style="color: rgba(255,255,255,0.7); text-decoration: none;">Studies</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-2 mb-4">
+                            <h6 style="color: white; font-weight: 600; margin-bottom: 1rem;">Links</h6>
+                            <ul style="list-style: none; padding: 0; font-size: 0.9rem; line-height: 2;">
+                                <li><a href="https://tvbo-docs.charite.de" target="_blank" style="color: rgba(255,255,255,0.7); text-decoration: none;">Documentation</a></li>
+                                <li><a href="https://github.com/virtual-twin/tvbo" target="_blank" style="color: rgba(255,255,255,0.7); text-decoration: none;">GitHub</a></li>
+                                <li><a href="https://www.thevirtualbrain.org" target="_blank" style="color: rgba(255,255,255,0.7); text-decoration: none;">TVB Project</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <h6 style="color: white; font-weight: 600; margin-bottom: 1rem;">Contact</h6>
+                            <p style="font-size: 0.9rem; line-height: 1.7;">
+                                Charité Universitätsmedizin Berlin<br/>
+                                Berlin Institute of Health (BIH)<br/>
+                                <a href="https://github.com/virtual-twin/tvbo" style="color: rgba(255,255,255,0.7);">github.com/virtual-twin/tvbo</a>
+                            </p>
+                        </div>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,0.2); margin: 1.5rem 0;"/>
+                    <div class="row">
+                        <div class="col-12 text-center" style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                            © 2025 Charité Universitätsmedizin Berlin. Licensed under EUPL-1.2.
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </xpath>
+    </template>
+
+    <!-- TVBO Custom Homepage View -->
+    <record id="tvbo_homepage_view" model="ir.ui.view">
         <field name="name">TVBO Homepage</field>
         <field name="type">qweb</field>
-        <field name="key">website.homepage</field>
         <field name="arch" type="xml">
-            <t t-name="website.homepage">
+            <t t-name="tvbo_homepage_view">
                 <t t-call="website.layout">
                     <div id="wrap" class="oe_structure oe_empty">
                         <!-- Hero Section -->
