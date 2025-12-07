@@ -6,10 +6,10 @@ from odoo.http import request
 
 class TVBOWebsite(http.Controller):
 
-    @http.route('/tvbo', type='http', auth='public', website=True)
+    @http.route('/', type='http', auth='public', website=True)
     def index(self, **kw):
         """TVBO Database homepage."""
-        return request.render('tvbo.tvbo_database_home', {})
+        return request.render('tvbo.tvbo_homepage_view', {})
 
     @http.route('/tvbo/models', type='http', auth='public', website=True)
     def models(self, **kw):
