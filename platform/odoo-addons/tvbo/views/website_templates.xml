@@ -172,62 +172,6 @@
                             </div>
                         </section>
 
-                        <!-- Features Section -->
-                        <section class="pt-5 pb-5" style="background-color: #f8f9fa;">
-                            <div class="container">
-                                <h2 class="text-center mb-5"
-                                    style="font-size: 2.5rem; color: #2C3E50;">Core Resources</h2>
-                                <div class="row">
-                                    <div class="col-md-4 mb-4">
-                                        <div class="card h-100 shadow-sm"
-                                            style="border: none; border-top: 4px solid #667eea;">
-                                            <div class="card-body text-center">
-                                                <div
-                                                    style="font-size: 2.5rem; color: #667eea; margin-bottom: 1rem;">
-                                                    ⚙️</div>
-                                                <h3 class="card-title">Neural Models</h3>
-                                                <p class="card-text text-muted">
-                                                    Curated computational models of neural dynamics
-                                                    including conductance-based and rate-coded
-                                                    neurons
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 mb-4">
-                                        <div class="card h-100 shadow-sm"
-                                            style="border: none; border-top: 4px solid #764ba2;">
-                                            <div class="card-body text-center">
-                                                <div
-                                                    style="font-size: 2.5rem; color: #764ba2; margin-bottom: 1rem;">
-                                                    🧠</div>
-                                                <h3 class="card-title">Brain Networks</h3>
-                                                <p class="card-text text-muted">
-                                                    Structural and functional connectivity networks
-                                                    from diverse primate and human populations
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 mb-4">
-                                        <div class="card h-100 shadow-sm"
-                                            style="border: none; border-top: 4px solid #667eea;">
-                                            <div class="card-body text-center">
-                                                <div
-                                                    style="font-size: 2.5rem; color: #667eea; margin-bottom: 1rem;">
-                                                    📊</div>
-                                                <h3 class="card-title">Research Studies</h3>
-                                                <p class="card-text text-muted">
-                                                    Validated simulation protocols and experimental
-                                                    datasets for reproducible computational
-                                                    neuroscience
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
 
                         <!-- Data Model Schema Section -->
                         <section class="pt-5 pb-5">
