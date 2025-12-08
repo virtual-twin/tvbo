@@ -1081,7 +1081,7 @@ classes:
         multivalued: true
         range: Dynamics
         inlined: true
-        inlined_as_list: true
+        inlined_as_list: false
         description: "Dictionary of dynamics models keyed by name. Nodes reference these by name."
       integration:
         range: Integrator

@@ -10,34 +10,27 @@ import os
 import re
 import tempfile
 from os.path import basename, dirname, join, splitext
-from tvbo.knowledge.simulation.perturbation import Stimulus
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import owlready2
 from linkml_runtime.loaders import yaml_loader
 from matplotlib import colormaps
-from sympy import (
-    Derivative,
-    Eq,
-    Function,
-    Symbol,
-    latex,
-    pycode,
-    symbols,
-)
-from tvbo.parse.expression import parse_eq
+from sympy import Derivative, Eq, Function, Symbol, latex, pycode, symbols
 
 from tvbo import templates
+from tvbo.analysis import BifurcationResult
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.datamodel import tvbopydantic as _pdm
 from tvbo.datamodel.tvbo_datamodel import Case, DerivedVariable, Equation
-from tvbo.export import templater, report
+from tvbo.export import report, templater
 from tvbo.knowledge import ontology, query, simulation
 from tvbo.knowledge.simulation import equations
+from tvbo.knowledge.simulation.perturbation import Stimulus
 from tvbo.parse import metadata
-from tvbo.analysis import BifurcationResult
+from tvbo.parse.expression import parse_eq
 
 TEMPLATES = templates.root
 available_neural_mass_models = set(ontology.get_models().values())
@@ -388,12 +381,16 @@ def sort_equations(model, variable_type):
 
 
 class Dynamics(tvbo_datamodel.Dynamics):
-    def __init__(self, name="Dynamics", **kwargs):
+    def __init__(self, name="Dynamics", _skip_ontology: bool = False, **kwargs):
         if name is not None:
             kwargs["name"] = str(name)
 
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
+
+        # Skip ontology lookup when model is fully specified (e.g., from PyRates import)
+        if _skip_ontology:
+            return
 
         # Auto-populate only when a name was provided; keep default Dynamics() empty
         if name != "Dynamics":
@@ -436,13 +433,17 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return inst
 
     @classmethod
-    def from_pyrates(cls, path: str) -> "Dynamics":
+    def from_pyrates(cls, path: str, operator_key: str | None = None) -> "Dynamics":
         """Load a Dynamics model from a PyRates YAML template file.
 
         Parameters
         ----------
         path : str
             Path to PyRates YAML file.
+        operator_key : str, optional
+            Name of the specific OperatorTemplate to load (without _op suffix).
+            If None, loads the first OperatorTemplate found.
+            Use SimulationExperiment.from_pyrates() to load all operators.
 
         Returns
         -------
@@ -452,13 +453,17 @@ class Dynamics(tvbo_datamodel.Dynamics):
         Example
         -------
         >>> model = Dynamics.from_pyrates("jansen_rit.yaml")
+        >>> # Load specific operator from multi-operator file
+        >>> tsodyks = Dynamics.from_pyrates("synaptic_plasticity.yaml", operator_key="tsodyks")
         """
         from tvbo.export.pyrates import from_pyrates_yaml
 
-        data = from_pyrates_yaml(path)
-        inst = cls(**data)
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
+        data = from_pyrates_yaml(path, operator_key=operator_key)
+        # Skip ontology lookup - PyRates YAML provides complete model definition
+        inst = cls(_skip_ontology=True, **data)
+        # Only calculate derived parameters if needed
+        if inst.derived_parameters:
+            inst.calculate_derived_parameters()
         return inst
 
     # Internal helpers
@@ -1356,8 +1361,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         - lems.Model instance containing a ComponentType and a Component for this model
         """
         import lems.api as lems  # lazy import
-        from tvbo.knowledge import ontology as _ontology  # avoid shadowing
+
         from tvbo.export.lemsgenerator import setup_lems_model  # lazy to avoid cycles
+        from tvbo.knowledge import ontology as _ontology  # avoid shadowing
 
         model = setup_lems_model()
 
@@ -1562,7 +1568,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.utils.julia import get_julia, eval_with_auto_install
+            from tvbo.utils.julia import eval_with_auto_install, get_julia
 
             jl, Main = get_julia(compiled_modules=False)
             eval_with_auto_install(code)
@@ -1594,7 +1600,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     po = eval_with_auto_install("po_results")
 
                     bif_res.periodic_orbits = [
-                        BifurcationResult(br=p, model=self, **kwargs) for p in po.branches
+                        BifurcationResult(br=p, model=self, **kwargs)
+                        for p in po.branches
                     ]
                 return bif_res
 

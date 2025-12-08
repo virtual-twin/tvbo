@@ -12,9 +12,11 @@ from tvbo.datamodel import tvbo_datamodel
 from tvbo.export import templater
 from tvbo.knowledge import ontology, query
 from tvbo.knowledge.simulation import equations
-from tvbo.knowledge.simulation.equations import (_clash1,
-                                                 conditionals2piecewise,
-                                                 convert_ifelse_to_np_where)
+from tvbo.knowledge.simulation.equations import (
+    _clash1,
+    conditionals2piecewise,
+    convert_ifelse_to_np_where,
+)
 
 
 def class2metadata(ontoclass):
@@ -105,7 +107,6 @@ class Stimulus(tvbo_datamodel.Stimulus):
             kwargs["label"] = kwargs.get("name", "Stimulus")
         super().__init__(**kwargs)
 
-
     @classmethod
     def from_datamodel(cls, instance: tvbo_datamodel.Stimulus):
         return cls(**instance._as_dict)
@@ -130,9 +131,11 @@ class Stimulus(tvbo_datamodel.Stimulus):
         from linkml_runtime.loaders import yaml_loader
 
         return yaml_loader.load(filepath, target_class=cls)
+
     @property
     def metadata(self):
         return self
+
     # @property
     # def equation(self):
     #     eq, params = self.get_expression()
@@ -167,9 +170,9 @@ class Stimulus(tvbo_datamodel.Stimulus):
             self.temporal_equation = stim_eq()
 
             if connectivity is None and format == "tvb":
-                from tvbo.data.tvbo_data.connectomes import Connectome
+                from tvbo.data.tvbo_data.connectomes import Network
 
-                sc = Connectome(number_of_regions=1)
+                sc = Network(number_of_regions=1)
                 connectivity = sc.execute()
 
             if region_indices is None:

@@ -58,7 +58,7 @@ from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from tvbo.knowledge.simulation.localdynamics import Dynamics
-    from tvbo.knowledge.simulation.network import Network
+    from tvbo.data.tvbo_data.connectomes import Network
 
 
 def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> str:
@@ -175,25 +175,63 @@ def network_to_pyrates_yaml_string(network: "Network", filepath: str | None = No
     return to_pyrates_yaml_string(network=network, filepath=filepath)
 
 
-def from_pyrates_yaml(filepath: str) -> dict:
+def _pyrates_to_python_expr(expr: str) -> str:
+    """Convert PyRates expression syntax to Python/sympy compatible syntax.
+
+    PyRates uses:
+    - ^ for exponentiation (Python uses **)
+    """
+    return expr.replace("^", "**")
+
+
+def from_pyrates_yaml(filepath: str, operator_key: str | None = None) -> dict:
     """Load a PyRates YAML file and return dict for Dynamics constructor.
 
     Parameters
     ----------
     filepath : str
         Path to PyRates YAML file.
+    operator_key : str, optional
+        Name of the specific OperatorTemplate to load (without _op suffix).
+        If None, loads the first OperatorTemplate found.
 
     Returns
     -------
     dict
         Dictionary suitable for Dynamics(**dict) constructor.
+
+    Raises
+    ------
+    ValueError
+        If operator_key is specified but not found in the file.
     """
     import yaml
 
     with open(filepath, "r", encoding="utf-8") as f:
         yaml_data = yaml.safe_load(f)
 
-    return _pyrates_yaml_to_dynamics_dict(yaml_data)
+    # Find all OperatorTemplates
+    operators = {}
+    for template_name, template_def in yaml_data.items():
+        if not isinstance(template_def, dict):
+            continue
+        if template_def.get("base") == "OperatorTemplate":
+            parsed = _parse_single_operator(template_name, template_def)
+            operators[parsed["name"]] = parsed
+
+    if not operators:
+        raise ValueError(f"No OperatorTemplate found in {filepath}")
+
+    if operator_key is not None:
+        if operator_key not in operators:
+            available = list(operators.keys())
+            raise ValueError(
+                f"Operator '{operator_key}' not found. Available: {available}"
+            )
+        return operators[operator_key]
+
+    # Return first operator if no key specified
+    return next(iter(operators.values()))
 
 
 def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
@@ -202,7 +240,8 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
     parameters = {}
     derived_variables = {}
     output_transforms = {}
-    name = None
+    operator_name = None  # Name from OperatorTemplate (preferred)
+    node_name = None  # Name from NodeTemplate (fallback)
     description = None
 
     for template_name, template_def in yaml_data.items():
@@ -212,14 +251,23 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
         base = template_def.get("base", "")
 
         if base == "NodeTemplate":
-            name = template_name
+            # Extract name from NodeTemplate, removing common suffixes
+            node_name = template_name
+            for suffix in ("_node", "_Node", "Node"):
+                if node_name.endswith(suffix):
+                    node_name = node_name[: -len(suffix)]
+                    break
             continue
 
         if base != "OperatorTemplate":
             continue
 
-        if name is None:
-            name = template_name.replace("_op", "")
+        # Extract name from OperatorTemplate, removing _op suffix
+        operator_name = template_name
+        for suffix in ("_op", "_Op", "Op"):
+            if operator_name.endswith(suffix):
+                operator_name = operator_name[: -len(suffix)]
+                break
 
         description = template_def.get("description")
 
@@ -240,7 +288,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
             if match_prime or match_ddt:
                 match = match_prime or match_ddt
                 var_name = match.group(1)
-                rhs = match.group(2)
+                rhs = _pyrates_to_python_expr(match.group(2))
 
                 initial_value = None
                 var_spec = variables.get(var_name)
@@ -258,7 +306,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
                 match = re.match(r"(\w+)\s*=\s*(.+)", eq)
                 if match:
                     var_name = match.group(1)
-                    rhs = match.group(2)
+                    rhs = _pyrates_to_python_expr(match.group(2))
 
                     var_spec = variables.get(var_name)
                     if var_spec == "output":
@@ -281,12 +329,152 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
                     "name": var_name,
                     "value": float(var_spec),
                 }
+            elif isinstance(var_spec, str):
+                # Handle input(value) syntax - treat as parameter with default value
+                input_match = re.match(r"input\(([\d.e+-]+)\)", var_spec)
+                if input_match:
+                    parameters[var_name] = {
+                        "name": var_name,
+                        "value": float(input_match.group(1)),
+                    }
+                # Skip "output" markers - already handled above
+
+    # Prefer operator name, then node name, then default
+    name = operator_name or node_name or "pyrates_model"
 
     return {
-        "name": name or "pyrates_model",
+        "name": name,
         "description": description,
         "state_variables": state_variables,
         "parameters": parameters,
         "derived_variables": derived_variables,
         "output_transforms": output_transforms,
     }
+
+
+def _parse_single_operator(template_name: str, template_def: dict) -> dict:
+    """Parse a single OperatorTemplate into a Dynamics-compatible dict."""
+    state_variables = {}
+    parameters = {}
+    derived_variables = {}
+    output_transforms = {}
+
+    # Extract name from OperatorTemplate, removing _op suffix
+    name = template_name
+    for suffix in ("_op", "_Op", "Op"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+
+    description = template_def.get("description")
+
+    # Parse equations
+    equations = template_def.get("equations", [])
+    if isinstance(equations, str):
+        equations = [equations]
+
+    variables = template_def.get("variables", {})
+
+    for eq in equations:
+        eq = str(eq).strip()
+
+        # Check if differential equation (var' = rhs or d/dt * var = rhs)
+        match_prime = re.match(r"(\w+)'\s*=\s*(.+)", eq)
+        match_ddt = re.match(r"d/dt\s*\*\s*(\w+)\s*=\s*(.+)", eq)
+
+        if match_prime or match_ddt:
+            match = match_prime or match_ddt
+            var_name = match.group(1)
+            rhs = _pyrates_to_python_expr(match.group(2))
+
+            initial_value = None
+            var_spec = variables.get(var_name)
+            if isinstance(var_spec, str) and "variable(" in var_spec:
+                iv_match = re.search(r"variable\(([\d.e+-]+)\)", var_spec)
+                if iv_match:
+                    initial_value = float(iv_match.group(1))
+
+            state_variables[var_name] = {
+                "name": var_name,
+                "equation": {"lhs": var_name, "rhs": rhs},
+                "initial_value": initial_value,
+            }
+        else:
+            match = re.match(r"(\w+)\s*=\s*(.+)", eq)
+            if match:
+                var_name = match.group(1)
+                rhs = _pyrates_to_python_expr(match.group(2))
+
+                var_spec = variables.get(var_name)
+                if var_spec == "output":
+                    output_transforms[var_name] = {
+                        "name": var_name,
+                        "equation": {"lhs": var_name, "rhs": rhs},
+                    }
+                else:
+                    derived_variables[var_name] = {
+                        "name": var_name,
+                        "equation": {"lhs": var_name, "rhs": rhs},
+                    }
+
+    # Parse variables that are not state/derived/output
+    for var_name, var_spec in variables.items():
+        if var_name in state_variables or var_name in derived_variables or var_name in output_transforms:
+            continue
+
+        if isinstance(var_spec, (int, float)):
+            parameters[var_name] = {
+                "name": var_name,
+                "value": float(var_spec),
+            }
+        elif isinstance(var_spec, str):
+            # Handle input(value) syntax - treat as parameter with default value
+            input_match = re.match(r"input\(([\d.e+-]+)\)", var_spec)
+            if input_match:
+                parameters[var_name] = {
+                    "name": var_name,
+                    "value": float(input_match.group(1)),
+                }
+
+    return {
+        "name": name,
+        "description": description,
+        "state_variables": state_variables,
+        "parameters": parameters,
+        "derived_variables": derived_variables,
+        "output_transforms": output_transforms,
+    }
+
+
+def from_pyrates_yaml_all(filepath: str) -> dict[str, dict]:
+    """Load a PyRates YAML file and return dict of all Dynamics.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to PyRates YAML file.
+
+    Returns
+    -------
+    dict[str, dict]
+        Dictionary mapping operator names to Dynamics-compatible dicts.
+        Keys are the clean names (without _op suffix).
+    """
+    import yaml
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        yaml_data = yaml.safe_load(f)
+
+    dynamics_dict = {}
+
+    for template_name, template_def in yaml_data.items():
+        if not isinstance(template_def, dict):
+            continue
+
+        base = template_def.get("base", "")
+
+        if base == "OperatorTemplate":
+            dynamics_data = _parse_single_operator(template_name, template_def)
+            dynamics_dict[dynamics_data["name"]] = dynamics_data
+
+    return dynamics_dict

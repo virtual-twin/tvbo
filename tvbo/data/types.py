@@ -8,7 +8,7 @@ from matplotlib.animation import FuncAnimation
 
 from tvbo.knowledge.simulation import equations
 from tvbo.utils import Bunch
-from tvbo.data.tvbo_data.connectomes import Connectome
+from tvbo.data.tvbo_data.connectomes import Network
 from tvbo.utils import format_pytree_as_string
 
 import jax
@@ -506,12 +506,12 @@ class TimeSeries(BaseTimeSeries):
     def compute_normalised_average_power(self, VOI=None):
         """
         Compute normalized average power spectrum using FFT.
-        
+
         Parameters
         ----------
         VOI : str, optional
             Variable of interest to analyze. Required if multiple state variables exist.
-            
+
         Returns
         -------
         frequency : ndarray
@@ -827,7 +827,7 @@ class SimulationState:
     def __init__(
         self,
         initial_conditions: TimeSeries,
-        network: Connectome,
+        network: Network,
         dt,
         noise,
         parameters,

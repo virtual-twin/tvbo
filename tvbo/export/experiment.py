@@ -13,18 +13,19 @@ import numpy as np
 from lems.base.util import validate_lems
 
 from tvbo import templates
-from tvbo.data.tvbo_data.connectomes import Connectome
+from tvbo.data.tvbo_data.connectomes import Network
 from tvbo.data.types import SimulationState, TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.export import templater
 from tvbo.export.templater import format_code
-from tvbo.knowledge import Connectome, Coupling, Integrator
+from tvbo.knowledge import Coupling, Integrator
 from tvbo.knowledge.simulation.localdynamics import Dynamics
-from tvbo.knowledge.simulation.network import Coupling, Network
+from tvbo.knowledge.simulation.network import Coupling, _Network
 from tvbo.parse import metadata
 from tvbo.utils import Bunch
 
 sessionid = 1
+
 
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def __init__(self, **kwargs):
@@ -77,15 +78,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "connectivity", None) and not getattr(self, "network", None):
             self.network = self.connectivity
 
-        if getattr(self, "network", None) and not isinstance(self.network, Connectome):
-            self.network = _coerce(Connectome, self.network)
+        if getattr(self, "network", None) and not isinstance(self.network, Network):
+            self.network = _coerce(Network, self.network)
             self.connectivity = self.network  # backwards compatibility TODO: remove
 
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
 
         # If dynamics list is empty, populate from local_dynamics
-        if not getattr(self, "dynamics", None) and getattr(self, "local_dynamics", None):
+        if not getattr(self, "dynamics", None) and getattr(
+            self, "local_dynamics", None
+        ):
             self.dynamics = [self.local_dynamics]
 
         # Defaults
@@ -95,7 +98,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.monitors["Raw"] = Monitor(name="Raw")
 
         if not getattr(self, "network", None):
-            self.network = Connectome()
+            self.network = Network()
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
@@ -111,6 +114,50 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return cls(**dm._as_dict)
 
     @classmethod
+    def from_pyrates(cls, filepath: str) -> "SimulationExperiment":
+        """Load a SimulationExperiment from a PyRates YAML template file.
+
+        Parses all OperatorTemplates in the file and creates a keyed dict
+        of Dynamics objects.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to PyRates YAML file.
+
+        Returns
+        -------
+        SimulationExperiment
+            New instance with dynamics dict populated from PyRates templates.
+
+        Example
+        -------
+        >>> exp = SimulationExperiment.from_pyrates("synaptic_plasticity.yaml")
+        >>> print(exp.dynamics.keys())  # ['tsodyks', 'depression', 'facilitation']
+        """
+        from tvbo.export.pyrates import from_pyrates_yaml_all
+
+        dynamics_dicts = from_pyrates_yaml_all(filepath)
+
+        # Convert dicts to Dynamics instances using lightweight construction
+        dynamics = {}
+        for name, dyn_dict in dynamics_dicts.items():
+            # Create instance with _skip_ontology=True to avoid slow lookups
+            dyn = Dynamics(_skip_ontology=True, **dyn_dict)
+            dynamics[name] = dyn
+
+        # Use the first dynamics as local_dynamics if available
+        local_dynamics = None
+        if dynamics:
+            first_key = next(iter(dynamics))
+            local_dynamics = dynamics[first_key]
+
+        return cls(
+            dynamics=dynamics,
+            local_dynamics=local_dynamics,
+        )
+
+    @classmethod
     def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
         """Create a SimulationExperiment from a Pydantic model instance.
 
@@ -120,10 +167,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Returns:
             SimulationExperiment instance
         """
-        if hasattr(pyd_obj, 'model_dump'):
+        if hasattr(pyd_obj, "model_dump"):
             # Pydantic v2
             return cls(**pyd_obj.model_dump(exclude_none=True))
-        elif hasattr(pyd_obj, 'dict'):
+        elif hasattr(pyd_obj, "dict"):
             # Pydantic v1
             return cls(**pyd_obj.dict(exclude_none=True))
         else:
@@ -263,11 +310,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if network is None:
                 return
 
-            # Get the network as a Connectome (it might already be one)
-            if isinstance(network, Connectome):
+            # Get the network as a Network (it might already be one)
+            if isinstance(network, Network):
                 conn = network
             else:
-                conn = Connectome(network)
+                conn = Network(network)
 
             # Try to get lengths matrix
             try:
@@ -276,7 +323,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 L = None
 
             # Disable delays if lengths are None or all zeros
-            if L is None or np.allclose(L, 0) or np.allclose(L.max() / conn.conduction_speed.value, 0):
+            if (
+                L is None
+                or np.allclose(L, 0)
+                or np.allclose(L.max() / conn.conduction_speed.value, 0)
+            ):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
@@ -284,6 +335,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         except Exception as e:
             # Best-effort; keep defaults if anything goes wrong
             import warnings
+
             warnings.warn(f"Could not configure delays: {e}")
 
     def add_stimulus(self, stimulus):
@@ -359,8 +411,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, jax.")
 
     def run(self, format="jax", initial_conditions=None, **kwargs):
-        if 'duration' in kwargs:
-            self.integration.duration = kwargs.pop('duration')
+        if "duration" in kwargs:
+            self.integration.duration = kwargs.pop("duration")
 
         self.configure()
         simulation_data = Bunch()
@@ -423,7 +475,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return ts
 
         elif format.lower() == "python":
-            bnm = Network(Connectome(self.network))
+            bnm = _Network(Network(self.network))
             bnm.add_local_model(self.local_dynamics)
             bnm.add_coupling(self.coupling)
 

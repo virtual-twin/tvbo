@@ -317,7 +317,7 @@ def get_global_coupling_functions():
 available_coupling_functions = set(get_global_coupling_functions())
 
 
-class Network:
+class _Network:
     def __init__(self, connectome, normalize_weights=True):
         if normalize_weights:
             # Normalize using Connectome's schema-safe method
