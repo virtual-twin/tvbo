@@ -1,0 +1,339 @@
+---
+title: PyRates Bifurcation Analysis with AUTO-07p
+jupyter: python3
+---
+
+This tutorial demonstrates how to perform 1D numerical parameter continuation in PyRates with automatic fold bifurcation detection using AUTO-07p.
+
+## Overview
+
+We use the Quadratic Integrate-and-Fire (QIF) population mean-field model:
+
+$$
+\tau \dot{r} = \frac{\Delta}{\pi\tau} + 2rv
+$$
+$$
+\tau \dot{v} = v^2 + \bar\eta + I(t) + Jr\tau - (\pi r\tau)^2
+$$
+
+where $r$ is the average firing rate and $v$ is the average membrane potential. Parameters:
+
+- $\tau$ → population time constant
+- $\bar\eta$ → mean neural excitability (Lorentzian distribution)
+- $\Delta$ → half-width at half maximum of the excitability distribution
+- $J$ → recurrent coupling strength
+
+**References:**
+
+- Montbrió, E., Pazó, D., & Roxin, A. (2015). Macroscopic description for networks of spiking neurons. Physical Review X, 5, 021028.
+- Doedel, E.J. et al. (2007). Auto-07p: Continuation and bifurcation software for ordinary differential equations.
+
+## Requirements
+
+```bash
+pip install pyrates pycobi
+# AUTO-07p must be installed separately
+```
+
+## Setup
+
+```{python}
+import os
+import matplotlib.pyplot as plt
+from pyrates import CircuitTemplate
+from pycobi import ODESystem
+
+# Set AUTO-07p directory (adjust to your installation)
+auto_dir = os.path.expanduser("~/auto-07p")
+```
+
+## Part 1: Creating a PyCoBi Instance
+
+### Step 1: Define Model in TVBO and Export to PyRates
+
+```{python}
+from tvbo import Dynamics
+from IPython.display import Markdown, display
+
+# QIF mean-field model
+qif_tvbo = Dynamics("Dynamics")
+qif_tvbo.name = "QIF"
+
+qif_tvbo.add_parameter("tau", value=1.0, description="Time constant")
+qif_tvbo.add_parameter("eta", value=-5.0, description="Background drive")
+qif_tvbo.add_parameter("J", value=15.0, description="Coupling strength")
+qif_tvbo.add_parameter("Delta", value=1.0, description="Heterogeneity width")
+
+qif_tvbo.add_state_variable("r", equation="Delta/(tau*pi) + 2*r*v", initial_value=0.1)
+qif_tvbo.add_state_variable("v", equation="v**2 + eta + J*r*tau - (pi*r*tau)**2", initial_value=-2.0)
+
+# Display model summary
+display(Markdown(qif_tvbo.generate_report(format="markdown")))
+```
+
+```{python}
+# Export to PyRates format
+os.makedirs('_continuation', exist_ok=True)
+with open('_continuation/__init__.py', 'w') as f:
+    f.write('')
+qif_tvbo.to_yaml(format="pyrates", filepath='_continuation/qif.yaml')
+
+print("Model exported to _continuation/qif.yaml")
+print("\n=== Generated Python Code ===")
+print(qif_tvbo.render_code(format="python"))
+```
+
+### Step 2: Load Model and Generate Fortran Routines for AUTO-07p
+
+```{python}
+# Load the exported model into PyRates
+qif = CircuitTemplate.from_yaml("_continuation.qif.QIF_circuit")
+
+# Generate Fortran file with AUTO-07p subroutines
+qif.get_run_func(
+    func_name='qif_rhs',
+    file_name='qif',
+    step_size=1e-4,
+    auto=True,
+    backend='fortran',
+    solver='scipy',
+    vectorize=False,
+    float_precision='float64'
+)
+
+print("Fortran routines generated for AUTO-07p")
+```
+
+### Step 3: Inspect Generated Files
+
+```{python}
+# Inspect the generated Fortran file
+print("=== Fortran file (qif.f90) ===")
+with open('qif.f90', 'r') as f:
+    print(f.read())
+```
+
+```{python}
+# Inspect the AUTO-07p constants file
+print("=== AUTO-07p constants file (c.ivp) ===")
+with open('c.ivp', 'r') as f:
+    print(f.read())
+```
+
+### Step 4: Create PyCoBi ODESystem Instance
+
+```{python}
+# Create PyCoBi instance for continuation
+qif_auto = ODESystem(eq_file="qif", working_dir=None, auto_dir=auto_dir, init_cont=False)
+
+print("PyCoBi ODESystem created successfully")
+```
+
+## Part 2: Performing Parameter Continuations
+
+### Step 1: Time Continuation (Find Equilibrium)
+
+Before parameter continuation, we must start from an equilibrium. We run a time continuation to let the system converge:
+
+```{python}
+# Time continuation to find equilibrium
+t_sols, t_cont = qif_auto.run(
+    c='ivp',
+    name='time',
+    DS=1e-4,
+    DSMIN=1e-10,
+    EPSL=1e-08,
+    EPSU=1e-08,
+    EPSS=1e-06,
+    DSMAX=1e-2,
+    NMX=1000,
+    UZR={14: 4.0},  # Stop at t=4.0
+    STOP={'UZ1'}
+)
+
+# Plot time evolution
+qif_auto.plot_continuation('PAR(14)', 'U(1)', cont='time')
+plt.xlabel('Time')
+plt.ylabel('r (firing rate)')
+plt.title('Time Evolution to Equilibrium')
+plt.show()
+
+print("\nSystem converged to equilibrium!")
+print(f"Final r = {t_sols['U(1)'].iloc[-1]:.6f}")
+print(f"Final v = {t_sols['U(2)'].iloc[-1]:.6f}")
+```
+
+**Key parameters explained:**
+
+- `DS=1e-4`: Initial step-size (ms)
+- `DSMIN=1e-10`: Minimum step-size (ms)
+- `DSMAX=1e-2`: Maximum step-size (ms)
+- `NMX=1000`: Maximum continuation steps
+- `UZR={14: 4.0}`: Create marker when time (parameter 14) reaches 4.0
+- `STOP={'UZ1'}`: Stop at first user marker
+
+### Step 2: Continuation in η (Background Drive)
+
+Now we continue the equilibrium in the bifurcation parameter $\bar\eta$:
+
+```{python}
+# Parameter continuation in eta
+eta_sols, eta_cont = qif_auto.run(
+    origin=t_cont,
+    starting_point='UZ1',
+    name='eta',
+    bidirectional=True,
+    ICP=4,              # Continue parameter 4 (eta)
+    RL0=-20.0,          # Lower bound for eta
+    RL1=20.0,           # Upper bound for eta
+    IPS=1,              # Equilibrium continuation
+    ILP=1,              # Detect fold bifurcations
+    ISP=2,              # Full bifurcation detection
+    ISW=1,              # Branch switching
+    NTST=400,           # Mesh intervals
+    NCOL=4,             # Collocation points
+    IAD=3,              # Mesh adaptation
+    IPLT=0,             # Plotting parameter
+    NBC=0,              # Boundary conditions
+    NINT=0,             # Integral conditions
+    NMX=2000,           # Max continuation steps
+    NPR=10,             # Print every N steps
+    MXBF=5,             # Max branch switches
+    IID=2,              # Diagnostic output
+    ITMX=40,            # Max iterations
+    ITNW=40,            # Newton iterations
+    NWTN=12,            # Newton corrections
+    JAC=0,              # Jacobian computation
+    EPSL=1e-06,         # Tolerance (left)
+    EPSU=1e-06,         # Tolerance (right)
+    EPSS=1e-04,         # Tolerance (steady)
+    DS=1e-4,            # Initial step-size
+    DSMIN=1e-8,         # Min step-size
+    DSMAX=5e-2,         # Max step-size
+    IADS=1,             # Step-size adaptation
+    THL={},             # Parameter weights
+    THU={},             # Variable weights
+    UZR={},             # User markers
+    STOP={}             # Stop conditions
+)
+
+print("Parameter continuation complete!")
+print(f"Number of solutions found: {len(eta_sols)}")
+```
+
+**Key parameters explained:**
+
+- `origin=t_cont`: Start from time continuation branch
+- `starting_point='UZ1'`: Start from first user marker
+- `bidirectional=True`: Continue in both directions
+- `ICP=4`: Parameter index for η
+- `RL0=-20.0`, `RL1=20.0`: Parameter bounds
+- `ILP=1`: Enable fold bifurcation detection
+- `ISP=2`: Full automatic bifurcation detection
+
+## Part 3: Bifurcation Diagram
+
+### Plot the Bifurcation Diagram
+
+```{python}
+# Plot bifurcation diagram
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Firing rate vs eta
+ax = axes[0]
+qif_auto.plot_continuation('PAR(4)', 'U(1)', cont='eta', ax=ax)
+ax.set_xlabel('η (Background drive)')
+ax.set_ylabel('Firing rate r')
+ax.set_title('QIF Bifurcation Diagram: Firing Rate')
+ax.grid(True, alpha=0.3)
+
+# Membrane potential vs eta
+ax = axes[1]
+qif_auto.plot_continuation('PAR(4)', 'U(2)', cont='eta', ax=ax)
+ax.set_xlabel('η (Background drive)')
+ax.set_ylabel('Membrane potential v')
+ax.set_title('QIF Bifurcation Diagram: Voltage')
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+### Interpreting the Diagram
+
+The bifurcation diagram shows:
+
+- **Solid line**: Stable equilibrium
+- **Dotted line**: Unstable equilibrium
+- **Triangles (LP)**: Fold (limit point) bifurcations
+
+At a fold bifurcation, the critical eigenvalue crosses the imaginary axis, indicating a change in stability. A stable and unstable equilibrium collide and annihilate each other.
+
+```{python}
+# Extract bifurcation points
+print("\n=== Detected Bifurcations ===")
+for idx, row in eta_sols.iterrows():
+    if 'LP' in str(row.get('TY', '')):
+        eta_val = row['PAR(4)']
+        r_val = row['U(1)']
+        v_val = row['U(2)']
+        print(f"Fold bifurcation at η = {eta_val:.4f}, r = {r_val:.4f}, v = {v_val:.4f}")
+```
+
+## Summary
+
+This tutorial demonstrated the complete workflow for bifurcation analysis:
+
+1. **Define** model in TVBO with `Dynamics`
+2. **Export** to PyRates format with `to_yaml(format="pyrates")`
+3. **Generate** Fortran routines with `get_run_func(auto=True)`
+4. **Create** PyCoBi instance with `ODESystem`
+5. **Time continuation** to find equilibrium
+6. **Parameter continuation** with automatic bifurcation detection
+7. **Visualize** bifurcation diagram
+
+### Key Functions
+
+```python
+from pyrates import CircuitTemplate
+from pycobi import ODESystem
+
+# Generate AUTO-07p compatible files
+circuit.get_run_func(auto=True, backend='fortran', ...)
+
+# Create PyCoBi instance
+ode = ODESystem(eq_file="name", auto_dir="path/to/auto-07p")
+
+# Time continuation (find equilibrium)
+t_sols, t_cont = ode.run(c='ivp', name='time', UZR={14: T}, STOP={'UZ1'})
+
+# Parameter continuation with bifurcation detection
+sols, cont = ode.run(origin=t_cont, starting_point='UZ1', ICP=param_idx,
+                     ILP=1, ISP=2, bidirectional=True, ...)
+
+# Plot bifurcation diagram
+ode.plot_continuation('PAR(idx)', 'U(var)', cont='name')
+```
+
+## Cleanup
+
+```{python}
+import shutil
+
+# Clean up temporary files
+qif.clear()
+shutil.rmtree('_continuation', ignore_errors=True)
+
+# Remove generated files
+for f in ['qif.f90', 'c.ivp']:
+    if os.path.exists(f):
+        os.remove(f)
+
+print("Cleaned up temporary files")
+```
+
+## References
+
+- [PyCoBi Documentation](https://github.com/pyrates-neuroscience/PyCoBi)
+- [AUTO-07p Documentation](https://github.com/auto-07p/auto-07p)
+- [Montbrió, E., Pazó, D., & Roxin, A. (2015). Macroscopic description for networks of spiking neurons. Physical Review X, 5(2), 021028.](https://doi.org/10.1103/PhysRevX.5.021028)

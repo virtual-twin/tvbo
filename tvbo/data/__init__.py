@@ -15,5 +15,5 @@ Access and manage TVB-O data.
 from .db import *
 from .tvbo_data import *
 
-from .tvbo_data.connectomes import Connectome
+from .tvbo_data.connectomes import Network
 from .tvbo_data.atlases import Atlas

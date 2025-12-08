@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-07T00:05:13
+# Generation date: 2025-12-08T13:56:35
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1939,7 +1939,7 @@ class SimulationExperiment(YAMLRoot):
         if self.local_dynamics is not None and not isinstance(self.local_dynamics, Dynamics):
             self.local_dynamics = Dynamics(**as_dict(self.local_dynamics))
 
-        self._normalize_inlined_as_list(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
         if self.integration is not None and not isinstance(self.integration, Integrator):
             self.integration = Integrator(**as_dict(self.integration))

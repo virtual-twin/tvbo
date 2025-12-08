@@ -71,7 +71,7 @@ def get_normative_connectome_data(
 
 
 @register_pytree_node_class
-class Connectome(tvbo_datamodel.Network):
+class Network(tvbo_datamodel.Network):
     """Structural connectivity data with weights, lengths, and visualization tools.
 
     Represents brain structural connectivity including connection weights, tract lengths,
@@ -311,13 +311,16 @@ class Connectome(tvbo_datamodel.Network):
                 # Don't block attribute setting on sync errors
                 pass
 
-    def to_yaml(self, filepath: Optional[str] = None) -> str:
+    def to_yaml(self, filepath: Optional[str] = None, format: str = "tvbo") -> str:
         """Serialize Connectome to YAML format.
 
         Parameters
         ----------
         filepath : str, optional
             Path to save YAML file. If None, returns YAML string.
+        format : str
+            Output format: "tvbo" (default) or "pyrates".
+            PyRates format generates a complete experiment YAML (network + dynamics).
 
         Returns
         -------
@@ -330,11 +333,17 @@ class Connectome(tvbo_datamodel.Network):
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         yaml_str = sc.to_yaml()
         sc.to_yaml("connectome.yaml")  # Save to file
+        sc.to_yaml("network.yaml", format="pyrates")  # PyRates format
         ```
         """
-        from tvbo.utils import to_yaml as _to_yaml
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import to_pyrates_yaml_string
 
-        return _to_yaml(self, filepath)
+            return to_pyrates_yaml_string(network=self, filepath=filepath)
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+
+            return _to_yaml(self, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----
     def tree_flatten(self) -> Tuple[Tuple[JaxArray, JaxArray], Tuple[str]]:
@@ -376,24 +385,21 @@ class Connectome(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             weights_arr, lengths_arr = self._pytree_data
         else:
-            # First flatten or normal object - compute arrays from metadata
-            if self.weights is not None:
-                weights_arr = self.weights_matrix
-            elif hasattr(self, "number_of_regions") and self.number_of_regions:
-                weights_arr = jnp.zeros(
-                    (self.number_of_regions, self.number_of_regions)
-                )
-            else:
-                weights_arr = jnp.zeros((1, 1))
+            # Use weights_matrix/lengths_matrix properties which handle edges, Matrix, or defaults
+            weights_arr = self.weights_matrix
+            lengths_arr = self.lengths_matrix
 
-            if self.lengths is not None:
-                lengths_arr = self.lengths_matrix
-            elif hasattr(self, "number_of_regions") and self.number_of_regions:
-                lengths_arr = jnp.zeros(
-                    (self.number_of_regions, self.number_of_regions)
-                )
+            # Fallback to zeros if properties return None
+            n = self.number_of_regions or 1
+            if weights_arr is None:
+                weights_arr = jnp.zeros((n, n))
             else:
-                lengths_arr = jnp.zeros((1, 1))
+                weights_arr = jnp.asarray(weights_arr)
+
+            if lengths_arr is None:
+                lengths_arr = jnp.zeros((n, n))
+            else:
+                lengths_arr = jnp.asarray(lengths_arr)
 
         children = (weights_arr, lengths_arr)
 
@@ -456,11 +462,42 @@ class Connectome(tvbo_datamodel.Network):
             x=x, y=y, values=arr.reshape(-1).astype(jnp.float32).tolist()
         )
 
+    def _weights_from_edges(self) -> Optional[np.ndarray]:
+        """Compute weights matrix from edges metadata.
+
+        Returns None if no edges are defined.
+        """
+        if not self.edges:
+            return None
+        n = self.number_of_nodes or self.number_of_regions or 1
+        W = np.zeros((n, n), dtype=np.float64)
+        for edge in self.edges:
+            i, j = edge.source, edge.target
+            if 0 <= i < n and 0 <= j < n:
+                W[i, j] = edge.weight if edge.weight is not None else 1.0
+        return W
+
+    def _lengths_from_edges(self) -> Optional[np.ndarray]:
+        """Compute lengths matrix from edges metadata.
+
+        Returns None if no edges are defined.
+        """
+        if not self.edges:
+            return None
+        n = self.number_of_nodes or self.number_of_regions or 1
+        L = np.zeros((n, n), dtype=np.float64)
+        for edge in self.edges:
+            i, j = edge.source, edge.target
+            if 0 <= i < n and 0 <= j < n:
+                L[i, j] = edge.distance if edge.distance is not None else 0.0
+        return L
+
     @property
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Connection weights matrix as numpy/JAX array.
 
         Returns the (N x N) matrix of connection strengths between regions.
+        Priority: 1) edges metadata, 2) weights Matrix/array, 3) default.
         If normalization is defined, applies the normalization equation.
 
         Returns
@@ -486,47 +523,47 @@ class Connectome(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
-        wm = self.weights
-        if wm is not None:
-            if isinstance(wm, list):
-                W = np.array(wm, dtype=float)
-            if getattr(wm, "values", None):
-                x = getattr(wm, "x", None)
-                y = getattr(wm, "y", None)
-                nx_ = (
-                    len(x.values)
-                    if x and getattr(x, "values", None)
-                    else self.number_of_regions
-                )
-                ny_ = (
-                    len(y.values)
-                    if y and getattr(y, "values", None)
-                    else self.number_of_regions
-                )
-                # Type guard: ensure dimensions are valid integers
-                if (
-                    nx_ is not None
-                    and ny_ is not None
-                    and isinstance(nx_, int)
-                    and isinstance(ny_, int)
-                ):
-                    W = np.array(wm.values, dtype=float).reshape(nx_, ny_)
-                else:
-                    W = None
-            elif getattr(wm, "dataLocation", None):
-                W = pd.read_csv(wm.dataLocation, header=None).values.astype(float)  # type: ignore[arg-type,attr-defined]
-            else:
-                W = None
-        else:
-            W = None
+        W = None
 
+        # Priority 1: Compute from edges metadata
+        if self.edges:
+            W = self._weights_from_edges()
+
+        # Priority 2: Use weights Matrix/array
+        if W is None:
+            wm = self.weights
+            if wm is not None:
+                if isinstance(wm, list):
+                    W = np.array(wm, dtype=np.float64)
+                elif getattr(wm, "values", None):
+                    x = getattr(wm, "x", None)
+                    y = getattr(wm, "y", None)
+                    nx_ = (
+                        len(x.values)
+                        if x and getattr(x, "values", None)
+                        else self.number_of_regions
+                    )
+                    ny_ = (
+                        len(y.values)
+                        if y and getattr(y, "values", None)
+                        else self.number_of_regions
+                    )
+                    if (
+                        nx_ is not None
+                        and ny_ is not None
+                        and isinstance(nx_, int)
+                        and isinstance(ny_, int)
+                    ):
+                        W = np.array(wm.values, dtype=np.float64).reshape(nx_, ny_)
+                elif getattr(wm, "dataLocation", None):
+                    W = pd.read_csv(wm.dataLocation, header=None).values.astype(np.float64)
+
+        # Priority 3: Default matrix
         if W is None:
             N = getattr(self, "number_of_regions", None)
             if N is not None and isinstance(N, int) and N > 0:
-                W = np.ones((N, N))
+                W = np.ones((N, N), dtype=np.float64)
                 np.fill_diagonal(W, 0)
-            else:
-                return None
 
         # Apply normalization from metadata if available and executable
         norm = getattr(self, "normalization", None)
@@ -584,37 +621,47 @@ class Connectome(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
 
-        lm = self.lengths
-        if lm is not None:
-            if getattr(lm, "values", None):
-                x = getattr(lm, "x", None)
-                y = getattr(lm, "y", None)
-                nx_ = (
-                    len(x.values)
-                    if x and getattr(x, "values", None)
-                    else self.number_of_regions
-                )
-                ny_ = (
-                    len(y.values)
-                    if y and getattr(y, "values", None)
-                    else self.number_of_regions
-                )
-                # Type guard: ensure dimensions are valid integers
-                if (
-                    nx_ is not None
-                    and ny_ is not None
-                    and isinstance(nx_, int)
-                    and isinstance(ny_, int)
-                ):
-                    return np.array(lm.values, dtype=float).reshape(nx_, ny_)
-            if getattr(lm, "dataLocation", None):
-                return pd.read_csv(lm.dataLocation, header=None).values.astype(float)  # type: ignore[arg-type,attr-defined]
-        N = getattr(self, "number_of_regions", None)
-        if N is not None and isinstance(N, int) and N > 0:
-            L = np.ones((N, N))
-            np.fill_diagonal(L, 0)
-            return L
-        return None
+        L = None
+
+        # Priority 1: Compute from edges metadata
+        if self.edges:
+            L = self._lengths_from_edges()
+
+        # Priority 2: Use lengths Matrix/array
+        if L is None:
+            lm = self.lengths
+            if lm is not None:
+                if getattr(lm, "values", None):
+                    x = getattr(lm, "x", None)
+                    y = getattr(lm, "y", None)
+                    nx_ = (
+                        len(x.values)
+                        if x and getattr(x, "values", None)
+                        else self.number_of_regions
+                    )
+                    ny_ = (
+                        len(y.values)
+                        if y and getattr(y, "values", None)
+                        else self.number_of_regions
+                    )
+                    if (
+                        nx_ is not None
+                        and ny_ is not None
+                        and isinstance(nx_, int)
+                        and isinstance(ny_, int)
+                    ):
+                        L = np.array(lm.values, dtype=np.float64).reshape(nx_, ny_)
+                elif getattr(lm, "dataLocation", None):
+                    L = pd.read_csv(lm.dataLocation, header=None).values.astype(np.float64)
+
+        # Priority 3: Default matrix
+        if L is None:
+            N = getattr(self, "number_of_regions", None)
+            if N is not None and isinstance(N, int) and N > 0:
+                L = np.ones((N, N), dtype=np.float64)
+                np.fill_diagonal(L, 0)
+
+        return L
 
     @property
     def labels(self) -> Dict[str, str]:
@@ -1384,3 +1431,8 @@ class Connectome(tvbo_datamodel.Network):
         self.normalization = tvbo_datamodel.Equation(
             rhs="(W - W_min) / (W_max - W_min)"
         )
+
+
+
+class Connectome(Network):
+    pass

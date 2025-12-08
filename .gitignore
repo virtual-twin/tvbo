@@ -84,3 +84,6 @@ manuscript/_notes
 manuscript
 docs/Usage/_output
 presentation
+docs/Interoperability/*.ivp
+docs/Interoperability/*.so
+docs/Interoperability/*.f90
