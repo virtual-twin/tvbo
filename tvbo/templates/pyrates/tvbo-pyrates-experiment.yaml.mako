@@ -49,7 +49,7 @@ def render_operator(m, op_name):
             variables[var_name] = f"variable({iv})"
 
     # Output transforms
-    for var_name, ot in (m.output_transforms or {}).items():
+    for var_name, ot in (m.output or {}).items():
         if ot.equation and ot.equation.rhs:
             rhs = convert_rhs(str(ot.equation.rhs))
             equations.append(f"{var_name} = {rhs}")

@@ -39,7 +39,7 @@ class ModelConfiguratorController(http.Controller):
                         'derived_parameters': [],
                         'state_variables': [],
                         'derived_variables': [],
-                        'output_transforms': [],
+                        'output': [],
                         'functions': [],
                         'coupling_terms': [],
                     }
@@ -122,10 +122,10 @@ class ModelConfiguratorController(http.Controller):
                     except Exception as e:
                         _logger.error(f"Error loading derived variables for {model.name}: {e}")
 
-                    # Add output_transforms
+                    # Add output
                     try:
-                        if hasattr(model, 'output_transforms'):
-                            for ot in model.output_transforms:
+                        if hasattr(model, 'output'):
+                            for ot in model.output:
                                 ot_dict = {
                                     'name': ot.name,
                                     'description': ot.description or '',
@@ -136,10 +136,10 @@ class ModelConfiguratorController(http.Controller):
                                         'lhs': ot.equation.lefthandside or '',
                                         'rhs': ot.equation.righthandside or '',
                                     }
-                                model_dict['output_transforms'].append(ot_dict)
-                            _logger.info(f"Added {len(model_dict['output_transforms'])} output transforms")
+                                model_dict['output'].append(ot_dict)
+                            _logger.info(f"Added {len(model_dict['output'])} output transforms")
                     except Exception as e:
-                        _logger.error(f"Error loading output_transforms for {model.name}: {e}")
+                        _logger.error(f"Error loading output for {model.name}: {e}")
 
                     # Add functions
                     try:

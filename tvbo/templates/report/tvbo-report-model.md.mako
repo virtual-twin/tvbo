@@ -13,9 +13,9 @@ state_equations = [eq for k, eq in model.get_equations().items() if k in model.s
 
 derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
 
-output_transforms = [
+output = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.output_transforms.values()
+    for p in model.output.values()
 ]
 
 derived_parameters = [
@@ -45,9 +45,9 @@ ${'\n'.join([f"$$\n{latex(eq, mul_symbol='*')}\n$$" for eq in derived_variables]
 ${"### State Equations"}
 ${'\n'.join([f"$$\n{latex(eq, mul_symbol='*')}\n$$" for eq in state_equations])}
 
-% if output_transforms:
+% if output:
 ${"### Output Transforms"}
-${'\n'.join([f"$$\n{latex(eq, mul_symbol='*')}\n$$" for eq in output_transforms])}
+${'\n'.join([f"$$\n{latex(eq, mul_symbol='*')}\n$$" for eq in output])}
 % endif
 
 ${"### Parameters"}

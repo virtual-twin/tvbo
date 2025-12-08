@@ -392,7 +392,7 @@
       }
 
       // Fill output transforms
-      let ots = item.output_transforms || [];
+      let ots = item.output || [];
       // Handle both array and object formats (YAML can be dict)
       if (!Array.isArray(ots) && typeof ots === 'object') {
         ots = Object.keys(ots).map(key => ({
@@ -574,7 +574,7 @@
         derived_parameters: derivedParams.length ? derivedParams : undefined,
         state_variables: stateVars.length ? stateVars : undefined,
         derived_variables: derivedVars.length ? derivedVars : undefined,
-        output_transforms: outputTransforms.length ? outputTransforms : undefined,
+        output: outputTransforms.length ? outputTransforms : undefined,
         functions: functions.length ? functions : undefined,
         coupling_terms: couplingTerms.length ? couplingTerms : undefined,
       })
@@ -701,9 +701,9 @@
       code += `    ],\n`;
     }
 
-    if (model.output_transforms && model.output_transforms.length > 0) {
-      code += `    'output_transforms': [\n`;
-      model.output_transforms.forEach(ot => {
+    if (model.output && model.output.length > 0) {
+      code += `    'output': [\n`;
+      model.output.forEach(ot => {
         code += `        {\n`;
         code += `            'name': '${ot.name}',\n`;
         if (ot.unit) code += `            'unit': '${ot.unit}',\n`;
@@ -815,9 +815,9 @@
       });
     }
 
-    if (model.output_transforms && model.output_transforms.length > 0) {
-      yaml += `\noutput_transforms:\n`;
-      model.output_transforms.forEach(ot => {
+    if (model.output && model.output.length > 0) {
+      yaml += `\noutput:\n`;
+      model.output.forEach(ot => {
         yaml += `  - name: ${ot.name}\n`;
         if (ot.unit) yaml += `    unit: ${ot.unit}\n`;
         if (ot.equation && ot.equation.rhs) {

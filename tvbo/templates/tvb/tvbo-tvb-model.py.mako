@@ -63,9 +63,9 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 ########## Variables Of Interest ##########
     <%
-    choices = tuple(model.state_variables.keys()) + (tuple(model.output_transforms.keys()) if model.output_transforms else ())
+    choices = tuple(model.state_variables.keys()) + (tuple(model.output.keys()) if model.output else ())
 
-    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + (tuple(model.output_transforms.keys()) if model.output_transforms else ())
+    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + (tuple(model.output.keys()) if model.output else ())
     %>
 
     variables_of_interest = List(
@@ -119,11 +119,11 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 
 ########## OutputTransforms ##########
-% if model.output_transforms:
+% if model.output:
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % for ot in model.output_transforms.values():
+                    % for ot in model.output.values():
                     "    ${ot.name} = ${render(ot)}\n"
                     % endfor
                     "    return numpy.array([{voi_names}])")

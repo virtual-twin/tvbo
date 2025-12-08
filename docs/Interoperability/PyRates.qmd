@@ -28,7 +28,7 @@ TVBO provides seamless bidirectional integration:
 | Differential equations | `equation.rhs` attribute | `var' = rhs` syntax |
 | Initial values | `initial_value` attribute | `variable(value)` |
 | Parameters | `Parameter` objects | Numeric values |
-| Outputs | `output_transforms` | `output` marker |
+| Outputs | `output` | `output` marker |
 | Inputs | `coupling_terms` | `input(value)` marker |
 | Single node | `Dynamics` | `NodeTemplate` |
 | Network | `Network` | `CircuitTemplate` |
@@ -267,11 +267,11 @@ for name, dyn in exp_multi.dynamics.items():
 from IPython.display import Markdown, display
 
 # Run the Tsodyks-Markram model with constant presynaptic input
-tsodyks = exp_multi.dynamics['tsodyks']
+tsodyks = exp_multi.dynamics["tsodyks"]
 
 # Set presynaptic firing rate (r_in is now a parameter since we loaded it)
-if 'r_in' in tsodyks.parameters:
-    tsodyks.parameters['r_in'].value = 20.0  # 20 Hz input
+if "r_in" in tsodyks.parameters:
+    tsodyks.parameters["r_in"].value = 20.0  # 20 Hz input
 
 # Display the rendered code
 print("=== Generated Python Code for Tsodyks Model ===")
@@ -279,8 +279,7 @@ print(tsodyks.render_code(format="python"))
 
 # Create experiment
 synapse_exp = SimulationExperiment(
-    local_dynamics=tsodyks,
-    integration=Integrator(duration=1000.0, step_size=0.1),
+    local_dynamics=tsodyks
 )
 
 # Display experiment configuration
@@ -296,23 +295,23 @@ x = result.data[:, 0, 0, 0]  # synaptic resources
 u = result.data[:, 1, 0, 0]  # utilization factor
 
 axes[0].plot(time, x)
-axes[0].set_xlabel('Time (ms)')
-axes[0].set_ylabel('x')
-axes[0].set_title('Synaptic Resources (x)')
+axes[0].set_xlabel("Time (ms)")
+axes[0].set_ylabel("x")
+axes[0].set_title("Synaptic Resources (x)")
 
 axes[1].plot(time, u)
-axes[1].set_xlabel('Time (ms)')
-axes[1].set_ylabel('u')
-axes[1].set_title('Utilization Factor (u)')
+axes[1].set_xlabel("Time (ms)")
+axes[1].set_ylabel("u")
+axes[1].set_title("Utilization Factor (u)")
 
 # Effective rate = r_in * x * u
 r_in = 20.0
 r_eff = r_in * x * u
 axes[2].plot(time, r_eff)
-axes[2].set_xlabel('Time (ms)')
-axes[2].set_ylabel('r_eff')
-axes[2].set_title('Effective Rate (r_in × x × u)')
-axes[2].axhline(r_in, color='gray', linestyle='--', label='Input rate')
+axes[2].set_xlabel("Time (ms)")
+axes[2].set_ylabel("r_eff")
+axes[2].set_title("Effective Rate (r_in × x × u)")
+axes[2].axhline(r_in, color="gray", linestyle="--", label="Input rate")
 axes[2].legend()
 
 plt.tight_layout()
@@ -334,7 +333,7 @@ from IPython.display import Markdown, display
 # Define identical model
 mu_value = 3.0
 T = 50.0
-dt = 0.01
+dt = 0.001  # Smaller step size for better accuracy
 
 # Create TVBO model
 vdp_compare = Dynamics("Dynamics")
@@ -346,110 +345,49 @@ vdp_compare.add_state_variable("z", equation="mu*(1 - x**2)*z - x", initial_valu
 # Display model report
 display(Markdown(vdp_compare.generate_report(format="markdown")))
 
-# Run in TVBO
-exp_compare = SimulationExperiment(
-    local_dynamics=vdp_compare,
-    integration=Integrator(duration=T, step_size=dt),
-)
+# Run in TVBO (uses Heun by default)
+exp_compare = SimulationExperiment(local_dynamics=vdp_compare)
+exp_compare.integration.duration = T
+exp_compare.integration.step_size = dt
 tvbo_result = exp_compare.run()
 
-# Run in PyRates
-os.makedirs('_compare', exist_ok=True)
-with open('_compare/__init__.py', 'w') as f:
-    f.write('')
-vdp_compare.to_yaml(format="pyrates", filepath='_compare/model.yaml')
+# Run in PyRates with same solver (heun)
+os.makedirs("_compare", exist_ok=True)
+with open("_compare/__init__.py", "w") as f:
+    f.write("")
+vdp_compare.to_yaml(format="pyrates", filepath="_compare/model.yaml")
 
-pyrates_model = CircuitTemplate.from_yaml('_compare.model.VdP_circuit')
+pyrates_model = CircuitTemplate.from_yaml("_compare.model.VdP_circuit")
 pyrates_result = pyrates_model.run(
     step_size=dt,
-    simulation_time=T,
-    outputs={'x': 'p/VdP_op/x', 'z': 'p/VdP_op/z'},
-    solver='scipy',
-    method='RK45'
+    simulation_time=T + dt,
+    outputs={"x": "p/VdP_op/x", "z": "p/VdP_op/z"},
+    solver="heun",  # Use same solver as TVBO
 )
 clear(pyrates_model)
-shutil.rmtree('_compare')
+shutil.rmtree("_compare")
 
 # Compare
 tvbo_x = tvbo_result.data[:, 0, 0, 0]
 tvbo_z = tvbo_result.data[:, 1, 0, 0]
-pyrates_x = pyrates_result['x'].values.flatten()
-pyrates_z = pyrates_result['z'].values.flatten()
 
-# Align lengths (PyRates may have different sampling)
-min_len = min(len(tvbo_x), len(pyrates_x))
+fig, axes = plt.subplots(1, 2, layout='compressed')
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-
-axes[0].plot(tvbo_result.time[:min_len], tvbo_x[:min_len], label='TVBO')
-axes[0].plot(pyrates_result.index[:min_len], pyrates_x[:min_len], '--', label='PyRates', alpha=0.8)
-axes[0].set_xlabel('Time (ms)')
-axes[0].set_ylabel('x')
-axes[0].set_title('State Variable x')
+axes[0].plot(tvbo_result.time, tvbo_x, label="TVBO")
+axes[0].plot(pyrates_result["x"], "--", label="PyRates", alpha=0.8)
+axes[0].set_xlabel("Time (ms)")
+axes[0].set_ylabel("x")
+axes[0].set_title("State Variable x")
 axes[0].legend()
 
-axes[1].plot(tvbo_result.time[:min_len], tvbo_z[:min_len], label='TVBO')
-axes[1].plot(pyrates_result.index[:min_len], pyrates_z[:min_len], '--', label='PyRates', alpha=0.8)
-axes[1].set_xlabel('Time (ms)')
-axes[1].set_ylabel('z')
-axes[1].set_title('State Variable z')
+axes[1].plot(tvbo_result.time, tvbo_z, label="TVBO")
+axes[1].plot(pyrates_result["z"], "--", label="PyRates", alpha=0.8)
+axes[1].set_xlabel("Time (ms)")
+axes[1].set_ylabel("z")
+axes[1].set_title("State Variable z")
 axes[1].legend()
 
-# Difference plot
-x_diff = np.abs(tvbo_x[:min_len] - pyrates_x[:min_len])
-z_diff = np.abs(tvbo_z[:min_len] - pyrates_z[:min_len])
-axes[2].semilogy(tvbo_result.time[:min_len], x_diff, label='|Δx|')
-axes[2].semilogy(tvbo_result.time[:min_len], z_diff, label='|Δz|', alpha=0.8)
-axes[2].set_xlabel('Time (ms)')
-axes[2].set_ylabel('Absolute Difference')
-axes[2].set_title('TVBO vs PyRates Difference')
-axes[2].legend()
+for ax in fig.axes:
+    ax.set_box_aspect(1)
 
-plt.tight_layout()
-plt.show()
-
-print(f"\nMax difference in x: {np.max(x_diff):.2e}")
-print(f"Max difference in z: {np.max(z_diff):.2e}")
-print(f"Note: Differences are due to different solvers (TVBO uses Heun, PyRates uses RK45)")
 ```
-
-## API Reference
-
-### Export Functions
-
-```python
-from tvbo.export.pyrates import (
-    to_pyrates_model_yaml,    # OperatorTemplate only
-    to_pyrates_network_yaml,  # NodeTemplate + CircuitTemplate
-    to_pyrates_yaml_string,   # Complete experiment
-    from_pyrates_yaml,        # Import single operator
-    from_pyrates_yaml_all,    # Import all operators as dict
-)
-
-# Direct export from Dynamics
-model.to_yaml(format="pyrates")
-model.to_yaml(format="pyrates", filepath="model.yaml")
-```
-
-### Import Functions
-
-```python
-# Single operator (first found or specified by key)
-model = Dynamics.from_pyrates("model.yaml")
-model = Dynamics.from_pyrates("model.yaml", operator_key="specific_op")
-
-# All operators as SimulationExperiment
-exp = SimulationExperiment.from_pyrates("multi_operator.yaml")
-# Access by name: exp.dynamics['operator_name']
-```
-
-## Next Steps
-
-- [PyRates Analysis](PyRates_Analysis.qmd): Parameter sweeps and grid search
-- [PyRates Bifurcation](PyRates_Bifurcation.qmd): Continuation and bifurcation analysis
-
-## References
-
-- [PyRates Documentation](https://pyrates.readthedocs.io/)
-- [PyRates Template Specification](https://pyrates.readthedocs.io/en/latest/template_specification.html)
-- [Gast, R., Knösche, T. R. & Kennedy, A. (2023). PyRates - A Code-Generation Tool for Dynamical Systems Modeling. PLOS Computational Biology 19 (12), e1011761.](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011761)

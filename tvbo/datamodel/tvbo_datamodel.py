@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-08T13:56:35
+# Generation date: 2025-12-08T18:42:53
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -919,7 +919,7 @@ class Dynamics(YAMLRoot):
     coupling_inputs: Optional[Union[dict[Union[str, CouplingInputName], Union[dict, "CouplingInput"]], list[Union[dict, "CouplingInput"]]]] = empty_dict()
     state_variables: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
     modified: Optional[Union[bool, Bool]] = None
-    output_transforms: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    output: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
     derived_from_model: Optional[Union[str, NeuralMassModelName]] = None
     number_of_modes: Optional[int] = 1
     local_coupling_term: Optional[Union[str, ParameterName]] = None
@@ -968,7 +968,7 @@ class Dynamics(YAMLRoot):
         if self.modified is not None and not isinstance(self.modified, Bool):
             self.modified = Bool(self.modified)
 
-        self._normalize_inlined_as_dict(slot_name="output_transforms", slot_type=DerivedVariable, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="output", slot_type=DerivedVariable, key_name="name", keyed=True)
 
         if self.derived_from_model is not None and not isinstance(self.derived_from_model, NeuralMassModelName):
             self.derived_from_model = NeuralMassModelName(self.derived_from_model)
@@ -3862,8 +3862,8 @@ slots.dynamics__state_variables = Slot(uri=TVBO.state_variables, name="dynamics_
 slots.dynamics__modified = Slot(uri=TVBO.modified, name="dynamics__modified", curie=TVBO.curie('modified'),
                    model_uri=TVBO.dynamics__modified, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.dynamics__output_transforms = Slot(uri=TVBO.output_transforms, name="dynamics__output_transforms", curie=TVBO.curie('output_transforms'),
-                   model_uri=TVBO.dynamics__output_transforms, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+slots.dynamics__output = Slot(uri=TVBO.output, name="dynamics__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.dynamics__output, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.dynamics__derived_from_model = Slot(uri=TVBO.derived_from_model, name="dynamics__derived_from_model", curie=TVBO.curie('derived_from_model'),
                    model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[str, NeuralMassModelName]])

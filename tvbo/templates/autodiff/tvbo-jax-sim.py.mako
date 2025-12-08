@@ -162,7 +162,7 @@ def kernel(state):
     vois = [sv.name for sv in experiment.local_dynamics.state_variables.values() if sv.variable_of_interest]
     svars = [sv.name for sv in experiment.local_dynamics.state_variables.values()]
     svars_is_vois = svars == vois
-    has_output_transforms = len(experiment.local_dynamics.output_transforms) > 0
+    has_output_transforms = len(experiment.local_dynamics.output) > 0
     %>
     ## Generate expressions for derived variables and potentially remove and reorder state variables
     % if not svars_is_vois or has_output_transforms:
@@ -183,7 +183,7 @@ def kernel(state):
     ${var} = ${utils.generate_derived_expression(var, svars)}
         % endif
     % endfor
-    % for trafo in experiment.local_dynamics.output_transforms.values():
+    % for trafo in experiment.local_dynamics.output.values():
     ${trafo.name} = ${jaxcode(trafo.equation.rhs)}
     % endfor
 
@@ -191,7 +191,7 @@ def kernel(state):
         % for var in vois:
             ${var},
         % endfor
-        % for trafo in experiment.local_dynamics.output_transforms.values():
+        % for trafo in experiment.local_dynamics.output.values():
             ${trafo.name},
         % endfor
         ))
@@ -212,7 +212,7 @@ def kernel(state):
     ## Build labels for TimeSeries so indexing and plotting work robustly
     labels_dimensions = {
         "Time": None,
-        "State Variable": ${(vois + [trafo.name for trafo in experiment.local_dynamics.output_transforms.values()])},
+        "State Variable": ${(vois + [trafo.name for trafo in experiment.local_dynamics.output.values()])},
         "Space": ${list(experiment.network.parcellation.region_labels) if getattr(experiment.network.parcellation, 'region_labels', None) else [str(i) for i in range(experiment.network.number_of_regions)]},
         "Mode": ${[f"m{i}" for i in range(experiment.local_dynamics.number_of_modes)]},
     }
