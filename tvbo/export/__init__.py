@@ -10,4 +10,25 @@
 TVB-O Export
 ============
 
+Provides export functionality for TVBO models to various formats:
+
+- TVB (The Virtual Brain)
+- JAX (autodiff)
+- Julia (DifferentialEquations.jl, BifurcationKit.jl)
+- PyRates (YAML templates)
+- LEMS (NeuroML)
+- PDE-FEM (scikit-fem)
+
 """
+
+from tvbo.export.pyrates import (
+    # Complete experiment (model + network, ready to run)
+    to_pyrates_yaml_string,
+    # Modular exports
+    to_pyrates_model_yaml,      # OperatorTemplate only (dynamics)
+    to_pyrates_network_yaml,    # NodeTemplate + CircuitTemplate (topology)
+    # Import
+    from_pyrates_yaml,
+    # Alias
+    network_to_pyrates_yaml_string,
+)
