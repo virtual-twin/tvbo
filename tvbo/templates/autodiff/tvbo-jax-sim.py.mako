@@ -11,7 +11,7 @@
     # This enables vmapping over sigma by passing it through SimulationState.noise.sigma_vec.
     stochastic = True
     import builtins as _builtins
-    any_delays = experiment.horizon > 1
+    is_delayed = experiment.horizon > 1
     # Obtain monitors regardless of whether experiment.monitors is a field (dict/list) or a method
     _mon = getattr(experiment, 'monitors', None)
     try:
@@ -29,7 +29,7 @@
     svars = list(model.state_variables.keys())
     svars_is_vois = svars == vois
 
-    ## print('simulation delayed:', any_delays)
+    ## print('simulation delayed:', is_delayed)
 %>
 
 import jax
@@ -88,7 +88,7 @@ def kernel(state):
     n_modes = ${experiment.local_dynamics.number_of_modes}
     nh = ${experiment.horizon}
 
-    %if any_delays:
+    %if is_delayed:
     %if len(cvar) > 0:
     current_state, history = (state.initial_conditions.data[-1], state.initial_conditions.data[-nh:, c_vars].transpose(1, 0, 2, 3))
     %else:
@@ -144,7 +144,7 @@ def kernel(state):
     ## new_ics = ics(latest_carry[1], latest_carry[0])
     ## % else:
     ## new_current_state = trace[-1, :, :, :]
-    ## % if any_delays:
+    ## % if is_delayed:
     ## cvar = ${utils.array_input(np.array(cvar))}
     ## new_history = jnp.transpose(trace[-nh:, cvar, :, :], (1, 0, 2, 3))
     ## % else:
