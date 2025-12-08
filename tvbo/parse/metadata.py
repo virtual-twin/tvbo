@@ -344,20 +344,22 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
 
     # Parameters: prefer explicit TVB lists, fallback to summary_info
     try:
-        for p in getattr(sim.model, "global_parameter_names", []) or []:
+        p_names = getattr(sim.model, "global_parameter_names", []) + getattr(sim.model, "spatial_parameter_names", [])
+        if not p_names:
+            raise Exception("No parameters found in model .global_parameter_names and .spatial_parameter_names.")
+        for p in p_names:
             try:
                 val = getattr(sim.model, p)
                 val = val[0] if hasattr(val, "__len__") and len(val) > 0 else val
             except Exception:
+                print(f"Failed to parse parameter {p}")
                 val = None
             model_metadata.parameters[p] = tvbo_datamodel.Parameter(name=p, value=val)
 
-        for p in getattr(sim.model, "local_parameter_names", []) or []:
-            model_metadata.parameters[p] = tvbo_datamodel.Parameter(
-                name=p, value=getattr(sim.model, p)
-            )
-    except Exception:
+    except Exception as e:
+        print(f"{e} Falling back to summary_info.")
         for k, v in dict(getattr(sim.model, "summary_info", lambda: {})()).items():
+
             if k in {
                 "Type",
                 "title",
@@ -367,7 +369,8 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
                 "gid",
             }:
                 continue
-            model_metadata.parameters[k] = tvbo_datamodel.Parameter(name=k, value=v)
+            val = getattr(sim.model, k) # We need to get vals as summary contains statistics for heterogenous parameters
+            model_metadata.parameters[k] = tvbo_datamodel.Parameter(name=k, value=val)
 
     # State variables with domains/boundaries and optional initial conditions
     for i, sv in enumerate(getattr(sim.model, "state_variables", []) or []):

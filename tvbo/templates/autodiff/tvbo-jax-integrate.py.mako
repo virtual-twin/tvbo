@@ -11,7 +11,7 @@ else:
     raise ValueError("No integration metadata found")
 
 stochastic = integration.noise is not None
-delayed = integration.delayed
+is_delayed = integration.delayed
 
 ## Potential boundaries for clamping
 boundaries = [
@@ -113,7 +113,7 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
 
 
 ## Return for scan: carry, result
-% if delayed:
+% if is_delayed:
     <%
     cvar_list = [i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]
     %>
