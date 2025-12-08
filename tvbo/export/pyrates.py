@@ -292,10 +292,17 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
 
                 initial_value = None
                 var_spec = variables.get(var_name)
-                if isinstance(var_spec, str) and "variable(" in var_spec:
-                    iv_match = re.search(r"variable\(([\d.e+-]+)\)", var_spec)
-                    if iv_match:
-                        initial_value = float(iv_match.group(1))
+                if isinstance(var_spec, str):
+                    # Handle variable(value) syntax
+                    if "variable(" in var_spec:
+                        iv_match = re.search(r"variable\(([\d.e+-]+)\)", var_spec)
+                        if iv_match:
+                            initial_value = float(iv_match.group(1))
+                    # Handle output(value) syntax - still a state variable with initial value
+                    elif "output(" in var_spec:
+                        iv_match = re.search(r"output\(([\d.e+-]+)\)", var_spec)
+                        if iv_match:
+                            initial_value = float(iv_match.group(1))
 
                 state_variables[var_name] = {
                     "name": var_name,
@@ -309,7 +316,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
                     rhs = _pyrates_to_python_expr(match.group(2))
 
                     var_spec = variables.get(var_name)
-                    if var_spec == "output":
+                    if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
                         output_transforms[var_name] = {
                             "name": var_name,
                             "equation": {"lhs": var_name, "rhs": rhs},
@@ -389,10 +396,17 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
 
             initial_value = None
             var_spec = variables.get(var_name)
-            if isinstance(var_spec, str) and "variable(" in var_spec:
-                iv_match = re.search(r"variable\(([\d.e+-]+)\)", var_spec)
-                if iv_match:
-                    initial_value = float(iv_match.group(1))
+            if isinstance(var_spec, str):
+                # Handle variable(value) syntax
+                if "variable(" in var_spec:
+                    iv_match = re.search(r"variable\(([\d.e+-]+)\)", var_spec)
+                    if iv_match:
+                        initial_value = float(iv_match.group(1))
+                # Handle output(value) syntax - still a state variable with initial value
+                elif "output(" in var_spec:
+                    iv_match = re.search(r"output\(([\d.e+-]+)\)", var_spec)
+                    if iv_match:
+                        initial_value = float(iv_match.group(1))
 
             state_variables[var_name] = {
                 "name": var_name,
@@ -406,7 +420,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
                 rhs = _pyrates_to_python_expr(match.group(2))
 
                 var_spec = variables.get(var_name)
-                if var_spec == "output":
+                if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
                     output_transforms[var_name] = {
                         "name": var_name,
                         "equation": {"lhs": var_name, "rhs": rhs},
