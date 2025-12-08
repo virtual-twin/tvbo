@@ -8,7 +8,7 @@
 
 QIF_op:
   base: OperatorTemplate
-  description: "TVBO model: QIF"
+  description: "Quadratic Integrate-and-Fire (QIF) population mean-field model."
   equations:
     - "r' = Delta/(pi*tau) + 2*r*v"
     - "v' = J*r*tau + eta - pi**2*r**2*tau**2 + v**2"
@@ -17,8 +17,8 @@ QIF_op:
     v: variable(-2.0)
     tau: 1.0
     eta: -5.0
-    J: 15.0
     Delta: 1.0
+    J: 15.0
 
 # NODES (Network Topology)
 

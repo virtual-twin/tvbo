@@ -1,95 +1,77 @@
 ---
-title: PyRates Bifurcation Analysis with AUTO-07p
+title: Parameter Continuation and Bifurcation Detection with TVBO
 jupyter: python3
 ---
 
-This tutorial demonstrates how to perform 1D numerical parameter continuation in PyRates with automatic fold bifurcation detection using AUTO-07p.
-
-## Overview
-
-We use the Quadratic Integrate-and-Fire (QIF) population mean-field model:
-
-$$
-\tau \dot{r} = \frac{\Delta}{\pi\tau} + 2rv
-$$
-$$
-\tau \dot{v} = v^2 + \bar\eta + I(t) + Jr\tau - (\pi r\tau)^2
-$$
-
-where $r$ is the average firing rate and $v$ is the average membrane potential. Parameters:
-
-- $\tau$ → population time constant
-- $\bar\eta$ → mean neural excitability (Lorentzian distribution)
-- $\Delta$ → half-width at half maximum of the excitability distribution
-- $J$ → recurrent coupling strength
-
-**References:**
-
-- Montbrió, E., Pazó, D., & Roxin, A. (2015). Macroscopic description for networks of spiking neurons. Physical Review X, 5, 021028.
-- Doedel, E.J. et al. (2007). Auto-07p: Continuation and bifurcation software for ordinary differential equations.
-
-## Requirements
-
-```bash
-pip install pyrates pycobi
-# AUTO-07p must be installed separately
-```
-
-## Setup
+In this tutorial, you will learn how to perform a 1D numerical parameter continuation with automatic fold bifurcation detection using TVBO for model specification and PyRates/PyCoBi for the continuation analysis.
 
 ```{python}
 import os
+
 import matplotlib.pyplot as plt
-from pyrates import CircuitTemplate
 from pycobi import ODESystem
-
-# Set AUTO-07p directory (adjust to your installation)
-auto_dir = os.path.expanduser("~/auto-07p")
-```
-
-## Part 1: Creating a PyCoBi Instance
-
-### Step 1: Define Model in TVBO and Export to PyRates
-
-```{python}
+from pyrates import CircuitTemplate
+from IPython.display import Markdown
 from tvbo import Dynamics
-from IPython.display import Markdown, display
 
-# QIF mean-field model
-qif_tvbo = Dynamics("Dynamics")
-qif_tvbo.name = "QIF"
+qif_model = Dynamics.from_string(
+    """
+name: QIF
+description: Quadratic Integrate-and-Fire (QIF) population mean-field model.
+parameters:
+    tau:
+        value: 1.0
+        description: Population time constant
+    eta:
+        value: -5.0
+        description: mean of a Lorentzian distribution over the neural excitability
+    Delta:
+        value: 1.0
+        description: half-width of a Lorentzian distribution over the neural excitability
+    J:
+        value: 15.0
+        description: strength of the recurrent coupling inside the population
+    
+state_variables:
+    r:
+        description:  Average firing rate
+        equation:
+            rhs: Delta/(tau*pi) + 2*r*v
+        initial_value: 0.1
+    v:
+        description: Average membrane potential
+        equation:
+            rhs: v**2 + eta + J*r*tau - (pi*r*tau)**2
+        initial_value: -2.0
 
-qif_tvbo.add_parameter("tau", value=1.0, description="Time constant")
-qif_tvbo.add_parameter("eta", value=-5.0, description="Background drive")
-qif_tvbo.add_parameter("J", value=15.0, description="Coupling strength")
-qif_tvbo.add_parameter("Delta", value=1.0, description="Heterogeneity width")
+references:
+    - Montbriot2015
+"""
+)
 
-qif_tvbo.add_state_variable("r", equation="Delta/(tau*pi) + 2*r*v", initial_value=0.1)
-qif_tvbo.add_state_variable("v", equation="v**2 + eta + J*r*tau - (pi*r*tau)**2", initial_value=-2.0)
-
-# Display model summary
-display(Markdown(qif_tvbo.generate_report(format="markdown")))
+Markdown(qif_model.generate_report())
 ```
 
 ```{python}
-# Export to PyRates format
-os.makedirs('_continuation', exist_ok=True)
-with open('_continuation/__init__.py', 'w') as f:
+# Export to PyRates YAML format
+os.makedirs('_qif_model', exist_ok=True)
+with open('_qif_model/__init__.py', 'w') as f:
     f.write('')
-qif_tvbo.to_yaml(format="pyrates", filepath='_continuation/qif.yaml')
 
-print("Model exported to _continuation/qif.yaml")
-print("\n=== Generated Python Code ===")
-print(qif_tvbo.render_code(format="python"))
+qif_model.to_yaml(format="pyrates", filepath='_qif_model/qif.yaml')
+print("Model exported to PyRates format")
 ```
 
-### Step 2: Load Model and Generate Fortran Routines for AUTO-07p
+### Step 2: Generate Fortran Routines for AUTO-07p
+
+Next, we translate the model into a Fortran file containing all subroutines required by AUTO-07p. This requires using the Fortran backend of PyRates with `vectorize=False`:
 
 ```{python}
-# Load the exported model into PyRates
-qif = CircuitTemplate.from_yaml("_continuation.qif.QIF_circuit")
+# Load the TVBO-exported model into PyRates
+qif = CircuitTemplate.from_yaml("_qif_model.qif.QIF_circuit")
 
 # Generate Fortran file with AUTO-07p subroutines
+# Setting auto=True creates two files: .f90 (Fortran code) and c.ivp (AUTO constants)
 qif.get_run_func(
     func_name='qif_rhs',
     file_name='qif',
@@ -100,55 +82,51 @@ qif.get_run_func(
     vectorize=False,
     float_precision='float64'
 )
-
-print("Fortran routines generated for AUTO-07p")
 ```
 
-### Step 3: Inspect Generated Files
+Calling `get_run_func` with `auto=True` creates two files. The first is a `.f90` file containing the Fortran subroutines:
 
 ```{python}
-# Inspect the generated Fortran file
-print("=== Fortran file (qif.f90) ===")
-with open('qif.f90', 'r') as f:
-    print(f.read())
+f = open('qif.f90', 'r')
+print(f.read())
+f.close()
 ```
+
+The second file contains the AUTO-07p parameters that determine how it performs parameter continuations:
 
 ```{python}
-# Inspect the AUTO-07p constants file
-print("=== AUTO-07p constants file (c.ivp) ===")
-with open('c.ivp', 'r') as f:
-    print(f.read())
+f = open('c.ivp', 'r')
+print(f.read())
+f.close()
 ```
 
-### Step 4: Create PyCoBi ODESystem Instance
+The default parameters allow solving the initial value problem (performing simulations). For detailed explanation of these parameters, see the [AUTO-07p documentation](https://github.com/auto-07p/auto-07p).
+
+### Step 3: Generate a PyCoBi Instance
+
+Now that the model equations are compiled, we generate an instance of `pycobi.ODESystem`, which provides an interface to AUTO-07p:
 
 ```{python}
-# Create PyCoBi instance for continuation
-qif_auto = ODESystem(eq_file="qif", working_dir=None, auto_dir=auto_dir, init_cont=False)
-
-print("PyCoBi ODESystem created successfully")
+qif_auto = ODESystem(eq_file="qif", working_dir=None, init_cont=False)
 ```
+
+Now we can use all tools provided by AUTO-07p to investigate how the model reacts to changes in its parameterization.
 
 ## Part 2: Performing Parameter Continuations
 
-### Step 1: Time Continuation (Find Equilibrium)
+### Step 1: Time Continuation
 
-Before parameter continuation, we must start from an equilibrium. We run a time continuation to let the system converge:
+In parameter continuations, we must start from an equilibrium or periodic orbit. We run a time continuation to let the system converge to an equilibrium:
 
 ```{python}
-# Time continuation to find equilibrium
+# Time continuation: integrate until system converges to equilibrium
 t_sols, t_cont = qif_auto.run(
-    c='ivp',
-    name='time',
-    DS=1e-4,
-    DSMIN=1e-10,
-    EPSL=1e-08,
-    EPSU=1e-08,
-    EPSS=1e-06,
-    DSMAX=1e-2,
+    c='ivp', name='time',
+    DS=1e-4, DSMIN=1e-10, DSMAX=1e-2,
+    EPSL=1e-08, EPSU=1e-08, EPSS=1e-06,
     NMX=1000,
-    UZR={14: 4.0},  # Stop at t=4.0
-    STOP={'UZ1'}
+    UZR={14: 4.0},   # Create marker when time (PAR 14) reaches 4.0
+    STOP={'UZ1'}     # Stop at first user marker
 )
 
 # Plot time evolution
@@ -157,165 +135,88 @@ plt.xlabel('Time')
 plt.ylabel('r (firing rate)')
 plt.title('Time Evolution to Equilibrium')
 plt.show()
-
-print("\nSystem converged to equilibrium!")
-print(f"Final r = {t_sols['U(1)'].iloc[-1]:.6f}")
-print(f"Final v = {t_sols['U(2)'].iloc[-1]:.6f}")
 ```
 
-**Key parameters explained:**
+Key parameters explained:
 
-- `DS=1e-4`: Initial step-size (ms)
-- `DSMIN=1e-10`: Minimum step-size (ms)
-- `DSMAX=1e-2`: Maximum step-size (ms)
-- `NMX=1000`: Maximum continuation steps
-- `UZR={14: 4.0}`: Create marker when time (parameter 14) reaches 4.0
+- `DS=1e-4`: Initial step-size (in time units)
+- `DSMIN=1e-10`: Minimum step-size
+- `DSMAX=1e-2`: Maximum step-size
+- `NMX=1000`: Maximum number of continuation steps
+- `UZR={14: 4.0}`: Create user marker when parameter 14 (time) reaches 4.0
 - `STOP={'UZ1'}`: Stop at first user marker
 
-### Step 2: Continuation in η (Background Drive)
+The values for `U(1)` and `U(2)` converged to certain values, representing $r$ and $v$ at equilibrium.
 
-Now we continue the equilibrium in the bifurcation parameter $\bar\eta$:
+### Step 2: Continuation of $\bar\eta$
+
+Now we perform the parameter continuation in $\bar\eta$:
 
 ```{python}
-# Parameter continuation in eta
+# Parameter continuation in eta (parameter 4)
 eta_sols, eta_cont = qif_auto.run(
-    origin=t_cont,
-    starting_point='UZ1',
-    name='eta',
+    origin=t_cont, starting_point='UZ1', name='eta',
     bidirectional=True,
     ICP=4,              # Continue parameter 4 (eta)
     RL0=-20.0,          # Lower bound for eta
     RL1=20.0,           # Upper bound for eta
     IPS=1,              # Equilibrium continuation
     ILP=1,              # Detect fold bifurcations
-    ISP=2,              # Full bifurcation detection
-    ISW=1,              # Branch switching
-    NTST=400,           # Mesh intervals
-    NCOL=4,             # Collocation points
-    IAD=3,              # Mesh adaptation
-    IPLT=0,             # Plotting parameter
-    NBC=0,              # Boundary conditions
-    NINT=0,             # Integral conditions
-    NMX=2000,           # Max continuation steps
-    NPR=10,             # Print every N steps
-    MXBF=5,             # Max branch switches
-    IID=2,              # Diagnostic output
-    ITMX=40,            # Max iterations
-    ITNW=40,            # Newton iterations
-    NWTN=12,            # Newton corrections
-    JAC=0,              # Jacobian computation
-    EPSL=1e-06,         # Tolerance (left)
-    EPSU=1e-06,         # Tolerance (right)
-    EPSS=1e-04,         # Tolerance (steady)
-    DS=1e-4,            # Initial step-size
-    DSMIN=1e-8,         # Min step-size
-    DSMAX=5e-2,         # Max step-size
-    IADS=1,             # Step-size adaptation
-    THL={},             # Parameter weights
-    THU={},             # Variable weights
-    UZR={},             # User markers
-    STOP={}             # Stop conditions
+    ISP=2,              # Full automatic bifurcation detection
+    ISW=1, NTST=400, NCOL=4, IAD=3, IPLT=0, NBC=0, NINT=0,
+    NMX=2000, NPR=10, MXBF=5, IID=2, ITMX=40, ITNW=40, NWTN=12, JAC=0,
+    EPSL=1e-06, EPSU=1e-06, EPSS=1e-04,
+    DS=1e-4, DSMIN=1e-8, DSMAX=5e-2, IADS=1,
+    THL={}, THU={}, UZR={}, STOP={}
 )
-
-print("Parameter continuation complete!")
-print(f"Number of solutions found: {len(eta_sols)}")
 ```
 
-**Key parameters explained:**
+Key parameters explained:
 
 - `origin=t_cont`: Start from time continuation branch
 - `starting_point='UZ1'`: Start from first user marker
-- `bidirectional=True`: Continue in both directions
-- `ICP=4`: Parameter index for η
+- `bidirectional=True`: Continue in both positive and negative directions
+- `ICP=4`: Parameter index for $\bar\eta$ (4th parameter in Fortran file)
 - `RL0=-20.0`, `RL1=20.0`: Parameter bounds
+- `IPS=1`: Indicates equilibrium continuation of an ODE system
 - `ILP=1`: Enable fold bifurcation detection
 - `ISP=2`: Full automatic bifurcation detection
 
+The output shows `LP` in column `TY` for some solutions, indicating **limit point** (fold) bifurcations.
+
 ## Part 3: Bifurcation Diagram
 
-### Plot the Bifurcation Diagram
+We can visualize the full bifurcation diagram:
 
 ```{python}
 # Plot bifurcation diagram
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig, axes = plt.subplots(1, 2, layout="compressed", figsize=(10, 5))
 
 # Firing rate vs eta
 ax = axes[0]
-qif_auto.plot_continuation('PAR(4)', 'U(1)', cont='eta', ax=ax)
-ax.set_xlabel('η (Background drive)')
-ax.set_ylabel('Firing rate r')
-ax.set_title('QIF Bifurcation Diagram: Firing Rate')
-ax.grid(True, alpha=0.3)
+qif_auto.plot_continuation("PAR(4)", "U(1)", cont="eta", ax=ax)
+ax.set_xlabel("η (Background drive)")
+ax.set_ylabel("Firing rate r")
+ax.set_title("QIF Bifurcation Diagram: Firing Rate")
 
 # Membrane potential vs eta
 ax = axes[1]
-qif_auto.plot_continuation('PAR(4)', 'U(2)', cont='eta', ax=ax)
-ax.set_xlabel('η (Background drive)')
-ax.set_ylabel('Membrane potential v')
-ax.set_title('QIF Bifurcation Diagram: Voltage')
-ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
+qif_auto.plot_continuation("PAR(4)", "U(2)", cont="eta", ax=ax)
+ax.set_xlabel("η (Background drive)")
+ax.set_ylabel("Membrane potential v")
+ax.set_title("QIF Bifurcation Diagram: Voltage")
 plt.show()
 ```
 
 ### Interpreting the Diagram
 
-The bifurcation diagram shows:
+The curve represents the value of $r$ (y-axis) at equilibrium solutions for each value of $\bar\eta$ (x-axis):
 
 - **Solid line**: Stable equilibrium
 - **Dotted line**: Unstable equilibrium
 - **Triangles (LP)**: Fold (limit point) bifurcations
 
-At a fold bifurcation, the critical eigenvalue crosses the imaginary axis, indicating a change in stability. A stable and unstable equilibrium collide and annihilate each other.
-
-```{python}
-# Extract bifurcation points
-print("\n=== Detected Bifurcations ===")
-for idx, row in eta_sols.iterrows():
-    if 'LP' in str(row.get('TY', '')):
-        eta_val = row['PAR(4)']
-        r_val = row['U(1)']
-        v_val = row['U(2)']
-        print(f"Fold bifurcation at η = {eta_val:.4f}, r = {r_val:.4f}, v = {v_val:.4f}")
-```
-
-## Summary
-
-This tutorial demonstrated the complete workflow for bifurcation analysis:
-
-1. **Define** model in TVBO with `Dynamics`
-2. **Export** to PyRates format with `to_yaml(format="pyrates")`
-3. **Generate** Fortran routines with `get_run_func(auto=True)`
-4. **Create** PyCoBi instance with `ODESystem`
-5. **Time continuation** to find equilibrium
-6. **Parameter continuation** with automatic bifurcation detection
-7. **Visualize** bifurcation diagram
-
-### Key Functions
-
-```python
-from pyrates import CircuitTemplate
-from pycobi import ODESystem
-
-# Generate AUTO-07p compatible files
-circuit.get_run_func(auto=True, backend='fortran', ...)
-
-# Create PyCoBi instance
-ode = ODESystem(eq_file="name", auto_dir="path/to/auto-07p")
-
-# Time continuation (find equilibrium)
-t_sols, t_cont = ode.run(c='ivp', name='time', UZR={14: T}, STOP={'UZ1'})
-
-# Parameter continuation with bifurcation detection
-sols, cont = ode.run(origin=t_cont, starting_point='UZ1', ICP=param_idx,
-                     ILP=1, ISP=2, bidirectional=True, ...)
-
-# Plot bifurcation diagram
-ode.plot_continuation('PAR(idx)', 'U(var)', cont='name')
-```
-
-## Cleanup
+At a fold bifurcation, the critical eigenvalue of the vector field crosses the imaginary axis (its real part changes sign), indicating a change of stability. A stable and unstable equilibrium approach and annihilate each other.
 
 ```{python}
 import shutil
@@ -337,3 +238,4 @@ print("Cleaned up temporary files")
 - [PyCoBi Documentation](https://github.com/pyrates-neuroscience/PyCoBi)
 - [AUTO-07p Documentation](https://github.com/auto-07p/auto-07p)
 - [Montbrió, E., Pazó, D., & Roxin, A. (2015). Macroscopic description for networks of spiking neurons. Physical Review X, 5(2), 021028.](https://doi.org/10.1103/PhysRevX.5.021028)
+

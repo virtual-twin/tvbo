@@ -433,6 +433,14 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return inst
 
     @classmethod
+    def from_string(cls, str: str) -> "Dynamics":
+        inst = yaml_loader.loads(str, cls)
+        inst._populate_from_ontology_if_available()
+        inst.update_metadata()
+        inst.calculate_derived_parameters()
+        return inst
+
+    @classmethod
     def from_pyrates(cls, path: str, operator_key: str | None = None) -> "Dynamics":
         """Load a Dynamics model from a PyRates YAML template file.
 
