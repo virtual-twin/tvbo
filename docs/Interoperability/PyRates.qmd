@@ -137,14 +137,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
 ### Step 4: Run in TVBO
 
 ```{python}
-from tvbo import SimulationExperiment, Integrator
+from tvbo import SimulationExperiment
 from IPython.display import Markdown, display
 
 # Run the loaded model in TVBO
 exp = SimulationExperiment(
     local_dynamics=loaded,
-    integration=Integrator(duration=100.0, step_size=0.01),
 )
+exp.integration.duration=100
 
 # Display experiment report
 display(Markdown(exp.generate_report(format="markdown")))
@@ -158,17 +158,17 @@ time = result.time
 x = result.data[:, 0, 0, 0]
 z = result.data[:, 1, 0, 0]
 
-axes[0].plot(time, x, label='x')
-axes[0].plot(time, z, label='z', alpha=0.8)
-axes[0].set_xlabel('Time (ms)')
-axes[0].set_ylabel('State')
-axes[0].set_title('Van der Pol Oscillator (TVBO simulation)')
+axes[0].plot(time, x, label="x")
+axes[0].plot(time, z, label="z", alpha=0.8)
+axes[0].set_xlabel("Time (ms)")
+axes[0].set_ylabel("State")
+axes[0].set_title("Van der Pol Oscillator (TVBO simulation)")
 axes[0].legend()
 
 axes[1].plot(x, z)
-axes[1].set_xlabel('x')
-axes[1].set_ylabel('z')
-axes[1].set_title('Phase Space')
+axes[1].set_xlabel("x")
+axes[1].set_ylabel("z")
+axes[1].set_title("Phase Space")
 
 plt.tight_layout()
 plt.show()
@@ -213,34 +213,17 @@ from IPython.display import Markdown, display
 # Run the modified model in TVBO
 exp = SimulationExperiment(
     local_dynamics=vdp_imported,
-    integration=Integrator(duration=100.0, step_size=0.01),
 )
+exp.integration.duration=100
 
 # Display experiment configuration
-display(Markdown(exp.generate_report(format="markdown")))
+Markdown(exp.generate_report(format="markdown"))
+```
 
+
+```{python}
 result = exp.run()
-
-# Plot
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-time = result.time
-x = result.data[:, 0, 0, 0]
-z = result.data[:, 1, 0, 0]
-
-axes[0].plot(time, x, label='x')
-axes[0].plot(time, z, label='z', alpha=0.8)
-axes[0].set_xlabel('Time (ms)')
-axes[0].set_ylabel('State')
-axes[0].set_title(f'{vdp_imported.name} (TVBO simulation)')
-axes[0].legend()
-
-axes[1].plot(x, z)
-axes[1].set_xlabel('x')
-axes[1].set_ylabel('z')
-axes[1].set_title('Phase Space')
-
-plt.tight_layout()
-plt.show()
+result.plot()
 ```
 
 ### Step 4: Export Back to PyRates
