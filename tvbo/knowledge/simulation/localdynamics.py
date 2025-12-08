@@ -435,6 +435,32 @@ class Dynamics(tvbo_datamodel.Dynamics):
         inst.calculate_derived_parameters()
         return inst
 
+    @classmethod
+    def from_pyrates(cls, path: str) -> "Dynamics":
+        """Load a Dynamics model from a PyRates YAML template file.
+
+        Parameters
+        ----------
+        path : str
+            Path to PyRates YAML file.
+
+        Returns
+        -------
+        Dynamics
+            New Dynamics instance populated from the PyRates template.
+
+        Example
+        -------
+        >>> model = Dynamics.from_pyrates("jansen_rit.yaml")
+        """
+        from tvbo.export.pyrates import from_pyrates_yaml
+
+        data = from_pyrates_yaml(path)
+        inst = cls(**data)
+        inst.update_metadata()
+        inst.calculate_derived_parameters()
+        return inst
+
     # Internal helpers
     def _populate_from_ontology_if_available(self):
         oc = self.ontology
@@ -454,10 +480,35 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def __repr__(self) -> str:
         return f"{self.name} - {len(self.parameters)} parameters and {len(self.state_variables)} state variables"
 
-    def to_yaml(self, filepath: str | None = None):
-        from tvbo.utils import to_yaml as _to_yaml
+    def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
+        """Export the model to YAML format.
 
-        return _to_yaml(self, filepath)
+        Parameters
+        ----------
+        filepath : str, optional
+            Path to write the YAML file. If None, returns the YAML string.
+        format : str
+            Output format: "tvbo" (default) or "pyrates".
+            PyRates format generates a complete experiment YAML (model + network).
+
+        Returns
+        -------
+        str
+            YAML string or filepath if written to file.
+
+        Example
+        -------
+        >>> model.to_yaml("model.yaml")  # TVBO format
+        >>> model.to_yaml("model.yaml", format="pyrates")  # PyRates experiment format
+        """
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import to_pyrates_yaml_string
+
+            return to_pyrates_yaml_string(dynamics=self, filepath=filepath)
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+
+            return _to_yaml(self, filepath)
 
     # ---- Runtime convenience properties (no extra attributes) ----
     @property

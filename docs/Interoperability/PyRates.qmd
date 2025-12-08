@@ -1,0 +1,412 @@
+---
+title: PyRates Interoperability
+jupyter: python3
+---
+
+This guide demonstrates how to define models in TVBO and export them to [PyRates](https://pyrates.readthedocs.io/) format, a Python toolbox for dynamical systems modeling.
+
+## Overview
+
+PyRates is a powerful framework for:
+
+- Numerical simulation of dynamical systems
+- Bifurcation analysis
+- Parameter fitting
+- Code generation (NumPy, TensorFlow, Julia, Fortran)
+
+TVBO provides modular templates for PyRates integration:
+
+| Template | PyRates Components | Use Case |
+|----------|-------------------|----------|
+| **Model** | `OperatorTemplate` | Dynamics/equations only |
+| **Network** | `NodeTemplate` + `CircuitTemplate` | Network topology only |
+| **Experiment** | All of the above | Complete, ready to run |
+
+### Feature Mapping
+
+| Feature | TVBO | PyRates |
+|---------|------|---------|
+| Differential equations | `equation.rhs` attribute | `var' = rhs` syntax |
+| Initial values | `initial_value` attribute | `variable(value)` |
+| Parameters | `Parameter` objects | Numeric values |
+| Outputs | `output_transforms` | `output` marker |
+| Inputs | `coupling_terms` | `input` marker |
+| Single node | `Dynamics` | `NodeTemplate` |
+| Network | `Network` | `CircuitTemplate` |
+
+## Example: Van der Pol Oscillator
+
+The Van der Pol oscillator is governed by:
+
+$$
+\dot{x} = z
+$$
+$$
+\dot{z} = \mu(1 - x^2)z - x
+$$
+
+where $\mu$ is the damping constant.
+
+### Step 1: Define Model in TVBO
+
+```{python}
+from tvbo import Dynamics
+
+# Create a Van der Pol oscillator model in TVBO
+vdp = Dynamics("Dynamics")
+vdp.name = "VanDerPol"
+vdp.description = "Van der Pol oscillator - a classical nonlinear oscillator"
+
+# Add parameters
+vdp.add_parameter("mu", value=5.0, description="Damping constant")
+
+# Add state variables with their differential equations
+vdp.add_state_variable("x", equation="z", initial_value=0.0, description="Position")
+vdp.add_state_variable("z", equation="mu*(1 - x**2)*z - x", initial_value=1.0, description="Velocity")
+
+print(vdp)
+```
+
+### Step 2: Modular Export
+
+TVBO provides three modular export functions:
+
+```{python}
+from tvbo.export.pyrates import (
+    to_pyrates_model_yaml,    # OperatorTemplate only
+    to_pyrates_network_yaml,  # NodeTemplate + CircuitTemplate
+    to_pyrates_yaml_string,   # Complete experiment
+)
+```
+
+#### Model Template (OperatorTemplate only)
+
+```{python}
+print("=== Model Template (Dynamics only) ===")
+print(to_pyrates_model_yaml(vdp))
+```
+
+#### Network Template (Topology only)
+
+```{python}
+print("=== Network Template (Node + Circuit) ===")
+print(to_pyrates_network_yaml(dynamics=vdp))
+```
+
+#### Experiment Template (Complete, ready to run)
+
+```{python}
+print("=== Experiment Template (Complete) ===")
+print(vdp.to_yaml(format="pyrates"))
+```
+
+### Step 3: Save and Load (Round-Trip)
+
+```{python}
+import tempfile
+import os
+
+# Save to file
+with tempfile.TemporaryDirectory() as tmpdir:
+    filepath = os.path.join(tmpdir, "vanderpol.yaml")
+    vdp.to_yaml(format="pyrates", filepath=filepath)
+    print(f"Saved to: {filepath}")
+
+    # Load back into TVBO
+    loaded = Dynamics.from_pyrates(filepath)
+    print(f"\nLoaded model: {loaded.name}")
+    print(f"Parameters: {list(loaded.parameters.keys())}")
+    print(f"State variables: {list(loaded.state_variables.keys())}")
+    for sv_name, sv in loaded.state_variables.items():
+        print(f"  d{sv_name}/dt = {sv.equation.rhs}")
+```
+
+## Running Simulations: PyRates vs TVBO Comparison
+
+Let's compare running the same model in both PyRates (from TVBO export) and natively.
+
+```{python}
+#| eval: true
+import numpy as np
+import matplotlib.pyplot as plt
+import tempfile
+import os
+import shutil
+
+# Check if PyRates is available
+try:
+    from pyrates import CircuitTemplate, clear
+    PYRATES_AVAILABLE = True
+except ImportError:
+    PYRATES_AVAILABLE = False
+    print("PyRates not installed. Install with: pip install pyrates")
+```
+
+### Native PyRates Model
+
+```{python}
+#| eval: true
+if PYRATES_AVAILABLE:
+    # Simulation parameters
+    T = 100.0
+    step_size = 1e-2
+    mu_value = 5.0
+
+    # Define Van der Pol natively in PyRates
+    pyrates_yaml_native = f'''%YAML 1.2
+---
+vdp_op:
+  base: OperatorTemplate
+  equations:
+    - "x' = z"
+    - "z' = mu*(1 - x**2)*z - x"
+  variables:
+    x: variable(0.0)
+    z: variable(1.0)
+    mu: {mu_value}
+
+vdp:
+  base: NodeTemplate
+  operators:
+    - vdp_op
+
+vdp_circuit:
+  base: CircuitTemplate
+  nodes:
+    p: vdp
+'''
+
+    # Create temp module directory
+    os.makedirs('_pyrates_native', exist_ok=True)
+    with open('_pyrates_native/__init__.py', 'w') as f:
+        f.write('')
+    with open('_pyrates_native/vdp.yaml', 'w') as f:
+        f.write(pyrates_yaml_native)
+
+    # Run native PyRates model
+    print("Running native PyRates Van der Pol model...")
+    native_model = CircuitTemplate.from_yaml('_pyrates_native.vdp.vdp_circuit')
+    native_results = native_model.run(
+        step_size=step_size,
+        simulation_time=T,
+        outputs={'x': 'p/vdp_op/x', 'z': 'p/vdp_op/z'},
+        solver='scipy',
+        method='RK23'
+    )
+    clear(native_model)
+    shutil.rmtree('_pyrates_native')
+    print("Native PyRates run complete!")
+```
+
+### TVBO-Exported Model in PyRates
+
+```{python}
+#| eval: true
+if PYRATES_AVAILABLE:
+    from tvbo import Dynamics
+
+    # Create TVBO model
+    vdp_tvbo = Dynamics("Dynamics")
+    vdp_tvbo.name = "VanDerPol"
+    vdp_tvbo.add_parameter("mu", value=mu_value)
+    vdp_tvbo.add_state_variable("x", equation="z", initial_value=0.0)
+    vdp_tvbo.add_state_variable("z", equation="mu*(1 - x**2)*z - x", initial_value=1.0)
+
+    # Create temp module directory and export
+    os.makedirs('_pyrates_tvbo', exist_ok=True)
+    with open('_pyrates_tvbo/__init__.py', 'w') as f:
+        f.write('')
+    vdp_tvbo.to_yaml(format="pyrates", filepath='_pyrates_tvbo/vdp.yaml')
+
+    # Run TVBO-exported model in PyRates
+    print("Running TVBO-exported Van der Pol model in PyRates...")
+    tvbo_model = CircuitTemplate.from_yaml('_pyrates_tvbo.vdp.VanDerPol_circuit')
+    tvbo_results = tvbo_model.run(
+        step_size=step_size,
+        simulation_time=T,
+        outputs={'x': 'p/VanDerPol_op/x', 'z': 'p/VanDerPol_op/z'},
+        solver='scipy',
+        method='RK23'
+    )
+    clear(tvbo_model)
+    shutil.rmtree('_pyrates_tvbo')
+    print("TVBO-exported run complete!")
+```
+
+### Compare Results
+
+```{python}
+#| eval: true
+if PYRATES_AVAILABLE:
+    # Visual comparison
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+    # Time series comparison
+    axes[0, 0].plot(native_results['x'], label='Native PyRates', linewidth=1.5)
+    axes[0, 0].plot(tvbo_results['x'], '--', label='TVBO Export', linewidth=1.5, alpha=0.8)
+    axes[0, 0].set_xlabel('Time steps')
+    axes[0, 0].set_ylabel('x')
+    axes[0, 0].set_title('State Variable x: Native vs TVBO Export')
+    axes[0, 0].legend()
+
+    axes[0, 1].plot(native_results['z'], label='Native PyRates', linewidth=1.5)
+    axes[0, 1].plot(tvbo_results['z'], '--', label='TVBO Export', linewidth=1.5, alpha=0.8)
+    axes[0, 1].set_xlabel('Time steps')
+    axes[0, 1].set_ylabel('z')
+    axes[0, 1].set_title('State Variable z: Native vs TVBO Export')
+    axes[0, 1].legend()
+
+    # Phase space
+    axes[1, 0].plot(native_results['x'], native_results['z'], label='Native PyRates')
+    axes[1, 0].plot(tvbo_results['x'], tvbo_results['z'], '--', label='TVBO Export', alpha=0.8)
+    axes[1, 0].set_xlabel('x')
+    axes[1, 0].set_ylabel('z')
+    axes[1, 0].set_title('Phase Space')
+    axes[1, 0].legend()
+
+    # Error plot
+    x_diff = np.abs(native_results['x'].values - tvbo_results['x'].values).flatten()
+    z_diff = np.abs(native_results['z'].values - tvbo_results['z'].values).flatten()
+    axes[1, 1].semilogy(x_diff, label='|x_native - x_tvbo|')
+    axes[1, 1].semilogy(z_diff, label='|z_native - z_tvbo|', alpha=0.8)
+    axes[1, 1].set_xlabel('Time steps')
+    axes[1, 1].set_ylabel('Absolute Difference')
+    axes[1, 1].set_title('Numerical Difference (should be ~0)')
+    axes[1, 1].legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    # Numerical comparison
+    max_x_diff = np.max(x_diff)
+    max_z_diff = np.max(z_diff)
+    print(f"\nNumerical Comparison:")
+    print(f"  Max |x_native - x_tvbo|: {max_x_diff:.2e}")
+    print(f"  Max |z_native - z_tvbo|: {max_z_diff:.2e}")
+    print(f"  Models match: {max_x_diff < 1e-10 and max_z_diff < 1e-10}")
+```
+
+## Network / Circuit Example
+
+TVBO's `Network` class can be exported to PyRates `CircuitTemplate` format with multiple nodes and edges.
+
+```{python}
+#| eval: false
+from tvbo.knowledge.simulation import Network, Coupling
+from tvbo import Connectome
+import numpy as np
+
+# Create a simple 2-node connectome
+connectome = Connectome()
+connectome.weights = np.array([[0.0, 0.5], [0.3, 0.0]])
+connectome.region_labels = ["Node1", "Node2"]
+
+# Create network from connectome
+network = Network(connectome, normalize_weights=False)
+
+# Add local dynamics to each node
+oscillator = Dynamics("Dynamics")
+oscillator.name = "oscillator"
+oscillator.add_parameter("omega", value=1.0)
+oscillator.add_parameter("gamma", value=0.1)
+oscillator.add_state_variable("x", equation="y", initial_value=1.0)
+oscillator.add_state_variable("y", equation="-omega**2 * x - gamma * y", initial_value=0.0)
+
+network.add_local_model(oscillator)
+
+# Add coupling
+coupling = Coupling.from_ontology("Linear Coupling")
+network.add_coupling(coupling)
+
+# Export to PyRates
+print(network.to_yaml(format="pyrates"))
+```
+
+## Loading Existing PyRates Models
+
+You can load existing PyRates YAML templates into TVBO:
+
+```{python}
+# Example PyRates YAML content
+pyrates_yaml_content = '''%YAML 1.2
+---
+
+simple_oscillator_op:
+  base: OperatorTemplate
+  equations:
+    - "x' = y"
+    - "y' = -omega**2 * x - gamma * y"
+  variables:
+    x: variable(1.0)
+    y: variable(0.0)
+    omega: 1.0
+    gamma: 0.1
+
+simple_oscillator:
+  base: NodeTemplate
+  operators:
+    - simple_oscillator_op
+'''
+
+import tempfile
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    f.write(pyrates_yaml_content)
+    temp_path = f.name
+
+# Load into TVBO
+oscillator = Dynamics.from_pyrates(temp_path)
+print(f"Loaded: {oscillator.name}")
+print(f"Parameters: {[(p, oscillator.parameters[p].value) for p in oscillator.parameters]}")
+print(f"State variables: {list(oscillator.state_variables.keys())}")
+for sv_name, sv in oscillator.state_variables.items():
+    print(f"  d{sv_name}/dt = {sv.equation.rhs}")
+
+import os
+os.unlink(temp_path)
+```
+
+## API Summary
+
+### Dynamics Class Methods
+
+```python
+# Complete experiment export (recommended for running)
+model.to_yaml(format="pyrates")
+model.to_yaml(format="pyrates", filepath="model.yaml")
+
+# Import from PyRates
+Dynamics.from_pyrates("model.yaml")
+```
+
+### Network Class Methods
+
+```python
+# Export network to PyRates CircuitTemplate
+network.to_yaml(format="pyrates")
+network.to_yaml(format="pyrates", filepath="circuit.yaml")
+```
+
+### Modular Export Functions
+
+```python
+from tvbo.export.pyrates import (
+    # Model only (OperatorTemplate)
+    to_pyrates_model_yaml,
+
+    # Network only (NodeTemplate + CircuitTemplate)
+    to_pyrates_network_yaml,
+
+    # Complete experiment (all components)
+    to_pyrates_yaml_string,
+
+    # Import
+    from_pyrates_yaml,
+)
+```
+
+## References
+
+- [PyRates Documentation](https://pyrates.readthedocs.io/)
+- [PyRates Template Specification](https://pyrates.readthedocs.io/en/latest/template_specification.html)
+- [Gast, R., Knösche, T. R. & Kennedy, A. (2023). PyRates - A Code-Generation Tool for Dynamical Systems Modeling. PLOS Computational Biology 19 (12), e1011761.](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011761)
