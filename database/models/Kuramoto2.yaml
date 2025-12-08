@@ -53,7 +53,7 @@ state_variables:
         coupling_variable: true
         initial_value: 0.1
 
-output_transforms:
+output:
     phase:
         equation:
             rhs: theta / (2*pi)

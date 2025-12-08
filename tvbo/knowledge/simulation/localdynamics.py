@@ -579,7 +579,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             scope[str(name)] = Symbol(str(name))
         for name in getattr(self, "derived_variables", {}).keys():
             scope[str(name)] = Symbol(str(name))
-        for name in getattr(self, "output_transforms", {}).keys():
+        for name in getattr(self, "output", {}).keys():
             scope[str(name)] = Symbol(str(name))
 
         # State variables as Symbols
@@ -610,7 +610,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         _ = self.get_dependency_tree()
         sort_equations(self, "derived_parameters")
         sort_equations(self, "derived_variables")
-        sort_equations(self, "output_transforms")
+        sort_equations(self, "output")
         # sort_equations(self, "state_variables") #TODO: Test if sorting is really not necessary
 
     # -----------------------
@@ -715,7 +715,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Known non-parameter entities: states, derived vars, output transforms, derived parameters, function arguments, and 't'
         nonparam_known = set(map(str, self.state_variables.keys()))
         nonparam_known |= set(map(str, self.derived_variables.keys()))
-        nonparam_known |= set(map(str, self.output_transforms.keys()))
+        nonparam_known |= set(map(str, self.output.keys()))
         nonparam_known |= set(map(str, self.derived_parameters.keys()))
         for f in self.functions.values():
             nonparam_known |= {str(arg.name) for arg in f.arguments.values()}
@@ -899,7 +899,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         return self
 
-    def add_output_transform(
+    def add_output(
         self,
         name: str,
         expression=None,
@@ -912,7 +912,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             if expression is not None
             else None
         )
-        self.output_transforms[str(name)] = tvbo_datamodel.DerivedVariable(
+        self.output[str(name)] = tvbo_datamodel.DerivedVariable(
             name=str(name), equation=eq, unit=unit, description=description
         )
         return self
@@ -1022,7 +1022,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             return {_sv_name(_eq): _eq for _eq in equations["state-equations"]}
 
         equations["output-transformations"] = []
-        for k, ot in self.output_transforms.items():
+        for k, ot in self.output.items():
             equations["output-transformations"].append(
                 Eq(lhs=Symbol(k), rhs=parse_eq(ot.equation, local_dict=scope))
             )

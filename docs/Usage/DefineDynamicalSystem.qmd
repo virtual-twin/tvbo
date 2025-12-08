@@ -13,7 +13,7 @@ We'll create a simple damped pendulum system to illustrate the key concepts.
 
 ### System Specification
 
-Define the pendulum [Dynamics](/datamodel/classes/Dynamics.html) using YAML format with [Parameter](/datamodel/classes/Parameter.html)s, [state variables](/datamodel/classes/StateVariable.html), and [output transforms](/datamodel/slots/output_transforms.html):
+Define the pendulum [Dynamics](/datamodel/classes/Dynamics.html) using YAML format with [Parameter](/datamodel/classes/Parameter.html)s, [state variables](/datamodel/classes/StateVariable.html), and [output transforms](/datamodel/slots/output.html):
 
 ```{python}
 #| echo: false
@@ -58,7 +58,7 @@ state_variables:
         initial_value: 0.0
         equation:
             rhs: -c*omega - omega0**2 * sin(theta)
-output_transforms:
+output:
     x:
         description: X coordinate of the pendulum bob
         unit: m

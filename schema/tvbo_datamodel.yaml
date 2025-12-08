@@ -625,7 +625,7 @@ classes:
         inlined: true
       modified:
         range: boolean
-      output_transforms:
+      output:
         multivalued: true
         range: DerivedVariable
         inlined: true

@@ -187,7 +187,7 @@ def import_yaml_model(
             dv.name + model_suffix, onto.Function, properties, model_class
         )
 
-    for ot in model_data.output_transforms.values():
+    for ot in model_data.output.values():
         properties = {
             "label": ot.name + model_suffix,
             "equation": str(ot.equation.rhs),

@@ -482,7 +482,7 @@
                         <field name="iri"/>
                         <field name="has_reference"/>
                         <field name="is_modified"/>
-                        <field name="output_transforms"/>
+                        <field name="output"/>
                         <field name="derived_from_model"/>
                         <field name="local_coupling_term"/>
                     </group>

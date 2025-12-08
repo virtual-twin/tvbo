@@ -239,7 +239,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
     state_variables = {}
     parameters = {}
     derived_variables = {}
-    output_transforms = {}
+    output = {}
     operator_name = None  # Name from OperatorTemplate (preferred)
     node_name = None  # Name from NodeTemplate (fallback)
     description = None
@@ -317,7 +317,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
 
                     var_spec = variables.get(var_name)
                     if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
-                        output_transforms[var_name] = {
+                        output[var_name] = {
                             "name": var_name,
                             "equation": {"lhs": var_name, "rhs": rhs},
                         }
@@ -328,7 +328,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
                         }
 
         for var_name, var_spec in variables.items():
-            if var_name in state_variables or var_name in derived_variables or var_name in output_transforms:
+            if var_name in state_variables or var_name in derived_variables or var_name in output:
                 continue
 
             if isinstance(var_spec, (int, float)):
@@ -355,7 +355,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
         "state_variables": state_variables,
         "parameters": parameters,
         "derived_variables": derived_variables,
-        "output_transforms": output_transforms,
+        "output": output,
     }
 
 
@@ -364,7 +364,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
     state_variables = {}
     parameters = {}
     derived_variables = {}
-    output_transforms = {}
+    output = {}
 
     # Extract name from OperatorTemplate, removing _op suffix
     name = template_name
@@ -421,7 +421,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
 
                 var_spec = variables.get(var_name)
                 if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
-                    output_transforms[var_name] = {
+                    output[var_name] = {
                         "name": var_name,
                         "equation": {"lhs": var_name, "rhs": rhs},
                     }
@@ -433,7 +433,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
 
     # Parse variables that are not state/derived/output
     for var_name, var_spec in variables.items():
-        if var_name in state_variables or var_name in derived_variables or var_name in output_transforms:
+        if var_name in state_variables or var_name in derived_variables or var_name in output:
             continue
 
         if isinstance(var_spec, (int, float)):
@@ -456,7 +456,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
         "state_variables": state_variables,
         "parameters": parameters,
         "derived_variables": derived_variables,
-        "output_transforms": output_transforms,
+        "output": output,
     }
 
 

@@ -40,7 +40,7 @@ for var_name, sv in (model.state_variables or {}).items():
         variables[var_name] = f"variable({iv})"
 
 # Add output transforms
-for var_name, ot in (model.output_transforms or {}).items():
+for var_name, ot in (model.output or {}).items():
     if ot.equation and ot.equation.rhs:
         rhs = convert_rhs(str(ot.equation.rhs))
         equations.append(f"{var_name} = {rhs}")

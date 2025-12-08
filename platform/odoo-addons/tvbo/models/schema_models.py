@@ -383,7 +383,7 @@ class Dynamics(models.Model):
     coupling_inputs = fields.Many2many(comodel_name='tvbo.coupling_input', relation='tvbo_dynamics_coupling_inputs_rel')
     state_variables = fields.Many2many(comodel_name='tvbo.state_variable', relation='tvbo_dynamics_state_variables_rel')
     is_modified = fields.Boolean(string="MODIFIED (renamed from 'modified')")
-    output_transforms = fields.Many2many(comodel_name='tvbo.derived_variable', relation='tvbo_dynamics_output_transforms_rel')
+    output = fields.Many2many(comodel_name='tvbo.derived_variable', relation='tvbo_dynamics_output_transforms_rel')
     derived_from_model = fields.Many2one(comodel_name='tvbo.neural_mass_model')
     number_of_modes = fields.Integer(default=1)
     local_coupling_term = fields.Many2one(comodel_name='tvbo.parameter')
