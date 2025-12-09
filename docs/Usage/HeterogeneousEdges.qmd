@@ -43,6 +43,9 @@ parameters:
   k:
     value: 0.5
     description: "Depression rate"
+  k_fac:
+    value: 0.05
+    description: "Facilitation rate"
 state_variables:
   x:
     equation:
@@ -51,7 +54,7 @@ state_variables:
     description: "Available synaptic resources (depression variable)"
   u:
     equation:
-      rhs: "(U0 - u)/tau_u + U0*(1 - u)*r_in"
+      rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability (facilitation variable)"
 coupling_terms:
@@ -100,10 +103,13 @@ parameters:
   U0:
     value: 0.2
     description: "Baseline release probability"
+  k_fac:
+    value: 0.01
+    description: "Facilitation rate"
 state_variables:
   u:
     equation:
-      rhs: "(U0 - u)/tau_u + U0*(1 - u)*r_in"
+      rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability"
 coupling_terms:
