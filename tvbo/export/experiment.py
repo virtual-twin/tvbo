@@ -730,11 +730,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if outputs is None:
                 outputs = self._build_pyrates_outputs()
 
+            # Build inputs from stimulation if not explicitly provided
+            if inputs is None:
+                inputs = self._build_pyrates_inputs()
+
             # Run simulation
             result = circuit.run(
                 step_size=self.integration.step_size,
                 simulation_time=self.integration.duration,
-                inputs=inputs or {},
+                inputs=inputs,
                 outputs=outputs,
                 solver=solver,
                 **kwargs,
@@ -794,6 +798,86 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     outputs[sv_name] = f"node_0/{op_name}/{sv_name}"
 
         return outputs
+
+    def _build_pyrates_inputs(self) -> dict:
+        """Build PyRates inputs dict from experiment stimulation.
+
+        Converts TVBO Stimulus objects to PyRates input format:
+        {"NodeLabel/DynamicsName_op/I_ext": np.array([...])}
+
+        Returns
+        -------
+        dict
+            PyRates-compatible inputs dictionary.
+        """
+        inputs = {}
+
+        stimulation = getattr(self, "stimulation", None)
+        if stimulation is None:
+            return inputs
+
+        # Get time array for stimulus evaluation
+        duration = self.integration.duration
+        step_size = self.integration.step_size
+        time = np.arange(0, duration, step_size)
+
+        # Get the stimulus function
+        try:
+            stim_func = stimulation.execute(format="python")
+        except Exception:
+            # If execute fails, try to evaluate directly
+            stim_func = None
+
+        if stim_func is None:
+            return inputs
+
+        # Evaluate stimulus over time
+        stim_values = stim_func(time)
+
+        # Determine target variable (default to I_ext for rate neurons)
+        target_var = getattr(stimulation, "target_variable", None) or "I_ext"
+
+        # Get regions/nodes to stimulate
+        regions = getattr(stimulation, "regions", None) or []
+        weighting = getattr(stimulation, "weighting", None) or []
+
+        # Get network nodes
+        network = getattr(self, "network", None)
+        dynamics = self.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            nodes = list(network.nodes)
+
+            # If no specific regions, apply to first node (Pre-synaptic)
+            if not regions:
+                regions = [0]
+
+            for i, region_idx in enumerate(regions):
+                if region_idx >= len(nodes):
+                    continue
+
+                node = nodes[region_idx]
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+                # Get dynamics name for this node
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+
+                if dyn_name:
+                    op_name = f"{dyn_name}_op"
+                    key = f"{safe_label}/{op_name}/{target_var}"
+
+                    # Apply weighting if available
+                    weight = weighting[i] if i < len(weighting) else 1.0
+                    inputs[key] = stim_values * weight
+
+        return inputs
 
     def _pyrates_result_to_timeseries(self, result) -> TimeSeries:
         """Convert PyRates pandas DataFrame result to TVBO TimeSeries.
