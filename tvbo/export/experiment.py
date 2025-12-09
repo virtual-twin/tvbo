@@ -43,6 +43,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             kwargs["id"] = sessionid
             sessionid += 1
 
+        # Handle pydantic Network - convert to dict before parent __init__
+        # This prevents the parent's __post_init__ from failing on pydantic objects
+        if "network" in kwargs and kwargs["network"] is not None:
+            net = kwargs["network"]
+            # Check if it's a pydantic model (has model_dump) - convert to dict
+            if hasattr(net, "model_dump"):
+                kwargs["network"] = net.model_dump(exclude_none=True)
+            elif hasattr(net, "dict") and not isinstance(net, dict):
+                # Pydantic v1
+                kwargs["network"] = net.dict(exclude_none=True)
+
         # Delegate to the parent dataclass initializer for normalization
         super().__init__(**kwargs)
 
@@ -80,16 +91,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if getattr(self, "network", None) and not isinstance(self.network, Network):
             self.network = _coerce(Network, self.network)
-            self.connectivity = self.network  # backwards compatibility TODO: remove
 
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
 
-        # If dynamics list is empty, populate from local_dynamics
+        # If dynamics dict is empty, populate from local_dynamics
         if not getattr(self, "dynamics", None) and getattr(
             self, "local_dynamics", None
         ):
-            self.dynamics = [self.local_dynamics]
+            ld = self.local_dynamics
+            self.dynamics = {ld.name: ld}
 
         # Defaults
         if not getattr(self, "monitors", None):
@@ -275,10 +286,42 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             setattr(clone, k, _copy.deepcopy(v, memo))
         return clone
 
-    def to_yaml(self, filepath: str | None = None):
-        from tvbo.utils import to_yaml as _to_yaml
+    def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
+        """Export the experiment to YAML format.
 
-        return _to_yaml(self, filepath)
+        Parameters
+        ----------
+        filepath : str, optional
+            Path to write the YAML file. If None, returns the YAML string.
+        format : str
+            Output format: "tvbo" (default) or "pyrates".
+
+        Returns
+        -------
+        str
+            YAML string or filepath if written to file.
+        """
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import to_pyrates_yaml_string
+
+            # Get dynamics dict - prefer self.dynamics if it's a dict
+            dynamics = self.dynamics
+            if not isinstance(dynamics, dict):
+                # Convert list to dict keyed by name
+                dynamics = {d.name: d for d in (dynamics or [])}
+
+            # Get network
+            network = getattr(self, "network", None)
+
+            return to_pyrates_yaml_string(
+                dynamics=dynamics,
+                network=network,
+                filepath=filepath,
+            )
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+
+            return _to_yaml(self, filepath)
 
     def render_yaml(self) -> str:
         """Deprecated Render the YAML representation as a string.
@@ -558,12 +601,181 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 time=t, data=data, network=None, labels_dimensions=labels_dimensions
             )
             return ts
+
+        elif format.lower() == "pyrates":
+            return self._run_pyrates(**kwargs)
+
         else:
             raise ValueError(
-                f"Format {format} not supported. Valid formats: tvb, jax, python"
+                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates"
             )
 
         return simulation_data
+
+    def _run_pyrates(
+        self,
+        duration: float | None = None,
+        step_size: float = 0.1,
+        solver: str = "heun",
+        inputs: dict | None = None,
+        outputs: list[str] | None = None,
+        **kwargs,
+    ) -> TimeSeries:
+        """Run simulation using PyRates backend.
+
+        Parameters
+        ----------
+        duration : float, optional
+            Simulation duration in ms. Defaults to integration.duration.
+        step_size : float
+            Integration step size in ms. Default 0.1.
+        solver : str
+            ODE solver: "euler", "heun", "scipy". Default "heun".
+        inputs : dict, optional
+            External inputs as {node/op/var: array} or will be auto-generated.
+        outputs : list[str], optional
+            Variables to monitor. If None, monitors all state variables.
+        **kwargs
+            Additional kwargs passed to circuit.run().
+
+        Returns
+        -------
+        TimeSeries
+            TVBO TimeSeries with simulation results.
+        """
+        import shutil
+        import tempfile
+        from pyrates.frontend import CircuitTemplate
+        from pyrates import clear
+
+        # Get simulation parameters
+        if duration is None:
+            duration = getattr(self.integration, "duration", 100.0)
+
+        # Export to PyRates YAML
+        yaml_content = self.to_yaml(format="pyrates")
+
+        # Create temporary package for PyRates
+        tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_")
+        pkg_name = "_tvbo_pyrates_tmp"
+        pkg_path = os.path.join(tmpdir, pkg_name)
+        os.makedirs(pkg_path, exist_ok=True)
+        open(os.path.join(pkg_path, "__init__.py"), "w").close()
+        yaml_path = os.path.join(pkg_path, "model.yaml")
+        with open(yaml_path, "w") as f:
+            f.write(yaml_content)
+
+        # Add tmpdir to path temporarily
+        import sys
+
+        sys.path.insert(0, tmpdir)
+
+        try:
+            # Get circuit name from network or default
+            network = getattr(self, "network", None)
+            circuit_name = "tvbo_circuit"
+            if network is not None:
+                circuit_name = (
+                    getattr(network, "label", None)
+                    or getattr(network, "name", None)
+                    or circuit_name
+                )
+
+            # Load circuit
+            circuit = CircuitTemplate.from_yaml(f"{pkg_name}.model.{circuit_name}")
+
+            # Build outputs dict if not provided
+            if outputs is None:
+                outputs = self._build_pyrates_outputs()
+
+            # Run simulation
+            result = circuit.run(
+                step_size=step_size,
+                simulation_time=duration,
+                inputs=inputs or {},
+                outputs=outputs,
+                solver=solver,
+                **kwargs,
+            )
+
+            # Clean up PyRates
+            clear(circuit)
+
+        finally:
+            # Remove from path and clean up
+            sys.path.remove(tmpdir)
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+        # Convert pandas DataFrame to TVBO TimeSeries
+        return self._pyrates_result_to_timeseries(result)
+
+    def _build_pyrates_outputs(self) -> dict:
+        """Build PyRates outputs dict from dynamics state variables."""
+        outputs = {}
+
+        # Get dynamics - prefer dict form
+        dynamics = self.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        # Get network nodes if available
+        network = getattr(self, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+                # Get dynamics for this node
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+                dyn = dynamics.get(dyn_name) if dyn_name else None
+
+                if dyn and dyn.state_variables:
+                    op_name = f"{dyn.name}_op"
+                    for sv_name in dyn.state_variables.keys():
+                        key = f"{safe_label}_{sv_name}"
+                        outputs[key] = f"{safe_label}/{op_name}/{sv_name}"
+        else:
+            # Single dynamics case
+            if dynamics:
+                dyn = next(iter(dynamics.values()))
+                op_name = f"{dyn.name}_op"
+                for sv_name in dyn.state_variables.keys():
+                    outputs[sv_name] = f"node_0/{op_name}/{sv_name}"
+
+        return outputs
+
+    def _pyrates_result_to_timeseries(self, result) -> TimeSeries:
+        """Convert PyRates pandas DataFrame result to TVBO TimeSeries."""
+        time = np.array(result.index)
+        columns = list(result.columns)
+
+        # Extract data: shape (time, state_vars, regions, modes=1)
+        # PyRates returns flat columns like "node_var"
+        data = np.array(result.values)
+
+        # Reshape: (time, n_cols) -> (time, 1, n_cols, 1) for compatibility
+        # Or try to infer structure from column names
+        n_time = data.shape[0]
+        n_cols = data.shape[1]
+
+        # Simple reshape for now
+        data = data.reshape(n_time, 1, n_cols, 1)
+
+        labels_dimensions = {
+            "State Variable": ["state"],
+            "Region": columns,
+        }
+
+        return TimeSeries(
+            time=time,
+            data=data,
+            labels_dimensions=labels_dimensions,
+            sample_period=time[1] - time[0] if len(time) > 1 else 1.0,
+        )
 
     def get_experiment_file_prefix(self):
         atlas = (

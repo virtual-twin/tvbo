@@ -128,7 +128,7 @@ def class2metadata(ontoclass, metadata):
                 setattr(state_var, attr, value)
 
     for k, v in functions.items():
-        if k not in metadata.derived_variables and k not in metadata.derived_parameters:
+        if k not in metadata.derived_variables and k not in metadata.derived_parameters and k not in metadata.output:
             metadata.derived_variables.update(
                 {
                     k: tvbo_datamodel.DerivedVariable(

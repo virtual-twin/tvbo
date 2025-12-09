@@ -90,8 +90,85 @@ edges = []
 if is_network:
     circuit_name = getattr(network, 'label', None) or getattr(network, 'name', None) or "tvbo_circuit"
 
-    # Check if network has a .graph attribute (NetworkX graph-based)
-    if hasattr(network, 'graph') and network.graph is not None:
+    # Check if network has schema-based nodes with individual dynamics
+    dynamics_library = context.get('dynamics') or {}
+    if hasattr(network, 'nodes') and network.nodes:
+        # Schema-based Network with nodes list
+        node_dynamics_map = {}  # node_id -> Dynamics object
+
+        for node in network.nodes:
+            node_id = node.id
+            node_label = getattr(node, 'label', None) or f"node_{node_id}"
+            safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+            # Get dynamics for this node
+            dyn = None
+            if hasattr(node, 'dynamics') and node.dynamics:
+                if isinstance(node.dynamics, str):
+                    # Reference to dynamics library
+                    dyn = dynamics_library.get(node.dynamics)
+                else:
+                    # Inline dynamics object
+                    dyn = node.dynamics
+
+            if dyn:
+                model_name = getattr(dyn, 'name', None) or f"model_{node_id}"
+                op_name = f"{model_name}_op"
+                if op_name not in operators:
+                    operators[op_name] = render_operator(dyn, op_name)
+                nodes[safe_label] = model_name
+                node_dynamics_map[node_id] = dyn
+            else:
+                nodes[safe_label] = "node"
+                node_dynamics_map[node_id] = None
+
+        # Collect edges from network.edges
+        if hasattr(network, 'edges') and network.edges:
+            for edge in network.edges:
+                src_id = edge.source
+                tgt_id = edge.target
+                weight = getattr(edge, 'weight', 1.0) or 1.0
+                delay = getattr(edge, 'delay', 0.0) or 0.0
+
+                # Find node labels
+                src_label = None
+                tgt_label = None
+                for n in network.nodes:
+                    if n.id == src_id:
+                        src_label = getattr(n, 'label', None) or f"node_{src_id}"
+                    if n.id == tgt_id:
+                        tgt_label = getattr(n, 'label', None) or f"node_{tgt_id}"
+
+                src_label = str(src_label).replace(" ", "_").replace("-", "_")
+                tgt_label = str(tgt_label).replace(" ", "_").replace("-", "_")
+
+                src_model = nodes.get(src_label, "node")
+                tgt_model = nodes.get(tgt_label, "node")
+
+                src_dyn = node_dynamics_map.get(src_id)
+                tgt_dyn = node_dynamics_map.get(tgt_id)
+                # Prefer output variable for source, fall back to first state variable
+                if src_dyn and src_dyn.output:
+                    src_var = list(src_dyn.output.keys())[0]
+                elif src_dyn and src_dyn.state_variables:
+                    src_var = list(src_dyn.state_variables.keys())[0]
+                else:
+                    src_var = "x"
+                tgt_var = list(tgt_dyn.coupling_terms.keys())[0] if tgt_dyn and tgt_dyn.coupling_terms else src_var
+
+                edges.append({
+                    'src': src_label,
+                    'tgt': tgt_label,
+                    'src_op': f"{src_model}_op",
+                    'tgt_op': f"{tgt_model}_op",
+                    'src_var': src_var,
+                    'tgt_var': tgt_var,
+                    'weight': weight,
+                    'delay': delay,
+                })
+
+    # Check if network has a .graph attribute (NetworkX graph-based) - DEPRECATED
+    elif hasattr(network, 'graph') and network.graph is not None:
         # NetworkX-based network (deprecated _Network style)
         for node_id in network.graph.nodes:
             node_data = network.graph.nodes[node_id]
@@ -119,7 +196,13 @@ if is_network:
             tgt_node_data = network.graph.nodes[tgt]
             src_m = src_node_data.get('model')
             tgt_m = tgt_node_data.get('model')
-            src_var = list(src_m.state_variables.keys())[0] if src_m and src_m.state_variables else "x"
+            # Prefer output variable for source, fall back to first state variable
+            if src_m and src_m.output:
+                src_var = list(src_m.output.keys())[0]
+            elif src_m and src_m.state_variables:
+                src_var = list(src_m.state_variables.keys())[0]
+            else:
+                src_var = "x"
             tgt_var = list(tgt_m.coupling_terms.keys())[0] if tgt_m and tgt_m.coupling_terms else src_var
 
             edges.append({
