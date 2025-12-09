@@ -14,6 +14,7 @@ from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+
 from tvbo.data.tvbo_data import CONNECTOME_DIR, bids_utils
 from tvbo.datamodel import tvbo_datamodel
 
@@ -1288,6 +1289,7 @@ class Network(tvbo_datamodel.Network):
         edge_kwargs: Optional[Dict[str, Any]] = None,
         node_kwargs: Optional[Dict[str, Any]] = None,
         fontsize: float = 8,
+        format: str = "networkx",
     ) -> Union[Figure, cm.ScalarMappable]:
         """Visualize connectome as network graph.
 
@@ -1327,6 +1329,11 @@ class Network(tvbo_datamodel.Network):
             Additional arguments passed to nx.draw_networkx_nodes
         fontsize : float, default=8
             Font size for labels
+        format : str, default="networkx"
+            Plotting format: "networkx" for standard plotting, "bsplot" for fancy
+            node/edge plotting with text boxes and curved edges. When using "bsplot",
+            node labels are displayed with neuron (🔵) and synapse (🔗) icons based
+            on node type.
 
         Returns
         -------
@@ -1498,57 +1505,140 @@ class Network(tvbo_datamodel.Network):
             node_coloring = np.zeros(len(G.nodes)) if len(G.nodes) > 0 else np.array([])
 
         node_colors = node_cmap(node_coloring)
-        # Use explicit edgelist to keep color order aligned with edges_list
-        edgelist_draw = [(u, v, k) for (u, v, k, _) in edges_list]
-        nx.draw_networkx_edges(  # type: ignore[call-overload]
-            G,
-            pos,  # type: ignore[arg-type]
-            edgelist=edgelist_draw if edges_list else None,
-            edge_color=edge_colors,
-            edge_cmap=edge_cmap,
-            ax=ax,
-            **edge_kwargs,
-        )
-        nx.draw_networkx_nodes(  # type: ignore[call-overload]
-            G,
-            pos,  # type: ignore[arg-type]
-            node_size=node_sizes,  # Node size
-            node_color="white",  # No fill
-            edgecolors=node_colors,  # Outline color
-            linewidths=1,  # Outline width
-            ax=ax,
-            **node_kwargs,
-        )
-        if node_labels:
-            # Use node 'label' attribute if available, otherwise node id
+
+        # Branch based on format
+        if format == "bsplot":
+            from bsplot.graph.nodes import draw_custom_nodes
+            from bsplot.graph.edges import draw_custom_edges
+
+            # Build label dict with neuron/synapse icons
             label_dict = {}
-            for node_id in G.nodes():
+            node_colors_dict = {}
+            for i, node_id in enumerate(G.nodes()):
                 node_data = G.nodes[node_id]
-                label = node_data.get("label", None)
-                label_dict[node_id] = label if label else f"{node_id}"
-            nx.draw_networkx_labels(
-                G,
-                pos,  # type: ignore[arg-type]
-                labels=label_dict,
+                label = node_data.get("label", None) or str(node_id)
+                node_type = node_data.get("type", "").lower()
+                dynamics = node_data.get("dynamics", "").lower()
+
+                # Add icons based on node type or dynamics name
+                is_synapse = (
+                    "synapse" in node_type
+                    or "synapse" in dynamics
+                    or "synapse" in label.lower()
+                    or "depression" in dynamics
+                    or "facilitation" in dynamics
+                    or "tsodyks" in dynamics
+                    or "plasticity" in dynamics
+                )
+                is_neuron = (
+                    "neuron" in node_type
+                    or "neuron" in dynamics
+                    or "population" in node_type
+                    or "rate" in dynamics
+                )
+
+                if is_synapse:
+                    icon = "[S] "  # Synapse/connection icon
+                elif is_neuron:
+                    icon = "[N] "  # Neuron/node icon
+                else:
+                    icon = ""
+
+                label_dict[node_id] = f"{icon}{label}"
+                node_colors_dict[node_id] = node_colors[i]
+
+            # Create a relabeled graph with string node IDs for bsplot compatibility
+            # bsplot expects string node IDs, not integers
+            G_str = nx.relabel_nodes(G, {n: str(n) for n in G.nodes()})
+            pos_str = {str(k): v for k, v in pos.items()}  # type: ignore[union-attr]
+            label_dict_str = {str(k): v for k, v in label_dict.items()}
+            node_colors_dict_str = {str(k): v for k, v in node_colors_dict.items()}
+
+            # Add 'type' attribute to edges if missing (bsplot requires it)
+            for u, v, k, d in G_str.edges(keys=True, data=True):
+                if "type" not in d:
+                    # Use edge label or weight as type for visualization
+                    d["type"] = d.get("label", f"w={d.get('weight', 1.0):.2f}")
+
+            # Draw edges with bsplot curved style
+            draw_custom_edges(
+                G_str,
+                pos_str,
                 ax=ax,
+                edge_labels=edge_labels,
+                edge_colors=edge_cmap.name if hasattr(edge_cmap, "name") else "viridis",
+                color_by="type",
+                edge_radius=0.1,
+                linewidth=1.5,
                 font_size=fontsize,
             )
-        if edge_labels:
-            if edges_list:
-                edge_labels_dict = {}
-                for u, v, k, d in edges_list:
-                    val = d.get(edge_color, None)
-                    try:
-                        edge_labels_dict[(u, v, k)] = f"{float(val):.2f}"  # type: ignore[arg-type]
-                    except (TypeError, ValueError):
-                        edge_labels_dict[(u, v, k)] = str(val)
-                nx.draw_networkx_edge_labels(
+
+            # Draw nodes with bsplot text box style
+            draw_custom_nodes(
+                G_str,
+                pos_str,
+                labels=label_dict_str,
+                font_size=fontsize,
+                ax=ax,
+                node_colors=node_colors_dict_str,
+                alpha=0.9,
+            )
+
+            ax.axis("off")
+
+        else:
+            # Standard networkx plotting
+            # Use explicit edgelist to keep color order aligned with edges_list
+            edgelist_draw = [(u, v, k) for (u, v, k, _) in edges_list]
+            nx.draw_networkx_edges(  # type: ignore[call-overload]
+                G,
+                pos,  # type: ignore[arg-type]
+                edgelist=edgelist_draw if edges_list else None,
+                edge_color=edge_colors,
+                edge_cmap=edge_cmap,
+                ax=ax,
+                **edge_kwargs,
+            )
+            nx.draw_networkx_nodes(  # type: ignore[call-overload]
+                G,
+                pos,  # type: ignore[arg-type]
+                node_size=node_sizes,  # Node size
+                node_color="white",  # No fill
+                edgecolors=node_colors,  # Outline color
+                linewidths=1,  # Outline width
+                ax=ax,
+                **node_kwargs,
+            )
+            if node_labels:
+                # Use node 'label' attribute if available, otherwise node id
+                label_dict = {}
+                for node_id in G.nodes():
+                    node_data = G.nodes[node_id]
+                    label = node_data.get("label", None)
+                    label_dict[node_id] = label if label else f"{node_id}"
+                nx.draw_networkx_labels(
                     G,
                     pos,  # type: ignore[arg-type]
-                    edge_labels=edge_labels_dict,
+                    labels=label_dict,
                     ax=ax,
                     font_size=fontsize,
                 )
+            if edge_labels:
+                if edges_list:
+                    edge_labels_dict = {}
+                    for u, v, k, d in edges_list:
+                        val = d.get(edge_color, None)
+                        try:
+                            edge_labels_dict[(u, v, k)] = f"{float(val):.2f}"  # type: ignore[arg-type]
+                        except (TypeError, ValueError):
+                            edge_labels_dict[(u, v, k)] = str(val)
+                    nx.draw_networkx_edge_labels(
+                        G,
+                        pos,  # type: ignore[arg-type]
+                        edge_labels=edge_labels_dict,
+                        ax=ax,
+                        font_size=fontsize,
+                    )
         if return_fig:
             assert fig is not None
             plt.close()
