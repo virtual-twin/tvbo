@@ -264,6 +264,92 @@ class Network(tvbo_datamodel.Network):
         # as_dict returns a dict-like object that works with **kwargs
         return cls(**data)  # type: ignore[arg-type]
 
+    @classmethod
+    def from_matrix(
+        cls,
+        weights: np.ndarray,
+        lengths: Optional[np.ndarray] = None,
+        labels: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> "Network":
+        """Create a Network from weight (and optionally length) matrices.
+
+        This is a convenience constructor for creating networks from matrix
+        representations. The matrices are converted to explicit nodes and edges.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            Connection weight matrix (N x N). Non-zero entries become edges.
+        lengths : np.ndarray, optional
+            Tract length matrix (N x N). If provided, used for delay calculation.
+        labels : list of str, optional
+            Node labels. If not provided, uses "node_0", "node_1", etc.
+        **kwargs : Any
+            Additional keyword arguments passed to Network constructor.
+
+        Returns
+        -------
+        Network
+            New Network with nodes and edges derived from matrices.
+
+        Examples
+        --------
+        ```{python}
+        import numpy as np
+        from tvbo import Network
+
+        # Simple 3-node network
+        W = np.array([[0, 0.5, 0.3],
+                      [0.2, 0, 0.4],
+                      [0.1, 0.6, 0]])
+        network = Network.from_matrix(W, labels=["A", "B", "C"])
+        network.plot_graph()
+
+        # With tract lengths
+        L = np.array([[0, 10, 15],
+                      [10, 0, 8],
+                      [15, 8, 0]])
+        network = Network.from_matrix(W, lengths=L)
+        ```
+        """
+        weights = np.asarray(weights)
+        n_nodes = weights.shape[0]
+
+        if labels is None:
+            labels = [f"node_{i}" for i in range(n_nodes)]
+
+        # Create explicit nodes
+        nodes = []
+        for i in range(n_nodes):
+            nodes.append(tvbo_datamodel.Node(id=i, label=labels[i]))
+
+        # Create explicit edges from non-zero weights
+        edges = []
+        for i in range(n_nodes):
+            for j in range(n_nodes):
+                if weights[i, j] != 0:
+                    edge_kwargs = {
+                        "source": i,
+                        "target": j,
+                        "weight": float(weights[i, j]),
+                    }
+                    if lengths is not None:
+                        edge_kwargs["delay"] = float(lengths[i, j])
+                    edges.append(tvbo_datamodel.Edge(**edge_kwargs))
+
+        # Build the network with explicit nodes/edges
+        return cls(
+            nodes=nodes,
+            edges=edges,
+            number_of_nodes=n_nodes,
+            number_of_regions=n_nodes,
+            weights=weights,
+            lengths=lengths,
+            node_labels=labels,
+            **kwargs,
+        )
+
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
         super_setattr = super().__setattr__
@@ -1003,7 +1089,11 @@ class Network(tvbo_datamodel.Network):
         return lengths / conduction_speed  # type: ignore[operator]
 
     def create_graph(self, weight_threshold: float = 0) -> nx.MultiDiGraph:
-        """Create NetworkX graph from connectivity matrices.
+        """Create NetworkX graph from network structure.
+
+        Prioritizes explicit nodes/edges representation over weight matrices.
+        This allows proper visualization of heterogeneous networks with
+        labeled nodes and typed edges.
 
         Parameters
         ----------
@@ -1013,29 +1103,83 @@ class Network(tvbo_datamodel.Network):
         Returns
         -------
         networkx.MultiDiGraph
-            Directed multigraph with 'weight' and 'delay' edge attributes
+            Directed multigraph with 'weight' and 'delay' edge attributes.
+            Nodes have 'label' and 'dynamics' attributes when available.
+            Edges have 'source_var', 'target_var' attributes when available.
 
         Examples
         --------
         ```{python}
+        # From explicit nodes/edges
+        network = Network(nodes=[...], edges=[...])
+        G = network.create_graph()
+
+        # From weight matrix
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         G = sc.create_graph(weight_threshold=0.1)
         print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
         ```
         """
-        W = self.weights_matrix
-        D = self.calculate_delays()
-        # Use MultiDiGraph to allow asymmetric and multiple parallel edges
         G = nx.MultiDiGraph()
+
+        # Priority 1: Use explicit nodes/edges if available
+        nodes = getattr(self, "nodes", None)
+        edges = getattr(self, "edges", None)
+
+        if nodes and len(nodes) > 0:
+            # Build graph from explicit node/edge representation
+            for node in nodes:
+                node_id = getattr(node, "id", None)
+                if node_id is None:
+                    continue
+                node_attrs = {
+                    "label": getattr(node, "label", None) or f"node_{node_id}",
+                    "dynamics": getattr(node, "dynamics", None),
+                }
+                G.add_node(node_id, **node_attrs)
+
+            if edges:
+                for edge in edges:
+                    source = getattr(edge, "source", None)
+                    target = getattr(edge, "target", None)
+                    weight = getattr(edge, "weight", 1.0) or 1.0
+
+                    if source is None or target is None:
+                        continue
+                    if abs(weight) < weight_threshold:
+                        continue
+
+                    edge_attrs = {
+                        "weight": weight,
+                        "delay": getattr(edge, "delay", 0.0) or 0.0,
+                        "source_var": getattr(edge, "source_var", None),
+                        "target_var": getattr(edge, "target_var", None),
+                    }
+                    G.add_edge(source, target, **edge_attrs)
+
+            return G
+
+        # Priority 2: Fall back to weight matrix representation
+        W = self.weights_matrix
+        D = self.calculate_delays() if self.lengths_matrix is not None else None
         N_regions = self.number_of_regions
+
         if N_regions is None or W is None:
             return G
+
+        # Get node labels if available
+        labels = self.labels if hasattr(self, "labels") and self.labels else None
+
         for i in range(N_regions):
-            G.add_node(i)
+            node_attrs = {"label": labels[i] if labels else f"node_{i}"}
+            G.add_node(i, **node_attrs)
+
         for i in range(N_regions):
             for j in range(N_regions):
                 if W[i, j] > weight_threshold:
-                    G.add_edge(i, j, weight=W[i, j], delay=D[i, j])
+                    delay = D[i, j] if D is not None else 0.0
+                    G.add_edge(i, j, weight=W[i, j], delay=delay)
+
         return G
 
     def get_centers(self) -> Dict[int, Tuple[float, float, float]]:
@@ -1171,13 +1315,26 @@ class Network(tvbo_datamodel.Network):
         if isinstance(edge_cmap, str):
             edge_cmap = plt.get_cmap(edge_cmap)
 
-        # Build graph on demand from current weights and delays
-        W = self.weights_matrix
-        if W is None:
-            W = np.zeros((1, 1))
-        G = self.create_graph(
-            weight_threshold=float(np.percentile(W, threshold_percentile))
-        )
+        # Build graph on demand
+        # Determine weight threshold based on explicit edges or weight matrix
+        nodes = getattr(self, "nodes", None)
+        edges = getattr(self, "edges", None)
+        
+        if nodes and len(nodes) > 0 and edges:
+            # Use explicit edges - compute threshold from edge weights
+            edge_weights = [abs(getattr(e, "weight", 1.0) or 1.0) for e in edges]
+            if edge_weights and threshold_percentile > 0:
+                weight_threshold = float(np.percentile(edge_weights, threshold_percentile))
+            else:
+                weight_threshold = 0.0
+        else:
+            # Fall back to weight matrix
+            W = self.weights_matrix
+            if W is None:
+                W = np.zeros((1, 1))
+            weight_threshold = float(np.percentile(W, threshold_percentile))
+        
+        G = self.create_graph(weight_threshold=weight_threshold)
 
         # Generate positions for nodes
         if pos == "spring":
@@ -1240,8 +1397,12 @@ class Network(tvbo_datamodel.Network):
         else:
             edge_colors = edge_cmap(norm_edge_attr)
 
-        # Node strengths (incoming)
-        node_in_strength = np.sum(W, axis=1).astype(float)
+        # Node strengths (incoming) - compute from graph edges for accuracy
+        node_list = list(G.nodes())
+        node_in_strength = np.zeros(len(node_list))
+        for i, node_id in enumerate(node_list):
+            in_edges = G.in_edges(node_id, data=True)
+            node_in_strength[i] = sum(abs(d.get("weight", 1.0)) for _, _, d in in_edges)
         if log_in_strength:
             node_in_strength = np.log1p(node_in_strength)
         norm_node_in_strength = _safe_norm(node_in_strength)
@@ -1254,8 +1415,8 @@ class Network(tvbo_datamodel.Network):
         if node_colors == "in-strength":
             node_coloring = norm_node_in_strength
         elif node_colors == "node":
-            nodes = np.array(list(G.nodes), dtype=float)
-            node_coloring = _safe_norm(nodes)
+            nodes_arr = np.array(node_list, dtype=float)
+            node_coloring = _safe_norm(nodes_arr)
         else:
             # constant color fallback
             node_coloring = np.zeros(len(G.nodes)) if len(G.nodes) > 0 else np.array([])
@@ -1283,10 +1444,16 @@ class Network(tvbo_datamodel.Network):
             **node_kwargs,
         )
         if node_labels:
+            # Use node 'label' attribute if available, otherwise node id
+            label_dict = {}
+            for node_id in G.nodes():
+                node_data = G.nodes[node_id]
+                label = node_data.get("label", None)
+                label_dict[node_id] = label if label else f"{node_id}"
             nx.draw_networkx_labels(
                 G,
                 pos,  # type: ignore[arg-type]
-                labels={i: f"{i}" for i in G.nodes()},
+                labels=label_dict,
                 ax=ax,
                 font_size=fontsize,
             )

@@ -102,6 +102,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ld = self.local_dynamics
             self.dynamics = {ld.name: ld}
 
+        # If local_dynamics is empty but dynamics dict exists, use first entry
+        # This enables backwards-compatible single-model workflows
+        if not getattr(self, "local_dynamics", None) and getattr(self, "dynamics", None):
+            dynamics_dict = self.dynamics
+            if isinstance(dynamics_dict, dict) and dynamics_dict:
+                first_key = next(iter(dynamics_dict))
+                self.local_dynamics = dynamics_dict[first_key]
+                self.model = self.local_dynamics
+
         # Defaults
         if not getattr(self, "monitors", None):
             from tvbo.datamodel.tvbo_datamodel import Monitor
@@ -614,9 +623,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def _run_pyrates(
         self,
-        duration: float | None = None,
-        step_size: float = 0.1,
-        solver: str = "heun",
+        solver: str | None = None,
         inputs: dict | None = None,
         outputs: list[str] | None = None,
         **kwargs,
@@ -627,10 +634,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ----------
         duration : float, optional
             Simulation duration in ms. Defaults to integration.duration.
-        step_size : float
-            Integration step size in ms. Default 0.1.
-        solver : str
-            ODE solver: "euler", "heun", "scipy". Default "heun".
+        step_size : float, optional
+            Integration step size in ms. Defaults to integration.step_size.
+        solver : str, optional
+            ODE solver: "euler", "heun", "scipy". Defaults to mapped integration.method.
         inputs : dict, optional
             External inputs as {node/op/var: array} or will be auto-generated.
         outputs : list[str], optional
@@ -645,19 +652,54 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         import shutil
         import tempfile
+        import uuid
         from pyrates.frontend import CircuitTemplate
         from pyrates import clear
 
-        # Get simulation parameters
-        if duration is None:
-            duration = getattr(self.integration, "duration", 100.0)
+        # Get simulation parameters from metadata
+        integration = getattr(self, "integration", None)
+
+        # PyRates supported solvers (from pyrates.frontend.template.circuit)
+        PYRATES_SOLVERS = {"euler", "heun", "scipy"}
+        
+        # Map TVBO integration methods to PyRates solvers
+        TVBO_TO_PYRATES_SOLVER = {
+            "EulerDeterministic": "euler",
+            "Euler": "euler",
+            "HeunDeterministic": "heun",
+            "Heun": "heun",
+            "RungeKutta4thOrder": "scipy",
+            "RungeKutta4": "scipy",
+            "RK4": "scipy",
+        }
+
+        if solver is None:
+            method = getattr(integration, "method", None)
+            if method in TVBO_TO_PYRATES_SOLVER:
+                solver = TVBO_TO_PYRATES_SOLVER[method]
+            elif method in PYRATES_SOLVERS:
+                # Method is already a valid PyRates solver name
+                solver = method
+            elif method:
+                raise ValueError(
+                    f"Unsupported integration method '{method}' for PyRates. "
+                    f"Supported TVBO methods: {list(TVBO_TO_PYRATES_SOLVER.keys())}. "
+                    f"Supported PyRates solvers: {sorted(PYRATES_SOLVERS)}."
+                )
+            else:
+                solver = "heun"  # Default
+        elif solver not in PYRATES_SOLVERS:
+            raise ValueError(
+                f"Invalid solver '{solver}'. "
+                f"Supported PyRates solvers: {sorted(PYRATES_SOLVERS)}."
+            )
 
         # Export to PyRates YAML
         yaml_content = self.to_yaml(format="pyrates")
 
-        # Create temporary package for PyRates
+        # Create temporary package for PyRates with UNIQUE name to avoid caching
         tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_")
-        pkg_name = "_tvbo_pyrates_tmp"
+        pkg_name = f"_tvbo_pyrates_{uuid.uuid4().hex[:8]}"
         pkg_path = os.path.join(tmpdir, pkg_name)
         os.makedirs(pkg_path, exist_ok=True)
         open(os.path.join(pkg_path, "__init__.py"), "w").close()
@@ -690,8 +732,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Run simulation
             result = circuit.run(
-                step_size=step_size,
-                simulation_time=duration,
+                step_size=self.integration.step_size,
+                simulation_time=self.integration.duration,
                 inputs=inputs or {},
                 outputs=outputs,
                 solver=solver,
@@ -703,7 +745,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         finally:
             # Remove from path and clean up
-            sys.path.remove(tmpdir)
+            if tmpdir in sys.path:
+                sys.path.remove(tmpdir)
+            # Clean up cached module to prevent stale references
+            modules_to_remove = [k for k in sys.modules if k.startswith(pkg_name)]
+            for mod in modules_to_remove:
+                del sys.modules[mod]
             shutil.rmtree(tmpdir, ignore_errors=True)
 
         # Convert pandas DataFrame to TVBO TimeSeries
@@ -749,32 +796,56 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return outputs
 
     def _pyrates_result_to_timeseries(self, result) -> TimeSeries:
-        """Convert PyRates pandas DataFrame result to TVBO TimeSeries."""
+        """Convert PyRates pandas DataFrame result to TVBO TimeSeries.
+
+        Reshapes data from PyRates flat format to TVBO's standard format:
+        (time, state_variables, nodes, modes)
+        """
         time = np.array(result.index)
         columns = list(result.columns)
 
-        # Extract data: shape (time, state_vars, regions, modes=1)
-        # PyRates returns flat columns like "node_var"
-        data = np.array(result.values)
+        # Parse column names to extract node and state variable info
+        # Columns are named like "NodeLabel_statevariable" (e.g., "Driver_x", "Excitable_v")
+        node_names = []
+        sv_names = []
+        node_sv_pairs = []
 
-        # Reshape: (time, n_cols) -> (time, 1, n_cols, 1) for compatibility
-        # Or try to infer structure from column names
-        n_time = data.shape[0]
-        n_cols = data.shape[1]
+        for col in columns:
+            # Split on last underscore to handle node names with underscores
+            parts = col.rsplit("_", 1)
+            if len(parts) == 2:
+                node_name, sv_name = parts
+            else:
+                node_name, sv_name = col, col
+            node_sv_pairs.append((node_name, sv_name))
+            if node_name not in node_names:
+                node_names.append(node_name)
+            if sv_name not in sv_names:
+                sv_names.append(sv_name)
 
-        # Simple reshape for now
-        data = data.reshape(n_time, 1, n_cols, 1)
+        n_time = len(time)
+        n_nodes = len(node_names)
+        n_svs = len(sv_names)
+
+        # Create properly shaped data array: (time, state_vars, nodes, modes=1)
+        data = np.zeros((n_time, n_svs, n_nodes, 1), dtype=np.float32)
+
+        # Fill in the data by mapping each column to its (sv_index, node_index)
+        for col_idx, (node_name, sv_name) in enumerate(node_sv_pairs):
+            node_idx = node_names.index(node_name)
+            sv_idx = sv_names.index(sv_name)
+            data[:, sv_idx, node_idx, 0] = result.iloc[:, col_idx].values
 
         labels_dimensions = {
-            "State Variable": ["state"],
-            "Region": columns,
+            "State Variable": sv_names,
+            "Region": node_names,
         }
 
         return TimeSeries(
             time=time,
             data=data,
             labels_dimensions=labels_dimensions,
-            sample_period=time[1] - time[0] if len(time) > 1 else 1.0,
+            sample_period=float(time[1] - time[0]) if len(time) > 1 else 1.0,
         )
 
     def get_experiment_file_prefix(self):
