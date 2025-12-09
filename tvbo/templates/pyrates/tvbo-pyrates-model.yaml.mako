@@ -39,12 +39,14 @@ for var_name, sv in (model.state_variables or {}).items():
         iv = sv.initial_value if sv.initial_value is not None else 0.0
         variables[var_name] = f"variable({iv})"
 
-# Add output transforms
+# Add output transforms (algebraic equations)
+# Note: PyRates only allows ONE output per operator, so we mark these as 'variable'
+# They can still be recorded via the outputs dict in run()
 for var_name, ot in (model.output or {}).items():
     if ot.equation and ot.equation.rhs:
         rhs = convert_rhs(str(ot.equation.rhs))
         equations.append(f"{var_name} = {rhs}")
-        variables[var_name] = "output"
+        variables[var_name] = "variable"
 
 # Add parameters as constants
 for param_name, param in (model.parameters or {}).items():

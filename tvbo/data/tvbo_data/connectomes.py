@@ -350,6 +350,54 @@ class Network(tvbo_datamodel.Network):
             **kwargs,
         )
 
+    @classmethod
+    def from_string(cls, yaml_string: str, **kwargs: Any) -> "Network":
+        """Create a Network from a YAML string.
+
+        This is a convenience constructor for creating networks directly from
+        YAML specifications, commonly used in notebooks and scripts.
+
+        Parameters
+        ----------
+        yaml_string : str
+            YAML string defining the network with nodes and edges.
+        **kwargs : Any
+            Additional keyword arguments passed to Network constructor.
+
+        Returns
+        -------
+        Network
+            New Network parsed from the YAML string.
+
+        Examples
+        --------
+        ```{python}
+        from tvbo import Network
+
+        network = Network.from_string('''
+        label: MyNetwork
+        nodes:
+          - id: 0
+            label: NodeA
+            dynamics: Oscillator
+          - id: 1
+            label: NodeB
+            dynamics: Excitable
+        edges:
+          - source: 0
+            target: 1
+            weight: 0.5
+        ''')
+        print(network.label)
+        ```
+        """
+        import yaml as yaml_module
+
+        data = yaml_module.safe_load(yaml_string)
+        # Merge any additional kwargs
+        data.update(kwargs)
+        return cls(**data)
+
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
         super_setattr = super().__setattr__
@@ -642,7 +690,9 @@ class Network(tvbo_datamodel.Network):
                     ):
                         W = np.array(wm.values, dtype=np.float64).reshape(nx_, ny_)
                 elif getattr(wm, "dataLocation", None):
-                    W = pd.read_csv(wm.dataLocation, header=None).values.astype(np.float64)
+                    W = pd.read_csv(wm.dataLocation, header=None).values.astype(
+                        np.float64
+                    )
 
         # Priority 3: Default matrix
         if W is None:
@@ -738,7 +788,9 @@ class Network(tvbo_datamodel.Network):
                     ):
                         L = np.array(lm.values, dtype=np.float64).reshape(nx_, ny_)
                 elif getattr(lm, "dataLocation", None):
-                    L = pd.read_csv(lm.dataLocation, header=None).values.astype(np.float64)
+                    L = pd.read_csv(lm.dataLocation, header=None).values.astype(
+                        np.float64
+                    )
 
         # Priority 3: Default matrix
         if L is None:
@@ -1324,7 +1376,9 @@ class Network(tvbo_datamodel.Network):
             # Use explicit edges - compute threshold from edge weights
             edge_weights = [abs(getattr(e, "weight", 1.0) or 1.0) for e in edges]
             if edge_weights and threshold_percentile > 0:
-                weight_threshold = float(np.percentile(edge_weights, threshold_percentile))
+                weight_threshold = float(
+                    np.percentile(edge_weights, threshold_percentile)
+                )
             else:
                 weight_threshold = 0.0
         else:
@@ -1337,6 +1391,24 @@ class Network(tvbo_datamodel.Network):
         G = self.create_graph(weight_threshold=weight_threshold)
 
         # Generate positions for nodes
+        # First, check if nodes have explicit position coordinates
+        nodes_obj = getattr(self, "nodes", None)
+        nodes_have_positions = False
+        if nodes_obj and len(nodes_obj) > 0:
+            # Check if any node has a position attribute with x, y coordinates
+            positions_from_nodes = {}
+            for i, node in enumerate(nodes_obj):
+                node_pos = getattr(node, "position", None)
+                if node_pos is not None:
+                    x = getattr(node_pos, "x", None)
+                    y = getattr(node_pos, "y", None)
+                    if x is not None and y is not None:
+                        node_id = getattr(node, "id", i) or i
+                        positions_from_nodes[node_id] = [float(x), float(y)]
+            if len(positions_from_nodes) == len(nodes_obj):
+                nodes_have_positions = True
+                pos = positions_from_nodes  # type: ignore[assignment]
+
         if pos == "spring":
             pos = nx.spring_layout(  # type: ignore[assignment]
                 G,
@@ -1345,7 +1417,11 @@ class Network(tvbo_datamodel.Network):
             )
             ax.set_box_aspect(1)
 
-        if plot_brain:
+        if pos == "graphviz":
+            pos = nx.nx_agraph.graphviz_layout(G, prog="neato")  # type: ignore[assignment]
+            ax.set_box_aspect(1)
+
+        if plot_brain and not nodes_have_positions:
             view = plot_brain
 
             if view == "horizontal":
@@ -1598,7 +1674,6 @@ class Network(tvbo_datamodel.Network):
         self.normalization = tvbo_datamodel.Equation(
             rhs="(W - W_min) / (W_max - W_min)"
         )
-
 
 
 class Connectome(Network):

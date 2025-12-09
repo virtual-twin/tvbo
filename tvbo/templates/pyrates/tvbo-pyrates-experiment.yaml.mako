@@ -48,12 +48,13 @@ def render_operator(m, op_name):
             iv = sv.initial_value if sv.initial_value is not None else 0.0
             variables[var_name] = f"variable({iv})"
 
-    # Output transforms
+    # Output transforms (algebraic equations)
+    # Note: PyRates only allows ONE output per operator, so we mark as 'variable'
     for var_name, ot in (m.output or {}).items():
         if ot.equation and ot.equation.rhs:
             rhs = convert_rhs(str(ot.equation.rhs))
             equations.append(f"{var_name} = {rhs}")
-            variables[var_name] = "output"
+            variables[var_name] = "variable"
 
     # Parameters
     for param_name, param in (m.parameters or {}).items():
