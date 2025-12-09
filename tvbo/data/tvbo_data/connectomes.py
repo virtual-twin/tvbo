@@ -1319,7 +1319,7 @@ class Network(tvbo_datamodel.Network):
         # Determine weight threshold based on explicit edges or weight matrix
         nodes = getattr(self, "nodes", None)
         edges = getattr(self, "edges", None)
-        
+
         if nodes and len(nodes) > 0 and edges:
             # Use explicit edges - compute threshold from edge weights
             edge_weights = [abs(getattr(e, "weight", 1.0) or 1.0) for e in edges]
@@ -1333,7 +1333,7 @@ class Network(tvbo_datamodel.Network):
             if W is None:
                 W = np.zeros((1, 1))
             weight_threshold = float(np.percentile(W, threshold_percentile))
-        
+
         G = self.create_graph(weight_threshold=weight_threshold)
 
         # Generate positions for nodes

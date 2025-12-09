@@ -661,7 +661,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # PyRates supported solvers (from pyrates.frontend.template.circuit)
         PYRATES_SOLVERS = {"euler", "heun", "scipy"}
-        
+
         # Map TVBO integration methods to PyRates solvers
         TVBO_TO_PYRATES_SOLVER = {
             "EulerDeterministic": "euler",
