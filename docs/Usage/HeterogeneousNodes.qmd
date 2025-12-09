@@ -139,7 +139,9 @@ network = Network(**yaml.safe_load(network_yaml))
 ```
 
 ```{python}
-network.plot_graph(edge_cmap='coolwarm', node_size=1, edge_width=2, colorbar=True)
+network.plot_graph(
+    edge_cmap="coolwarm", edge_kwargs={"width": 5}, node_size=10)
+
 ```
 
 ```{python}
