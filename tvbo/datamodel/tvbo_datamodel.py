@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-08T18:42:53
+# Generation date: 2025-12-08T22:44:39
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -641,9 +641,11 @@ class Edge(YAMLRoot):
 
     source: int = None
     target: int = None
-    coupling: Union[dict, "Coupling"] = None
     label: Optional[str] = None
     description: Optional[str] = None
+    source_var: Optional[str] = None
+    target_var: Optional[str] = None
+    coupling: Optional[Union[str, CouplingName]] = None
     weight: Optional[float] = 1.0
     delay: Optional[float] = 0.0
     distance: Optional[float] = None
@@ -660,16 +662,20 @@ class Edge(YAMLRoot):
         if not isinstance(self.target, int):
             self.target = int(self.target)
 
-        if self._is_empty(self.coupling):
-            self.MissingRequiredField("coupling")
-        if not isinstance(self.coupling, Coupling):
-            self.coupling = Coupling(**as_dict(self.coupling))
-
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if self.source_var is not None and not isinstance(self.source_var, str):
+            self.source_var = str(self.source_var)
+
+        if self.target_var is not None and not isinstance(self.target_var, str):
+            self.target_var = str(self.target_var)
+
+        if self.coupling is not None and not isinstance(self.coupling, CouplingName):
+            self.coupling = CouplingName(self.coupling)
 
         if self.weight is not None and not isinstance(self.weight, float):
             self.weight = float(self.weight)
@@ -3763,8 +3769,14 @@ slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie
 slots.edge__target = Slot(uri=TVBO.target, name="edge__target", curie=TVBO.curie('target'),
                    model_uri=TVBO.edge__target, domain=None, range=int)
 
+slots.edge__source_var = Slot(uri=TVBO.source_var, name="edge__source_var", curie=TVBO.curie('source_var'),
+                   model_uri=TVBO.edge__source_var, domain=None, range=Optional[str])
+
+slots.edge__target_var = Slot(uri=TVBO.target_var, name="edge__target_var", curie=TVBO.curie('target_var'),
+                   model_uri=TVBO.edge__target_var, domain=None, range=Optional[str])
+
 slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO.curie('coupling'),
-                   model_uri=TVBO.edge__coupling, domain=None, range=Union[dict, Coupling])
+                   model_uri=TVBO.edge__coupling, domain=None, range=Optional[Union[str, CouplingName]])
 
 slots.edge__weight = Slot(uri=TVBO.weight, name="edge__weight", curie=TVBO.curie('weight'),
                    model_uri=TVBO.edge__weight, domain=None, range=Optional[float])

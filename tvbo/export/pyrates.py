@@ -130,7 +130,7 @@ def to_pyrates_network_yaml(
 
 
 def to_pyrates_yaml_string(
-    dynamics: "Dynamics | None" = None,
+    dynamics: "Dynamics | dict[str, Dynamics] | None" = None,
     network: "Network | None" = None,
     filepath: str | None = None,
 ) -> str:
@@ -141,8 +141,9 @@ def to_pyrates_yaml_string(
 
     Parameters
     ----------
-    dynamics : Dynamics, optional
-        TVBO Dynamics model for single-node experiment.
+    dynamics : Dynamics or dict[str, Dynamics], optional
+        TVBO Dynamics model for single-node experiment, or a dictionary
+        of dynamics models keyed by name for heterogeneous networks.
     network : Network, optional
         TVBO Network for multi-node experiment.
     filepath : str, optional
@@ -156,7 +157,14 @@ def to_pyrates_yaml_string(
     from tvbo import templates
 
     template = templates.lookup.get_template("tvbo-pyrates-experiment.yaml.mako")
-    yaml_str = str(template.render(model=dynamics, network=network))
+
+    # Handle dynamics as either a single model or a dictionary
+    if isinstance(dynamics, dict):
+        # dynamics is a library for heterogeneous networks
+        yaml_str = str(template.render(model=None, network=network, dynamics=dynamics))
+    else:
+        # dynamics is a single model
+        yaml_str = str(template.render(model=dynamics, network=network, dynamics={}))
 
     if filepath:
         with open(filepath, "w", encoding="utf-8") as f:

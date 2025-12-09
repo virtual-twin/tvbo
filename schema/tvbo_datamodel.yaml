@@ -446,11 +446,17 @@ classes:
         range: integer
         required: true
         description: "Target node ID"
+      source_var:
+        range: string
+        description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+      target_var:
+        range: string
+        description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
       coupling:
         range: Coupling
-        required: true
-        description: "Coupling function applied on this edge (can be shared across edges)"
-        inlined: true
+        required: false
+        description: "Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling."
+        inlined: false
       weight:
         range: float
         ifabsent: float(1.0)
