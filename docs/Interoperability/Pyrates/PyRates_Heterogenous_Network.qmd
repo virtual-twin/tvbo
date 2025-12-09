@@ -97,8 +97,6 @@ output:
     equation:
       rhs: "x"
 """)
-
-print(f"Created dynamics: {driver.name}, {fhn.name}, {vdp.name}")
 ```
 
 ## Create SimulationExperiment with Network
@@ -185,6 +183,24 @@ print("=== Generated PyRates YAML ===")
 print(yaml_content)
 ```
 
+```{python}
+# Run with PyRates backend - returns TVBO TimeSeries
+exp.integration.duration = 300.0
+exp.integration.step_size = 0.01
+
+res = exp.run('pyrates')
+```
+
+```{python}
+# Check the result format
+print(res)
+print(f"\nData shape: {res.data.shape}  →  (time, state_vars, nodes, modes)")
+```
+
+```{python}
+res.get_region('Excitable').plot()
+```
+
 ## Run in PyRates
 
 For manual control, you can still run PyRates directly:
@@ -227,45 +243,38 @@ import numpy as np
 
 fig, axes = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
 
-# Normalize for better comparison
 t = result.index
+t_tvbo = res.time
 
 # Plot Driver (slow oscillation)
 ax = axes[0]
-ax.plot(t, result["driver"], 'C0', lw=2, label="Slow Driver")
+ax.plot(t, result["driver"], 'C0', lw=2, label="PyRates: Driver x")
+# Overlay TVBO data with dashed line
+driver_tvbo = res.get_region('Driver').get_state_variable('x')
+ax.plot(t_tvbo, driver_tvbo.data[:, 0, 0, 0], 'k--', lw=1.5, alpha=0.7, label="TVBO TimeSeries")
 ax.axhline(0, color='gray', ls='--', alpha=0.5)
-ax.fill_between(t, result["driver"], 0, where=result["driver"] > 0,
-                alpha=0.3, color='C0', label="Driver UP phase")
 ax.set_ylabel("Driver\n(Hopf)")
 ax.legend(loc='upper right')
-ax.set_title("Heterogeneous Network: Slow Driver Modulates Two Different Dynamics", fontsize=12)
+ax.set_title("Comparison: PyRates DataFrame vs TVBO TimeSeries", fontsize=12)
 
-# Plot Excitable (responds to positive driver input)
+# Plot Excitable
 ax = axes[1]
-ax.plot(t, result["excitable"], 'C1', lw=1.5, label="Excitable (FHN)")
+ax.plot(t, result["excitable"], 'C1', lw=2, label="PyRates: Excitable v")
+excitable_tvbo = res.get_region('Excitable').get_state_variable('v')
+ax.plot(t_tvbo, excitable_tvbo.data[:, 0, 0, 0], 'k--', lw=1.5, alpha=0.7, label="TVBO TimeSeries")
 ax.axhline(0, color='gray', ls='--', alpha=0.5)
-# Shade when driver is positive (excitable should be more active)
-driver_up = result["driver"].values > 0
-ax.fill_between(t, ax.get_ylim()[0], ax.get_ylim()[1],
-                where=driver_up, alpha=0.15, color='C0')
 ax.set_ylabel("Excitable\n(FHN)")
 ax.legend(loc='upper right')
-ax.annotate("Active when Driver UP", xy=(0.02, 0.85), xycoords='axes fraction',
-            fontsize=10, color='C0')
 
-# Plot Relaxation (responds to negative driver input - anti-phase)
+# Plot Relaxation
 ax = axes[2]
-ax.plot(t, result["relaxation"], 'C2', lw=1.5, label="Relaxation (VdP)")
+ax.plot(t, result["relaxation"], 'C2', lw=2, label="PyRates: Relaxation x")
+relaxation_tvbo = res.get_region('Relaxation').get_state_variable('x')
+ax.plot(t_tvbo, relaxation_tvbo.data[:, 0, 0, 0], 'k--', lw=1.5, alpha=0.7, label="TVBO TimeSeries")
 ax.axhline(0, color='gray', ls='--', alpha=0.5)
-# Shade when driver is negative (relaxation should be more active)
-driver_down = result["driver"].values < 0
-ax.fill_between(t, ax.get_ylim()[0], ax.get_ylim()[1],
-                where=driver_down, alpha=0.15, color='C2')
 ax.set_ylabel("Relaxation\n(VdP)")
 ax.set_xlabel("Time (ms)")
 ax.legend(loc='upper right')
-ax.annotate("Active when Driver DOWN", xy=(0.02, 0.85), xycoords='axes fraction',
-            fontsize=10, color='C2')
 
 plt.tight_layout()
 plt.show()
@@ -686,3 +695,4 @@ ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 ```
+
