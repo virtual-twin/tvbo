@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-08T22:44:39
+# Generation date: 2025-12-10T11:29:07
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -516,10 +516,7 @@ class Network(YAMLRoot):
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[str] = None
-    weights: Optional[Union[dict, Matrix]] = None
-    lengths: Optional[Union[dict, Matrix]] = None
     normalization: Optional[Union[dict, Equation]] = None
-    node_labels: Optional[Union[str, list[str]]] = empty_list()
     global_coupling_strength: Optional[Union[dict, "Parameter"]] = None
     conduction_speed: Optional[Union[dict, "Parameter"]] = None
 
@@ -552,18 +549,8 @@ class Network(YAMLRoot):
         if self.tractogram is not None and not isinstance(self.tractogram, str):
             self.tractogram = str(self.tractogram)
 
-        if self.weights is not None and not isinstance(self.weights, Matrix):
-            self.weights = Matrix(**as_dict(self.weights))
-
-        if self.lengths is not None and not isinstance(self.lengths, Matrix):
-            self.lengths = Matrix(**as_dict(self.lengths))
-
         if self.normalization is not None and not isinstance(self.normalization, Equation):
             self.normalization = Equation(**as_dict(self.normalization))
-
-        if not isinstance(self.node_labels, list):
-            self.node_labels = [self.node_labels] if self.node_labels is not None else []
-        self.node_labels = [v if isinstance(v, str) else str(v) for v in self.node_labels]
 
         if self.global_coupling_strength is not None and not isinstance(self.global_coupling_strength, Parameter):
             self.global_coupling_strength = Parameter(**as_dict(self.global_coupling_strength))
@@ -3727,17 +3714,8 @@ slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcell
 slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
                    model_uri=TVBO.network__tractogram, domain=None, range=Optional[str])
 
-slots.network__weights = Slot(uri=TVBO.weights, name="network__weights", curie=TVBO.curie('weights'),
-                   model_uri=TVBO.network__weights, domain=None, range=Optional[Union[dict, Matrix]])
-
-slots.network__lengths = Slot(uri=TVBO.lengths, name="network__lengths", curie=TVBO.curie('lengths'),
-                   model_uri=TVBO.network__lengths, domain=None, range=Optional[Union[dict, Matrix]])
-
 slots.network__normalization = Slot(uri=TVBO.normalization, name="network__normalization", curie=TVBO.curie('normalization'),
                    model_uri=TVBO.network__normalization, domain=None, range=Optional[Union[dict, Equation]])
-
-slots.network__node_labels = Slot(uri=TVBO.node_labels, name="network__node_labels", curie=TVBO.curie('node_labels'),
-                   model_uri=TVBO.network__node_labels, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.network__global_coupling_strength = Slot(uri=TVBO.global_coupling_strength, name="network__global_coupling_strength", curie=TVBO.curie('global_coupling_strength'),
                    model_uri=TVBO.network__global_coupling_strength, domain=None, range=Optional[Union[dict, Parameter]])

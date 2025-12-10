@@ -128,17 +128,19 @@ class Network(tvbo_datamodel.Network):
 
         1. Use provided weights/lengths arrays
         2. Load from atlas if parcellation specified
-        3. Create default matrices as fallback
+        3. Create default empty network as fallback
 
         Examples
         --------
         ```{python}
-        # From atlas
+        # From atlas (loads normative data as nodes/edges)
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
 
-        # From arrays
-        import numpy as np
-        sc = Connectome(weights=np.random.rand(68, 68), number_of_regions=68)
+        # From nodes/edges
+        from tvbo.datamodel import Node, Edge
+        nodes = [Node(id=0, label="A"), Node(id=1, label="B")]
+        edges = [Edge(source=0, target=1, weight=0.5)]
+        net = Network(nodes=nodes, edges=edges)
         ```
         """
         # Sync number_of_regions and number_of_nodes early
@@ -147,90 +149,66 @@ class Network(tvbo_datamodel.Network):
         elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
             kwargs["number_of_regions"] = kwargs["number_of_nodes"]
 
-        # Priority 1: Use weights/lengths from kwargs if provided (already there)
-        has_weights = "weights" in kwargs
-        has_lengths = "lengths" in kwargs
+        # Check if nodes/edges are already provided
+        has_nodes = "nodes" in kwargs and kwargs["nodes"]
+        has_edges = "edges" in kwargs and kwargs["edges"]
 
-        # Infer n_nodes from numpy arrays if provided
-        n_nodes = kwargs.get("number_of_nodes") or kwargs.get("number_of_regions")
-        if n_nodes is None:
-            if has_weights and isinstance(kwargs["weights"], np.ndarray):
-                n_nodes = kwargs["weights"].shape[0]
-            elif has_lengths and isinstance(kwargs["lengths"], np.ndarray):
-                n_nodes = kwargs["lengths"].shape[0]
-            else:
-                n_nodes = 1
-
-        # Priority 2: Load normative data if parcellation/atlas specified and no weights/lengths
-        if not has_weights and not has_lengths:
-            if "parcellation" in kwargs and kwargs["parcellation"].get("atlas"):
+        # Load normative data if parcellation/atlas specified and no nodes/edges
+        if not has_nodes and not has_edges:
+            if "parcellation" in kwargs:
+                if isinstance("parcellation", str):
+                    parcellation = tvbo_datamodel.Parcellation(
+                        label=kwargs["parcellation"],
+                        atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
+                    )
                 atlas_name = kwargs["parcellation"]["atlas"].get("name")
                 tractogram = kwargs.get("tractogram", "dTOR")
-                w_in, l_in = get_normative_connectome_data(atlas_name, tractogram)
-                kwargs["weights"] = w_in
-                kwargs["lengths"] = l_in
-                # Infer number of regions from loaded data
-                if hasattr(w_in, "dataLocation") and w_in.dataLocation:
-                    w_arr = pd.read_csv(w_in.dataLocation, header=None).values
+                w_matrix, l_matrix = get_normative_connectome_data(
+                    atlas_name, tractogram
+                )
+
+                # Load the actual arrays
+                if hasattr(w_matrix, "dataLocation") and w_matrix.dataLocation:
+                    w_arr = pd.read_csv(w_matrix.dataLocation, header=None).values
+                    l_arr = (
+                        pd.read_csv(l_matrix.dataLocation, header=None).values
+                        if hasattr(l_matrix, "dataLocation")
+                        else None
+                    )
                     n_nodes = w_arr.shape[0]
+
+                    # Create nodes
+                    nodes = [
+                        tvbo_datamodel.Node(id=i, label=f"region_{i}")
+                        for i in range(n_nodes)
+                    ]
+
+                    # Create edges from non-zero weights
+                    edges = []
+                    for i in range(n_nodes):
+                        for j in range(n_nodes):
+                            if w_arr[i, j] != 0:
+                                edge_kwargs = {
+                                    "source": i,
+                                    "target": j,
+                                    "weight": float(w_arr[i, j]),
+                                }
+                                if l_arr is not None:
+                                    edge_kwargs["distance"] = float(l_arr[i, j])
+                                edges.append(tvbo_datamodel.Edge(**edge_kwargs))
+
+                    kwargs["nodes"] = nodes
+                    kwargs["edges"] = edges
                     kwargs["number_of_regions"] = n_nodes
                     kwargs["number_of_nodes"] = n_nodes
-                has_weights = True
-                has_lengths = True
 
-        # Priority 3: Create default matrices if still no weights/lengths
-        if not has_weights:
-            kwargs["weights"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                values=[0.0] * (n_nodes * n_nodes),
-            )
-
-        if not has_lengths:
-            kwargs["lengths"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                values=[1.0] * (n_nodes * n_nodes),
-            )
-
-        # Ensure number_of_regions/nodes are set
-        if "number_of_regions" not in kwargs:
-            kwargs["number_of_regions"] = n_nodes
-        if "number_of_nodes" not in kwargs:
-            kwargs["number_of_nodes"] = n_nodes
-
-        # Convert numpy arrays to Matrix objects if needed
-        if isinstance(kwargs.get("weights"), np.ndarray):
-            w_in = kwargs["weights"]
-            kwargs["weights"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(w_in.shape[0])]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(w_in.shape[1])]
-                ),
-                values=w_in.reshape(-1).astype(float).tolist(),
-            )
-
-        if isinstance(kwargs.get("lengths"), np.ndarray):
-            l_in = kwargs["lengths"]
-            kwargs["lengths"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(l_in.shape[0])]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(l_in.shape[1])]
-                ),
-                values=l_in.reshape(-1).astype(float).tolist(),
-            )
+        # Infer n_nodes from nodes if present
+        if "nodes" in kwargs and kwargs["nodes"]:
+            n_nodes = len(kwargs["nodes"])
+            if "number_of_nodes" not in kwargs:
+                kwargs["number_of_nodes"] = n_nodes
+            if "number_of_regions" not in kwargs:
+                kwargs["number_of_regions"] = n_nodes
 
         super().__init__(**kwargs)
 
@@ -336,18 +314,15 @@ class Network(tvbo_datamodel.Network):
                         "weight": float(weights[i, j]),
                     }
                     if lengths is not None:
-                        edge_kwargs["delay"] = float(lengths[i, j])
+                        edge_kwargs["distance"] = float(lengths[i, j])
                     edges.append(tvbo_datamodel.Edge(**edge_kwargs))
 
-        # Build the network with explicit nodes/edges
+        # Build the network with explicit nodes/edges (no weights/lengths attributes)
         return cls(
             nodes=nodes,
             edges=edges,
             number_of_nodes=n_nodes,
             number_of_regions=n_nodes,
-            weights=weights,
-            lengths=lengths,
-            node_labels=labels,
             **kwargs,
         )
 
@@ -403,33 +378,9 @@ class Network(tvbo_datamodel.Network):
     def __setattr__(self, name: str, value: Any) -> None:
         super_setattr = super().__setattr__
 
-        # Normalize assignments to weights/lengths into Matrix objects
-        if name in ("weights", "lengths"):
-            try:
-                # list -> ndarray
-                if isinstance(value, list):
-                    value = np.array(value, dtype=float)
-                # ndarray -> Matrix with labeled axes
-                if isinstance(value, np.ndarray):
-                    mat = self._matrix_from_array(value)
-                    super_setattr(name, mat)
-                    # Keep region/node counts in sync
-                    try:
-                        n = int(value.shape[0])
-                        if getattr(self, "number_of_regions", None) != n:
-                            super_setattr("number_of_regions", n)
-                    except Exception:
-                        pass
-                    return
-                # path-like str -> Matrix by dataLocation
-                if isinstance(value, str):
-                    super_setattr(name, tvbo_datamodel.Matrix(dataLocation=value))
-                    return
-            except Exception:
-                # Fallback to raw assignment on any conversion issue
-                pass
-
         super_setattr(name, value)
+
+        # Keep number_of_regions and number_of_nodes in sync
         if name == "number_of_regions":
             try:
                 nodes = getattr(self, "number_of_nodes", None)
@@ -598,7 +549,7 @@ class Network(tvbo_datamodel.Network):
         )
 
     def _weights_from_edges(self) -> Optional[np.ndarray]:
-        """Compute weights matrix from edges metadata.
+        """Compute weights matrix from edges.
 
         Returns None if no edges are defined.
         """
@@ -613,7 +564,7 @@ class Network(tvbo_datamodel.Network):
         return W
 
     def _lengths_from_edges(self) -> Optional[np.ndarray]:
-        """Compute lengths matrix from edges metadata.
+        """Compute lengths matrix from edges.
 
         Returns None if no edges are defined.
         """
@@ -628,28 +579,42 @@ class Network(tvbo_datamodel.Network):
         return L
 
     @property
-    def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
-        """Connection weights matrix as numpy/JAX array.
-
-        Returns the (N x N) matrix of connection strengths between regions.
-        Priority: 1) edges metadata, 2) weights Matrix/array, 3) default.
-        If normalization is defined, applies the normalization equation.
+    def node_labels(self) -> List[str]:
+        """Node labels derived from nodes.
 
         Returns
         -------
-        np.ndarray or jax.Array, optional
-            Connection weights matrix (N x N), or None if unavailable
-
-        Notes
-        -----
-        If `self.normalization` contains an equation, the weights are
-        transformed according to that equation before being returned.
+        list of str
+            Labels for each node in the network
 
         Examples
         --------
         ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        W = sc.weights_matrix
+        net = Network.from_matrix(weights, lengths, labels=["A", "B", "C"])
+        print(net.node_labels)  # ['A', 'B', 'C']
+        ```
+        """
+        if not self.nodes:
+            return []
+        return [n.label for n in self.nodes]  # type: ignore[union-attr]
+
+    @property
+    def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
+        """Connection weights matrix as numpy/JAX array.
+
+        Computed from edges. If normalization is defined, applies the
+        normalization equation.
+
+        Returns
+        -------
+        np.ndarray or jax.Array, optional
+            Connection weights matrix (N x N), or None if no edges
+
+        Examples
+        --------
+        ```{python}
+        net = Network.from_matrix(weights, lengths)
+        W = net.weights_matrix
         print(f"Shape: {W.shape}, Mean: {W.mean():.3f}")
         ```
         """
@@ -658,51 +623,12 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
-        W = None
-
-        # Priority 1: Compute from edges metadata
-        if self.edges:
-            W = self._weights_from_edges()
-
-        # Priority 2: Use weights Matrix/array
+        # Compute from edges
+        W = self._weights_from_edges()
         if W is None:
-            wm = self.weights
-            if wm is not None:
-                if isinstance(wm, list):
-                    W = np.array(wm, dtype=np.float64)
-                elif getattr(wm, "values", None):
-                    x = getattr(wm, "x", None)
-                    y = getattr(wm, "y", None)
-                    nx_ = (
-                        len(x.values)
-                        if x and getattr(x, "values", None)
-                        else self.number_of_regions
-                    )
-                    ny_ = (
-                        len(y.values)
-                        if y and getattr(y, "values", None)
-                        else self.number_of_regions
-                    )
-                    if (
-                        nx_ is not None
-                        and ny_ is not None
-                        and isinstance(nx_, int)
-                        and isinstance(ny_, int)
-                    ):
-                        W = np.array(wm.values, dtype=np.float64).reshape(nx_, ny_)
-                elif getattr(wm, "dataLocation", None):
-                    W = pd.read_csv(wm.dataLocation, header=None).values.astype(
-                        np.float64
-                    )
+            return None
 
-        # Priority 3: Default matrix
-        if W is None:
-            N = getattr(self, "number_of_regions", None)
-            if N is not None and isinstance(N, int) and N > 0:
-                W = np.ones((N, N), dtype=np.float64)
-                np.fill_diagonal(W, 0)
-
-        # Apply normalization from metadata if available and executable
+        # Apply normalization if defined
         norm = getattr(self, "normalization", None)
         if norm is not None:
             import jax.numpy as jnp
@@ -744,13 +670,13 @@ class Network(tvbo_datamodel.Network):
         Returns
         -------
         np.ndarray or jax.Array, optional
-            Tract lengths matrix (N x N) in mm, or None if unavailable
+            Tract lengths matrix (N x N) in mm, or None if no edges
 
         Examples
         --------
         ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        L = sc.lengths_matrix
+        net = Network.from_matrix(weights, lengths)
+        L = net.lengths_matrix
         print(f"Mean length: {L.mean():.1f} mm")
         ```
         """
@@ -758,49 +684,8 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
 
-        L = None
-
-        # Priority 1: Compute from edges metadata
-        if self.edges:
-            L = self._lengths_from_edges()
-
-        # Priority 2: Use lengths Matrix/array
-        if L is None:
-            lm = self.lengths
-            if lm is not None:
-                if getattr(lm, "values", None):
-                    x = getattr(lm, "x", None)
-                    y = getattr(lm, "y", None)
-                    nx_ = (
-                        len(x.values)
-                        if x and getattr(x, "values", None)
-                        else self.number_of_regions
-                    )
-                    ny_ = (
-                        len(y.values)
-                        if y and getattr(y, "values", None)
-                        else self.number_of_regions
-                    )
-                    if (
-                        nx_ is not None
-                        and ny_ is not None
-                        and isinstance(nx_, int)
-                        and isinstance(ny_, int)
-                    ):
-                        L = np.array(lm.values, dtype=np.float64).reshape(nx_, ny_)
-                elif getattr(lm, "dataLocation", None):
-                    L = pd.read_csv(lm.dataLocation, header=None).values.astype(
-                        np.float64
-                    )
-
-        # Priority 3: Default matrix
-        if L is None:
-            N = getattr(self, "number_of_regions", None)
-            if N is not None and isinstance(N, int) and N > 0:
-                L = np.ones((N, N), dtype=np.float64)
-                np.fill_diagonal(L, 0)
-
-        return L
+        # Compute from edges
+        return self._lengths_from_edges()
 
     @property
     def labels(self) -> Dict[str, str]:

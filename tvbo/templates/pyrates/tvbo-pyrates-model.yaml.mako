@@ -7,62 +7,85 @@
 ## Use tvbo-pyrates-network.yaml.mako for Node/Circuit topology.
 ## Use tvbo-pyrates-experiment.yaml.mako for complete runnable experiments.
 ##
+## Note: Custom functions (e.g., Sigm) are automatically inlined into equations
+## since PyRates doesn't support user-defined functions in YAML templates.
+## We use format='sympy' since PyRates parses equations with SymPy internally.
+##
+## This template can be used standalone or included via <%namespace>.
+##
+
+<%def name="render_operator(m, op_name=None)">
 <%
-model = context['model']
+    # Replace reserved names that conflict with SymPy/PyRates built-ins:
+    # - 'I' conflicts with PyRates built-in 'I' (imaginary unit/current)
+    # - 'gamma' conflicts with SymPy's gamma function
+    # - 'beta' conflicts with SymPy's beta function (Euler beta)
+    # - 'zeta' conflicts with SymPy's zeta function (Riemann zeta)
+    # - 'lambda' is a Python keyword
+    # - 'E' conflicts with SymPy's E (Euler's number)
+    # - 'N' conflicts with SymPy's N (numerical evaluation)
+    # - 'S' conflicts with SymPy's S (sympify shorthand)
+    # - 'O' conflicts with SymPy's O (big-O notation)
+    repl = {
+        "I": "Ipar",
+        "gamma": "gamma_par",
+        "beta": "beta_par",
+        "zeta": "zeta_par",
+        "lambda": "lambda_par",
+        "E": "E_par",
+        "N": "N_par",
+        "S": "S_par",
+        "O": "O_par",
+    }
 
-def convert_rhs(rhs):
-    """Convert TVBO equation RHS to PyRates syntax."""
-    if not rhs:
-        return rhs
-    return str(rhs).replace("numpy.", "").replace("np.", "").replace("math.", "")
+    # Get model name
+    name = m.name or "tvbo_model"
+    _op_name = op_name or f"{name}_op"
 
-# Get model name
-name = model.name or "tvbo_model"
-op_name = f"{name}_op"
+    # Collect equations and variables
+    equations = []
+    variables = {}
 
-# Collect equations and variables
-equations = []
-variables = {}
+    # Add derived variables (algebraic equations)
+    for k, dv in m.derived_variables.items():
+        # Use sympy format (bare function names) and inline any custom functions
+        equations.append(f"{k} = {m.render_equation(dv, format='sympy', inline_functions=True, replace=repl)}")
+        variables[k] = "variable"
 
-# Add derived variables (algebraic equations)
-for var_name, dv in (model.derived_variables or {}).items():
-    if dv.equation and dv.equation.rhs:
-        rhs = convert_rhs(str(dv.equation.rhs))
-        equations.append(f"{var_name} = {rhs}")
-        variables[var_name] = "variable"
+    # Add state variable equations (differential equations)
+    for k, sv in (m.state_variables or {}).items():
+        # Use sympy format and inline any custom functions
+        equations.append(f"{k}' = {m.render_equation(sv, format='sympy', inline_functions=True, replace=repl)}")
+        iv = sv.initial_value
+        variables[k] = f"variable({iv})"
 
-# Add state variable equations (differential equations)
-for var_name, sv in (model.state_variables or {}).items():
-    if sv.equation and sv.equation.rhs:
-        rhs = convert_rhs(str(sv.equation.rhs))
-        equations.append(f"{var_name}' = {rhs}")
-        iv = sv.initial_value if sv.initial_value is not None else 0.0
-        variables[var_name] = f"variable({iv})"
+    # Add output transforms (algebraic equations)
+    # Note: PyRates only allows ONE output per operator, so we mark these as 'variable'
+    for k, ot in (m.output or {}).items():
+        equations.append(f"{k} = {m.render_equation(ot, format='sympy', inline_functions=True, replace=repl)}")
+        variables[k] = "variable"
 
-# Add output transforms (algebraic equations)
-# Note: PyRates only allows ONE output per operator, so we mark these as 'variable'
-# They can still be recorded via the outputs dict in run()
-for var_name, ot in (model.output or {}).items():
-    if ot.equation and ot.equation.rhs:
-        rhs = convert_rhs(str(ot.equation.rhs))
-        equations.append(f"{var_name} = {rhs}")
-        variables[var_name] = "variable"
+    # Add parameters as constants
+    for param_name, param in (m.parameters or {}).items():
+        if param_name in repl:
+            param_name = repl[param_name]
 
-# Add parameters as constants
-for param_name, param in (model.parameters or {}).items():
-    val = param.value if param.value is not None else 0.0
-    variables[param_name] = float(val)
+        val = param.value
+        variables[param_name] = float(val)
 
-# Add coupling terms as inputs
-for ct_name in (model.coupling_terms or {}).keys():
-    variables[ct_name] = "input"
+    # Add derived parameters as equations
+    for dp_name, dp in (m.derived_parameters or {}).items():
+        eq_str = m.render_equation(dp, format='sympy', inline_functions=True, replace=repl)
+        equations.append(f"{dp_name} = {eq_str}")
+        variables[dp_name] = "variable"
 
-description = model.description or f"TVBO model: {name}"
+    # Add coupling terms as inputs
+    for ct_name in (m.coupling_terms or {}).keys():
+        variables[ct_name] = "input"
+
+    description = m.description or f"TVBO model: {name}"
 %>\
-# PyRates OperatorTemplate: ${name}
-# Generated from TVBO Dynamics model
-
-${op_name}:
+${_op_name}:
   base: OperatorTemplate
   description: "${description.replace('"', "'")}"
 % if len(equations) == 1:
@@ -81,3 +104,18 @@ ${op_name}:
     ${var_name}: ${var_spec}
 % endif
 % endfor
+</%def>\
+##
+## Standalone rendering when used directly (not via namespace)
+##
+% if 'model' in context.keys() and context['model'] is not None:
+<%
+model = context['model']
+name = model.name or "tvbo_model"
+op_name = f"{name}_op"
+%>\
+# PyRates OperatorTemplate: ${name}
+# Generated from TVBO Dynamics model
+
+${render_operator(model, op_name)}
+% endif
