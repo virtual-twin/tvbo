@@ -1,6 +1,8 @@
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
 import sympy.printing.fortran as spf
+import sympy.printing.c as spc
+from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
 from sympy import IndexedBase, parse_expr, Symbol, S
 from sympy import latex
 from tvbo.datamodel.tvbo_datamodel import Equation
@@ -115,9 +117,41 @@ class FortranPrinter(spf.FCodePrinter):
         super().__init__(settings=settings)
 
 
+class PythonCodePrinter(_PythonCodePrinter):
+    def __init__(self, settings=None):
+        settings = settings or {}
+        # Be lenient: allow partial printing for unknown constructs
+        settings.setdefault("strict", False)
+        super().__init__(settings=settings)
+
+        # Add additional math functions not in the base printer
+        self.known_functions.update({
+            "ceil": "math.ceil",
+            "sign": "math.copysign(1, {0})",  # Python's math doesn't have sign directly
+        })
+
+    def _print_Piecewise(self, expr):
+        # Basic nested conditional for plain Python
+        args = expr.args
+        default = self._print(args[-1][0])
+        result = default
+
+        for value, condition in reversed(args[:-1]):
+            condition_str = self._print(condition)
+            value_str = self._print(value)
+            result = f"({value_str} if {condition_str} else {result})"
+
+        return result
+
+    def _print_sign(self, expr):
+        # sign(x) -> (1 if x > 0 else (-1 if x < 0 else 0))
+        arg = self._print(expr.args[0])
+        return f"(1 if {arg} > 0 else (-1 if {arg} < 0 else 0))"
+
+
 def get_printer(format):
 
-    if format in ["python", "numpy"]:
+    if format == "numpy":
         return NumPyPrinter()
     elif format == "jax":
         return JaxPrinter()
@@ -125,6 +159,8 @@ def get_printer(format):
         return JuliaPrinter()
     elif format == "fortran":
         return FortranPrinter()
+    elif format == "python":
+        return PythonCodePrinter()
     else:
         raise ValueError(f"Unsupported format: {format}")
 
