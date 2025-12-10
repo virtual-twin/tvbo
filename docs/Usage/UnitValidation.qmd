@@ -1,16 +1,31 @@
 ---
-title: "Unit-Aware Delay Computation"
-description: "How TVBO handles physical units for distances, speeds, and delays"
+title: "Unit-Aware Computations"
+description: "How TVBO handles physical units across simulation components"
+jupyter: python3
 ---
 
-Networks often involve physical quantities with units: distances in millimeters or meters,
-conduction speeds in m/s or mm/ms, and delays in milliseconds or seconds. TVBO uses
-[SymPy's units system](https://docs.sympy.org/latest/modules/physics/units/index.html)
-to handle unit conversions automatically.
+TVBO uses [SymPy's units system](https://docs.sympy.org/latest/modules/physics/units/index.html) 
+to handle physical units automatically. This enables correct unit conversions across 
+different components of a simulation experiment.
 
-## Network Units
+## Overview
 
-Networks have two unit attributes:
+Physical quantities appear throughout simulations:
+
+| Component | Quantities with Units |
+|-----------|----------------------|
+| **Network** | distances (mm, m), delays (ms, s), conduction speed (m/s) |
+| **Integrator** | step size (ms), duration (s), time scale |
+| **Dynamics** | time constants (ms), frequencies (Hz) |
+| **Monitors** | sampling period (ms), frequencies (Hz) |
+
+This notebook demonstrates unit handling, starting with Networks.
+
+---
+
+## 1. Network Units
+
+Networks have two unit attributes that define the coordinate system:
 
 - `distance_unit`: Unit for edge distances/lengths (default: `"mm"`)
 - `time_unit`: Default time unit for delays (default: `"ms"`)
@@ -34,7 +49,7 @@ print(f"Distance unit: {net.distance_unit}")
 print(f"Time unit: {net.time_unit}")
 ```
 
-## Computing Delays
+### 1.1 Computing Delays
 
 The `compute_delays()` method calculates transmission delays from distances and conduction speed:
 
@@ -48,19 +63,19 @@ net.conduction_speed = Parameter(name="v", value=3.0, unit="mm/ms")
 
 # Compute delays (uses network's time_unit by default)
 delays = net.compute_delays()
-print(f"Delays (ms):\n{delays}")
+print(f"Delays (ms):\n{np.round(delays, 2)}")
 ```
 
-## Mixed Units
+### 1.2 Mixed Units
 
-TVBO correctly handles mixed units. The conduction speed unit doesn't need to match
+TVBO correctly handles mixed units. The conduction speed unit doesn't need to match 
 the network's distance/time units:
 
 ```{python}
 # Speed in m/s, distances in mm, output in ms
 net.conduction_speed = Parameter(name="v", value=3.0, unit="m/s")
 delays = net.compute_delays()
-print(f"With speed in m/s:\n{delays}")
+print(f"With speed in m/s:\n{np.round(delays, 2)}")
 ```
 
 ```{python}
@@ -69,14 +84,14 @@ delays_seconds = net.compute_delays("s")
 print(f"Delays in seconds:\n{delays_seconds}")
 ```
 
-## Custom Network Units
+### 1.3 Custom Network Units
 
 Create networks with non-default units:
 
 ```{python}
 # Network with distances in meters and time in seconds
 net_si = Network.from_matrix(
-    W,
+    W, 
     lengths=L / 1000,  # Convert mm to m
     distance_unit="m",
     time_unit="s"
@@ -87,7 +102,7 @@ delays_si = net_si.compute_delays()
 print(f"SI units - delays in seconds:\n{delays_si}")
 ```
 
-## Supported Units
+### 1.4 Supported Units
 
 Any unit recognized by SymPy can be used:
 
@@ -102,7 +117,7 @@ Any unit recognized by SymPy can be used:
 net_micro = Network.from_matrix(
     W,
     lengths=L * 10,  # mm to 0.1mm scale
-    distance_unit="cm",
+    distance_unit="cm", 
     time_unit="us"
 )
 net_micro.conduction_speed = Parameter(name="v", value=3000.0, unit="m/s")
@@ -111,7 +126,7 @@ delays_us = net_micro.compute_delays()
 print(f"Delays in microseconds:\n{np.round(delays_us, 2)}")
 ```
 
-## Edge-Level Parameters with Units
+### 1.5 Edge-Level Parameters with Units
 
 Individual edges can have parameters with units via the `parameters` slot:
 
@@ -145,7 +160,65 @@ edges = [
 
 net_explicit = Network(nodes=nodes, edges=edges)
 print(f"Number of edges: {len(net_explicit.edges)}")
+
+# Access edge parameters
+for edge in net_explicit.edges:
+    print(f"  Edge {edge.source}→{edge.target}:")
+    for p in edge.parameters:
+        unit_str = f" {p.unit}" if p.unit else ""
+        print(f"    {p.name}: {p.value}{unit_str}")
 ```
+
+---
+
+## 2. Integrator Units (Coming Soon)
+
+The integrator's `step_size` and `duration` will support unit-aware specification:
+
+```python
+# Future API example
+from tvbo.datamodel import Integrator
+
+integrator = Integrator(
+    method="heun",
+    step_size=0.1,       # value
+    time_unit="ms",      # unit for step_size
+    duration=1000.0,     # in time_unit
+)
+```
+
+---
+
+## 3. Dynamics Units (Coming Soon)
+
+Time constants and frequencies in dynamics models will be unit-aware:
+
+```python
+# Future API example
+from tvbo.datamodel import Parameter
+
+tau = Parameter(name="tau", value=10.0, unit="ms")  # time constant
+omega = Parameter(name="omega", value=10.0, unit="Hz")  # frequency
+```
+
+---
+  
+## 4. Monitor Units (Coming Soon)
+
+Sampling periods and frequencies will support units:
+
+```python
+# Future API example
+from tvbo.datamodel import Monitor
+
+monitor = Monitor(
+    name="BOLD",
+    period=2.0,
+    period_unit="s",  # TR in seconds
+)
+```
+
+---
 
 ## Summary
 
@@ -153,3 +226,4 @@ print(f"Number of edges: {len(net_explicit.edges)}")
 - `compute_delays()` automatically converts between units using SymPy
 - Edge parameters can include units for documentation and validation
 - Any SymPy-recognized unit string works (no hardcoded mappings)
+- Unit support will extend to Integrator, Dynamics, and Monitor components
