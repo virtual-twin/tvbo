@@ -6,6 +6,9 @@ This script reads the TVBO LinkML datamodel and generates openMINDS JSON schema
 templates, dynamically mapping types to existing openMINDS namespaces where
 appropriate.
 
+All type mappings are imported from tvbo.export.openminds to maintain a single
+source of truth.
+
 Usage:
     python generate_openminds.py [--input PATH] [--output PATH]
 """
@@ -14,87 +17,27 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-# =============================================================================
-# CONFIGURATION: Mappings to existing openMINDS types
-# =============================================================================
+# Add project root to path to enable imports
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-# Map LinkML class names to existing openMINDS types (namespace:Type)
-# These will NOT generate new schemas - use the existing type directly
-OPENMINDS_TYPE_MAPPINGS: dict[str, str] = {
-    # SANDS types
-    "BrainAtlas": "sands:BrainAtlas",
-    "BrainAtlasVersion": "sands:BrainAtlasVersion",
-    "CommonCoordinateSpace": "sands:CommonCoordinateSpace",
-    "CommonCoordinateSpaceVersion": "sands:CommonCoordinateSpaceVersion",
-    "ParcellationEntity": "sands:ParcellationEntity",
-    "ParcellationEntityVersion": "sands:ParcellationEntityVersion",
-    "ParcellationTerminology": "sands:ParcellationTerminology",
-    "ParcellationTerminologyVersion": "sands:ParcellationTerminologyVersion",
-    "Coordinate": "sands:CoordinatePoint",
-    # Core types
-    "File": "core:File",
-    "FileBundle": "core:FileBundle",
-    "DOI": "core:DOI",
-    "RRID": "core:RRID",
-    "Person": "core:Person",
-    "Organization": "core:Organization",
-    "Software": "core:Software",
-    "SoftwareVersion": "core:SoftwareVersion",
-    "QuantitativeValue": "core:QuantitativeValue",
-    "QuantitativeValueRange": "core:QuantitativeValueRange",
-    # Computation types (simulation environment)
-    # Note: We generate our own SoftwareEnvironment with extended fields
-}
-
-# Map LinkML class names to openMINDS categories
-OPENMINDS_CATEGORIES: dict[str, list[str]] = {
-    "SimulationStudy": ["researchProduct"],
-    "SimulationExperiment": ["computationalActivity"],
-    "Dynamics": ["computationalModel"],
-    "NeuralMassModel": ["computationalModel"],
-    "Network": ["connectome"],
-    "TimeSeries": ["simulationOutput"],
-}
-
-# Map LinkML class names to openMINDS base types (extension)
-OPENMINDS_EXTENDS: dict[str, str] = {
-    "SimulationExperiment": "/computation/schemas/simulation.schema.tpl.json",
-}
-
-# Classes that should be skipped (internal/helper classes)
-SKIP_CLASSES: set[str] = {
-    "Matrix",
-    "BrainRegionSeries",
-    "NDArray",
-    "Case",  # Internal helper for conditionals
-    "ArgumentMapping",
-    "DataInjection",
-    "Callable",
-    "Sample",
-}
-
-# =============================================================================
-# LinkML TYPE MAPPINGS
-# =============================================================================
-
-LINKML_TO_JSON_TYPE: dict[str, str] = {
-    "string": "string",
-    "integer": "integer",
-    "int": "integer",
-    "float": "number",
-    "double": "number",
-    "boolean": "boolean",
-    "bool": "boolean",
-    "date": "string",
-    "datetime": "string",
-    "uri": "string",
-    "uriorcurie": "string",
-}
+# Import all type mappings from the single source of truth
+from tvbo.export.openminds import (
+    EXTERNAL_TYPE_MAPPINGS,
+    LINKML_TO_JSON_TYPE,
+    OPENMINDS_CATEGORIES,
+    OPENMINDS_CONTEXT,
+    OPENMINDS_EXTENDS,
+    SKIP_CLASSES,
+    TVBO_TO_OPENMINDS_TYPE,
+)
 
 
 def camel_to_snake(name: str) -> str:
@@ -130,15 +73,15 @@ def resolve_slot(
 
 def get_openminds_type(linkml_type: str) -> str:
     """Map a LinkML type to openMINDS type reference."""
-    if linkml_type in OPENMINDS_TYPE_MAPPINGS:
-        return OPENMINDS_TYPE_MAPPINGS[linkml_type]
+    if linkml_type in EXTERNAL_TYPE_MAPPINGS:
+        return EXTERNAL_TYPE_MAPPINGS[linkml_type]
     # Default: use tvbo namespace
     return f"tvbo:{linkml_type}"
 
 
 def is_external_type(linkml_type: str) -> bool:
     """Check if a type maps to an external openMINDS namespace."""
-    return linkml_type in OPENMINDS_TYPE_MAPPINGS
+    return linkml_type in EXTERNAL_TYPE_MAPPINGS
 
 
 def linkml_range_to_openminds(
@@ -159,7 +102,7 @@ def linkml_range_to_openminds(
         result["type"] = "string"
     elif range_type in LINKML_TO_JSON_TYPE:
         result["type"] = LINKML_TO_JSON_TYPE[range_type]
-    elif range_type in all_classes or range_type in OPENMINDS_TYPE_MAPPINGS:
+    elif range_type in all_classes or range_type in EXTERNAL_TYPE_MAPPINGS:
         # It's a class reference
         openminds_type = get_openminds_type(range_type)
         if is_inlined:
@@ -405,7 +348,7 @@ def main() -> None:
             if name in SKIP_CLASSES:
                 print(f"  SKIP: {name}")
             elif is_external_type(name):
-                print(f"  EXTERNAL: {name} -> {OPENMINDS_TYPE_MAPPINGS[name]}")
+                print(f"  EXTERNAL: {name} -> {EXTERNAL_TYPE_MAPPINGS[name]}")
             else:
                 print(f"  GEN: {name}")
         return

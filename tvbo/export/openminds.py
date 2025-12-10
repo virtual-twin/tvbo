@@ -30,8 +30,40 @@ OPENMINDS_CONTEXT = {
     "computation": "https://openminds.ebrains.eu/computation/",
 }
 
-# Map TVBO class names to openMINDS types
-TVBO_TO_OPENMINDS_TYPE = {
+# =============================================================================
+# Type Mappings: Single Source of Truth
+# =============================================================================
+
+# Map LinkML/TVBO class names to existing openMINDS types (namespace:Type)
+# These will NOT generate new schemas - use the existing type directly
+EXTERNAL_TYPE_MAPPINGS: dict[str, str] = {
+    # SANDS types
+    "BrainAtlas": "sands:BrainAtlas",
+    "BrainAtlasVersion": "sands:BrainAtlasVersion",
+    "CommonCoordinateSpace": "sands:CommonCoordinateSpace",
+    "CommonCoordinateSpaceVersion": "sands:CommonCoordinateSpaceVersion",
+    "ParcellationEntity": "sands:ParcellationEntity",
+    "ParcellationEntityVersion": "sands:ParcellationEntityVersion",
+    "ParcellationTerminology": "sands:ParcellationTerminology",
+    "ParcellationTerminologyVersion": "sands:ParcellationTerminologyVersion",
+    "Coordinate": "sands:CoordinatePoint",
+    # Core types
+    "File": "core:File",
+    "FileBundle": "core:FileBundle",
+    "DOI": "core:DOI",
+    "RRID": "core:RRID",
+    "Person": "core:Person",
+    "Organization": "core:Organization",
+    "Software": "core:Software",
+    "SoftwareVersion": "core:SoftwareVersion",
+    "QuantitativeValue": "core:QuantitativeValue",
+    "QuantitativeValueRange": "core:QuantitativeValueRange",
+    # Computation types (simulation environment)
+    # Note: We generate our own SoftwareEnvironment with extended fields
+}
+
+# Map TVBO class names to openMINDS types (tvbo namespace)
+TVBO_TYPE_MAPPINGS: dict[str, str] = {
     "SimulationExperiment": "tvbo:SimulationExperiment",
     "SimulationStudy": "tvbo:SimulationStudy",
     "Dynamics": "tvbo:Dynamics",
@@ -58,9 +90,54 @@ TVBO_TO_OPENMINDS_TYPE = {
     "SoftwareEnvironment": "tvbo:SoftwareEnvironment",
     "SoftwareRequirement": "tvbo:SoftwareRequirement",
     "SoftwarePackage": "tvbo:SoftwarePackage",
-    "BrainAtlas": "sands:BrainAtlas",
-    "Coordinate": "sands:CoordinatePoint",
-    "CommonCoordinateSpace": "sands:CommonCoordinateSpace",
+}
+
+# Combined mappings (external + tvbo) for runtime conversion
+TVBO_TO_OPENMINDS_TYPE: dict[str, str] = {
+    **EXTERNAL_TYPE_MAPPINGS,
+    **TVBO_TYPE_MAPPINGS,
+}
+
+# Map LinkML class names to openMINDS categories
+OPENMINDS_CATEGORIES: dict[str, list[str]] = {
+    "SimulationStudy": ["researchProduct"],
+    "SimulationExperiment": ["computationalActivity"],
+    "Dynamics": ["computationalModel"],
+    "NeuralMassModel": ["computationalModel"],
+    "Network": ["connectome"],
+    "TimeSeries": ["simulationOutput"],
+}
+
+# Map LinkML class names to openMINDS base types (extension)
+OPENMINDS_EXTENDS: dict[str, str] = {
+    "SimulationExperiment": "/computation/schemas/simulation.schema.tpl.json",
+}
+
+# Classes that should be skipped (internal/helper classes)
+SKIP_CLASSES: set[str] = {
+    "Matrix",
+    "BrainRegionSeries",
+    "NDArray",
+    "Case",  # Internal helper for conditionals
+    "ArgumentMapping",
+    "DataInjection",
+    "Callable",
+    "Sample",
+}
+
+# LinkML to JSON type mappings
+LINKML_TO_JSON_TYPE: dict[str, str] = {
+    "string": "string",
+    "integer": "integer",
+    "int": "integer",
+    "float": "number",
+    "double": "number",
+    "boolean": "boolean",
+    "bool": "boolean",
+    "date": "string",
+    "datetime": "string",
+    "uri": "string",
+    "uriorcurie": "string",
 }
 
 # Fields to skip during serialization (internal/computed)
