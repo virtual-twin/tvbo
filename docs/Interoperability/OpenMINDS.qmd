@@ -1,0 +1,359 @@
+---
+title: "OpenMINDS Interoperability"
+subtitle: "Exporting TVBO simulations to OpenMINDS JSON-LD"
+author: "TVBO Team"
+date: today
+format:
+  html:
+    code-fold: false
+    code-tools: true
+    toc: true
+    toc-depth: 3
+jupyter: python3
+---
+
+## Overview
+
+TVBO provides bidirectional interoperability with the [OpenMINDS](https://openminds.ebrains.eu/) metadata framework. This allows:
+
+- **Export** simulation experiments and studies to OpenMINDS-compatible JSON-LD
+- **Import** OpenMINDS JSON-LD back into TVBO objects
+- **Integration** with EBRAINS Knowledge Graph and other OpenMINDS-compatible tools
+
+The `openMINDS_tvbo` schema module extends OpenMINDS with brain simulation-specific types while reusing existing types from:
+
+- `openMINDS_SANDS` - Brain atlases, parcellations, coordinates
+- `openMINDS_core` - Files, software, identifiers
+- `openMINDS_computation` - Simulation activities, environments
+
+```{python}
+#| label: setup
+#| code-fold: true
+
+import json
+import numpy as np
+from pprint import pprint
+
+# TVBO imports
+from tvbo.export.experiment import SimulationExperiment
+from tvbo.knowledge.study import SimulationStudy
+from tvbo.knowledge import Dynamics, Integrator, Coupling
+from tvbo.datamodel.tvbo_datamodel import (
+    StateVariable, Parameter, Equation, Monitor, Noise, Range
+)
+```
+
+## Creating a Simulation Experiment
+
+Let's create a simulation experiment using the Jansen-Rit neural mass model:
+
+```{python}
+#| label: create-experiment
+
+# Define the Jansen-Rit dynamics model
+jansen_rit = Dynamics(
+    name="JansenRit",
+    label="Jansen-Rit Neural Mass Model",
+    description="A neural mass model describing cortical column dynamics",
+    iri="http://www.thevirtualbrain.org/tvb-o/JansenRit",
+    system_type="continuous",
+    references=[
+        "Jansen BH, Rit VG (1995). Electroencephalogram and visual evoked potential generation. Biol Cybern 73:357-366."
+    ],
+    state_variables={
+        "y0": StateVariable(
+            name="y0",
+            label="Average PSP of pyramidal population",
+            equation=Equation(lhs="d(y0)/dt", rhs="y3"),
+            domain=Range(lo=-100.0, hi=100.0),
+            variable_of_interest=True,
+            initial_value=0.0
+        ),
+        "y1": StateVariable(
+            name="y1",
+            label="Average PSP of excitatory interneurons",
+            equation=Equation(lhs="d(y1)/dt", rhs="y4"),
+            initial_value=0.0
+        ),
+        "y2": StateVariable(
+            name="y2",
+            label="Average PSP of inhibitory interneurons",
+            equation=Equation(lhs="d(y2)/dt", rhs="y5"),
+            initial_value=0.0
+        ),
+        "y3": StateVariable(
+            name="y3",
+            label="Derivative of y0",
+            equation=Equation(
+                lhs="d(y3)/dt",
+                rhs="A * a * S(y1 - y2) - 2 * a * y3 - a**2 * y0"
+            ),
+            coupling_variable=True,
+            initial_value=0.0
+        ),
+        "y4": StateVariable(
+            name="y4",
+            label="Derivative of y1",
+            equation=Equation(
+                lhs="d(y4)/dt",
+                rhs="A * a * (mu + C2 * S(C1 * y0) + c_in) - 2 * a * y4 - a**2 * y1"
+            ),
+            initial_value=0.0
+        ),
+        "y5": StateVariable(
+            name="y5",
+            label="Derivative of y2",
+            equation=Equation(
+                lhs="d(y5)/dt",
+                rhs="B * b * C4 * S(C3 * y0) - 2 * b * y5 - b**2 * y2"
+            ),
+            initial_value=0.0
+        ),
+    },
+    parameters={
+        "A": Parameter(name="A", label="Excitatory PSP amplitude", value=3.25, unit="mV"),
+        "B": Parameter(name="B", label="Inhibitory PSP amplitude", value=22.0, unit="mV"),
+        "a": Parameter(name="a", label="Excitatory time constant", value=0.1, unit="1/ms"),
+        "b": Parameter(name="b", label="Inhibitory time constant", value=0.05, unit="1/ms"),
+        "mu": Parameter(name="mu", label="External input", value=220.0, unit="Hz"),
+        "C1": Parameter(name="C1", value=135.0),
+        "C2": Parameter(name="C2", value=108.0),
+        "C3": Parameter(name="C3", value=33.75),
+        "C4": Parameter(name="C4", value=33.75),
+    }
+)
+
+print(f"Created dynamics model: {jansen_rit.name}")
+print(f"State variables: {list(jansen_rit.state_variables.keys())}")
+print(f"Parameters: {list(jansen_rit.parameters.keys())}")
+```
+
+```{python}
+#| label: create-full-experiment
+
+# Create the full simulation experiment
+experiment = SimulationExperiment(
+    id=1,
+    label="Jansen-Rit Resting State",
+    description="Whole-brain resting state simulation using the Jansen-Rit model",
+    local_dynamics=jansen_rit,
+    integration=Integrator(
+        method="heun",
+        step_size=0.1,
+        duration=5000.0,
+        time_scale="ms",
+        noise=Noise(
+            noise_type="gaussian",
+            additive=True,
+            seed=42,
+            parameters={"nsig": Parameter(name="nsig", value=0.01)}
+        )
+    ),
+    coupling=Coupling(
+        name="Linear",
+        label="Linear Diffusive Coupling",
+    ),
+    monitors={
+        "Raw": Monitor(name="Raw", period=1.0),
+    },
+    references=[
+        "Jansen BH, Rit VG (1995). Biol Cybern 73:357-366.",
+        "Sanz-Leon P, et al. (2015). NeuroImage 111:385-430."
+    ]
+)
+
+print(f"Created experiment: {experiment.label}")
+print(f"Integration: {experiment.integration.method}, dt={experiment.integration.step_size}")
+```
+
+## Export to OpenMINDS JSON-LD
+
+Use the `to_openminds()` method to export the experiment:
+
+```{python}
+#| label: export-openminds
+
+# Convert to OpenMINDS JSON-LD
+jsonld = experiment.to_openminds(
+    base_id="https://example.org/simulations"
+)
+
+# Display the structure (truncated for readability)
+print("OpenMINDS JSON-LD structure:")
+print(f"  @context: {list(jsonld.get('@context', {}).keys())}")
+print(f"  @type: {jsonld.get('@type')}")
+print(f"  @id: {jsonld.get('@id')}")
+print(f"  label: {jsonld.get('label')}")
+print(f"  Top-level keys: {[k for k in jsonld.keys() if not k.startswith('@')]}")
+```
+
+```{python}
+#| label: show-jsonld
+#| code-fold: true
+
+# Pretty print the full JSON-LD (collapsed by default)
+print(json.dumps(jsonld, indent=2, default=str)[:3000])
+print("\n... [truncated for display]")
+```
+
+## Save to File
+
+```{python}
+#| label: save-jsonld
+#| eval: false
+
+# Save to file
+experiment.to_openminds(
+    filepath="experiment_jansenrit.jsonld",
+    base_id="https://example.org/simulations"
+)
+print("Saved to experiment_jansenrit.jsonld")
+```
+
+## Import from OpenMINDS JSON-LD
+
+TVBO can also read OpenMINDS JSON-LD files back into native objects:
+
+```{python}
+#| label: import-openminds
+
+# Round-trip: convert to JSON-LD and back
+jsonld_data = experiment.to_openminds()
+
+# Remove context for reconstruction
+experiment_data = {k: v for k, v in jsonld_data.items() if not k.startswith('@')}
+
+# Reconstruct (simplified - full round-trip requires complete type mapping)
+print("Round-trip data keys:", list(experiment_data.keys()))
+print("Label preserved:", experiment_data.get('label'))
+print("Description preserved:", experiment_data.get('description')[:50] + "...")
+```
+
+```{python}
+#| label: from-openminds-file
+#| eval: false
+
+# Load from file
+loaded_exp = SimulationExperiment.from_openminds("experiment_jansenrit.jsonld")
+print(f"Loaded: {loaded_exp.label}")
+```
+
+## Working with Simulation Studies
+
+A `SimulationStudy` groups multiple related experiments:
+
+```{python}
+#| label: create-study
+
+from tvbo.datamodel.tvbo_datamodel import SimulationExperiment as ExpDatamodel
+
+# Create a study with multiple experiments
+study = SimulationStudy(
+    key="JansenRit2024",
+    label="Jansen-Rit Parameter Exploration",
+    title="Systematic exploration of Jansen-Rit model parameters",
+    description="A simulation study exploring the effect of coupling strength on whole-brain dynamics",
+    year=2024,
+    doi="10.1234/example.jansenrit.2024",
+    model=jansen_rit,
+    simulation_experiments=[
+        ExpDatamodel(
+            id=1,
+            label="Low coupling (G=0.01)",
+            description="Simulation with weak global coupling",
+        ),
+        ExpDatamodel(
+            id=2,
+            label="Medium coupling (G=0.05)",
+            description="Simulation with moderate global coupling",
+        ),
+        ExpDatamodel(
+            id=3,
+            label="High coupling (G=0.1)",
+            description="Simulation with strong global coupling",
+        ),
+    ]
+)
+
+print(study)
+```
+
+```{python}
+#| label: study-to-openminds
+
+# Export study to OpenMINDS
+study_jsonld = study.to_openminds()
+
+print("Study OpenMINDS structure:")
+print(f"  @type: {study_jsonld.get('@type')}")
+print(f"  @id: {study_jsonld.get('@id')}")
+print(f"  title: {study_jsonld.get('title')}")
+print(f"  year: {study_jsonld.get('year')}")
+print(f"  doi: {study_jsonld.get('doi')}")
+print(f"  Number of experiments: {len(study_jsonld.get('simulation_experiments', []))}")
+```
+
+## OpenMINDS Type Mappings
+
+TVBO types map to OpenMINDS namespaces as follows:
+
+```{python}
+#| label: type-mappings
+#| code-fold: true
+
+from tvbo.export.openminds import TVBO_TO_OPENMINDS_TYPE
+
+print("TVBO → OpenMINDS Type Mappings:")
+print("-" * 50)
+for tvbo_type, om_type in sorted(TVBO_TO_OPENMINDS_TYPE.items()):
+    print(f"  {tvbo_type:25s} → {om_type}")
+```
+
+## Integration with EBRAINS
+
+The exported JSON-LD is compatible with:
+
+1. **EBRAINS Knowledge Graph** - Upload simulation metadata for discovery
+2. **openMINDS Python** - Programmatic metadata creation and validation
+3. **SANDS parcellations** - Link to standardized brain atlases
+
+```{python}
+#| label: ebrains-example
+#| eval: false
+
+# Example: Prepare for EBRAINS Knowledge Graph upload
+from fairgraph import KGClient
+
+# Export with EBRAINS-compatible IDs
+kg_jsonld = experiment.to_openminds(
+    base_id="https://kg.ebrains.eu/api/instances"
+)
+
+# The JSON-LD can be uploaded to EBRAINS KG
+# client = KGClient(token="...")
+# client.upload(kg_jsonld)
+```
+
+## Summary
+
+| Method | Class | Description |
+|--------|-------|-------------|
+| `to_openminds()` | `SimulationExperiment` | Export to JSON-LD dict or file |
+| `from_openminds()` | `SimulationExperiment` | Import from JSON-LD dict or file |
+| `to_openminds()` | `SimulationStudy` | Export study with embedded experiments |
+| `from_openminds()` | `SimulationStudy` | Import study from JSON-LD |
+
+The openMINDS export preserves:
+
+- ✅ Model equations and parameters
+- ✅ Network/connectivity information
+- ✅ Integration settings
+- ✅ Monitor configurations
+- ✅ Software environment
+- ✅ Provenance references
+
+See also:
+
+- [openMINDS_tvbo schema](/schema/openMINDS_tvbo/README.md)
+- [Example JSON-LD files](/schema/openMINDS_tvbo/examples/)
+- [OpenMINDS documentation](https://openminds.ebrains.eu/)
