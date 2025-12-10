@@ -1,0 +1,48 @@
+{
+  "_type": "tvbo:PDESolver",
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "requirements": {
+      "_linkedTypes": [
+        "tvbo:SoftwareRequirement"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all requirements."
+    },
+    "environment": {
+      "_linkedTypes": [
+        "tvbo:SoftwareEnvironment"
+      ],
+      "_instruction": "Enter the environment."
+    },
+    "discretization": {
+      "type": "string",
+      "_instruction": "Enter the discretization."
+    },
+    "time_integrator": {
+      "type": "string",
+      "_instruction": "e.g., implicit Euler, Crank\u2013Nicolson."
+    },
+    "dt": {
+      "type": "number",
+      "_instruction": "Time step (s)."
+    },
+    "tolerances": {
+      "type": "string",
+      "_instruction": "Abs/rel tolerances."
+    },
+    "preconditioner": {
+      "type": "string",
+      "_instruction": "Enter the preconditioner."
+    }
+  }
+}

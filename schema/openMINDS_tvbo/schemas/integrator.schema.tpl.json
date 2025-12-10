@@ -1,0 +1,84 @@
+{
+  "_type": "tvbo:Integrator",
+  "properties": {
+    "time_scale": {
+      "type": "string",
+      "_instruction": "Enter the time scale."
+    },
+    "unit": {
+      "type": "string",
+      "_instruction": "Enter the unit."
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all parameters."
+    },
+    "duration": {
+      "type": "number",
+      "_instruction": "Enter the duration."
+    },
+    "method": {
+      "type": "string",
+      "_instruction": "Enter the method."
+    },
+    "step_size": {
+      "type": "number",
+      "_instruction": "Enter the step size."
+    },
+    "steps": {
+      "type": "integer",
+      "_instruction": "Enter the steps."
+    },
+    "noise": {
+      "_embeddedTypes": [
+        "tvbo:Noise"
+      ],
+      "_instruction": "Enter the noise."
+    },
+    "state_wise_sigma": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all state wise sigma.",
+      "items": {
+        "type": "number"
+      }
+    },
+    "transient_time": {
+      "type": "number",
+      "_instruction": "Enter the transient time."
+    },
+    "scipy_ode_base": {
+      "type": "boolean",
+      "_instruction": "Enter the scipy ode base."
+    },
+    "number_of_stages": {
+      "type": "integer",
+      "_instruction": "Enter the number of stages."
+    },
+    "intermediate_expressions": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all intermediate expressions."
+    },
+    "update_expression": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "_instruction": "Enter the update expression."
+    },
+    "delayed": {
+      "type": "boolean",
+      "_instruction": "Enter the delayed."
+    }
+  }
+}

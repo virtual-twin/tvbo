@@ -1483,3 +1483,78 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         self.generate_report(
             format=format if format != "md" else "markdown", outputfile=fpath
         )
+
+    # ---- OpenMINDS JSON-LD conversion ----
+    def to_openminds(
+        self,
+        filepath: str | None = None,
+        base_id: str | None = None,
+        include_context: bool = True,
+    ) -> dict:
+        """Export experiment to openMINDS JSON-LD format.
+        
+        Parameters
+        ----------
+        filepath : str, optional
+            If provided, write JSON-LD to this file path.
+        base_id : str, optional
+            Base URI for generating @id values (e.g., "https://example.org/simulations").
+        include_context : bool
+            Whether to include the @context in the output. Default True.
+        
+        Returns
+        -------
+        dict
+            OpenMINDS-compatible JSON-LD dictionary.
+        
+        Example
+        -------
+        >>> exp = SimulationExperiment(...)
+        >>> jsonld = exp.to_openminds()
+        >>> exp.to_openminds("output.jsonld", base_id="https://example.org")
+        """
+        from tvbo.export.openminds import experiment_to_openminds, save_openminds
+        
+        result = experiment_to_openminds(
+            self, 
+            base_id=base_id, 
+            include_context=include_context
+        )
+        
+        if filepath:
+            save_openminds(self, filepath, base_id=base_id)
+        
+        return result
+    
+    @classmethod
+    def from_openminds(cls, source: str | dict) -> "SimulationExperiment":
+        """Create a SimulationExperiment from openMINDS JSON-LD.
+        
+        Parameters
+        ----------
+        source : str or dict
+            Either a file path to a JSON-LD file, or a dict containing
+            JSON-LD data.
+        
+        Returns
+        -------
+        SimulationExperiment
+            New instance constructed from the openMINDS data.
+        
+        Example
+        -------
+        >>> exp = SimulationExperiment.from_openminds("experiment.jsonld")
+        >>> exp = SimulationExperiment.from_openminds({"@type": "tvbo:SimulationExperiment", ...})
+        """
+        from tvbo.export.openminds import experiment_from_openminds, load_openminds
+        
+        if isinstance(source, str):
+            # It's a file path
+            data = load_openminds(source)
+        elif isinstance(source, dict):
+            data = experiment_from_openminds(source)
+        else:
+            raise TypeError(f"Expected str or dict, got {type(source)}")
+        
+        return cls(**data)
+

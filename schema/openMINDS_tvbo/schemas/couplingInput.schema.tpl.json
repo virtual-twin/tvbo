@@ -1,0 +1,17 @@
+{
+  "_type": "tvbo:CouplingInput",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "dimension": {
+      "type": "integer",
+      "_instruction": "Dimensionality of the coupling input (number of coupled values)"
+    }
+  }
+}

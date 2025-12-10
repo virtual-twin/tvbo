@@ -1,0 +1,57 @@
+{
+  "_type": "tvbo:SimulationStudy",
+  "_categories": [
+    "researchProduct"
+  ],
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "derived_from": {
+      "type": "string",
+      "_instruction": "Enter the derived_from."
+    },
+    "model": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "_instruction": "Enter the model."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "key": {
+      "type": "string",
+      "_instruction": "Enter the key."
+    },
+    "title": {
+      "type": "string",
+      "_instruction": "Enter the title."
+    },
+    "year": {
+      "type": "integer",
+      "_instruction": "Enter the year."
+    },
+    "doi": {
+      "type": "string",
+      "_instruction": "Enter the doi."
+    },
+    "sample": {
+      "_linkedTypes": [
+        "tvbo:Sample"
+      ],
+      "_instruction": "Enter the sample."
+    },
+    "simulation_experiments": {
+      "_embeddedTypes": [
+        "tvbo:SimulationExperiment"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all simulation experiments."
+    }
+  }
+}

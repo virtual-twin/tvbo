@@ -1,0 +1,28 @@
+{
+  "_type": "tvbo:FieldStateVariable",
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "mesh": {
+      "_linkedTypes": [
+        "tvbo:Mesh"
+      ],
+      "_instruction": "Enter the mesh."
+    },
+    "boundary_conditions": {
+      "_linkedTypes": [
+        "tvbo:BoundaryCondition"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all boundary conditions."
+    }
+  }
+}

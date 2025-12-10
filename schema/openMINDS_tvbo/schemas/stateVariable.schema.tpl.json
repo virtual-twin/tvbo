@@ -1,0 +1,75 @@
+{
+  "_type": "tvbo:StateVariable",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "symbol": {
+      "type": "string",
+      "_instruction": "Enter the symbol."
+    },
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "definition": {
+      "type": "string",
+      "_instruction": "Enter the definition."
+    },
+    "domain": {
+      "_linkedTypes": [
+        "tvbo:Range"
+      ],
+      "_instruction": "Enter the domain."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "_instruction": "Enter the equation."
+    },
+    "unit": {
+      "type": "string",
+      "_instruction": "Enter the unit."
+    },
+    "variable_of_interest": {
+      "type": "boolean",
+      "_instruction": "Enter the variable of interest."
+    },
+    "coupling_variable": {
+      "type": "boolean",
+      "_instruction": "Enter the coupling variable."
+    },
+    "noise": {
+      "_embeddedTypes": [
+        "tvbo:Noise"
+      ],
+      "_instruction": "Enter the noise."
+    },
+    "stimulation_variable": {
+      "type": "boolean",
+      "_instruction": "Enter the stimulation variable."
+    },
+    "boundaries": {
+      "_embeddedTypes": [
+        "tvbo:Range"
+      ],
+      "_instruction": "Enter the boundaries."
+    },
+    "initial_value": {
+      "type": "number",
+      "_instruction": "Enter the initial value."
+    },
+    "history": {
+      "_embeddedTypes": [
+        "tvbo:TimeSeries"
+      ],
+      "_instruction": "Enter the history."
+    }
+  }
+}

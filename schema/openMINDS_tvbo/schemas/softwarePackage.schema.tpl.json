@@ -1,0 +1,33 @@
+{
+  "_type": "tvbo:SoftwarePackage",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "homepage": {
+      "type": "string",
+      "_instruction": "Enter the homepage."
+    },
+    "license": {
+      "type": "string",
+      "_instruction": "Enter the license."
+    },
+    "repository": {
+      "type": "string",
+      "_instruction": "Enter the repository."
+    },
+    "doi": {
+      "type": "string",
+      "_instruction": "Enter the doi."
+    },
+    "ecosystem": {
+      "type": "string",
+      "_instruction": "Package ecosystem or index (e.g., pypi, conda-forge)."
+    }
+  }
+}

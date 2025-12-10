@@ -1,0 +1,54 @@
+{
+  "_type": "tvbo:Node",
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "id": {
+      "type": "integer",
+      "_instruction": "Unique node identifier"
+    },
+    "dynamics": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "_instruction": "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics."
+    },
+    "position": {
+      "_embeddedTypes": [
+        "sands:CoordinatePoint"
+      ],
+      "_instruction": "Spatial coordinates (x, y, z) of the node"
+    },
+    "region": {
+      "type": "string",
+      "_instruction": "Brain region or anatomical label"
+    },
+    "parameters": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Node-specific parameter overrides"
+    },
+    "initial_state": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Initial values for state variables",
+      "items": {
+        "type": "number"
+      }
+    }
+  }
+}

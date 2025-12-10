@@ -1,0 +1,50 @@
+{
+  "_type": "tvbo:SoftwareEnvironment",
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "name": {
+      "type": "string",
+      "_instruction": "Human-readable environment label/name (deprecated alias was 'software')."
+    },
+    "version": {
+      "type": "string",
+      "_instruction": "Optional version tag for the environment definition (not a package version)."
+    },
+    "platform": {
+      "type": "string",
+      "_instruction": "OS / architecture description (e.g., linux-64)."
+    },
+    "environment_type": {
+      "type": "string",
+      "_instruction": "Category: conda, venv, docker, etc."
+    },
+    "container_image": {
+      "type": "string",
+      "_instruction": "Container image reference (e.g., ghcr.io/org/img:tag@sha256:...)."
+    },
+    "build_hash": {
+      "type": "string",
+      "_instruction": "Deterministic hash/fingerprint of the resolved dependency set."
+    },
+    "requirements": {
+      "_embeddedTypes": [
+        "tvbo:SoftwareRequirement"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Constituent software/module requirements that define this environment."
+    }
+  }
+}

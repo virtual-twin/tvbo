@@ -1,0 +1,31 @@
+{
+  "_type": "tvbo:BoundaryCondition",
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "bc_type": {
+      "type": "string",
+      "_instruction": "Enter the bc type."
+    },
+    "on_region": {
+      "type": "string",
+      "_instruction": "Mesh/atlas subset where BC applies."
+    },
+    "value": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "_instruction": "Constant, parameter, or equation."
+    },
+    "time_dependent": {
+      "type": "boolean",
+      "_instruction": "Enter the time dependent."
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "_type": "tvbo:Dynamics",
+  "_categories": [
+    "computationalModel"
+  ],
+  "properties": {
+    "has_reference": {
+      "type": "string",
+      "_instruction": "Enter the has reference."
+    },
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "iri": {
+      "type": "string",
+      "_instruction": "Enter the iri."
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all parameters."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "source": {
+      "type": "string",
+      "_instruction": "Enter the source."
+    },
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all references.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "derived_parameters": {
+      "_embeddedTypes": [
+        "tvbo:DerivedParameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all derived parameters."
+    },
+    "derived_variables": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all derived variables."
+    },
+    "coupling_terms": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all coupling terms."
+    },
+    "coupling_inputs": {
+      "_embeddedTypes": [
+        "tvbo:CouplingInput"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all coupling inputs."
+    },
+    "state_variables": {
+      "_embeddedTypes": [
+        "tvbo:StateVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all state variables."
+    },
+    "modified": {
+      "type": "boolean",
+      "_instruction": "Enter the modified."
+    },
+    "output": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all output."
+    },
+    "derived_from_model": {
+      "_linkedTypes": [
+        "tvbo:NeuralMassModel"
+      ],
+      "_instruction": "Enter the derived from model."
+    },
+    "number_of_modes": {
+      "type": "integer",
+      "_instruction": "Enter the number of modes."
+    },
+    "local_coupling_term": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ],
+      "_instruction": "Enter the local coupling term."
+    },
+    "functions": {
+      "_embeddedTypes": [
+        "tvbo:Function"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all functions."
+    },
+    "stimulus": {
+      "_embeddedTypes": [
+        "tvbo:Stimulus"
+      ],
+      "_instruction": "Enter the stimulus."
+    },
+    "modes": {
+      "_embeddedTypes": [
+        "tvbo:NeuralMassModel"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all modes."
+    },
+    "system_type": {
+      "type": "string",
+      "_instruction": "Enter the system type."
+    }
+  }
+}
