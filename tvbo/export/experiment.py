@@ -922,6 +922,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if not isinstance(dynamics, dict):
             dynamics = {d.name: d for d in (dynamics or [])}
 
+        # Get default dynamics (first in dict)
+        default_dyn = next(iter(dynamics.values())) if dynamics else None
+
         # Get network nodes if available
         network = getattr(self, "network", None)
         if network is not None and hasattr(network, "nodes") and network.nodes:
@@ -929,13 +932,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 node_label = getattr(node, "label", None) or f"node_{node.id}"
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
 
-                # Get dynamics for this node
+                # Get dynamics for this node, fall back to default
                 dyn_name = (
                     node.dynamics
                     if isinstance(node.dynamics, str)
                     else getattr(node.dynamics, "name", None)
                 )
-                dyn = dynamics.get(dyn_name) if dyn_name else None
+                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
 
                 if dyn and dyn.state_variables:
                     op_name = f"{dyn.name}_op"
