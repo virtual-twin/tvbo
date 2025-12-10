@@ -1,0 +1,27 @@
+{
+  "_type": "tvbo:DerivedParameter",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "symbol": {
+      "type": "string",
+      "_instruction": "Enter the symbol."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "_instruction": "Enter the equation."
+    },
+    "unit": {
+      "type": "string",
+      "_instruction": "Enter the unit."
+    }
+  }
+}

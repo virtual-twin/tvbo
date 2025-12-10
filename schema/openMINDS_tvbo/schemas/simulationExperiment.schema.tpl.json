@@ -1,0 +1,126 @@
+{
+  "_type": "tvbo:SimulationExperiment",
+  "_extends": "/computation/schemas/simulation.schema.tpl.json",
+  "_categories": [
+    "computationalActivity"
+  ],
+  "properties": {
+    "model": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "_instruction": "Enter the model."
+    },
+    "id": {
+      "type": "integer",
+      "_instruction": "Enter the id."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "additional_equations": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all additional equations."
+    },
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "local_dynamics": {
+      "_embeddedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "_instruction": "Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)"
+    },
+    "dynamics": {
+      "_embeddedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Dictionary of dynamics models keyed by name. Nodes reference these by name."
+    },
+    "integration": {
+      "_embeddedTypes": [
+        "tvbo:Integrator"
+      ],
+      "_instruction": "Enter the integration."
+    },
+    "connectivity": {
+      "_embeddedTypes": [
+        "tvbo:Network"
+      ],
+      "_instruction": "Enter the connectivity."
+    },
+    "network": {
+      "_embeddedTypes": [
+        "tvbo:Network"
+      ],
+      "_instruction": "Enter the network."
+    },
+    "coupling": {
+      "_embeddedTypes": [
+        "tvbo:Coupling"
+      ],
+      "_instruction": "Enter the coupling."
+    },
+    "monitors": {
+      "_embeddedTypes": [
+        "tvbo:Monitor"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all monitors."
+    },
+    "stimulation": {
+      "_embeddedTypes": [
+        "tvbo:Stimulus"
+      ],
+      "_instruction": "Enter the stimulation."
+    },
+    "field_dynamics": {
+      "_embeddedTypes": [
+        "tvbo:PDE"
+      ],
+      "_instruction": "Enter the field dynamics."
+    },
+    "modelfitting": {
+      "_embeddedTypes": [
+        "tvbo:ModelFitting"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all modelfitting."
+    },
+    "environment": {
+      "_embeddedTypes": [
+        "tvbo:SoftwareEnvironment"
+      ],
+      "_instruction": "Execution environment (collection of requirements)."
+    },
+    "software": {
+      "_embeddedTypes": [
+        "tvbo:SoftwareRequirement"
+      ],
+      "_instruction": "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
+    },
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all references.",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

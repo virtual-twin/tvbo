@@ -1,0 +1,13 @@
+{
+  "_type": "tvbo:ConditionalBlock",
+  "properties": {
+    "condition": {
+      "type": "string",
+      "_instruction": "The condition for this block (e.g., t > onset)."
+    },
+    "expression": {
+      "type": "string",
+      "_instruction": "The equation to apply when the condition is met."
+    }
+  }
+}

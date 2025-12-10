@@ -1,0 +1,40 @@
+{
+  "_type": "tvbo:Mesh",
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "element_type": {
+      "type": "string",
+      "_instruction": "Enter the element type."
+    },
+    "coordinates": {
+      "_linkedTypes": [
+        "sands:CoordinatePoint"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Node coordinates (x,y,z) in the given coordinate space."
+    },
+    "elements": {
+      "type": "string",
+      "_instruction": "Connectivity (indices) or file reference to topology."
+    },
+    "coordinate_space": {
+      "_linkedTypes": [
+        "sands:CommonCoordinateSpace"
+      ],
+      "_instruction": "Enter the coordinate space."
+    }
+  }
+}

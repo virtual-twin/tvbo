@@ -1,0 +1,67 @@
+{
+  "_type": "tvbo:SoftwareRequirement",
+  "required": [
+    "package"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "package": {
+      "_linkedTypes": [
+        "tvbo:SoftwarePackage"
+      ],
+      "_instruction": "Reference to the software package identity."
+    },
+    "version_spec": {
+      "type": "string",
+      "_instruction": "Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2')."
+    },
+    "role": {
+      "type": "string",
+      "_instruction": "Enter the role."
+    },
+    "optional": {
+      "type": "boolean",
+      "_instruction": "Enter the optional."
+    },
+    "hash": {
+      "type": "string",
+      "_instruction": "Build or artifact hash for exact reproducibility (wheel, sdist, image layer)."
+    },
+    "source_url": {
+      "type": "string",
+      "_instruction": "Canonical source or repository URL."
+    },
+    "url": {
+      "type": "string",
+      "_instruction": "(Deprecated) Use source_url."
+    },
+    "license": {
+      "type": "string",
+      "_instruction": "Enter the license."
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "(Deprecated) Former ad-hoc list; use environment.requirements list instead.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string",
+      "_instruction": "(Deprecated) Use version_spec."
+    }
+  }
+}

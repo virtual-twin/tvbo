@@ -5,12 +5,13 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release release gen-linkml all
+.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release release gen-linkml gen-openminds all
 all: build save
 
 # LinkML schema generation
 SCHEMA_PATH = schema/tvbo_datamodel.yaml
 DATAMODEL_DIR = tvbo/datamodel
+OPENMINDS_DIR = schema/openMINDS_tvbo
 
 gen-linkml:
 	@echo "Generating Python datamodel from LinkML schema..."
@@ -18,6 +19,14 @@ gen-linkml:
 	@gen-pydantic $(SCHEMA_PATH) > $(DATAMODEL_DIR)/tvbopydantic.py
 	@gen-python $(SCHEMA_PATH) > $(DATAMODEL_DIR)/tvbo_datamodel.py
 	@echo "✓ LinkML datamodel generated in $(DATAMODEL_DIR)/"
+
+gen-openminds:
+	@echo "Generating openMINDS schemas from LinkML source..."
+	@python $(OPENMINDS_DIR)/generate_openminds.py
+	@echo "✓ openMINDS schemas generated in $(OPENMINDS_DIR)/schemas/"
+
+gen-all: gen-linkml gen-openminds
+	@echo "✓ All schemas generated"
 
 build:
 	DOCKER_BUILDKIT=1 docker build --secret id=gitlab_token,env=GITLAB_TOKEN -t $(IMAGE_FULL) .

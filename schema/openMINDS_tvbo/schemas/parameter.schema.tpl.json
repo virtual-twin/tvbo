@@ -1,0 +1,78 @@
+{
+  "_type": "tvbo:Parameter",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "symbol": {
+      "type": "string",
+      "_instruction": "Enter the symbol."
+    },
+    "definition": {
+      "type": "string",
+      "_instruction": "Enter the definition."
+    },
+    "value": {
+      "type": "number",
+      "_instruction": "Enter the value."
+    },
+    "default": {
+      "type": "string",
+      "_instruction": "Enter the default."
+    },
+    "domain": {
+      "_linkedTypes": [
+        "tvbo:Range"
+      ],
+      "_instruction": "Enter the domain."
+    },
+    "reported_optimum": {
+      "type": "number",
+      "_instruction": "Enter the reported optimum."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "_instruction": "Enter the equation."
+    },
+    "unit": {
+      "type": "string",
+      "_instruction": "Enter the unit."
+    },
+    "comment": {
+      "type": "string",
+      "_instruction": "Enter the comment."
+    },
+    "heterogeneous": {
+      "type": "boolean",
+      "_instruction": "Enter the heterogeneous."
+    },
+    "free": {
+      "type": "boolean",
+      "_instruction": "Enter the free."
+    },
+    "shape": {
+      "type": "string",
+      "_instruction": "Enter the shape."
+    },
+    "explored_values": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all explored values.",
+      "items": {
+        "type": "number"
+      }
+    }
+  }
+}

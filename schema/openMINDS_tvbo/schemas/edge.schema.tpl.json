@@ -1,0 +1,52 @@
+{
+  "_type": "tvbo:Edge",
+  "required": [
+    "source",
+    "target"
+  ],
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all parameters."
+    },
+    "source": {
+      "type": "integer",
+      "_instruction": "Source node ID"
+    },
+    "target": {
+      "type": "integer",
+      "_instruction": "Target node ID"
+    },
+    "source_var": {
+      "type": "string",
+      "_instruction": "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+    },
+    "target_var": {
+      "type": "string",
+      "_instruction": "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
+    },
+    "coupling": {
+      "_linkedTypes": [
+        "tvbo:Coupling"
+      ],
+      "_instruction": "Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling."
+    },
+    "directed": {
+      "type": "boolean",
+      "_instruction": "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+    }
+  }
+}

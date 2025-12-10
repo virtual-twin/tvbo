@@ -1,0 +1,52 @@
+{
+  "_type": "tvbo:ProcessingStep",
+  "required": [
+    "function"
+  ],
+  "properties": {
+    "order": {
+      "type": "integer",
+      "_instruction": "Execution order in the pipeline (optional for standalone operations)"
+    },
+    "function": {
+      "_embeddedTypes": [
+        "tvbo:Function"
+      ],
+      "_instruction": "Function or transformation to apply"
+    },
+    "operation_type": {
+      "type": "string",
+      "_instruction": "Kind of operation to perform (e.g., subsample, projection, convolution)."
+    },
+    "input_mapping": {
+      "_embeddedTypes": [
+        "tvbo:ArgumentMapping"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Maps function arguments to pipeline data/outputs"
+    },
+    "output_alias": {
+      "type": "string",
+      "_instruction": "Optional name for this step's output (default: function name)"
+    },
+    "apply_on_dimension": {
+      "type": "string",
+      "_instruction": "Which dimension to apply function on (e.g., 'time', 'space')"
+    },
+    "ensure_shape": {
+      "type": "string",
+      "_instruction": "Ensure output has specific dimensionality (e.g., '4d')"
+    },
+    "variables_of_interest": {
+      "_embeddedTypes": [
+        "tvbo:StateVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Optional per-step variable selection"
+    }
+  }
+}

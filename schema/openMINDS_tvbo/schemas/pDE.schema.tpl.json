@@ -1,0 +1,109 @@
+{
+  "_type": "tvbo:PDE",
+  "properties": {
+    "label": {
+      "type": "string",
+      "_instruction": "Enter the label."
+    },
+    "description": {
+      "type": "string",
+      "_instruction": "Enter the description."
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all parameters."
+    },
+    "domain": {
+      "_linkedTypes": [
+        "tvbo:SpatialDomain"
+      ],
+      "_instruction": "Enter the domain."
+    },
+    "mesh": {
+      "_linkedTypes": [
+        "tvbo:Mesh"
+      ],
+      "_instruction": "Shared mesh for all field state variables in this PDE."
+    },
+    "state_variables": {
+      "_linkedTypes": [
+        "tvbo:FieldStateVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all state variables."
+    },
+    "field": {
+      "_linkedTypes": [
+        "tvbo:SpatialField"
+      ],
+      "_instruction": "Primary field being solved for (deprecated; use state_variables)."
+    },
+    "operators": {
+      "_linkedTypes": [
+        "tvbo:DifferentialOperator"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all operators."
+    },
+    "sources": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all sources."
+    },
+    "boundary_conditions": {
+      "_linkedTypes": [
+        "tvbo:BoundaryCondition"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all boundary conditions."
+    },
+    "solver": {
+      "_linkedTypes": [
+        "tvbo:PDESolver"
+      ],
+      "_instruction": "Enter the solver."
+    },
+    "derived_parameters": {
+      "_linkedTypes": [
+        "tvbo:DerivedParameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all derived parameters."
+    },
+    "derived_variables": {
+      "_linkedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all derived variables."
+    },
+    "functions": {
+      "_linkedTypes": [
+        "tvbo:Function"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "_instruction": "Add all functions."
+    }
+  }
+}
