@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-10T11:29:07
+# Generation date: 2025-12-10T14:17:00
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -519,6 +519,8 @@ class Network(YAMLRoot):
     normalization: Optional[Union[dict, Equation]] = None
     global_coupling_strength: Optional[Union[dict, "Parameter"]] = None
     conduction_speed: Optional[Union[dict, "Parameter"]] = None
+    distance_unit: Optional[str] = "mm"
+    time_unit: Optional[str] = "ms"
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -557,6 +559,12 @@ class Network(YAMLRoot):
 
         if self.conduction_speed is not None and not isinstance(self.conduction_speed, Parameter):
             self.conduction_speed = Parameter(**as_dict(self.conduction_speed))
+
+        if self.distance_unit is not None and not isinstance(self.distance_unit, str):
+            self.distance_unit = str(self.distance_unit)
+
+        if self.time_unit is not None and not isinstance(self.time_unit, str):
+            self.time_unit = str(self.time_unit)
 
         super().__post_init__(**kwargs)
 
@@ -617,7 +625,8 @@ class Node(YAMLRoot):
 @dataclass(repr=False)
 class Edge(YAMLRoot):
     """
-    A directed edge in a network with coupling and connectivity properties
+    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance)
+    are stored in the parameters slot with optional units.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -630,13 +639,10 @@ class Edge(YAMLRoot):
     target: int = None
     label: Optional[str] = None
     description: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     source_var: Optional[str] = None
     target_var: Optional[str] = None
     coupling: Optional[Union[str, CouplingName]] = None
-    weight: Optional[float] = 1.0
-    delay: Optional[float] = 0.0
-    distance: Optional[float] = None
-    tract_properties: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.source):
@@ -655,6 +661,8 @@ class Edge(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
         if self.source_var is not None and not isinstance(self.source_var, str):
             self.source_var = str(self.source_var)
 
@@ -663,18 +671,6 @@ class Edge(YAMLRoot):
 
         if self.coupling is not None and not isinstance(self.coupling, CouplingName):
             self.coupling = CouplingName(self.coupling)
-
-        if self.weight is not None and not isinstance(self.weight, float):
-            self.weight = float(self.weight)
-
-        if self.delay is not None and not isinstance(self.delay, float):
-            self.delay = float(self.delay)
-
-        if self.distance is not None and not isinstance(self.distance, float):
-            self.distance = float(self.distance)
-
-        if self.tract_properties is not None and not isinstance(self.tract_properties, str):
-            self.tract_properties = str(self.tract_properties)
 
         super().__post_init__(**kwargs)
 
@@ -3723,6 +3719,12 @@ slots.network__global_coupling_strength = Slot(uri=TVBO.global_coupling_strength
 slots.network__conduction_speed = Slot(uri=TVBO.conduction_speed, name="network__conduction_speed", curie=TVBO.curie('conduction_speed'),
                    model_uri=TVBO.network__conduction_speed, domain=None, range=Optional[Union[dict, Parameter]])
 
+slots.network__distance_unit = Slot(uri=TVBO.distance_unit, name="network__distance_unit", curie=TVBO.curie('distance_unit'),
+                   model_uri=TVBO.network__distance_unit, domain=None, range=Optional[str])
+
+slots.network__time_unit = Slot(uri=TVBO.time_unit, name="network__time_unit", curie=TVBO.curie('time_unit'),
+                   model_uri=TVBO.network__time_unit, domain=None, range=Optional[str])
+
 slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie('id'),
                    model_uri=TVBO.node__id, domain=None, range=int)
 
@@ -3755,18 +3757,6 @@ slots.edge__target_var = Slot(uri=TVBO.target_var, name="edge__target_var", curi
 
 slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.edge__coupling, domain=None, range=Optional[Union[str, CouplingName]])
-
-slots.edge__weight = Slot(uri=TVBO.weight, name="edge__weight", curie=TVBO.curie('weight'),
-                   model_uri=TVBO.edge__weight, domain=None, range=Optional[float])
-
-slots.edge__delay = Slot(uri=TVBO.delay, name="edge__delay", curie=TVBO.curie('delay'),
-                   model_uri=TVBO.edge__delay, domain=None, range=Optional[float])
-
-slots.edge__distance = Slot(uri=TVBO.distance, name="edge__distance", curie=TVBO.curie('distance'),
-                   model_uri=TVBO.edge__distance, domain=None, range=Optional[float])
-
-slots.edge__tract_properties = Slot(uri=TVBO.tract_properties, name="edge__tract_properties", curie=TVBO.curie('tract_properties'),
-                   model_uri=TVBO.edge__tract_properties, domain=None, range=Optional[str])
 
 slots.observationModel__transformation = Slot(uri=TVBO.transformation, name="observationModel__transformation", curie=TVBO.curie('transformation'),
                    model_uri=TVBO.observationModel__transformation, domain=None, range=Optional[Union[dict, Function]])
@@ -4583,6 +4573,9 @@ slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eFi
 
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
+
+slots.Edge_parameters = Slot(uri=TVBO.parameters, name="Edge_parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.Edge_parameters, domain=Edge, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]])
 
 slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])

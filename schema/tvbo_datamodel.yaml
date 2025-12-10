@@ -386,6 +386,14 @@ classes:
         range: Parameter
         description: "Conduction speed for computing delays from distances"
         inlined: true
+      distance_unit:
+        range: string
+        description: "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
+        ifabsent: string(mm)
+      time_unit:
+        range: string
+        description: "Default time unit for the network (e.g., 'ms', 's')"
+        ifabsent: string(ms)
 
   Node:
     class_uri: tvbo:Node
@@ -421,10 +429,14 @@ classes:
 
   Edge:
     class_uri: tvbo:Edge
-    description: "A directed edge in a network with coupling and connectivity properties"
+    description: "A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units."
     slots:
       - label
       - description
+      - parameters
+    slot_usage:
+      parameters:
+        description: "Edge parameters including weight, delay, and/or distance. Use parameter names 'weight' (connection strength), 'delay' (transmission delay), 'distance' (physical length). Each can have a unit."
     attributes:
       source:
         range: integer
@@ -445,20 +457,6 @@ classes:
         required: false
         description: "Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling."
         inlined: false
-      weight:
-        range: float
-        ifabsent: float(1.0)
-        description: "Connection strength/weight"
-      delay:
-        range: float
-        ifabsent: float(0.0)
-        description: "Transmission delay (ms or specified time unit)"
-      distance:
-        range: float
-        description: "Physical distance between nodes (e.g., tract length in mm)"
-      tract_properties:
-        range: string
-        description: "Additional tract metadata or reference to tractography data"
 
   ObservationModel:
     class_uri: tvbo:ObservationModel

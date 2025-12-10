@@ -254,7 +254,8 @@ class Network(tvbo_datamodel.Network):
         """Create a Network from weight (and optionally length) matrices.
 
         This is a convenience constructor for creating networks from matrix
-        representations. The matrices are converted to explicit nodes and edges.
+        representations. For performance, matrices are stored directly and
+        edges are generated lazily only when needed.
 
         Parameters
         ----------
@@ -270,7 +271,8 @@ class Network(tvbo_datamodel.Network):
         Returns
         -------
         Network
-            New Network with nodes and edges derived from matrices.
+            New Network with nodes derived from labels and matrices stored
+            for efficient access.
 
         Examples
         --------
@@ -298,33 +300,23 @@ class Network(tvbo_datamodel.Network):
         if labels is None:
             labels = [f"node_{i}" for i in range(n_nodes)]
 
-        # Create explicit nodes
-        nodes = []
-        for i in range(n_nodes):
-            nodes.append(tvbo_datamodel.Node(id=i, label=labels[i]))
+        # Create explicit nodes (cheap - only N objects)
+        nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
-        # Create explicit edges from non-zero weights
-        edges = []
-        for i in range(n_nodes):
-            for j in range(n_nodes):
-                if weights[i, j] != 0:
-                    edge_kwargs = {
-                        "source": i,
-                        "target": j,
-                        "weight": float(weights[i, j]),
-                    }
-                    if lengths is not None:
-                        edge_kwargs["distance"] = float(lengths[i, j])
-                    edges.append(tvbo_datamodel.Edge(**edge_kwargs))
-
-        # Build the network with explicit nodes/edges (no weights/lengths attributes)
-        return cls(
+        # Build the network with nodes only - matrices stored separately for performance
+        instance = cls(
             nodes=nodes,
-            edges=edges,
+            edges=[],  # Don't create Edge objects - too slow for large networks
             number_of_nodes=n_nodes,
             number_of_regions=n_nodes,
             **kwargs,
         )
+
+        # Store matrices directly for efficient access (not in schema, runtime only)
+        instance._cached_weights = weights
+        instance._cached_lengths = lengths if lengths is not None else None
+
+        return instance
 
     @classmethod
     def from_string(cls, yaml_string: str, **kwargs: Any) -> "Network":
@@ -548,9 +540,39 @@ class Network(tvbo_datamodel.Network):
             x=x, y=y, values=arr.reshape(-1).astype(jnp.float32).tolist()
         )
 
+    @staticmethod
+    def _get_edge_param(edge, name: str, default: float = 0.0) -> float:
+        """Get a parameter value from an edge by name.
+
+        Looks in edge.parameters for a parameter with the given name.
+
+        Parameters
+        ----------
+        edge : Edge
+            The edge to get the parameter from
+        name : str
+            Parameter name to look for (e.g., 'weight', 'delay', 'distance')
+        default : float
+            Default value if parameter not found
+
+        Returns
+        -------
+        float
+            The parameter value or default
+        """
+        params = getattr(edge, "parameters", None)
+        if params:
+            for p in params:
+                p_name = getattr(p, "name", None)
+                if p_name == name:
+                    val = getattr(p, "value", None)
+                    return float(val) if val is not None else default
+        return default
+
     def _weights_from_edges(self) -> Optional[np.ndarray]:
         """Compute weights matrix from edges.
 
+        Looks for 'weight' parameter in edge.parameters.
         Returns None if no edges are defined.
         """
         if not self.edges:
@@ -560,12 +582,13 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                W[i, j] = edge.weight if edge.weight is not None else 1.0
+                W[i, j] = self._get_edge_param(edge, "weight", default=1.0)
         return W
 
     def _lengths_from_edges(self) -> Optional[np.ndarray]:
-        """Compute lengths matrix from edges.
+        """Compute lengths/distances matrix from edges.
 
+        Looks for 'distance' parameter in edge.parameters.
         Returns None if no edges are defined.
         """
         if not self.edges:
@@ -575,8 +598,28 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                L[i, j] = edge.distance if edge.distance is not None else 0.0
+                L[i, j] = self._get_edge_param(edge, "distance", default=0.0)
         return L
+
+    def _delays_from_edges(self) -> Optional[np.ndarray]:
+        """Compute delays matrix from edges.
+
+        Looks for 'delay' parameter in edge.parameters.
+        Returns None if no edges are defined or no delays are set.
+        """
+        if not self.edges:
+            return None
+        n = self.number_of_nodes or self.number_of_regions or 1
+        D = np.zeros((n, n), dtype=np.float64)
+        has_delays = False
+        for edge in self.edges:
+            i, j = edge.source, edge.target
+            if 0 <= i < n and 0 <= j < n:
+                delay = self._get_edge_param(edge, "delay", default=0.0)
+                D[i, j] = delay
+                if delay > 0:
+                    has_delays = True
+        return D if has_delays else None
 
     @property
     def node_labels(self) -> List[str]:
@@ -602,13 +645,14 @@ class Network(tvbo_datamodel.Network):
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Connection weights matrix as numpy/JAX array.
 
-        Computed from edges. If normalization is defined, applies the
+        Returns cached matrix if available (from from_matrix), otherwise
+        computes from edges. If normalization is defined, applies the
         normalization equation.
 
         Returns
         -------
         np.ndarray or jax.Array, optional
-            Connection weights matrix (N x N), or None if no edges
+            Connection weights matrix (N x N), or None if no edges/matrix
 
         Examples
         --------
@@ -623,8 +667,13 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
-        # Compute from edges
-        W = self._weights_from_edges()
+        # Check for cached matrix from from_matrix (performance optimization)
+        if hasattr(self, "_cached_weights") and self._cached_weights is not None:
+            W = self._cached_weights
+        else:
+            # Compute from edges (fallback for networks built from explicit edges)
+            W = self._weights_from_edges()
+
         if W is None:
             return None
 
@@ -670,7 +719,7 @@ class Network(tvbo_datamodel.Network):
         Returns
         -------
         np.ndarray or jax.Array, optional
-            Tract lengths matrix (N x N) in mm, or None if no edges
+            Tract lengths matrix (N x N) in mm, or None if no matrix/edges
 
         Examples
         --------
@@ -684,7 +733,11 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
 
-        # Compute from edges
+        # Check for cached matrix from from_matrix (performance optimization)
+        if hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
+            return self._cached_lengths
+
+        # Compute from edges (fallback for networks built from explicit edges)
         return self._lengths_from_edges()
 
     @property
@@ -761,45 +814,56 @@ class Network(tvbo_datamodel.Network):
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
         return Atlas(atlas_data)
 
-    def compute_delays(
-        self, conduction_speed: Union[str, float] = "default"
-    ) -> Union[np.ndarray, JaxArray]:
-        """Calculate signal propagation delays between regions.
+    def compute_delays(self, output_unit: Optional[str] = None) -> Union[np.ndarray, JaxArray]:
+        """Compute transmission delays from lengths and conduction speed.
+
+        Uses sympy for unit-aware computation: delay = length / speed.
 
         Parameters
         ----------
-        conduction_speed : str or float, default="default"
-            Signal propagation speed in mm/ms. If "default", uses
-            `self.conduction_speed.value` (typically 3.0 mm/ms)
+        output_unit : str, optional
+            Desired output time unit (e.g., "ms", "s"). If None, uses network's time_unit.
 
         Returns
         -------
         np.ndarray or jax.Array
-            Delay matrix (N x N) in milliseconds
+            Delay matrix (N x N) in the specified time unit.
 
         Raises
         ------
         ValueError
-            If lengths matrix is not available
-
-        Examples
-        --------
-        ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        delays = sc.compute_delays(conduction_speed=4.0)
-        print(f"Mean delay: {delays.mean():.2f} ms")
-        ```
+            If lengths matrix or conduction speed is not available.
         """
-        if conduction_speed == "default":
-            cs_param = getattr(self, "conduction_speed", None)
-            if cs_param and hasattr(cs_param, "value"):
-                conduction_speed = cs_param.value  # type: ignore[attr-defined]
-            else:
-                conduction_speed = 3.0  # default fallback
+        import sympy.physics.units as u
+        from sympy import nsimplify
+        from sympy.parsing.sympy_parser import parse_expr
+
         lengths = self.lengths_matrix
         if lengths is None:
-            raise ValueError("Lengths matrix is not available")
-        return lengths / conduction_speed  # type: ignore[operator]
+            raise ValueError("Lengths matrix not available")
+
+        cs = self.conduction_speed
+        if cs is None or not hasattr(cs, "value"):
+            raise ValueError("Conduction speed not set")
+
+        # Use sympy's full unit namespace - no hardcoded mapping needed
+        unit_ns = dict(vars(u))
+
+        # Get units from network attributes (with defaults)
+        distance_unit_str = getattr(self, "distance_unit", None) or "mm"
+        time_unit_str = output_unit or getattr(self, "time_unit", None) or "ms"
+        speed_unit_str = cs.unit or f"{distance_unit_str}/{time_unit_str}"
+
+        length_unit = parse_expr(distance_unit_str, local_dict=unit_ns)
+        speed_unit = parse_expr(speed_unit_str, local_dict=unit_ns)
+        target_unit = parse_expr(time_unit_str, local_dict=unit_ns)
+
+        # delay = length / speed, then convert to target unit
+        delay_unit = length_unit / speed_unit
+        converted = u.convert_to(delay_unit, target_unit)
+        factor = float(nsimplify(converted / target_unit))
+
+        return lengths / cs.value * factor
 
     def execute(self, format: str = "tvb") -> Any:
         """Convert connectome to simulator-specific format.
