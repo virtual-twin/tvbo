@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jax.numpy as jnp
+import jax.scipy as jsp
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -13,7 +14,6 @@ from jax.tree_util import register_pytree_node_class
 from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-
 
 from tvbo.data.tvbo_data import CONNECTOME_DIR, bids_utils
 from tvbo.datamodel import tvbo_datamodel
@@ -156,8 +156,7 @@ class Network(tvbo_datamodel.Network):
         elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
             n_nodes = kwargs["number_of_nodes"]
             kwargs["nodes"] = [
-                tvbo_datamodel.Node(id=i, label=f"node_{i}")
-                for i in range(n_nodes)
+                tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
             ]
 
         super().__init__(**kwargs)
@@ -643,6 +642,9 @@ class Network(tvbo_datamodel.Network):
         ```
         """
         format = "jax"
+
+        if len(self.nodes) == 1:
+            return jnp.zeros((1, 1))
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
@@ -660,8 +662,6 @@ class Network(tvbo_datamodel.Network):
         # Apply normalization if defined
         norm = getattr(self, "normalization", None)
         if norm is not None:
-            import jax.numpy as jnp
-            import jax.scipy as jsp
 
             from tvbo.export.code import parse_eq, render_expression
 
@@ -713,6 +713,8 @@ class Network(tvbo_datamodel.Network):
         print(f"Mean length: {L.mean():.1f} mm")
         ```
         """
+        if len(self.nodes) == 1:
+            return jnp.zeros((1, 1))
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
@@ -915,8 +917,7 @@ class Network(tvbo_datamodel.Network):
 
         lengths = self.lengths_matrix
         if lengths is None:
-            raise ValueError("Lengths matrix not available")
-
+            return np.zeros((self.number_of_nodes or 1, self.number_of_nodes or 1))
         cs = self.conduction_speed
         if cs is None or not hasattr(cs, "value"):
             raise ValueError("Conduction speed not set")
@@ -962,7 +963,8 @@ class Network(tvbo_datamodel.Network):
         ```
         """
         if format == "tvb":
-            from tvb.datatypes.connectivity import Connectivity  # type: ignore[import-not-found]
+            from tvb.datatypes.connectivity import \
+                Connectivity  # type: ignore[import-not-found]
 
             # Ensure TVB receives plain NumPy arrays (no JAX tracers)
             _weights = np.asarray(self.weights_matrix, dtype=float)
@@ -1526,8 +1528,8 @@ class Network(tvbo_datamodel.Network):
 
         # Branch based on format
         if format == "bsplot":
-            from bsplot.graph.nodes import draw_custom_nodes
             from bsplot.graph.edges import draw_custom_edges
+            from bsplot.graph.nodes import draw_custom_nodes
 
             # Build label dict with neuron/synapse icons
             label_dict = {}
