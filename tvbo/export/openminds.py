@@ -8,6 +8,9 @@ OpenMINDS JSON-LD conversion utilities for TVBO.
 
 This module provides bidirectional conversion between TVBO datamodel objects
 and openMINDS-compatible JSON-LD format.
+
+This module is the **single source of truth** for all openMINDS type mappings.
+Both runtime conversion and schema generation import from here.
 """
 from __future__ import annotations
 
@@ -17,6 +20,26 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from tvbo.export.experiment import SimulationExperiment
     from tvbo.knowledge.study import SimulationStudy
+
+__all__ = [
+    # Context and mappings
+    "OPENMINDS_CONTEXT",
+    "EXTERNAL_TYPE_MAPPINGS",
+    "TVBO_TYPE_MAPPINGS",
+    "TVBO_TO_OPENMINDS_TYPE",
+    "OPENMINDS_CATEGORIES",
+    "OPENMINDS_EXTENDS",
+    "SKIP_CLASSES",
+    "LINKML_TO_JSON_TYPE",
+    "SKIP_FIELDS",
+    # Conversion functions
+    "experiment_to_openminds",
+    "experiment_from_openminds",
+    "study_to_openminds",
+    "study_from_openminds",
+    "save_openminds",
+    "load_openminds",
+]
 
 # =============================================================================
 # OpenMINDS Context and Type Mappings
@@ -208,7 +231,7 @@ def _to_openminds_value(value: Any, depth: int = 0) -> Any:
     return str(value)
 
 
-def _object_to_openminds(obj: Any, depth: int = 0) -> dict[str, Any]:
+def _object_to_openminds(obj: Any, depth: int = 0) -> dict[str, Any] | None:
     """Convert a TVBO object to openMINDS JSON-LD dict."""
     if obj is None:
         return None
@@ -303,6 +326,8 @@ def experiment_to_openminds(
         OpenMINDS-compatible JSON-LD dictionary.
     """
     result = _object_to_openminds(experiment)
+    if result is None:
+        result = {}
 
     # Ensure correct type
     result["@type"] = "tvbo:SimulationExperiment"
@@ -384,6 +409,8 @@ def study_to_openminds(
         OpenMINDS-compatible JSON-LD dictionary.
     """
     result = _object_to_openminds(study)
+    if result is None:
+        result = {}
 
     # Ensure correct type
     result["@type"] = "tvbo:SimulationStudy"
@@ -482,7 +509,7 @@ def save_openminds(
     elif cls_name == "SimulationExperiment" or "Experiment" in cls_name:
         data = experiment_to_openminds(obj, base_id=base_id)
     else:
-        data = _object_to_openminds(obj)
+        data = _object_to_openminds(obj) or {}
         data = {"@context": OPENMINDS_CONTEXT, **data}
 
     with open(filepath, "w", encoding="utf-8") as f:
