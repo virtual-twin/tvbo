@@ -1541,16 +1541,7 @@ class Edge(ConfiguredBaseModel):
     """
     A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge',
-         'from_schema': 'https://w3id.org/tvbo',
-         'slot_usage': {'parameters': {'description': 'Edge parameters including '
-                                                      'weight, delay, and/or distance. '
-                                                      "Use parameter names 'weight' "
-                                                      "(connection strength), 'delay' "
-                                                      '(transmission delay), '
-                                                      "'distance' (physical length). "
-                                                      'Each can have a unit.',
-                                       'name': 'parameters'}}})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
@@ -1621,7 +1612,7 @@ class Edge(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Edge parameters including weight, delay, and/or distance. Use parameter names 'weight' (connection strength), 'delay' (transmission delay), 'distance' (physical length). Each can have a unit.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
@@ -1641,6 +1632,7 @@ class Edge(ConfiguredBaseModel):
     source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
+    directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'False'} })
 
 
 class ObservationModel(ConfiguredBaseModel):

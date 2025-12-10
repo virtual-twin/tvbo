@@ -692,16 +692,88 @@ class Network(tvbo_datamodel.Network):
         return {}
 
     @property
-    def graph(self) -> nx.DiGraph:
+    def graph(self) -> nx.MultiDiGraph:
+        """Build NetworkX MultiDiGraph from network nodes and edges.
+
+        Priority:
+        1. Use explicit nodes if available (with their properties)
+        2. Use explicit edges if available
+        3. Generate edges from weight/length matrices if no explicit edges
+        4. Fall back to matrix-only representation if no nodes defined
+
+        Returns
+        -------
+        nx.MultiDiGraph
+            Graph with node/edge attributes from schema.
+            Nodes have: id, label, dynamics, region, position, parameters
+            Edges have: weight, delay, distance, directed, source_var, target_var, coupling
+        """
+        G = nx.MultiDiGraph()
+
         W = self.weights_matrix
-        if W is None:
-            raise ValueError("Weights matrix not available for graph construction")
-        G = nx.from_numpy_array(W, create_using=nx.DiGraph)
-        # Set node labels
-        labels = self.node_labels
-        if labels and len(labels) == G.number_of_nodes():
-            mapping = {i: labels[i] for i in range(len(labels))}
-            G = nx.relabel_nodes(G, mapping)
+        L = self.lengths_matrix
+
+        # Step 1: Add nodes (prefer explicit nodes, fall back to matrix size)
+        if self.nodes:
+            for node in self.nodes:
+                node_id = node.id if node.id is not None else 0
+                node_attrs = {
+                    "label": node.label or f"node_{node_id}",
+                    "dynamics": node.dynamics,
+                    "region": node.region,
+                }
+                if node.position:
+                    node_attrs["x"] = node.position.x
+                    node_attrs["y"] = node.position.y
+                    node_attrs["z"] = getattr(node.position, "z", None)
+                if node.parameters:
+                    for name, param in node.parameters.items():
+                        node_attrs[f"param_{name}"] = param.value
+                G.add_node(node_id, **node_attrs)
+        elif W is not None:
+            # No explicit nodes - create from matrix dimensions
+            n = W.shape[0]
+            for i in range(n):
+                G.add_node(i, label=f"node_{i}")
+
+        # Step 2: Add edges (prefer explicit edges, fall back to matrix)
+        if self.edges:
+            # Use explicit edges
+            for edge in self.edges:
+                edge_attrs = {
+                    "directed": getattr(edge, "directed", True),
+                    "source_var": edge.source_var,
+                    "target_var": edge.target_var,
+                    "coupling": edge.coupling,
+                }
+                if edge.parameters:
+                    for name, param in edge.parameters.items():
+                        edge_attrs[name] = param.value
+                        if param.unit:
+                            edge_attrs[f"{name}_unit"] = param.unit
+
+                G.add_edge(edge.source, edge.target, **edge_attrs)
+
+                # If undirected, add reverse edge
+                if not edge_attrs["directed"]:
+                    G.add_edge(edge.target, edge.source, **edge_attrs)
+
+        elif W is not None:
+            # No explicit edges - generate from weight matrix
+            n = W.shape[0]
+            # Verify dimensions match nodes if we have nodes
+            if self.nodes and len(self.nodes) != n:
+                raise ValueError(
+                    f"Matrix dimensions ({n}) don't match number of nodes ({len(self.nodes)})"
+                )
+            for i in range(n):
+                for j in range(n):
+                    if W[i, j] != 0:
+                        edge_attrs = {"weight": float(W[i, j]), "directed": True}
+                        if L is not None:
+                            edge_attrs["distance"] = float(L[i, j])
+                        G.add_edge(i, j, **edge_attrs)
+
         return G
 
     def __str__(self) -> str:

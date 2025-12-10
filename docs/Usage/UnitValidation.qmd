@@ -4,8 +4,8 @@ description: "How TVBO handles physical units across simulation components"
 jupyter: python3
 ---
 
-TVBO uses [SymPy's units system](https://docs.sympy.org/latest/modules/physics/units/index.html) 
-to handle physical units automatically. This enables correct unit conversions across 
+TVBO uses [SymPy's units system](https://docs.sympy.org/latest/modules/physics/units/index.html)
+to handle physical units automatically. This enables correct unit conversions across
 different components of a simulation experiment.
 
 ## Overview
@@ -68,7 +68,7 @@ print(f"Delays (ms):\n{np.round(delays, 2)}")
 
 ### 1.2 Mixed Units
 
-TVBO correctly handles mixed units. The conduction speed unit doesn't need to match 
+TVBO correctly handles mixed units. The conduction speed unit doesn't need to match
 the network's distance/time units:
 
 ```{python}
@@ -91,7 +91,7 @@ Create networks with non-default units:
 ```{python}
 # Network with distances in meters and time in seconds
 net_si = Network.from_matrix(
-    W, 
+    W,
     lengths=L / 1000,  # Convert mm to m
     distance_unit="m",
     time_unit="s"
@@ -117,7 +117,7 @@ Any unit recognized by SymPy can be used:
 net_micro = Network.from_matrix(
     W,
     lengths=L * 10,  # mm to 0.1mm scale
-    distance_unit="cm", 
+    distance_unit="cm",
     time_unit="us"
 )
 net_micro.conduction_speed = Parameter(name="v", value=3000.0, unit="m/s")
@@ -202,7 +202,7 @@ omega = Parameter(name="omega", value=10.0, unit="Hz")  # frequency
 ```
 
 ---
-  
+
 ## 4. Monitor Units (Coming Soon)
 
 Sampling periods and frequencies will support units:

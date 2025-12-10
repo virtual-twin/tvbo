@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-10T14:17:00
+# Generation date: 2025-12-10T14:54:49
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -643,6 +643,7 @@ class Edge(YAMLRoot):
     source_var: Optional[str] = None
     target_var: Optional[str] = None
     coupling: Optional[Union[str, CouplingName]] = None
+    directed: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.source):
@@ -671,6 +672,9 @@ class Edge(YAMLRoot):
 
         if self.coupling is not None and not isinstance(self.coupling, CouplingName):
             self.coupling = CouplingName(self.coupling)
+
+        if self.directed is not None and not isinstance(self.directed, Bool):
+            self.directed = Bool(self.directed)
 
         super().__post_init__(**kwargs)
 
@@ -3758,6 +3762,9 @@ slots.edge__target_var = Slot(uri=TVBO.target_var, name="edge__target_var", curi
 slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.edge__coupling, domain=None, range=Optional[Union[str, CouplingName]])
 
+slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
+                   model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
+
 slots.observationModel__transformation = Slot(uri=TVBO.transformation, name="observationModel__transformation", curie=TVBO.curie('transformation'),
                    model_uri=TVBO.observationModel__transformation, domain=None, range=Optional[Union[dict, Function]])
 
@@ -4573,9 +4580,6 @@ slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eFi
 
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
-
-slots.Edge_parameters = Slot(uri=TVBO.parameters, name="Edge_parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.Edge_parameters, domain=Edge, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]])
 
 slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])
