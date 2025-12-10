@@ -786,6 +786,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 del sys.modules[mod]
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+        # Compute algebraic output variables post-hoc
+        result = self._compute_pyrates_outputs(result)
+
         return self._pyrates_result_to_timeseries(result)
 
     def _load_pyrates_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
@@ -914,7 +917,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
     def _build_pyrates_outputs(self) -> dict:
-        """Build PyRates outputs dict from dynamics state variables."""
+        """Build PyRates outputs dict from dynamics state variables.
+
+        Note: PyRates only tracks state variables (differential equations) in its
+        state vector. Algebraic outputs like 'v_pyr = y1 - y2' are computed inline
+        but not stored for recording. We only request state variables here, and
+        compute outputs post-hoc in _run_pyrates using _compute_pyrates_outputs.
+        """
         outputs = {}
 
         # Get dynamics - prefer dict form
@@ -924,6 +933,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Get default dynamics (first in dict)
         default_dyn = next(iter(dynamics.values())) if dynamics else None
+
+        def add_outputs_for_dynamics(dyn, op_name: str, prefix: str = ""):
+            """Add state variables for a dynamics model."""
+            if not dyn:
+                return
+            # Add state variables only (PyRates can only record these)
+            for sv_name in (dyn.state_variables or {}).keys():
+                key = f"{prefix}{sv_name}" if prefix else sv_name
+                outputs[key] = f"{prefix.rstrip('_') or 'node_0'}/{op_name}/{sv_name}"
 
         # Get network nodes if available
         network = getattr(self, "network", None)
@@ -940,20 +958,88 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
                 dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
 
-                if dyn and dyn.state_variables:
+                if dyn:
                     op_name = f"{dyn.name}_op"
-                    for sv_name in dyn.state_variables.keys():
-                        key = f"{safe_label}_{sv_name}"
-                        outputs[key] = f"{safe_label}/{op_name}/{sv_name}"
+                    add_outputs_for_dynamics(dyn, op_name, prefix=f"{safe_label}_")
         else:
             # Single dynamics case
             if dynamics:
                 dyn = next(iter(dynamics.values()))
                 op_name = f"{dyn.name}_op"
-                for sv_name in dyn.state_variables.keys():
-                    outputs[sv_name] = f"node_0/{op_name}/{sv_name}"
+                add_outputs_for_dynamics(dyn, op_name)
 
         return outputs
+
+    def _compute_pyrates_outputs(self, result: "pd.DataFrame") -> "pd.DataFrame":
+        """Compute algebraic output variables from PyRates simulation results.
+
+        PyRates only records state variables. This method evaluates output
+        equations (like 'v_pyr = y1 - y2') using the recorded state values.
+        """
+        import sympy as sp
+
+        # Get dynamics
+        dynamics = self.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        if not dynamics:
+            return result
+
+        # Get default dynamics
+        default_dyn = next(iter(dynamics.values()))
+
+        # Compute outputs for each dynamics model
+        network = getattr(self, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                prefix = f"{safe_label}_"
+
+                # Get dynamics for this node
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
+
+                if dyn and dyn.output:
+                    for out_name, out_var in dyn.output.items():
+                        eq = out_var.equation
+                        if eq and eq.rhs:
+                            # Parse and evaluate the equation
+                            expr = sp.sympify(eq.rhs)
+                            # Substitute state variable values
+                            subs = {}
+                            for sym in expr.free_symbols:
+                                col_name = f"{prefix}{sym.name}"
+                                if col_name in result.columns:
+                                    subs[sym] = result[col_name].values
+                            if subs:
+                                # Add output with same prefix as state variables
+                                out_col = f"{prefix}{out_name}"
+                                # Vectorized evaluation using lambdify
+                                func = sp.lambdify(list(subs.keys()), expr, 'numpy')
+                                result[out_col] = func(*subs.values())
+        else:
+            # Single dynamics case (no network/nodes)
+            dyn = default_dyn
+            if dyn and dyn.output:
+                for out_name, out_var in dyn.output.items():
+                    eq = out_var.equation
+                    if eq and eq.rhs:
+                        expr = sp.sympify(eq.rhs)
+                        subs = {}
+                        for sym in expr.free_symbols:
+                            if sym.name in result.columns:
+                                subs[sym] = result[sym.name].values
+                        if subs:
+                            func = sp.lambdify(list(subs.keys()), expr, 'numpy')
+                            result[out_name] = func(*subs.values())
+
+        return result
 
     def _build_pyrates_inputs(self) -> dict:
         """Build PyRates inputs dict from experiment stimulation.
@@ -1044,19 +1130,40 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         time = np.array(result.index)
         columns = list(result.columns)
 
+        # Get known node labels from network
+        known_node_labels = []
+        network = getattr(self, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                known_node_labels.append(safe_label)
+
         # Parse column names to extract node and state variable info
-        # Columns are named like "NodeLabel_statevariable" (e.g., "Driver_x", "Excitable_v")
+        # Columns are named like "NodeLabel_statevariable" (e.g., "node_0_y1", "node_0_v_pyr")
         node_names = []
         sv_names = []
         node_sv_pairs = []
 
         for col in columns:
-            # Split on last underscore to handle node names with underscores
-            parts = col.rsplit("_", 1)
-            if len(parts) == 2:
-                node_name, sv_name = parts
-            else:
-                node_name, sv_name = col, col
+            # Try to match against known node labels first
+            node_name = None
+            sv_name = None
+            for node_label in known_node_labels:
+                prefix = f"{node_label}_"
+                if col.startswith(prefix):
+                    node_name = node_label
+                    sv_name = col[len(prefix):]
+                    break
+
+            if node_name is None:
+                # Fallback: split on last underscore
+                parts = col.rsplit("_", 1)
+                if len(parts) == 2:
+                    node_name, sv_name = parts
+                else:
+                    node_name, sv_name = col, col
+
             node_sv_pairs.append((node_name, sv_name))
             if node_name not in node_names:
                 node_names.append(node_name)

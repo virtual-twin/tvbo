@@ -604,10 +604,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return scope
 
     def update_metadata(self):
+        # Pre-compute coupling term symbols for fast set intersection
+        coupling_symbols = set(symbols(list(self.coupling_terms.keys())))
+
         for v, eq in update_equations(self).items():
             equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=str(eq.rhs))
             if v in self.state_variables:
                 self.state_variables[v].equation = equation
+                # Check if any coupling term appears in the equation's free symbols
+                if coupling_symbols & eq.rhs.free_symbols:
+                    self.state_variables[v].coupling_variable = True
             elif v in self.derived_variables:
                 self.derived_variables[v].equation = equation
         # Build dependency order without storing state
