@@ -7,7 +7,7 @@ if 'experiment' in context.keys():
     model = context['experiment'].local_dynamics.metadata
 else:
     model = context['model'].metadata
-render = lambda obj: model.render_equation(obj, format='python')
+render = lambda obj: model.render_equation(obj, format='numpy')
 %>
 class ${model.name}(Model):
 
