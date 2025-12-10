@@ -1,0 +1,660 @@
+id: 3
+model:
+  name: ModelJansen1995
+  has_reference: Jansen1995
+  label: Jansen-Rit Neural Mass Model (single column)
+  parameters:
+    A:
+      name: A
+      value: 3.25
+      description: None
+      unit: mV
+    B:
+      name: B
+      value: 22.0
+      description: None
+      unit: mV
+    C:
+      name: C
+      value: 135.0
+      description: None
+      explored_values:
+      - 68.0
+      - 128.0
+      - 135.0
+      - 270.0
+      - 675.0
+      - 1350.0
+    a:
+      name: a
+      value: 0.1
+      description: None
+      unit: ms^-1
+    b:
+      name: b
+      value: 0.05
+      description: None
+      unit: ms^-1
+    v0:
+      name: v0
+      value: 6.0
+      description: None
+      unit: mV
+    e0:
+      name: e0
+      value: 0.0025
+      description: None
+      unit: ms^-1
+    r:
+      name: r
+      value: 0.56
+      description: None
+      unit: mV^-1
+    p:
+      name: p
+      value: 0.24
+      description: None
+      unit: ms^-1
+  description: JR model with canonical parameters; long-range input is injected via
+    a coupling term. Output is pyramidal potential difference.
+  references:
+  - Jansen1995
+  derived_parameters:
+    C1:
+      name: C1
+      value: 135.0
+      equation:
+        rhs: C
+        latex: false
+    C2:
+      name: C2
+      value: 108.0
+      equation:
+        rhs: 0.8*C
+        latex: false
+    C3:
+      name: C3
+      value: 33.75
+      equation:
+        rhs: 0.25*C
+        latex: false
+    C4:
+      name: C4
+      value: 33.75
+      equation:
+        rhs: 0.25*C
+        latex: false
+  coupling_terms:
+    c_glob:
+      name: c_glob
+      description: Long-range input to the pyramidal population (pre-filter).
+  state_variables:
+    y0:
+      name: y0
+      label: Pyramidal membrane potential (position)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y0, t)
+        rhs: y3
+        latex: false
+      unit: mV
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y3:
+      name: y3
+      label: Pyramidal EPSP drive (velocity)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y3, t)
+        rhs: A*a*Sigm(y1 - y2) - a**2*y0 - 2*a*y3
+        latex: false
+      unit: mV*ms^-1
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y1:
+      name: y1
+      label: Excitatory interneuron membrane potential (position)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y1, t)
+        rhs: y4
+        latex: false
+      unit: mV
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y4:
+      name: y4
+      label: Excitatory EPSP drive (velocity) with global input
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y4, t)
+        rhs: A*a*(C2*Sigm(C1*y0) + c_glob + p) - a**2*y1 - 2*a*y4
+        latex: false
+      unit: mV*ms^-1
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y2:
+      name: y2
+      label: Inhibitory interneuron membrane potential (position)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y2, t)
+        rhs: y5
+        latex: false
+      unit: mV
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y5:
+      name: y5
+      label: Inhibitory IPSP drive (velocity)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y5, t)
+        rhs: B*C4*b*Sigm(C3*y0) - b**2*y2 - 2*b*y5
+        latex: false
+      unit: mV*ms^-1
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+  output:
+    v_pyr:
+      name: v_pyr
+      description: EEG-like output
+      equation:
+        rhs: y1 - y2
+        latex: false
+      unit: mV
+      conditional: false
+  number_of_modes: 1
+  functions:
+    Sigm:
+      name: Sigm
+      equation:
+        rhs: 2*e0 / (1 + exp(r*(v0 - v)))
+        latex: false
+      definition: JR sigmoid transformation
+      arguments:
+        v:
+          name: v
+local_dynamics:
+  name: ModelJansen1995
+  has_reference: Jansen1995
+  label: Jansen-Rit Neural Mass Model (single column)
+  parameters:
+    A:
+      name: A
+      value: 3.25
+      description: None
+      unit: mV
+    B:
+      name: B
+      value: 22.0
+      description: None
+      unit: mV
+    C:
+      name: C
+      value: 135.0
+      description: None
+      explored_values:
+      - 68.0
+      - 128.0
+      - 135.0
+      - 270.0
+      - 675.0
+      - 1350.0
+    a:
+      name: a
+      value: 0.1
+      description: None
+      unit: ms^-1
+    b:
+      name: b
+      value: 0.05
+      description: None
+      unit: ms^-1
+    v0:
+      name: v0
+      value: 6.0
+      description: None
+      unit: mV
+    e0:
+      name: e0
+      value: 0.0025
+      description: None
+      unit: ms^-1
+    r:
+      name: r
+      value: 0.56
+      description: None
+      unit: mV^-1
+    p:
+      name: p
+      value: 0.24
+      description: None
+      unit: ms^-1
+  description: JR model with canonical parameters; long-range input is injected via
+    a coupling term. Output is pyramidal potential difference.
+  references:
+  - Jansen1995
+  derived_parameters:
+    C1:
+      name: C1
+      value: 135.0
+      equation:
+        rhs: C
+        latex: false
+    C2:
+      name: C2
+      value: 108.0
+      equation:
+        rhs: 0.8*C
+        latex: false
+    C3:
+      name: C3
+      value: 33.75
+      equation:
+        rhs: 0.25*C
+        latex: false
+    C4:
+      name: C4
+      value: 33.75
+      equation:
+        rhs: 0.25*C
+        latex: false
+  coupling_terms:
+    c_glob:
+      name: c_glob
+      description: Long-range input to the pyramidal population (pre-filter).
+  state_variables:
+    y0:
+      name: y0
+      label: Pyramidal membrane potential (position)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y0, t)
+        rhs: y3
+        latex: false
+      unit: mV
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y3:
+      name: y3
+      label: Pyramidal EPSP drive (velocity)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y3, t)
+        rhs: A*a*Sigm(y1 - y2) - a**2*y0 - 2*a*y3
+        latex: false
+      unit: mV*ms^-1
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y1:
+      name: y1
+      label: Excitatory interneuron membrane potential (position)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y1, t)
+        rhs: y4
+        latex: false
+      unit: mV
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y4:
+      name: y4
+      label: Excitatory EPSP drive (velocity) with global input
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y4, t)
+        rhs: A*a*(C2*Sigm(C1*y0) + c_glob + p) - a**2*y1 - 2*a*y4
+        latex: false
+      unit: mV*ms^-1
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y2:
+      name: y2
+      label: Inhibitory interneuron membrane potential (position)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y2, t)
+        rhs: y5
+        latex: false
+      unit: mV
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+    y5:
+      name: y5
+      label: Inhibitory IPSP drive (velocity)
+      domain:
+        lo: 1.0e-100
+        hi: 1.0e+100
+      description: ''
+      equation:
+        lhs: Derivative(y5, t)
+        rhs: B*C4*b*Sigm(C3*y0) - b**2*y2 - 2*b*y5
+        latex: false
+      unit: mV*ms^-1
+      variable_of_interest: true
+      coupling_variable: false
+      initial_value: 0.1
+  output:
+    v_pyr:
+      name: v_pyr
+      description: EEG-like output
+      equation:
+        rhs: y1 - y2
+        latex: false
+      unit: mV
+      conditional: false
+  number_of_modes: 1
+  functions:
+    Sigm:
+      name: Sigm
+      equation:
+        rhs: 2*e0 / (1 + exp(r*(v0 - v)))
+        latex: false
+      definition: JR sigmoid transformation
+      arguments:
+        v:
+          name: v
+dynamics:
+  ModelJansen1995:
+    name: ModelJansen1995
+    has_reference: Jansen1995
+    label: Jansen-Rit Neural Mass Model (single column)
+    parameters:
+      A:
+        name: A
+        value: 3.25
+        description: None
+        unit: mV
+      B:
+        name: B
+        value: 22.0
+        description: None
+        unit: mV
+      C:
+        name: C
+        value: 135.0
+        description: None
+        explored_values:
+        - 68.0
+        - 128.0
+        - 135.0
+        - 270.0
+        - 675.0
+        - 1350.0
+      a:
+        name: a
+        value: 0.1
+        description: None
+        unit: ms^-1
+      b:
+        name: b
+        value: 0.05
+        description: None
+        unit: ms^-1
+      v0:
+        name: v0
+        value: 6.0
+        description: None
+        unit: mV
+      e0:
+        name: e0
+        value: 0.0025
+        description: None
+        unit: ms^-1
+      r:
+        name: r
+        value: 0.56
+        description: None
+        unit: mV^-1
+      p:
+        name: p
+        value: 0.24
+        description: None
+        unit: ms^-1
+    description: JR model with canonical parameters; long-range input is injected
+      via a coupling term. Output is pyramidal potential difference.
+    references:
+    - Jansen1995
+    derived_parameters:
+      C1:
+        name: C1
+        value: 135.0
+        equation:
+          rhs: C
+          latex: false
+      C2:
+        name: C2
+        value: 108.0
+        equation:
+          rhs: 0.8*C
+          latex: false
+      C3:
+        name: C3
+        value: 33.75
+        equation:
+          rhs: 0.25*C
+          latex: false
+      C4:
+        name: C4
+        value: 33.75
+        equation:
+          rhs: 0.25*C
+          latex: false
+    coupling_terms:
+      c_glob:
+        name: c_glob
+        description: Long-range input to the pyramidal population (pre-filter).
+    state_variables:
+      y0:
+        name: y0
+        label: Pyramidal membrane potential (position)
+        domain:
+          lo: 1.0e-100
+          hi: 1.0e+100
+        description: ''
+        equation:
+          lhs: Derivative(y0, t)
+          rhs: y3
+          latex: false
+        unit: mV
+        variable_of_interest: true
+        coupling_variable: false
+        initial_value: 0.1
+      y3:
+        name: y3
+        label: Pyramidal EPSP drive (velocity)
+        domain:
+          lo: 1.0e-100
+          hi: 1.0e+100
+        description: ''
+        equation:
+          lhs: Derivative(y3, t)
+          rhs: A*a*Sigm(y1 - y2) - a**2*y0 - 2*a*y3
+          latex: false
+        unit: mV*ms^-1
+        variable_of_interest: true
+        coupling_variable: false
+        initial_value: 0.1
+      y1:
+        name: y1
+        label: Excitatory interneuron membrane potential (position)
+        domain:
+          lo: 1.0e-100
+          hi: 1.0e+100
+        description: ''
+        equation:
+          lhs: Derivative(y1, t)
+          rhs: y4
+          latex: false
+        unit: mV
+        variable_of_interest: true
+        coupling_variable: false
+        initial_value: 0.1
+      y4:
+        name: y4
+        label: Excitatory EPSP drive (velocity) with global input
+        domain:
+          lo: 1.0e-100
+          hi: 1.0e+100
+        description: ''
+        equation:
+          lhs: Derivative(y4, t)
+          rhs: A*a*(C2*Sigm(C1*y0) + c_glob + p) - a**2*y1 - 2*a*y4
+          latex: false
+        unit: mV*ms^-1
+        variable_of_interest: true
+        coupling_variable: false
+        initial_value: 0.1
+      y2:
+        name: y2
+        label: Inhibitory interneuron membrane potential (position)
+        domain:
+          lo: 1.0e-100
+          hi: 1.0e+100
+        description: ''
+        equation:
+          lhs: Derivative(y2, t)
+          rhs: y5
+          latex: false
+        unit: mV
+        variable_of_interest: true
+        coupling_variable: false
+        initial_value: 0.1
+      y5:
+        name: y5
+        label: Inhibitory IPSP drive (velocity)
+        domain:
+          lo: 1.0e-100
+          hi: 1.0e+100
+        description: ''
+        equation:
+          lhs: Derivative(y5, t)
+          rhs: B*C4*b*Sigm(C3*y0) - b**2*y2 - 2*b*y5
+          latex: false
+        unit: mV*ms^-1
+        variable_of_interest: true
+        coupling_variable: false
+        initial_value: 0.1
+    output:
+      v_pyr:
+        name: v_pyr
+        description: EEG-like output
+        equation:
+          rhs: y1 - y2
+          latex: false
+        unit: mV
+        conditional: false
+    number_of_modes: 1
+    functions:
+      Sigm:
+        name: Sigm
+        equation:
+          rhs: 2*e0 / (1 + exp(r*(v0 - v)))
+          latex: false
+        definition: JR sigmoid transformation
+        arguments:
+          v:
+            name: v
+integration:
+  time_scale: ms
+  duration: 1000.0
+  method: Heun
+  step_size: 0.01220703125
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 2
+  intermediate_expressions:
+    X1:
+      name: X1
+      equation:
+        lhs: X1
+        rhs: X + dX0 * dt + noise + stimulus * dt
+        latex: false
+      conditional: false
+  update_expression:
+    name: dX
+    equation:
+      lhs: X_{t+1}
+      rhs: (dX0 + dX1) * (dt / 2)
+      latex: false
+    conditional: false
+  delayed: true
+network:
+  number_of_regions: 1
+  number_of_nodes: 1
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm/ms
+  distance_unit: mm
+  time_unit: ms
+coupling:
+  name: Linear
+  parameters:
+    a:
+      name: a
+      value: 0.00390625
+      description: Linear scaling factor of the coupled (delayed) input.
+    b:
+      name: b
+      value: 0.0
+      description: Shifts the base of the connection strength while maintaining the
+        absolute difference between different values.
+  sparse: false
+  pre_expression:
+    rhs: x_j
+    latex: false
+  post_expression:
+    rhs: a*gx + b
+    latex: false
+  delayed: true
+monitors:
+  Raw:
+    name: Raw
+    time_scale: ms

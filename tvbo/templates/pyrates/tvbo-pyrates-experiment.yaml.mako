@@ -42,6 +42,12 @@ if is_network:
 
     # Check if network has schema-based nodes with individual dynamics
     dynamics_library = context.get('dynamics') or {}
+
+    # Get default dynamics (first in library) for nodes without explicit dynamics
+    default_dyn = None
+    if dynamics_library:
+        default_dyn = next(iter(dynamics_library.values()))
+
     if hasattr(network, 'nodes') and network.nodes:
         # Schema-based Network with nodes list
         node_dynamics_map = {}  # node_id -> Dynamics object
@@ -60,6 +66,10 @@ if is_network:
                 else:
                     # Inline dynamics object
                     dyn = node.dynamics
+
+            # Fall back to default dynamics if none specified
+            if dyn is None:
+                dyn = default_dyn
 
             if dyn:
                 model_name = getattr(dyn, 'name', None) or f"model_{node_id}"

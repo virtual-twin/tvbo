@@ -38,6 +38,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         global sessionid
 
+        if 'dynamics' in kwargs and not isinstance(kwargs['dynamics'], dict):
+            # Convert list of Dynamics to dict keyed by name
+            dynamics_input = kwargs['dynamics']
+            if isinstance(dynamics_input, list):
+                dynamics_dict = {}
+                for dyn in dynamics_input:
+                    if dyn is not None and hasattr(dyn, 'name'):
+                        dynamics_dict[dyn.name] = dyn
+                kwargs['dynamics'] = dynamics_dict
+            elif hasattr(dynamics_input, 'name'):
+                # Single Dynamics instance - wrap in dict
+                kwargs['dynamics'] = {dynamics_input.name: dynamics_input}
+
         # Ensure an id exists (the datamodel requires it in __post_init__)
         if kwargs.get("id") is None:
             kwargs["id"] = sessionid
