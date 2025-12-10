@@ -58,7 +58,7 @@ The following TVBO/LinkML types map to existing openMINDS types (no new schemas 
 ### Dynamics (7 schemas)
 Neural dynamics and model specification:
 - `dynamics` - Neural mass model or dynamical system
-- `stateVariable` - State variable with differential equation  
+- `stateVariable` - State variable with differential equation
 - `derivedVariable` - Algebraic variable derived from state
 - `coupling` - Inter-node coupling function
 - `couplingInput` - Coupling input channel specification

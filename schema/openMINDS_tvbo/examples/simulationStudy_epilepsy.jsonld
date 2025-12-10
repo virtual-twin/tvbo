@@ -8,7 +8,7 @@
   },
   "@type": "tvbo:SimulationStudy",
   "@id": "https://example.org/studies/epilepsy-virtual-resection-study",
-  
+
   "key": "EpilepsyVirtualResection2024",
   "label": "Virtual Epileptogenic Zone Resection Study",
   "title": "Patient-Specific Virtual Brain Modeling for Surgical Planning in Drug-Resistant Epilepsy",
