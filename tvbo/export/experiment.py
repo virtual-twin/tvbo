@@ -312,21 +312,57 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         if format.lower() == "pyrates":
             from tvbo.export.pyrates import to_pyrates_yaml_string
-
-            # Get dynamics dict - prefer self.dynamics if it's a dict
-            dynamics = self.dynamics
-            if not isinstance(dynamics, dict):
-                # Convert list to dict keyed by name
-                dynamics = {d.name: d for d in (dynamics or [])}
+            from tvbo.knowledge.simulation import Dynamics as DynamicsClass
 
             # Get network
             network = getattr(self, "network", None)
 
-            return to_pyrates_yaml_string(
-                dynamics=dynamics,
-                network=network,
-                filepath=filepath,
-            )
+            # Handle dynamics based on whether we have a network or single model
+            if network is not None:
+                # Network case: pass dynamics as dict for heterogeneous networks
+                dynamics = self.dynamics
+                if dynamics is None:
+                    dynamics = {}
+                elif not isinstance(dynamics, dict):
+                    # Convert list to dict keyed by name
+                    if isinstance(dynamics, list):
+                        dynamics = {d.name: d for d in dynamics if d is not None}
+                    else:
+                        # Single model - wrap in dict
+                        dynamics = {dynamics.name: dynamics} if dynamics else {}
+
+                # Convert all datamodel Dynamics to full Dynamics class with methods
+                dynamics_converted = {}
+                for name, dyn in dynamics.items():
+                    if dyn is not None and not hasattr(dyn, "render_equation"):
+                        dynamics_converted[name] = DynamicsClass.from_datamodel(dyn)
+                    else:
+                        dynamics_converted[name] = dyn
+
+                return to_pyrates_yaml_string(
+                    dynamics=dynamics_converted,
+                    network=network,
+                    filepath=filepath,
+                )
+            else:
+                # Single model case (no network)
+                dynamics = getattr(self, "local_dynamics", None)
+                if dynamics is None:
+                    dynamics = self.dynamics
+                    if isinstance(dynamics, list) and len(dynamics) == 1:
+                        dynamics = dynamics[0]
+                    elif isinstance(dynamics, dict) and len(dynamics) == 1:
+                        dynamics = list(dynamics.values())[0]
+
+                # Convert datamodel Dynamics to full Dynamics class with methods
+                if dynamics is not None and not hasattr(dynamics, "render_equation"):
+                    dynamics = DynamicsClass.from_datamodel(dynamics)
+
+                return to_pyrates_yaml_string(
+                    dynamics=dynamics,
+                    network=network,
+                    filepath=filepath,
+                )
         else:
             from tvbo.utils import to_yaml as _to_yaml
 
@@ -626,22 +662,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         solver: str | None = None,
         inputs: dict | None = None,
         outputs: list[str] | None = None,
+        matrix_edge_threshold: int = 100,
         **kwargs,
     ) -> TimeSeries:
         """Run simulation using PyRates backend.
 
         Parameters
         ----------
-        duration : float, optional
-            Simulation duration in ms. Defaults to integration.duration.
-        step_size : float, optional
-            Integration step size in ms. Defaults to integration.step_size.
         solver : str, optional
             ODE solver: "euler", "heun", "scipy". Defaults to mapped integration.method.
         inputs : dict, optional
             External inputs as {node/op/var: array} or will be auto-generated.
         outputs : list[str], optional
             Variables to monitor. If None, monitors all state variables.
+        matrix_edge_threshold : int, optional
+            For networks with N > threshold nodes, use add_edges_from_matrix instead
+            of YAML edges for efficiency. Default is 100.
         **kwargs
             Additional kwargs passed to circuit.run().
 
@@ -651,6 +687,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             TVBO TimeSeries with simulation results.
         """
         import shutil
+        import sys
         import tempfile
         import uuid
         from pyrates.frontend import CircuitTemplate
@@ -659,10 +696,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Get simulation parameters from metadata
         integration = getattr(self, "integration", None)
 
-        # PyRates supported solvers (from pyrates.frontend.template.circuit)
+        # PyRates supported solvers
         PYRATES_SOLVERS = {"euler", "heun", "scipy"}
-
-        # Map TVBO integration methods to PyRates solvers
         TVBO_TO_PYRATES_SOLVER = {
             "EulerDeterministic": "euler",
             "Euler": "euler",
@@ -678,59 +713,40 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if method in TVBO_TO_PYRATES_SOLVER:
                 solver = TVBO_TO_PYRATES_SOLVER[method]
             elif method in PYRATES_SOLVERS:
-                # Method is already a valid PyRates solver name
                 solver = method
             elif method:
                 raise ValueError(
                     f"Unsupported integration method '{method}' for PyRates. "
-                    f"Supported TVBO methods: {list(TVBO_TO_PYRATES_SOLVER.keys())}. "
-                    f"Supported PyRates solvers: {sorted(PYRATES_SOLVERS)}."
+                    f"Supported: {list(TVBO_TO_PYRATES_SOLVER.keys())}"
                 )
             else:
-                solver = "heun"  # Default
+                solver = "heun"
         elif solver not in PYRATES_SOLVERS:
-            raise ValueError(
-                f"Invalid solver '{solver}'. "
-                f"Supported PyRates solvers: {sorted(PYRATES_SOLVERS)}."
+            raise ValueError(f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}")
+
+        network = getattr(self, "network", None)
+        n_nodes = 0
+        if network is not None:
+            n_nodes = getattr(network, 'number_of_nodes', 0) or (
+                len(network.nodes) if hasattr(network, 'nodes') and network.nodes else 0
             )
 
-        # Export to PyRates YAML
-        yaml_content = self.to_yaml(format="pyrates")
+        # For large networks, use matrix-based edges (much faster)
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, 'weights_matrix')
 
-        # Create temporary package for PyRates with UNIQUE name to avoid caching
-        tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_")
-        pkg_name = f"_tvbo_pyrates_{uuid.uuid4().hex[:8]}"
-        pkg_path = os.path.join(tmpdir, pkg_name)
-        os.makedirs(pkg_path, exist_ok=True)
-        open(os.path.join(pkg_path, "__init__.py"), "w").close()
-        yaml_path = os.path.join(pkg_path, "model.yaml")
-        with open(yaml_path, "w") as f:
-            f.write(yaml_content)
-
-        # Add tmpdir to path temporarily
-        import sys
-
-        sys.path.insert(0, tmpdir)
+        # Build circuit from YAML (operators, nodes, and optionally edges)
+        circuit, tmpdir, pkg_name = self._load_pyrates_circuit_from_yaml(
+            include_edges=not use_matrix_edges
+        )
 
         try:
-            # Get circuit name from network or default
-            network = getattr(self, "network", None)
-            circuit_name = "tvbo_circuit"
-            if network is not None:
-                circuit_name = (
-                    getattr(network, "label", None)
-                    or getattr(network, "name", None)
-                    or circuit_name
-                )
+            # For large networks, add edges via matrix
+            if use_matrix_edges:
+                self._add_pyrates_edges_from_matrix(circuit, network)
 
-            # Load circuit
-            circuit = CircuitTemplate.from_yaml(f"{pkg_name}.model.{circuit_name}")
-
-            # Build outputs dict if not provided
+            # Build outputs/inputs if not provided
             if outputs is None:
                 outputs = self._build_pyrates_outputs()
-
-            # Build inputs from stimulation if not explicitly provided
             if inputs is None:
                 inputs = self._build_pyrates_inputs()
 
@@ -743,22 +759,127 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 solver=solver,
                 **kwargs,
             )
-
-            # Clean up PyRates
             clear(circuit)
 
+        except Exception:
+            clear(circuit)
+            raise
         finally:
-            # Remove from path and clean up
+            # Cleanup
             if tmpdir in sys.path:
                 sys.path.remove(tmpdir)
-            # Clean up cached module to prevent stale references
             modules_to_remove = [k for k in sys.modules if k.startswith(pkg_name)]
             for mod in modules_to_remove:
                 del sys.modules[mod]
             shutil.rmtree(tmpdir, ignore_errors=True)
 
-        # Convert pandas DataFrame to TVBO TimeSeries
         return self._pyrates_result_to_timeseries(result)
+
+    def _load_pyrates_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
+        """Load PyRates circuit from YAML template.
+
+        Parameters
+        ----------
+        include_edges : bool
+            If True, include edges in YAML. If False, edges will be added separately.
+
+        Returns
+        -------
+        tuple
+            (circuit, tmpdir, pkg_name) for cleanup
+        """
+        import sys
+        import tempfile
+        import uuid
+        from pyrates.frontend import CircuitTemplate
+
+        # Export to PyRates YAML
+        yaml_content = self.to_yaml(format="pyrates")
+
+        # For large networks, strip edges from YAML (we'll add them via matrix)
+        if not include_edges:
+            yaml_content = self._strip_edges_from_yaml(yaml_content)
+
+        # Create temporary package
+        tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_")
+        pkg_name = f"_tvbo_pyrates_{uuid.uuid4().hex[:8]}"
+        pkg_path = os.path.join(tmpdir, pkg_name)
+        os.makedirs(pkg_path, exist_ok=True)
+        open(os.path.join(pkg_path, "__init__.py"), "w").close()
+
+        yaml_path = os.path.join(pkg_path, "model.yaml")
+        with open(yaml_path, "w") as f:
+            f.write(yaml_content)
+
+        sys.path.insert(0, tmpdir)
+
+        # Get circuit name
+        network = getattr(self, "network", None)
+        dynamics = getattr(self, "local_dynamics", None) or getattr(self, "dynamics", None)
+
+        if network is not None:
+            circuit_name = getattr(network, "label", None) or getattr(network, "name", None) or "tvbo_circuit"
+        elif dynamics is not None:
+            model_name = getattr(dynamics, "name", None) or "tvbo_model"
+            circuit_name = f"{model_name}_circuit"
+        else:
+            circuit_name = "tvbo_circuit"
+
+        circuit = CircuitTemplate.from_yaml(f"{pkg_name}.model.{circuit_name}")
+        return circuit, tmpdir, pkg_name
+
+    def _strip_edges_from_yaml(self, yaml_content: str) -> str:
+        """Remove edges section from YAML for large networks."""
+        import re
+        # Remove edges section from circuit definition
+        # Match "  edges:\n" followed by lines starting with "    -"
+        pattern = r'(  edges:\n(?:    - \[.*\]\n)*)'
+        return re.sub(pattern, '', yaml_content)
+
+    def _add_pyrates_edges_from_matrix(self, circuit, network) -> None:
+        """Add edges to circuit using weight matrix (efficient for large networks)."""
+        dynamics_dict = self.dynamics
+        if not isinstance(dynamics_dict, dict):
+            dynamics_dict = {d.name: d for d in (dynamics_dict or [])}
+
+        # Get node labels
+        node_labels = []
+        if hasattr(network, 'nodes') and network.nodes:
+            for node in network.nodes:
+                label = getattr(node, 'label', None) or f"node_{node.id}"
+                node_labels.append(str(label).replace(" ", "_").replace("-", "_"))
+        else:
+            n_nodes = network.weights_matrix.shape[0]
+            node_labels = [f"node_{i}" for i in range(n_nodes)]
+
+        # Get source/target variables from dynamics
+        first_dyn = next(iter(dynamics_dict.values()))
+        dyn_name = first_dyn.name
+
+        # Source: prefer output, fallback to first state variable
+        if first_dyn.output:
+            src_var = f"{dyn_name}_op/{list(first_dyn.output.keys())[0]}"
+        elif first_dyn.state_variables:
+            src_var = f"{dyn_name}_op/{list(first_dyn.state_variables.keys())[0]}"
+        else:
+            src_var = f"{dyn_name}_op/x"
+
+        # Target: coupling term
+        if first_dyn.coupling_terms:
+            tgt_var = f"{dyn_name}_op/{list(first_dyn.coupling_terms.keys())[0]}"
+        else:
+            tgt_var = src_var
+
+        # Add edges using matrix (MUCH faster!)
+        weights = network.weights_matrix
+        if weights is not None and weights.size > 0:
+            circuit.add_edges_from_matrix(
+                source_var=src_var,
+                target_var=tgt_var,
+                source_nodes=node_labels,
+                weight=weights,
+                min_weight=1e-12,
+            )
 
     def _build_pyrates_outputs(self) -> dict:
         """Build PyRates outputs dict from dynamics state variables."""

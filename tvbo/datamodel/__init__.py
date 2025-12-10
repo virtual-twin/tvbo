@@ -7,3 +7,5 @@ This module contains the data model for TVB-O.
 https://bss.git-pages.bihealth.org/tvb-o/tvbo-datamodel
 ```
 """
+
+from .tvbo_datamodel import *

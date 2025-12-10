@@ -7,6 +7,7 @@
 ##
 ## This is the template to use when exporting for actual PyRates execution.
 ##
+<%namespace name="pyrates_model" file="tvbo-pyrates-model.yaml.mako"/>
 <%
 import numpy as np
 
@@ -22,58 +23,6 @@ else:
     model = context.get('model')
     is_network = False
 
-def convert_rhs(rhs):
-    """Convert TVBO equation RHS to PyRates syntax."""
-    if not rhs:
-        return rhs
-    return str(rhs).replace("numpy.", "").replace("np.", "").replace("math.", "")
-
-def render_operator(m, op_name):
-    """Render a single OperatorTemplate from a Dynamics model."""
-    equations = []
-    variables = {}
-
-    # Derived variables
-    for var_name, dv in (m.derived_variables or {}).items():
-        if dv.equation and dv.equation.rhs:
-            rhs = convert_rhs(str(dv.equation.rhs))
-            equations.append(f"{var_name} = {rhs}")
-            variables[var_name] = "variable"
-
-    # State variables
-    for var_name, sv in (m.state_variables or {}).items():
-        if sv.equation and sv.equation.rhs:
-            rhs = convert_rhs(str(sv.equation.rhs))
-            equations.append(f"{var_name}' = {rhs}")
-            iv = sv.initial_value if sv.initial_value is not None else 0.0
-            variables[var_name] = f"variable({iv})"
-
-    # Output transforms (algebraic equations)
-    # Note: PyRates only allows ONE output per operator, so we mark as 'variable'
-    for var_name, ot in (m.output or {}).items():
-        if ot.equation and ot.equation.rhs:
-            rhs = convert_rhs(str(ot.equation.rhs))
-            equations.append(f"{var_name} = {rhs}")
-            variables[var_name] = "variable"
-
-    # Parameters
-    for param_name, param in (m.parameters or {}).items():
-        val = param.value if param.value is not None else 0.0
-        variables[param_name] = float(val)
-
-    # Coupling terms as inputs
-    for ct_name in (m.coupling_terms or {}).keys():
-        variables[ct_name] = "input"
-
-    description = m.description or f"TVBO model: {m.name or op_name.replace('_op', '')}"
-
-    return {
-        'name': op_name,
-        'description': description,
-        'equations': equations,
-        'variables': variables,
-    }
-
 def get_node_labels(network, n_nodes):
     """Get node labels from Network."""
     if hasattr(network, 'node_labels') and network.node_labels:
@@ -83,8 +32,8 @@ def get_node_labels(network, n_nodes):
     else:
         return [f"node_{i}" for i in range(n_nodes)]
 
-# Collect all operators and nodes
-operators = {}
+# Collect all operators (dynamics models) and nodes
+operators = {}  # op_name -> Dynamics model (not dict anymore)
 nodes = {}
 edges = []
 
@@ -116,7 +65,7 @@ if is_network:
                 model_name = getattr(dyn, 'name', None) or f"model_{node_id}"
                 op_name = f"{model_name}_op"
                 if op_name not in operators:
-                    operators[op_name] = render_operator(dyn, op_name)
+                    operators[op_name] = dyn  # Store the model, not a dict
                 nodes[safe_label] = model_name
                 node_dynamics_map[node_id] = dyn
             else:
@@ -178,7 +127,7 @@ if is_network:
                 model_name = m.name or f"model_{node_id}"
                 op_name = f"{model_name}_op"
                 if op_name not in operators:
-                    operators[op_name] = render_operator(m, op_name)
+                    operators[op_name] = m  # Store the model
                 nodes[node_id] = model_name
 
         # Collect edges from graph
@@ -229,7 +178,7 @@ if is_network:
         if base_model:
             model_name = base_model.name or "tvbo_model"
             op_name = f"{model_name}_op"
-            operators[op_name] = render_operator(base_model, op_name)
+            operators[op_name] = base_model  # Store the model
         else:
             model_name = "node"
             op_name = "node_op"
@@ -270,7 +219,7 @@ else:
     name = model.name or "tvbo_model"
     op_name = f"{name}_op"
     circuit_name = f"{name}_circuit"
-    operators[op_name] = render_operator(model, op_name)
+    operators[op_name] = model  # Store the model
     nodes['p'] = name
 %>\
 ${"%" + "YAML 1.2"}
@@ -282,27 +231,9 @@ ${"%" + "YAML 1.2"}
 #############################################
 # OPERATORS (Model Dynamics)
 #############################################
-% for op_name, op in operators.items():
+% for op_name, dyn_model in operators.items():
 
-${op_name}:
-  base: OperatorTemplate
-  description: "${op['description'].replace('"', "'")}"
-% if len(op['equations']) == 1:
-  equations: "${op['equations'][0]}"
-% else:
-  equations:
-% for eq in op['equations']:
-    - "${eq}"
-% endfor
-% endif
-  variables:
-% for var_name, var_spec in op['variables'].items():
-% if isinstance(var_spec, float):
-    ${var_name}: ${var_spec}
-% else:
-    ${var_name}: ${var_spec}
-% endif
-% endfor
+${pyrates_model.render_operator(dyn_model, op_name)}
 % endfor
 
 #############################################

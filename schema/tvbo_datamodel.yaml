@@ -356,15 +356,15 @@ classes:
         description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
         inlined: true
 
-      # Connectome/matrix-based attributes (backward compatibility)
+      # Network metadata
       number_of_regions:
         range: integer
         ifabsent: integer(1)
-        description: "Number of regions (backward compatibility)"
+        description: "Number of regions (derived from nodes if not set)"
       number_of_nodes:
         range: integer
         ifabsent: integer(1)
-        description: "Number of nodes in the network"
+        description: "Number of nodes in the network (derived from nodes if not set)"
       parcellation:
         range: Parcellation
         description: "Brain parcellation/atlas reference"
@@ -372,22 +372,10 @@ classes:
       tractogram:
         range: string
         description: "Reference to tractography data"
-      weights:
-        range: Matrix
-        description: "Adjacency/weight matrix (backward compatibility with Connectome)"
-        inlined: true
-      lengths:
-        range: Matrix
-        description: "Distance/length matrix (backward compatibility with Connectome)"
-        inlined: true
       normalization:
         range: Equation
         description: "Normalization equation for connectivity weights"
         inlined: true
-      node_labels:
-        multivalued: true
-        range: string
-        description: "Labels for nodes/regions"
 
       # Shared global parameters
       global_coupling_strength:

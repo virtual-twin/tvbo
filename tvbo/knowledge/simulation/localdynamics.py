@@ -128,7 +128,11 @@ def class2metadata(ontoclass, metadata):
                 setattr(state_var, attr, value)
 
     for k, v in functions.items():
-        if k not in metadata.derived_variables and k not in metadata.derived_parameters and k not in metadata.output:
+        if (
+            k not in metadata.derived_variables
+            and k not in metadata.derived_parameters
+            and k not in metadata.output
+        ):
             metadata.derived_variables.update(
                 {
                     k: tvbo_datamodel.DerivedVariable(
@@ -946,14 +950,32 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         return network.plot_model(self.ontology, **kwargs)
 
-    def render_equation(self, obj, format="latex"):
+    def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         from tvbo.export.code import render_equation
+        from tvbo.knowledge.simulation.equations import sympify as tvbo_sympify
 
         scope = self.get_symbolic_elements()
         # Tell the printer which names are functions so it emits f(x) cleanly
         uf = {str(name): str(name) for name in getattr(self, "functions", {}).keys()}
+
+        # Build inline_funcs dict if requested
+        inline_funcs = None
+        if inline_functions and hasattr(self, "functions") and self.functions:
+            inline_funcs = {}
+            for fname, fdef in self.functions.items():
+                arg_names = list(fdef.arguments.keys())
+                body = tvbo_sympify(fdef.equation.rhs)
+                inline_funcs[fname] = (arg_names, body)
+            # Don't emit function names as user_functions if we're inlining them
+            uf = {}
+
         return render_equation(
-            obj.equation, local_dict=scope, format=format, user_functions=uf
+            obj.equation,
+            local_dict=scope,
+            format=format,
+            user_functions=uf,
+            inline_funcs=inline_funcs,
+            **kwargs,
         )
 
     def get_equations(self, format="metadata"):
@@ -1063,7 +1085,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     evaluate=False,
                 ).subs({Symbol(p.name): p.value for p in self.parameters.values()})
                 sol = eq.evalf()
-                self.derived_parameters[k].value = sol
+                # Convert SymPy Float to Python float for YAML serialization
+                self.derived_parameters[k].value = float(sol)
 
             return {
                 k: self.derived_parameters[k].value for k in self.derived_parameters
