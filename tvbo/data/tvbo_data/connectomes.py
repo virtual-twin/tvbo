@@ -73,76 +73,7 @@ def get_normative_connectome_data(
 
 @register_pytree_node_class
 class Network(tvbo_datamodel.Network):
-    """Structural connectivity data with weights, lengths, and visualization tools.
-
-    Represents brain structural connectivity including connection weights, tract lengths,
-    and spatial information. Supports loading normative connectomes from atlases or
-    custom data, with JAX pytree compatibility.
-
-    Examples
-    --------
-    ```{python}
-    from tvbo import Connectome
-    # Load atlas-based connectome
-    sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-    sc.plot_matrix()
-
-    # Custom connectome from arrays
-    import numpy as np
-    sc = Connectome(weights=np.random.rand(10, 10), number_of_regions=10)
-    delays = sc.calculate_delays(conduction_speed=3.0)
-    ```
-
-    See Also
-    --------
-    weights_matrix : Access connection weights as array
-    lengths_matrix : Access tract lengths as array
-    plot_graph : Visualize as network graph
-    plot_overview : Complete visualization with matrices and graph
-    """
-
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize a Connectome instance.
-
-        Parameters
-        ----------
-        **kwargs : Any
-            Connectome initialization arguments. Common parameters:
-
-            - parcellation : dict
-                Parcellation info with atlas name, e.g., {"atlas": {"name": "DesikanKilliany"}}
-            - weights : np.ndarray or Matrix
-                Connection weights matrix (N x N)
-            - lengths : np.ndarray or Matrix
-                Tract lengths matrix (N x N)
-            - number_of_regions : int
-                Number of brain regions
-            - conduction_speed : Parameter or float
-                Signal propagation speed (default: 3.0 mm/ms)
-            - tractogram : str
-                Tractography method (default: "dTOR")
-
-        Notes
-        -----
-        Initialization follows priority order:
-
-        1. Use provided weights/lengths arrays
-        2. Load from atlas if parcellation specified
-        3. Create default empty network as fallback
-
-        Examples
-        --------
-        ```{python}
-        # From atlas (loads normative data as nodes/edges)
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-
-        # From nodes/edges
-        from tvbo.datamodel import Node, Edge
-        nodes = [Node(id=0, label="A"), Node(id=1, label="B")]
-        edges = [Edge(source=0, target=1, weight=0.5)]
-        net = Network(nodes=nodes, edges=edges)
-        ```
-        """
         # Sync number_of_regions and number_of_nodes early
         if "number_of_regions" in kwargs and "number_of_nodes" not in kwargs:
             kwargs["number_of_nodes"] = kwargs["number_of_regions"]
@@ -156,11 +87,11 @@ class Network(tvbo_datamodel.Network):
         # Load normative data if parcellation/atlas specified and no nodes/edges
         if not has_nodes and not has_edges:
             if "parcellation" in kwargs:
-                if isinstance("parcellation", str):
-                    parcellation = tvbo_datamodel.Parcellation(
+                if isinstance(kwargs["parcellation"], str):
+                    kwargs["parcellation"] = tvbo_datamodel.Parcellation(
                         label=kwargs["parcellation"],
                         atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
-                    )
+                    )._as_dict
                 atlas_name = kwargs["parcellation"]["atlas"].get("name")
                 tractogram = kwargs.get("tractogram", "dTOR")
                 w_matrix, l_matrix = get_normative_connectome_data(
@@ -191,10 +122,22 @@ class Network(tvbo_datamodel.Network):
                                 edge_kwargs = {
                                     "source": i,
                                     "target": j,
-                                    "weight": float(w_arr[i, j]),
+                                    "parameters": (
+                                        [
+                                            tvbo_datamodel.Parameter(
+                                                name="weight", value=float(w_arr[i, j])
+                                            )
+                                        ]
+                                        + [
+                                            tvbo_datamodel.Parameter(
+                                                name="distance",
+                                                value=float(l_arr[i, j]),
+                                            )
+                                        ]
+                                        if l_arr is not None
+                                        else []
+                                    ),
                                 }
-                                if l_arr is not None:
-                                    edge_kwargs["distance"] = float(l_arr[i, j])
                                 edges.append(tvbo_datamodel.Edge(**edge_kwargs))
 
                     kwargs["nodes"] = nodes
@@ -541,33 +484,8 @@ class Network(tvbo_datamodel.Network):
         )
 
     @staticmethod
-    def _get_edge_param(edge, name: str, default: float = 0.0) -> float:
-        """Get a parameter value from an edge by name.
-
-        Looks in edge.parameters for a parameter with the given name.
-
-        Parameters
-        ----------
-        edge : Edge
-            The edge to get the parameter from
-        name : str
-            Parameter name to look for (e.g., 'weight', 'delay', 'distance')
-        default : float
-            Default value if parameter not found
-
-        Returns
-        -------
-        float
-            The parameter value or default
-        """
-        params = getattr(edge, "parameters", None)
-        if params:
-            for p in params:
-                p_name = getattr(p, "name", None)
-                if p_name == name:
-                    val = getattr(p, "value", None)
-                    return float(val) if val is not None else default
-        return default
+    def _get_edge_param(edge, name: str) -> Optional[float]:
+        return edge.parameters[name].value if name in edge.parameters else None
 
     def _weights_from_edges(self) -> Optional[np.ndarray]:
         """Compute weights matrix from edges.
@@ -582,7 +500,7 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                W[i, j] = self._get_edge_param(edge, "weight", default=1.0)
+                W[i, j] = self._get_edge_param(edge, "weight")
         return W
 
     def _lengths_from_edges(self) -> Optional[np.ndarray]:
@@ -598,7 +516,7 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                L[i, j] = self._get_edge_param(edge, "distance", default=0.0)
+                L[i, j] = self._get_edge_param(edge, "distance")
         return L
 
     def _delays_from_edges(self) -> Optional[np.ndarray]:
@@ -615,7 +533,7 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                delay = self._get_edge_param(edge, "delay", default=0.0)
+                delay = self._get_edge_param(edge, "delay")
                 D[i, j] = delay
                 if delay > 0:
                     has_delays = True
@@ -710,6 +628,10 @@ class Network(tvbo_datamodel.Network):
         return W
 
     @property
+    def weights(self):
+        return self.weights_matrix
+
+    @property
     def lengths_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Tract length matrix as numpy/JAX array.
 
@@ -741,6 +663,10 @@ class Network(tvbo_datamodel.Network):
         return self._lengths_from_edges()
 
     @property
+    def lengths(self):
+        return self.lengths_matrix
+
+    @property
     def labels(self) -> Dict[str, str]:
         """Brain region labels from atlas.
 
@@ -764,6 +690,19 @@ class Network(tvbo_datamodel.Network):
                 for k, e in atlas.metadata.terminology.entities.items()
             }
         return {}
+
+    @property
+    def graph(self) -> nx.DiGraph:
+        W = self.weights_matrix
+        if W is None:
+            raise ValueError("Weights matrix not available for graph construction")
+        G = nx.from_numpy_array(W, create_using=nx.DiGraph)
+        # Set node labels
+        labels = self.node_labels
+        if labels and len(labels) == G.number_of_nodes():
+            mapping = {i: labels[i] for i in range(len(labels))}
+            G = nx.relabel_nodes(G, mapping)
+        return G
 
     def __str__(self) -> str:
         parc = getattr(self, "parcellation", None)
@@ -814,7 +753,9 @@ class Network(tvbo_datamodel.Network):
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
         return Atlas(atlas_data)
 
-    def compute_delays(self, output_unit: Optional[str] = None) -> Union[np.ndarray, JaxArray]:
+    def compute_delays(
+        self, output_unit: Optional[str] = None
+    ) -> Union[np.ndarray, JaxArray]:
         """Compute transmission delays from lengths and conduction speed.
 
         Uses sympy for unit-aware computation: delay = length / speed.
