@@ -152,8 +152,23 @@ class Network(tvbo_datamodel.Network):
                 kwargs["number_of_nodes"] = n_nodes
             if "number_of_regions" not in kwargs:
                 kwargs["number_of_regions"] = n_nodes
+        # Create default nodes if number_of_nodes is set but nodes list is empty
+        elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
+            n_nodes = kwargs["number_of_nodes"]
+            kwargs["nodes"] = [
+                tvbo_datamodel.Node(id=i, label=f"node_{i}")
+                for i in range(n_nodes)
+            ]
 
         super().__init__(**kwargs)
+
+        # After parent init, create default nodes if still empty but number_of_nodes is set
+        # (handles case where number_of_nodes comes from datamodel default)
+        if self.number_of_nodes and not self.nodes:
+            self.nodes = [
+                tvbo_datamodel.Node(id=i, label=f"node_{i}")
+                for i in range(self.number_of_nodes)
+            ]
 
         if not self.conduction_speed:
             self.conduction_speed = tvbo_datamodel.Parameter(
@@ -491,6 +506,7 @@ class Network(tvbo_datamodel.Network):
         """Compute weights matrix from edges.
 
         Looks for 'weight' parameter in edge.parameters.
+        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
         Returns None if no edges are defined.
         """
         if not self.edges:
@@ -500,13 +516,46 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                W[i, j] = self._get_edge_param(edge, "weight")
+                w = self._get_edge_param(edge, "weight")
+                W[i, j] = w
+                # Mirror for undirected edges (symmetric)
+                if not getattr(edge, "directed", False):
+                    W[j, i] = w
         return W
+
+    def _get_node_position(self, node_id: int) -> Optional[Tuple[float, float, float]]:
+        """Get (x, y, z) position for a node by ID."""
+        if not self.nodes:
+            return None
+        for node in self.nodes:
+            if getattr(node, "id", None) == node_id:
+                pos = getattr(node, "position", None)
+                if pos is not None:
+                    x = getattr(pos, "x", None)
+                    y = getattr(pos, "y", None)
+                    z = getattr(pos, "z", 0.0)  # default z=0 if not specified
+                    if x is not None and y is not None:
+                        return (float(x), float(y), float(z) if z else 0.0)
+        return None
+
+    def _compute_euclidean_distance(self, i: int, j: int) -> Optional[float]:
+        """Compute Euclidean distance between two nodes from their positions."""
+        pos_i = self._get_node_position(i)
+        pos_j = self._get_node_position(j)
+        if pos_i is None or pos_j is None:
+            return None
+        dx = pos_j[0] - pos_i[0]
+        dy = pos_j[1] - pos_i[1]
+        dz = pos_j[2] - pos_i[2]
+        return np.sqrt(dx * dx + dy * dy + dz * dz)
 
     def _lengths_from_edges(self) -> Optional[np.ndarray]:
         """Compute lengths/distances matrix from edges.
 
         Looks for 'distance' parameter in edge.parameters.
+        If no distance is specified but nodes have positions, computes
+        Euclidean distance from node coordinates (in distance_unit).
+        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
         Returns None if no edges are defined.
         """
         if not self.edges:
@@ -516,13 +565,23 @@ class Network(tvbo_datamodel.Network):
         for edge in self.edges:
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
-                L[i, j] = self._get_edge_param(edge, "distance")
+                d = self._get_edge_param(edge, "distance")
+                # If no explicit distance, compute from node positions
+                if d is None or d == 0:
+                    d = self._compute_euclidean_distance(i, j)
+                if d is None:
+                    d = 0.0
+                L[i, j] = d
+                # Mirror for undirected edges (symmetric)
+                if not getattr(edge, "directed", False):
+                    L[j, i] = d
         return L
 
     def _delays_from_edges(self) -> Optional[np.ndarray]:
         """Compute delays matrix from edges.
 
         Looks for 'delay' parameter in edge.parameters.
+        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
         Returns None if no edges are defined or no delays are set.
         """
         if not self.edges:
@@ -535,6 +594,9 @@ class Network(tvbo_datamodel.Network):
             if 0 <= i < n and 0 <= j < n:
                 delay = self._get_edge_param(edge, "delay")
                 D[i, j] = delay
+                # Mirror for undirected edges (symmetric)
+                if not getattr(edge, "directed", False):
+                    D[j, i] = delay
                 if delay > 0:
                     has_delays = True
         return D if has_delays else None
@@ -1341,23 +1403,17 @@ class Network(tvbo_datamodel.Network):
         nodes = getattr(self, "nodes", None)
         edges = getattr(self, "edges", None)
 
-        if nodes and len(nodes) > 0 and edges:
-            # Use explicit edges - compute threshold from edge weights
-            edge_weights = [abs(getattr(e, "weight", 1.0) or 1.0) for e in edges]
-            if edge_weights and threshold_percentile > 0:
-                weight_threshold = float(
-                    np.percentile(edge_weights, threshold_percentile)
-                )
-            else:
-                weight_threshold = 0.0
-        else:
-            # Fall back to weight matrix
-            W = self.weights_matrix
-            if W is None:
-                W = np.zeros((1, 1))
-            weight_threshold = float(np.percentile(W, threshold_percentile))
+        G = self.graph
 
-        G = self.create_graph(weight_threshold=weight_threshold)
+        if threshold_percentile > 0:
+            # Remove edges below threshold
+            edges_to_remove = [
+                (u, v, k)
+                for u, v, k, data in G.edges(keys=True, data=True)
+                if abs(data.get("weight", 1.0))
+                < np.percentile(self.weights, threshold_percentile)
+            ]
+            G.remove_edges_from(edges_to_remove)
 
         # Generate positions for nodes
         # First, check if nodes have explicit position coordinates
@@ -1622,6 +1678,7 @@ class Network(tvbo_datamodel.Network):
         lengths_kwargs: Optional[Dict[str, Any]] = None,
         graph_kwargs: Optional[Dict[str, Any]] = None,
         log_weights: bool = False,
+        plot_brain=False,
     ) -> Figure:
         """Create comprehensive visualization with graph and matrices.
 
@@ -1671,7 +1728,7 @@ class Network(tvbo_datamodel.Network):
         if "edge_cmap" not in graph_kwargs:
             graph_kwargs["edge_cmap"] = "magma"
 
-        g = self.plot_graph(axs[0], **graph_kwargs)
+        g = self.plot_graph(axs[0], plot_brain=plot_brain, **graph_kwargs)
         axs[0].axis("off")
         w = self.plot_weights(axs[1], log=log_weights, **weights_kwargs)
         l = self.plot_lengths(axs[2], **lengths_kwargs)
