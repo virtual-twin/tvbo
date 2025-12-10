@@ -219,6 +219,38 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         return yaml_loader.load(filepath, target_class=cls)
 
+    @classmethod
+    def from_string(cls, yaml_string: str) -> "SimulationExperiment":
+        """Create a SimulationExperiment from a YAML string.
+
+        This is useful for defining experiments inline in notebooks or scripts
+        using human-readable YAML syntax.
+
+        Parameters
+        ----------
+        yaml_string : str
+            YAML-formatted string defining the experiment.
+
+        Returns
+        -------
+        SimulationExperiment
+            New instance populated from the YAML definition.
+
+        Example
+        -------
+        >>> exp = SimulationExperiment.from_string('''
+        ... id: 1
+        ... label: My Experiment
+        ... local_dynamics:
+        ...   name: JansenRit
+        ...   parameters:
+        ...     A: {value: 3.25}
+        ... ''')
+        """
+        from linkml_runtime.loaders import yaml_loader
+
+        return yaml_loader.loads(yaml_string, target_class=cls)
+
     @property
     def metadata(self):
         return self
