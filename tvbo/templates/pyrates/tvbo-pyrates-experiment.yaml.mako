@@ -72,13 +72,32 @@ if is_network:
                 nodes[safe_label] = "node"
                 node_dynamics_map[node_id] = None
 
+        # Helper to get parameter value from edge.parameters
+        def get_edge_param(edge, name, default=0.0):
+            params = getattr(edge, 'parameters', None)
+            if params:
+                for p in params:
+                    p_name = getattr(p, 'name', None)
+                    if p_name == name:
+                        val = getattr(p, 'value', None)
+                        return float(val) if val is not None else default
+            return default
+
         # Collect edges from network.edges
         if hasattr(network, 'edges') and network.edges:
             for edge in network.edges:
                 src_id = edge.source
                 tgt_id = edge.target
-                weight = getattr(edge, 'weight', 1.0) or 1.0
-                delay = getattr(edge, 'delay', 0.0) or 0.0
+                # Get weight, delay, distance from edge.parameters
+                weight = get_edge_param(edge, 'weight', 1.0)
+                delay = get_edge_param(edge, 'delay', 0.0)
+                distance = get_edge_param(edge, 'distance', 0.0)
+
+                # If delay not set but distance is, compute delay from distance and conduction speed
+                if delay == 0.0 and distance > 0.0:
+                    cs = getattr(network, 'conduction_speed', None)
+                    if cs and hasattr(cs, 'value') and cs.value:
+                        delay = distance / cs.value
 
                 # Find node labels
                 src_label = None

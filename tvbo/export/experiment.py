@@ -873,11 +873,30 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Add edges using matrix (MUCH faster!)
         weights = network.weights_matrix
         if weights is not None and weights.size > 0:
+            # Get delays - priority: explicit delays > computed from distances/lengths
+            delays = None
+
+            # First check for explicit delays from edges
+            if hasattr(network, '_delays_from_edges'):
+                delays = network._delays_from_edges()
+
+            # If no explicit delays, compute from lengths/distances
+            if delays is None:
+                lengths = getattr(network, 'lengths_matrix', None)
+                if lengths is not None and np.any(lengths > 0):
+                    delays = network.calculate_delays()
+
+            # Build edge_attr dict if we have delays
+            edge_attr = None
+            if delays is not None:
+                edge_attr = {'delay': delays}
+
             circuit.add_edges_from_matrix(
                 source_var=src_var,
                 target_var=tgt_var,
                 source_nodes=node_labels,
                 weight=weights,
+                edge_attr=edge_attr,
                 min_weight=1e-12,
             )
 

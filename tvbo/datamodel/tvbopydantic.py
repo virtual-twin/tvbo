@@ -884,6 +884,7 @@ class Equation(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -934,6 +935,7 @@ class Stimulus(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1035,6 +1037,7 @@ class TemporalApplicableEquation(Equation):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1433,6 +1436,8 @@ class Network(ConfiguredBaseModel):
     normalization: Optional[Equation] = Field(default=None, description="""Normalization equation for connectivity weights""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     global_coupling_strength: Optional[Parameter] = Field(default=None, description="""Global scaling factor for all coupling weights""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     conduction_speed: Optional[Parameter] = Field(default=None, description="""Conduction speed for computing delays from distances""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    distance_unit: Optional[str] = Field(default="mm", description="""Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(mm)'} })
+    time_unit: Optional[str] = Field(default="ms", description="""Default time unit for the network (e.g., 'ms', 's')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(ms)'} })
 
 
 class Node(ConfiguredBaseModel):
@@ -1518,6 +1523,7 @@ class Node(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1533,9 +1539,18 @@ class Node(ConfiguredBaseModel):
 
 class Edge(ConfiguredBaseModel):
     """
-    A directed edge in a network with coupling and connectivity properties
+    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'parameters': {'description': 'Edge parameters including '
+                                                      'weight, delay, and/or distance. '
+                                                      "Use parameter names 'weight' "
+                                                      "(connection strength), 'delay' "
+                                                      '(transmission delay), '
+                                                      "'distance' (physical length). "
+                                                      'Each can have a unit.',
+                                       'name': 'parameters'}}})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
@@ -1606,15 +1621,26 @@ class Edge(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Edge parameters including weight, delay, and/or distance. Use parameter names 'weight' (connection strength), 'delay' (transmission delay), 'distance' (physical length). Each can have a unit.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'TemporalApplicableEquation',
+                       'Node',
+                       'Edge',
+                       'ObservationModel',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'CostFunction',
+                       'FittingTarget',
+                       'Integrator',
+                       'Monitor',
+                       'Coupling',
+                       'PDE']} })
     source: int = Field(default=..., description="""Source node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'ArgumentMapping', 'Dynamics']} })
     target: int = Field(default=..., description="""Target node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
-    weight: Optional[float] = Field(default=1.0, description="""Connection strength/weight""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'float(1.0)'} })
-    delay: Optional[float] = Field(default=0.0, description="""Transmission delay (ms or specified time unit)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'float(0.0)'} })
-    distance: Optional[float] = Field(default=None, description="""Physical distance between nodes (e.g., tract length in mm)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    tract_properties: Optional[str] = Field(default=None, description="""Additional tract metadata or reference to tractography data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
 
 
 class ObservationModel(ConfiguredBaseModel):
@@ -1701,6 +1727,7 @@ class ObservationModel(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1869,6 +1896,7 @@ class DownsamplingModel(ObservationModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1964,6 +1992,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -2097,6 +2126,7 @@ class NeuralMassModel(Dynamics):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -2348,6 +2378,7 @@ class Distribution(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3032,6 +3063,7 @@ class Noise(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3210,6 +3242,7 @@ class CostFunction(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3290,6 +3323,7 @@ class FittingTarget(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3395,6 +3429,7 @@ class Integrator(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3488,6 +3523,7 @@ class Monitor(ObservationModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3633,6 +3669,7 @@ class Coupling(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -5132,6 +5169,7 @@ class PDE(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
