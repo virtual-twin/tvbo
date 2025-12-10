@@ -434,9 +434,6 @@ classes:
       - label
       - description
       - parameters
-    slot_usage:
-      parameters:
-        description: "Edge parameters including weight, delay, and/or distance. Use parameter names 'weight' (connection strength), 'delay' (transmission delay), 'distance' (physical length). Each can have a unit."
     attributes:
       source:
         range: integer
@@ -457,6 +454,10 @@ classes:
         required: false
         description: "Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling."
         inlined: false
+      directed:
+        range: boolean
+        ifabsent: false
+        description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
 
   ObservationModel:
     class_uri: tvbo:ObservationModel
