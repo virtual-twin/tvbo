@@ -2,26 +2,21 @@
   "_type": "tvbo:SpatialDomain",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "coordinate_space": {
       "_linkedTypes": [
         "sands:CommonCoordinateSpace"
-      ],
-      "_instruction": "Enter the coordinate space."
+      ]
     },
     "region": {
-      "type": "string",
-      "_instruction": "Optional named region/ROI in the atlas/parcellation."
+      "type": "string"
     },
     "geometry": {
-      "type": "string",
-      "_instruction": "Optional file for geometry/ROI mask (e.g., NIfTI, GIfTI)."
+      "type": "string"
     }
   }
 }

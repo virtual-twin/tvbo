@@ -2,16 +2,13 @@
   "_type": "tvbo:Monitor",
   "properties": {
     "time_scale": {
-      "type": "string",
-      "_instruction": "Enter the time scale."
+      "type": "string"
     },
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "parameters": {
       "_embeddedTypes": [
@@ -19,36 +16,29 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "acronym": {
-      "type": "string",
-      "_instruction": "Enter the acronym."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "environment": {
       "_linkedTypes": [
         "tvbo:SoftwareEnvironment"
-      ],
-      "_instruction": "Enter the environment."
+      ]
     },
     "period": {
-      "type": "number",
-      "_instruction": "Sampling period for the monitor"
+      "type": "number"
     },
     "imaging_modality": {
-      "type": "string",
-      "_instruction": "Type of imaging modality (BOLD, EEG, MEG, etc.)"
+      "type": "string"
     }
   }
 }

@@ -2,12 +2,10 @@
   "_type": "tvbo:Coupling",
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "parameters": {
       "_embeddedTypes": [
@@ -15,72 +13,59 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "coupling_function": {
       "_embeddedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Mathematical function defining the coupling"
+      ]
     },
     "sparse": {
-      "type": "boolean",
-      "_instruction": "Whether the coupling uses sparse representations"
+      "type": "boolean"
     },
     "pre_expression": {
       "_embeddedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Pre-processing expression applied before coupling"
+      ]
     },
     "post_expression": {
       "_embeddedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Post-processing expression applied after coupling"
+      ]
     },
     "incoming_states": {
       "_embeddedTypes": [
         "tvbo:StateVariable"
-      ],
-      "_instruction": "State variables from connected nodes (source)"
+      ]
     },
     "local_states": {
       "_embeddedTypes": [
         "tvbo:StateVariable"
-      ],
-      "_instruction": "State variables from local node (target)"
+      ]
     },
     "delayed": {
-      "type": "boolean",
-      "_instruction": "Whether coupling includes transmission delays"
+      "type": "boolean"
     },
     "inner_coupling": {
       "_embeddedTypes": [
         "tvbo:Coupling"
-      ],
-      "_instruction": "For hierarchical coupling: inner coupling applied at regional level"
+      ]
     },
     "region_mapping": {
       "_embeddedTypes": [
         "tvbo:RegionMapping"
-      ],
-      "_instruction": "For hierarchical coupling: vertex-to-region mapping for aggregation"
+      ]
     },
     "regional_connectivity": {
       "_embeddedTypes": [
         "tvbo:Network"
-      ],
-      "_instruction": "For hierarchical coupling: region-to-region connectivity with weights and delays"
+      ]
     },
     "aggregation": {
-      "type": "string",
-      "_instruction": "For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function"
+      "type": "string"
     },
     "distribution": {
-      "type": "string",
-      "_instruction": "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
+      "type": "string"
     }
   }
 }

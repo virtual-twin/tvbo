@@ -1,9 +1,0 @@
-{
-  "_type": "tvbo:DownsamplingModel",
-  "properties": {
-    "period": {
-      "type": "number",
-      "_instruction": "Enter the period."
-    }
-  }
-}

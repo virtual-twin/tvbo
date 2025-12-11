@@ -5,12 +5,10 @@
   ],
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "nodes": {
       "_embeddedTypes": [
@@ -18,8 +16,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "List of nodes with individual dynamics (optional, for heterogeneous networks)"
+      "uniqueItems": true
     },
     "edges": {
       "_embeddedTypes": [
@@ -27,8 +24,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "List of directed edges with coupling references (optional, for explicit edge definition)"
+      "uniqueItems": true
     },
     "coupling_library": {
       "_embeddedTypes": [
@@ -36,52 +32,42 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
+      "uniqueItems": true
     },
     "number_of_regions": {
-      "type": "integer",
-      "_instruction": "Number of regions (derived from nodes if not set)"
+      "type": "integer"
     },
     "number_of_nodes": {
-      "type": "integer",
-      "_instruction": "Number of nodes in the network (derived from nodes if not set)"
+      "type": "integer"
     },
     "parcellation": {
       "_embeddedTypes": [
         "tvbo:Parcellation"
-      ],
-      "_instruction": "Brain parcellation/atlas reference"
+      ]
     },
     "tractogram": {
-      "type": "string",
-      "_instruction": "Reference to tractography data"
+      "type": "string"
     },
     "normalization": {
       "_embeddedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Normalization equation for connectivity weights"
+      ]
     },
     "global_coupling_strength": {
       "_embeddedTypes": [
         "tvbo:Parameter"
-      ],
-      "_instruction": "Global scaling factor for all coupling weights"
+      ]
     },
     "conduction_speed": {
       "_embeddedTypes": [
         "tvbo:Parameter"
-      ],
-      "_instruction": "Conduction speed for computing delays from distances"
+      ]
     },
     "distance_unit": {
-      "type": "string",
-      "_instruction": "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
+      "type": "string"
     },
     "time_unit": {
-      "type": "string",
-      "_instruction": "Default time unit for the network (e.g., 'ms', 's')"
+      "type": "string"
     }
   }
 }

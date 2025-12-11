@@ -2,74 +2,59 @@
   "_type": "tvbo:StateVariable",
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "symbol": {
-      "type": "string",
-      "_instruction": "Enter the symbol."
+      "type": "string"
     },
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "definition": {
-      "type": "string",
-      "_instruction": "Enter the definition."
+      "type": "string"
     },
     "domain": {
       "_linkedTypes": [
         "tvbo:Range"
-      ],
-      "_instruction": "Enter the domain."
+      ]
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "unit": {
-      "type": "string",
-      "_instruction": "Enter the unit."
+      "type": "string"
     },
     "variable_of_interest": {
-      "type": "boolean",
-      "_instruction": "Enter the variable of interest."
+      "type": "boolean"
     },
     "coupling_variable": {
-      "type": "boolean",
-      "_instruction": "Enter the coupling variable."
+      "type": "boolean"
     },
     "noise": {
       "_embeddedTypes": [
         "tvbo:Noise"
-      ],
-      "_instruction": "Enter the noise."
+      ]
     },
     "stimulation_variable": {
-      "type": "boolean",
-      "_instruction": "Enter the stimulation variable."
+      "type": "boolean"
     },
     "boundaries": {
       "_embeddedTypes": [
         "tvbo:Range"
-      ],
-      "_instruction": "Enter the boundaries."
+      ]
     },
     "initial_value": {
-      "type": "number",
-      "_instruction": "Enter the initial value."
+      "type": "number"
     },
     "history": {
       "_embeddedTypes": [
         "tvbo:TimeSeries"
-      ],
-      "_instruction": "Enter the history."
+      ]
     }
   }
 }

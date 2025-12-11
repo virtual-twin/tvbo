@@ -2,22 +2,18 @@
   "_type": "tvbo:ObservationModel",
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "acronym": {
-      "type": "string",
-      "_instruction": "Enter the acronym."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "parameters": {
       "_embeddedTypes": [
@@ -25,20 +21,17 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "environment": {
       "_linkedTypes": [
         "tvbo:SoftwareEnvironment"
-      ],
-      "_instruction": "Enter the environment."
+      ]
     },
     "transformation": {
       "_embeddedTypes": [
         "tvbo:Function"
-      ],
-      "_instruction": "Enter the transformation."
+      ]
     },
     "pipeline": {
       "_embeddedTypes": [
@@ -46,8 +39,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Ordered sequence of processing functions"
+      "uniqueItems": true
     },
     "data_injections": {
       "_embeddedTypes": [
@@ -55,8 +47,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "External data added to the pipeline (e.g., timepoints, kernels)"
+      "uniqueItems": true
     },
     "argument_mappings": {
       "_embeddedTypes": [
@@ -64,8 +55,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "How inputs/outputs connect between pipeline steps"
+      "uniqueItems": true
     },
     "derivatives": {
       "_embeddedTypes": [
@@ -73,8 +63,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Side computations (e.g., functional connectivity)"
+      "uniqueItems": true
     }
   }
 }

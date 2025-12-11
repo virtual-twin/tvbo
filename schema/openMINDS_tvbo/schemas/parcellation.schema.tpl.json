@@ -5,14 +5,12 @@
   ],
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "region_labels": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "Add all region labels.",
       "items": {
         "type": "string"
       }
@@ -21,20 +19,17 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "Add all center coordinates.",
       "items": {
         "type": "number"
       }
     },
     "data_source": {
-      "type": "string",
-      "_instruction": "Enter the data source."
+      "type": "string"
     },
     "atlas": {
       "_embeddedTypes": [
         "sands:BrainAtlas"
-      ],
-      "_instruction": "Enter the atlas."
+      ]
     }
   }
 }

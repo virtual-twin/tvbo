@@ -2,12 +2,10 @@
   "_type": "tvbo:ModelFitting",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "targets": {
       "_embeddedTypes": [
@@ -15,14 +13,12 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all targets."
+      "uniqueItems": true
     },
     "cost_function": {
       "_embeddedTypes": [
         "tvbo:CostFunction"
-      ],
-      "_instruction": "Enter the cost function."
+      ]
     }
   }
 }

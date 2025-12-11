@@ -211,7 +211,7 @@ def convert_slot_to_property(
     )
 
     # Add instruction
-    prop["_instruction"] = build_instruction(slot_name, slot_def)
+    # prop["_instruction"] = build_instruction(slot_name, slot_def)
 
     # Handle enums
     enum_values = slot_def.get("enum")

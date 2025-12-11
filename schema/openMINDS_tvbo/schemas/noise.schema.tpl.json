@@ -7,56 +7,45 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "noise_type": {
-      "type": "string",
-      "_instruction": "Enter the noise type."
+      "type": "string"
     },
     "correlated": {
-      "type": "boolean",
-      "_instruction": "Enter the correlated."
+      "type": "boolean"
     },
     "gaussian": {
-      "type": "boolean",
-      "_instruction": "Indicates whether the noise is Gaussian"
+      "type": "boolean"
     },
     "additive": {
-      "type": "boolean",
-      "_instruction": "Indicates whether the noise is additive"
+      "type": "boolean"
     },
     "seed": {
-      "type": "integer",
-      "_instruction": "Enter the seed."
+      "type": "integer"
     },
     "random_state": {
       "_embeddedTypes": [
         "tvbo:RandomStream"
-      ],
-      "_instruction": "Enter the random state."
+      ]
     },
     "intensity": {
       "_embeddedTypes": [
         "tvbo:Parameter"
-      ],
-      "_instruction": "Optional scalar or vector intensity parameter for noise."
+      ]
     },
     "function": {
       "_embeddedTypes": [
         "tvbo:Function"
-      ],
-      "_instruction": "Optional functional form of the noise (callable specification)."
+      ]
     },
     "pycode": {
-      "type": "string",
-      "_instruction": "Inline Python code representation of the noise process."
+      "type": "string"
     },
     "targets": {
       "_embeddedTypes": [
@@ -64,8 +53,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "State variables this noise applies to; if omitted, applies globally."
+      "uniqueItems": true
     }
   }
 }

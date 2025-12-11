@@ -2,36 +2,28 @@
   "_type": "tvbo:Tractogram",
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "data_source": {
-      "type": "string",
-      "_instruction": "Path or URI to the tractography data file"
+      "type": "string"
     },
     "number_of_subjects": {
-      "type": "integer",
-      "_instruction": "Number of subjects in the tractography dataset"
+      "type": "integer"
     },
     "acquisition": {
-      "type": "string",
-      "_instruction": "Acquisition protocol or scanner information"
+      "type": "string"
     },
     "processing_pipeline": {
-      "type": "string",
-      "_instruction": "Processing pipeline used to generate the tractography"
+      "type": "string"
     },
     "reference": {
-      "type": "string",
-      "_instruction": "Publication or DOI reference for this tractography dataset"
+      "type": "string"
     }
   }
 }
