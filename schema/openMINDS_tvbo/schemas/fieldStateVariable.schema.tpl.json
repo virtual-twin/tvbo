@@ -1,0 +1,24 @@
+{
+  "_type": "tvbo:FieldStateVariable",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "mesh": {
+      "_linkedTypes": [
+        "tvbo:Mesh"
+      ]
+    },
+    "boundary_conditions": {
+      "_linkedTypes": [
+        "tvbo:BoundaryCondition"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

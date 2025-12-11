@@ -1,0 +1,95 @@
+{
+  "_type": "tvbo:PDE",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "domain": {
+      "_linkedTypes": [
+        "tvbo:SpatialDomain"
+      ]
+    },
+    "mesh": {
+      "_linkedTypes": [
+        "tvbo:Mesh"
+      ]
+    },
+    "state_variables": {
+      "_linkedTypes": [
+        "tvbo:FieldStateVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "field": {
+      "_linkedTypes": [
+        "tvbo:SpatialField"
+      ]
+    },
+    "operators": {
+      "_linkedTypes": [
+        "tvbo:DifferentialOperator"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "sources": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "boundary_conditions": {
+      "_linkedTypes": [
+        "tvbo:BoundaryCondition"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "solver": {
+      "_linkedTypes": [
+        "tvbo:PDESolver"
+      ]
+    },
+    "derived_parameters": {
+      "_linkedTypes": [
+        "tvbo:DerivedParameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "derived_variables": {
+      "_linkedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "functions": {
+      "_linkedTypes": [
+        "tvbo:Function"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

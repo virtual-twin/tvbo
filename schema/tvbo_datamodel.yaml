@@ -149,23 +149,6 @@ enums:
       other: {}
 
 classes:
-  # Remove Operation class entirely
-  # Operation:
-  #   description: "A single operation (monitoring or otherwise)."
-  #   attributes:
-  #     operation_type:
-  #       description: "Kind of operation to perform (e.g., subsample, projection, convolution)."
-  #       range: OperationType
-  #       alias: type
-  #     transformation:
-  #       description: "Transformation (Function) applied by this operation."
-  #       range: Function
-  #       alias: reference
-  #     variables_of_interest:
-  #       description: "Optional per-operation variable selection; takes precedence over Monitor.select_variable when provided."
-  #       multivalued: true
-  #       range: StateVariable
-
   Range:
     attributes:
       lo:
@@ -282,16 +265,6 @@ classes:
       reference:
         range: string
         description: "Publication or DOI reference for this tractography dataset"
-
-  # Network:
-  #   slots:
-  #     - label
-  #     - description
-  #     - dataLocation
-  #   attributes:
-  #     matrix:
-  #       description: "Adjacency matrix representing the network."
-  #       range: Matrix
 
   Matrix:
     # implements:
@@ -567,14 +540,6 @@ classes:
         description: "Use a constant value instead of pipeline data"
         range: string
 
-  DownsamplingModel:
-    is_a: ObservationModel
-    class_uri: tvbo:DownsamplingModel
-    attributes:
-      period:
-        range: float
-        ifabsent: float(0.9765625)
-
   Dynamics:
     class_uri: tvbo:Dynamics
     comments:
@@ -642,14 +607,6 @@ classes:
         inlined: true
       system_type:
         range: SystemType
-
-  NeuralMassModel:
-    is_a: Dynamics
-    class_uri: tvbo:NeuralMassModel
-    comments:
-      - Deprecated in favor of Dynamics.
-    aliases:
-      - NeuralMassModel
 
   StateVariable:
     class_uri: tvbo:StateVariable
@@ -953,12 +910,6 @@ classes:
         range: ImagingModality
         description: "Type of imaging modality (BOLD, EEG, MEG, etc.)"
 
-      # Inherited from ObservationModel:
-      # - transformation: Function
-      # - pipeline: ProcessingStep[]
-      # - data_injections: DataInjection[]
-      # - argument_mappings: ArgumentMapping[]
-      # - derivatives: DerivedVariable[]
 
   Coupling:
     class_uri: tvbo:Coupling

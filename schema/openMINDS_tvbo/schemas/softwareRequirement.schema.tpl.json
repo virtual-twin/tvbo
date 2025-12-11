@@ -1,0 +1,55 @@
+{
+  "_type": "tvbo:SoftwareRequirement",
+  "required": [
+    "package"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "package": {
+      "_linkedTypes": [
+        "tvbo:SoftwarePackage"
+      ]
+    },
+    "version_spec": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "optional": {
+      "type": "boolean"
+    },
+    "hash": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "_type": "tvbo:Coupling",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "coupling_function": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "sparse": {
+      "type": "boolean"
+    },
+    "pre_expression": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "post_expression": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "incoming_states": {
+      "_embeddedTypes": [
+        "tvbo:StateVariable"
+      ]
+    },
+    "local_states": {
+      "_embeddedTypes": [
+        "tvbo:StateVariable"
+      ]
+    },
+    "delayed": {
+      "type": "boolean"
+    },
+    "inner_coupling": {
+      "_embeddedTypes": [
+        "tvbo:Coupling"
+      ]
+    },
+    "region_mapping": {
+      "_embeddedTypes": [
+        "tvbo:RegionMapping"
+      ]
+    },
+    "regional_connectivity": {
+      "_embeddedTypes": [
+        "tvbo:Network"
+      ]
+    },
+    "aggregation": {
+      "type": "string"
+    },
+    "distribution": {
+      "type": "string"
+    }
+  }
+}

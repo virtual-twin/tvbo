@@ -1,0 +1,14 @@
+{
+  "_type": "tvbo:Range",
+  "properties": {
+    "lo": {
+      "type": "number"
+    },
+    "hi": {
+      "type": "number"
+    },
+    "step": {
+      "type": "number"
+    }
+  }
+}

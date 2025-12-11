@@ -1,0 +1,29 @@
+{
+  "_type": "tvbo:Tractogram",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "data_source": {
+      "type": "string"
+    },
+    "number_of_subjects": {
+      "type": "integer"
+    },
+    "acquisition": {
+      "type": "string"
+    },
+    "processing_pipeline": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "_type": "tvbo:Network",
+  "_categories": [
+    "connectome"
+  ],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "nodes": {
+      "_embeddedTypes": [
+        "tvbo:Node"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "edges": {
+      "_embeddedTypes": [
+        "tvbo:Edge"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "coupling_library": {
+      "_embeddedTypes": [
+        "tvbo:Coupling"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "number_of_regions": {
+      "type": "integer"
+    },
+    "number_of_nodes": {
+      "type": "integer"
+    },
+    "parcellation": {
+      "_embeddedTypes": [
+        "tvbo:Parcellation"
+      ]
+    },
+    "tractogram": {
+      "type": "string"
+    },
+    "normalization": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "global_coupling_strength": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "conduction_speed": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "distance_unit": {
+      "type": "string"
+    },
+    "time_unit": {
+      "type": "string"
+    }
+  }
+}

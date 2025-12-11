@@ -1,0 +1,41 @@
+{
+  "_type": "tvbo:SoftwareEnvironment",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "environment_type": {
+      "type": "string"
+    },
+    "container_image": {
+      "type": "string"
+    },
+    "build_hash": {
+      "type": "string"
+    },
+    "requirements": {
+      "_embeddedTypes": [
+        "tvbo:SoftwareRequirement"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

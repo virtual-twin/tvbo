@@ -1,0 +1,44 @@
+{
+  "_type": "tvbo:Monitor",
+  "properties": {
+    "time_scale": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "acronym": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "environment": {
+      "_linkedTypes": [
+        "tvbo:SoftwareEnvironment"
+      ]
+    },
+    "period": {
+      "type": "number"
+    },
+    "imaging_modality": {
+      "type": "string"
+    }
+  }
+}
