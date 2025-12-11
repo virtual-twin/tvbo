@@ -88,13 +88,13 @@
     ],
     "default_path_patterns": [
         "sub-{subject}[/ses-{session}]/{datatype<net>|net}/sub-{subject}[_ses-{session}][_desc-{desc}][_run-{run}]_net-{net<weights|distances>}_id-{id}{extension<.tsv|.json>|.tsv}",
-        "sub-{subject}[/ses-{session}]/{datatype<ts>|ts}/sub-{subject}[_ses-{session}][_desc-{desc}][_run-{run}]_ts-{ts}_{suffix<State|BOLD|EEG|MEG|LFP>|State}{extension<.ptseries.nii|.ptseries.nii.gz|.tsv|.json>|.ptseries.nii}",
+        "sub-{subject}[/ses-{session}]/{datatype<ts>|ts}/sub-{subject}[_ses-{session}][_desc-{desc}][_run-{run}]_ts-{ts}_{suffix<State|BOLD|EEG|MEG|LFP>|State}{extension<.ptseries.nii|.ptseries.nii.gz|.h5|.tsv|.json>|.ptseries.nii}",
         "sub-{subject}[/ses-{session}]/{datatype<eq>|eq}/eq-{eq}[_desc-{desc}]_id-{id}{extension<.json|.yaml|.xml>|.json}",
         "sub-{subject}[/ses-{session}]/{datatype<coord>|coord}/sub-{subject}[_ses-{session}][_desc-{desc}][_space-{space}]_coord-{coord<centres|vertices>}_id-{id}{extension<.tsv|.json>|.tsv}",
         "sub-{subject}[/ses-{session}]/{datatype<map>|map}/sub-{subject}[_ses-{session}][_desc-{desc}][_atlas-{atlas}]_map-{map<region|vertex>}_id-{id}{extension<.tsv|.json>|.tsv}",
         "sub-{subject}[/ses-{session}]/{datatype<code>|code}/{suffix}{extension<.py|.m|.jl|.r>|.py}",
         "[desc-{desc}_][run-{run}_]net-{net<weights|distances>}_id-{id}{extension<.json>|.json}",
-        "[desc-{desc}_][run-{run}_]ts-{ts}_{suffix<State|BOLD|EEG|MEG|LFP>|State}{extension<.json>|.json}",
+        "[desc-{desc}_][run-{run}_]ts-{ts}_{suffix<State|BOLD|EEG|MEG|LFP>|State}{extension<.h5|.json>|.json}",
         "eq-{eq}[_desc-{desc}]_id-{id}{extension<.json>|.json}",
         "[desc-{desc}_][space-{space}_]coord-{coord<centres|vertices>}_id-{id}{extension<.json>|.json}",
         "[desc-{desc}_][atlas-{atlas}_]map-{map<region|vertex>}_id-{id}{extension<.json>|.json}"

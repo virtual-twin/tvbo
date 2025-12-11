@@ -113,7 +113,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self, "local_dynamics", None
         ):
             ld = self.local_dynamics
-            self.dynamics = {ld.name: ld}
+            self.dynamics[ld.name] = ld
 
         # If local_dynamics is empty but dynamics dict exists, use first entry
         # This enables backwards-compatible single-model workflows
@@ -138,6 +138,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "coupling", None):
             self.coupling = Coupling(name="Linear")
+
+        if self.local_dynamics and not self.dynamics:
+            self.dynamics[self.local_dynamics.name] = self.local_dyanmics
 
     @classmethod
     def from_datamodel(
@@ -250,6 +253,225 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from linkml_runtime.loaders import yaml_loader
 
         return yaml_loader.loads(yaml_string, target_class=cls)
+
+    @classmethod
+    def from_bids(
+        cls,
+        bids_dir: str,
+        subject: str = "01",
+        session: str | None = None,
+        run_to_verify: bool = False,
+    ) -> tuple["SimulationExperiment", TimeSeries]:
+        """
+        Load a SimulationExperiment and TimeSeries from a BIDS BEP034 dataset.
+
+        This method ingests data exported via `to_bids()` and reconstructs:
+        - The SimulationExperiment with model, network, and integration settings
+        - The TimeSeries data (with 100% fidelity for HDF5 format)
+
+        Automatically detects the time series format (HDF5, CIFTI, or TSV).
+
+        Parameters
+        ----------
+        bids_dir : str
+            Path to the root BIDS dataset directory (e.g., './derivatives/tvbo')
+        subject : str
+            Subject identifier (with or without 'sub-' prefix). Default: '01'
+        session : str, optional
+            Session identifier (with or without 'ses-' prefix).
+            If not specified and sessions exist, uses the first one.
+        run_to_verify : bool
+            If True, re-run the simulation and compare with loaded TimeSeries.
+            Useful for verifying reproducibility. Default: False.
+
+        Returns
+        -------
+        tuple[SimulationExperiment, TimeSeries]
+            The reconstructed experiment and time series data.
+
+        Examples
+        --------
+        >>> # Load from BIDS
+        >>> exp, ts = SimulationExperiment.from_bids("./derivatives/tvbo", subject="01")
+        >>> print(ts.shape)
+        (1000, 2, 68, 1)
+
+        >>> # Verify reproducibility
+        >>> exp, ts = SimulationExperiment.from_bids(
+        ...     "./derivatives/tvbo",
+        ...     subject="01",
+        ...     run_to_verify=True
+        ... )
+
+        >>> # Access the experiment settings
+        >>> print(exp.local_dynamics.name)
+        'Generic2dOscillator'
+
+        Notes
+        -----
+        - HDF5 format preserves full dimensionality with 100% fidelity
+        - CIFTI/TSV formats reconstruct from per-state-variable files
+        - Model parameters are restored from eq/ sidecar if available
+        - Network connectivity is restored from net/ directory
+
+        See Also
+        --------
+        to_bids : Export experiment to BIDS format
+        """
+        from pathlib import Path
+
+        from tvbo.export.bids import (
+            ingest_bids_session,
+        )
+
+        # Ingest all data from the BIDS session
+        bids_data = ingest_bids_session(bids_dir, subject, session)
+
+        # =====================================================================
+        # 1. Reconstruct Network
+        # =====================================================================
+        network = None
+        if bids_data["network"] is not None:
+            net_data = bids_data["network"]
+            network = Network(
+                weights=net_data["weights"],
+                tract_lengths=net_data.get("distances"),
+                region_labels=np.array(net_data["region_labels"]) if net_data["region_labels"] else None,
+            )
+
+            # Add coordinates if available
+            if bids_data["coordinates"] is not None:
+                coord_data = bids_data["coordinates"]
+                if coord_data["centres"] is not None:
+                    network.centres = coord_data["centres"]
+
+        # =====================================================================
+        # 2. Reconstruct Dynamics model
+        # =====================================================================
+        local_dynamics = None
+        if bids_data["equations"] is not None:
+            eq_data = bids_data["equations"]
+            model_type = eq_data.get("model_type", "Generic2dOscillator")
+            params = eq_data.get("parameters", {})
+
+            # Try to load from ontology by name
+            try:
+                local_dynamics = Dynamics.from_ontology(model_type)
+                # Apply stored parameters
+                for param_name, param_value in params.items():
+                    if hasattr(local_dynamics, 'parameters') and param_name in local_dynamics.parameters:
+                        local_dynamics.parameters[param_name].value = param_value
+            except Exception:
+                # Fallback: create minimal Dynamics
+                local_dynamics = Dynamics(name=model_type)
+        else:
+            # Default dynamics
+            local_dynamics = Dynamics.from_ontology("Generic2dOscillator")
+
+        # =====================================================================
+        # 3. Reconstruct Integration settings from sidecar provenance
+        # =====================================================================
+        integration = Integrator(method="Heun")
+
+        if bids_data["timeseries"] is not None:
+            ts_data = bids_data["timeseries"]
+
+            # Get sampling from time series
+            if ts_data["sample_period"] is not None:
+                sample_period = ts_data["sample_period"]
+                # Convert to step size (usually smaller)
+                # Note: step_size may not equal sample_period if subsampling was used
+                integration.step_size = sample_period
+
+            # Check sidecars for provenance info
+            for sidecar in ts_data.get("sidecars", []):
+                provenance = sidecar.get("Provenance") or sidecar.get("SimulationProvenance")
+                if provenance:
+                    if "StepSize" in provenance and provenance["StepSize"]:
+                        integration.step_size = float(provenance["StepSize"])
+                    if "Duration" in provenance and provenance["Duration"]:
+                        integration.duration = float(provenance["Duration"])
+                    if "Integrator" in provenance and provenance["Integrator"]:
+                        # Try to parse integrator method from string
+                        int_str = str(provenance["Integrator"])
+                        for method in ["Heun", "Euler", "RungeKutta"]:
+                            if method.lower() in int_str.lower():
+                                integration.method = method
+                                break
+
+        # =====================================================================
+        # 4. Reconstruct TimeSeries
+        # =====================================================================
+        timeseries = None
+        if bids_data["timeseries"] is not None:
+            ts_data = bids_data["timeseries"]
+
+            # Build labels_dimensions
+            labels_dimensions = ts_data.get("labels_dimensions", {})
+            if not labels_dimensions:
+                labels_dimensions = {
+                    "State Variable": ts_data["state_variables"],
+                    "Space": ts_data["region_labels"],
+                }
+
+            timeseries = TimeSeries(
+                time=ts_data["time"],
+                data=ts_data["data"],
+                network=network,
+                title=f"Loaded from BIDS: sub-{subject}",
+                sample_period=ts_data["sample_period"],
+                labels_dimensions=labels_dimensions,
+            )
+            timeseries.sample_period_unit = ts_data.get("sample_period_unit", "ms")
+
+            # Store source info
+            timeseries._bids_source = {
+                "bids_dir": str(bids_dir),
+                "subject": subject,
+                "session": session,
+                "format": ts_data["format"],
+            }
+
+        # =====================================================================
+        # 5. Create SimulationExperiment
+        # =====================================================================
+        experiment = cls(
+            label=f"Loaded from BIDS: sub-{subject}",
+            description=f"Experiment reconstructed from BIDS dataset at {bids_dir}",
+            local_dynamics=local_dynamics,
+            network=network,
+            integration=integration,
+            coupling=Coupling(name="Linear"),  # Default coupling
+        )
+
+        # Store BIDS source info
+        experiment._bids_source = {
+            "bids_dir": str(bids_dir),
+            "subject": subject,
+            "session": session,
+            "loaded_at": str(np.datetime64("now")),
+        }
+
+        # =====================================================================
+        # 6. Verify reproducibility if requested
+        # =====================================================================
+        if run_to_verify and timeseries is not None:
+            print("Running simulation to verify reproducibility...")
+            ts_rerun = experiment.run(format="jax")
+
+            # Compare shapes
+            if ts_rerun.shape != timeseries.shape:
+                print(f"WARNING: Shape mismatch! Loaded: {timeseries.shape}, Rerun: {ts_rerun.shape}")
+            else:
+                # Compare data
+                max_diff = np.max(np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data)))
+                if max_diff < 1e-6:
+                    print(f"✓ Verification passed! Max difference: {max_diff:.2e}")
+                else:
+                    print(f"⚠ Data differs. Max difference: {max_diff:.2e}")
+                    print("  This may be expected if noise was used or parameters differ.")
+
+        return experiment, timeseries
 
     @property
     def metadata(self):
