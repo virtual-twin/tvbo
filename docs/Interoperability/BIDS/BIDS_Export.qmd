@@ -1,0 +1,392 @@
+---
+title: "BIDS Export for TVB Simulations"
+subtitle: "Brain Imaging Data Structure (BEP034) Integration"
+author: "TVB-O Team"
+date: last-modified
+format:
+  html:
+    code-fold: false
+    code-tools: true
+    toc: true
+    toc-depth: 3
+jupyter: python3
+execute:
+  eval: true
+  warning: false
+---
+
+# Introduction
+
+This notebook demonstrates how to export simulation results from The Virtual Brain (TVB) to the 
+**Brain Imaging Data Structure (BIDS)** format, specifically following the 
+**BEP034 Computational Modeling Extension**.
+
+## What is BIDS?
+
+The Brain Imaging Data Structure (BIDS) is a standard for organizing and describing 
+neuroimaging data. It provides:
+
+- **Standardized file naming** conventions
+- **JSON sidecar files** for metadata
+- **Interoperability** across neuroimaging tools
+- **Reproducibility** of analyses
+
+## BEP034: Computational Modeling Extension
+
+BEP034 extends BIDS to support computational modeling data, including:
+
+- **Model equations** in LEMS XML format
+- **Parameter configurations**
+- **Simulated time series** data
+- **Structural connectivity** matrices
+- **Provenance tracking**
+
+For more information, see:
+- [BIDS Specification](https://bids-specification.readthedocs.io/)
+- [BEP034 Computational Modeling](https://bids.neuroimaging.io/get_involved.html)
+
+---
+
+# Setup
+
+```{python}
+#| label: setup
+import os
+import tempfile
+import json
+import numpy as np
+
+# Import TVB-O components
+from tvbo.export.experiment import SimulationExperiment
+from tvbo.knowledge.simulation.localdynamics import Dynamics
+from tvbo.knowledge.simulation.network import Coupling
+from tvbo.knowledge import Integrator, Connectome
+```
+
+# Create a Simulation Experiment
+
+First, let's set up a simulation experiment using the Wilson-Cowan model with 
+a sample connectome.
+
+```{python}
+#| label: create-experiment
+# Load a sample connectome
+connectome = Connectome("Schaefer100x7")
+
+# Define the dynamics model
+dynamics = Dynamics("WilsonCowan")
+
+# Define coupling function
+coupling = Coupling("Linear")
+
+# Create the simulation experiment
+experiment = SimulationExperiment(
+    label="BIDS Demo Simulation",
+    description="Example simulation for BIDS export demonstration",
+    local_dynamics=dynamics,
+    coupling=coupling,
+    network=connectome,
+    integration=Integrator(
+        method="EulerDeterministic",
+        step_size=0.1,
+        duration=1000.0,  # 1 second simulation
+    ),
+)
+
+print(f"Created experiment: {experiment}")
+print(f"Model: {experiment.local_dynamics}")
+print(f"Network: {experiment.network}")
+```
+
+# Run the Simulation
+
+```{python}
+#| label: run-simulation
+# Run the simulation
+ts = experiment.run(format="jax")
+
+print(f"TimeSeries shape: {ts.shape}")
+print(f"Time points: {len(ts.time)}")
+print(f"State variables: {ts.variables_labels}")
+print(f"Sample period: {ts.sample_period} {ts.sample_period_unit}")
+```
+
+# Visualize Results
+
+```{python}
+#| label: visualize-results
+import matplotlib.pyplot as plt
+
+# Plot time series for a few regions
+fig, ax = plt.subplots(figsize=(12, 4))
+ts.plot(ax=ax)
+ax.set_title("Simulated Brain Activity (First Variable)")
+ax.set_xlim([0, 200])  # Show first 200 ms
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Export to BIDS Format
+
+Now we'll export the simulation results to BIDS format. The `to_bids()` method 
+creates a complete BIDS-compliant dataset structure.
+
+## Method 1: Export via TimeSeries
+
+```{python}
+#| label: export-via-timeseries
+# Create a temporary directory for the BIDS output
+bids_output = tempfile.mkdtemp(prefix="tvbo_bids_")
+
+# Export using the TimeSeries to_bids method
+output_path = ts.to_bids(
+    output_dir=bids_output,
+    subject="01",
+    session="simulation",
+    task="rest",
+    run=1,
+    description="WilsonCowan",
+    experiment=experiment,  # Include experiment for full provenance
+)
+
+print(f"BIDS dataset created at: {output_path}")
+```
+
+## Method 2: Export via SimulationExperiment
+
+Alternatively, you can export directly from the experiment (which will run 
+the simulation if needed):
+
+```{python}
+#| label: export-via-experiment
+# Create another output directory
+bids_output2 = tempfile.mkdtemp(prefix="tvbo_bids_exp_")
+
+# Export using the experiment's to_bids method
+output_path2 = experiment.to_bids(
+    output_dir=bids_output2,
+    subject="02",
+    task="simulation",
+    timeseries=ts,  # Use pre-computed timeseries
+)
+
+print(f"BIDS dataset created at: {output_path2}")
+```
+
+---
+
+# Inspect the BIDS Structure
+
+Let's examine the created BIDS dataset structure:
+
+```{python}
+#| label: inspect-structure
+def print_tree(path, prefix=""):
+    """Print directory tree structure."""
+    entries = sorted(os.listdir(path))
+    for i, entry in enumerate(entries):
+        is_last = i == len(entries) - 1
+        current_prefix = "└── " if is_last else "├── "
+        print(f"{prefix}{current_prefix}{entry}")
+        entry_path = os.path.join(path, entry)
+        if os.path.isdir(entry_path):
+            next_prefix = prefix + ("    " if is_last else "│   ")
+            print_tree(entry_path, next_prefix)
+
+print("BIDS Dataset Structure:")
+print("=" * 50)
+print_tree(bids_output)
+```
+
+## Dataset Description
+
+```{python}
+#| label: show-dataset-description
+# Read and display the dataset_description.json
+desc_path = os.path.join(bids_output, "dataset_description.json")
+with open(desc_path, "r") as f:
+    dataset_desc = json.load(f)
+
+print("dataset_description.json:")
+print(json.dumps(dataset_desc, indent=2))
+```
+
+## Time Series Sidecar
+
+```{python}
+#| label: show-sidecar
+# Find and display the JSON sidecar
+import glob
+
+sidecar_files = glob.glob(os.path.join(bids_output, "**", "*_timeseries.json"), recursive=True)
+if sidecar_files:
+    with open(sidecar_files[0], "r") as f:
+        sidecar = json.load(f)
+    print("Time Series Sidecar Metadata:")
+    print(json.dumps(sidecar, indent=2))
+```
+
+## Participants File
+
+```{python}
+#| label: show-participants
+import pandas as pd
+
+participants_path = os.path.join(bids_output, "participants.tsv")
+if os.path.exists(participants_path):
+    participants = pd.read_csv(participants_path, sep="\t")
+    print("participants.tsv:")
+    print(participants)
+```
+
+---
+
+# BIDS Validation
+
+To validate your BIDS dataset, you can use the 
+[BIDS Validator](https://bids-standard.github.io/bids-validator/):
+
+```bash
+# Install bids-validator
+npm install -g bids-validator
+
+# Run validation
+bids-validator /path/to/your/bids/dataset
+```
+
+Or use the online validator: https://bids-standard.github.io/bids-validator/
+
+---
+
+# BEP034 Specific Features
+
+The export includes several BEP034-specific features:
+
+## 1. Model Equations (LEMS XML)
+
+When the experiment is provided, model equations are exported in LEMS format:
+
+```{python}
+#| label: show-lems
+# Check for LEMS files
+lems_files = glob.glob(os.path.join(bids_output, "**", "*_eq.xml"), recursive=True)
+if lems_files:
+    print(f"LEMS model file: {os.path.basename(lems_files[0])}")
+    # Show first few lines
+    with open(lems_files[0], "r") as f:
+        lines = f.readlines()[:20]
+    print("\nFirst 20 lines:")
+    print("".join(lines))
+else:
+    print("Note: LEMS export may require additional configuration.")
+```
+
+## 2. Connectivity Data
+
+Structural connectivity matrices are exported as TSV files:
+
+```{python}
+#| label: show-connectivity
+# Check for connectivity files
+conn_files = glob.glob(os.path.join(bids_output, "**", "*connectivity*.tsv*"), recursive=True)
+if conn_files:
+    print(f"Connectivity files found: {len(conn_files)}")
+    for f in conn_files:
+        print(f"  - {os.path.basename(f)}")
+```
+
+## 3. Provenance Tracking
+
+The JSON sidecar includes simulation provenance:
+
+```{python}
+#| label: show-provenance
+if sidecar_files:
+    with open(sidecar_files[0], "r") as f:
+        sidecar = json.load(f)
+    
+    if "SimulationProvenance" in sidecar:
+        print("Simulation Provenance:")
+        print(json.dumps(sidecar["SimulationProvenance"], indent=2))
+```
+
+---
+
+# Complete Example: Multiple Subjects
+
+Here's how to create a multi-subject BIDS dataset:
+
+```{python}
+#| label: multi-subject
+# Create a multi-subject dataset
+multi_bids = tempfile.mkdtemp(prefix="tvbo_bids_multi_")
+
+# Simulate and export for multiple "subjects" (different parameter settings)
+for i, coupling_strength in enumerate([0.01, 0.02, 0.03]):
+    # Modify experiment parameters
+    modified_exp = experiment.copy()
+    modified_exp.coupling.parameters[0].value = coupling_strength
+    
+    # Run simulation
+    ts_i = modified_exp.run(format="jax")
+    
+    # Export with subject number
+    ts_i.to_bids(
+        output_dir=multi_bids,
+        subject=f"{i+1:02d}",
+        task="rest",
+        description=f"coupling{int(coupling_strength*100):02d}",
+        experiment=modified_exp,
+    )
+    print(f"Exported subject {i+1:02d} with coupling={coupling_strength}")
+
+print("\nMulti-subject dataset structure:")
+print_tree(multi_bids)
+```
+
+---
+
+# Cleanup
+
+```{python}
+#| label: cleanup
+import shutil
+
+# Remove temporary directories
+for path in [bids_output, bids_output2, multi_bids]:
+    if os.path.exists(path):
+        shutil.rmtree(path)
+        print(f"Removed: {path}")
+```
+
+---
+
+# Summary
+
+This notebook demonstrated:
+
+1. **Creating** a TVB simulation experiment
+2. **Running** the simulation to generate time series data
+3. **Exporting** results to BIDS format using:
+   - `TimeSeries.to_bids()` method
+   - `SimulationExperiment.to_bids()` method
+4. **Inspecting** the BIDS dataset structure
+5. **Understanding** BEP034-specific features
+
+For more information on TVBO, visit the [documentation](https://tvbo.readthedocs.io/).
+
+---
+
+# References
+
+1. Gorgolewski, K. J., et al. (2016). The brain imaging data structure, a format for organizing and describing outputs of neuroimaging experiments. *Scientific Data*, 3, 160044.
+
+2. BIDS Specification: https://bids-specification.readthedocs.io/
+
+3. BEP034 Computational Modeling: https://bids.neuroimaging.io/bep034
+
+4. LEMS - Low Entropy Model Specification: http://lems.github.io/LEMS/
+
+5. The Virtual Brain: https://www.thevirtualbrain.org/

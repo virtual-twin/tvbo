@@ -366,6 +366,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         )
                     )
             ts.derivatives = derivatives
+            # Link TimeSeries to source experiment for provenance tracking
+            ts.source_experiment = self
             return ts
 
         elif format.lower() in ["autodiff", "jax"]:
@@ -386,6 +388,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # }
             # ts.sample_period = self.integration.step_size
             # ts.dt = self.integration.step_size
+
+            # Link TimeSeries to source experiment for provenance tracking
+            ts.source_experiment = self
 
             return ts
 
@@ -472,6 +477,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ts = TimeSeries(
                 time=t, data=data, network=None, labels_dimensions=labels_dimensions
             )
+            # Link TimeSeries to source experiment for provenance tracking
+            ts.source_experiment = self
             return ts
         else:
             raise ValueError(
@@ -767,4 +774,88 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         fpath = join(opath, f"{filename}.{ext}")
         self.generate_report(
             format=format if format != "md" else "markdown", outputfile=fpath
+        )
+
+    def to_bids(
+        self,
+        output_dir: str,
+        subject: str = "01",
+        session: str | None = None,
+        task: str = "simulation",
+        run: int | None = None,
+        description: str | None = None,
+        timeseries: TimeSeries | None = None,
+        run_simulation: bool = True,
+        **run_kwargs,
+    ) -> str:
+        """
+        Export simulation experiment and results to BIDS-compliant format (BEP034).
+
+        This method creates a complete BIDS dataset containing:
+        - Time series data from the simulation
+        - Model equations in LEMS XML format
+        - Connectivity data
+        - JSON sidecar files with full metadata
+
+        Parameters
+        ----------
+        output_dir : str
+            Root directory for the BIDS dataset.
+        subject : str
+            Subject identifier (without 'sub-' prefix). Default: '01'.
+        session : str, optional
+            Session identifier (without 'ses-' prefix).
+        task : str
+            Task name for the simulation. Default: 'simulation'.
+        run : int, optional
+            Run number.
+        description : str, optional
+            Description label for the output files.
+        timeseries : TimeSeries, optional
+            Pre-computed TimeSeries. If not provided and run_simulation=True,
+            the simulation will be executed.
+        run_simulation : bool
+            If True and no timeseries provided, run the simulation. Default: True.
+        **run_kwargs
+            Additional arguments passed to the run() method.
+
+        Returns
+        -------
+        str
+            Path to the created BIDS dataset root directory.
+
+        Examples
+        --------
+        >>> experiment = SimulationExperiment(...)
+        >>> experiment.to_bids("./bids_output", subject="01", task="rest")
+        './bids_output'
+
+        >>> # Or with pre-computed timeseries
+        >>> ts = experiment.run()
+        >>> experiment.to_bids("./bids_output", timeseries=ts)
+        './bids_output'
+
+        Notes
+        -----
+        Follows BIDS BEP034 Computational Modeling extension.
+        """
+        # Run simulation if needed
+        if timeseries is None and run_simulation:
+            timeseries = self.run(**run_kwargs)
+
+        if timeseries is None:
+            raise ValueError(
+                "No timeseries provided and run_simulation=False. "
+                "Provide a TimeSeries or set run_simulation=True."
+            )
+
+        # Delegate to TimeSeries.to_bids with experiment reference
+        return timeseries.to_bids(
+            output_dir=output_dir,
+            subject=subject,
+            session=session,
+            task=task,
+            run=run,
+            description=description,
+            experiment=self,
         )
