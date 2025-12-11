@@ -174,7 +174,7 @@ def class2metadata(ontoclass, metadata):
             }
         )
 
-    for k, v in ontology.get_model_coupling_terms(ontoclass).items():
+    for k, v in ontology.get_model_coupling_terms(ontoclass, only_global=False).items():
         if k not in metadata.coupling_terms:
             metadata.coupling_terms.update(
                 {
