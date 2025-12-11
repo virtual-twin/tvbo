@@ -710,12 +710,8 @@ class TimeSeries(BaseTimeSeries):
         - coord/: Region coordinates (if available)
         - JSON sidecar files with metadata
 
-        File naming follows BEP034 pattern:
-        - `sub-<label>_desc-<label>_net-weights_id-<id>.tsv`
-        - `sub-<label>_desc-<label>_ts-<label>_id-<id>.tsv`
-        - `eq-<label>_desc-<description>_id-<id>.yaml`
-
-        The `id-<id>` is computed as a hash of the JSON sidecar contents.
+        Uses pydantic models for metadata serialization and pybids patterns
+        for BIDS-compliant filename generation.
 
         Parameters
         ----------
@@ -753,177 +749,148 @@ class TimeSeries(BaseTimeSeries):
         Notes
         -----
         Follows BIDS BEP034 Computational Modeling extension v1.0.0.
-        Uses tvbo format for model equations instead of LEMS XML.
+        Uses pydantic for metadata serialization and pybids for filenames.
         """
-        import hashlib
-        import json
         import os
         from datetime import datetime
 
         import pandas as pd
 
+        # Import BEP034 module
+        from tvbo.export.bids import (
+            BEP034PathBuilder,
+            CoordinateSidecar,
+            DatasetDescription,
+            EquationSidecar,
+            NetworkSidecar,
+            SimulationProvenance,
+            TimeSeriesSidecar,
+            compute_id,
+            to_float,
+            write_sidecar,
+            write_tsv,
+        )
+
         # Use source_experiment if not explicitly provided
         if experiment is None:
             experiment = getattr(self, "source_experiment", None)
 
-        # Helper to safely convert JAX arrays/tracers to Python floats
-        def _to_float(val):
-            if val is None:
-                return None
-            try:
-                import jax
-                val = jax.device_get(val)
-            except Exception:
-                pass
-            try:
-                arr = np.asarray(val)
-                if arr.ndim == 0:
-                    return float(arr.item())
-                return float(arr.flat[0])
-            except Exception:
-                try:
-                    return float(val)
-                except Exception:
-                    return None
-
-        def _compute_id(sidecar_dict: dict) -> str:
-            """Compute ID as hash of JSON sidecar content."""
-            content = json.dumps(sidecar_dict, sort_keys=True, default=str)
-            return hashlib.sha256(content.encode()).hexdigest()[:8]
+        # Initialize path builder
+        path_builder = BEP034PathBuilder()
 
         # Create base directory structure
         os.makedirs(output_dir, exist_ok=True)
 
-        # Build subject path components
-        sub_label = f"sub-{subject}"
-        path_parts = [sub_label]
-        if session:
-            path_parts.append(f"ses-{session}")
-
-        sub_dir = os.path.join(output_dir, *path_parts)
-
-        # Build filename prefix
-        filename_parts = [sub_label]
-        if session:
-            filename_parts.append(f"ses-{session}")
-        filename_parts.append(f"desc-{description}")
-        if run is not None:
-            filename_parts.append(f"run-{run:02d}")
-
-        base_prefix = "_".join(filename_parts)
-
         # Track all created files for summary
-        created_files = {
-            "net": [],
-            "ts": [],
-            "eq": [],
-            "coord": [],
-        }
+        created_files = {"net": [], "ts": [], "eq": [], "coord": []}
+
+        region_labels = list(self.space_labels) if len(self.space_labels) else None
 
         # =====================================================================
         # 1. Export connectivity to net/ directory
         # =====================================================================
         if include_connectivity and self.network is not None:
-            net_dir = os.path.join(sub_dir, "net")
-            os.makedirs(net_dir, exist_ok=True)
-
-            region_labels = list(self.space_labels) if len(self.space_labels) else None
-
             # --- Weights matrix ---
-            weights_sidecar = {
-                "Description": "Structural connectivity weights matrix",
-                "NumberOfNodes": int(self.network.weights.shape[0]),
-                "Units": "a.u.",
-                "Source": "tvbo simulation",
-                "GeneratedAt": datetime.now().isoformat(),
-            }
-            if region_labels:
-                weights_sidecar["NodeLabels"] = region_labels
+            weights_sidecar = NetworkSidecar(
+                Description="Structural connectivity weights matrix",
+                NumberOfNodes=int(self.network.weights.shape[0]),
+                Units="a.u.",
+                Source="tvbo simulation",
+                GeneratedAt=datetime.now().isoformat(),
+                NodeLabels=region_labels,
+            )
+            weights_id = compute_id(weights_sidecar.to_dict())
 
-            weights_id = _compute_id(weights_sidecar)
-            weights_filename = f"{base_prefix}_net-weights_id-{weights_id}"
+            # Build path using pybids patterns
+            weights_rel_path = path_builder.build_net_path(
+                subject=subject,
+                net_type="weights",
+                id_hash=weights_id,
+                desc=description,
+                session=session,
+                run=run,
+                extension=".tsv",
+            )
+            weights_tsv_path = os.path.join(output_dir, weights_rel_path)
+            weights_json_path = weights_tsv_path.replace(".tsv", ".json")
 
             weights_df = pd.DataFrame(
                 np.asarray(self.network.weights),
                 index=region_labels,
                 columns=region_labels,
             )
-            weights_tsv_path = os.path.join(net_dir, f"{weights_filename}.tsv")
-            weights_df.to_csv(weights_tsv_path, sep="\t")
-
-            weights_json_path = os.path.join(net_dir, f"{weights_filename}.json")
-            with open(weights_json_path, "w") as f:
-                json.dump(weights_sidecar, f, indent=2)
-
-            created_files["net"].append(f"{weights_filename}.tsv")
+            write_tsv(weights_df, weights_tsv_path)
+            write_sidecar(weights_sidecar, weights_json_path)
+            created_files["net"].append(weights_rel_path)
 
             # --- Distances (tract lengths) matrix ---
-            distances_sidecar = {
-                "Description": "Tract lengths (distances) between regions",
-                "NumberOfNodes": int(self.network.tract_lengths.shape[0]),
-                "Units": "mm",
-                "Source": "tvbo simulation",
-                "GeneratedAt": datetime.now().isoformat(),
-            }
-            if region_labels:
-                distances_sidecar["NodeLabels"] = region_labels
+            distances_sidecar = NetworkSidecar(
+                Description="Tract lengths (distances) between regions",
+                NumberOfNodes=int(self.network.tract_lengths.shape[0]),
+                Units="mm",
+                Source="tvbo simulation",
+                GeneratedAt=datetime.now().isoformat(),
+                NodeLabels=region_labels,
+            )
+            distances_id = compute_id(distances_sidecar.to_dict())
 
-            distances_id = _compute_id(distances_sidecar)
-            distances_filename = f"{base_prefix}_net-distances_id-{distances_id}"
+            distances_rel_path = path_builder.build_net_path(
+                subject=subject,
+                net_type="distances",
+                id_hash=distances_id,
+                desc=description,
+                session=session,
+                run=run,
+                extension=".tsv",
+            )
+            distances_tsv_path = os.path.join(output_dir, distances_rel_path)
+            distances_json_path = distances_tsv_path.replace(".tsv", ".json")
 
             distances_df = pd.DataFrame(
                 np.asarray(self.network.tract_lengths),
                 index=region_labels,
                 columns=region_labels,
             )
-            distances_tsv_path = os.path.join(net_dir, f"{distances_filename}.tsv")
-            distances_df.to_csv(distances_tsv_path, sep="\t")
-
-            distances_json_path = os.path.join(net_dir, f"{distances_filename}.json")
-            with open(distances_json_path, "w") as f:
-                json.dump(distances_sidecar, f, indent=2)
-
-            created_files["net"].append(f"{distances_filename}.tsv")
+            write_tsv(distances_df, distances_tsv_path)
+            write_sidecar(distances_sidecar, distances_json_path)
+            created_files["net"].append(distances_rel_path)
 
             # --- Coordinates if available ---
             if hasattr(self.network, "centres") and self.network.centres is not None:
-                coord_dir = os.path.join(sub_dir, "coord")
-                os.makedirs(coord_dir, exist_ok=True)
+                coord_sidecar = CoordinateSidecar(
+                    Description="Region center coordinates",
+                    NumberOfNodes=int(self.network.centres.shape[0]),
+                    CoordinateSystem="MNI152NLin6Asym",
+                    Units="mm",
+                    Columns=["x", "y", "z"],
+                    NodeLabels=region_labels,
+                )
+                coord_id = compute_id(coord_sidecar.to_dict())
 
-                coord_sidecar = {
-                    "Description": "Region center coordinates",
-                    "NumberOfNodes": int(self.network.centres.shape[0]),
-                    "CoordinateSystem": "MNI152NLin6Asym",
-                    "Units": "mm",
-                    "Columns": ["x", "y", "z"],
-                }
-                if region_labels:
-                    coord_sidecar["NodeLabels"] = region_labels
-
-                coord_id = _compute_id(coord_sidecar)
-                coord_filename = f"{base_prefix}_coord-centres_id-{coord_id}"
+                coord_rel_path = path_builder.build_coord_path(
+                    subject=subject,
+                    coord_type="centres",
+                    id_hash=coord_id,
+                    desc=description,
+                    session=session,
+                    extension=".tsv",
+                )
+                coord_tsv_path = os.path.join(output_dir, coord_rel_path)
+                coord_json_path = coord_tsv_path.replace(".tsv", ".json")
 
                 coord_df = pd.DataFrame(
                     np.asarray(self.network.centres),
                     columns=["x", "y", "z"],
                     index=region_labels,
                 )
-                coord_tsv_path = os.path.join(coord_dir, f"{coord_filename}.tsv")
-                coord_df.to_csv(coord_tsv_path, sep="\t")
-
-                coord_json_path = os.path.join(coord_dir, f"{coord_filename}.json")
-                with open(coord_json_path, "w") as f:
-                    json.dump(coord_sidecar, f, indent=2)
-
-                created_files["coord"].append(f"{coord_filename}.tsv")
+                write_tsv(coord_df, coord_tsv_path)
+                write_sidecar(coord_sidecar, coord_json_path)
+                created_files["coord"].append(coord_rel_path)
 
         # =====================================================================
         # 2. Export time series to ts/ directory
         # =====================================================================
-        ts_dir = os.path.join(sub_dir, "ts")
-        os.makedirs(ts_dir, exist_ok=True)
-
-        sample_period_val = _to_float(self.sample_period)
+        sample_period_val = to_float(self.sample_period)
         if sample_period_val is not None and sample_period_val > 0:
             if self.sample_period_unit in ("ms", "msec"):
                 sampling_freq = 1000.0 / sample_period_val
@@ -932,75 +899,66 @@ class TimeSeries(BaseTimeSeries):
         else:
             sampling_freq = None
 
-        region_labels = list(self.space_labels) if len(self.space_labels) else None
+        # Build provenance if experiment available
+        provenance = None
+        if experiment is not None:
+            provenance = SimulationProvenance(
+                Model=str(experiment.local_dynamics) if hasattr(experiment, "local_dynamics") else None,
+                Integrator=str(experiment.integration) if hasattr(experiment, "integration") else None,
+                Duration=to_float(experiment.duration) if hasattr(experiment, "duration") else None,
+                StepSize=to_float(experiment.integration.step_size) if hasattr(experiment, "integration") and hasattr(experiment.integration, "step_size") else None,
+                GeneratedAt=datetime.now().isoformat(),
+            )
 
         # Export each state variable as separate time series file
         for sv_idx, sv_label in enumerate(self.variables_labels):
-            # Create sidecar for this state variable
-            ts_sidecar = {
-                "Description": f"Simulated time series - {sv_label}",
-                "StateVariable": sv_label,
-                "SamplingFrequency": sampling_freq,
-                "SamplingPeriod": sample_period_val,
-                "SamplingPeriodUnits": self.sample_period_unit,
-                "StartTime": _to_float(self.time[0]) if len(self.time) > 0 else 0.0,
-                "NumberOfTimepoints": int(self.data.shape[0]),
-                "NumberOfNodes": int(self.data.shape[2]) if self.data.ndim > 2 else 1,
-                "Columns": ["time"] + (region_labels or []),
-                "Units": "a.u.",
-                "GeneratedAt": datetime.now().isoformat(),
-            }
+            ts_sidecar = TimeSeriesSidecar(
+                Description=f"Simulated time series - {sv_label}",
+                StateVariable=sv_label,
+                SamplingFrequency=sampling_freq,
+                SamplingPeriod=sample_period_val,
+                SamplingPeriodUnits=self.sample_period_unit,
+                StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
+                NumberOfTimepoints=int(self.data.shape[0]),
+                NumberOfNodes=int(self.data.shape[2]) if self.data.ndim > 2 else 1,
+                Columns=["time"] + (region_labels or []),
+                Units="a.u.",
+                GeneratedAt=datetime.now().isoformat(),
+                SimulationProvenance=provenance,
+            )
+            ts_id = compute_id(ts_sidecar.to_dict())
 
-            # Add provenance if experiment available
-            if experiment is not None:
-                ts_sidecar["SimulationProvenance"] = {
-                    "Model": str(experiment.local_dynamics) if hasattr(experiment, "local_dynamics") else None,
-                    "Integrator": str(experiment.integration) if hasattr(experiment, "integration") else None,
-                    "Duration": _to_float(experiment.duration) if hasattr(experiment, "duration") else None,
-                    "StepSize": _to_float(experiment.integration.step_size) if hasattr(experiment, "integration") and hasattr(experiment.integration, "step_size") else None,
-                }
-
-            ts_id = _compute_id(ts_sidecar)
-            ts_filename = f"{base_prefix}_ts-{ts_label}{sv_label}_id-{ts_id}"
+            ts_rel_path = path_builder.build_ts_path(
+                subject=subject,
+                ts_label=f"{ts_label}{sv_label}",
+                id_hash=ts_id,
+                desc=description,
+                session=session,
+                run=run,
+                extension=".tsv",
+            )
+            ts_tsv_path = os.path.join(output_dir, ts_rel_path)
+            ts_json_path = ts_tsv_path.replace(".tsv", ".json")
 
             # Extract data for this state variable (time x regions)
             sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
-            ts_df = pd.DataFrame(
-                np.asarray(sv_data),
-                columns=region_labels,
-            )
+            ts_df = pd.DataFrame(np.asarray(sv_data), columns=region_labels)
             ts_df.insert(0, "time", np.asarray(self.time))
 
-            ts_tsv_path = os.path.join(ts_dir, f"{ts_filename}.tsv")
-            ts_df.to_csv(ts_tsv_path, sep="\t", index=False)
-
-            ts_json_path = os.path.join(ts_dir, f"{ts_filename}.json")
-            with open(ts_json_path, "w") as f:
-                json.dump(ts_sidecar, f, indent=2, default=str)
-
-            created_files["ts"].append(f"{ts_filename}.tsv")
+            write_tsv(ts_df, ts_tsv_path, include_index=False)
+            write_sidecar(ts_sidecar, ts_json_path)
+            created_files["ts"].append(ts_rel_path)
 
         # =====================================================================
         # 3. Export model equations to eq/ directory
         # =====================================================================
         if include_model and experiment is not None:
-            eq_dir = os.path.join(sub_dir, "eq")
-            os.makedirs(eq_dir, exist_ok=True)
-
-            # Get model name
             model_name = "unknown"
             if hasattr(experiment, "local_dynamics"):
                 model_name = type(experiment.local_dynamics).__name__
 
-            # Create equation sidecar
-            eq_sidecar = {
-                "Description": f"Neural mass model equations - {model_name}",
-                "ModelType": model_name,
-                "Format": "tvbo",
-                "GeneratedAt": datetime.now().isoformat(),
-            }
-
-            # Add model parameters if available
+            # Extract model parameters
+            params = None
             if hasattr(experiment, "local_dynamics"):
                 model = experiment.local_dynamics
                 params = {}
@@ -1014,43 +972,56 @@ class TimeSeries(BaseTimeSeries):
                                 params[attr] = float(np.asarray(val).flat[0])
                             except Exception:
                                 pass
-                if params:
-                    eq_sidecar["Parameters"] = params
+                if not params:
+                    params = None
 
-            eq_id = _compute_id(eq_sidecar)
-            eq_filename = f"eq-{model_name.lower()}_desc-{description}_id-{eq_id}"
+            eq_sidecar = EquationSidecar(
+                Description=f"Neural mass model equations - {model_name}",
+                ModelType=model_name,
+                Format="tvbo",
+                GeneratedAt=datetime.now().isoformat(),
+                Parameters=params,
+            )
+            eq_id = compute_id(eq_sidecar.to_dict())
 
-            eq_json_path = os.path.join(eq_dir, f"{eq_filename}.json")
-            with open(eq_json_path, "w") as f:
-                json.dump(eq_sidecar, f, indent=2, default=str)
+            eq_rel_path = path_builder.build_eq_path(
+                eq_label=model_name.lower(),
+                id_hash=eq_id,
+                desc=description,
+                subject=subject,
+                session=session,
+                extension=".json",
+            )
+            eq_json_path = os.path.join(output_dir, eq_rel_path)
 
-            created_files["eq"].append(f"{eq_filename}.json")
+            write_sidecar(eq_sidecar, eq_json_path)
+            created_files["eq"].append(eq_rel_path)
 
         # =====================================================================
         # 4. Create dataset_description.json at root
         # =====================================================================
-        dataset_description = {
-            "Name": f"TVB Simulation Output",
-            "BIDSVersion": "1.9.0",
-            "DatasetType": "derivative",
-            "GeneratedBy": [
-                {
-                    "Name": "tvbo",
-                    "Version": "0.1.0",
-                    "Description": "The Virtual Brain Ontology and Simulation Framework",
-                    "CodeURL": "https://github.com/the-virtual-brain/tvb-ontology",
-                }
-            ],
-            "BEP034Version": "1.0.0",
-        }
         desc_path = os.path.join(output_dir, "dataset_description.json")
         if not os.path.exists(desc_path):
-            with open(desc_path, "w") as f:
-                json.dump(dataset_description, f, indent=2)
+            dataset_desc = DatasetDescription(
+                Name="TVB Simulation Output",
+                BIDSVersion="1.9.0",
+                DatasetType="derivative",
+                GeneratedBy=[
+                    {
+                        "Name": "tvbo",
+                        "Version": "0.1.0",
+                        "Description": "The Virtual Brain Ontology and Simulation Framework",
+                        "CodeURL": "https://github.com/the-virtual-brain/tvb-ontology",
+                    }
+                ],
+                BEP034Version="1.0.0",
+            )
+            write_sidecar(dataset_desc, desc_path)
 
         # =====================================================================
         # 5. Create participants.tsv
         # =====================================================================
+        sub_label = f"sub-{subject}"
         participants_path = os.path.join(output_dir, "participants.tsv")
         if not os.path.exists(participants_path):
             participants_df = pd.DataFrame({"participant_id": [sub_label]})
