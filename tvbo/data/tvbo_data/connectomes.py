@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jax.numpy as jnp
+import jax.scipy as jsp
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -71,167 +72,102 @@ def get_normative_connectome_data(
 
 
 @register_pytree_node_class
-class Connectome(tvbo_datamodel.Network):
-    """Structural connectivity data with weights, lengths, and visualization tools.
-
-    Represents brain structural connectivity including connection weights, tract lengths,
-    and spatial information. Supports loading normative connectomes from atlases or
-    custom data, with JAX pytree compatibility.
-
-    Examples
-    --------
-    ```{python}
-    from tvbo import Connectome
-    # Load atlas-based connectome
-    sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-    sc.plot_matrix()
-
-    # Custom connectome from arrays
-    import numpy as np
-    sc = Connectome(weights=np.random.rand(10, 10), number_of_regions=10)
-    delays = sc.calculate_delays(conduction_speed=3.0)
-    ```
-
-    See Also
-    --------
-    weights_matrix : Access connection weights as array
-    lengths_matrix : Access tract lengths as array
-    plot_graph : Visualize as network graph
-    plot_overview : Complete visualization with matrices and graph
-    """
-
+class Network(tvbo_datamodel.Network):
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize a Connectome instance.
-
-        Parameters
-        ----------
-        **kwargs : Any
-            Connectome initialization arguments. Common parameters:
-
-            - parcellation : dict
-                Parcellation info with atlas name, e.g., {"atlas": {"name": "DesikanKilliany"}}
-            - weights : np.ndarray or Matrix
-                Connection weights matrix (N x N)
-            - lengths : np.ndarray or Matrix
-                Tract lengths matrix (N x N)
-            - number_of_regions : int
-                Number of brain regions
-            - conduction_speed : Parameter or float
-                Signal propagation speed (default: 3.0 mm/ms)
-            - tractogram : str
-                Tractography method (default: "dTOR")
-
-        Notes
-        -----
-        Initialization follows priority order:
-
-        1. Use provided weights/lengths arrays
-        2. Load from atlas if parcellation specified
-        3. Create default matrices as fallback
-
-        Examples
-        --------
-        ```{python}
-        # From atlas
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-
-        # From arrays
-        import numpy as np
-        sc = Connectome(weights=np.random.rand(68, 68), number_of_regions=68)
-        ```
-        """
         # Sync number_of_regions and number_of_nodes early
         if "number_of_regions" in kwargs and "number_of_nodes" not in kwargs:
             kwargs["number_of_nodes"] = kwargs["number_of_regions"]
         elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
             kwargs["number_of_regions"] = kwargs["number_of_nodes"]
 
-        # Priority 1: Use weights/lengths from kwargs if provided (already there)
-        has_weights = "weights" in kwargs
-        has_lengths = "lengths" in kwargs
+        # Check if nodes/edges are already provided
+        has_nodes = "nodes" in kwargs and kwargs["nodes"]
+        has_edges = "edges" in kwargs and kwargs["edges"]
 
-        # Infer n_nodes from numpy arrays if provided
-        n_nodes = kwargs.get("number_of_nodes") or kwargs.get("number_of_regions")
-        if n_nodes is None:
-            if has_weights and isinstance(kwargs["weights"], np.ndarray):
-                n_nodes = kwargs["weights"].shape[0]
-            elif has_lengths and isinstance(kwargs["lengths"], np.ndarray):
-                n_nodes = kwargs["lengths"].shape[0]
-            else:
-                n_nodes = 1
-
-        # Priority 2: Load normative data if parcellation/atlas specified and no weights/lengths
-        if not has_weights and not has_lengths:
-            if "parcellation" in kwargs and kwargs["parcellation"].get("atlas"):
+        # Load normative data if parcellation/atlas specified and no nodes/edges
+        if not has_nodes and not has_edges:
+            if "parcellation" in kwargs:
+                if isinstance(kwargs["parcellation"], str):
+                    kwargs["parcellation"] = tvbo_datamodel.Parcellation(
+                        label=kwargs["parcellation"],
+                        atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
+                    )._as_dict
                 atlas_name = kwargs["parcellation"]["atlas"].get("name")
                 tractogram = kwargs.get("tractogram", "dTOR")
-                w_in, l_in = get_normative_connectome_data(atlas_name, tractogram)
-                kwargs["weights"] = w_in
-                kwargs["lengths"] = l_in
-                # Infer number of regions from loaded data
-                if hasattr(w_in, "dataLocation") and w_in.dataLocation:
-                    w_arr = pd.read_csv(w_in.dataLocation, header=None).values
+                w_matrix, l_matrix = get_normative_connectome_data(
+                    atlas_name, tractogram
+                )
+
+                # Load the actual arrays
+                if hasattr(w_matrix, "dataLocation") and w_matrix.dataLocation:
+                    w_arr = pd.read_csv(w_matrix.dataLocation, header=None).values
+                    l_arr = (
+                        pd.read_csv(l_matrix.dataLocation, header=None).values
+                        if hasattr(l_matrix, "dataLocation")
+                        else None
+                    )
                     n_nodes = w_arr.shape[0]
+
+                    # Create nodes
+                    nodes = [
+                        tvbo_datamodel.Node(id=i, label=f"region_{i}")
+                        for i in range(n_nodes)
+                    ]
+
+                    # Create edges from non-zero weights
+                    edges = []
+                    for i in range(n_nodes):
+                        for j in range(n_nodes):
+                            if w_arr[i, j] != 0:
+                                edge_kwargs = {
+                                    "source": i,
+                                    "target": j,
+                                    "parameters": (
+                                        [
+                                            tvbo_datamodel.Parameter(
+                                                name="weight", value=float(w_arr[i, j])
+                                            )
+                                        ]
+                                        + [
+                                            tvbo_datamodel.Parameter(
+                                                name="distance",
+                                                value=float(l_arr[i, j]),
+                                            )
+                                        ]
+                                        if l_arr is not None
+                                        else []
+                                    ),
+                                }
+                                edges.append(tvbo_datamodel.Edge(**edge_kwargs))
+
+                    kwargs["nodes"] = nodes
+                    kwargs["edges"] = edges
                     kwargs["number_of_regions"] = n_nodes
                     kwargs["number_of_nodes"] = n_nodes
-                has_weights = True
-                has_lengths = True
 
-        # Priority 3: Create default matrices if still no weights/lengths
-        if not has_weights:
-            kwargs["weights"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                values=[0.0] * (n_nodes * n_nodes),
-            )
-
-        if not has_lengths:
-            kwargs["lengths"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(n_nodes)]
-                ),
-                values=[1.0] * (n_nodes * n_nodes),
-            )
-
-        # Ensure number_of_regions/nodes are set
-        if "number_of_regions" not in kwargs:
-            kwargs["number_of_regions"] = n_nodes
-        if "number_of_nodes" not in kwargs:
-            kwargs["number_of_nodes"] = n_nodes
-
-        # Convert numpy arrays to Matrix objects if needed
-        if isinstance(kwargs.get("weights"), np.ndarray):
-            w_in = kwargs["weights"]
-            kwargs["weights"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(w_in.shape[0])]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(w_in.shape[1])]
-                ),
-                values=w_in.reshape(-1).astype(float).tolist(),
-            )
-
-        if isinstance(kwargs.get("lengths"), np.ndarray):
-            l_in = kwargs["lengths"]
-            kwargs["lengths"] = tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(l_in.shape[0])]
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=[str(i) for i in range(l_in.shape[1])]
-                ),
-                values=l_in.reshape(-1).astype(float).tolist(),
-            )
+        # Infer n_nodes from nodes if present
+        if "nodes" in kwargs and kwargs["nodes"]:
+            n_nodes = len(kwargs["nodes"])
+            if "number_of_nodes" not in kwargs:
+                kwargs["number_of_nodes"] = n_nodes
+            if "number_of_regions" not in kwargs:
+                kwargs["number_of_regions"] = n_nodes
+        # Create default nodes if number_of_nodes is set but nodes list is empty
+        elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
+            n_nodes = kwargs["number_of_nodes"]
+            kwargs["nodes"] = [
+                tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
+            ]
 
         super().__init__(**kwargs)
+
+        # After parent init, create default nodes if still empty but number_of_nodes is set
+        # (handles case where number_of_nodes comes from datamodel default)
+        if self.number_of_nodes and not self.nodes:
+            self.nodes = [
+                tvbo_datamodel.Node(id=i, label=f"node_{i}")
+                for i in range(self.number_of_nodes)
+            ]
 
         if not self.conduction_speed:
             self.conduction_speed = tvbo_datamodel.Parameter(
@@ -264,37 +200,136 @@ class Connectome(tvbo_datamodel.Network):
         # as_dict returns a dict-like object that works with **kwargs
         return cls(**data)  # type: ignore[arg-type]
 
+    @classmethod
+    def from_matrix(
+        cls,
+        weights: np.ndarray,
+        lengths: Optional[np.ndarray] = None,
+        labels: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> "Network":
+        """Create a Network from weight (and optionally length) matrices.
+
+        This is a convenience constructor for creating networks from matrix
+        representations. For performance, matrices are stored directly and
+        edges are generated lazily only when needed.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            Connection weight matrix (N x N). Non-zero entries become edges.
+        lengths : np.ndarray, optional
+            Tract length matrix (N x N). If provided, used for delay calculation.
+        labels : list of str, optional
+            Node labels. If not provided, uses "node_0", "node_1", etc.
+        **kwargs : Any
+            Additional keyword arguments passed to Network constructor.
+
+        Returns
+        -------
+        Network
+            New Network with nodes derived from labels and matrices stored
+            for efficient access.
+
+        Examples
+        --------
+        ```{python}
+        import numpy as np
+        from tvbo import Network
+
+        # Simple 3-node network
+        W = np.array([[0, 0.5, 0.3],
+                      [0.2, 0, 0.4],
+                      [0.1, 0.6, 0]])
+        network = Network.from_matrix(W, labels=["A", "B", "C"])
+        network.plot_graph()
+
+        # With tract lengths
+        L = np.array([[0, 10, 15],
+                      [10, 0, 8],
+                      [15, 8, 0]])
+        network = Network.from_matrix(W, lengths=L)
+        ```
+        """
+        weights = np.asarray(weights)
+        n_nodes = weights.shape[0]
+
+        if labels is None:
+            labels = [f"node_{i}" for i in range(n_nodes)]
+
+        # Create explicit nodes (cheap - only N objects)
+        nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
+
+        # Build the network with nodes only - matrices stored separately for performance
+        instance = cls(
+            nodes=nodes,
+            edges=[],  # Don't create Edge objects - too slow for large networks
+            number_of_nodes=n_nodes,
+            number_of_regions=n_nodes,
+            **kwargs,
+        )
+
+        # Store matrices directly for efficient access (not in schema, runtime only)
+        instance._cached_weights = weights
+        instance._cached_lengths = lengths if lengths is not None else None
+
+        return instance
+
+    @classmethod
+    def from_string(cls, yaml_string: str, **kwargs: Any) -> "Network":
+        """Create a Network from a YAML string.
+
+        This is a convenience constructor for creating networks directly from
+        YAML specifications, commonly used in notebooks and scripts.
+
+        Parameters
+        ----------
+        yaml_string : str
+            YAML string defining the network with nodes and edges.
+        **kwargs : Any
+            Additional keyword arguments passed to Network constructor.
+
+        Returns
+        -------
+        Network
+            New Network parsed from the YAML string.
+
+        Examples
+        --------
+        ```{python}
+        from tvbo import Network
+
+        network = Network.from_string('''
+        label: MyNetwork
+        nodes:
+          - id: 0
+            label: NodeA
+            dynamics: Oscillator
+          - id: 1
+            label: NodeB
+            dynamics: Excitable
+        edges:
+          - source: 0
+            target: 1
+            weight: 0.5
+        ''')
+        print(network.label)
+        ```
+        """
+        import yaml as yaml_module
+
+        data = yaml_module.safe_load(yaml_string)
+        # Merge any additional kwargs
+        data.update(kwargs)
+        return cls(**data)
+
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
         super_setattr = super().__setattr__
 
-        # Normalize assignments to weights/lengths into Matrix objects
-        if name in ("weights", "lengths"):
-            try:
-                # list -> ndarray
-                if isinstance(value, list):
-                    value = np.array(value, dtype=float)
-                # ndarray -> Matrix with labeled axes
-                if isinstance(value, np.ndarray):
-                    mat = self._matrix_from_array(value)
-                    super_setattr(name, mat)
-                    # Keep region/node counts in sync
-                    try:
-                        n = int(value.shape[0])
-                        if getattr(self, "number_of_regions", None) != n:
-                            super_setattr("number_of_regions", n)
-                    except Exception:
-                        pass
-                    return
-                # path-like str -> Matrix by dataLocation
-                if isinstance(value, str):
-                    super_setattr(name, tvbo_datamodel.Matrix(dataLocation=value))
-                    return
-            except Exception:
-                # Fallback to raw assignment on any conversion issue
-                pass
-
         super_setattr(name, value)
+
+        # Keep number_of_regions and number_of_nodes in sync
         if name == "number_of_regions":
             try:
                 nodes = getattr(self, "number_of_nodes", None)
@@ -311,13 +346,16 @@ class Connectome(tvbo_datamodel.Network):
                 # Don't block attribute setting on sync errors
                 pass
 
-    def to_yaml(self, filepath: Optional[str] = None) -> str:
+    def to_yaml(self, filepath: Optional[str] = None, format: str = "tvbo") -> str:
         """Serialize Connectome to YAML format.
 
         Parameters
         ----------
         filepath : str, optional
             Path to save YAML file. If None, returns YAML string.
+        format : str
+            Output format: "tvbo" (default) or "pyrates".
+            PyRates format generates a complete experiment YAML (network + dynamics).
 
         Returns
         -------
@@ -330,11 +368,17 @@ class Connectome(tvbo_datamodel.Network):
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         yaml_str = sc.to_yaml()
         sc.to_yaml("connectome.yaml")  # Save to file
+        sc.to_yaml("network.yaml", format="pyrates")  # PyRates format
         ```
         """
-        from tvbo.utils import to_yaml as _to_yaml
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import to_pyrates_yaml_string
 
-        return _to_yaml(self, filepath)
+            return to_pyrates_yaml_string(network=self, filepath=filepath)
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+
+            return _to_yaml(self, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----
     def tree_flatten(self) -> Tuple[Tuple[JaxArray, JaxArray], Tuple[str]]:
@@ -376,24 +420,21 @@ class Connectome(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             weights_arr, lengths_arr = self._pytree_data
         else:
-            # First flatten or normal object - compute arrays from metadata
-            if self.weights is not None:
-                weights_arr = self.weights_matrix
-            elif hasattr(self, "number_of_regions") and self.number_of_regions:
-                weights_arr = jnp.zeros(
-                    (self.number_of_regions, self.number_of_regions)
-                )
-            else:
-                weights_arr = jnp.zeros((1, 1))
+            # Use weights_matrix/lengths_matrix properties which handle edges, Matrix, or defaults
+            weights_arr = self.weights_matrix
+            lengths_arr = self.lengths_matrix
 
-            if self.lengths is not None:
-                lengths_arr = self.lengths_matrix
-            elif hasattr(self, "number_of_regions") and self.number_of_regions:
-                lengths_arr = jnp.zeros(
-                    (self.number_of_regions, self.number_of_regions)
-                )
+            # Fallback to zeros if properties return None
+            n = self.number_of_regions or 1
+            if weights_arr is None:
+                weights_arr = jnp.zeros((n, n))
             else:
-                lengths_arr = jnp.zeros((1, 1))
+                weights_arr = jnp.asarray(weights_arr)
+
+            if lengths_arr is None:
+                lengths_arr = jnp.zeros((n, n))
+            else:
+                lengths_arr = jnp.asarray(lengths_arr)
 
         children = (weights_arr, lengths_arr)
 
@@ -456,83 +497,171 @@ class Connectome(tvbo_datamodel.Network):
             x=x, y=y, values=arr.reshape(-1).astype(jnp.float32).tolist()
         )
 
-    @property
-    def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
-        """Connection weights matrix as numpy/JAX array.
+    @staticmethod
+    def _get_edge_param(edge, name: str) -> Optional[float]:
+        return edge.parameters[name].value if name in edge.parameters else None
 
-        Returns the (N x N) matrix of connection strengths between regions.
-        If normalization is defined, applies the normalization equation.
+    def _weights_from_edges(self) -> Optional[np.ndarray]:
+        """Compute weights matrix from edges.
+
+        Looks for 'weight' parameter in edge.parameters.
+        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
+        Returns None if no edges are defined.
+        """
+        if not self.edges:
+            return None
+        n = self.number_of_nodes or self.number_of_regions or 1
+        W = np.zeros((n, n), dtype=np.float64)
+        for edge in self.edges:
+            i, j = edge.source, edge.target
+            if 0 <= i < n and 0 <= j < n:
+                w = self._get_edge_param(edge, "weight")
+                W[i, j] = w
+                # Mirror for undirected edges (symmetric)
+                if not getattr(edge, "directed", False):
+                    W[j, i] = w
+        return W
+
+    def _get_node_position(self, node_id: int) -> Optional[Tuple[float, float, float]]:
+        """Get (x, y, z) position for a node by ID."""
+        if not self.nodes:
+            return None
+        for node in self.nodes:
+            if getattr(node, "id", None) == node_id:
+                pos = getattr(node, "position", None)
+                if pos is not None:
+                    x = getattr(pos, "x", None)
+                    y = getattr(pos, "y", None)
+                    z = getattr(pos, "z", 0.0)  # default z=0 if not specified
+                    if x is not None and y is not None:
+                        return (float(x), float(y), float(z) if z else 0.0)
+        return None
+
+    def _compute_euclidean_distance(self, i: int, j: int) -> Optional[float]:
+        """Compute Euclidean distance between two nodes from their positions."""
+        pos_i = self._get_node_position(i)
+        pos_j = self._get_node_position(j)
+        if pos_i is None or pos_j is None:
+            return None
+        dx = pos_j[0] - pos_i[0]
+        dy = pos_j[1] - pos_i[1]
+        dz = pos_j[2] - pos_i[2]
+        return np.sqrt(dx * dx + dy * dy + dz * dz)
+
+    def _lengths_from_edges(self) -> Optional[np.ndarray]:
+        """Compute lengths/distances matrix from edges.
+
+        Looks for 'distance' parameter in edge.parameters.
+        If no distance is specified but nodes have positions, computes
+        Euclidean distance from node coordinates (in distance_unit).
+        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
+        Returns None if no edges are defined.
+        """
+        if not self.edges:
+            return None
+        n = self.number_of_nodes or self.number_of_regions or 1
+        L = np.zeros((n, n), dtype=np.float64)
+        for edge in self.edges:
+            i, j = edge.source, edge.target
+            if 0 <= i < n and 0 <= j < n:
+                d = self._get_edge_param(edge, "distance")
+                # If no explicit distance, compute from node positions
+                if d is None or d == 0:
+                    d = self._compute_euclidean_distance(i, j)
+                if d is None:
+                    d = 0.0
+                L[i, j] = d
+                # Mirror for undirected edges (symmetric)
+                if not getattr(edge, "directed", False):
+                    L[j, i] = d
+        return L
+
+    def _delays_from_edges(self) -> Optional[np.ndarray]:
+        """Compute delays matrix from edges.
+
+        Looks for 'delay' parameter in edge.parameters.
+        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
+        Returns None if no edges are defined or no delays are set.
+        """
+        if not self.edges:
+            return None
+        n = self.number_of_nodes or self.number_of_regions or 1
+        D = np.zeros((n, n), dtype=np.float64)
+        has_delays = False
+        for edge in self.edges:
+            i, j = edge.source, edge.target
+            if 0 <= i < n and 0 <= j < n:
+                delay = self._get_edge_param(edge, "delay")
+                D[i, j] = delay
+                # Mirror for undirected edges (symmetric)
+                if not getattr(edge, "directed", False):
+                    D[j, i] = delay
+                if delay > 0:
+                    has_delays = True
+        return D if has_delays else None
+
+    @property
+    def node_labels(self) -> List[str]:
+        """Node labels derived from nodes.
 
         Returns
         -------
-        np.ndarray or jax.Array, optional
-            Connection weights matrix (N x N), or None if unavailable
-
-        Notes
-        -----
-        If `self.normalization` contains an equation, the weights are
-        transformed according to that equation before being returned.
+        list of str
+            Labels for each node in the network
 
         Examples
         --------
         ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        W = sc.weights_matrix
+        net = Network.from_matrix(weights, lengths, labels=["A", "B", "C"])
+        print(net.node_labels)  # ['A', 'B', 'C']
+        ```
+        """
+        if not self.nodes:
+            return []
+        return [n.label for n in self.nodes]  # type: ignore[union-attr]
+
+    @property
+    def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
+        """Connection weights matrix as numpy/JAX array.
+
+        Returns cached matrix if available (from from_matrix), otherwise
+        computes from edges. If normalization is defined, applies the
+        normalization equation.
+
+        Returns
+        -------
+        np.ndarray or jax.Array, optional
+            Connection weights matrix (N x N), or None if no edges/matrix
+
+        Examples
+        --------
+        ```{python}
+        net = Network.from_matrix(weights, lengths)
+        W = net.weights_matrix
         print(f"Shape: {W.shape}, Mean: {W.mean():.3f}")
         ```
         """
         format = "jax"
+
+        if len(self.nodes) == 1:
+            return jnp.zeros((1, 1))
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
-        wm = self.weights
-        if wm is not None:
-            if isinstance(wm, list):
-                W = np.array(wm, dtype=float)
-            if getattr(wm, "values", None):
-                x = getattr(wm, "x", None)
-                y = getattr(wm, "y", None)
-                nx_ = (
-                    len(x.values)
-                    if x and getattr(x, "values", None)
-                    else self.number_of_regions
-                )
-                ny_ = (
-                    len(y.values)
-                    if y and getattr(y, "values", None)
-                    else self.number_of_regions
-                )
-                # Type guard: ensure dimensions are valid integers
-                if (
-                    nx_ is not None
-                    and ny_ is not None
-                    and isinstance(nx_, int)
-                    and isinstance(ny_, int)
-                ):
-                    W = np.array(wm.values, dtype=float).reshape(nx_, ny_)
-                else:
-                    W = None
-            elif getattr(wm, "dataLocation", None):
-                W = pd.read_csv(wm.dataLocation, header=None).values.astype(float)  # type: ignore[arg-type,attr-defined]
-            else:
-                W = None
+        # Check for cached matrix from from_matrix (performance optimization)
+        if hasattr(self, "_cached_weights") and self._cached_weights is not None:
+            W = self._cached_weights
         else:
-            W = None
+            # Compute from edges (fallback for networks built from explicit edges)
+            W = self._weights_from_edges()
 
         if W is None:
-            N = getattr(self, "number_of_regions", None)
-            if N is not None and isinstance(N, int) and N > 0:
-                W = np.ones((N, N))
-                np.fill_diagonal(W, 0)
-            else:
-                return None
+            return None
 
-        # Apply normalization from metadata if available and executable
+        # Apply normalization if defined
         norm = getattr(self, "normalization", None)
         if norm is not None:
-            import jax.numpy as jnp
-            import jax.scipy as jsp
 
             from tvbo.export.code import parse_eq, render_expression
 
@@ -561,6 +690,10 @@ class Connectome(tvbo_datamodel.Network):
         return W
 
     @property
+    def weights(self):
+        return self.weights_matrix
+
+    @property
     def lengths_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Tract length matrix as numpy/JAX array.
 
@@ -570,51 +703,32 @@ class Connectome(tvbo_datamodel.Network):
         Returns
         -------
         np.ndarray or jax.Array, optional
-            Tract lengths matrix (N x N) in mm, or None if unavailable
+            Tract lengths matrix (N x N) in mm, or None if no matrix/edges
 
         Examples
         --------
         ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        L = sc.lengths_matrix
+        net = Network.from_matrix(weights, lengths)
+        L = net.lengths_matrix
         print(f"Mean length: {L.mean():.1f} mm")
         ```
         """
+        if len(self.nodes) == 1:
+            return jnp.zeros((1, 1))
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
 
-        lm = self.lengths
-        if lm is not None:
-            if getattr(lm, "values", None):
-                x = getattr(lm, "x", None)
-                y = getattr(lm, "y", None)
-                nx_ = (
-                    len(x.values)
-                    if x and getattr(x, "values", None)
-                    else self.number_of_regions
-                )
-                ny_ = (
-                    len(y.values)
-                    if y and getattr(y, "values", None)
-                    else self.number_of_regions
-                )
-                # Type guard: ensure dimensions are valid integers
-                if (
-                    nx_ is not None
-                    and ny_ is not None
-                    and isinstance(nx_, int)
-                    and isinstance(ny_, int)
-                ):
-                    return np.array(lm.values, dtype=float).reshape(nx_, ny_)
-            if getattr(lm, "dataLocation", None):
-                return pd.read_csv(lm.dataLocation, header=None).values.astype(float)  # type: ignore[arg-type,attr-defined]
-        N = getattr(self, "number_of_regions", None)
-        if N is not None and isinstance(N, int) and N > 0:
-            L = np.ones((N, N))
-            np.fill_diagonal(L, 0)
-            return L
-        return None
+        # Check for cached matrix from from_matrix (performance optimization)
+        if hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
+            return self._cached_lengths
+
+        # Compute from edges (fallback for networks built from explicit edges)
+        return self._lengths_from_edges()
+
+    @property
+    def lengths(self):
+        return self.lengths_matrix
 
     @property
     def labels(self) -> Dict[str, str]:
@@ -640,6 +754,91 @@ class Connectome(tvbo_datamodel.Network):
                 for k, e in atlas.metadata.terminology.entities.items()
             }
         return {}
+
+    @property
+    def graph(self) -> nx.MultiDiGraph:
+        """Build NetworkX MultiDiGraph from network nodes and edges.
+
+        Priority:
+        1. Use explicit nodes if available (with their properties)
+        2. Use explicit edges if available
+        3. Generate edges from weight/length matrices if no explicit edges
+        4. Fall back to matrix-only representation if no nodes defined
+
+        Returns
+        -------
+        nx.MultiDiGraph
+            Graph with node/edge attributes from schema.
+            Nodes have: id, label, dynamics, region, position, parameters
+            Edges have: weight, delay, distance, directed, source_var, target_var, coupling
+        """
+        G = nx.MultiDiGraph()
+
+        W = self.weights_matrix
+        L = self.lengths_matrix
+
+        # Step 1: Add nodes (prefer explicit nodes, fall back to matrix size)
+        if self.nodes:
+            for node in self.nodes:
+                node_id = node.id if node.id is not None else 0
+                node_attrs = {
+                    "label": node.label or f"node_{node_id}",
+                    "dynamics": node.dynamics,
+                    "region": node.region,
+                }
+                if node.position:
+                    node_attrs["x"] = node.position.x
+                    node_attrs["y"] = node.position.y
+                    node_attrs["z"] = getattr(node.position, "z", None)
+                if node.parameters:
+                    for name, param in node.parameters.items():
+                        node_attrs[f"param_{name}"] = param.value
+                G.add_node(node_id, **node_attrs)
+        elif W is not None:
+            # No explicit nodes - create from matrix dimensions
+            n = W.shape[0]
+            for i in range(n):
+                G.add_node(i, label=f"node_{i}")
+
+        # Step 2: Add edges (prefer explicit edges, fall back to matrix)
+        if self.edges:
+            # Use explicit edges
+            for edge in self.edges:
+                edge_attrs = {
+                    "directed": getattr(edge, "directed", True),
+                    "source_var": edge.source_var,
+                    "target_var": edge.target_var,
+                    "coupling": edge.coupling,
+                }
+                if edge.parameters:
+                    for name, param in edge.parameters.items():
+                        edge_attrs[name] = param.value
+                        if param.unit:
+                            edge_attrs[f"{name}_unit"] = param.unit
+
+                G.add_edge(edge.source, edge.target, **edge_attrs)
+
+                # If undirected, add reverse edge
+                if not edge_attrs["directed"]:
+                    G.add_edge(edge.target, edge.source, **edge_attrs)
+
+        elif W is not None:
+            # No explicit edges - generate from weight matrix
+            n = W.shape[0]
+            # Verify dimensions match nodes if we have nodes
+            if self.nodes and len(self.nodes) != n:
+                raise ValueError(
+                    f"Matrix dimensions ({n}) don't match number of nodes ({len(self.nodes)})"
+                )
+            for i in range(n):
+                for j in range(n):
+                    if W[i, j] != 0:
+                        edge_attrs = {"weight": float(W[i, j]), "directed": True}
+                        if L is not None:
+                            edge_attrs["distance"] = float(L[i, j])
+                        G.add_edge(i, j, **edge_attrs)
+
+        return G
 
     def __str__(self) -> str:
         parc = getattr(self, "parcellation", None)
@@ -691,44 +890,56 @@ class Connectome(tvbo_datamodel.Network):
         return Atlas(atlas_data)
 
     def compute_delays(
-        self, conduction_speed: Union[str, float] = "default"
+        self, output_unit: Optional[str] = None
     ) -> Union[np.ndarray, JaxArray]:
-        """Calculate signal propagation delays between regions.
+        """Compute transmission delays from lengths and conduction speed.
+
+        Uses sympy for unit-aware computation: delay = length / speed.
 
         Parameters
         ----------
-        conduction_speed : str or float, default="default"
-            Signal propagation speed in mm/ms. If "default", uses
-            `self.conduction_speed.value` (typically 3.0 mm/ms)
+        output_unit : str, optional
+            Desired output time unit (e.g., "ms", "s"). If None, uses network's time_unit.
 
         Returns
         -------
         np.ndarray or jax.Array
-            Delay matrix (N x N) in milliseconds
+            Delay matrix (N x N) in the specified time unit.
 
         Raises
         ------
         ValueError
-            If lengths matrix is not available
-
-        Examples
-        --------
-        ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        delays = sc.compute_delays(conduction_speed=4.0)
-        print(f"Mean delay: {delays.mean():.2f} ms")
-        ```
+            If lengths matrix or conduction speed is not available.
         """
-        if conduction_speed == "default":
-            cs_param = getattr(self, "conduction_speed", None)
-            if cs_param and hasattr(cs_param, "value"):
-                conduction_speed = cs_param.value  # type: ignore[attr-defined]
-            else:
-                conduction_speed = 3.0  # default fallback
+        import sympy.physics.units as u
+        from sympy import nsimplify
+        from sympy.parsing.sympy_parser import parse_expr
+
         lengths = self.lengths_matrix
         if lengths is None:
-            raise ValueError("Lengths matrix is not available")
-        return lengths / conduction_speed  # type: ignore[operator]
+            return np.zeros((self.number_of_nodes or 1, self.number_of_nodes or 1))
+        cs = self.conduction_speed
+        if cs is None or not hasattr(cs, "value"):
+            raise ValueError("Conduction speed not set")
+
+        # Use sympy's full unit namespace - no hardcoded mapping needed
+        unit_ns = dict(vars(u))
+
+        # Get units from network attributes (with defaults)
+        distance_unit_str = getattr(self, "distance_unit", None) or "mm"
+        time_unit_str = output_unit or getattr(self, "time_unit", None) or "ms"
+        speed_unit_str = cs.unit or f"{distance_unit_str}/{time_unit_str}"
+
+        length_unit = parse_expr(distance_unit_str, local_dict=unit_ns)
+        speed_unit = parse_expr(speed_unit_str, local_dict=unit_ns)
+        target_unit = parse_expr(time_unit_str, local_dict=unit_ns)
+
+        # delay = length / speed, then convert to target unit
+        delay_unit = length_unit / speed_unit
+        converted = u.convert_to(delay_unit, target_unit)
+        factor = float(nsimplify(converted / target_unit))
+
+        return lengths / cs.value * factor
 
     def execute(self, format: str = "tvb") -> Any:
         """Convert connectome to simulator-specific format.
@@ -752,7 +963,8 @@ class Connectome(tvbo_datamodel.Network):
         ```
         """
         if format == "tvb":
-            from tvb.datatypes.connectivity import Connectivity  # type: ignore[import-not-found]
+            from tvb.datatypes.connectivity import \
+                Connectivity  # type: ignore[import-not-found]
 
             # Ensure TVB receives plain NumPy arrays (no JAX tracers)
             _weights = np.asarray(self.weights_matrix, dtype=float)
@@ -956,7 +1168,11 @@ class Connectome(tvbo_datamodel.Network):
         return lengths / conduction_speed  # type: ignore[operator]
 
     def create_graph(self, weight_threshold: float = 0) -> nx.MultiDiGraph:
-        """Create NetworkX graph from connectivity matrices.
+        """Create NetworkX graph from network structure.
+
+        Prioritizes explicit nodes/edges representation over weight matrices.
+        This allows proper visualization of heterogeneous networks with
+        labeled nodes and typed edges.
 
         Parameters
         ----------
@@ -966,29 +1182,83 @@ class Connectome(tvbo_datamodel.Network):
         Returns
         -------
         networkx.MultiDiGraph
-            Directed multigraph with 'weight' and 'delay' edge attributes
+            Directed multigraph with 'weight' and 'delay' edge attributes.
+            Nodes have 'label' and 'dynamics' attributes when available.
+            Edges have 'source_var', 'target_var' attributes when available.
 
         Examples
         --------
         ```{python}
+        # From explicit nodes/edges
+        network = Network(nodes=[...], edges=[...])
+        G = network.create_graph()
+
+        # From weight matrix
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         G = sc.create_graph(weight_threshold=0.1)
         print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
         ```
         """
-        W = self.weights_matrix
-        D = self.calculate_delays()
-        # Use MultiDiGraph to allow asymmetric and multiple parallel edges
         G = nx.MultiDiGraph()
+
+        # Priority 1: Use explicit nodes/edges if available
+        nodes = getattr(self, "nodes", None)
+        edges = getattr(self, "edges", None)
+
+        if nodes and len(nodes) > 0:
+            # Build graph from explicit node/edge representation
+            for node in nodes:
+                node_id = getattr(node, "id", None)
+                if node_id is None:
+                    continue
+                node_attrs = {
+                    "label": getattr(node, "label", None) or f"node_{node_id}",
+                    "dynamics": getattr(node, "dynamics", None),
+                }
+                G.add_node(node_id, **node_attrs)
+
+            if edges:
+                for edge in edges:
+                    source = getattr(edge, "source", None)
+                    target = getattr(edge, "target", None)
+                    weight = getattr(edge, "weight", 1.0) or 1.0
+
+                    if source is None or target is None:
+                        continue
+                    if abs(weight) < weight_threshold:
+                        continue
+
+                    edge_attrs = {
+                        "weight": weight,
+                        "delay": getattr(edge, "delay", 0.0) or 0.0,
+                        "source_var": getattr(edge, "source_var", None),
+                        "target_var": getattr(edge, "target_var", None),
+                    }
+                    G.add_edge(source, target, **edge_attrs)
+
+            return G
+
+        # Priority 2: Fall back to weight matrix representation
+        W = self.weights_matrix
+        D = self.calculate_delays() if self.lengths_matrix is not None else None
         N_regions = self.number_of_regions
+
         if N_regions is None or W is None:
             return G
+
+        # Get node labels if available
+        labels = self.labels if hasattr(self, "labels") and self.labels else None
+
         for i in range(N_regions):
-            G.add_node(i)
+            node_attrs = {"label": labels[i] if labels else f"node_{i}"}
+            G.add_node(i, **node_attrs)
+
         for i in range(N_regions):
             for j in range(N_regions):
                 if W[i, j] > weight_threshold:
-                    G.add_edge(i, j, weight=W[i, j], delay=D[i, j])
+                    delay = D[i, j] if D is not None else 0.0
+                    G.add_edge(i, j, weight=W[i, j], delay=delay)
+
         return G
 
     def get_centers(self) -> Dict[int, Tuple[float, float, float]]:
@@ -1045,6 +1315,7 @@ class Connectome(tvbo_datamodel.Network):
         edge_kwargs: Optional[Dict[str, Any]] = None,
         node_kwargs: Optional[Dict[str, Any]] = None,
         fontsize: float = 8,
+        format: str = "networkx",
     ) -> Union[Figure, cm.ScalarMappable]:
         """Visualize connectome as network graph.
 
@@ -1084,6 +1355,11 @@ class Connectome(tvbo_datamodel.Network):
             Additional arguments passed to nx.draw_networkx_nodes
         fontsize : float, default=8
             Font size for labels
+        format : str, default="networkx"
+            Plotting format: "networkx" for standard plotting, "bsplot" for fancy
+            node/edge plotting with text boxes and curved edges. When using "bsplot",
+            node labels are displayed with neuron (🔵) and synapse (🔗) icons based
+            on node type.
 
         Returns
         -------
@@ -1124,15 +1400,42 @@ class Connectome(tvbo_datamodel.Network):
         if isinstance(edge_cmap, str):
             edge_cmap = plt.get_cmap(edge_cmap)
 
-        # Build graph on demand from current weights and delays
-        W = self.weights_matrix
-        if W is None:
-            W = np.zeros((1, 1))
-        G = self.create_graph(
-            weight_threshold=float(np.percentile(W, threshold_percentile))
-        )
+        # Build graph on demand
+        # Determine weight threshold based on explicit edges or weight matrix
+        nodes = getattr(self, "nodes", None)
+        edges = getattr(self, "edges", None)
+
+        G = self.graph
+
+        if threshold_percentile > 0:
+            # Remove edges below threshold
+            edges_to_remove = [
+                (u, v, k)
+                for u, v, k, data in G.edges(keys=True, data=True)
+                if abs(data.get("weight", 1.0))
+                < np.percentile(self.weights, threshold_percentile)
+            ]
+            G.remove_edges_from(edges_to_remove)
 
         # Generate positions for nodes
+        # First, check if nodes have explicit position coordinates
+        nodes_obj = getattr(self, "nodes", None)
+        nodes_have_positions = False
+        if nodes_obj and len(nodes_obj) > 0:
+            # Check if any node has a position attribute with x, y coordinates
+            positions_from_nodes = {}
+            for i, node in enumerate(nodes_obj):
+                node_pos = getattr(node, "position", None)
+                if node_pos is not None:
+                    x = getattr(node_pos, "x", None)
+                    y = getattr(node_pos, "y", None)
+                    if x is not None and y is not None:
+                        node_id = getattr(node, "id", i) or i
+                        positions_from_nodes[node_id] = [float(x), float(y)]
+            if len(positions_from_nodes) == len(nodes_obj):
+                nodes_have_positions = True
+                pos = positions_from_nodes  # type: ignore[assignment]
+
         if pos == "spring":
             pos = nx.spring_layout(  # type: ignore[assignment]
                 G,
@@ -1141,7 +1444,11 @@ class Connectome(tvbo_datamodel.Network):
             )
             ax.set_box_aspect(1)
 
-        if plot_brain:
+        if pos == "graphviz":
+            pos = nx.nx_agraph.graphviz_layout(G, prog="neato")  # type: ignore[assignment]
+            ax.set_box_aspect(1)
+
+        if plot_brain and not nodes_have_positions:
             view = plot_brain
 
             if view == "horizontal":
@@ -1193,8 +1500,12 @@ class Connectome(tvbo_datamodel.Network):
         else:
             edge_colors = edge_cmap(norm_edge_attr)
 
-        # Node strengths (incoming)
-        node_in_strength = np.sum(W, axis=1).astype(float)
+        # Node strengths (incoming) - compute from graph edges for accuracy
+        node_list = list(G.nodes())
+        node_in_strength = np.zeros(len(node_list))
+        for i, node_id in enumerate(node_list):
+            in_edges = G.in_edges(node_id, data=True)
+            node_in_strength[i] = sum(abs(d.get("weight", 1.0)) for _, _, d in in_edges)
         if log_in_strength:
             node_in_strength = np.log1p(node_in_strength)
         norm_node_in_strength = _safe_norm(node_in_strength)
@@ -1207,58 +1518,147 @@ class Connectome(tvbo_datamodel.Network):
         if node_colors == "in-strength":
             node_coloring = norm_node_in_strength
         elif node_colors == "node":
-            nodes = np.array(list(G.nodes), dtype=float)
-            node_coloring = _safe_norm(nodes)
+            nodes_arr = np.array(node_list, dtype=float)
+            node_coloring = _safe_norm(nodes_arr)
         else:
             # constant color fallback
             node_coloring = np.zeros(len(G.nodes)) if len(G.nodes) > 0 else np.array([])
 
         node_colors = node_cmap(node_coloring)
-        # Use explicit edgelist to keep color order aligned with edges_list
-        edgelist_draw = [(u, v, k) for (u, v, k, _) in edges_list]
-        nx.draw_networkx_edges(  # type: ignore[call-overload]
-            G,
-            pos,  # type: ignore[arg-type]
-            edgelist=edgelist_draw if edges_list else None,
-            edge_color=edge_colors,
-            edge_cmap=edge_cmap,
-            ax=ax,
-            **edge_kwargs,
-        )
-        nx.draw_networkx_nodes(  # type: ignore[call-overload]
-            G,
-            pos,  # type: ignore[arg-type]
-            node_size=node_sizes,  # Node size
-            node_color="white",  # No fill
-            edgecolors=node_colors,  # Outline color
-            linewidths=1,  # Outline width
-            ax=ax,
-            **node_kwargs,
-        )
-        if node_labels:
-            nx.draw_networkx_labels(
-                G,
-                pos,  # type: ignore[arg-type]
-                labels={i: f"{i}" for i in G.nodes()},
+
+        # Branch based on format
+        if format == "bsplot":
+            from bsplot.graph.edges import draw_custom_edges
+            from bsplot.graph.nodes import draw_custom_nodes
+
+            # Build label dict with neuron/synapse icons
+            label_dict = {}
+            node_colors_dict = {}
+            for i, node_id in enumerate(G.nodes()):
+                node_data = G.nodes[node_id]
+                label = node_data.get("label", None) or str(node_id)
+                node_type = node_data.get("type", "").lower()
+                dynamics = node_data.get("dynamics", "").lower()
+
+                # Add icons based on node type or dynamics name
+                is_synapse = (
+                    "synapse" in node_type
+                    or "synapse" in dynamics
+                    or "synapse" in label.lower()
+                    or "depression" in dynamics
+                    or "facilitation" in dynamics
+                    or "tsodyks" in dynamics
+                    or "plasticity" in dynamics
+                )
+                is_neuron = (
+                    "neuron" in node_type
+                    or "neuron" in dynamics
+                    or "population" in node_type
+                    or "rate" in dynamics
+                )
+
+                if is_synapse:
+                    icon = "[S] "  # Synapse/connection icon
+                elif is_neuron:
+                    icon = "[N] "  # Neuron/node icon
+                else:
+                    icon = ""
+
+                label_dict[node_id] = f"{icon}{label}"
+                node_colors_dict[node_id] = node_colors[i]
+
+            # Create a relabeled graph with string node IDs for bsplot compatibility
+            # bsplot expects string node IDs, not integers
+            G_str = nx.relabel_nodes(G, {n: str(n) for n in G.nodes()})
+            pos_str = {str(k): v for k, v in pos.items()}  # type: ignore[union-attr]
+            label_dict_str = {str(k): v for k, v in label_dict.items()}
+            node_colors_dict_str = {str(k): v for k, v in node_colors_dict.items()}
+
+            # Add 'type' attribute to edges if missing (bsplot requires it)
+            for u, v, k, d in G_str.edges(keys=True, data=True):
+                if "type" not in d:
+                    # Use edge label or weight as type for visualization
+                    d["type"] = d.get("label", f"w={d.get('weight', 1.0):.2f}")
+
+            # Draw edges with bsplot curved style
+            draw_custom_edges(
+                G_str,
+                pos_str,
                 ax=ax,
+                edge_labels=edge_labels,
+                edge_colors=edge_cmap.name if hasattr(edge_cmap, "name") else "viridis",
+                color_by="type",
+                edge_radius=0.1,
+                linewidth=1.5,
                 font_size=fontsize,
             )
-        if edge_labels:
-            if edges_list:
-                edge_labels_dict = {}
-                for u, v, k, d in edges_list:
-                    val = d.get(edge_color, None)
-                    try:
-                        edge_labels_dict[(u, v, k)] = f"{float(val):.2f}"  # type: ignore[arg-type]
-                    except (TypeError, ValueError):
-                        edge_labels_dict[(u, v, k)] = str(val)
-                nx.draw_networkx_edge_labels(
+
+            # Draw nodes with bsplot text box style
+            draw_custom_nodes(
+                G_str,
+                pos_str,
+                labels=label_dict_str,
+                font_size=fontsize,
+                ax=ax,
+                node_colors=node_colors_dict_str,
+                alpha=0.9,
+            )
+
+            ax.axis("off")
+
+        else:
+            # Standard networkx plotting
+            # Use explicit edgelist to keep color order aligned with edges_list
+            edgelist_draw = [(u, v, k) for (u, v, k, _) in edges_list]
+            nx.draw_networkx_edges(  # type: ignore[call-overload]
+                G,
+                pos,  # type: ignore[arg-type]
+                edgelist=edgelist_draw if edges_list else None,
+                edge_color=edge_colors,
+                edge_cmap=edge_cmap,
+                ax=ax,
+                **edge_kwargs,
+            )
+            nx.draw_networkx_nodes(  # type: ignore[call-overload]
+                G,
+                pos,  # type: ignore[arg-type]
+                node_size=node_sizes,  # Node size
+                node_color="white",  # No fill
+                edgecolors=node_colors,  # Outline color
+                linewidths=1,  # Outline width
+                ax=ax,
+                **node_kwargs,
+            )
+            if node_labels:
+                # Use node 'label' attribute if available, otherwise node id
+                label_dict = {}
+                for node_id in G.nodes():
+                    node_data = G.nodes[node_id]
+                    label = node_data.get("label", None)
+                    label_dict[node_id] = label if label else f"{node_id}"
+                nx.draw_networkx_labels(
                     G,
                     pos,  # type: ignore[arg-type]
-                    edge_labels=edge_labels_dict,
+                    labels=label_dict,
                     ax=ax,
                     font_size=fontsize,
                 )
+            if edge_labels:
+                if edges_list:
+                    edge_labels_dict = {}
+                    for u, v, k, d in edges_list:
+                        val = d.get(edge_color, None)
+                        try:
+                            edge_labels_dict[(u, v, k)] = f"{float(val):.2f}"  # type: ignore[arg-type]
+                        except (TypeError, ValueError):
+                            edge_labels_dict[(u, v, k)] = str(val)
+                    nx.draw_networkx_edge_labels(
+                        G,
+                        pos,  # type: ignore[arg-type]
+                        edge_labels=edge_labels_dict,
+                        ax=ax,
+                        font_size=fontsize,
+                    )
         if return_fig:
             assert fig is not None
             plt.close()
@@ -1280,6 +1680,7 @@ class Connectome(tvbo_datamodel.Network):
         lengths_kwargs: Optional[Dict[str, Any]] = None,
         graph_kwargs: Optional[Dict[str, Any]] = None,
         log_weights: bool = False,
+        plot_brain=False,
     ) -> Figure:
         """Create comprehensive visualization with graph and matrices.
 
@@ -1329,7 +1730,7 @@ class Connectome(tvbo_datamodel.Network):
         if "edge_cmap" not in graph_kwargs:
             graph_kwargs["edge_cmap"] = "magma"
 
-        g = self.plot_graph(axs[0], **graph_kwargs)
+        g = self.plot_graph(axs[0], plot_brain=plot_brain, **graph_kwargs)
         axs[0].axis("off")
         w = self.plot_weights(axs[1], log=log_weights, **weights_kwargs)
         l = self.plot_lengths(axs[2], **lengths_kwargs)
@@ -1384,3 +1785,7 @@ class Connectome(tvbo_datamodel.Network):
         self.normalization = tvbo_datamodel.Equation(
             rhs="(W - W_min) / (W_max - W_min)"
         )
+
+
+class Connectome(Network):
+    pass

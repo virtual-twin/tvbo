@@ -8,7 +8,7 @@ from matplotlib.animation import FuncAnimation
 
 from tvbo.knowledge.simulation import equations
 from tvbo.utils import Bunch
-from tvbo.data.tvbo_data.connectomes import Connectome
+from tvbo.data.tvbo_data.connectomes import Network
 from tvbo.utils import format_pytree_as_string
 
 import jax
@@ -1204,7 +1204,7 @@ class SimulationState:
     def __init__(
         self,
         initial_conditions: TimeSeries,
-        network: Connectome,
+        network: Network,
         dt,
         noise,
         parameters,

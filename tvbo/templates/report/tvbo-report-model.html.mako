@@ -5,7 +5,7 @@ import networkx as nx
 
 state_equations = [eq for k, eq in model.equations.items() if k in model.metadata.state_variables]
 derived_variables = [eq for k, eq in model.equations.items() if k in model.metadata.derived_variables]
-output_transforms = [eq for k, eq in model.equations.items() if k in model.metadata.output_transforms]
+output = [eq for k, eq in model.equations.items() if k in model.metadata.output]
 derived_parameters = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
     for p in model.metadata.derived_parameters.values()
@@ -84,10 +84,10 @@ svg_content = pydot_graph.create_svg().decode("utf-8")
         % endfor
     </div>
 
-    % if output_transforms:
+    % if output:
     <h3>Output Transforms</h3>
     <div class="equations">
-        % for eq in output_transforms:
+        % for eq in output:
         <div class="equation">
             <p>$$ ${latex(eq, mul_symbol='*')} $$</p>
         </div>

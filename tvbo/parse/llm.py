@@ -28,7 +28,7 @@ You are an expert assistant tasked with extracting data from scientific text and
 
 2. **Models**: If the text references any model from the following list, set it as the 'label' in the 'derived_from_model' attribute. Ensure that this attribute complies with the NeuralMassModel schema, including:
    - 'label': The model name (e.g., 'Kuramoto')
-   - Other required fields according to the schema (e.g., 'iri', 'modified', 'output_transform').
+   - Other required fields according to the schema (e.g., 'iri', 'modified', 'output').
    The models to check include: ['GastSchmidtKnosche_SD', 'CoombesByrne', 'CoombesByrne2D', 'DumontGutkin', 'Epileptor2D', 'Epileptor5D', 'EpileptorRestingState', 'GastSchmidtKnosche_SF', 'Generic2dOscillator', 'GenericLinear', 'Hopfield', 'JansenRit', 'KIonEx', 'Kuramoto', 'LarterBreakspear', 'MontbrioPazoRoxin', 'ReducedWongWang', 'ReducedWongWangExcInh', 'SupHopf', 'WilsonCowan', 'ZerlautAdaptationFirstOrder', 'ZetterbergJansen'].
 
 3. **Parameters**: Extract all variables used in equations as parameters, ensuring:

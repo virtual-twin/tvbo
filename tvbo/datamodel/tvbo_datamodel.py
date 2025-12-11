@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-07T00:05:13
+# Generation date: 2025-12-10T15:01:32
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -516,12 +516,11 @@ class Network(YAMLRoot):
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[str] = None
-    weights: Optional[Union[dict, Matrix]] = None
-    lengths: Optional[Union[dict, Matrix]] = None
     normalization: Optional[Union[dict, Equation]] = None
-    node_labels: Optional[Union[str, list[str]]] = empty_list()
     global_coupling_strength: Optional[Union[dict, "Parameter"]] = None
     conduction_speed: Optional[Union[dict, "Parameter"]] = None
+    distance_unit: Optional[str] = "mm"
+    time_unit: Optional[str] = "ms"
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -552,24 +551,20 @@ class Network(YAMLRoot):
         if self.tractogram is not None and not isinstance(self.tractogram, str):
             self.tractogram = str(self.tractogram)
 
-        if self.weights is not None and not isinstance(self.weights, Matrix):
-            self.weights = Matrix(**as_dict(self.weights))
-
-        if self.lengths is not None and not isinstance(self.lengths, Matrix):
-            self.lengths = Matrix(**as_dict(self.lengths))
-
         if self.normalization is not None and not isinstance(self.normalization, Equation):
             self.normalization = Equation(**as_dict(self.normalization))
-
-        if not isinstance(self.node_labels, list):
-            self.node_labels = [self.node_labels] if self.node_labels is not None else []
-        self.node_labels = [v if isinstance(v, str) else str(v) for v in self.node_labels]
 
         if self.global_coupling_strength is not None and not isinstance(self.global_coupling_strength, Parameter):
             self.global_coupling_strength = Parameter(**as_dict(self.global_coupling_strength))
 
         if self.conduction_speed is not None and not isinstance(self.conduction_speed, Parameter):
             self.conduction_speed = Parameter(**as_dict(self.conduction_speed))
+
+        if self.distance_unit is not None and not isinstance(self.distance_unit, str):
+            self.distance_unit = str(self.distance_unit)
+
+        if self.time_unit is not None and not isinstance(self.time_unit, str):
+            self.time_unit = str(self.time_unit)
 
         super().__post_init__(**kwargs)
 
@@ -630,7 +625,8 @@ class Node(YAMLRoot):
 @dataclass(repr=False)
 class Edge(YAMLRoot):
     """
-    A directed edge in a network with coupling and connectivity properties
+    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance)
+    are stored in the parameters slot with optional units.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -641,13 +637,13 @@ class Edge(YAMLRoot):
 
     source: int = None
     target: int = None
-    coupling: Union[dict, "Coupling"] = None
     label: Optional[str] = None
     description: Optional[str] = None
-    weight: Optional[float] = 1.0
-    delay: Optional[float] = 0.0
-    distance: Optional[float] = None
-    tract_properties: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    source_var: Optional[str] = None
+    target_var: Optional[str] = None
+    coupling: Optional[Union[str, CouplingName]] = None
+    directed: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.source):
@@ -660,28 +656,25 @@ class Edge(YAMLRoot):
         if not isinstance(self.target, int):
             self.target = int(self.target)
 
-        if self._is_empty(self.coupling):
-            self.MissingRequiredField("coupling")
-        if not isinstance(self.coupling, Coupling):
-            self.coupling = Coupling(**as_dict(self.coupling))
-
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if self.weight is not None and not isinstance(self.weight, float):
-            self.weight = float(self.weight)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
-        if self.delay is not None and not isinstance(self.delay, float):
-            self.delay = float(self.delay)
+        if self.source_var is not None and not isinstance(self.source_var, str):
+            self.source_var = str(self.source_var)
 
-        if self.distance is not None and not isinstance(self.distance, float):
-            self.distance = float(self.distance)
+        if self.target_var is not None and not isinstance(self.target_var, str):
+            self.target_var = str(self.target_var)
 
-        if self.tract_properties is not None and not isinstance(self.tract_properties, str):
-            self.tract_properties = str(self.tract_properties)
+        if self.coupling is not None and not isinstance(self.coupling, CouplingName):
+            self.coupling = CouplingName(self.coupling)
+
+        if self.directed is not None and not isinstance(self.directed, Bool):
+            self.directed = Bool(self.directed)
 
         super().__post_init__(**kwargs)
 
@@ -919,7 +912,7 @@ class Dynamics(YAMLRoot):
     coupling_inputs: Optional[Union[dict[Union[str, CouplingInputName], Union[dict, "CouplingInput"]], list[Union[dict, "CouplingInput"]]]] = empty_dict()
     state_variables: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
     modified: Optional[Union[bool, Bool]] = None
-    output_transforms: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    output: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
     derived_from_model: Optional[Union[str, NeuralMassModelName]] = None
     number_of_modes: Optional[int] = 1
     local_coupling_term: Optional[Union[str, ParameterName]] = None
@@ -968,7 +961,7 @@ class Dynamics(YAMLRoot):
         if self.modified is not None and not isinstance(self.modified, Bool):
             self.modified = Bool(self.modified)
 
-        self._normalize_inlined_as_dict(slot_name="output_transforms", slot_type=DerivedVariable, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="output", slot_type=DerivedVariable, key_name="name", keyed=True)
 
         if self.derived_from_model is not None and not isinstance(self.derived_from_model, NeuralMassModelName):
             self.derived_from_model = NeuralMassModelName(self.derived_from_model)
@@ -1939,7 +1932,7 @@ class SimulationExperiment(YAMLRoot):
         if self.local_dynamics is not None and not isinstance(self.local_dynamics, Dynamics):
             self.local_dynamics = Dynamics(**as_dict(self.local_dynamics))
 
-        self._normalize_inlined_as_list(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
         if self.integration is not None and not isinstance(self.integration, Integrator):
             self.integration = Integrator(**as_dict(self.integration))
@@ -3721,23 +3714,20 @@ slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcell
 slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
                    model_uri=TVBO.network__tractogram, domain=None, range=Optional[str])
 
-slots.network__weights = Slot(uri=TVBO.weights, name="network__weights", curie=TVBO.curie('weights'),
-                   model_uri=TVBO.network__weights, domain=None, range=Optional[Union[dict, Matrix]])
-
-slots.network__lengths = Slot(uri=TVBO.lengths, name="network__lengths", curie=TVBO.curie('lengths'),
-                   model_uri=TVBO.network__lengths, domain=None, range=Optional[Union[dict, Matrix]])
-
 slots.network__normalization = Slot(uri=TVBO.normalization, name="network__normalization", curie=TVBO.curie('normalization'),
                    model_uri=TVBO.network__normalization, domain=None, range=Optional[Union[dict, Equation]])
-
-slots.network__node_labels = Slot(uri=TVBO.node_labels, name="network__node_labels", curie=TVBO.curie('node_labels'),
-                   model_uri=TVBO.network__node_labels, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.network__global_coupling_strength = Slot(uri=TVBO.global_coupling_strength, name="network__global_coupling_strength", curie=TVBO.curie('global_coupling_strength'),
                    model_uri=TVBO.network__global_coupling_strength, domain=None, range=Optional[Union[dict, Parameter]])
 
 slots.network__conduction_speed = Slot(uri=TVBO.conduction_speed, name="network__conduction_speed", curie=TVBO.curie('conduction_speed'),
                    model_uri=TVBO.network__conduction_speed, domain=None, range=Optional[Union[dict, Parameter]])
+
+slots.network__distance_unit = Slot(uri=TVBO.distance_unit, name="network__distance_unit", curie=TVBO.curie('distance_unit'),
+                   model_uri=TVBO.network__distance_unit, domain=None, range=Optional[str])
+
+slots.network__time_unit = Slot(uri=TVBO.time_unit, name="network__time_unit", curie=TVBO.curie('time_unit'),
+                   model_uri=TVBO.network__time_unit, domain=None, range=Optional[str])
 
 slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie('id'),
                    model_uri=TVBO.node__id, domain=None, range=int)
@@ -3763,20 +3753,17 @@ slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie
 slots.edge__target = Slot(uri=TVBO.target, name="edge__target", curie=TVBO.curie('target'),
                    model_uri=TVBO.edge__target, domain=None, range=int)
 
+slots.edge__source_var = Slot(uri=TVBO.source_var, name="edge__source_var", curie=TVBO.curie('source_var'),
+                   model_uri=TVBO.edge__source_var, domain=None, range=Optional[str])
+
+slots.edge__target_var = Slot(uri=TVBO.target_var, name="edge__target_var", curie=TVBO.curie('target_var'),
+                   model_uri=TVBO.edge__target_var, domain=None, range=Optional[str])
+
 slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO.curie('coupling'),
-                   model_uri=TVBO.edge__coupling, domain=None, range=Union[dict, Coupling])
+                   model_uri=TVBO.edge__coupling, domain=None, range=Optional[Union[str, CouplingName]])
 
-slots.edge__weight = Slot(uri=TVBO.weight, name="edge__weight", curie=TVBO.curie('weight'),
-                   model_uri=TVBO.edge__weight, domain=None, range=Optional[float])
-
-slots.edge__delay = Slot(uri=TVBO.delay, name="edge__delay", curie=TVBO.curie('delay'),
-                   model_uri=TVBO.edge__delay, domain=None, range=Optional[float])
-
-slots.edge__distance = Slot(uri=TVBO.distance, name="edge__distance", curie=TVBO.curie('distance'),
-                   model_uri=TVBO.edge__distance, domain=None, range=Optional[float])
-
-slots.edge__tract_properties = Slot(uri=TVBO.tract_properties, name="edge__tract_properties", curie=TVBO.curie('tract_properties'),
-                   model_uri=TVBO.edge__tract_properties, domain=None, range=Optional[str])
+slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
+                   model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.observationModel__transformation = Slot(uri=TVBO.transformation, name="observationModel__transformation", curie=TVBO.curie('transformation'),
                    model_uri=TVBO.observationModel__transformation, domain=None, range=Optional[Union[dict, Function]])
@@ -3862,8 +3849,8 @@ slots.dynamics__state_variables = Slot(uri=TVBO.state_variables, name="dynamics_
 slots.dynamics__modified = Slot(uri=TVBO.modified, name="dynamics__modified", curie=TVBO.curie('modified'),
                    model_uri=TVBO.dynamics__modified, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.dynamics__output_transforms = Slot(uri=TVBO.output_transforms, name="dynamics__output_transforms", curie=TVBO.curie('output_transforms'),
-                   model_uri=TVBO.dynamics__output_transforms, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+slots.dynamics__output = Slot(uri=TVBO.output, name="dynamics__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.dynamics__output, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.dynamics__derived_from_model = Slot(uri=TVBO.derived_from_model, name="dynamics__derived_from_model", curie=TVBO.curie('derived_from_model'),
                    model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[str, NeuralMassModelName]])
