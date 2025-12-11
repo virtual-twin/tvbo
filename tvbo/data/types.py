@@ -688,128 +688,128 @@ class TimeSeries(BaseTimeSeries):
         )
 
 
-class TimeSeriesRegion(TimeSeries):
-    """A time-series associated with the regions of a network."""
+# class TimeSeriesRegion(TimeSeries):
+#     """A time-series associated with the regions of a network."""
 
-    # network = Attr(field_type=network.Connectivity)
-    # region_mapping_volume = Attr(
-    #     field_type=region_mapping.RegionVolumeMapping, required=False
-    # )
-    # region_mapping = Attr(field_type=region_mapping.RegionMapping, required=False)
-    # labels_ordering = List(of=str, default=("Time", "State Variable", "Region", "Mode"))
+#     # network = Attr(field_type=network.Connectivity)
+#     # region_mapping_volume = Attr(
+#     #     field_type=region_mapping.RegionVolumeMapping, required=False
+#     # )
+#     # region_mapping = Attr(field_type=region_mapping.RegionMapping, required=False)
+#     # labels_ordering = List(of=str, default=("Time", "State Variable", "Region", "Mode"))
 
-    def summary_info(self):
-        """
-        Gather scientifically interesting summary information from an instance of this datatype.
-        """
-        summary = super(TimeSeriesRegion, self).summary_info()
-        summary.update(
-            {
-                "Source Connectivity": self.network.title,
-                "Region Mapping": (
-                    self.region_mapping.title if self.region_mapping else "None"
-                ),
-                "Region Mapping Volume": (
-                    self.region_mapping_volume.title
-                    if self.region_mapping_volume
-                    else "None"
-                ),
-            }
-        )
-        return summary
+#     def summary_info(self):
+#         """
+#         Gather scientifically interesting summary information from an instance of this datatype.
+#         """
+#         summary = super(TimeSeriesRegion, self).summary_info()
+#         summary.update(
+#             {
+#                 "Source Connectivity": self.network.title,
+#                 "Region Mapping": (
+#                     self.region_mapping.title if self.region_mapping else "None"
+#                 ),
+#                 "Region Mapping Volume": (
+#                     self.region_mapping_volume.title
+#                     if self.region_mapping_volume
+#                     else "None"
+#                 ),
+#             }
+#         )
+#         return summary
 
-    def animate_time_series(
-        ts,
-        plane="sagittal",
-        state=0,
-        mode=0,
-        interval=100,
-        window_dt=1000,
-        cmap="viridis",
-        node_size=100,
-        line_kwargs={},
-    ):
-        """
-        Creates an animated 2D scatter plot from a 4D time-series object,
-        with a second axis for the time-series progression showing all regions.
+#     def animate_time_series(
+#         ts,
+#         plane="sagittal",
+#         state=0,
+#         mode=0,
+#         interval=100,
+#         window_dt=1000,
+#         cmap="viridis",
+#         node_size=100,
+#         line_kwargs={},
+#     ):
+#         """
+#         Creates an animated 2D scatter plot from a 4D time-series object,
+#         with a second axis for the time-series progression showing all regions.
 
-        Parameters:
-        - ts: Time series object with `ts.time`, `ts.data`, and `ts.network.centres`.
-            `ts.data` has shape (time, state, region, mode).
-        - plane: Projection plane ('sagittal', 'horizontal', 'axial').
-        - state: Index of the state to select or None to aggregate across states.
-        - mode: Index of the mode to select or None to aggregate across modes.
-        - interval: Time interval between frames in milliseconds.
-        - aggregation: Aggregation method ('mean', 'sum') if state or mode is None.
-        """
-        # Map plane to coordinates
-        if plane == "sagittal":
-            x, y = ts.network.centres[:, 1], ts.network.centres[:, 2]
-        elif plane == "horizontal":
-            x, y = ts.network.centres[:, 0], ts.network.centres[:, 1]
-        elif plane == "axial":
-            x, y = ts.network.centres[:, 0], ts.network.centres[:, 2]
-        else:
-            raise ValueError(
-                "Invalid plane. Choose from 'sagittal', 'horizontal', 'axial'."
-            )
+#         Parameters:
+#         - ts: Time series object with `ts.time`, `ts.data`, and `ts.network.centres`.
+#             `ts.data` has shape (time, state, region, mode).
+#         - plane: Projection plane ('sagittal', 'horizontal', 'axial').
+#         - state: Index of the state to select or None to aggregate across states.
+#         - mode: Index of the mode to select or None to aggregate across modes.
+#         - interval: Time interval between frames in milliseconds.
+#         - aggregation: Aggregation method ('mean', 'sum') if state or mode is None.
+#         """
+#         # Map plane to coordinates
+#         if plane == "sagittal":
+#             x, y = ts.network.centres[:, 1], ts.network.centres[:, 2]
+#         elif plane == "horizontal":
+#             x, y = ts.network.centres[:, 0], ts.network.centres[:, 1]
+#         elif plane == "axial":
+#             x, y = ts.network.centres[:, 0], ts.network.centres[:, 2]
+#         else:
+#             raise ValueError(
+#                 "Invalid plane. Choose from 'sagittal', 'horizontal', 'axial'."
+#             )
 
-        # Prepare data based on state and mode selection or aggregation
-        data = ts.data
-        data = data[:, state, :, mode][::window_dt]  # Fix state
-        data = (data - np.min(data)) / (
-            np.max(data) - np.min(data)
-        )  # Normalize to [0, 1]
+#         # Prepare data based on state and mode selection or aggregation
+#         data = ts.data
+#         data = data[:, state, :, mode][::window_dt]  # Fix state
+#         data = (data - np.min(data)) / (
+#             np.max(data) - np.min(data)
+#         )  # Normalize to [0, 1]
 
-        time = ts.time[::window_dt]
-        n_regions = data.shape[1]
+#         time = ts.time[::window_dt]
+#         n_regions = data.shape[1]
 
-        # Initialize figure and axes
-        fig, (ax, ax_ts) = plt.subplots(1, 2, layout="compressed", figsize=(8, 4))
-        sc = ax.scatter(x, y, c=data[0], cmap="viridis", s=node_size, vmin=0, vmax=1)
+#         # Initialize figure and axes
+#         fig, (ax, ax_ts) = plt.subplots(1, 2, layout="compressed", figsize=(8, 4))
+#         sc = ax.scatter(x, y, c=data[0], cmap="viridis", s=node_size, vmin=0, vmax=1)
 
-        ax.set_title(f"Time: {time[0]:.2f}")
-        ax.set_aspect("equal")
-        fig.colorbar(sc, ax=ax, label="Data Intensity", shrink=0.5)
+#         ax.set_title(f"Time: {time[0]:.2f}")
+#         ax.set_aspect("equal")
+#         fig.colorbar(sc, ax=ax, label="Data Intensity", shrink=0.5)
 
-        # Create evenly spaced colors from the viridis colormap
-        colors = colormaps[cmap](np.linspace(0, 1, n_regions))
+#         # Create evenly spaced colors from the viridis colormap
+#         colors = colormaps[cmap](np.linspace(0, 1, n_regions))
 
-        # Initialize the time series plot for all regions
-        lines = []
-        for i, color in enumerate(colors):
-            (line,) = ax_ts.plot(
-                [], [], color=color, label=f"Region {i+1}", **line_kwargs
-            )
-            lines.append(line)
-        (avg_line,) = ax_ts.plot([], [], color="red", linewidth=2, label="Average")
+#         # Initialize the time series plot for all regions
+#         lines = []
+#         for i, color in enumerate(colors):
+#             (line,) = ax_ts.plot(
+#                 [], [], color=color, label=f"Region {i+1}", **line_kwargs
+#             )
+#             lines.append(line)
+#         (avg_line,) = ax_ts.plot([], [], color="red", linewidth=2, label="Average")
 
-        ax_ts.set_xlim(time[0], time[-1])
-        ax_ts.set_ylim(0, 1.1)
-        ax_ts.set_title("Time-Series Progression")
-        ax_ts.set_xlabel("Time")
-        ax_ts.set_ylabel("Intensity")
+#         ax_ts.set_xlim(time[0], time[-1])
+#         ax_ts.set_ylim(0, 1.1)
+#         ax_ts.set_title("Time-Series Progression")
+#         ax_ts.set_xlabel("Time")
+#         ax_ts.set_ylabel("Intensity")
 
-        # Update function for animation
-        def update(frame):
-            sc.set_array(data[frame])
-            ax.set_title(f"Time: {time[frame]:.2f}")
-            for i, line in enumerate(lines):
-                line.set_xdata(time[: frame + 1])  # Update X data for each region
-                line.set_ydata(data[: frame + 1, i])  # Update Y data for each region
-            avg_line.set_xdata(time[: frame + 1])  # Update X data for average
-            avg_line.set_ydata(
-                data[: frame + 1].mean(axis=1)
-            )  # Update Y data for average
-            return [sc] + lines + [avg_line]
+#         # Update function for animation
+#         def update(frame):
+#             sc.set_array(data[frame])
+#             ax.set_title(f"Time: {time[frame]:.2f}")
+#             for i, line in enumerate(lines):
+#                 line.set_xdata(time[: frame + 1])  # Update X data for each region
+#                 line.set_ydata(data[: frame + 1, i])  # Update Y data for each region
+#             avg_line.set_xdata(time[: frame + 1])  # Update X data for average
+#             avg_line.set_ydata(
+#                 data[: frame + 1].mean(axis=1)
+#             )  # Update Y data for average
+#             return [sc] + lines + [avg_line]
 
-        # Create animation
-        ani = FuncAnimation(
-            fig, update, frames=len(time), interval=interval, blit=False
-        )
+#         # Create animation
+#         ani = FuncAnimation(
+#             fig, update, frames=len(time), interval=interval, blit=False
+#         )
 
-        plt.close()
-        return ani
+#         plt.close()
+#         return ani
 
 
 class SimulationResult(Bunch):
