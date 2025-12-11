@@ -692,22 +692,30 @@ class TimeSeries(BaseTimeSeries):
         output_dir: str,
         subject: str = "01",
         session: str | None = None,
-        task: str = "simulation",
+        description: str = "tvbsim",
         run: int | None = None,
-        description: str | None = None,
+        ts_label: str = "sim",
         experiment=None,
         include_model: bool = True,
         include_connectivity: bool = True,
-        compression: str = "gzip",
     ) -> str:
         """
         Export TimeSeries data to BIDS-compliant format (BEP034).
 
-        Creates a BIDS dataset structure with:
-        - Time series data as TSV files
-        - Model equations as LEMS XML files (if experiment provided)
-        - Connectivity data as TSV files (if network is available)
+        Creates a BIDS dataset structure following the Computational Model
+        Specification (BEP034 v1.0.0) with:
+        - net/: Network connectivity files (weights, distances)
+        - ts/: Time series data files
+        - eq/: Model equations (tvbo format)
+        - coord/: Region coordinates (if available)
         - JSON sidecar files with metadata
+
+        File naming follows BEP034 pattern:
+        - `sub-<label>_desc-<label>_net-weights_id-<id>.tsv`
+        - `sub-<label>_desc-<label>_ts-<label>_id-<id>.tsv`
+        - `eq-<label>_desc-<description>_id-<id>.yaml`
+
+        The `id-<id>` is computed as a hash of the JSON sidecar contents.
 
         Parameters
         ----------
@@ -717,21 +725,19 @@ class TimeSeries(BaseTimeSeries):
             Subject identifier (without 'sub-' prefix). Default: '01'.
         session : str, optional
             Session identifier (without 'ses-' prefix).
-        task : str
-            Task name for the simulation. Default: 'simulation'.
+        description : str
+            Description label for the output files. Default: 'tvbsim'.
         run : int, optional
             Run number.
-        description : str, optional
-            Description label for the output files.
+        ts_label : str
+            Time series label (e.g., 'sim', 'bold', 'eeg'). Default: 'sim'.
         experiment : SimulationExperiment, optional
             The source simulation experiment for full provenance tracking.
-            If provided, model and connectivity files will be included.
+            If not provided, uses self.source_experiment if available.
         include_model : bool
-            Whether to export model equations as LEMS XML. Default: True.
+            Whether to export model equations. Default: True.
         include_connectivity : bool
             Whether to export connectivity data. Default: True.
-        compression : str
-            Compression for TSV files ('gzip' or None). Default: 'gzip'.
 
         Returns
         -------
@@ -741,170 +747,318 @@ class TimeSeries(BaseTimeSeries):
         Examples
         --------
         >>> ts = experiment.run()
-        >>> ts.to_bids("./bids_output", subject="01", task="rest", experiment=experiment)
-        './bids_output'
+        >>> ts.to_bids("./derivatives/tvbo", subject="01", description="simulation")
+        './derivatives/tvbo'
 
         Notes
         -----
-        Follows BIDS BEP034 Computational Modeling extension:
-        https://bids-specification.readthedocs.io/en/latest/modality-specific-files/computational-models.html
+        Follows BIDS BEP034 Computational Modeling extension v1.0.0.
+        Uses tvbo format for model equations instead of LEMS XML.
         """
+        import hashlib
         import json
         import os
         from datetime import datetime
 
         import pandas as pd
 
+        # Use source_experiment if not explicitly provided
+        if experiment is None:
+            experiment = getattr(self, "source_experiment", None)
+
+        # Helper to safely convert JAX arrays/tracers to Python floats
+        def _to_float(val):
+            if val is None:
+                return None
+            try:
+                import jax
+                val = jax.device_get(val)
+            except Exception:
+                pass
+            try:
+                arr = np.asarray(val)
+                if arr.ndim == 0:
+                    return float(arr.item())
+                return float(arr.flat[0])
+            except Exception:
+                try:
+                    return float(val)
+                except Exception:
+                    return None
+
+        def _compute_id(sidecar_dict: dict) -> str:
+            """Compute ID as hash of JSON sidecar content."""
+            content = json.dumps(sidecar_dict, sort_keys=True, default=str)
+            return hashlib.sha256(content.encode()).hexdigest()[:8]
+
         # Create base directory structure
         os.makedirs(output_dir, exist_ok=True)
 
-        # Build subject path
-        sub_dir = f"sub-{subject}"
+        # Build subject path components
+        sub_label = f"sub-{subject}"
+        path_parts = [sub_label]
         if session:
-            sub_dir = os.path.join(sub_dir, f"ses-{session}")
+            path_parts.append(f"ses-{session}")
 
-        # Create model directory for computational models
-        model_dir = os.path.join(output_dir, sub_dir, "model")
-        os.makedirs(model_dir, exist_ok=True)
+        sub_dir = os.path.join(output_dir, *path_parts)
 
-        # Build filename components
-        filename_parts = [f"sub-{subject}"]
+        # Build filename prefix
+        filename_parts = [sub_label]
         if session:
             filename_parts.append(f"ses-{session}")
-        filename_parts.append(f"task-{task}")
+        filename_parts.append(f"desc-{description}")
         if run is not None:
             filename_parts.append(f"run-{run:02d}")
-        if description:
-            filename_parts.append(f"desc-{description}")
 
-        base_filename = "_".join(filename_parts)
+        base_prefix = "_".join(filename_parts)
 
-        # File references for sidecar
-        model_eq_ref = None
-        model_param_ref = None
-        connectivity_ref = None
-
-        # Export model equations as LEMS XML if experiment provided
-        if include_model and experiment is not None:
-            try:
-                eq_filename = f"{base_filename}_eq.xml"
-                eq_path = os.path.join(model_dir, eq_filename)
-                experiment.to_lems(out_path=model_dir, out_file=eq_filename)
-                model_eq_ref = os.path.join(sub_dir, "model", eq_filename)
-            except Exception as e:
-                print(f"Warning: Could not export LEMS model: {e}")
-
-        # Export connectivity if available
-        if include_connectivity and self.network is not None:
-            try:
-                conn_filename = f"{base_filename}_conndata-network_connectivity.tsv"
-                ext = ".gz" if compression == "gzip" else ""
-                conn_path = os.path.join(model_dir, conn_filename + ext)
-
-                # Export weights matrix
-                weights_df = pd.DataFrame(
-                    self.network.weights,
-                    index=list(self.space_labels) if len(self.space_labels) else None,
-                    columns=list(self.space_labels) if len(self.space_labels) else None,
-                )
-                comp_arg = "gzip" if compression == "gzip" else "infer"
-                weights_df.to_csv(conn_path, sep="\t", compression=comp_arg)
-                connectivity_ref = os.path.join(sub_dir, "model", conn_filename + ext)
-
-                # Export tract lengths
-                tracts_filename = f"{base_filename}_conndata-network_distances.tsv"
-                tracts_path = os.path.join(model_dir, tracts_filename + ext)
-                tracts_df = pd.DataFrame(
-                    self.network.tract_lengths,
-                    index=list(self.space_labels) if len(self.space_labels) else None,
-                    columns=list(self.space_labels) if len(self.space_labels) else None,
-                )
-                tracts_df.to_csv(tracts_path, sep="\t", compression=comp_arg)
-            except Exception as e:
-                print(f"Warning: Could not export connectivity: {e}")
-
-        # Export time series data for each state variable
-        ts_files = []
-        for sv_idx, sv_label in enumerate(self.variables_labels):
-            sv_filename = f"{base_filename}_desc-{sv_label}_timeseries"
-            ext = ".tsv.gz" if compression == "gzip" else ".tsv"
-            sv_path = os.path.join(model_dir, sv_filename + ext)
-
-            # Extract data for this state variable (time x regions)
-            sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
-            sv_df = pd.DataFrame(
-                np.asarray(sv_data),
-                columns=list(self.space_labels) if len(self.space_labels) else None,
-            )
-            sv_df.insert(0, "time", np.asarray(self.time))
-            comp_arg_ts = "gzip" if compression == "gzip" else "infer"
-            sv_df.to_csv(sv_path, sep="\t", index=False, compression=comp_arg_ts)
-            ts_files.append(os.path.join(sub_dir, "model", sv_filename + ext))
-
-        # Create JSON sidecar with metadata
-        sidecar = {
-            "TaskName": task,
-            "SamplingFrequency": float(self.sample_rate) if hasattr(self, 'sample_rate') else None,
-            "SamplingPeriod": float(self.sample_period) if self.sample_period else None,
-            "SamplingPeriodUnits": self.sample_period_unit,
-            "StartTime": float(self.time[0]) if len(self.time) > 0 else 0.0,
-            "Columns": list(self.space_labels) if len(self.space_labels) else None,
-            "StateVariables": list(self.variables_labels) if len(self.variables_labels) else None,
-            "NumberOfTimepoints": int(self.data.shape[0]),
-            "NumberOfRegions": int(self.data.shape[2]) if self.data.ndim > 2 else 1,
-            "TimeSeriesFiles": ts_files,
+        # Track all created files for summary
+        created_files = {
+            "net": [],
+            "ts": [],
+            "eq": [],
+            "coord": [],
         }
 
-        # Add model references
-        if model_eq_ref:
-            sidecar["ModelEq"] = model_eq_ref
-        if model_param_ref:
-            sidecar["ModelParam"] = model_param_ref
-        if connectivity_ref:
-            sidecar["ConnectivityData"] = connectivity_ref
+        # =====================================================================
+        # 1. Export connectivity to net/ directory
+        # =====================================================================
+        if include_connectivity and self.network is not None:
+            net_dir = os.path.join(sub_dir, "net")
+            os.makedirs(net_dir, exist_ok=True)
 
-        # Add experiment provenance if available
-        if experiment is not None:
-            sidecar["SimulationProvenance"] = {
-                "Model": str(experiment.local_dynamics) if hasattr(experiment, 'local_dynamics') else None,
-                "Integrator": str(experiment.integration) if hasattr(experiment, 'integration') else None,
-                "Duration": float(experiment.duration) if hasattr(experiment, 'duration') else None,
-                "StepSize": float(experiment.integration.step_size) if hasattr(experiment.integration, 'step_size') else None,
+            region_labels = list(self.space_labels) if len(self.space_labels) else None
+
+            # --- Weights matrix ---
+            weights_sidecar = {
+                "Description": "Structural connectivity weights matrix",
+                "NumberOfNodes": int(self.network.weights.shape[0]),
+                "Units": "a.u.",
+                "Source": "tvbo simulation",
+                "GeneratedAt": datetime.now().isoformat(),
+            }
+            if region_labels:
+                weights_sidecar["NodeLabels"] = region_labels
+
+            weights_id = _compute_id(weights_sidecar)
+            weights_filename = f"{base_prefix}_net-weights_id-{weights_id}"
+
+            weights_df = pd.DataFrame(
+                np.asarray(self.network.weights),
+                index=region_labels,
+                columns=region_labels,
+            )
+            weights_tsv_path = os.path.join(net_dir, f"{weights_filename}.tsv")
+            weights_df.to_csv(weights_tsv_path, sep="\t")
+
+            weights_json_path = os.path.join(net_dir, f"{weights_filename}.json")
+            with open(weights_json_path, "w") as f:
+                json.dump(weights_sidecar, f, indent=2)
+
+            created_files["net"].append(f"{weights_filename}.tsv")
+
+            # --- Distances (tract lengths) matrix ---
+            distances_sidecar = {
+                "Description": "Tract lengths (distances) between regions",
+                "NumberOfNodes": int(self.network.tract_lengths.shape[0]),
+                "Units": "mm",
+                "Source": "tvbo simulation",
+                "GeneratedAt": datetime.now().isoformat(),
+            }
+            if region_labels:
+                distances_sidecar["NodeLabels"] = region_labels
+
+            distances_id = _compute_id(distances_sidecar)
+            distances_filename = f"{base_prefix}_net-distances_id-{distances_id}"
+
+            distances_df = pd.DataFrame(
+                np.asarray(self.network.tract_lengths),
+                index=region_labels,
+                columns=region_labels,
+            )
+            distances_tsv_path = os.path.join(net_dir, f"{distances_filename}.tsv")
+            distances_df.to_csv(distances_tsv_path, sep="\t")
+
+            distances_json_path = os.path.join(net_dir, f"{distances_filename}.json")
+            with open(distances_json_path, "w") as f:
+                json.dump(distances_sidecar, f, indent=2)
+
+            created_files["net"].append(f"{distances_filename}.tsv")
+
+            # --- Coordinates if available ---
+            if hasattr(self.network, "centres") and self.network.centres is not None:
+                coord_dir = os.path.join(sub_dir, "coord")
+                os.makedirs(coord_dir, exist_ok=True)
+
+                coord_sidecar = {
+                    "Description": "Region center coordinates",
+                    "NumberOfNodes": int(self.network.centres.shape[0]),
+                    "CoordinateSystem": "MNI152NLin6Asym",
+                    "Units": "mm",
+                    "Columns": ["x", "y", "z"],
+                }
+                if region_labels:
+                    coord_sidecar["NodeLabels"] = region_labels
+
+                coord_id = _compute_id(coord_sidecar)
+                coord_filename = f"{base_prefix}_coord-centres_id-{coord_id}"
+
+                coord_df = pd.DataFrame(
+                    np.asarray(self.network.centres),
+                    columns=["x", "y", "z"],
+                    index=region_labels,
+                )
+                coord_tsv_path = os.path.join(coord_dir, f"{coord_filename}.tsv")
+                coord_df.to_csv(coord_tsv_path, sep="\t")
+
+                coord_json_path = os.path.join(coord_dir, f"{coord_filename}.json")
+                with open(coord_json_path, "w") as f:
+                    json.dump(coord_sidecar, f, indent=2)
+
+                created_files["coord"].append(f"{coord_filename}.tsv")
+
+        # =====================================================================
+        # 2. Export time series to ts/ directory
+        # =====================================================================
+        ts_dir = os.path.join(sub_dir, "ts")
+        os.makedirs(ts_dir, exist_ok=True)
+
+        sample_period_val = _to_float(self.sample_period)
+        if sample_period_val is not None and sample_period_val > 0:
+            if self.sample_period_unit in ("ms", "msec"):
+                sampling_freq = 1000.0 / sample_period_val
+            else:
+                sampling_freq = 1.0 / sample_period_val
+        else:
+            sampling_freq = None
+
+        region_labels = list(self.space_labels) if len(self.space_labels) else None
+
+        # Export each state variable as separate time series file
+        for sv_idx, sv_label in enumerate(self.variables_labels):
+            # Create sidecar for this state variable
+            ts_sidecar = {
+                "Description": f"Simulated time series - {sv_label}",
+                "StateVariable": sv_label,
+                "SamplingFrequency": sampling_freq,
+                "SamplingPeriod": sample_period_val,
+                "SamplingPeriodUnits": self.sample_period_unit,
+                "StartTime": _to_float(self.time[0]) if len(self.time) > 0 else 0.0,
+                "NumberOfTimepoints": int(self.data.shape[0]),
+                "NumberOfNodes": int(self.data.shape[2]) if self.data.ndim > 2 else 1,
+                "Columns": ["time"] + (region_labels or []),
+                "Units": "a.u.",
                 "GeneratedAt": datetime.now().isoformat(),
             }
 
-        # Write sidecar JSON
-        sidecar_path = os.path.join(model_dir, f"{base_filename}_timeseries.json")
-        with open(sidecar_path, "w") as f:
-            json.dump(sidecar, f, indent=2, default=str)
+            # Add provenance if experiment available
+            if experiment is not None:
+                ts_sidecar["SimulationProvenance"] = {
+                    "Model": str(experiment.local_dynamics) if hasattr(experiment, "local_dynamics") else None,
+                    "Integrator": str(experiment.integration) if hasattr(experiment, "integration") else None,
+                    "Duration": _to_float(experiment.duration) if hasattr(experiment, "duration") else None,
+                    "StepSize": _to_float(experiment.integration.step_size) if hasattr(experiment, "integration") and hasattr(experiment.integration, "step_size") else None,
+                }
 
-        # Create dataset_description.json at root
+            ts_id = _compute_id(ts_sidecar)
+            ts_filename = f"{base_prefix}_ts-{ts_label}{sv_label}_id-{ts_id}"
+
+            # Extract data for this state variable (time x regions)
+            sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
+            ts_df = pd.DataFrame(
+                np.asarray(sv_data),
+                columns=region_labels,
+            )
+            ts_df.insert(0, "time", np.asarray(self.time))
+
+            ts_tsv_path = os.path.join(ts_dir, f"{ts_filename}.tsv")
+            ts_df.to_csv(ts_tsv_path, sep="\t", index=False)
+
+            ts_json_path = os.path.join(ts_dir, f"{ts_filename}.json")
+            with open(ts_json_path, "w") as f:
+                json.dump(ts_sidecar, f, indent=2, default=str)
+
+            created_files["ts"].append(f"{ts_filename}.tsv")
+
+        # =====================================================================
+        # 3. Export model equations to eq/ directory
+        # =====================================================================
+        if include_model and experiment is not None:
+            eq_dir = os.path.join(sub_dir, "eq")
+            os.makedirs(eq_dir, exist_ok=True)
+
+            # Get model name
+            model_name = "unknown"
+            if hasattr(experiment, "local_dynamics"):
+                model_name = type(experiment.local_dynamics).__name__
+
+            # Create equation sidecar
+            eq_sidecar = {
+                "Description": f"Neural mass model equations - {model_name}",
+                "ModelType": model_name,
+                "Format": "tvbo",
+                "GeneratedAt": datetime.now().isoformat(),
+            }
+
+            # Add model parameters if available
+            if hasattr(experiment, "local_dynamics"):
+                model = experiment.local_dynamics
+                params = {}
+                for attr in dir(model):
+                    if not attr.startswith("_"):
+                        val = getattr(model, attr, None)
+                        if isinstance(val, (int, float)):
+                            params[attr] = val
+                        elif hasattr(val, "tolist"):
+                            try:
+                                params[attr] = float(np.asarray(val).flat[0])
+                            except Exception:
+                                pass
+                if params:
+                    eq_sidecar["Parameters"] = params
+
+            eq_id = _compute_id(eq_sidecar)
+            eq_filename = f"eq-{model_name.lower()}_desc-{description}_id-{eq_id}"
+
+            eq_json_path = os.path.join(eq_dir, f"{eq_filename}.json")
+            with open(eq_json_path, "w") as f:
+                json.dump(eq_sidecar, f, indent=2, default=str)
+
+            created_files["eq"].append(f"{eq_filename}.json")
+
+        # =====================================================================
+        # 4. Create dataset_description.json at root
+        # =====================================================================
         dataset_description = {
-            "Name": f"TVB Simulation Output - {task}",
+            "Name": f"TVB Simulation Output",
             "BIDSVersion": "1.9.0",
             "DatasetType": "derivative",
             "GeneratedBy": [
                 {
                     "Name": "tvbo",
+                    "Version": "0.1.0",
                     "Description": "The Virtual Brain Ontology and Simulation Framework",
+                    "CodeURL": "https://github.com/the-virtual-brain/tvb-ontology",
                 }
             ],
+            "BEP034Version": "1.0.0",
         }
         desc_path = os.path.join(output_dir, "dataset_description.json")
         if not os.path.exists(desc_path):
             with open(desc_path, "w") as f:
                 json.dump(dataset_description, f, indent=2)
 
-        # Create participants.tsv
+        # =====================================================================
+        # 5. Create participants.tsv
+        # =====================================================================
         participants_path = os.path.join(output_dir, "participants.tsv")
         if not os.path.exists(participants_path):
-            participants_df = pd.DataFrame({"participant_id": [f"sub-{subject}"]})
+            participants_df = pd.DataFrame({"participant_id": [sub_label]})
             participants_df.to_csv(participants_path, sep="\t", index=False)
         else:
-            # Append if subject not already listed
             existing = pd.read_csv(participants_path, sep="\t")
-            if f"sub-{subject}" not in existing["participant_id"].values:
-                new_row = pd.DataFrame({"participant_id": [f"sub-{subject}"]})
+            if sub_label not in existing["participant_id"].values:
+                new_row = pd.DataFrame({"participant_id": [sub_label]})
                 existing = pd.concat([existing, new_row], ignore_index=True)
                 existing.to_csv(participants_path, sep="\t", index=False)
 

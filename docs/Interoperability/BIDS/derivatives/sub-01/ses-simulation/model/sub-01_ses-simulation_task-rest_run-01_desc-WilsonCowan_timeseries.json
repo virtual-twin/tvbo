@@ -1,0 +1,29 @@
+{
+  "TaskName": "rest",
+  "SamplingFrequency": null,
+  "SamplingPeriod": null,
+  "SamplingPeriodUnits": "ms",
+  "StartTime": 0.1,
+  "Columns": [
+    "0",
+    "1"
+  ],
+  "StateVariables": [
+    "E",
+    "I"
+  ],
+  "NumberOfTimepoints": 1000,
+  "NumberOfRegions": 2,
+  "TimeSeriesFiles": [
+    "sub-01/ses-simulation/model/sub-01_ses-simulation_task-rest_run-01_desc-WilsonCowan_desc-E_timeseries.tsv.gz",
+    "sub-01/ses-simulation/model/sub-01_ses-simulation_task-rest_run-01_desc-WilsonCowan_desc-I_timeseries.tsv.gz"
+  ],
+  "ModelEq": "sub-01/ses-simulation/model/sub-01_ses-simulation_task-rest_run-01_desc-WilsonCowan_eq.xml",
+  "SimulationProvenance": {
+    "Model": "WilsonCowan - 23 parameters and 2 state variables",
+    "Integrator": "Integrator({\n  'time_scale': 'ms',\n  'duration': 100.0,\n  'method': 'Euler',\n  'step_size': 0.1,\n  'transient_time': 0.0,\n  'scipy_ode_base': False,\n  'number_of_stages': 1,\n  'update_expression': DerivedVariable({\n      'name': 'dX',\n      'equation': Equation({'lhs': 'X_{t+1}', 'rhs': 'dX0 * dt', 'latex': False}),\n      'conditional': False\n    }),\n  'delayed': True\n})",
+    "Duration": null,
+    "StepSize": 0.1,
+    "GeneratedAt": "2025-12-11T13:24:35.394108"
+  }
+}
