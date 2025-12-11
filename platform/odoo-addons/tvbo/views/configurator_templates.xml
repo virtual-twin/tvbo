@@ -1,0 +1,639 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="model_configurator_template" name="Model Configurator">
+            <t t-call="website.layout">
+                <div id="wrap" class="oe_structure">
+                    <div class="container-fluid" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+                        <div class="header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb;">
+                            <h1 style="margin: 0; color: #1f2937; font-size: 2rem;">Simulation Experiment Configurator</h1>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="builderCopyPython" class="btn btn-secondary">Copy Python</button>
+                                <button id="builderDownloadYaml" class="btn btn-secondary">Download YAML</button>
+                                <t t-if="not request.env.user._is_public()">
+                                    <button id="saveModelBtn" class="btn btn-success">Save to Database</button>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Main Layout -->
+                        <div class="configurator-main-layout">
+                            <!-- Tabs Navigation - full width -->
+                            <ul class="nav nav-tabs" id="configTabs" role="tablist" style="margin-bottom: 20px;">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-panel" type="button" role="tab">
+                                        General
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="dynamics-tab" data-bs-toggle="tab" data-bs-target="#dynamics-panel" type="button" role="tab">
+                                        Dynamics
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network-panel" type="button" role="tab">
+                                        Network
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="integration-tab" data-bs-toggle="tab" data-bs-target="#integration-panel" type="button" role="tab">
+                                        Integration
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="observation-tab" data-bs-toggle="tab" data-bs-target="#observation-panel" type="button" role="tab">
+                                        Observation Models
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="stimulus-tab" data-bs-toggle="tab" data-bs-target="#stimulus-panel" type="button" role="tab">
+                                        Stimulus
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-panel" type="button" role="tab">
+                                        Preview
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="run-tab" data-bs-toggle="tab" data-bs-target="#run-panel" type="button" role="tab">
+                                        <i class="fa fa-play"></i> Run
+                                    </button>
+                                </li>
+                            </ul>
+
+                        <!-- Tab Content with Grid layout for Network Viewer -->
+                        <div class="tab-content" id="configTabContent" style="display: grid; grid-template-columns: 1fr 340px; grid-template-rows: auto 1fr; gap: 20px;">
+                            <!-- Network Viewer - fixed in top-right grid cell -->
+                            <div class="network-viewer-panel" style="grid-column: 2; grid-row: 1 / 3;">
+                                <div class="card" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: sticky; top: 80px; max-height: calc(100vh - 100px);">
+                                    <div class="card-header py-2" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; border-radius: 8px 8px 0 0;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span style="font-size: 0.85rem; font-weight: 500;">
+                                                <i class="fa fa-project-diagram me-1"></i>3D Network
+                                            </span>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-light btn-sm py-0 px-1" id="persistentToggleBrainMesh" title="Toggle brain mesh" style="font-size: 0.75rem;">
+                                                    🧠
+                                                </button>
+                                                <button class="btn btn-outline-light btn-sm py-0 px-1" id="persistentResetCamera" title="Reset camera" style="font-size: 0.75rem;">
+                                                    ⟲
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0" style="height: 250px; overflow: hidden;">
+                                        <div id="persistentNetworkGraph3D" style="width: 100%; height: 100%; background: #1a1a2e;"></div>
+                                    </div>
+                                    <div class="card-footer py-1 px-2" style="background: #f8f9fa; border-top: 1px solid #dee2e6;">
+                                        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.7rem; color: #6c757d;">
+                                            <span id="networkViewerNodeCount">Nodes: 0</span>
+                                            <span id="networkViewerEdgeCount">Edges: 0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- General Tab -->
+                            <div class="tab-pane fade show active" id="general-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">General Configuration</h5>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Experiment Name</label>
+                                            <input type="text" id="experimentName" class="form-control" placeholder="My Simulation Experiment"/>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Label</label>
+                                            <input type="text" id="experimentLabel" class="form-control" placeholder="Short identifier"/>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">Description</label>
+                                            <textarea id="experimentDescription" class="form-control" rows="3" placeholder="Optional description of this simulation experiment"></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">References (DOI/PMID)</label>
+                                            <input type="text" id="experimentReferences" class="form-control" placeholder="e.g., 10.1234/example or PMID:12345678 (comma-separated for multiple)"/>
+                                            <small class="text-muted">Enter DOI or PMID identifiers, separated by commas for multiple references.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dynamics Tab -->
+                            <div class="tab-pane fade" id="dynamics-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div id="configuratorContainer"></div>
+                                    <div id="builderContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Network Tab -->
+                            <div class="tab-pane fade" id="network-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">Network Configuration</h5>
+
+                                    <!-- Network Mode Selection -->
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Network Mode</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="networkMode" id="networkModeCustom" value="custom" checked="checked"/>
+                                            <label class="btn btn-outline-primary" for="networkModeCustom">Custom Network</label>
+
+                                            <input type="radio" class="btn-check" name="networkMode" id="networkModeBrain" value="brain"/>
+                                            <label class="btn btn-outline-primary" for="networkModeBrain">Brain Network</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Custom Network Panel -->
+                                    <div id="customNetworkPanel">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Custom Network Definition</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Upload YAML option -->
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Upload Network YAML (optional)</label>
+                                                    <input type="file" id="networkYamlUpload" class="form-control" accept=".yaml,.yml"/>
+                                                    <small class="text-muted">Upload a YAML file defining your network structure.</small>
+                                                </div>
+
+                                                <hr/>
+
+                                                <p class="text-muted">Or define manually:</p>
+
+                                                <!-- Network metadata -->
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Network Label</label>
+                                                        <input type="text" id="customNetworkLabel" class="form-control" placeholder="My Custom Network"/>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Global Coupling</label>
+                                                        <input type="number" id="customGlobalCoupling" class="form-control" step="0.01" value="1.0"/>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Conduction Speed</label>
+                                                        <input type="number" id="customConductionSpeed" class="form-control" step="0.1" value="3.0"/>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Random Network Generator -->
+                                                <div class="d-flex align-items-center gap-2 mb-3">
+                                                    <label class="form-label mb-0">Random Network:</label>
+                                                    <input type="number" id="randomNodeCount" class="form-control form-control-sm" style="width: 80px;" value="5" min="2" max="100" placeholder="# nodes"/>
+                                                    <button class="btn btn-sm btn-success" id="generateRandomNetwork">Generate</button>
+                                                </div>
+
+                                                <!-- Nodes -->
+                                                <h6>Nodes</h6>
+                                                <div id="customNetworkNodes" class="mb-3"></div>
+                                                <button class="btn btn-sm btn-outline-primary mb-4" id="addCustomNode">+ Add Node</button>
+
+                                                <!-- Edges -->
+                                                <h6>Edges</h6>
+                                                <div id="customNetworkEdges" class="mb-3"></div>
+                                                <button class="btn btn-sm btn-outline-primary mb-4" id="addCustomEdge">+ Add Edge</button>
+
+                                                <!-- 3D Graph Preview -->
+                                                <h6>3D Network Preview</h6>
+                                                <div class="card mb-3">
+                                                    <div class="card-body p-0 position-relative">
+                                                        <div id="networkGraph3D" style="width: 100%; height: 400px; background: #1a1a2e; border-radius: 4px;"></div>
+                                                        <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button class="btn btn-outline-light" id="toggleBrainMesh" title="Toggle brain mesh">
+                                                                    🧠
+                                                                </button>
+                                                                <button class="btn btn-outline-light" id="resetCamera" title="Reset camera">
+                                                                    ⟲
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="position-absolute bottom-0 start-0 p-2 text-white small" style="z-index: 10;">
+                                                            <span class="badge bg-secondary">Click node to edit • Drag to rotate • Scroll to zoom</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Brain Network Panel -->
+                                    <div id="brainNetworkPanel" style="display: none;">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Brain Network Configuration</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Normative options -->
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Normative Tractogram</label>
+                                                        <select id="brainTractogram" class="form-select">
+                                                            <option value="">— Select tractogram —</option>
+                                                            <!-- Populated dynamically from window.tractogramsData -->
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Parcellation</label>
+                                                        <select id="brainParcellation" class="form-select">
+                                                            <option value="">— Select parcellation —</option>
+                                                            <!-- Populated dynamically from window.parcellationsData -->
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <hr/>
+
+                                                <!-- Upload custom files -->
+                                                <h6>Upload Custom Files (optional)</h6>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Upload Tractogram</label>
+                                                        <input type="file" id="brainTractogramUpload" class="form-control" accept=".nii,.nii.gz,.trk,.tck"/>
+                                                        <small class="text-muted">Supported: .nii, .nii.gz, .trk, .tck</small>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Upload Parcellation</label>
+                                                        <input type="file" id="brainParcellationUpload" class="form-control" accept=".nii,.nii.gz,.annot,.gii"/>
+                                                        <small class="text-muted">Supported: .nii, .nii.gz, .annot, .gii</small>
+                                                    </div>
+                                                </div>
+
+                                                <hr/>
+
+                                                <!-- Additional parameters -->
+                                                <h6>Network Parameters</h6>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Number of Regions</label>
+                                                        <input type="number" id="brainNumRegions" class="form-control" placeholder="Auto-detected"/>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Global Coupling</label>
+                                                        <input type="number" id="brainGlobalCoupling" class="form-control" step="0.01" value="1.0"/>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Conduction Speed (m/s)</label>
+                                                        <input type="number" id="brainConductionSpeed" class="form-control" step="0.1" value="3.0"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="margin: 30px 0;"/>
+
+                                    <h4>Coupling Function</h4>
+                                    <div id="couplingContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Integration Tab -->
+                            <div class="tab-pane fade" id="integration-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">Integration Configuration</h5>
+                                    <div id="integratorContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Observation Models Tab -->
+                            <div class="tab-pane fade" id="observation-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">Observation Models</h5>
+                                    <div id="observationModelsContainer" style="margin-bottom: 20px;">
+                                        <div id="observationModelsList"></div>
+                                    </div>
+
+                                    <div class="builder-actions">
+                                        <button class="btn btn-primary" id="addObservationModel">Add Observation Model</button>
+                                    </div>
+
+                                    <hr style="margin: 30px 0;"/>
+
+                                    <div id="monitorsContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Stimulus Tab -->
+                            <div class="tab-pane fade" id="stimulus-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">Stimulus Configuration</h5>
+                                    <div id="stimulusContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Tab -->
+                            <div class="tab-pane fade" id="preview-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">Configuration Preview</h5>
+                                    <div id="previewContent">
+                                        <pre id="previewYaml" style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Run Tab -->
+                            <div class="tab-pane fade" id="run-panel" role="tabpanel" style="grid-column: 1; grid-row: 1 / 3;">
+                                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h5 class="mb-3" style="color: #1f2937;">Run Simulation</h5>
+
+                                    <!-- Run Controls -->
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Simulation Settings</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Duration (ms)</label>
+                                                    <input type="number" id="runDuration" class="form-control" value="1000" min="1" step="100"/>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Step Size (ms)</label>
+                                                    <input type="number" id="runStepSize" class="form-control" value="0.1" min="0.001" step="0.01"/>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Backend</label>
+                                                    <select id="runBackend" class="form-select">
+                                                        <option value="jax" selected="selected">JAX (GPU/CPU)</option>
+                                                        <option value="tvb">TVB (NumPy)</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 d-flex align-items-end">
+                                                    <button id="runSimulationBtn" class="btn btn-success w-100">
+                                                        <i class="fa fa-play"></i> Run Simulation
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Status and Progress -->
+                                    <div id="runStatus" class="mb-4" style="display: none;">
+                                        <div class="alert alert-secondary">
+                                            <div class="d-flex align-items-center">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                    <span class="visually-hidden">Running...</span>
+                                                </div>
+                                                <span id="runStatusText">Initializing simulation...</span>
+                                            </div>
+                                            <div class="progress mt-2" style="height: 6px;">
+                                                <div id="runProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Error Display -->
+                                    <div id="runError" class="alert alert-danger" style="display: none;"></div>
+
+                                    <!-- Results Section -->
+                                    <div id="runResults" style="display: none;">
+                                        <div class="card mb-4">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">Simulation Results</h5>
+                                                <div>
+                                                    <button id="downloadResultsBtn" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fa fa-download"></i> Download Data
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Plot Controls -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">State Variables</label>
+                                                        <div id="plotStateVars" style="max-height: 120px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px; background: #fff;">
+                                                            <!-- Checkboxes will be populated dynamically -->
+                                                        </div>
+                                                        <small id="stateVarHint" class="text-muted">Select variables to plot</small>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Regions</label>
+                                                        <div id="plotRegions" style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px; background: #fff;">
+                                                            <!-- Checkboxes will be populated dynamically -->
+                                                        </div>
+                                                        <div class="mt-1">
+                                                            <button type="button" class="btn btn-sm btn-link p-0" id="selectAllRegions">Select All</button>
+                                                            <span class="text-muted mx-1">|</span>
+                                                            <button type="button" class="btn btn-sm btn-link p-0" id="selectNoneRegions">Select None</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Plot Type</label>
+                                                        <select id="plotType" class="form-select">
+                                                            <option value="timeseries">Time Series</option>
+                                                            <option value="phasespace">Phase Space (2 vars)</option>
+                                                            <option value="heatmap">Heatmap (1 var)</option>
+                                                        </select>
+                                                        <small id="plotTypeHint" class="text-muted"></small>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Plot Container -->
+                                                <div id="plotContainer" style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px;"></div>
+
+                                                <!-- Simulation Info -->
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <div id="simInfo" class="text-muted small"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        <!-- End of main layout -->
+                    </div>
+                </div>
+
+                <!-- Load MathJax -->
+                <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async=""></script>
+
+                <!-- IMMEDIATE TEST - this should appear in console right away -->
+                <script type="text/javascript">
+                    console.log('=== TVBO CONFIGURATOR JS START ===');
+                    window.TVBO_JS_LOADED = true;
+                </script>
+
+                <!-- Load Three.js for 3D visualization (r128 with global OrbitControls) -->
+                <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
+                <!-- Load builder CSS and JS -->
+                <link rel="stylesheet" href="/tvbo/static/src/css/builder.css?v=4"/>
+<script type="text/javascript">
+                    console.log('[DEBUG] About to load network_graph_3d.js');
+                </script>
+                <script type="text/javascript" src="/tvbo/static/src/js/network_graph_3d.js?v=11"></script>
+                <script type="text/javascript">
+                    console.log('[DEBUG] network_graph_3d.js loaded, NetworkGraph3D:', typeof window.NetworkGraph3D);
+                </script>
+                <script type="text/javascript" src="/tvbo/static/src/js/model_builder.js?v=19"></script>
+
+                <script type="text/javascript">
+                    console.log('[DEBUG] All scripts loaded, checking THREE:', typeof THREE);
+                    console.log('[DEBUG] Checking THREE.OrbitControls:', typeof THREE?.OrbitControls);
+                    console.log('[DEBUG] Checking THREE.OBJLoader:', typeof THREE?.OBJLoader);
+                </script>
+
+                <script type="text/javascript">
+                    // Make models data available globally
+                    window.searchData = <t t-out="models_json"/>;
+                    window.integratorsData = <t t-out="integrators_json"/>;
+                    window.couplingsData = <t t-out="couplings_json"/>;
+                    window.monitorsData = <t t-out="monitors_json"/>;
+                    window.networksData = <t t-out="networks_json"/>;
+                    window.tractogramsData = <t t-out="tractograms_json"/>;
+                    window.parcellationsData = <t t-out="parcellations_json"/>;
+
+                        // Initialize the configurator
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const saveBtn = document.getElementById('saveModelBtn');
+                        const copyBtn = document.getElementById('builderCopyPython');
+                        const downloadBtn = document.getElementById('builderDownloadYaml');
+
+                        // Initialize tabs manually
+                        const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+                        tabs.forEach(tab => {
+                            tab.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const target = this.getAttribute('data-bs-target');
+
+                                // Hide all tab panes
+                                document.querySelectorAll('.tab-pane').forEach(pane => {
+                                    pane.classList.remove('show', 'active');
+                                });
+
+                                // Remove active from all tabs
+                                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(t => {
+                                    t.classList.remove('active');
+                                });
+
+                                // Show selected tab pane
+                                const targetPane = document.querySelector(target);
+                                if (targetPane) {
+                                    targetPane.classList.add('show', 'active');
+                                }
+
+                                // Mark current tab as active
+                                this.classList.add('active');
+
+                                // Initialize 3D graph when Network tab is shown
+                                if (target === '#network-panel') {
+                                    console.log('[TAB] Network panel activated, initializing 3D graph...');
+                                    setTimeout(function() {
+                                        if (window.NetworkGraph3D &amp;&amp; window.NetworkGraph3D.init) {
+                                            window.NetworkGraph3D.init();
+                                        }
+                                    }, 100);
+                                }
+                            });
+                        });
+
+                        // Initialize builder on page load
+                        if (window.initializeBuilder) {
+                            window.initializeBuilder();
+                        }
+
+                        // Copy Python functionality
+                        if (copyBtn) {
+                            copyBtn.addEventListener('click', function() {
+                                if (window.copyPythonCode) {
+                                    window.copyPythonCode();
+                                }
+                            });
+                        }
+
+                        // Download YAML functionality
+                        if (downloadBtn) {
+                            downloadBtn.addEventListener('click', function() {
+                                if (window.downloadYaml) {
+                                    window.downloadYaml();
+                                }
+                            });
+                        }
+
+                        // Save to database functionality
+                        if (saveBtn) {
+                            saveBtn.addEventListener('click', function() {
+                                const section = document.getElementById('builderContent');
+                                if (!section) {
+                                    alert('Please configure a model first');
+                                    return;
+                                }
+
+                                // Collect the model spec
+                                if (typeof collectSpec !== 'function') {
+                                    alert('Model builder not loaded properly');
+                                    return;
+                                }
+
+                                const spec = collectSpec(section, {
+                                    models: window.searchData || [],
+                                    networks: [],
+                                    couplings: []
+                                });
+
+                                if (!spec || !spec.model || !spec.model.name) {
+                                    alert('Please provide at least a model name');
+                                    return;
+                                }
+
+                                // Show loading
+                                saveBtn.disabled = true;
+                                saveBtn.textContent = 'Saving...';
+
+                                // Send to server
+                                fetch('/tvbo/configurator/save', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        jsonrpc: '2.0',
+                                        method: 'call',
+                                        params: {
+                                            model_data: spec.model
+                                        }
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    saveBtn.disabled = false;
+                                    saveBtn.textContent = 'Save to Database';
+
+                                    if (data.result &amp;&amp; data.result.success) {
+                                        alert(data.result.message || 'Model saved successfully!');
+                                        window.location.reload();
+                                    } else {
+                                        alert('Error: ' + (data.result ? data.result.error : 'Unknown error'));
+                                    }
+                                })
+                                .catch(error => {
+                                    saveBtn.disabled = false;
+                                    saveBtn.textContent = 'Save to Database';
+                                    alert('Error saving model: ' + error.message);
+                                });
+                            });
+                        }
+                    });
+                </script>
+            </t>
+        </template>
+
+        <!-- Menu item -->
+        <record id="menu_model_configurator" model="website.menu">
+            <field name="name">Simulation Configurator</field>
+            <field name="url">/tvbo/configurator</field>
+            <field name="parent_id" ref="website.main_menu"/>
+            <field name="sequence" type="int">50</field>
+        </record>
+    </data>
+</odoo>

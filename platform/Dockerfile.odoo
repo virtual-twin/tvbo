@@ -1,0 +1,27 @@
+FROM odoo:19
+
+USER root
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y python3-pip libcairo2-dev libpango1.0-dev poppler-utils && \
+    # Install tvbo dependencies but not tvbo itself (will be mounted for dev)
+    python3 -m pip install --break-system-packages --ignore-installed tvboptim pydantic pypdf requests && \
+    # Pin PyPDF/PyPDF2 per Python version to satisfy Odoo and distro expectations
+    python3 -m pip install --break-system-packages "PyPDF2==1.26.0; python_version <= '3.10'" && \
+    python3 -m pip install --break-system-packages "PyPDF2==2.12.1; python_version > '3.10' and python_version < '3.13'" && \
+    python3 -m pip install --break-system-packages "PyPDF==5.4.0; python_version >= '3.13'" && \
+    mkdir -p /usr/local/lib/python3.12/dist-packages/tvbo/.temp && \
+    chown -R odoo:odoo /usr/local/lib/python3.12/dist-packages/tvbo/.temp && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Create entrypoint script that installs tvbo from mounted source at startup
+RUN echo '#!/bin/bash\n\
+if [ -f /mnt/tvbo/pyproject.toml ]; then\n\
+    echo "Installing tvbo from mounted source..."\n\
+    pip install --break-system-packages -e /mnt/tvbo 2>&1 | tail -5\n\
+fi\n\
+exec "$@"' > /entrypoint-tvbo.sh && chmod +x /entrypoint-tvbo.sh
+
+USER odoo
+ENTRYPOINT ["/entrypoint-tvbo.sh"]
+CMD ["odoo"]

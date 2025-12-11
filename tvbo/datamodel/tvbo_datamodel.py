@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-11-07T13:55:02
+# Generation date: 2025-12-07T00:05:13
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -76,11 +76,99 @@ DEFAULT_ = TVBO
 # Types
 
 # Class references
+class TractogramName(extended_str):
+    pass
+
+
+class ObservationModelName(extended_str):
+    pass
+
+
+class DownsamplingModelName(ObservationModelName):
+    pass
+
+
+class DynamicsName(extended_str):
+    pass
+
+
+class NeuralMassModelName(DynamicsName):
+    pass
+
+
+class StateVariableName(extended_str):
+    pass
+
+
+class DistributionName(extended_str):
+    pass
+
+
+class ParameterName(extended_str):
+    pass
+
+
+class CouplingInputName(extended_str):
+    pass
+
+
+class FunctionName(extended_str):
+    pass
+
+
+class CallableName(extended_str):
+    pass
+
+
+class DerivedParameterName(ParameterName):
+    pass
+
+
+class DerivedVariableName(extended_str):
+    pass
+
+
+class MonitorName(ObservationModelName):
+    pass
+
+
+class CouplingName(extended_str):
+    pass
+
+
 class SimulationExperimentId(extended_int):
     pass
 
 
+class SoftwareRequirementName(extended_str):
+    pass
+
+
+class SoftwarePackageName(extended_str):
+    pass
+
+
+class FieldStateVariableName(StateVariableName):
+    pass
+
+
+class BrainAtlasName(extended_str):
+    pass
+
+
+class CommonCoordinateSpaceName(extended_str):
+    pass
+
+
+class ParcellationEntityName(extended_str):
+    pass
+
+
 class SubjectSubjectId(extended_str):
+    pass
+
+
+class DBSProtocolName(extended_str):
     pass
 
 
@@ -121,7 +209,7 @@ class Equation(YAMLRoot):
 
     label: Optional[str] = None
     definition: Optional[str] = None
-    parameters: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     lhs: Optional[str] = None
     rhs: Optional[str] = None
     conditionals: Optional[Union[Union[dict, "ConditionalBlock"], list[Union[dict, "ConditionalBlock"]]]] = empty_list()
@@ -136,7 +224,7 @@ class Equation(YAMLRoot):
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.lhs is not None and not isinstance(self.lhs, str):
             self.lhs = str(self.lhs)
@@ -195,7 +283,7 @@ class Stimulus(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Stimulus
 
     equation: Optional[Union[dict, Equation]] = None
-    parameters: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     dataLocation: Optional[str] = None
     duration: Optional[float] = 1000
@@ -207,7 +295,7 @@ class Stimulus(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -241,11 +329,11 @@ class TemporalApplicableEquation(Equation):
     class_name: ClassVar[str] = "TemporalApplicableEquation"
     class_model_uri: ClassVar[URIRef] = TVBO.TemporalApplicableEquation
 
-    parameters: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     time_dependent: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.time_dependent is not None and not isinstance(self.time_dependent, Bool):
             self.time_dependent = Bool(self.time_dependent)
@@ -287,6 +375,57 @@ class Parcellation(YAMLRoot):
 
         if self.data_source is not None and not isinstance(self.data_source, str):
             self.data_source = str(self.data_source)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Tractogram(YAMLRoot):
+    """
+    Reference to tractography/diffusion MRI data used to derive structural connectivity
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Tractogram"]
+    class_class_curie: ClassVar[str] = "tvbo:Tractogram"
+    class_name: ClassVar[str] = "Tractogram"
+    class_model_uri: ClassVar[URIRef] = TVBO.Tractogram
+
+    name: Union[str, TractogramName] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    data_source: Optional[str] = None
+    number_of_subjects: Optional[int] = None
+    acquisition: Optional[str] = None
+    processing_pipeline: Optional[str] = None
+    reference: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, TractogramName):
+            self.name = TractogramName(self.name)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.data_source is not None and not isinstance(self.data_source, str):
+            self.data_source = str(self.data_source)
+
+        if self.number_of_subjects is not None and not isinstance(self.number_of_subjects, int):
+            self.number_of_subjects = int(self.number_of_subjects)
+
+        if self.acquisition is not None and not isinstance(self.acquisition, str):
+            self.acquisition = str(self.acquisition)
+
+        if self.processing_pipeline is not None and not isinstance(self.processing_pipeline, str):
+            self.processing_pipeline = str(self.processing_pipeline)
+
+        if self.reference is not None and not isinstance(self.reference, str):
+            self.reference = str(self.reference)
 
         super().__post_init__(**kwargs)
 
@@ -356,14 +495,23 @@ class BrainRegionSeries(YAMLRoot):
 
 
 @dataclass(repr=False)
-class Connectome(YAMLRoot):
+class Network(YAMLRoot):
+    """
+    Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge
+    representation and matrix-based connectivity (Connectome compatibility).
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
-    class_class_uri: ClassVar[URIRef] = TVBO["Connectivity"]
-    class_class_curie: ClassVar[str] = "tvbo:Connectivity"
-    class_name: ClassVar[str] = "Connectome"
-    class_model_uri: ClassVar[URIRef] = TVBO.Connectome
+    class_class_uri: ClassVar[URIRef] = TVBO["Network"]
+    class_class_curie: ClassVar[str] = "tvbo:Network"
+    class_name: ClassVar[str] = "Network"
+    class_model_uri: ClassVar[URIRef] = TVBO.Network
 
+    label: Optional[str] = None
+    description: Optional[str] = None
+    nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
+    edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
+    coupling_library: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
     number_of_regions: Optional[int] = 1
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
@@ -371,10 +519,27 @@ class Connectome(YAMLRoot):
     weights: Optional[Union[dict, Matrix]] = None
     lengths: Optional[Union[dict, Matrix]] = None
     normalization: Optional[Union[dict, Equation]] = None
-    conduction_speed: Optional[Union[dict, "Parameter"]] = None
     node_labels: Optional[Union[str, list[str]]] = empty_list()
+    global_coupling_strength: Optional[Union[dict, "Parameter"]] = None
+    conduction_speed: Optional[Union[dict, "Parameter"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if not isinstance(self.nodes, list):
+            self.nodes = [self.nodes] if self.nodes is not None else []
+        self.nodes = [v if isinstance(v, Node) else Node(**as_dict(v)) for v in self.nodes]
+
+        if not isinstance(self.edges, list):
+            self.edges = [self.edges] if self.edges is not None else []
+        self.edges = [v if isinstance(v, Edge) else Edge(**as_dict(v)) for v in self.edges]
+
+        self._normalize_inlined_as_dict(slot_name="coupling_library", slot_type=Coupling, key_name="name", keyed=True)
+
         if self.number_of_regions is not None and not isinstance(self.number_of_regions, int):
             self.number_of_regions = int(self.number_of_regions)
 
@@ -396,41 +561,45 @@ class Connectome(YAMLRoot):
         if self.normalization is not None and not isinstance(self.normalization, Equation):
             self.normalization = Equation(**as_dict(self.normalization))
 
-        if self.conduction_speed is not None and not isinstance(self.conduction_speed, Parameter):
-            self.conduction_speed = Parameter(**as_dict(self.conduction_speed))
-
         if not isinstance(self.node_labels, list):
             self.node_labels = [self.node_labels] if self.node_labels is not None else []
         self.node_labels = [v if isinstance(v, str) else str(v) for v in self.node_labels]
+
+        if self.global_coupling_strength is not None and not isinstance(self.global_coupling_strength, Parameter):
+            self.global_coupling_strength = Parameter(**as_dict(self.global_coupling_strength))
+
+        if self.conduction_speed is not None and not isinstance(self.conduction_speed, Parameter):
+            self.conduction_speed = Parameter(**as_dict(self.conduction_speed))
 
         super().__post_init__(**kwargs)
 
 
 @dataclass(repr=False)
-class Network(YAMLRoot):
+class Node(YAMLRoot):
     """
-    Complete network specification combining dynamics, graph topology, and coupling configurations
+    A node in a network with its own dynamics and properties
     """
     _inherited_slots: ClassVar[list[str]] = []
 
-    class_class_uri: ClassVar[URIRef] = TVBO["Network"]
-    class_class_curie: ClassVar[str] = "tvbo:Network"
-    class_name: ClassVar[str] = "Network"
-    class_model_uri: ClassVar[URIRef] = TVBO.Network
+    class_class_uri: ClassVar[URIRef] = TVBO["Node"]
+    class_class_curie: ClassVar[str] = "tvbo:Node"
+    class_name: ClassVar[str] = "Node"
+    class_model_uri: ClassVar[URIRef] = TVBO.Node
 
-    graph: Union[dict, Connectome] = None
+    id: int = None
     label: Optional[str] = None
     description: Optional[str] = None
-    dynamics: Optional[Union[dict, "Dynamics"]] = None
-    node_dynamics: Optional[Union[Union[dict, "Dynamics"], list[Union[dict, "Dynamics"]]]] = empty_list()
-    node_dynamics_mapping: Optional[Union[int, list[int]]] = empty_list()
-    couplings: Optional[Union[Union[dict, "Coupling"], list[Union[dict, "Coupling"]]]] = empty_list()
+    dynamics: Optional[Union[str, DynamicsName]] = None
+    position: Optional[Union[dict, "Coordinate"]] = None
+    region: Optional[str] = None
+    parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
+    initial_state: Optional[Union[float, list[float]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.graph):
-            self.MissingRequiredField("graph")
-        if not isinstance(self.graph, Connectome):
-            self.graph = Connectome(**as_dict(self.graph))
+        if self._is_empty(self.id):
+            self.MissingRequiredField("id")
+        if not isinstance(self.id, int):
+            self.id = int(self.id)
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
@@ -438,16 +607,81 @@ class Network(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if self.dynamics is not None and not isinstance(self.dynamics, Dynamics):
-            self.dynamics = Dynamics(**as_dict(self.dynamics))
+        if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
+            self.dynamics = DynamicsName(self.dynamics)
 
-        self._normalize_inlined_as_dict(slot_name="node_dynamics", slot_type=Dynamics, key_name="name", keyed=False)
+        if self.position is not None and not isinstance(self.position, Coordinate):
+            self.position = Coordinate(**as_dict(self.position))
 
-        if not isinstance(self.node_dynamics_mapping, list):
-            self.node_dynamics_mapping = [self.node_dynamics_mapping] if self.node_dynamics_mapping is not None else []
-        self.node_dynamics_mapping = [v if isinstance(v, int) else int(v) for v in self.node_dynamics_mapping]
+        if self.region is not None and not isinstance(self.region, str):
+            self.region = str(self.region)
 
-        self._normalize_inlined_as_dict(slot_name="couplings", slot_type=Coupling, key_name="name", keyed=False)
+        if not isinstance(self.parameters, list):
+            self.parameters = [self.parameters] if self.parameters is not None else []
+        self.parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.parameters]
+
+        if not isinstance(self.initial_state, list):
+            self.initial_state = [self.initial_state] if self.initial_state is not None else []
+        self.initial_state = [v if isinstance(v, float) else float(v) for v in self.initial_state]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Edge(YAMLRoot):
+    """
+    A directed edge in a network with coupling and connectivity properties
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Edge"]
+    class_class_curie: ClassVar[str] = "tvbo:Edge"
+    class_name: ClassVar[str] = "Edge"
+    class_model_uri: ClassVar[URIRef] = TVBO.Edge
+
+    source: int = None
+    target: int = None
+    coupling: Union[dict, "Coupling"] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    weight: Optional[float] = 1.0
+    delay: Optional[float] = 0.0
+    distance: Optional[float] = None
+    tract_properties: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.source):
+            self.MissingRequiredField("source")
+        if not isinstance(self.source, int):
+            self.source = int(self.source)
+
+        if self._is_empty(self.target):
+            self.MissingRequiredField("target")
+        if not isinstance(self.target, int):
+            self.target = int(self.target)
+
+        if self._is_empty(self.coupling):
+            self.MissingRequiredField("coupling")
+        if not isinstance(self.coupling, Coupling):
+            self.coupling = Coupling(**as_dict(self.coupling))
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.weight is not None and not isinstance(self.weight, float):
+            self.weight = float(self.weight)
+
+        if self.delay is not None and not isinstance(self.delay, float):
+            self.delay = float(self.delay)
+
+        if self.distance is not None and not isinstance(self.distance, float):
+            self.distance = float(self.distance)
+
+        if self.tract_properties is not None and not isinstance(self.tract_properties, str):
+            self.tract_properties = str(self.tract_properties)
 
         super().__post_init__(**kwargs)
 
@@ -461,23 +695,23 @@ class ObservationModel(YAMLRoot):
     class_name: ClassVar[str] = "ObservationModel"
     class_model_uri: ClassVar[URIRef] = TVBO.ObservationModel
 
-    name: str = None
+    name: Union[str, ObservationModelName] = None
     acronym: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    parameters: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     transformation: Optional[Union[dict, "Function"]] = None
     pipeline: Optional[Union[Union[dict, "ProcessingStep"], list[Union[dict, "ProcessingStep"]]]] = empty_list()
     data_injections: Optional[Union[Union[dict, "DataInjection"], list[Union[dict, "DataInjection"]]]] = empty_list()
     argument_mappings: Optional[Union[Union[dict, "ArgumentMapping"], list[Union[dict, "ArgumentMapping"]]]] = empty_list()
-    derivatives: Optional[Union[Union[dict, "DerivedVariable"], list[Union[dict, "DerivedVariable"]]]] = empty_list()
+    derivatives: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, ObservationModelName):
+            self.name = ObservationModelName(self.name)
 
         if self.acronym is not None and not isinstance(self.acronym, str):
             self.acronym = str(self.acronym)
@@ -488,7 +722,7 @@ class ObservationModel(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -500,11 +734,15 @@ class ObservationModel(YAMLRoot):
             self.pipeline = [self.pipeline] if self.pipeline is not None else []
         self.pipeline = [v if isinstance(v, ProcessingStep) else ProcessingStep(**as_dict(v)) for v in self.pipeline]
 
-        self._normalize_inlined_as_dict(slot_name="data_injections", slot_type=DataInjection, key_name="name", keyed=False)
+        if not isinstance(self.data_injections, list):
+            self.data_injections = [self.data_injections] if self.data_injections is not None else []
+        self.data_injections = [v if isinstance(v, DataInjection) else DataInjection(**as_dict(v)) for v in self.data_injections]
 
-        self._normalize_inlined_as_dict(slot_name="argument_mappings", slot_type=ArgumentMapping, key_name="function_argument", keyed=False)
+        if not isinstance(self.argument_mappings, list):
+            self.argument_mappings = [self.argument_mappings] if self.argument_mappings is not None else []
+        self.argument_mappings = [v if isinstance(v, ArgumentMapping) else ArgumentMapping(**as_dict(v)) for v in self.argument_mappings]
 
-        self._normalize_inlined_as_dict(slot_name="derivatives", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="derivatives", slot_type=DerivedVariable, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -528,7 +766,7 @@ class ProcessingStep(YAMLRoot):
     output_alias: Optional[str] = None
     apply_on_dimension: Optional[str] = None
     ensure_shape: Optional[str] = None
-    variables_of_interest: Optional[Union[Union[dict, "StateVariable"], list[Union[dict, "StateVariable"]]]] = empty_list()
+    variables_of_interest: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.transformation):
@@ -542,7 +780,9 @@ class ProcessingStep(YAMLRoot):
         if self.type is not None and not isinstance(self.type, OperationType):
             self.type = OperationType(self.type)
 
-        self._normalize_inlined_as_dict(slot_name="input_mapping", slot_type=ArgumentMapping, key_name="function_argument", keyed=False)
+        if not isinstance(self.input_mapping, list):
+            self.input_mapping = [self.input_mapping] if self.input_mapping is not None else []
+        self.input_mapping = [v if isinstance(v, ArgumentMapping) else ArgumentMapping(**as_dict(v)) for v in self.input_mapping]
 
         if self.output_alias is not None and not isinstance(self.output_alias, str):
             self.output_alias = str(self.output_alias)
@@ -553,7 +793,7 @@ class ProcessingStep(YAMLRoot):
         if self.ensure_shape is not None and not isinstance(self.ensure_shape, str):
             self.ensure_shape = str(self.ensure_shape)
 
-        self._normalize_inlined_as_dict(slot_name="variables_of_interest", slot_type=StateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="variables_of_interest", slot_type=StateVariable, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -641,10 +881,15 @@ class DownsamplingModel(ObservationModel):
     class_name: ClassVar[str] = "DownsamplingModel"
     class_model_uri: ClassVar[URIRef] = TVBO.DownsamplingModel
 
-    name: str = None
+    name: Union[str, DownsamplingModelName] = None
     period: Optional[float] = 0.9765625
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, DownsamplingModelName):
+            self.name = DownsamplingModelName(self.name)
+
         if self.period is not None and not isinstance(self.period, float):
             self.period = float(self.period)
 
@@ -660,34 +905,34 @@ class Dynamics(YAMLRoot):
     class_name: ClassVar[str] = "Dynamics"
     class_model_uri: ClassVar[URIRef] = TVBO.Dynamics
 
-    name: str = "Generic2dOscillator"
+    name: Union[str, DynamicsName] = "Generic2dOscillator"
     has_reference: Optional[str] = None
     label: Optional[str] = None
     iri: Optional[str] = None
-    parameters: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     source: Optional[str] = None
     references: Optional[Union[str, list[str]]] = empty_list()
-    derived_parameters: Optional[Union[Union[dict, "DerivedParameter"], list[Union[dict, "DerivedParameter"]]]] = empty_list()
-    derived_variables: Optional[Union[Union[dict, "DerivedVariable"], list[Union[dict, "DerivedVariable"]]]] = empty_list()
-    coupling_terms: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
-    coupling_inputs: Optional[Union[Union[dict, "CouplingInput"], list[Union[dict, "CouplingInput"]]]] = empty_list()
-    state_variables: Optional[Union[Union[dict, "StateVariable"], list[Union[dict, "StateVariable"]]]] = empty_list()
+    derived_parameters: Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, "DerivedParameter"]], list[Union[dict, "DerivedParameter"]]]] = empty_dict()
+    derived_variables: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    coupling_terms: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    coupling_inputs: Optional[Union[dict[Union[str, CouplingInputName], Union[dict, "CouplingInput"]], list[Union[dict, "CouplingInput"]]]] = empty_dict()
+    state_variables: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
     modified: Optional[Union[bool, Bool]] = None
-    output_transforms: Optional[Union[Union[dict, "DerivedVariable"], list[Union[dict, "DerivedVariable"]]]] = empty_list()
-    derived_from_model: Optional[Union[dict, "NeuralMassModel"]] = None
+    output_transforms: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    derived_from_model: Optional[Union[str, NeuralMassModelName]] = None
     number_of_modes: Optional[int] = 1
-    local_coupling_term: Optional[Union[dict, "Parameter"]] = None
-    functions: Optional[Union[Union[dict, "Function"], list[Union[dict, "Function"]]]] = empty_list()
+    local_coupling_term: Optional[Union[str, ParameterName]] = None
+    functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     stimulus: Optional[Union[dict, Stimulus]] = None
-    modes: Optional[Union[Union[dict, "NeuralMassModel"], list[Union[dict, "NeuralMassModel"]]]] = empty_list()
+    modes: Optional[Union[dict[Union[str, NeuralMassModelName], Union[dict, "NeuralMassModel"]], list[Union[dict, "NeuralMassModel"]]]] = empty_dict()
     system_type: Optional[Union[str, "SystemType"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, DynamicsName):
+            self.name = DynamicsName(self.name)
 
         if self.has_reference is not None and not isinstance(self.has_reference, str):
             self.has_reference = str(self.has_reference)
@@ -698,7 +943,7 @@ class Dynamics(YAMLRoot):
         if self.iri is not None and not isinstance(self.iri, str):
             self.iri = str(self.iri)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -710,36 +955,36 @@ class Dynamics(YAMLRoot):
             self.references = [self.references] if self.references is not None else []
         self.references = [v if isinstance(v, str) else str(v) for v in self.references]
 
-        self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="coupling_terms", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="coupling_terms", slot_type=Parameter, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="coupling_inputs", slot_type=CouplingInput, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="coupling_inputs", slot_type=CouplingInput, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="state_variables", slot_type=StateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="state_variables", slot_type=StateVariable, key_name="name", keyed=True)
 
         if self.modified is not None and not isinstance(self.modified, Bool):
             self.modified = Bool(self.modified)
 
-        self._normalize_inlined_as_dict(slot_name="output_transforms", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="output_transforms", slot_type=DerivedVariable, key_name="name", keyed=True)
 
-        if self.derived_from_model is not None and not isinstance(self.derived_from_model, NeuralMassModel):
-            self.derived_from_model = NeuralMassModel(**as_dict(self.derived_from_model))
+        if self.derived_from_model is not None and not isinstance(self.derived_from_model, NeuralMassModelName):
+            self.derived_from_model = NeuralMassModelName(self.derived_from_model)
 
         if self.number_of_modes is not None and not isinstance(self.number_of_modes, int):
             self.number_of_modes = int(self.number_of_modes)
 
-        if self.local_coupling_term is not None and not isinstance(self.local_coupling_term, Parameter):
-            self.local_coupling_term = Parameter(**as_dict(self.local_coupling_term))
+        if self.local_coupling_term is not None and not isinstance(self.local_coupling_term, ParameterName):
+            self.local_coupling_term = ParameterName(self.local_coupling_term)
 
-        self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=True)
 
         if self.stimulus is not None and not isinstance(self.stimulus, Stimulus):
             self.stimulus = Stimulus(**as_dict(self.stimulus))
 
-        self._normalize_inlined_as_dict(slot_name="modes", slot_type=NeuralMassModel, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="modes", slot_type=NeuralMassModel, key_name="name", keyed=True)
 
         if self.system_type is not None and not isinstance(self.system_type, SystemType):
             self.system_type = SystemType(self.system_type)
@@ -759,7 +1004,16 @@ class NeuralMassModel(Dynamics):
     class_name: ClassVar[str] = "NeuralMassModel"
     class_model_uri: ClassVar[URIRef] = TVBO.NeuralMassModel
 
-    name: str = "Generic2dOscillator"
+    name: Union[str, NeuralMassModelName] = "Generic2dOscillator"
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, NeuralMassModelName):
+            self.name = NeuralMassModelName(self.name)
+
+        super().__post_init__(**kwargs)
+
 
 @dataclass(repr=False)
 class StateVariable(YAMLRoot):
@@ -770,7 +1024,7 @@ class StateVariable(YAMLRoot):
     class_name: ClassVar[str] = "StateVariable"
     class_model_uri: ClassVar[URIRef] = TVBO.StateVariable
 
-    name: str = None
+    name: Union[str, StateVariableName] = None
     symbol: Optional[str] = None
     label: Optional[str] = None
     definition: Optional[str] = None
@@ -784,14 +1038,13 @@ class StateVariable(YAMLRoot):
     stimulation_variable: Optional[Union[bool, Bool]] = None
     boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
-    initial_conditions: Optional[Union[float, list[float]]] = empty_list()
     history: Optional[Union[dict, "TimeSeries"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, StateVariableName):
+            self.name = StateVariableName(self.name)
 
         if self.symbol is not None and not isinstance(self.symbol, str):
             self.symbol = str(self.symbol)
@@ -832,10 +1085,6 @@ class StateVariable(YAMLRoot):
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
 
-        if not isinstance(self.initial_conditions, list):
-            self.initial_conditions = [self.initial_conditions] if self.initial_conditions is not None else []
-        self.initial_conditions = [v if isinstance(v, float) else float(v) for v in self.initial_conditions]
-
         if self.history is not None and not isinstance(self.history, TimeSeries):
             self.history = TimeSeries(**as_dict(self.history))
 
@@ -851,24 +1100,24 @@ class Distribution(YAMLRoot):
     class_name: ClassVar[str] = "Distribution"
     class_model_uri: ClassVar[URIRef] = TVBO.Distribution
 
-    name: str = None
+    name: Union[str, DistributionName] = None
     equation: Optional[Union[dict, Equation]] = None
-    parameters: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
-    dependencies: Optional[Union[Union[dict, "Parameter"], list[Union[dict, "Parameter"]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    dependencies: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     correlation: Optional[Union[dict, Matrix]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, DistributionName):
+            self.name = DistributionName(self.name)
 
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="dependencies", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="dependencies", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -885,7 +1134,7 @@ class Parameter(YAMLRoot):
     class_name: ClassVar[str] = "Parameter"
     class_model_uri: ClassVar[URIRef] = TVBO.Parameter
 
-    name: str = None
+    name: Union[str, ParameterName] = None
     label: Optional[str] = None
     symbol: Optional[str] = None
     definition: Optional[str] = None
@@ -905,8 +1154,8 @@ class Parameter(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, ParameterName):
+            self.name = ParameterName(self.name)
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
@@ -969,15 +1218,15 @@ class CouplingInput(YAMLRoot):
     class_name: ClassVar[str] = "CouplingInput"
     class_model_uri: ClassVar[URIRef] = TVBO.CouplingInput
 
-    name: str = None
+    name: Union[str, CouplingInputName] = None
     description: Optional[str] = None
     dimension: Optional[int] = 1
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, CouplingInputName):
+            self.name = CouplingInputName(self.name)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -997,15 +1246,15 @@ class Function(YAMLRoot):
     class_name: ClassVar[str] = "Function"
     class_model_uri: ClassVar[URIRef] = TVBO.Function
 
-    name: str = None
+    name: Union[str, FunctionName] = None
     acronym: Optional[str] = None
     label: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     definition: Optional[str] = None
     description: Optional[str] = None
-    requirements: Optional[Union[Union[dict, "SoftwareRequirement"], list[Union[dict, "SoftwareRequirement"]]]] = empty_list()
+    requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     iri: Optional[str] = None
-    arguments: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     output: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
     callable: Optional[Union[dict, "Callable"]] = None
@@ -1013,8 +1262,8 @@ class Function(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, FunctionName):
+            self.name = FunctionName(self.name)
 
         if self.acronym is not None and not isinstance(self.acronym, str):
             self.acronym = str(self.acronym)
@@ -1031,7 +1280,9 @@ class Function(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
+        if not isinstance(self.requirements, list):
+            self.requirements = [self.requirements] if self.requirements is not None else []
+        self.requirements = [v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements]
 
         if self.iri is not None and not isinstance(self.iri, str):
             self.iri = str(self.iri)
@@ -1039,7 +1290,7 @@ class Function(YAMLRoot):
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
 
-        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.output is not None and not isinstance(self.output, Equation):
             self.output = Equation(**as_dict(self.output))
@@ -1062,7 +1313,7 @@ class Callable(YAMLRoot):
     class_name: ClassVar[str] = "Callable"
     class_model_uri: ClassVar[URIRef] = TVBO.Callable
 
-    name: str = None
+    name: Union[str, CallableName] = None
     description: Optional[str] = None
     module: Optional[str] = None
     qualname: Optional[str] = None
@@ -1071,8 +1322,8 @@ class Callable(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, CallableName):
+            self.name = CallableName(self.name)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -1120,7 +1371,7 @@ class DerivedParameter(Parameter):
     class_name: ClassVar[str] = "DerivedParameter"
     class_model_uri: ClassVar[URIRef] = TVBO.DerivedParameter
 
-    name: str = None
+    name: Union[str, DerivedParameterName] = None
     symbol: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
@@ -1129,8 +1380,8 @@ class DerivedParameter(Parameter):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, DerivedParameterName):
+            self.name = DerivedParameterName(self.name)
 
         if self.symbol is not None and not isinstance(self.symbol, str):
             self.symbol = str(self.symbol)
@@ -1156,7 +1407,7 @@ class DerivedVariable(YAMLRoot):
     class_name: ClassVar[str] = "DerivedVariable"
     class_model_uri: ClassVar[URIRef] = TVBO.DerivedVariable
 
-    name: str = None
+    name: Union[str, DerivedVariableName] = None
     symbol: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
@@ -1167,8 +1418,8 @@ class DerivedVariable(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, DerivedVariableName):
+            self.name = DerivedVariableName(self.name)
 
         if self.symbol is not None and not isinstance(self.symbol, str):
             self.symbol = str(self.symbol)
@@ -1201,7 +1452,7 @@ class Noise(YAMLRoot):
     class_name: ClassVar[str] = "Noise"
     class_model_uri: ClassVar[URIRef] = TVBO.Noise
 
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     equation: Optional[Union[dict, Equation]] = None
     noise_type: Optional[str] = "gaussian"
     correlated: Optional[Union[bool, Bool]] = False
@@ -1212,10 +1463,10 @@ class Noise(YAMLRoot):
     intensity: Optional[Union[dict, Parameter]] = None
     function: Optional[Union[dict, Function]] = None
     pycode: Optional[str] = None
-    targets: Optional[Union[Union[dict, StateVariable], list[Union[dict, StateVariable]]]] = empty_list()
+    targets: Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
@@ -1247,7 +1498,7 @@ class Noise(YAMLRoot):
         if self.pycode is not None and not isinstance(self.pycode, str):
             self.pycode = str(self.pycode)
 
-        self._normalize_inlined_as_dict(slot_name="targets", slot_type=StateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="targets", slot_type=StateVariable, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -1289,7 +1540,7 @@ class CostFunction(YAMLRoot):
 
     label: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -1298,7 +1549,7 @@ class CostFunction(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -1316,7 +1567,7 @@ class FittingTarget(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     symbol: Optional[str] = None
     definition: Optional[str] = None
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -1331,7 +1582,7 @@ class FittingTarget(YAMLRoot):
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -1378,7 +1629,7 @@ class Integrator(YAMLRoot):
 
     time_scale: Optional[str] = "ms"
     unit: Optional[str] = None
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     duration: Optional[float] = 1000
     method: Optional[str] = None
     step_size: Optional[float] = 0.01220703125
@@ -1388,7 +1639,7 @@ class Integrator(YAMLRoot):
     transient_time: Optional[float] = 0
     scipy_ode_base: Optional[Union[bool, Bool]] = False
     number_of_stages: Optional[int] = 1
-    intermediate_expressions: Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]] = empty_list()
+    intermediate_expressions: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
     update_expression: Optional[Union[dict, DerivedVariable]] = None
     delayed: Optional[Union[bool, Bool]] = True
 
@@ -1399,7 +1650,7 @@ class Integrator(YAMLRoot):
         if self.unit is not None and not isinstance(self.unit, str):
             self.unit = str(self.unit)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.duration is not None and not isinstance(self.duration, float):
             self.duration = float(self.duration)
@@ -1429,7 +1680,7 @@ class Integrator(YAMLRoot):
         if self.number_of_stages is not None and not isinstance(self.number_of_stages, int):
             self.number_of_stages = int(self.number_of_stages)
 
-        self._normalize_inlined_as_dict(slot_name="intermediate_expressions", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="intermediate_expressions", slot_type=DerivedVariable, key_name="name", keyed=True)
 
         if self.update_expression is not None and not isinstance(self.update_expression, DerivedVariable):
             self.update_expression = DerivedVariable(**as_dict(self.update_expression))
@@ -1452,10 +1703,10 @@ class Monitor(ObservationModel):
     class_name: ClassVar[str] = "Monitor"
     class_model_uri: ClassVar[URIRef] = TVBO.Monitor
 
-    name: str = None
+    name: Union[str, MonitorName] = None
     time_scale: Optional[str] = "ms"
     label: Optional[str] = None
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     acronym: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
@@ -1466,8 +1717,8 @@ class Monitor(ObservationModel):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, MonitorName):
+            self.name = MonitorName(self.name)
 
         if self.time_scale is not None and not isinstance(self.time_scale, str):
             self.time_scale = str(self.time_scale)
@@ -1475,7 +1726,7 @@ class Monitor(ObservationModel):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.acronym is not None and not isinstance(self.acronym, str):
             self.acronym = str(self.acronym)
@@ -1507,9 +1758,9 @@ class Coupling(YAMLRoot):
     class_name: ClassVar[str] = "Coupling"
     class_model_uri: ClassVar[URIRef] = TVBO.Coupling
 
-    name: str = "Linear"
+    name: Union[str, CouplingName] = "Linear"
     label: Optional[str] = None
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     coupling_function: Optional[Union[dict, Equation]] = None
     sparse: Optional[Union[bool, Bool]] = False
     pre_expression: Optional[Union[dict, Equation]] = None
@@ -1519,20 +1770,20 @@ class Coupling(YAMLRoot):
     delayed: Optional[Union[bool, Bool]] = True
     inner_coupling: Optional[Union[dict, "Coupling"]] = None
     region_mapping: Optional[Union[dict, "RegionMapping"]] = None
-    regional_connectivity: Optional[Union[dict, Connectome]] = None
+    regional_connectivity: Optional[Union[dict, Network]] = None
     aggregation: Optional[str] = None
     distribution: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, CouplingName):
+            self.name = CouplingName(self.name)
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.coupling_function is not None and not isinstance(self.coupling_function, Equation):
             self.coupling_function = Equation(**as_dict(self.coupling_function))
@@ -1561,8 +1812,8 @@ class Coupling(YAMLRoot):
         if self.region_mapping is not None and not isinstance(self.region_mapping, RegionMapping):
             self.region_mapping = RegionMapping(**as_dict(self.region_mapping))
 
-        if self.regional_connectivity is not None and not isinstance(self.regional_connectivity, Connectome):
-            self.regional_connectivity = Connectome(**as_dict(self.regional_connectivity))
+        if self.regional_connectivity is not None and not isinstance(self.regional_connectivity, Network):
+            self.regional_connectivity = Network(**as_dict(self.regional_connectivity))
 
         if self.aggregation is not None and not isinstance(self.aggregation, str):
             self.aggregation = str(self.aggregation)
@@ -1648,17 +1899,17 @@ class SimulationExperiment(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.SimulationExperiment
 
     id: Union[int, SimulationExperimentId] = None
-    model: Optional[Union[dict, Dynamics]] = None
+    model: Optional[Union[str, DynamicsName]] = None
     description: Optional[str] = None
     additional_equations: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     label: Optional[str] = None
     local_dynamics: Optional[Union[dict, Dynamics]] = None
-    dynamics: Optional[Union[str, list[str]]] = empty_list()
+    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]] = empty_dict()
     integration: Optional[Union[dict, Integrator]] = None
-    connectivity: Optional[Union[dict, Connectome]] = None
-    network: Optional[Union[dict, Connectome]] = None
+    connectivity: Optional[Union[dict, Network]] = None
+    network: Optional[Union[dict, Network]] = None
     coupling: Optional[Union[dict, Coupling]] = None
-    monitors: Optional[Union[Union[dict, Monitor], list[Union[dict, Monitor]]]] = empty_list()
+    monitors: Optional[Union[dict[Union[str, MonitorName], Union[dict, Monitor]], list[Union[dict, Monitor]]]] = empty_dict()
     stimulation: Optional[Union[dict, Stimulus]] = None
     field_dynamics: Optional[Union[dict, "PDE"]] = None
     modelfitting: Optional[Union[Union[dict, ModelFitting], list[Union[dict, ModelFitting]]]] = empty_list()
@@ -1672,8 +1923,8 @@ class SimulationExperiment(YAMLRoot):
         if not isinstance(self.id, SimulationExperimentId):
             self.id = SimulationExperimentId(self.id)
 
-        if self.model is not None and not isinstance(self.model, Dynamics):
-            self.model = Dynamics(**as_dict(self.model))
+        if self.model is not None and not isinstance(self.model, DynamicsName):
+            self.model = DynamicsName(self.model)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -1688,23 +1939,21 @@ class SimulationExperiment(YAMLRoot):
         if self.local_dynamics is not None and not isinstance(self.local_dynamics, Dynamics):
             self.local_dynamics = Dynamics(**as_dict(self.local_dynamics))
 
-        if not isinstance(self.dynamics, list):
-            self.dynamics = [self.dynamics] if self.dynamics is not None else []
-        self.dynamics = [v if isinstance(v, str) else str(v) for v in self.dynamics]
+        self._normalize_inlined_as_list(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
         if self.integration is not None and not isinstance(self.integration, Integrator):
             self.integration = Integrator(**as_dict(self.integration))
 
-        if self.connectivity is not None and not isinstance(self.connectivity, Connectome):
-            self.connectivity = Connectome(**as_dict(self.connectivity))
+        if self.connectivity is not None and not isinstance(self.connectivity, Network):
+            self.connectivity = Network(**as_dict(self.connectivity))
 
-        if self.network is not None and not isinstance(self.network, Connectome):
-            self.network = Connectome(**as_dict(self.network))
+        if self.network is not None and not isinstance(self.network, Network):
+            self.network = Network(**as_dict(self.network))
 
         if self.coupling is not None and not isinstance(self.coupling, Coupling):
             self.coupling = Coupling(**as_dict(self.coupling))
 
-        self._normalize_inlined_as_dict(slot_name="monitors", slot_type=Monitor, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="monitors", slot_type=Monitor, key_name="name", keyed=True)
 
         if self.stimulation is not None and not isinstance(self.stimulation, Stimulus):
             self.stimulation = Stimulus(**as_dict(self.stimulation))
@@ -1740,7 +1989,7 @@ class SimulationStudy(YAMLRoot):
 
     label: Optional[str] = None
     derived_from: Optional[str] = None
-    model: Optional[Union[dict, Dynamics]] = None
+    model: Optional[Union[str, DynamicsName]] = None
     description: Optional[str] = None
     key: Optional[str] = None
     title: Optional[str] = None
@@ -1756,8 +2005,8 @@ class SimulationStudy(YAMLRoot):
         if self.derived_from is not None and not isinstance(self.derived_from, str):
             self.derived_from = str(self.derived_from)
 
-        if self.model is not None and not isinstance(self.model, Dynamics):
-            self.model = Dynamics(**as_dict(self.model))
+        if self.model is not None and not isinstance(self.model, DynamicsName):
+            self.model = DynamicsName(self.model)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -1842,7 +2091,7 @@ class SoftwareEnvironment(YAMLRoot):
     environment_type: Optional[Union[str, "EnvironmentType"]] = None
     container_image: Optional[str] = None
     build_hash: Optional[str] = None
-    requirements: Optional[Union[Union[dict, "SoftwareRequirement"], list[Union[dict, "SoftwareRequirement"]]]] = empty_list()
+    requirements: Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, "SoftwareRequirement"]], list[Union[dict, "SoftwareRequirement"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -1872,7 +2121,7 @@ class SoftwareEnvironment(YAMLRoot):
         if self.build_hash is not None and not isinstance(self.build_hash, str):
             self.build_hash = str(self.build_hash)
 
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -1886,8 +2135,8 @@ class SoftwareRequirement(YAMLRoot):
     class_name: ClassVar[str] = "SoftwareRequirement"
     class_model_uri: ClassVar[URIRef] = TVBO.SoftwareRequirement
 
-    name: str = None
-    package: Union[dict, "SoftwarePackage"] = None
+    name: Union[str, SoftwareRequirementName] = None
+    package: Union[str, SoftwarePackageName] = None
     description: Optional[str] = None
     dataLocation: Optional[str] = None
     version_spec: Optional[str] = None
@@ -1903,13 +2152,13 @@ class SoftwareRequirement(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, SoftwareRequirementName):
+            self.name = SoftwareRequirementName(self.name)
 
         if self._is_empty(self.package):
             self.MissingRequiredField("package")
-        if not isinstance(self.package, SoftwarePackage):
-            self.package = SoftwarePackage(**as_dict(self.package))
+        if not isinstance(self.package, SoftwarePackageName):
+            self.package = SoftwarePackageName(self.package)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -1960,7 +2209,7 @@ class SoftwarePackage(YAMLRoot):
     class_name: ClassVar[str] = "SoftwarePackage"
     class_model_uri: ClassVar[URIRef] = TVBO.SoftwarePackage
 
-    name: str = None
+    name: Union[str, SoftwarePackageName] = None
     description: Optional[str] = None
     homepage: Optional[str] = None
     license: Optional[str] = None
@@ -1971,8 +2220,8 @@ class SoftwarePackage(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, SoftwarePackageName):
+            self.name = SoftwarePackageName(self.name)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -2045,7 +2294,7 @@ class SpatialDomain(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
+    coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
     region: Optional[str] = None
     geometry: Optional[str] = None
 
@@ -2056,8 +2305,8 @@ class SpatialDomain(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
-            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
+            self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
         if self.region is not None and not isinstance(self.region, str):
             self.region = str(self.region)
@@ -2083,7 +2332,7 @@ class Mesh(YAMLRoot):
     element_type: Optional[Union[str, "ElementType"]] = None
     coordinates: Optional[Union[Union[dict, "Coordinate"], list[Union[dict, "Coordinate"]]]] = empty_list()
     elements: Optional[str] = None
-    coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
+    coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -2105,8 +2354,8 @@ class Mesh(YAMLRoot):
         if self.elements is not None and not isinstance(self.elements, str):
             self.elements = str(self.elements)
 
-        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
-            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
+            self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
         super().__post_init__(**kwargs)
 
@@ -2127,7 +2376,7 @@ class SpatialField(YAMLRoot):
     mesh: Optional[Union[dict, Mesh]] = None
     values: Optional[Union[dict, NDArray]] = None
     time_dependent: Optional[Union[bool, Bool]] = False
-    initial_value: Optional[float] = None
+    initial_value: Optional[float] = 0.1
     initial_expression: Optional[Union[dict, Equation]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2170,13 +2419,18 @@ class FieldStateVariable(StateVariable):
     class_name: ClassVar[str] = "FieldStateVariable"
     class_model_uri: ClassVar[URIRef] = TVBO.FieldStateVariable
 
-    name: str = None
+    name: Union[str, FieldStateVariableName] = None
     label: Optional[str] = None
     description: Optional[str] = None
     mesh: Optional[Union[dict, Mesh]] = None
     boundary_conditions: Optional[Union[Union[dict, "BoundaryCondition"], list[Union[dict, "BoundaryCondition"]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, FieldStateVariableName):
+            self.name = FieldStateVariableName(self.name)
+
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -2206,8 +2460,8 @@ class DifferentialOperator(YAMLRoot):
     definition: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     operator_type: Optional[Union[str, "OperatorType"]] = None
-    coefficient: Optional[Union[dict, Parameter]] = None
-    tensor_coefficient: Optional[Union[dict, Parameter]] = None
+    coefficient: Optional[Union[str, ParameterName]] = None
+    tensor_coefficient: Optional[Union[str, ParameterName]] = None
     expression: Optional[Union[dict, Equation]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2223,11 +2477,11 @@ class DifferentialOperator(YAMLRoot):
         if self.operator_type is not None and not isinstance(self.operator_type, OperatorType):
             self.operator_type = OperatorType(self.operator_type)
 
-        if self.coefficient is not None and not isinstance(self.coefficient, Parameter):
-            self.coefficient = Parameter(**as_dict(self.coefficient))
+        if self.coefficient is not None and not isinstance(self.coefficient, ParameterName):
+            self.coefficient = ParameterName(self.coefficient)
 
-        if self.tensor_coefficient is not None and not isinstance(self.tensor_coefficient, Parameter):
-            self.tensor_coefficient = Parameter(**as_dict(self.tensor_coefficient))
+        if self.tensor_coefficient is not None and not isinstance(self.tensor_coefficient, ParameterName):
+            self.tensor_coefficient = ParameterName(self.tensor_coefficient)
 
         if self.expression is not None and not isinstance(self.expression, Equation):
             self.expression = Equation(**as_dict(self.expression))
@@ -2284,7 +2538,7 @@ class PDESolver(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    requirements: Optional[Union[Union[dict, SoftwareRequirement], list[Union[dict, SoftwareRequirement]]]] = empty_list()
+    requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     environment: Optional[Union[dict, SoftwareEnvironment]] = None
     discretization: Optional[Union[str, "DiscretizationMethod"]] = None
     time_integrator: Optional[str] = None
@@ -2299,7 +2553,9 @@ class PDESolver(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
+        if not isinstance(self.requirements, list):
+            self.requirements = [self.requirements] if self.requirements is not None else []
+        self.requirements = [v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements]
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -2336,18 +2592,18 @@ class PDE(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    parameters: Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]] = empty_list()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     domain: Optional[Union[dict, SpatialDomain]] = None
     mesh: Optional[Union[dict, Mesh]] = None
-    state_variables: Optional[Union[Union[dict, FieldStateVariable], list[Union[dict, FieldStateVariable]]]] = empty_list()
+    state_variables: Optional[Union[Union[str, FieldStateVariableName], list[Union[str, FieldStateVariableName]]]] = empty_list()
     field: Optional[Union[dict, SpatialField]] = None
     operators: Optional[Union[Union[dict, DifferentialOperator], list[Union[dict, DifferentialOperator]]]] = empty_list()
     sources: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     boundary_conditions: Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]] = empty_list()
     solver: Optional[Union[dict, PDESolver]] = None
-    derived_parameters: Optional[Union[Union[dict, DerivedParameter], list[Union[dict, DerivedParameter]]]] = empty_list()
-    derived_variables: Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]] = empty_list()
-    functions: Optional[Union[Union[dict, Function], list[Union[dict, Function]]]] = empty_list()
+    derived_parameters: Optional[Union[Union[str, DerivedParameterName], list[Union[str, DerivedParameterName]]]] = empty_list()
+    derived_variables: Optional[Union[Union[str, DerivedVariableName], list[Union[str, DerivedVariableName]]]] = empty_list()
+    functions: Optional[Union[Union[str, FunctionName], list[Union[str, FunctionName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -2356,7 +2612,7 @@ class PDE(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.domain is not None and not isinstance(self.domain, SpatialDomain):
             self.domain = SpatialDomain(**as_dict(self.domain))
@@ -2364,7 +2620,9 @@ class PDE(YAMLRoot):
         if self.mesh is not None and not isinstance(self.mesh, Mesh):
             self.mesh = Mesh(**as_dict(self.mesh))
 
-        self._normalize_inlined_as_dict(slot_name="state_variables", slot_type=FieldStateVariable, key_name="name", keyed=False)
+        if not isinstance(self.state_variables, list):
+            self.state_variables = [self.state_variables] if self.state_variables is not None else []
+        self.state_variables = [v if isinstance(v, FieldStateVariableName) else FieldStateVariableName(v) for v in self.state_variables]
 
         if self.field is not None and not isinstance(self.field, SpatialField):
             self.field = SpatialField(**as_dict(self.field))
@@ -2384,11 +2642,17 @@ class PDE(YAMLRoot):
         if self.solver is not None and not isinstance(self.solver, PDESolver):
             self.solver = PDESolver(**as_dict(self.solver))
 
-        self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=False)
+        if not isinstance(self.derived_parameters, list):
+            self.derived_parameters = [self.derived_parameters] if self.derived_parameters is not None else []
+        self.derived_parameters = [v if isinstance(v, DerivedParameterName) else DerivedParameterName(v) for v in self.derived_parameters]
 
-        self._normalize_inlined_as_dict(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=False)
+        if not isinstance(self.derived_variables, list):
+            self.derived_variables = [self.derived_variables] if self.derived_variables is not None else []
+        self.derived_variables = [v if isinstance(v, DerivedVariableName) else DerivedVariableName(v) for v in self.derived_variables]
 
-        self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=False)
+        if not isinstance(self.functions, list):
+            self.functions = [self.functions] if self.functions is not None else []
+        self.functions = [v if isinstance(v, FunctionName) else FunctionName(v) for v in self.functions]
 
         super().__post_init__(**kwargs)
 
@@ -2405,14 +2669,14 @@ class Coordinate(YAMLRoot):
     class_name: ClassVar[str] = "Coordinate"
     class_model_uri: ClassVar[URIRef] = TVBO.Coordinate
 
-    coordinateSpace: Optional[Union[dict, "CommonCoordinateSpace"]] = None
+    coordinateSpace: Optional[Union[str, CommonCoordinateSpaceName]] = None
     x: Optional[float] = None
     y: Optional[float] = None
     z: Optional[float] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self.coordinateSpace is not None and not isinstance(self.coordinateSpace, CommonCoordinateSpace):
-            self.coordinateSpace = CommonCoordinateSpace(**as_dict(self.coordinateSpace))
+        if self.coordinateSpace is not None and not isinstance(self.coordinateSpace, CommonCoordinateSpaceName):
+            self.coordinateSpace = CommonCoordinateSpaceName(self.coordinateSpace)
 
         if self.x is not None and not isinstance(self.x, float):
             self.x = float(self.x)
@@ -2438,8 +2702,8 @@ class BrainAtlas(YAMLRoot):
     class_name: ClassVar[str] = "BrainAtlas"
     class_model_uri: ClassVar[URIRef] = TVBO.BrainAtlas
 
-    name: str = None
-    coordinateSpace: Optional[Union[dict, "CommonCoordinateSpace"]] = None
+    name: Union[str, BrainAtlasName] = None
+    coordinateSpace: Optional[Union[str, CommonCoordinateSpaceName]] = None
     abbreviation: Optional[str] = None
     author: Optional[Union[str, list[str]]] = empty_list()
     isVersionOf: Optional[str] = None
@@ -2449,11 +2713,11 @@ class BrainAtlas(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, BrainAtlasName):
+            self.name = BrainAtlasName(self.name)
 
-        if self.coordinateSpace is not None and not isinstance(self.coordinateSpace, CommonCoordinateSpace):
-            self.coordinateSpace = CommonCoordinateSpace(**as_dict(self.coordinateSpace))
+        if self.coordinateSpace is not None and not isinstance(self.coordinateSpace, CommonCoordinateSpaceName):
+            self.coordinateSpace = CommonCoordinateSpaceName(self.coordinateSpace)
 
         if self.abbreviation is not None and not isinstance(self.abbreviation, str):
             self.abbreviation = str(self.abbreviation)
@@ -2486,7 +2750,7 @@ class CommonCoordinateSpace(YAMLRoot):
     class_name: ClassVar[str] = "CommonCoordinateSpace"
     class_model_uri: ClassVar[URIRef] = TVBO.CommonCoordinateSpace
 
-    name: str = None
+    name: Union[str, CommonCoordinateSpaceName] = None
     abbreviation: Optional[str] = None
     unit: Optional[str] = None
     license: Optional[str] = None
@@ -2498,8 +2762,8 @@ class CommonCoordinateSpace(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, CommonCoordinateSpaceName):
+            self.name = CommonCoordinateSpaceName(self.name)
 
         if self.abbreviation is not None and not isinstance(self.abbreviation, str):
             self.abbreviation = str(self.abbreviation)
@@ -2538,11 +2802,11 @@ class ParcellationEntity(YAMLRoot):
     class_name: ClassVar[str] = "ParcellationEntity"
     class_model_uri: ClassVar[URIRef] = TVBO.ParcellationEntity
 
-    name: str = None
+    name: Union[str, ParcellationEntityName] = None
     abbreviation: Optional[str] = None
     alternateName: Optional[Union[str, list[str]]] = empty_list()
     lookupLabel: Optional[int] = None
-    hasParent: Optional[Union[Union[dict, "ParcellationEntity"], list[Union[dict, "ParcellationEntity"]]]] = empty_list()
+    hasParent: Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]] = empty_list()
     ontologyIdentifier: Optional[Union[str, list[str]]] = empty_list()
     versionIdentifier: Optional[str] = None
     relatedUBERONTerm: Optional[str] = None
@@ -2554,8 +2818,8 @@ class ParcellationEntity(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, ParcellationEntityName):
+            self.name = ParcellationEntityName(self.name)
 
         if self.abbreviation is not None and not isinstance(self.abbreviation, str):
             self.abbreviation = str(self.abbreviation)
@@ -2567,7 +2831,9 @@ class ParcellationEntity(YAMLRoot):
         if self.lookupLabel is not None and not isinstance(self.lookupLabel, int):
             self.lookupLabel = int(self.lookupLabel)
 
-        self._normalize_inlined_as_dict(slot_name="hasParent", slot_type=ParcellationEntity, key_name="name", keyed=False)
+        if not isinstance(self.hasParent, list):
+            self.hasParent = [self.hasParent] if self.hasParent is not None else []
+        self.hasParent = [v if isinstance(v, ParcellationEntityName) else ParcellationEntityName(v) for v in self.hasParent]
 
         if not isinstance(self.ontologyIdentifier, list):
             self.ontologyIdentifier = [self.ontologyIdentifier] if self.ontologyIdentifier is not None else []
@@ -2610,7 +2876,7 @@ class ParcellationTerminology(YAMLRoot):
     dataLocation: Optional[str] = None
     ontologyIdentifier: Optional[Union[str, list[str]]] = empty_list()
     versionIdentifier: Optional[str] = None
-    entities: Optional[Union[Union[dict, ParcellationEntity], list[Union[dict, ParcellationEntity]]]] = empty_list()
+    entities: Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -2626,7 +2892,9 @@ class ParcellationTerminology(YAMLRoot):
         if self.versionIdentifier is not None and not isinstance(self.versionIdentifier, str):
             self.versionIdentifier = str(self.versionIdentifier)
 
-        self._normalize_inlined_as_dict(slot_name="entities", slot_type=ParcellationEntity, key_name="name", keyed=False)
+        if not isinstance(self.entities, list):
+            self.entities = [self.entities] if self.entities is not None else []
+        self.entities = [v if isinstance(v, ParcellationEntityName) else ParcellationEntityName(v) for v in self.entities]
 
         super().__post_init__(**kwargs)
 
@@ -2647,7 +2915,7 @@ class Dataset(YAMLRoot):
     dataset_id: Optional[str] = None
     subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, "Subject"]], list[Union[dict, "Subject"]]]] = empty_dict()
     clinical_scores: Optional[Union[Union[dict, "ClinicalScore"], list[Union[dict, "ClinicalScore"]]]] = empty_list()
-    coordinate_space: Optional[Union[dict, CommonCoordinateSpace]] = None
+    coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -2662,8 +2930,8 @@ class Dataset(YAMLRoot):
             self.clinical_scores = [self.clinical_scores] if self.clinical_scores is not None else []
         self.clinical_scores = [v if isinstance(v, ClinicalScore) else ClinicalScore(**as_dict(v)) for v in self.clinical_scores]
 
-        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
-            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
+            self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
         super().__post_init__(**kwargs)
 
@@ -2685,8 +2953,8 @@ class Subject(YAMLRoot):
     sex: Optional[str] = None
     diagnosis: Optional[str] = None
     handedness: Optional[str] = None
-    protocols: Optional[Union[Union[dict, "DBSProtocol"], list[Union[dict, "DBSProtocol"]]]] = empty_list()
-    coordinate_space: Optional[Union[dict, CommonCoordinateSpace]] = None
+    protocols: Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]] = empty_list()
+    coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.subject_id):
@@ -2706,10 +2974,12 @@ class Subject(YAMLRoot):
         if self.handedness is not None and not isinstance(self.handedness, str):
             self.handedness = str(self.handedness)
 
-        self._normalize_inlined_as_dict(slot_name="protocols", slot_type=DBSProtocol, key_name="name", keyed=False)
+        if not isinstance(self.protocols, list):
+            self.protocols = [self.protocols] if self.protocols is not None else []
+        self.protocols = [v if isinstance(v, DBSProtocolName) else DBSProtocolName(v) for v in self.protocols]
 
-        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
-            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
+            self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
         super().__post_init__(**kwargs)
 
@@ -2734,8 +3004,8 @@ class Electrode(YAMLRoot):
     head: Optional[Union[dict, Coordinate]] = None
     tail: Optional[Union[dict, Coordinate]] = None
     trajectory: Optional[Union[Union[dict, Coordinate], list[Union[dict, Coordinate]]]] = empty_list()
-    target_structure: Optional[Union[dict, ParcellationEntity]] = None
-    coordinate_space: Optional[Union[dict, CommonCoordinateSpace]] = None
+    target_structure: Optional[Union[str, ParcellationEntityName]] = None
+    coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
     recon_path: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2765,11 +3035,11 @@ class Electrode(YAMLRoot):
             self.trajectory = [self.trajectory] if self.trajectory is not None else []
         self.trajectory = [v if isinstance(v, Coordinate) else Coordinate(**as_dict(v)) for v in self.trajectory]
 
-        if self.target_structure is not None and not isinstance(self.target_structure, ParcellationEntity):
-            self.target_structure = ParcellationEntity(**as_dict(self.target_structure))
+        if self.target_structure is not None and not isinstance(self.target_structure, ParcellationEntityName):
+            self.target_structure = ParcellationEntityName(self.target_structure)
 
-        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
-            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
+            self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
         if self.recon_path is not None and not isinstance(self.recon_path, str):
             self.recon_path = str(self.recon_path)
@@ -2819,9 +3089,9 @@ class StimulationSetting(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.StimulationSetting
 
     electrode_reference: Optional[Union[dict, Electrode]] = None
-    amplitude: Optional[Union[dict, Parameter]] = None
-    frequency: Optional[Union[dict, Parameter]] = None
-    pulse_width: Optional[Union[dict, Parameter]] = None
+    amplitude: Optional[Union[str, ParameterName]] = None
+    frequency: Optional[Union[str, ParameterName]] = None
+    pulse_width: Optional[Union[str, ParameterName]] = None
     mode: Optional[str] = None
     active_contacts: Optional[Union[int, list[int]]] = empty_list()
     efield: Optional[Union[dict, "EField"]] = None
@@ -2830,14 +3100,14 @@ class StimulationSetting(YAMLRoot):
         if self.electrode_reference is not None and not isinstance(self.electrode_reference, Electrode):
             self.electrode_reference = Electrode(**as_dict(self.electrode_reference))
 
-        if self.amplitude is not None and not isinstance(self.amplitude, Parameter):
-            self.amplitude = Parameter(**as_dict(self.amplitude))
+        if self.amplitude is not None and not isinstance(self.amplitude, ParameterName):
+            self.amplitude = ParameterName(self.amplitude)
 
-        if self.frequency is not None and not isinstance(self.frequency, Parameter):
-            self.frequency = Parameter(**as_dict(self.frequency))
+        if self.frequency is not None and not isinstance(self.frequency, ParameterName):
+            self.frequency = ParameterName(self.frequency)
 
-        if self.pulse_width is not None and not isinstance(self.pulse_width, Parameter):
-            self.pulse_width = Parameter(**as_dict(self.pulse_width))
+        if self.pulse_width is not None and not isinstance(self.pulse_width, ParameterName):
+            self.pulse_width = ParameterName(self.pulse_width)
 
         if self.mode is not None and not isinstance(self.mode, str):
             self.mode = str(self.mode)
@@ -2864,7 +3134,7 @@ class DBSProtocol(YAMLRoot):
     class_name: ClassVar[str] = "DBSProtocol"
     class_model_uri: ClassVar[URIRef] = TVBO.DBSProtocol
 
-    name: str = None
+    name: Union[str, DBSProtocolName] = None
     electrodes: Optional[Union[Union[dict, Electrode], list[Union[dict, Electrode]]]] = empty_list()
     settings: Optional[Union[Union[dict, StimulationSetting], list[Union[dict, StimulationSetting]]]] = empty_list()
     timing_info: Optional[str] = None
@@ -2874,8 +3144,8 @@ class DBSProtocol(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
+        if not isinstance(self.name, DBSProtocolName):
+            self.name = DBSProtocolName(self.name)
 
         if not isinstance(self.electrodes, list):
             self.electrodes = [self.electrodes] if self.electrodes is not None else []
@@ -3044,15 +3314,15 @@ class EField(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.EField
 
     volume_data: Optional[str] = None
-    coordinate_space: Optional[Union[dict, CommonCoordinateSpace]] = None
+    coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
     threshold_applied: Optional[float] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.volume_data is not None and not isinstance(self.volume_data, str):
             self.volume_data = str(self.volume_data)
 
-        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
-            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
+            self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
         if self.threshold_applied is not None and not isinstance(self.threshold_applied, float):
             self.threshold_applied = float(self.threshold_applied)
@@ -3235,6 +3505,9 @@ class Hemisphere(EnumDefinitionImpl):
 class slots:
     pass
 
+slots.name = Slot(uri=TVBO.name, name="name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.name, domain=None, range=URIRef)
+
 slots.time_scale = Slot(uri=TVBO.time_scale, name="time_scale", curie=TVBO.curie('time_scale'),
                    model_uri=TVBO.time_scale, domain=None, range=Optional[str])
 
@@ -3242,13 +3515,13 @@ slots.environment = Slot(uri=TVBO.environment, name="environment", curie=TVBO.cu
                    model_uri=TVBO.environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
 
 slots.requirements = Slot(uri=TVBO.requirements, name="requirements", curie=TVBO.curie('requirements'),
-                   model_uri=TVBO.requirements, domain=None, range=Optional[Union[Union[dict, SoftwareRequirement], list[Union[dict, SoftwareRequirement]]]])
+                   model_uri=TVBO.requirements, domain=None, range=Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]])
 
 slots.duration = Slot(uri=TVBO.duration, name="duration", curie=TVBO.curie('duration'),
                    model_uri=TVBO.duration, domain=None, range=Optional[float])
 
 slots.model = Slot(uri=TVBO.model, name="model", curie=TVBO.curie('model'),
-                   model_uri=TVBO.model, domain=None, range=Optional[Union[dict, Dynamics]])
+                   model_uri=TVBO.model, domain=None, range=Optional[Union[str, DynamicsName]])
 
 slots.has_reference = Slot(uri=TVBO.has_reference, name="has_reference", curie=TVBO.curie('has_reference'),
                    model_uri=TVBO.has_reference, domain=None, range=Optional[str])
@@ -3290,7 +3563,7 @@ slots.definition = Slot(uri=TVBO.definition, name="definition", curie=TVBO.curie
                    model_uri=TVBO.definition, domain=None, range=Optional[str])
 
 slots.parameters = Slot(uri=TVBO.parameters, name="parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.parameters, domain=None, range=Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.equation = Slot(uri=TVBO.Equation, name="equation", curie=TVBO.curie('Equation'),
                    model_uri=TVBO.equation, domain=None, range=Optional[Union[dict, Equation]])
@@ -3317,7 +3590,7 @@ slots.digitalIdentifier = Slot(uri=ATOM.digitalIdentifier, name="digitalIdentifi
                    model_uri=TVBO.digitalIdentifier, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.hasParent = Slot(uri=ATOM['atlas/hasParent'], name="hasParent", curie=ATOM.curie('atlas/hasParent'),
-                   model_uri=TVBO.hasParent, domain=None, range=Optional[Union[Union[dict, ParcellationEntity], list[Union[dict, ParcellationEntity]]]])
+                   model_uri=TVBO.hasParent, domain=None, range=Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]])
 
 slots.isVersionOf = Slot(uri=ATOM.isVersionOf, name="isVersionOf", curie=ATOM.curie('isVersionOf'),
                    model_uri=TVBO.isVersionOf, domain=None, range=Optional[str])
@@ -3327,9 +3600,6 @@ slots.license = Slot(uri=ATOM.license, name="license", curie=ATOM.curie('license
 
 slots.lookupLabel = Slot(uri=ATOM['atlas/lookupLabel'], name="lookupLabel", curie=ATOM.curie('atlas/lookupLabel'),
                    model_uri=TVBO.lookupLabel, domain=None, range=Optional[int])
-
-slots.name = Slot(uri=ATOM['atlas/hasName'], name="name", curie=ATOM.curie('atlas/hasName'),
-                   model_uri=TVBO.name, domain=None, range=str)
 
 slots.ontologyIdentifier = Slot(uri=ATOM['atlas/hasIlxId'], name="ontologyIdentifier", curie=ATOM.curie('atlas/hasIlxId'),
                    model_uri=TVBO.ontologyIdentifier, domain=None, range=Optional[Union[str, list[str]]])
@@ -3341,7 +3611,7 @@ slots.dataLocation = Slot(uri=ATOM.dataLocation, name="dataLocation", curie=ATOM
                    model_uri=TVBO.dataLocation, domain=None, range=Optional[str])
 
 slots.coordinateSpace = Slot(uri=ATOM.coordinateSpace, name="coordinateSpace", curie=ATOM.curie('coordinateSpace'),
-                   model_uri=TVBO.coordinateSpace, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.coordinateSpace, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.subject_id = Slot(uri=TVBO_DBS.subject_id, name="subject_id", curie=TVBO_DBS.curie('subject_id'),
                    model_uri=TVBO.subject_id, domain=None, range=URIRef)
@@ -3403,6 +3673,21 @@ slots.parcellation__data_source = Slot(uri=TVBO.data_source, name="parcellation_
 slots.parcellation__atlas = Slot(uri=TVBO.atlas, name="parcellation__atlas", curie=TVBO.curie('atlas'),
                    model_uri=TVBO.parcellation__atlas, domain=None, range=Union[dict, BrainAtlas])
 
+slots.tractogram__data_source = Slot(uri=TVBO.data_source, name="tractogram__data_source", curie=TVBO.curie('data_source'),
+                   model_uri=TVBO.tractogram__data_source, domain=None, range=Optional[str])
+
+slots.tractogram__number_of_subjects = Slot(uri=TVBO.number_of_subjects, name="tractogram__number_of_subjects", curie=TVBO.curie('number_of_subjects'),
+                   model_uri=TVBO.tractogram__number_of_subjects, domain=None, range=Optional[int])
+
+slots.tractogram__acquisition = Slot(uri=TVBO.acquisition, name="tractogram__acquisition", curie=TVBO.curie('acquisition'),
+                   model_uri=TVBO.tractogram__acquisition, domain=None, range=Optional[str])
+
+slots.tractogram__processing_pipeline = Slot(uri=TVBO.processing_pipeline, name="tractogram__processing_pipeline", curie=TVBO.curie('processing_pipeline'),
+                   model_uri=TVBO.tractogram__processing_pipeline, domain=None, range=Optional[str])
+
+slots.tractogram__reference = Slot(uri=TVBO.reference, name="tractogram__reference", curie=TVBO.curie('reference'),
+                   model_uri=TVBO.tractogram__reference, domain=None, range=Optional[str])
+
 slots.matrix__x = Slot(uri=TVBO.x, name="matrix__x", curie=TVBO.curie('x'),
                    model_uri=TVBO.matrix__x, domain=None, range=Optional[Union[dict, BrainRegionSeries]])
 
@@ -3415,47 +3700,83 @@ slots.matrix__values = Slot(uri=TVBO.values, name="matrix__values", curie=TVBO.c
 slots.brainRegionSeries__values = Slot(uri=TVBO.values, name="brainRegionSeries__values", curie=TVBO.curie('values'),
                    model_uri=TVBO.brainRegionSeries__values, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.connectome__number_of_regions = Slot(uri=TVBO.number_of_regions, name="connectome__number_of_regions", curie=TVBO.curie('number_of_regions'),
-                   model_uri=TVBO.connectome__number_of_regions, domain=None, range=Optional[int])
+slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.curie('nodes'),
+                   model_uri=TVBO.network__nodes, domain=None, range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]])
 
-slots.connectome__number_of_nodes = Slot(uri=TVBO.number_of_nodes, name="connectome__number_of_nodes", curie=TVBO.curie('number_of_nodes'),
-                   model_uri=TVBO.connectome__number_of_nodes, domain=None, range=Optional[int])
+slots.network__edges = Slot(uri=TVBO.edges, name="network__edges", curie=TVBO.curie('edges'),
+                   model_uri=TVBO.network__edges, domain=None, range=Optional[Union[Union[dict, Edge], list[Union[dict, Edge]]]])
 
-slots.connectome__parcellation = Slot(uri=TVBO.parcellation, name="connectome__parcellation", curie=TVBO.curie('parcellation'),
-                   model_uri=TVBO.connectome__parcellation, domain=None, range=Optional[Union[dict, Parcellation]])
+slots.network__coupling_library = Slot(uri=TVBO.coupling_library, name="network__coupling_library", curie=TVBO.curie('coupling_library'),
+                   model_uri=TVBO.network__coupling_library, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])
 
-slots.connectome__tractogram = Slot(uri=TVBO.tractogram, name="connectome__tractogram", curie=TVBO.curie('tractogram'),
-                   model_uri=TVBO.connectome__tractogram, domain=None, range=Optional[str])
+slots.network__number_of_regions = Slot(uri=TVBO.number_of_regions, name="network__number_of_regions", curie=TVBO.curie('number_of_regions'),
+                   model_uri=TVBO.network__number_of_regions, domain=None, range=Optional[int])
 
-slots.connectome__weights = Slot(uri=TVBO.weights, name="connectome__weights", curie=TVBO.curie('weights'),
-                   model_uri=TVBO.connectome__weights, domain=None, range=Optional[Union[dict, Matrix]])
+slots.network__number_of_nodes = Slot(uri=TVBO.number_of_nodes, name="network__number_of_nodes", curie=TVBO.curie('number_of_nodes'),
+                   model_uri=TVBO.network__number_of_nodes, domain=None, range=Optional[int])
 
-slots.connectome__lengths = Slot(uri=TVBO.lengths, name="connectome__lengths", curie=TVBO.curie('lengths'),
-                   model_uri=TVBO.connectome__lengths, domain=None, range=Optional[Union[dict, Matrix]])
+slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcellation", curie=TVBO.curie('parcellation'),
+                   model_uri=TVBO.network__parcellation, domain=None, range=Optional[Union[dict, Parcellation]])
 
-slots.connectome__normalization = Slot(uri=TVBO.normalization, name="connectome__normalization", curie=TVBO.curie('normalization'),
-                   model_uri=TVBO.connectome__normalization, domain=None, range=Optional[Union[dict, Equation]])
+slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
+                   model_uri=TVBO.network__tractogram, domain=None, range=Optional[str])
 
-slots.connectome__conduction_speed = Slot(uri=TVBO.conduction_speed, name="connectome__conduction_speed", curie=TVBO.curie('conduction_speed'),
-                   model_uri=TVBO.connectome__conduction_speed, domain=None, range=Optional[Union[dict, Parameter]])
+slots.network__weights = Slot(uri=TVBO.weights, name="network__weights", curie=TVBO.curie('weights'),
+                   model_uri=TVBO.network__weights, domain=None, range=Optional[Union[dict, Matrix]])
 
-slots.connectome__node_labels = Slot(uri=TVBO.node_labels, name="connectome__node_labels", curie=TVBO.curie('node_labels'),
-                   model_uri=TVBO.connectome__node_labels, domain=None, range=Optional[Union[str, list[str]]])
+slots.network__lengths = Slot(uri=TVBO.lengths, name="network__lengths", curie=TVBO.curie('lengths'),
+                   model_uri=TVBO.network__lengths, domain=None, range=Optional[Union[dict, Matrix]])
 
-slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curie=TVBO.curie('dynamics'),
-                   model_uri=TVBO.network__dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
+slots.network__normalization = Slot(uri=TVBO.normalization, name="network__normalization", curie=TVBO.curie('normalization'),
+                   model_uri=TVBO.network__normalization, domain=None, range=Optional[Union[dict, Equation]])
 
-slots.network__node_dynamics = Slot(uri=TVBO.node_dynamics, name="network__node_dynamics", curie=TVBO.curie('node_dynamics'),
-                   model_uri=TVBO.network__node_dynamics, domain=None, range=Optional[Union[Union[dict, Dynamics], list[Union[dict, Dynamics]]]])
+slots.network__node_labels = Slot(uri=TVBO.node_labels, name="network__node_labels", curie=TVBO.curie('node_labels'),
+                   model_uri=TVBO.network__node_labels, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.network__node_dynamics_mapping = Slot(uri=TVBO.node_dynamics_mapping, name="network__node_dynamics_mapping", curie=TVBO.curie('node_dynamics_mapping'),
-                   model_uri=TVBO.network__node_dynamics_mapping, domain=None, range=Optional[Union[int, list[int]]])
+slots.network__global_coupling_strength = Slot(uri=TVBO.global_coupling_strength, name="network__global_coupling_strength", curie=TVBO.curie('global_coupling_strength'),
+                   model_uri=TVBO.network__global_coupling_strength, domain=None, range=Optional[Union[dict, Parameter]])
 
-slots.network__graph = Slot(uri=TVBO.graph, name="network__graph", curie=TVBO.curie('graph'),
-                   model_uri=TVBO.network__graph, domain=None, range=Union[dict, Connectome])
+slots.network__conduction_speed = Slot(uri=TVBO.conduction_speed, name="network__conduction_speed", curie=TVBO.curie('conduction_speed'),
+                   model_uri=TVBO.network__conduction_speed, domain=None, range=Optional[Union[dict, Parameter]])
 
-slots.network__couplings = Slot(uri=TVBO.couplings, name="network__couplings", curie=TVBO.curie('couplings'),
-                   model_uri=TVBO.network__couplings, domain=None, range=Optional[Union[Union[dict, Coupling], list[Union[dict, Coupling]]]])
+slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie('id'),
+                   model_uri=TVBO.node__id, domain=None, range=int)
+
+slots.node__dynamics = Slot(uri=TVBO.dynamics, name="node__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.node__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO.curie('position'),
+                   model_uri=TVBO.node__position, domain=None, range=Optional[Union[dict, Coordinate]])
+
+slots.node__region = Slot(uri=TVBO.region, name="node__region", curie=TVBO.curie('region'),
+                   model_uri=TVBO.node__region, domain=None, range=Optional[str])
+
+slots.node__parameters = Slot(uri=TVBO.parameters, name="node__parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.node__parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
+
+slots.node__initial_state = Slot(uri=TVBO.initial_state, name="node__initial_state", curie=TVBO.curie('initial_state'),
+                   model_uri=TVBO.node__initial_state, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.edge__source, domain=None, range=int)
+
+slots.edge__target = Slot(uri=TVBO.target, name="edge__target", curie=TVBO.curie('target'),
+                   model_uri=TVBO.edge__target, domain=None, range=int)
+
+slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO.curie('coupling'),
+                   model_uri=TVBO.edge__coupling, domain=None, range=Union[dict, Coupling])
+
+slots.edge__weight = Slot(uri=TVBO.weight, name="edge__weight", curie=TVBO.curie('weight'),
+                   model_uri=TVBO.edge__weight, domain=None, range=Optional[float])
+
+slots.edge__delay = Slot(uri=TVBO.delay, name="edge__delay", curie=TVBO.curie('delay'),
+                   model_uri=TVBO.edge__delay, domain=None, range=Optional[float])
+
+slots.edge__distance = Slot(uri=TVBO.distance, name="edge__distance", curie=TVBO.curie('distance'),
+                   model_uri=TVBO.edge__distance, domain=None, range=Optional[float])
+
+slots.edge__tract_properties = Slot(uri=TVBO.tract_properties, name="edge__tract_properties", curie=TVBO.curie('tract_properties'),
+                   model_uri=TVBO.edge__tract_properties, domain=None, range=Optional[str])
 
 slots.observationModel__transformation = Slot(uri=TVBO.transformation, name="observationModel__transformation", curie=TVBO.curie('transformation'),
                    model_uri=TVBO.observationModel__transformation, domain=None, range=Optional[Union[dict, Function]])
@@ -3470,7 +3791,7 @@ slots.observationModel__argument_mappings = Slot(uri=TVBO.argument_mappings, nam
                    model_uri=TVBO.observationModel__argument_mappings, domain=None, range=Optional[Union[Union[dict, ArgumentMapping], list[Union[dict, ArgumentMapping]]]])
 
 slots.observationModel__derivatives = Slot(uri=TVBO.derivatives, name="observationModel__derivatives", curie=TVBO.curie('derivatives'),
-                   model_uri=TVBO.observationModel__derivatives, domain=None, range=Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]])
+                   model_uri=TVBO.observationModel__derivatives, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.processingStep__order = Slot(uri=TVBO.order, name="processingStep__order", curie=TVBO.curie('order'),
                    model_uri=TVBO.processingStep__order, domain=None, range=Optional[int])
@@ -3494,7 +3815,7 @@ slots.processingStep__ensure_shape = Slot(uri=TVBO.ensure_shape, name="processin
                    model_uri=TVBO.processingStep__ensure_shape, domain=None, range=Optional[str])
 
 slots.processingStep__variables_of_interest = Slot(uri=TVBO.variables_of_interest, name="processingStep__variables_of_interest", curie=TVBO.curie('variables_of_interest'),
-                   model_uri=TVBO.processingStep__variables_of_interest, domain=None, range=Optional[Union[Union[dict, StateVariable], list[Union[dict, StateVariable]]]])
+                   model_uri=TVBO.processingStep__variables_of_interest, domain=None, range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]])
 
 slots.dataInjection__name = Slot(uri=TVBO.name, name="dataInjection__name", curie=TVBO.curie('name'),
                    model_uri=TVBO.dataInjection__name, domain=None, range=str)
@@ -3524,43 +3845,43 @@ slots.downsamplingModel__period = Slot(uri=TVBO.period, name="downsamplingModel_
                    model_uri=TVBO.downsamplingModel__period, domain=None, range=Optional[float])
 
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
-                   model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[Union[dict, DerivedParameter], list[Union[dict, DerivedParameter]]]])
+                   model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
 
 slots.dynamics__derived_variables = Slot(uri=TVBO.derived_variables, name="dynamics__derived_variables", curie=TVBO.curie('derived_variables'),
-                   model_uri=TVBO.dynamics__derived_variables, domain=None, range=Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]])
+                   model_uri=TVBO.dynamics__derived_variables, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.dynamics__coupling_terms = Slot(uri=TVBO.coupling_terms, name="dynamics__coupling_terms", curie=TVBO.curie('coupling_terms'),
-                   model_uri=TVBO.dynamics__coupling_terms, domain=None, range=Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.dynamics__coupling_terms, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.dynamics__coupling_inputs = Slot(uri=TVBO.coupling_inputs, name="dynamics__coupling_inputs", curie=TVBO.curie('coupling_inputs'),
-                   model_uri=TVBO.dynamics__coupling_inputs, domain=None, range=Optional[Union[Union[dict, CouplingInput], list[Union[dict, CouplingInput]]]])
+                   model_uri=TVBO.dynamics__coupling_inputs, domain=None, range=Optional[Union[dict[Union[str, CouplingInputName], Union[dict, CouplingInput]], list[Union[dict, CouplingInput]]]])
 
 slots.dynamics__state_variables = Slot(uri=TVBO.state_variables, name="dynamics__state_variables", curie=TVBO.curie('state_variables'),
-                   model_uri=TVBO.dynamics__state_variables, domain=None, range=Optional[Union[Union[dict, StateVariable], list[Union[dict, StateVariable]]]])
+                   model_uri=TVBO.dynamics__state_variables, domain=None, range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]])
 
 slots.dynamics__modified = Slot(uri=TVBO.modified, name="dynamics__modified", curie=TVBO.curie('modified'),
                    model_uri=TVBO.dynamics__modified, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.dynamics__output_transforms = Slot(uri=TVBO.output_transforms, name="dynamics__output_transforms", curie=TVBO.curie('output_transforms'),
-                   model_uri=TVBO.dynamics__output_transforms, domain=None, range=Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]])
+                   model_uri=TVBO.dynamics__output_transforms, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.dynamics__derived_from_model = Slot(uri=TVBO.derived_from_model, name="dynamics__derived_from_model", curie=TVBO.curie('derived_from_model'),
-                   model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[dict, NeuralMassModel]])
+                   model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[str, NeuralMassModelName]])
 
 slots.dynamics__number_of_modes = Slot(uri=TVBO.number_of_modes, name="dynamics__number_of_modes", curie=TVBO.curie('number_of_modes'),
                    model_uri=TVBO.dynamics__number_of_modes, domain=None, range=Optional[int])
 
 slots.dynamics__local_coupling_term = Slot(uri=TVBO.local_coupling_term, name="dynamics__local_coupling_term", curie=TVBO.curie('local_coupling_term'),
-                   model_uri=TVBO.dynamics__local_coupling_term, domain=None, range=Optional[Union[dict, Parameter]])
+                   model_uri=TVBO.dynamics__local_coupling_term, domain=None, range=Optional[Union[str, ParameterName]])
 
 slots.dynamics__functions = Slot(uri=TVBO.functions, name="dynamics__functions", curie=TVBO.curie('functions'),
-                   model_uri=TVBO.dynamics__functions, domain=None, range=Optional[Union[Union[dict, Function], list[Union[dict, Function]]]])
+                   model_uri=TVBO.dynamics__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
 
 slots.dynamics__stimulus = Slot(uri=TVBO.stimulus, name="dynamics__stimulus", curie=TVBO.curie('stimulus'),
                    model_uri=TVBO.dynamics__stimulus, domain=None, range=Optional[Union[dict, Stimulus]])
 
 slots.dynamics__modes = Slot(uri=TVBO.modes, name="dynamics__modes", curie=TVBO.curie('modes'),
-                   model_uri=TVBO.dynamics__modes, domain=None, range=Optional[Union[Union[dict, NeuralMassModel], list[Union[dict, NeuralMassModel]]]])
+                   model_uri=TVBO.dynamics__modes, domain=None, range=Optional[Union[dict[Union[str, NeuralMassModelName], Union[dict, NeuralMassModel]], list[Union[dict, NeuralMassModel]]]])
 
 slots.dynamics__system_type = Slot(uri=TVBO.system_type, name="dynamics__system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.dynamics__system_type, domain=None, range=Optional[Union[str, "SystemType"]])
@@ -3583,14 +3904,11 @@ slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable_
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
 
-slots.stateVariable__initial_conditions = Slot(uri=TVBO.initial_conditions, name="stateVariable__initial_conditions", curie=TVBO.curie('initial_conditions'),
-                   model_uri=TVBO.stateVariable__initial_conditions, domain=None, range=Optional[Union[float, list[float]]])
-
 slots.stateVariable__history = Slot(uri=TVBO.history, name="stateVariable__history", curie=TVBO.curie('history'),
                    model_uri=TVBO.stateVariable__history, domain=None, range=Optional[Union[dict, TimeSeries]])
 
 slots.distribution__dependencies = Slot(uri=TVBO.dependencies, name="distribution__dependencies", curie=TVBO.curie('dependencies'),
-                   model_uri=TVBO.distribution__dependencies, domain=None, range=Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.distribution__dependencies, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
                    model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])
@@ -3620,7 +3938,7 @@ slots.function__definition = Slot(uri=TVBO.definition, name="function__definitio
                    model_uri=TVBO.function__definition, domain=None, range=Optional[str])
 
 slots.function__arguments = Slot(uri=TVBO.arguments, name="function__arguments", curie=TVBO.curie('arguments'),
-                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[Union[dict, Parameter], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TVBO.curie('output'),
                    model_uri=TVBO.function__output, domain=None, range=Optional[Union[dict, Equation]])
@@ -3680,7 +3998,7 @@ slots.noise__pycode = Slot(uri=TVBO.pycode, name="noise__pycode", curie=TVBO.cur
                    model_uri=TVBO.noise__pycode, domain=None, range=Optional[str])
 
 slots.noise__targets = Slot(uri=TVBO.targets, name="noise__targets", curie=TVBO.curie('targets'),
-                   model_uri=TVBO.noise__targets, domain=None, range=Optional[Union[Union[dict, StateVariable], list[Union[dict, StateVariable]]]])
+                   model_uri=TVBO.noise__targets, domain=None, range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]])
 
 slots.modelFitting__targets = Slot(uri=TVBO.targets, name="modelFitting__targets", curie=TVBO.curie('targets'),
                    model_uri=TVBO.modelFitting__targets, domain=None, range=Optional[Union[Union[dict, FittingTarget], list[Union[dict, FittingTarget]]]])
@@ -3713,7 +4031,7 @@ slots.integrator__number_of_stages = Slot(uri=TVBO.number_of_stages, name="integ
                    model_uri=TVBO.integrator__number_of_stages, domain=None, range=Optional[int])
 
 slots.integrator__intermediate_expressions = Slot(uri=TVBO.intermediate_expressions, name="integrator__intermediate_expressions", curie=TVBO.curie('intermediate_expressions'),
-                   model_uri=TVBO.integrator__intermediate_expressions, domain=None, range=Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]])
+                   model_uri=TVBO.integrator__intermediate_expressions, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.integrator__update_expression = Slot(uri=TVBO.update_expression, name="integrator__update_expression", curie=TVBO.curie('update_expression'),
                    model_uri=TVBO.integrator__update_expression, domain=None, range=Optional[Union[dict, DerivedVariable]])
@@ -3755,7 +4073,7 @@ slots.coupling__region_mapping = Slot(uri=TVBO.region_mapping, name="coupling__r
                    model_uri=TVBO.coupling__region_mapping, domain=None, range=Optional[Union[dict, RegionMapping]])
 
 slots.coupling__regional_connectivity = Slot(uri=TVBO.regional_connectivity, name="coupling__regional_connectivity", curie=TVBO.curie('regional_connectivity'),
-                   model_uri=TVBO.coupling__regional_connectivity, domain=None, range=Optional[Union[dict, Connectome]])
+                   model_uri=TVBO.coupling__regional_connectivity, domain=None, range=Optional[Union[dict, Network]])
 
 slots.coupling__aggregation = Slot(uri=TVBO.aggregation, name="coupling__aggregation", curie=TVBO.curie('aggregation'),
                    model_uri=TVBO.coupling__aggregation, domain=None, range=Optional[str])
@@ -3794,22 +4112,22 @@ slots.simulationExperiment__local_dynamics = Slot(uri=TVBO.local_dynamics, name=
                    model_uri=TVBO.simulationExperiment__local_dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
 
 slots.simulationExperiment__dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__dynamics", curie=TVBO.curie('dynamics'),
-                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[str, list[str]]])
+                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
 
 slots.simulationExperiment__integration = Slot(uri=TVBO.integration, name="simulationExperiment__integration", curie=TVBO.curie('integration'),
                    model_uri=TVBO.simulationExperiment__integration, domain=None, range=Optional[Union[dict, Integrator]])
 
 slots.simulationExperiment__connectivity = Slot(uri=TVBO.connectivity, name="simulationExperiment__connectivity", curie=TVBO.curie('connectivity'),
-                   model_uri=TVBO.simulationExperiment__connectivity, domain=None, range=Optional[Union[dict, Connectome]])
+                   model_uri=TVBO.simulationExperiment__connectivity, domain=None, range=Optional[Union[dict, Network]])
 
 slots.simulationExperiment__network = Slot(uri=TVBO.network, name="simulationExperiment__network", curie=TVBO.curie('network'),
-                   model_uri=TVBO.simulationExperiment__network, domain=None, range=Optional[Union[dict, Connectome]])
+                   model_uri=TVBO.simulationExperiment__network, domain=None, range=Optional[Union[dict, Network]])
 
 slots.simulationExperiment__coupling = Slot(uri=TVBO.coupling, name="simulationExperiment__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.simulationExperiment__coupling, domain=None, range=Optional[Union[dict, Coupling]])
 
 slots.simulationExperiment__monitors = Slot(uri=TVBO.monitors, name="simulationExperiment__monitors", curie=TVBO.curie('monitors'),
-                   model_uri=TVBO.simulationExperiment__monitors, domain=None, range=Optional[Union[Union[dict, Monitor], list[Union[dict, Monitor]]]])
+                   model_uri=TVBO.simulationExperiment__monitors, domain=None, range=Optional[Union[dict[Union[str, MonitorName], Union[dict, Monitor]], list[Union[dict, Monitor]]]])
 
 slots.simulationExperiment__stimulation = Slot(uri=TVBO.stimulation, name="simulationExperiment__stimulation", curie=TVBO.curie('stimulation'),
                    model_uri=TVBO.simulationExperiment__stimulation, domain=None, range=Optional[Union[dict, Stimulus]])
@@ -3878,10 +4196,10 @@ slots.softwareEnvironment__build_hash = Slot(uri=TVBO.build_hash, name="software
                    model_uri=TVBO.softwareEnvironment__build_hash, domain=None, range=Optional[str])
 
 slots.softwareEnvironment__requirements = Slot(uri=TVBO.requirements, name="softwareEnvironment__requirements", curie=TVBO.curie('requirements'),
-                   model_uri=TVBO.softwareEnvironment__requirements, domain=None, range=Optional[Union[Union[dict, SoftwareRequirement], list[Union[dict, SoftwareRequirement]]]])
+                   model_uri=TVBO.softwareEnvironment__requirements, domain=None, range=Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]])
 
 slots.softwareRequirement__package = Slot(uri=TVBO.package, name="softwareRequirement__package", curie=TVBO.curie('package'),
-                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Union[dict, SoftwarePackage])
+                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Union[str, SoftwarePackageName])
 
 slots.softwareRequirement__version_spec = Slot(uri=TVBO.version_spec, name="softwareRequirement__version_spec", curie=TVBO.curie('version_spec'),
                    model_uri=TVBO.softwareRequirement__version_spec, domain=None, range=Optional[str])
@@ -3938,7 +4256,7 @@ slots.nDArray__unit = Slot(uri=TVBO.unit, name="nDArray__unit", curie=TVBO.curie
                    model_uri=TVBO.nDArray__unit, domain=None, range=Optional[str])
 
 slots.spatialDomain__coordinate_space = Slot(uri=TVBO.coordinate_space, name="spatialDomain__coordinate_space", curie=TVBO.curie('coordinate_space'),
-                   model_uri=TVBO.spatialDomain__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.spatialDomain__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.spatialDomain__region = Slot(uri=TVBO.region, name="spatialDomain__region", curie=TVBO.curie('region'),
                    model_uri=TVBO.spatialDomain__region, domain=None, range=Optional[str])
@@ -3956,7 +4274,7 @@ slots.mesh__elements = Slot(uri=TVBO.elements, name="mesh__elements", curie=TVBO
                    model_uri=TVBO.mesh__elements, domain=None, range=Optional[str])
 
 slots.mesh__coordinate_space = Slot(uri=TVBO.coordinate_space, name="mesh__coordinate_space", curie=TVBO.curie('coordinate_space'),
-                   model_uri=TVBO.mesh__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.mesh__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.spatialField__quantity_kind = Slot(uri=TVBO.quantity_kind, name="spatialField__quantity_kind", curie=TVBO.curie('quantity_kind'),
                    model_uri=TVBO.spatialField__quantity_kind, domain=None, range=Optional[str])
@@ -3989,10 +4307,10 @@ slots.differentialOperator__operator_type = Slot(uri=TVBO.operator_type, name="d
                    model_uri=TVBO.differentialOperator__operator_type, domain=None, range=Optional[Union[str, "OperatorType"]])
 
 slots.differentialOperator__coefficient = Slot(uri=TVBO.coefficient, name="differentialOperator__coefficient", curie=TVBO.curie('coefficient'),
-                   model_uri=TVBO.differentialOperator__coefficient, domain=None, range=Optional[Union[dict, Parameter]])
+                   model_uri=TVBO.differentialOperator__coefficient, domain=None, range=Optional[Union[str, ParameterName]])
 
 slots.differentialOperator__tensor_coefficient = Slot(uri=TVBO.tensor_coefficient, name="differentialOperator__tensor_coefficient", curie=TVBO.curie('tensor_coefficient'),
-                   model_uri=TVBO.differentialOperator__tensor_coefficient, domain=None, range=Optional[Union[dict, Parameter]])
+                   model_uri=TVBO.differentialOperator__tensor_coefficient, domain=None, range=Optional[Union[str, ParameterName]])
 
 slots.differentialOperator__expression = Slot(uri=TVBO.expression, name="differentialOperator__expression", curie=TVBO.curie('expression'),
                    model_uri=TVBO.differentialOperator__expression, domain=None, range=Optional[Union[dict, Equation]])
@@ -4031,7 +4349,7 @@ slots.pDE__mesh = Slot(uri=TVBO.mesh, name="pDE__mesh", curie=TVBO.curie('mesh')
                    model_uri=TVBO.pDE__mesh, domain=None, range=Optional[Union[dict, Mesh]])
 
 slots.pDE__state_variables = Slot(uri=TVBO.state_variables, name="pDE__state_variables", curie=TVBO.curie('state_variables'),
-                   model_uri=TVBO.pDE__state_variables, domain=None, range=Optional[Union[Union[dict, FieldStateVariable], list[Union[dict, FieldStateVariable]]]])
+                   model_uri=TVBO.pDE__state_variables, domain=None, range=Optional[Union[Union[str, FieldStateVariableName], list[Union[str, FieldStateVariableName]]]])
 
 slots.pDE__field = Slot(uri=TVBO.field, name="pDE__field", curie=TVBO.curie('field'),
                    model_uri=TVBO.pDE__field, domain=None, range=Optional[Union[dict, SpatialField]])
@@ -4049,13 +4367,13 @@ slots.pDE__solver = Slot(uri=TVBO.solver, name="pDE__solver", curie=TVBO.curie('
                    model_uri=TVBO.pDE__solver, domain=None, range=Optional[Union[dict, PDESolver]])
 
 slots.pDE__derived_parameters = Slot(uri=TVBO.derived_parameters, name="pDE__derived_parameters", curie=TVBO.curie('derived_parameters'),
-                   model_uri=TVBO.pDE__derived_parameters, domain=None, range=Optional[Union[Union[dict, DerivedParameter], list[Union[dict, DerivedParameter]]]])
+                   model_uri=TVBO.pDE__derived_parameters, domain=None, range=Optional[Union[Union[str, DerivedParameterName], list[Union[str, DerivedParameterName]]]])
 
 slots.pDE__derived_variables = Slot(uri=TVBO.derived_variables, name="pDE__derived_variables", curie=TVBO.curie('derived_variables'),
-                   model_uri=TVBO.pDE__derived_variables, domain=None, range=Optional[Union[Union[dict, DerivedVariable], list[Union[dict, DerivedVariable]]]])
+                   model_uri=TVBO.pDE__derived_variables, domain=None, range=Optional[Union[Union[str, DerivedVariableName], list[Union[str, DerivedVariableName]]]])
 
 slots.pDE__functions = Slot(uri=TVBO.functions, name="pDE__functions", curie=TVBO.curie('functions'),
-                   model_uri=TVBO.pDE__functions, domain=None, range=Optional[Union[Union[dict, Function], list[Union[dict, Function]]]])
+                   model_uri=TVBO.pDE__functions, domain=None, range=Optional[Union[Union[str, FunctionName], list[Union[str, FunctionName]]]])
 
 slots.coordinate__x = Slot(uri=ATOM.x, name="coordinate__x", curie=ATOM.curie('x'),
                    model_uri=TVBO.coordinate__x, domain=None, range=Optional[float])
@@ -4097,7 +4415,7 @@ slots.parcellationEntity__color = Slot(uri=ATOM.color, name="parcellationEntity_
                    model_uri=TVBO.parcellationEntity__color, domain=None, range=Optional[str])
 
 slots.parcellationTerminology__entities = Slot(uri=ATOM.entities, name="parcellationTerminology__entities", curie=ATOM.curie('entities'),
-                   model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[Union[dict, ParcellationEntity], list[Union[dict, ParcellationEntity]]]])
+                   model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]])
 
 slots.dataset__dataset_id = Slot(uri=TVBO_DBS.dataset_id, name="dataset__dataset_id", curie=TVBO_DBS.curie('dataset_id'),
                    model_uri=TVBO.dataset__dataset_id, domain=None, range=Optional[str])
@@ -4109,7 +4427,7 @@ slots.dataset__clinical_scores = Slot(uri=TVBO_DBS.clinical_scores, name="datase
                    model_uri=TVBO.dataset__clinical_scores, domain=None, range=Optional[Union[Union[dict, ClinicalScore], list[Union[dict, ClinicalScore]]]])
 
 slots.dataset__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dataset__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
-                   model_uri=TVBO.dataset__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.dataset__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.subject__age = Slot(uri=TVBO_DBS.age, name="subject__age", curie=TVBO_DBS.curie('age'),
                    model_uri=TVBO.subject__age, domain=None, range=Optional[float])
@@ -4124,10 +4442,10 @@ slots.subject__handedness = Slot(uri=TVBO_DBS.handedness, name="subject__handedn
                    model_uri=TVBO.subject__handedness, domain=None, range=Optional[str])
 
 slots.subject__protocols = Slot(uri=TVBO_DBS.protocols, name="subject__protocols", curie=TVBO_DBS.curie('protocols'),
-                   model_uri=TVBO.subject__protocols, domain=None, range=Optional[Union[Union[dict, DBSProtocol], list[Union[dict, DBSProtocol]]]])
+                   model_uri=TVBO.subject__protocols, domain=None, range=Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]])
 
 slots.subject__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="subject__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
-                   model_uri=TVBO.subject__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.subject__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.electrode__electrode_id = Slot(uri=TVBO_DBS.electrode_id, name="electrode__electrode_id", curie=TVBO_DBS.curie('electrode_id'),
                    model_uri=TVBO.electrode__electrode_id, domain=None, range=Optional[str])
@@ -4154,10 +4472,10 @@ slots.electrode__trajectory = Slot(uri=TVBO_DBS.trajectory, name="electrode__tra
                    model_uri=TVBO.electrode__trajectory, domain=None, range=Optional[Union[Union[dict, Coordinate], list[Union[dict, Coordinate]]]])
 
 slots.electrode__target_structure = Slot(uri=TVBO_DBS.target_structure, name="electrode__target_structure", curie=TVBO_DBS.curie('target_structure'),
-                   model_uri=TVBO.electrode__target_structure, domain=None, range=Optional[Union[dict, ParcellationEntity]])
+                   model_uri=TVBO.electrode__target_structure, domain=None, range=Optional[Union[str, ParcellationEntityName]])
 
 slots.electrode__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="electrode__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
-                   model_uri=TVBO.electrode__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.electrode__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.electrode__recon_path = Slot(uri=TVBO_DBS.recon_path, name="electrode__recon_path", curie=TVBO_DBS.curie('recon_path'),
                    model_uri=TVBO.electrode__recon_path, domain=None, range=Optional[str])
@@ -4175,13 +4493,13 @@ slots.stimulationSetting__electrode_reference = Slot(uri=TVBO_DBS.electrode_refe
                    model_uri=TVBO.stimulationSetting__electrode_reference, domain=None, range=Optional[Union[dict, Electrode]])
 
 slots.stimulationSetting__amplitude = Slot(uri=TVBO_DBS.amplitude, name="stimulationSetting__amplitude", curie=TVBO_DBS.curie('amplitude'),
-                   model_uri=TVBO.stimulationSetting__amplitude, domain=None, range=Optional[Union[dict, Parameter]])
+                   model_uri=TVBO.stimulationSetting__amplitude, domain=None, range=Optional[Union[str, ParameterName]])
 
 slots.stimulationSetting__frequency = Slot(uri=TVBO_DBS.frequency, name="stimulationSetting__frequency", curie=TVBO_DBS.curie('frequency'),
-                   model_uri=TVBO.stimulationSetting__frequency, domain=None, range=Optional[Union[dict, Parameter]])
+                   model_uri=TVBO.stimulationSetting__frequency, domain=None, range=Optional[Union[str, ParameterName]])
 
 slots.stimulationSetting__pulse_width = Slot(uri=TVBO_DBS.pulse_width, name="stimulationSetting__pulse_width", curie=TVBO_DBS.curie('pulse_width'),
-                   model_uri=TVBO.stimulationSetting__pulse_width, domain=None, range=Optional[Union[dict, Parameter]])
+                   model_uri=TVBO.stimulationSetting__pulse_width, domain=None, range=Optional[Union[str, ParameterName]])
 
 slots.stimulationSetting__mode = Slot(uri=TVBO_DBS.mode, name="stimulationSetting__mode", curie=TVBO_DBS.curie('mode'),
                    model_uri=TVBO.stimulationSetting__mode, domain=None, range=Optional[str])
@@ -4268,7 +4586,7 @@ slots.eField__volume_data = Slot(uri=TVBO_DBS.volume_data, name="eField__volume_
                    model_uri=TVBO.eField__volume_data, domain=None, range=Optional[str])
 
 slots.eField__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="eField__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
-                   model_uri=TVBO.eField__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+                   model_uri=TVBO.eField__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eField__threshold_applied", curie=TVBO_DBS.curie('threshold_applied'),
                    model_uri=TVBO.eField__threshold_applied, domain=None, range=Optional[float])
@@ -4276,11 +4594,12 @@ slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eFi
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
 
-slots.Dynamics_name = Slot(uri=ATOM['atlas/hasName'], name="Dynamics_name", curie=ATOM.curie('atlas/hasName'),
-                   model_uri=TVBO.Dynamics_name, domain=Dynamics, range=str)
+slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])
 
 slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.Dynamics_system_type, domain=Dynamics, range=Optional[str])
 
-slots.Coupling_name = Slot(uri=ATOM['atlas/hasName'], name="Coupling_name", curie=ATOM.curie('atlas/hasName'),
-                   model_uri=TVBO.Coupling_name, domain=Coupling, range=str)
+slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
+

@@ -89,6 +89,7 @@ model:
       equation:
         rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - a**2*y1
       unit: mV*ms^-1
+      coupling_variable: true
     y2:
       label: "Inhibitory interneuron membrane potential (position)"
       equation:
@@ -116,7 +117,7 @@ simulation_experiments:
     model:
       name: ModelJansen1995
     integration:
-      method: RungeKuttaFehlberg45
+      method: RungeKutta4thOrder
       duration: 1000
       noise:
         gaussian: true
@@ -130,8 +131,8 @@ simulation_experiments:
       - name: Raw
         period: 1.0
         imaging_modality: EEG
-        select_variable:
-          name: v_pyr
+        # select_variable:
+        #   name: v_pyr
 
   # Alternate operating point (low-frequency/quasi-periodic)
   - id: 2
@@ -144,7 +145,7 @@ simulation_experiments:
         B: { value: 24 }
         C: { value: 108 }
     integration:
-      method: RungeKuttaFehlberg45
+      method: RungeKutta4thOrder
       duration: 1000
       noise:
         gaussian: true
@@ -158,8 +159,8 @@ simulation_experiments:
       - name: Raw
         period: 1.0
         imaging_modality: EEG
-        select_variable:
-          name: v_pyr
+        # select_variable:
+        #   name: v_pyr
 
   # Fig. 5: two identical columns, zero-delay coupling (symmetric behavior)
   - id: 3
@@ -213,7 +214,7 @@ simulation_experiments:
         lhs: c_glob
         rhs: a * gx + b
     integration:
-      method: RungeKuttaFehlberg45
+      method: RungeKutta4thOrder
       duration: 1000
       noise:
         gaussian: true
@@ -227,8 +228,8 @@ simulation_experiments:
       - name: Raw
         period: 1.0
         imaging_modality: EEG
-        select_variable:
-          name: v_pyr
+        # select_variable:
+        #   name: v_pyr
 
   # Fig. 6, 11 & VEPs: two different columns, delayed inter-column synaptic filtering + flash stimulus
   - id: 4
@@ -336,7 +337,7 @@ simulation_experiments:
           C[2] = 108
     # Flash stimulus P(t) = q ((t-t0)/w)^n exp(-(t-t0)/w) to node 1 only, added to 'flash' symbol used in y4
     stimulation:
-      name: Flash
+    #   name: Flash
       description: "Flash visual input to column 1 (Eq. 18)"
       parameters:
         q:   { value: 0.5 }
@@ -358,7 +359,7 @@ simulation_experiments:
         - 1.0
       duration: 0.2
     integration:
-      method: RungeKuttaFehlberg45
+      method: RungeKutta4thOrder
       duration: 7.0
       transient_time: 6.0
       noise:
@@ -374,8 +375,8 @@ simulation_experiments:
       - name: Raw
         period: 1.0
         imaging_modality: EEG
-        select_variable:
-          name: v_pyr
+        # select_variable:
+        #   name: v_pyr
     # Note: To replicate Fig. 8-11, run 20-40 trials with different noise seeds and average v_pyr offline.
 
   # Canonical alpha regime using s^-1 units (unit check)
@@ -395,11 +396,11 @@ simulation_experiments:
           value: 2.5
           unit: s^-1
     integration:
-      method: RungeKuttaFehlberg45
+      method: RungeKutta4thOrder
       duration: 1000
     monitors:
       - name: Raw
         period: 1.0
         imaging_modality: EEG
-        select_variable:
-          name: v_pyr
+        # select_variable:
+        #   name: v_pyr

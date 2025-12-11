@@ -168,12 +168,6 @@ slots:
     range: integer
     slot_uri: atom:atlas/lookupLabel
 
-  name:
-    description: Enter the name of this entity.
-    range: string
-    required: true
-    slot_uri: atom:atlas/hasName
-
   ontologyIdentifier:
     description: Enter the internationalized resource identifier (IRI) to the related ontological terms.
     range: string

@@ -1,0 +1,2840 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" ?>
+<odoo>
+    <data noupdate="1">
+        <record id="neural_model_coombesbyrne2d" model="tvbo.neural_model">
+            <field name="name">CoombesByrne2D</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_coombesbyrne2d_param_Delta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne2d"/>
+            <field name="name">Delta</field>
+            <field name="value">1.0</field>
+            <field name="description">Half-width of heterogeneous noise distribution</field>
+        </record>
+        <record id="neural_model_coombesbyrne2d_param_eta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne2d"/>
+            <field name="name">eta</field>
+            <field name="value">2.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the             firing rate variable to itself</field>
+        </record>
+        <record id="neural_model_coombesbyrne2d_param_k" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne2d"/>
+            <field name="name">k</field>
+            <field name="value">1.0</field>
+            <field name="description">Local coupling strength</field>
+        </record>
+        <record id="neural_model_coombesbyrne2d_param_v_syn" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne2d"/>
+            <field name="name">v_syn</field>
+            <field name="value">-4.0</field>
+            <field name="description">QIF membrane reversal potential</field>
+        </record>
+        <record id="neural_model_coombesbyrne2d_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne2d"/>
+            <field name="name">V</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_coombesbyrne2d_var_r" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne2d"/>
+            <field name="name">r</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_genericlinear" model="tvbo.neural_model">
+            <field name="name">GenericLinear</field>
+            <field name="description">The Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e., one state-variable ('x')) neural mass model (Galán, 2008).</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_genericlinear_param_gamma" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_genericlinear"/>
+            <field name="name">gamma</field>
+            <field name="value">-10.0</field>
+            <field name="description">Slope parameter of the state-variable 'x_GL', representing the inverse of the relaxation time</field>
+        </record>
+        <record id="neural_model_genericlinear_var_x" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_genericlinear"/>
+            <field name="name">x</field>
+            <field name="description">State-variable of the Generic Linear model</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh" model="tvbo.neural_model">
+            <field name="name">ReducedWongWangExcInh</field>
+            <field name="description">Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_G" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">G</field>
+            <field name="value">2.0</field>
+            <field name="description">Global coupling scaling</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_I_ext" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">I_ext</field>
+            <field name="value">0.0</field>
+            <field name="description">External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_I_o" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">I_o</field>
+            <field name="value">0.382</field>
+            <field name="description">Effective external input parameter to the excitatory E and inhibitory I population (Deco et al</field>
+            <field name="unit">nA</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_J_N" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">J_N</field>
+            <field name="value">0.15</field>
+            <field name="description">Excitatory synaptic coupling parameter (Deco et al</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_J_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">J_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_W_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">W_e</field>
+            <field name="value">1.0</field>
+            <field name="description">Excitatory population external input scaling weight</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_W_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">W_i</field>
+            <field name="value">0.7</field>
+            <field name="description">Inhibitory population external input scaling weight</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_a_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">a_e</field>
+            <field name="value">310.0</field>
+            <field name="description">Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al</field>
+            <field name="unit">nC^-1</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_a_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">a_i</field>
+            <field name="value">615.0</field>
+            <field name="description">Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al</field>
+            <field name="unit">nC^-1</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_b_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">b_e</field>
+            <field name="value">125.0</field>
+            <field name="description">Shift parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al</field>
+            <field name="unit">Hz</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_b_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">b_i</field>
+            <field name="value">177.0</field>
+            <field name="description">Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al</field>
+            <field name="unit">Hz</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_d_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">d_e</field>
+            <field name="value">0.16</field>
+            <field name="description">Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al</field>
+            <field name="unit">s</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_d_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">d_i</field>
+            <field name="value">0.087</field>
+            <field name="description">Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al</field>
+            <field name="unit">s</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_gamma_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">gamma_e</field>
+            <field name="value">0.000641</field>
+            <field name="description">Excitatory population kinetic parameter</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_gamma_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">gamma_i</field>
+            <field name="value">0.001</field>
+            <field name="description">Inhibitory population kinetic parameter</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_lamda" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">lamda</field>
+            <field name="value">0.0</field>
+            <field name="description">Inhibitory global coupling scaling</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_tau_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">tau_e</field>
+            <field name="value">100.0</field>
+            <field name="description">Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al</field>
+            <field name="unit">ms</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_tau_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">tau_i</field>
+            <field name="value">10.0</field>
+            <field name="description">Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al</field>
+            <field name="unit">ms</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_param_w_p" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">w_p</field>
+            <field name="value">1.4</field>
+            <field name="description">Excitatory population recurrence weight</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_var_S_e" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">S_e</field>
+            <field name="description">State-variable of the Reduced WongWang_EI model (Deco et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_reducedwongwangexcinh_var_S_i" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_reducedwongwangexcinh"/>
+            <field name="name">S_i</field>
+            <field name="description">State-variable of the Reduced WongWang_EI model (Deco et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_jansenrit" model="tvbo.neural_model">
+            <field name="name">JansenRit</field>
+            <field name="description">The Jansen-Rit is a neurophysiologically-inspired neural mass model of a cortical column (or area), developed to simulate the electrical brain activity, i.e., the electroencephalogram (EEG), and evoked-potentials (EPs; Jansen et al., 1993; Jansen &amp; Rit, 1995). It is a 6-dimensional, non-linear, model describing the local average states of three interconnected neural populations: pyramidal cells (PCs), excitatory and inhibitory interneurons (EINs and IINs), interacting through positive and negative feedback loops. The main output of the model is the average membrane potential of the pyramidal cell population, as the sum of the potential of these cells is thought to be the source of the potential recorded in the EEG.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_jansenrit_param_A" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">A</field>
+            <field name="value">3.25</field>
+            <field name="description">Maximum amplitude of EPSP [mV]</field>
+            <field name="unit">Millivolt</field>
+        </record>
+        <record id="neural_model_jansenrit_param_B" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">B</field>
+            <field name="value">22.0</field>
+            <field name="description">Maximum amplitude of IPSP [mV]</field>
+            <field name="unit">Millivolt</field>
+        </record>
+        <record id="neural_model_jansenrit_param_J" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">J</field>
+            <field name="value">135.0</field>
+            <field name="description">Average number of synapses between three neuronal populations of the model</field>
+        </record>
+        <record id="neural_model_jansenrit_param_a_1" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">a_1</field>
+            <field name="value">1.0</field>
+            <field name="description">Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop)</field>
+        </record>
+        <record id="neural_model_jansenrit_param_a_2" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">a_2</field>
+            <field name="value">0.8</field>
+            <field name="description">Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs</field>
+        </record>
+        <record id="neural_model_jansenrit_param_a_3" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">a_3</field>
+            <field name="value">0.25</field>
+            <field name="description">Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs</field>
+        </record>
+        <record id="neural_model_jansenrit_param_a_4" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">a_4</field>
+            <field name="value">0.25</field>
+            <field name="description">Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs</field>
+        </record>
+        <record id="neural_model_jansenrit_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">a</field>
+            <field name="value">0.1</field>
+            <field name="description">Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant.</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_jansenrit_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">b</field>
+            <field name="value">0.05</field>
+            <field name="description">Rate constant of the inhibitory post-synaptic potential (IPSP)</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_jansenrit_param_mu" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">mu</field>
+            <field name="value">0.22</field>
+            <field name="description">Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_jansenrit_param_nu_max" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">nu_max</field>
+            <field name="value">0.0025</field>
+            <field name="description">Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_jansenrit_param_r" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">r</field>
+            <field name="value">0.56</field>
+            <field name="description">Steepness (or gain) parameter of the sigmoid function Sigm_JR</field>
+            <field name="unit">mV^-1</field>
+        </record>
+        <record id="neural_model_jansenrit_param_v0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">v0</field>
+            <field name="value">5.52</field>
+            <field name="description">Average firing threshold (PSP) for which half of the firing rate is achieved</field>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_jansenrit_var_y0" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">y0</field>
+            <field name="description">First state-variable of the first Jansen-Rit population</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_jansenrit_var_y1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">y1</field>
+            <field name="description">First state-variable of the second Jansen-Rit population (EINs)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_jansenrit_var_y2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">y2</field>
+            <field name="description">First state-variable of the third Jansen-Rit population (IINs)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_jansenrit_var_y3" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">y3</field>
+            <field name="description">Second state-variable of the first Jansen-Rit population (excitatory PCs)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_jansenrit_var_y4" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">y4</field>
+            <field name="description">Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_jansenrit_var_y5" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_jansenrit"/>
+            <field name="name">y5</field>
+            <field name="description">Second state-variable of the third (inhibitory) Jansen-Rit population (IINs)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kionex" model="tvbo.neural_model">
+            <field name="name">KIonEx</field>
+            <field name="description">It describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate. 
+The model is derived as the mathematical limit of an infinite number of all-to-all coupled neurons, resulting in 5 state variables:
+    :math:`x` represents a phenomenological variable connected to the firing rate, 
+    :math:`V` represent the average membrane potential,
+    :math:`n` represents the gating variable for potassium K, 
+    :math:`\Delta K_{int}` represent the intracellular potassium concentration,
+    :math:`K_g` represents the extracellular potassium buffering by the external bath
+    """</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_kionex_param_Cm" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Cm</field>
+            <field name="value">1.0</field>
+            <field name="description">membrane capacitance</field>
+        </record>
+        <record id="neural_model_kionex_param_Delta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Delta</field>
+            <field name="value">1.0</field>
+            <field name="description">HWHM heterogeneous noise</field>
+        </record>
+        <record id="neural_model_kionex_param_E" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">E</field>
+            <field name="value">0.0</field>
+            <field name="description">Reversal Potential</field>
+        </record>
+        <record id="neural_model_kionex_param_J" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">J</field>
+            <field name="value">0.1</field>
+            <field name="description">Mean Synaptic weight</field>
+        </record>
+        <record id="neural_model_kionex_param_K_bath" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">K_bath</field>
+            <field name="value">5.5</field>
+            <field name="description">Potassium concentration in bath</field>
+        </record>
+        <record id="neural_model_kionex_param_R_minus" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">R_minus</field>
+            <field name="value">0.5</field>
+            <field name="description">curvature left parabola</field>
+        </record>
+        <record id="neural_model_kionex_param_R_plus" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">R_plus</field>
+            <field name="value">-0.5</field>
+            <field name="description">curvature right parabola</field>
+        </record>
+        <record id="neural_model_kionex_param_Vstar" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Vstar</field>
+            <field name="value">-31.0</field>
+            <field name="description">x-coordinate meeting point of parabolas</field>
+        </record>
+        <record id="neural_model_kionex_param_c_minus" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">c_minus</field>
+            <field name="value">-40.0</field>
+            <field name="description">x-coordinate left parabola</field>
+        </record>
+        <record id="neural_model_kionex_param_c_plus" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">c_plus</field>
+            <field name="value">-20.0</field>
+            <field name="description">x-coordinate right parabola</field>
+        </record>
+        <record id="neural_model_kionex_param_epsilon" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">epsilon</field>
+            <field name="value">0.001</field>
+            <field name="description">diffusion rate</field>
+        </record>
+        <record id="neural_model_kionex_param_eta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">eta</field>
+            <field name="value">0.0</field>
+            <field name="description">Mean heterogeneous noise</field>
+        </record>
+        <record id="neural_model_kionex_param_gamma" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">gamma</field>
+            <field name="value">0.04</field>
+            <field name="description">conversion factor</field>
+        </record>
+        <record id="neural_model_kionex_param_tau_n" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">tau_n</field>
+            <field name="value">4.0</field>
+            <field name="description">time constant of gating variable</field>
+        </record>
+        <record id="neural_model_kionex_param_Chn" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Chn</field>
+            <field name="value">0.4</field>
+            <field name="description"/>
+        </record>
+        <record id="neural_model_kionex_param_Ckp" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Ckp</field>
+            <field name="value">5.5</field>
+            <field name="description"/>
+            <field name="unit">mol.m**-3</field>
+        </record>
+        <record id="neural_model_kionex_param_Cl_i0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Cl_i0</field>
+            <field name="value">4.8</field>
+            <field name="description">initial concentration of intracellular Cl</field>
+            <field name="unit">mMol/m**3</field>
+        </record>
+        <record id="neural_model_kionex_param_Cl_o0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Cl_o0</field>
+            <field name="value">112.0</field>
+            <field name="description">initial concentration of extracellular Cl</field>
+            <field name="unit">mMol/m**3</field>
+        </record>
+        <record id="neural_model_kionex_param_Cmna" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Cmna</field>
+            <field name="value">-24.0</field>
+            <field name="description"/>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_kionex_param_Cnap" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Cnap</field>
+            <field name="value">21.0</field>
+            <field name="description"/>
+            <field name="unit">mol.m**-3</field>
+        </record>
+        <record id="neural_model_kionex_param_Cnk" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Cnk</field>
+            <field name="value">-19.0</field>
+            <field name="description"/>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_kionex_param_DChn" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">DChn</field>
+            <field name="value">-8.0</field>
+            <field name="description"/>
+        </record>
+        <record id="neural_model_kionex_param_DCkp" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">DCkp</field>
+            <field name="value">1.0</field>
+            <field name="description"/>
+            <field name="unit">mol.m**-3</field>
+        </record>
+        <record id="neural_model_kionex_param_DCmna" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">DCmna</field>
+            <field name="value">12.0</field>
+            <field name="description"/>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_kionex_param_DCnap" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">DCnap</field>
+            <field name="value">21.0</field>
+            <field name="description"/>
+            <field name="unit">mol.m**-3</field>
+        </record>
+        <record id="neural_model_kionex_param_DCnk" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">DCnk</field>
+            <field name="value">18.0</field>
+            <field name="description"/>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_kionex_param_K_i0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">K_i0</field>
+            <field name="value">130.0</field>
+            <field name="description">initial concentration of intracellular K</field>
+            <field name="unit">mMol/m**3</field>
+        </record>
+        <record id="neural_model_kionex_param_K_o0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">K_o0</field>
+            <field name="value">4.8</field>
+            <field name="description">initial concentration of extracellular K</field>
+            <field name="unit">mMol/m**3</field>
+        </record>
+        <record id="neural_model_kionex_param_Na_i0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Na_i0</field>
+            <field name="value">16.0</field>
+            <field name="description">initial concentration of intracellular Na</field>
+            <field name="unit">mMol/m**3</field>
+        </record>
+        <record id="neural_model_kionex_param_Na_o0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Na_o0</field>
+            <field name="value">138.0</field>
+            <field name="description">initial concentration of extracellular Na</field>
+            <field name="unit">mMol/m**3</field>
+        </record>
+        <record id="neural_model_kionex_param_g_Cl" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">g_Cl</field>
+            <field name="value">7.5</field>
+            <field name="description">chloride conductance</field>
+            <field name="unit">nS</field>
+        </record>
+        <record id="neural_model_kionex_param_g_K" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">g_K</field>
+            <field name="value">22.0</field>
+            <field name="description">maximal potassium conductance</field>
+            <field name="unit">nS</field>
+        </record>
+        <record id="neural_model_kionex_param_g_Kl" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">g_Kl</field>
+            <field name="value">0.12</field>
+            <field name="description">potassium leak conductance</field>
+            <field name="unit">nS</field>
+        </record>
+        <record id="neural_model_kionex_param_g_Na" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">g_Na</field>
+            <field name="value">40.0</field>
+            <field name="description">maximal sodiumconductance</field>
+            <field name="unit">nS</field>
+        </record>
+        <record id="neural_model_kionex_param_g_Nal" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">g_Nal</field>
+            <field name="value">0.02</field>
+            <field name="description">sodium leak conductance</field>
+            <field name="unit">nS</field>
+        </record>
+        <record id="neural_model_kionex_param_rho" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">rho</field>
+            <field name="value">250.0</field>
+            <field name="description">maximal Na/K pump current</field>
+            <field name="unit">pA</field>
+        </record>
+        <record id="neural_model_kionex_param_w_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">w_i</field>
+            <field name="value">2160.0</field>
+            <field name="description">intracellular volume</field>
+            <field name="unit">umeter**3</field>
+        </record>
+        <record id="neural_model_kionex_param_w_o" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">w_o</field>
+            <field name="value">720.0</field>
+            <field name="description">extracellular volume</field>
+            <field name="unit">umeter**3</field>
+        </record>
+        <record id="neural_model_kionex_var_DKi" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">DKi</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kionex_var_Kg" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">Kg</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kionex_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">V</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kionex_var_n" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">n</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kionex_var_x" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kionex"/>
+            <field name="name">x</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor5d" model="tvbo.neural_model">
+            <field name="name">Epileptor5D</field>
+            <field name="description">Epilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).
+
+Epileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: 
+- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. 
+- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.
+
+The main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.
+
+Note: 
+------
+- Equations and default parameters are taken from (Jirsa et al.,2014 &amp; El Houssaini et al., 2015),
+- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),
+- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_Iext2" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">Iext2</field>
+            <field name="value">0.45</field>
+            <field name="description">External input current to the second population</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_Iext" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">Iext</field>
+            <field name="value">3.1</field>
+            <field name="description">External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_Kf" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">Kf</field>
+            <field name="value">0.0</field>
+            <field name="description">Correspond to the coupling scaling on a fast time scale</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_Ks" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">Ks</field>
+            <field name="value">0.0</field>
+            <field name="description">Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_Kvf" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">Kvf</field>
+            <field name="value">0.0</field>
+            <field name="description">Coupling scaling on a very fast time scale</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">a</field>
+            <field name="value">1.0</field>
+            <field name="description">Coefficient of the cubic term in the first state variable</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_aa" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">aa</field>
+            <field name="value">6.0</field>
+            <field name="description">Linear coefficient in fifth state variable</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">b</field>
+            <field name="value">3.0</field>
+            <field name="description">Coefficient of the squared term in the first state variabel</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_bb" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">bb</field>
+            <field name="value">2.0</field>
+            <field name="description">Linear coefficient of lowpass excitatory coupling in fourth state variable</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_c" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">c</field>
+            <field name="value">1.0</field>
+            <field name="description">Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_d" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">d</field>
+            <field name="value">5.0</field>
+            <field name="description">Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_modification" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">modification</field>
+            <field name="value">0.0</field>
+            <field name="description">When modification is True, the function h_E5D uses a nonlinear influence on z_E5D</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_r" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">r</field>
+            <field name="value">0.00035</field>
+            <field name="description">Temporal scaling in the third state variable,         called :math:`1/\tau_{0}` in Jirsa paper</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_s" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">s</field>
+            <field name="value">4.0</field>
+            <field name="description">Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_slope" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">slope</field>
+            <field name="value">0.0</field>
+            <field name="description">Linear coefficient in the first state variable</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_tau" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">tau</field>
+            <field name="value">10.0</field>
+            <field name="description">Temporal scaling coefficient in fifth state variable</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_tt" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">tt</field>
+            <field name="value">1.0</field>
+            <field name="description">Characteristic time scale of the whole-system Epileptor5D</field>
+        </record>
+        <record id="neural_model_epileptor5d_param_x0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">x0</field>
+            <field name="value">-1.6</field>
+            <field name="description">Epileptogenicity Parameter</field>
+        </record>
+        <record id="neural_model_epileptor5d_var_g" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">g</field>
+            <field name="description">g_E5D is a low-pass filtered excitatory coupling function from sub-population (x1_E5D, y1_E5D) to (x2_E5D, y2_E5D) in Epileptor5D (Jirsa et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor5d_var_x1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">x1</field>
+            <field name="description">First state-variable of the first Epileptor5D population (Jirsa et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor5d_var_x2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">x2</field>
+            <field name="description">First state-variable of the second Epileptor5D sub-population (Jirsa et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor5d_var_y1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">y1</field>
+            <field name="description">Second state-variable of the first Epileptor5D sub-population (Jirsa et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor5d_var_y2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">y2</field>
+            <field name="description">Second state-variable of the second Epileptor5D population (Jirsa et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor5d_var_z" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor5d"/>
+            <field name="name">z</field>
+            <field name="description">Slow permittivity state-variable of the Epileptor5D (Jirsa et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kuramoto" model="tvbo.neural_model">
+            <field name="name">Kuramoto</field>
+            <field name="description">The Kuramoto model is a model of synchronization phenomena derived by Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including the study of neuronal oscillations and synchronization.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_kuramoto_param_omega" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kuramoto"/>
+            <field name="name">omega</field>
+            <field name="value">1.0</field>
+            <field name="description">Sets the base line frequency for the Kuramoto oscillator</field>
+            <field name="unit">rad/ms</field>
+        </record>
+        <record id="neural_model_kuramoto_var_theta" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kuramoto"/>
+            <field name="name">theta</field>
+            <field name="description">The Kuramoto model has only one state variable representing oscillations in general</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_suphopf" model="tvbo.neural_model">
+            <field name="name">SupHopf</field>
+            <field name="description">Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017). 
+
+This normal form has a supercritical bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a &lt; 0', the local dynamics has a stable fixed point and the system corresponds to a damped oscillatory state, whereas for 'a &gt; 0', the local dynamics enters in a stable limit cycle and the system switches to an oscillatory state.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_suphopf_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_suphopf"/>
+            <field name="name">a</field>
+            <field name="value">-0.5</field>
+            <field name="description">Local bifurcation parameter</field>
+        </record>
+        <record id="neural_model_suphopf_param_omega" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_suphopf"/>
+            <field name="name">omega</field>
+            <field name="value">1.0</field>
+            <field name="description">Angular frequency</field>
+        </record>
+        <record id="neural_model_suphopf_var_x" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_suphopf"/>
+            <field name="name">x</field>
+            <field name="description">First state-variable of the Supercritical Hopf model</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_suphopf_var_y" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_suphopf"/>
+            <field name="name">y</field>
+            <field name="description">Second state-variable of the Supercritical Hopf model</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd" model="tvbo.neural_model">
+            <field name="name">GastSchmidtKnosche_SD</field>
+            <field name="description">4D model describing the Ott-Antonsen reduction of infinite all-to-all 
+    coupled QIF neurons (Theta-neurons) with Synaptic Depression adaptation 
+    mechanisms [Gastetal_2020]_.
+
+    The two state variables :math:`r` and :math:`V` represent the average firing rate and 
+    the average membrane potential of our QIF neurons.
+    :math:`A` and :math:`B` are respectively the adaptation variable and its derivative.
+
+    The equations of the infinite QIF 2D population model read
+    
+    .. math::
+            \dot{r} &amp;= 1/\tau (\Delta/(\pi \tau) + 2 V r)\\
+            \dot{V} &amp;= 1/\tau (V^2 - \tau^2 \pi^2 r^2 + \eta + J \tau r (1 - A) + I)\\ 
+            \dot{A} &amp;= 1/\tau_A (B)\\
+            \dot{B} &amp;= 1/\tau_A (-2 B - A + \alpha  r) \\
+
+    .. [Gastetal_2020] Gast, R., Schmidt, H., &amp; Knösche, T. R. (2020). A mean-field description of bursting dynamics in spiking neural networks with short-term adaptation. *Neural Computation*, 32(9), 1615-1634.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_Delta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">Delta</field>
+            <field name="value">2.0</field>
+            <field name="description">Half-width of heterogeneous noise distribution</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_I" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">I</field>
+            <field name="value">0.0</field>
+            <field name="description">External homogeneous current</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_J" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">J</field>
+            <field name="value">21.2132</field>
+            <field name="description">Synaptic weight</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_alpha" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">alpha</field>
+            <field name="value">0.5</field>
+            <field name="description">adaptation rate</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_cr" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">cr</field>
+            <field name="value">1.0</field>
+            <field name="description">It is the weight on Coupling through variable r</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_cv" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">cv</field>
+            <field name="value">0.0</field>
+            <field name="description">It is the weight on Coupling through variable V</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_eta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">eta</field>
+            <field name="value">-6.0</field>
+            <field name="description">Mean of heterogeneous noise distribution</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_tau_A" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">tau_A</field>
+            <field name="value">10.0</field>
+            <field name="description">Adaptation time scale</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_param_tau" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">tau</field>
+            <field name="value">1.0</field>
+            <field name="description">Characteristic time</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_var_A" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">A</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_var_B" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">B</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">V</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sd_var_r" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sd"/>
+            <field name="name">r</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor2d" model="tvbo.neural_model">
+            <field name="name">Epileptor2D</field>
+            <field name="description">Epileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).
+
+Note: 
+------
+- Equations and default parameters are taken from (Proix et al.,2014),
+- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_Iext" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">Iext</field>
+            <field name="value">3.1</field>
+            <field name="description">External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_Ks" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">Ks</field>
+            <field name="value">0.0</field>
+            <field name="description">Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_Kvf" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">Kvf</field>
+            <field name="value">0.0</field>
+            <field name="description">Coupling scaling on a very fast time scale</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">a</field>
+            <field name="value">1.0</field>
+            <field name="description">Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">b</field>
+            <field name="value">3.0</field>
+            <field name="description">Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_c" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">c</field>
+            <field name="value">1.0</field>
+            <field name="description">Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_d" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">d</field>
+            <field name="value">5.0</field>
+            <field name="description">Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_modification" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">modification</field>
+            <field name="value">0.0</field>
+            <field name="description">When modification is True, the function h_E2D uses a nonlinear influence on z_E2D</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_r" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">r</field>
+            <field name="value">0.00035</field>
+            <field name="description">Temporal scaling in the slow state-variable, \         called :math:`1\tau_{0}` in Jirsa paper (see class Epileptor)</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_slope" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">slope</field>
+            <field name="value">0.0</field>
+            <field name="description">Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_tt" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">tt</field>
+            <field name="value">1.0</field>
+            <field name="description">Characteristic time scale of the whole-system Epileptor2D</field>
+        </record>
+        <record id="neural_model_epileptor2d_param_x0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">x0</field>
+            <field name="value">-1.6</field>
+            <field name="description">Degree of excitability or epileptogenicity in Epileptor2D (Proix et al</field>
+        </record>
+        <record id="neural_model_epileptor2d_var_x1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">x1</field>
+            <field name="description">First state-variable in the Epileptor2D (Proix et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptor2d_var_z" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptor2d"/>
+            <field name="name">z</field>
+            <field name="description">Slow permittivity state-variable of the Epileptor2D (Proix et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_wilsoncowan" model="tvbo.neural_model">
+            <field name="name">WilsonCowan</field>
+            <field name="description">The Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973). 
+
+This model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011). 
+
+Key parameters in the model are the strength of connectivity between each subtype of population (excitatory and inhibitory) and the strength of input to each subpopulation. The Input parameters P and Q also provide the entry point for local and long-range connectivity, that is, the activity coming from neighboring and distant populations respectively.
+
+Varying Input and connectivity generates a diversity of dynamical behaviors that are representative of observed activity in the brain, like multistability, oscillations, traveling waves and spatial patterns.
+We consider the transmission parameters of the excitatory population to be glutamatergic and therefore to be modified by glutamatergic receptors. The inhibitory population is considered as GABAergic.
+
+Note:
+- Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)
+- Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)
+- The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_P" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">P</field>
+            <field name="value">0.0</field>
+            <field name="description">External stimulus to the excitatory population (Wilson and Cowan, 1972)</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_Q" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">Q</field>
+            <field name="value">0.0</field>
+            <field name="description">External stimulus to the inhibitory population (Wilson and Cowan, 1972)</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_a_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">a_e</field>
+            <field name="value">1.2</field>
+            <field name="description">Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972)</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_a_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">a_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972)</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_alpha_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">alpha_e</field>
+            <field name="value">1.0</field>
+            <field name="description">Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_alpha_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">alpha_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_b_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">b_e</field>
+            <field name="value">2.8</field>
+            <field name="description">Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_b_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">b_i</field>
+            <field name="value">4.0</field>
+            <field name="description">Position of the maximum slope of a sigmoid function [in         threshold units]</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_c_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">c_e</field>
+            <field name="value">1.0</field>
+            <field name="description">The amplitude parameter for the excitatory response function</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_c_ee" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">c_ee</field>
+            <field name="value">12.0</field>
+            <field name="description">Excitatory to excitatory  coupling coefficient</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_c_ei" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">c_ei</field>
+            <field name="value">4.0</field>
+            <field name="description">Inhibitory to excitatory coupling coefficient</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_c_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">c_i</field>
+            <field name="value">1.0</field>
+            <field name="description">The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_c_ie" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">c_ie</field>
+            <field name="value">13.0</field>
+            <field name="description">Excitatory to inhibitory coupling coefficient (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_c_ii" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">c_ii</field>
+            <field name="value">11.0</field>
+            <field name="description">Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_k_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">k_e</field>
+            <field name="value">1.0</field>
+            <field name="description">Maximum value of the excitatory response function</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_k_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">k_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Maximum value of the inhibitory response function</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_r_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">r_e</field>
+            <field name="value">1.0</field>
+            <field name="description">Excitatory refractory period</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_r_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">r_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Inhibitory refractory period</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_shift_sigmoid" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">shift_sigmoid</field>
+            <field name="value">1.0</field>
+            <field name="description">In order to have resting state (E=0 and I=0) in absence of external input,         the logistic curve are translated downward S(0)=0</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_tau_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">tau_e</field>
+            <field name="value">10.0</field>
+            <field name="description">Excitatory population, membrane time-constant (Wilson and Cowan, 1972)</field>
+            <field name="unit">ms</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_tau_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">tau_i</field>
+            <field name="value">10.0</field>
+            <field name="description">Inhibitory population, membrane time-constant (Wilson and Cowan, 1972)</field>
+            <field name="unit">ms</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_theta_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">theta_e</field>
+            <field name="value">0.0</field>
+            <field name="description">Excitation threshold of excitatory population (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_param_theta_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">theta_i</field>
+            <field name="value">0.0</field>
+            <field name="description">Excitation threshold of inhibitory population (Sanz-Leon et al</field>
+        </record>
+        <record id="neural_model_wilsoncowan_var_E" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">E</field>
+            <field name="description">State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973), denoting the mean firing rate of all excitatory neurons of the population</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_wilsoncowan_var_I" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_wilsoncowan"/>
+            <field name="name">I</field>
+            <field name="description">State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973), denoting the mean firing rate of all inhibitory neurons of the population</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder" model="tvbo.neural_model">
+            <field name="name">ZerlautAdaptationFirstOrder</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_C_m" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">C_m</field>
+            <field name="value">200.0</field>
+            <field name="description">membrane capacitance [pF]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_DTvN0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">DTvN0</field>
+            <field name="value">1.0</field>
+            <field name="description">Normalization factors page 48 after the equation 4 from [ZD_2018]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_DmuV0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">DmuV0</field>
+            <field name="value">10.0</field>
+            <field name="description">Normalization factors page 48 after the equation 4 from [ZD_2018]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_DsV0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">DsV0</field>
+            <field name="value">6.0</field>
+            <field name="description">Normalization factors page 48 after the equation 4 from [ZD_2018]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_E_L_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">E_L_e</field>
+            <field name="value">-65.0</field>
+            <field name="description">leak reversal potential for excitatory [mV]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_E_L_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">E_L_i</field>
+            <field name="value">-65.0</field>
+            <field name="description">leak reversal potential for inhibitory [mV]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_E_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">E_e</field>
+            <field name="value">0.0</field>
+            <field name="description">excitatory reversal potential [mV]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_E_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">E_i</field>
+            <field name="value">-80.0</field>
+            <field name="description">inhibitory reversal potential [mV]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_K_ext_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">K_ext_e</field>
+            <field name="value">400.0</field>
+            <field name="description">Number of excitatory connexions from external population</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_K_ext_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">K_ext_i</field>
+            <field name="value">0.0</field>
+            <field name="description">Number of inhibitory connexions from external population</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_N_tot" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">N_tot</field>
+            <field name="value">10000.0</field>
+            <field name="description">cell number</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P0_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P0_e</field>
+            <field name="value">-0.04983106</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P0_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P0_i</field>
+            <field name="value">-0.05149122024209484</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P1_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P1_e</field>
+            <field name="value">0.005063550882777035</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P1_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P1_i</field>
+            <field name="value">0.004003689190271077</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P2_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P2_e</field>
+            <field name="value">-0.023470121807314552</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P2_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P2_i</field>
+            <field name="value">-0.008352013668528155</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P3_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P3_e</field>
+            <field name="value">0.0022951513725067503</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P3_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P3_i</field>
+            <field name="value">0.0002414237992765705</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P4_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P4_e</field>
+            <field name="value">-0.0004105302652029825</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P4_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P4_i</field>
+            <field name="value">-0.0005070645080016026</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P5_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P5_e</field>
+            <field name="value">0.010547051343547399</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P5_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P5_i</field>
+            <field name="value">0.0014345394104282397</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P6_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P6_e</field>
+            <field name="value">-0.03659252821136933</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P6_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P6_i</field>
+            <field name="value">-0.014686689498949967</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P7_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P7_e</field>
+            <field name="value">0.007437487505797858</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P7_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P7_i</field>
+            <field name="value">0.004502706285435741</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P8_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P8_e</field>
+            <field name="value">0.001265064721846073</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P8_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P8_i</field>
+            <field name="value">0.0028472190352532454</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P9_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P9_e</field>
+            <field name="value">-0.04072161294490446</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P9_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P9_i</field>
+            <field name="value">-0.015357804594594548</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P_e</field>
+            <field name="value">-0.04983106</field>
+            <field name="description">Polynome of excitatory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_P_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">P_i</field>
+            <field name="value">-0.05149122024209484</field>
+            <field name="description">Polynome of inhibitory phenomenological threshold (order 9)</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_Q_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">Q_e</field>
+            <field name="value">1.5</field>
+            <field name="description">excitatory quantal conductance [nS]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_Q_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">Q_i</field>
+            <field name="value">5.0</field>
+            <field name="description">inhibitory quantal conductance [nS]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_S_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">S_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Scaling of the remote input for the inhibitory population with         respect to the excitatory population</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_T" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">T</field>
+            <field name="value">20.0</field>
+            <field name="description">Time scale of describing network activity</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_TvN0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">TvN0</field>
+            <field name="value">0.5</field>
+            <field name="description">Normalization factors page 48 after the equation 4 from [ZD_2018]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_a_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">a_e</field>
+            <field name="value">4.0</field>
+            <field name="description">Excitatory adaptation conductance [nS]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_a_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">a_i</field>
+            <field name="value">0.0</field>
+            <field name="description">Inhibitory adaptation conductance [nS]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_b_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">b_e</field>
+            <field name="value">60.0</field>
+            <field name="description">Excitatory adaptation current increment [pA]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_b_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">b_i</field>
+            <field name="value">0.0</field>
+            <field name="description">Inhibitory adaptation current increment [pA]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_external_input_ex_ex" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">external_input_ex_ex</field>
+            <field name="value">0.0</field>
+            <field name="description">external drive</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_external_input_ex_in" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">external_input_ex_in</field>
+            <field name="value">0.0</field>
+            <field name="description">external drive</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_external_input_in_ex" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">external_input_in_ex</field>
+            <field name="value">0.0</field>
+            <field name="description">external drive</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_external_input_in_in" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">external_input_in_in</field>
+            <field name="value">0.0</field>
+            <field name="description">external drive</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_g_L" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">g_L</field>
+            <field name="value">10.0</field>
+            <field name="description">leak conductance [nS]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_g" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">g</field>
+            <field name="value">0.2</field>
+            <field name="description">fraction of inhibitory cells</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_muV0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">muV0</field>
+            <field name="value">-60.0</field>
+            <field name="description">Normalization factors page 48 after the equation 4 from [ZD_2018]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_p_connect_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">p_connect_e</field>
+            <field name="value">0.05</field>
+            <field name="description">connectivity probability</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_p_connect_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">p_connect_i</field>
+            <field name="value">0.05</field>
+            <field name="description">connectivity probability</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_sV0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">sV0</field>
+            <field name="value">4.0</field>
+            <field name="description">Normalization factors page 48 after the equation 4 from [ZD_2018]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_tau_OU" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">tau_OU</field>
+            <field name="value">5.0</field>
+            <field name="description">time constant noise</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_tau_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">tau_e</field>
+            <field name="value">5.0</field>
+            <field name="description">excitatory decay [ms]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_tau_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">tau_i</field>
+            <field name="value">5.0</field>
+            <field name="description">inhibitory decay [ms]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_tau_w_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">tau_w_e</field>
+            <field name="value">500.0</field>
+            <field name="description">Adaptation time constant of excitatory neurons [ms]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_tau_w_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">tau_w_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Adaptation time constant of inhibitory neurons [ms]</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_param_weight_noise" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">weight_noise</field>
+            <field name="value">10.5</field>
+            <field name="description">weight noise</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_var_E" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">E</field>
+            <field name="description">Firing rate of excitatory population in KHz</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_var_I" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">I</field>
+            <field name="description">Firing rate of inhibitory population in KHz</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_var_W_e" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">W_e</field>
+            <field name="description">Level of adaptation of excitatory in pA</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_var_W_i" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">W_i</field>
+            <field name="description">Level of adaptation of inhibitory in pA</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zerlautadaptationfirstorder_var_ou_drift" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zerlautadaptationfirstorder"/>
+            <field name="name">ou_drift</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_larterbreakspear" model="tvbo.neural_model">
+            <field name="name">LarterBreakspear</field>
+            <field name="description">The Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.
+
+The Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.
+
+The membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, 
+potassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. 
+
+The excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. 
+
+Note:
+- Equations and default parameters are taken from (Breakspear et al., 2003b), 
+- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_C" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">C</field>
+            <field name="value">0.1</field>
+            <field name="description">Coupling scaling factor</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_I_ext" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">I_ext</field>
+            <field name="value">0.3</field>
+            <field name="description">Subcortical input current</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_Q_Vmax" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">Q_Vmax</field>
+            <field name="value">1.0</field>
+            <field name="description">Maximal firing rate for excitatory populations</field>
+            <field name="unit">Kilohertz</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_Q_Zmax" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">Q_Zmax</field>
+            <field name="value">1.0</field>
+            <field name="description">Maximal firing rate for inhibitory population</field>
+            <field name="unit">Kilohertz</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_T_Ca" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">T_Ca</field>
+            <field name="value">-0.01</field>
+            <field name="description">Threshold value for Ca channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_T_K" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">T_K</field>
+            <field name="value">0.0</field>
+            <field name="description">Threshold value for K channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_T_Na" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">T_Na</field>
+            <field name="value">0.3</field>
+            <field name="description">Threshold value for sodium channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_V_Ca" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">V_Ca</field>
+            <field name="value">1.0</field>
+            <field name="description">Calcium Nernst potential</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_V_K" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">V_K</field>
+            <field name="value">-0.7</field>
+            <field name="description">K Nernst potential</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_V_L" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">V_L</field>
+            <field name="value">-0.5</field>
+            <field name="description">Nernst potential leak channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_V_Na" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">V_Na</field>
+            <field name="value">0.53</field>
+            <field name="description">Na Nernst potential</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_V_T" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">V_T</field>
+            <field name="value">0.0</field>
+            <field name="description">Threshold potential for excitatory neurons</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_Z_T" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">Z_T</field>
+            <field name="value">0.0</field>
+            <field name="description">Threshold potential (mean) for inihibtory neurons</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_a_ee" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">a_ee</field>
+            <field name="value">0.4</field>
+            <field name="description">Excitatory-to-excitatory synaptic strength</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_a_ei" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">a_ei</field>
+            <field name="value">2.0</field>
+            <field name="description">Excitatory-to-inhibitory synaptic strength</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_a_ie" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">a_ie</field>
+            <field name="value">2.0</field>
+            <field name="description">Inhibitory-to-excitatory synaptic strength</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_a_ne" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">a_ne</field>
+            <field name="value">1.0</field>
+            <field name="description">Non-specific-to-excitatory synaptic strength</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_a_ni" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">a_ni</field>
+            <field name="value">0.4</field>
+            <field name="description">Non-specific-to-inhibitory synaptic strength</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">b</field>
+            <field name="value">0.1</field>
+            <field name="description">Time constant scaling factor</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_delta_Ca" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">delta_Ca</field>
+            <field name="value">0.15</field>
+            <field name="description">Variance of Calcium channel threshold</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_delta_K" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">delta_K</field>
+            <field name="value">0.3</field>
+            <field name="description">Variance of Potassium channel threshold</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_delta_Na" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">delta_Na</field>
+            <field name="value">0.15</field>
+            <field name="description">Variance of sodium channel threshold</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_delta_V" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">delta_V</field>
+            <field name="value">0.65</field>
+            <field name="description">Variance of excitatory threshold</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_delta_Z" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">delta_Z</field>
+            <field name="value">0.7</field>
+            <field name="description">Variance of inhibitory threshold</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_g_Ca" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">g_Ca</field>
+            <field name="value">1.1</field>
+            <field name="description">Conductance of population of calcium (Ca++) channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_g_K" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">g_K</field>
+            <field name="value">2.0</field>
+            <field name="description">Conductance of population of potassium (K) channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_g_L" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">g_L</field>
+            <field name="value">0.5</field>
+            <field name="description">Conductance of population of leak channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_g_Na" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">g_Na</field>
+            <field name="value">6.7</field>
+            <field name="description">Conductance of population of Na channels</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_phi" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">phi</field>
+            <field name="value">0.7</field>
+            <field name="description">Temperature scaling factor</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_r_NMDA" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">r_NMDA</field>
+            <field name="value">0.25</field>
+            <field name="description">Ratio of NMDA to AMPA receptors</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_t_scale" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">t_scale</field>
+            <field name="value">1.0</field>
+            <field name="description">Time scale factor</field>
+        </record>
+        <record id="neural_model_larterbreakspear_param_tau_K" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">tau_K</field>
+            <field name="value">1.0</field>
+            <field name="description">Time constant for K relaxation time (ms)</field>
+        </record>
+        <record id="neural_model_larterbreakspear_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">V</field>
+            <field name="description">First state-variable of the Larter-Breakspear (Breakspear et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_larterbreakspear_var_W" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">W</field>
+            <field name="description">Second state-variable of the Larter-Breakspear (Breakspear et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_larterbreakspear_var_Z" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_larterbreakspear"/>
+            <field name="name">Z</field>
+            <field name="description">Third state-variable of the Larter-Breakspear (Breakspear et al</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf" model="tvbo.neural_model">
+            <field name="name">GastSchmidtKnosche_SF</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_Delta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">Delta</field>
+            <field name="value">2.0</field>
+            <field name="description">Half-width of heterogeneous noise distribution</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_I" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">I</field>
+            <field name="value">0.0</field>
+            <field name="description">External homogeneous current</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_J" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">J</field>
+            <field name="value">21.2132</field>
+            <field name="description">Synaptic weight</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_alpha" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">alpha</field>
+            <field name="value">10.0</field>
+            <field name="description">adaptation rate</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_cr" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">cr</field>
+            <field name="value">1.0</field>
+            <field name="description">It is the weight on Coupling through variable r</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_cv" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">cv</field>
+            <field name="value">0.0</field>
+            <field name="description">It is the weight on Coupling through variable V</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_eta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">eta</field>
+            <field name="value">1.0</field>
+            <field name="description">Mean of heterogeneous noise distribution</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_tau_A" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">tau_A</field>
+            <field name="value">10.0</field>
+            <field name="description">Adaptation time scale</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_param_tau" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">tau</field>
+            <field name="value">1.0</field>
+            <field name="description">Characteristic time</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_var_A" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">A</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_var_B" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">B</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">V</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_gastschmidtknosche_sf_var_r" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_gastschmidtknosche_sf"/>
+            <field name="name">r</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_hopfield" model="tvbo.neural_model">
+            <field name="name">Hopfield</field>
+            <field name="description">The Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).
+When the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).
+
+Various extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].
+
+Note:
+- This model uses the modifications implemented by Golos et al. (2015).</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_hopfield_param_tauT" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_hopfield"/>
+            <field name="name">tauT</field>
+            <field name="value">5.0</field>
+            <field name="description">The slow time-scale for threshold calculus :math:`\\theta`, state-variable of the model</field>
+        </record>
+        <record id="neural_model_hopfield_param_taux" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_hopfield"/>
+            <field name="name">taux</field>
+            <field name="value">1.0</field>
+            <field name="description">The fast time-scale for potential calculus :math:`x`, state-variable of the model</field>
+        </record>
+        <record id="neural_model_hopfield_var_theta" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_hopfield"/>
+            <field name="name">theta</field>
+            <field name="description">Slow state variable at node i</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_hopfield_var_x" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_hopfield"/>
+            <field name="name">x</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_generic2doscillator" model="tvbo.neural_model">
+            <field name="name">Generic2dOscillator</field>
+            <field name="description">The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_I" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">I</field>
+            <field name="value">0.0</field>
+            <field name="description">Baseline shift of the cubic nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">a</field>
+            <field name="value">-2.0</field>
+            <field name="description">Vertical shift of the configurable nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_alpha" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">alpha</field>
+            <field name="value">1.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the slow variable to the fast variable.</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">b</field>
+            <field name="value">-10.0</field>
+            <field name="description">Linear slope of the configurable nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_beta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">beta</field>
+            <field name="value">1.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the             slow variable to itself</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_c" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">c</field>
+            <field name="value">0.0</field>
+            <field name="description">Parabolic term of the configurable nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_d" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">d</field>
+            <field name="value">0.02</field>
+            <field name="description">Temporal scale factor</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">e</field>
+            <field name="value">3.0</field>
+            <field name="description">Coefficient of the quadratic term of the cubic nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_f" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">f</field>
+            <field name="value">1.0</field>
+            <field name="description">Coefficient of the cubic term of the cubic nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_g" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">g</field>
+            <field name="value">0.0</field>
+            <field name="description">Coefficient of the linear term of the cubic nullcline</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_gamma" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">gamma</field>
+            <field name="value">1.0</field>
+            <field name="description">Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative</field>
+        </record>
+        <record id="neural_model_generic2doscillator_param_tau" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">tau</field>
+            <field name="value">1.0</field>
+            <field name="description">A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W`</field>
+        </record>
+        <record id="neural_model_generic2doscillator_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">V</field>
+            <field name="description">V_G2D is the first state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with membrane potentials and sodium activation (FitzHugh, 1961)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_generic2doscillator_var_W" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_generic2doscillator"/>
+            <field name="name">W</field>
+            <field name="description">W_G2D is the second state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with accommodation and refractoriness and considered to represent potassium activation, sodium inactivation, or both (FitzHugh, 1961)</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_reducedwongwang" model="tvbo.neural_model">
+            <field name="name">ReducedWongWang</field>
+            <field name="description">Reduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).
+
+RWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong &amp; Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_I_o" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">I_o</field>
+            <field name="value">0.33</field>
+            <field name="description">External input current to the neurons population (Deco et al</field>
+            <field name="unit">nA</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_J_N" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">J_N</field>
+            <field name="value">0.2609</field>
+            <field name="description">Excitatory recurrence</field>
+            <field name="unit">nA</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">a</field>
+            <field name="value">0.27</field>
+            <field name="description">Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al</field>
+            <field name="unit">(pC)^-1</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">b</field>
+            <field name="value">0.108</field>
+            <field name="description">Shift parameter of the sigmoid input-output function H_RWW (Deco et al</field>
+            <field name="unit">kHz</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_d" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">d</field>
+            <field name="value">154.0</field>
+            <field name="description">Scaling parameter of the sigmoid input-output function H_RWW (Deco et al</field>
+            <field name="unit">ms</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_gamma" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">gamma</field>
+            <field name="value">0.641</field>
+            <field name="description">Kinetic parameter</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_tau_s" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">tau_s</field>
+            <field name="value">100.0</field>
+            <field name="description">Kinetic parameter</field>
+            <field name="unit">ms</field>
+        </record>
+        <record id="neural_model_reducedwongwang_param_w" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">w</field>
+            <field name="value">0.6</field>
+            <field name="description">Excitatory recurrence</field>
+            <field name="unit">dimensionless</field>
+        </record>
+        <record id="neural_model_reducedwongwang_var_S" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_reducedwongwang"/>
+            <field name="name">S</field>
+            <field name="description">State-variable of the Reduced WongWang model, denoting the average, (NMDAR)-mediated synaptic gating, i</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen" model="tvbo.neural_model">
+            <field name="name">ZetterbergJansen</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_He" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">He</field>
+            <field name="value">3.25</field>
+            <field name="description">Maximum amplitude of EPSP [mV]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_Hi" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">Hi</field>
+            <field name="value">22.0</field>
+            <field name="description">Maximum amplitude of IPSP [mV]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_P" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">P</field>
+            <field name="value">0.12</field>
+            <field name="description">Maximum firing rate to the pyramidal population [ms^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_Q" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">Q</field>
+            <field name="value">0.12</field>
+            <field name="description">Maximum firing rate to the interneurons population [ms^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_U" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">U</field>
+            <field name="value">0.12</field>
+            <field name="description">Maximum firing rate to the stellate population [ms^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_e0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">e0</field>
+            <field name="value">0.0025</field>
+            <field name="description">Half of the maximum population mean firing rate [ms^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_1T" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_1T</field>
+            <field name="value">1.0</field>
+            <field name="description">Coupling factor from the extrinisic input to the spiny stellate population</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_1" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_1</field>
+            <field name="value">135.0</field>
+            <field name="description">Average number of synapses between populations (pyramidal to stellate)</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_2T" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_2T</field>
+            <field name="value">1.0</field>
+            <field name="description">Coupling factor from the extrinisic input to the pyramidal population</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_2" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_2</field>
+            <field name="value">108.0</field>
+            <field name="description">Average number of synapses between populations (stellate to pyramidal)</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_3T" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_3T</field>
+            <field name="value">1.0</field>
+            <field name="description">Coupling factor from the extrinisic input to the inhibitory population</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_3" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_3</field>
+            <field name="value">33.75</field>
+            <field name="description">Connectivity constant (pyramidal to interneurons)</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_4" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_4</field>
+            <field name="value">33.75</field>
+            <field name="description">Connectivity constant (interneurons to pyramidal)</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_gamma_5" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">gamma_5</field>
+            <field name="value">15.0</field>
+            <field name="description">Connectivity constant (interneurons to interneurons)</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_ke" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">ke</field>
+            <field name="value">0.1</field>
+            <field name="description">Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_ki" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">ki</field>
+            <field name="value">0.05</field>
+            <field name="description">Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_rho_1" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">rho_1</field>
+            <field name="value">0.56</field>
+            <field name="description">Steepness of the sigmoidal transformation [mV^-1]</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_param_rho_2" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">rho_2</field>
+            <field name="value">6.0</field>
+            <field name="description">Firing threshold (PSP) for which a 50% firing rate is achieved</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v1</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v2</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v3" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v3</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v4" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v4</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v5" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v5</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v6" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v6</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_v7" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">v7</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_y1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">y1</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_y2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">y2</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_y3" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">y3</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_y4" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">y4</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_zetterbergjansen_var_y5" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_zetterbergjansen"/>
+            <field name="name">y5</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_kuramotomodel2" model="tvbo.neural_model">
+            <field name="name">KuramotoModel2</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_kuramotomodel2_param_omega" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_kuramotomodel2"/>
+            <field name="name">omega</field>
+            <field name="value">1.0</field>
+        </record>
+        <record id="neural_model_kuramotomodel2_var_theta" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_kuramotomodel2"/>
+            <field name="name">theta</field>
+            <field name="description">The Kuramoto model has only one state variable representing oscillations in general</field>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_modeljansen1995" model="tvbo.neural_model">
+            <field name="name">ModelJansen1995</field>
+            <field name="description">JR model with canonical parameters; long-range input is injected via a coupling term. Output is pyramidal potential difference.</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_A" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">A</field>
+            <field name="value">3.25</field>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_B" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">B</field>
+            <field name="value">22</field>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_C" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">C</field>
+            <field name="value">135</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">a</field>
+            <field name="value">0.1</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">b</field>
+            <field name="value">0.05</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_v0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">v0</field>
+            <field name="value">6</field>
+            <field name="unit">mV</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_e0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">e0</field>
+            <field name="value">0.0025</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_r" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">r</field>
+            <field name="value">0.56</field>
+            <field name="unit">mV^-1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_param_p" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">p</field>
+            <field name="value">0.24</field>
+            <field name="unit">ms^-1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_var_y0" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">y0</field>
+        </record>
+        <record id="neural_model_modeljansen1995_var_y3" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">y3</field>
+        </record>
+        <record id="neural_model_modeljansen1995_var_y1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">y1</field>
+        </record>
+        <record id="neural_model_modeljansen1995_var_y4" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">y4</field>
+        </record>
+        <record id="neural_model_modeljansen1995_var_y2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">y2</field>
+        </record>
+        <record id="neural_model_modeljansen1995_var_y5" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_modeljansen1995"/>
+            <field name="name">y5</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate" model="tvbo.neural_model">
+            <field name="name">EpileptorRestingState</field>
+            <field name="description">Epileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.
+        
+This model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_I_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">I_rs</field>
+            <field name="value">0.0</field>
+            <field name="description">External input current to the third population (x_rs, y_rs)</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_Iext2" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">Iext2</field>
+            <field name="value">0.45</field>
+            <field name="description">External input current to the second population (x2, y2)</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_Iext" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">Iext</field>
+            <field name="value">3.1</field>
+            <field name="description">External input current to the first population (x1, y1)</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_K_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">K_rs</field>
+            <field name="value">1.0</field>
+            <field name="description">Coupling scaling on a fast time scale</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_Kf" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">Kf</field>
+            <field name="value">0.0</field>
+            <field name="description">Coupling scaling on a fast time scale</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_Ks" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">Ks</field>
+            <field name="value">0.0</field>
+            <field name="description">Permittivity coupling, that is from the very fast time scale         toward the slow time scale</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_Kvf" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">Kvf</field>
+            <field name="value">0.0</field>
+            <field name="description">Coupling scaling on a very fast time scale</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_a" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">a</field>
+            <field name="value">1.0</field>
+            <field name="description">Coefficient of the cubic term in the first state-variable x1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_a_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">a_rs</field>
+            <field name="value">-2.0</field>
+            <field name="description">Vertical shift of the configurable nullcline         in the state-variable y_rs</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_aa" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">aa</field>
+            <field name="value">6.0</field>
+            <field name="description">Linear coefficient in the fifth state-variable y2</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_alpha_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">alpha_rs</field>
+            <field name="value">1.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the         slow variable y_rs to the fast variable x_rs</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_b" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">b</field>
+            <field name="value">3.0</field>
+            <field name="description">Coefficient of the squared term in the first state-variable x1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_b_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">b_rs</field>
+            <field name="value">-10.0</field>
+            <field name="description">Linear coefficient of the state-variable y_rs</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_bb" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">bb</field>
+            <field name="value">2.0</field>
+            <field name="description">Linear coefficient of lowpass excitatory coupling in the fourth         state-variable x2</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_beta_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">beta_rs</field>
+            <field name="value">1.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the         slow variable y_rs to itself</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_c" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">c</field>
+            <field name="value">1.0</field>
+            <field name="description">Additive coefficient for the second state-variable y1,         called :math:'y_{0}' in Jirsa et al</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_d" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">d</field>
+            <field name="value">5.0</field>
+            <field name="description">Coefficient of the squared term in the second state-variable y1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_d_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">d_rs</field>
+            <field name="value">0.02</field>
+            <field name="description">Temporal scaling of the whole third system (x_rs, y_rs)</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_e_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">e_rs</field>
+            <field name="value">3.0</field>
+            <field name="description">Coefficient of the squared term in the sixth state-variable x_rs</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_f_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">f_rs</field>
+            <field name="value">1.0</field>
+            <field name="description">Coefficient of the cubic term in the sixth state-variable x_rs</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_gamma_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">gamma_rs</field>
+            <field name="value">1.0</field>
+            <field name="description">Constant parameter to reproduce FHN dynamics where         excitatory input currents are negative</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_p" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">p</field>
+            <field name="value">0.0</field>
+            <field name="description">Linear coefficient</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_r" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">r</field>
+            <field name="value">0.00035</field>
+            <field name="description">Temporal scaling in the third state-variable z,         called :math:'1/	au_{0}' in Jirsa et al</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_slope" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">slope</field>
+            <field name="value">0.0</field>
+            <field name="description">Linear coefficient in the first state-variable x1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_tau" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">tau</field>
+            <field name="value">10.0</field>
+            <field name="description">Temporal scaling coefficient in the fifth state-variable y2</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_tau_rs" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">tau_rs</field>
+            <field name="value">1.0</field>
+            <field name="description">Temporal scaling coefficient in the third population (x_rs, y_rs)</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_tt" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">tt</field>
+            <field name="value">1.0</field>
+            <field name="description">Time scaling of the Epileptor</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_param_x0" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">x0</field>
+            <field name="value">-1.6</field>
+            <field name="description">Epileptogenicity parameter</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_g" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">g</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_x1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">x1</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_x2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">x2</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_x_rs" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">x_rs</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_y1" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">y1</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_y2" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">y2</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_y_rs" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">y_rs</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_epileptorrestingstate_var_z" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_epileptorrestingstate"/>
+            <field name="name">z</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin" model="tvbo.neural_model">
+            <field name="name">MontbrioPazoRoxin</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_Delta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">Delta</field>
+            <field name="value">1.0</field>
+            <field name="description">Mean heterogeneous noise</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_I" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">I</field>
+            <field name="value">0.0</field>
+            <field name="description">External Current</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_J" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">J</field>
+            <field name="value">15.0</field>
+            <field name="description">Mean Synaptic weight</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_cr" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">cr</field>
+            <field name="value">1.0</field>
+            <field name="description">It is the weight on Coupling through variable r</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_cv" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">cv</field>
+            <field name="value">0.0</field>
+            <field name="description">It is the weight on Coupling through variable V</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_eta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">eta</field>
+            <field name="value">-5.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the firing rate variable to itself</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_param_tau" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">tau</field>
+            <field name="value">1.0</field>
+            <field name="description">Membrane time constant</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">V</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_montbriopazoroxin_var_r" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_montbriopazoroxin"/>
+            <field name="name">r</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_coombesbyrne" model="tvbo.neural_model">
+            <field name="name">CoombesByrne</field>
+            <field name="description">4D model describing the Ott-Antonsen reduction of infinite all-to-all
+coupled QIF neurons (Theta-neurons).
+
+Note: the original equations describe the dynamics of the Kuramoto parameter
+$Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi r + i V$, we express the system dynamics in terms of two state variables $r$ and $V$ representing the average firing rate and the average membrane potential of our QIF neurons. The conductance variable and its derivative are $g$ and $q$.
+</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_coombesbyrne_param_Delta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">Delta</field>
+            <field name="value">0.5</field>
+            <field name="description">Half-width of heterogeneous noise distribution</field>
+        </record>
+        <record id="neural_model_coombesbyrne_param_alpha" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">alpha</field>
+            <field name="value">0.95</field>
+            <field name="description">Parameter of the alpha-function</field>
+        </record>
+        <record id="neural_model_coombesbyrne_param_eta" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">eta</field>
+            <field name="value">20.0</field>
+            <field name="description">Constant parameter to scale the rate of feedback from the             firing rate variable to itself</field>
+        </record>
+        <record id="neural_model_coombesbyrne_param_k" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">k</field>
+            <field name="value">1.0</field>
+            <field name="description">Local coupling strength</field>
+        </record>
+        <record id="neural_model_coombesbyrne_param_v_syn" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">v_syn</field>
+            <field name="value">-10.0</field>
+            <field name="description">QIF membrane reversal potential</field>
+        </record>
+        <record id="neural_model_coombesbyrne_var_V" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">V</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_coombesbyrne_var_g" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">g</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_coombesbyrne_var_q" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">q</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_coombesbyrne_var_r" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_coombesbyrne"/>
+            <field name="name">r</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin" model="tvbo.neural_model">
+            <field name="name">DumontGutkin</field>
+            <field name="number_of_modes">1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_Delta_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">Delta_e</field>
+            <field name="value">1.0</field>
+            <field name="description">Half-width of heterogeneous noise distribution over excitatory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_Delta_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">Delta_i</field>
+            <field name="value">1.0</field>
+            <field name="description">Half-width of heterogeneous noise distribution over inhibitory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_Gamma" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">Gamma</field>
+            <field name="value">5.0</field>
+            <field name="description">Ratio of excitatory VS inhibitory global couplings G_ie/G_ee </field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_I_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">I_e</field>
+            <field name="value">0.0</field>
+            <field name="description">External homogeneous current on excitatory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_I_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">I_i</field>
+            <field name="value">0.0</field>
+            <field name="description">External current on inhibitory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_J_ee" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">J_ee</field>
+            <field name="value">0.0</field>
+            <field name="description">Synaptic weight e--&gt;e</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_J_ei" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">J_ei</field>
+            <field name="value">10.0</field>
+            <field name="description">Synaptic weight i--&gt;e</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_J_ie" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">J_ie</field>
+            <field name="value">0.0</field>
+            <field name="description">Synaptic weight e--&gt;i</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_J_ii" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">J_ii</field>
+            <field name="value">15.0</field>
+            <field name="description">Synaptic weight i--&gt;i</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_eta_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">eta_e</field>
+            <field name="value">-5.0</field>
+            <field name="description">Mean heterogeneous current on excitatory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_eta_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">eta_i</field>
+            <field name="value">-5.0</field>
+            <field name="description">Mean heterogeneous current on inhibitory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_tau_e" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">tau_e</field>
+            <field name="value">10.0</field>
+            <field name="description">Characteristic time of excitatory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_tau_i" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">tau_i</field>
+            <field name="value">10.0</field>
+            <field name="description">Characteristic time of inhibitory population</field>
+        </record>
+        <record id="neural_model_dumontgutkin_param_tau_s" model="tvbo.model_parameter">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">tau_s</field>
+            <field name="value">1.0</field>
+            <field name="description">Synaptic time constant</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_V_e" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">V_e</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_V_i" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">V_i</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_r_e" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">r_e</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_r_i" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">r_i</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_s_ee" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">s_ee</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_s_ei" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">s_ei</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_s_ie" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">s_ie</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+        <record id="neural_model_dumontgutkin_var_s_ii" model="tvbo.state_variable">
+            <field name="neural_model_id" ref="neural_model_dumontgutkin"/>
+            <field name="name">s_ii</field>
+            <field name="description"/>
+            <field name="initial_value">0.1</field>
+        </record>
+    </data>
+</odoo>

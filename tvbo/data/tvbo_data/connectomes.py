@@ -71,7 +71,7 @@ def get_normative_connectome_data(
 
 
 @register_pytree_node_class
-class Connectome(tvbo_datamodel.Connectome):
+class Connectome(tvbo_datamodel.Network):
     """Structural connectivity data with weights, lengths, and visualization tools.
 
     Represents brain structural connectivity including connection weights, tract lengths,
@@ -239,12 +239,12 @@ class Connectome(tvbo_datamodel.Connectome):
             )
 
     @classmethod
-    def from_datamodel(cls, datamodel: tvbo_datamodel.Connectome) -> "Connectome":
+    def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Connectome":
         """Create a Connectome from a datamodel instance.
 
         Parameters
         ----------
-        datamodel : tvbo_datamodel.Connectome
+        datamodel : tvbo_datamodel.Network
             Source datamodel Connectome instance
 
         Returns
@@ -256,7 +256,7 @@ class Connectome(tvbo_datamodel.Connectome):
         --------
         ```{python}
         from tvbo.datamodel import tvbo_datamodel
-        dm = tvbo_datamodel.Connectome(number_of_nodes=10)
+        dm = tvbo_datamodel.Network(number_of_nodes=10)
         sc = Connectome.from_datamodel(dm)
         ```
         """

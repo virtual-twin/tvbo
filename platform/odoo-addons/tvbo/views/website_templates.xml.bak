@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Website Homepage -->
+        <template id="tvbo_database_home" name="TVBO Database Home" page="True">
+            <t t-call="website.layout">
+            <div id="wrap" class="oe_structure oe_empty">
+                <section class="s_cover pt-5 pb-5" style="background-color: #2C3E50;">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-lg-12 text-center">
+                                <h1 class="display-4 text-white font-weight-bold mb-4">
+                                    TVBO Database
+                                </h1>
+                                <p class="lead text-white-50 mb-5">
+                                    The Virtual Brain Ontology - Brain Simulation Models, Networks, and Research Studies
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pt-5 pb-5">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <a href="/tvbo/models" class="text-decoration-none">
+                                    <div class="card h-100 shadow-sm hover-shadow">
+                                        <div class="card-body text-center">
+                                            <i class="fa fa-brain fa-3x mb-3 text-primary"></i>
+                                            <h5 class="card-title">Neural Models</h5>
+                                            <p class="card-text text-muted">
+                                                Browse computational models of neural dynamics
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <a href="/tvbo/integrators" class="text-decoration-none">
+                                    <div class="card h-100 shadow-sm hover-shadow">
+                                        <div class="card-body text-center">
+                                            <i class="fa fa-calculator fa-3x mb-3 text-success"></i>
+                                            <h5 class="card-title">Integrators</h5>
+                                            <p class="card-text text-muted">
+                                                Numerical integration methods for simulations
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <a href="/tvbo/networks" class="text-decoration-none">
+                                    <div class="card h-100 shadow-sm hover-shadow">
+                                        <div class="card-body text-center">
+                                            <i class="fa fa-project-diagram fa-3x mb-3 text-warning"></i>
+                                            <h5 class="card-title">Networks</h5>
+                                            <p class="card-text text-muted">
+                                                Structural and functional connectivity
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <a href="/tvbo/studies" class="text-decoration-none">
+                                    <div class="card h-100 shadow-sm hover-shadow">
+                                        <div class="card-body text-center">
+                                            <i class="fa fa-flask fa-3x mb-3 text-danger"></i>
+                                            <h5 class="card-title">Studies</h5>
+                                            <p class="card-text text-muted">
+                                                Research studies and experiments
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pt-3 pb-5 bg-light">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <h3 class="mb-4">About TVBO</h3>
+                                <p>
+                                    The Virtual Brain Ontology (TVBO) provides a comprehensive database of:
+                                </p>
+                                <ul>
+                                    <li>Neural mass models and their parameters</li>
+                                    <li>Numerical integration methods</li>
+                                    <li>Brain connectivity networks and atlases</li>
+                                    <li>Published research studies and configurations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <!-- Neural Models List Page -->
+    <template id="tvbo_models_list" name="Neural Models" page="True">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container mt-5 mb-5">
+                    <h1 class="mb-4">Neural Models</h1>
+                    <p class="lead">Browse computational models of neural dynamics</p>
+                    <div class="row">
+                        <t t-foreach="models" t-as="model">
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <a t-attf-href="/tvbo/model/#{model.id}">
+                                                <t t-out="model.name"/>
+                                            </a>
+                                        </h5>
+                                        <p class="card-text text-muted">
+                                            <t t-if="model.description">
+                                                <t t-out="model.description[:200]"/>
+                                                <t t-if="len(model.description or '') > 200">...</t>
+                                            </t>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Model Detail Page -->
+    <template id="tvbo_model_detail" name="Model Detail">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container mt-5 mb-5">
+                    <h1 class="mb-3"><t t-out="model.name"/></h1>
+                    <p class="lead" t-if="model.label">
+                        <t t-out="model.label"/>
+                    </p>
+                    <p t-if="model.description">
+                        <t t-out="model.description"/>
+                    </p>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h3>State Variables</h3>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Initial Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="model.state_variable_ids" t-as="var">
+                                        <tr>
+                                            <td><strong><t t-out="var.name"/></strong></td>
+                                            <td><t t-out="var.initial_value"/></td>
+                                        </tr>
+                                        <tr t-if="var.description">
+                                            <td colspan="2" class="text-muted small">
+                                                <t t-out="var.description"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/tvbo/models" class="btn btn-secondary">Back to Models</a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Integrators List Page -->
+    <template id="tvbo_integrators_list" name="Integrators">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container mt-5 mb-5">
+                    <h1 class="mb-4">Numerical Integrators</h1>
+                    <p class="lead">Integration methods for solving differential equations</p>
+                    <div class="row">
+                        <div class="col-12">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Method</th>
+                                        <th>Step Size</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="integrators" t-as="integrator">
+                                        <tr>
+                                            <td><strong><t t-out="integrator.name"/></strong></td>
+                                            <td><t t-out="integrator.method or 'N/A'"/></td>
+                                            <td><t t-out="integrator.step_size or 'N/A'"/></td>
+                                            <td><t t-out="integrator.duration or 'N/A'"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Networks List Page -->
+    <template id="tvbo_networks_list" name="Connectivity Networks">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container mt-5 mb-5">
+                    <h1 class="mb-4">Connectivity Networks</h1>
+                    <p class="lead">Structural and functional brain connectivity</p>
+                    <div class="row">
+                        <t t-foreach="networks" t-as="network">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title"><t t-out="network.name"/></h5>
+                                        <p class="card-text text-muted">
+                                            <t t-out="network.description or 'No description available'"/>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Studies List Page -->
+    <template id="tvbo_studies_list" name="Research Studies">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container mt-5 mb-5">
+                    <h1 class="mb-4">Research Studies</h1>
+                    <p class="lead">Published simulation experiments and configurations</p>
+                    <div class="row">
+                        <t t-foreach="studies" t-as="study">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title"><t t-out="study.name"/></h5>
+                                        <p class="card-text text-muted">
+                                            <t t-out="study.description or 'No description available'"/>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Website Routes Controller -->
+    <record id="website_menu_tvbo" model="website.menu">
+        <field name="name">TVBO Database</field>
+        <field name="url">/tvbo</field>
+            <field name="parent_id" ref="website.main_menu"/>
+            <field name="sequence">50</field>
+        </record>
+    </data>
+</odoo>

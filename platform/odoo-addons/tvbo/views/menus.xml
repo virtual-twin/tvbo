@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main TVBO Menu -->
+    <menuitem id="menu_tvbo_root"
+              name="TVBO Database"
+              sequence="10"
+              groups="base.group_user"
+              web_icon="tvbo,static/description/icon.png"/>
+
+    <!-- Database submenu -->
+    <menuitem id="menu_tvbo_database"
+              name="Browse Database"
+              parent="menu_tvbo_root"
+              sequence="10"/>
+
+    <!-- Neural Mass Models -->
+    <menuitem id="menu_neural_mass_model"
+              name="Neural Mass Models"
+              parent="menu_tvbo_database"
+              action="action_neural_mass_model_list"
+              sequence="10"/>
+
+    <!-- Integrators -->
+    <menuitem id="menu_integrator"
+              name="Integrators"
+              parent="menu_tvbo_database"
+              action="action_integrator_list"
+              sequence="20"/>
+
+    <!-- Connectivity Networks -->
+    <menuitem id="menu_network"
+              name="Connectivity Networks"
+              parent="menu_tvbo_database"
+              action="action_network_list"
+              sequence="30"/>
+
+    <!-- Research Studies -->
+    <menuitem id="menu_simulation_study"
+              name="Research Studies"
+              parent="menu_tvbo_database"
+              action="action_simulation_study_list"
+              sequence="40"/>
+
+    <!-- Coupling Functions -->
+    <menuitem id="menu_coupling"
+              name="Coupling Functions"
+              parent="menu_tvbo_database"
+              action="action_coupling_list"
+              sequence="50"/>
+
+    <!-- Brain Atlases -->
+    <menuitem id="menu_brain_atlas"
+              name="Brain Atlases"
+              parent="menu_tvbo_database"
+              action="action_brain_atlas_list"
+              sequence="60"/>
+
+    <!-- Tractograms -->
+    <menuitem id="menu_tractogram"
+              name="Tractograms"
+              parent="menu_tvbo_database"
+              action="action_tractogram_list"
+              sequence="70"/>
+
+    <!-- Parcellations -->
+    <menuitem id="menu_parcellation"
+              name="Parcellations"
+              parent="menu_tvbo_database"
+              action="action_parcellation_list"
+              sequence="80"/>
+
+    <!-- Simulation Experiments -->
+    <menuitem id="menu_simulation_experiment"
+              name="Simulation Experiments"
+              parent="menu_tvbo_database"
+              action="action_simulation_experiment_list"
+              sequence="90"/>
+
+    <!-- Monitors -->
+    <menuitem id="menu_monitor"
+              name="Monitors"
+              parent="menu_tvbo_database"
+              action="action_monitor_list"
+              sequence="100"/>
+
+    <!-- Dynamics -->
+    <menuitem id="menu_dynamics"
+              name="Dynamics"
+              parent="menu_tvbo_database"
+              action="action_dynamics_list"
+              sequence="110"/>
+
+</odoo>

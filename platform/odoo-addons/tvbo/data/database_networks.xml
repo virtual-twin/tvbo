@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="brain_atlas_desikankillianyranked" model="tvbo.brain_atlas">
+            <field name="name">DesikanKillianyranked</field>
+        </record>
+
+        <record id="brain_atlas_desikankilliany" model="tvbo.brain_atlas">
+            <field name="name">DesikanKilliany</field>
+        </record>
+
+        <record id="brain_atlas_virtualdbs" model="tvbo.brain_atlas">
+            <field name="name">virtualdbs</field>
+        </record>
+
+        <record id="brain_atlas_destrieux" model="tvbo.brain_atlas">
+            <field name="name">Destrieux</field>
+        </record>
+
+        <record id="brain_atlas_yeo17" model="tvbo.brain_atlas">
+            <field name="name">Yeo17</field>
+        </record>
+
+        <record id="brain_atlas_hcpmmp1" model="tvbo.brain_atlas">
+            <field name="name">hcpmmp1</field>
+        </record>
+
+        <record id="brain_atlas_destrieuxranked" model="tvbo.brain_atlas">
+            <field name="name">Destrieuxranked</field>
+        </record>
+
+        <record id="brain_atlas_hcpmmp1ordered" model="tvbo.brain_atlas">
+            <field name="name">hcpmmp1ordered</field>
+        </record>
+
+        <record id="brain_atlas_schaefer1000" model="tvbo.brain_atlas">
+            <field name="name">Schaefer1000</field>
+        </record>
+
+        <record id="brain_atlas_schaefer100017networks" model="tvbo.brain_atlas">
+            <field name="name">Schaefer100017Networks</field>
+        </record>
+
+        <record id="brain_atlas_hocpa" model="tvbo.brain_atlas">
+            <field name="name">HOCPA</field>
+        </record>
+
+        <record id="brain_atlas_hcpex" model="tvbo.brain_atlas">
+            <field name="name">HCPex</field>
+        </record>
+
+        <record id="parcellation_desikankillianyranked" model="tvbo.parcellation">
+            <field name="label">DesikanKillianyranked</field>
+            <field name="atlas" ref="brain_atlas_desikankillianyranked"/>
+        </record>
+
+        <record id="parcellation_desikankilliany" model="tvbo.parcellation">
+            <field name="label">DesikanKilliany</field>
+            <field name="atlas" ref="brain_atlas_desikankilliany"/>
+        </record>
+
+        <record id="parcellation_virtualdbs" model="tvbo.parcellation">
+            <field name="label">virtualdbs</field>
+            <field name="atlas" ref="brain_atlas_virtualdbs"/>
+        </record>
+
+        <record id="parcellation_destrieux" model="tvbo.parcellation">
+            <field name="label">Destrieux</field>
+            <field name="atlas" ref="brain_atlas_destrieux"/>
+        </record>
+
+        <record id="parcellation_yeo17" model="tvbo.parcellation">
+            <field name="label">Yeo17</field>
+            <field name="atlas" ref="brain_atlas_yeo17"/>
+        </record>
+
+        <record id="parcellation_hcpmmp1" model="tvbo.parcellation">
+            <field name="label">hcpmmp1</field>
+            <field name="atlas" ref="brain_atlas_hcpmmp1"/>
+        </record>
+
+        <record id="parcellation_destrieuxranked" model="tvbo.parcellation">
+            <field name="label">Destrieuxranked</field>
+            <field name="atlas" ref="brain_atlas_destrieuxranked"/>
+        </record>
+
+        <record id="parcellation_hcpmmp1ordered" model="tvbo.parcellation">
+            <field name="label">hcpmmp1ordered</field>
+            <field name="atlas" ref="brain_atlas_hcpmmp1ordered"/>
+        </record>
+
+        <record id="parcellation_schaefer1000" model="tvbo.parcellation">
+            <field name="label">Schaefer1000</field>
+            <field name="atlas" ref="brain_atlas_schaefer1000"/>
+        </record>
+
+        <record id="parcellation_schaefer100017networks" model="tvbo.parcellation">
+            <field name="label">Schaefer100017Networks</field>
+            <field name="atlas" ref="brain_atlas_schaefer100017networks"/>
+        </record>
+
+        <record id="parcellation_hocpa" model="tvbo.parcellation">
+            <field name="label">HOCPA</field>
+            <field name="atlas" ref="brain_atlas_hocpa"/>
+        </record>
+
+        <record id="parcellation_hcpex" model="tvbo.parcellation">
+            <field name="label">HCPex</field>
+            <field name="atlas" ref="brain_atlas_hcpex"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_desikankillianyranked_desc_dtor" model="tvbo.network">
+            <field name="label">DesikanKillianyranked (dTOR)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_desikankillianyranked"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_tpl_mghuschcp32_atlas_desikankilliany_desc_ranked" model="tvbo.network">
+            <field name="label">DesikanKilliany (ranked)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">ranked</field>
+            <field name="parcellation" ref="parcellation_desikankilliany"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_virtualdbs_desc_dtor" model="tvbo.network">
+            <field name="label">virtualdbs (dTOR)</field>
+            <field name="number_of_regions">370</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_virtualdbs"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_tpl_mghuschcp32_atlas_destrieux_desc_ranked" model="tvbo.network">
+            <field name="label">Destrieux (ranked)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">ranked</field>
+            <field name="parcellation" ref="parcellation_destrieux"/>
+        </record>
+
+        <record id="network_space_mni152_atlas_yeo17_desc_dtor" model="tvbo.network">
+            <field name="label">Yeo17 (dTOR)</field>
+            <field name="number_of_regions">17</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_yeo17"/>
+        </record>
+
+        <record id="network_example_3node_network" model="tvbo.network">
+            <field name="label">Simple 3-Node Network Example</field>
+            <field name="number_of_nodes">3</field>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_virtualdbs_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">virtualdbs (MghUscHcp32)</field>
+            <field name="number_of_regions">370</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_virtualdbs"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009b_atlas_hcpmmp1_desc_ppmi85" model="tvbo.network">
+            <field name="label">hcpmmp1 (PPMI85)</field>
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_hcpmmp1"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_destrieux_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">Destrieux (MghUscHcp32)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_destrieux"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_destrieuxranked_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">Destrieuxranked (MghUscHcp32)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_destrieuxranked"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009b_atlas_hcpmmp1ordered_desc_dtor" model="tvbo.network">
+            <field name="label">hcpmmp1ordered (dTOR)</field>
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_hcpmmp1ordered"/>
+        </record>
+
+        <record id="network_space_fslmni152_atlas_schaefer1000_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">Schaefer1000 (MghUscHcp32)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_schaefer1000"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009b_atlas_hcpmmp1_desc_dtor" model="tvbo.network">
+            <field name="label">hcpmmp1 (dTOR)</field>
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_hcpmmp1"/>
+        </record>
+
+        <record id="network_space_fslmni152_atlas_schaefer100017networks_desc_dtor" model="tvbo.network">
+            <field name="label">Schaefer100017Networks (dTOR)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_schaefer100017networks"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009casym_atlas_hocpa_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">HOCPA (MghUscHcp32)</field>
+            <field name="number_of_regions">48</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_hocpa"/>
+        </record>
+
+        <record id="network_space_fslmni152_atlas_schaefer100017networks_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">Schaefer100017Networks (MghUscHcp32)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_schaefer100017networks"/>
+        </record>
+
+        <record id="network_space_fslmni152_atlas_schaefer100017networks_desc_ppmi85" model="tvbo.network">
+            <field name="label">Schaefer100017Networks (PPMI85)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_schaefer100017networks"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_destrieuxranked_desc_ppmi85" model="tvbo.network">
+            <field name="label">Destrieuxranked (PPMI85)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_destrieuxranked"/>
+        </record>
+
+        <record id="network_space_mni152_atlas_yeo17_desc_ppmi85" model="tvbo.network">
+            <field name="label">Yeo17 (PPMI85)</field>
+            <field name="number_of_regions">17</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_yeo17"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009casym_atlas_hcpex_desc_dtor" model="tvbo.network">
+            <field name="label">HCPex (dTOR)</field>
+            <field name="number_of_regions">427</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_hcpex"/>
+        </record>
+
+        <record id="network_space_fslmni152_atlas_schaefer1000_desc_dtor" model="tvbo.network">
+            <field name="label">Schaefer1000 (dTOR)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_schaefer1000"/>
+        </record>
+
+        <record id="network_space_fslmni152_atlas_schaefer1000_desc_ppmi85" model="tvbo.network">
+            <field name="label">Schaefer1000 (PPMI85)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_schaefer1000"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_desikankilliany_desc_dtor" model="tvbo.network">
+            <field name="label">DesikanKilliany (dTOR)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_desikankilliany"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_desikankillianyranked_desc_ppmi85" model="tvbo.network">
+            <field name="label">DesikanKillianyranked (PPMI85)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_desikankillianyranked"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009b_atlas_hcpmmp1_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">hcpmmp1 (MghUscHcp32)</field>
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_hcpmmp1"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009b_atlas_hcpmmp1ordered_desc_ppmi85" model="tvbo.network">
+            <field name="label">hcpmmp1ordered (PPMI85)</field>
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_hcpmmp1ordered"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_destrieux_desc_dtor" model="tvbo.network">
+            <field name="label">Destrieux (dTOR)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_destrieux"/>
+        </record>
+
+        <record id="network_space_mni152_atlas_yeo17_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">Yeo17 (MghUscHcp32)</field>
+            <field name="number_of_regions">17</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_yeo17"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_desikankilliany_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">DesikanKilliany (MghUscHcp32)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_desikankilliany"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_destrieuxranked_desc_dtor" model="tvbo.network">
+            <field name="label">Destrieuxranked (dTOR)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">dTOR</field>
+            <field name="parcellation" ref="parcellation_destrieuxranked"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009b_atlas_hcpmmp1ordered_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">hcpmmp1ordered (MghUscHcp32)</field>
+            <field name="number_of_regions">379</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_hcpmmp1ordered"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_destrieux_desc_ppmi85" model="tvbo.network">
+            <field name="label">Destrieux (PPMI85)</field>
+            <field name="number_of_regions">167</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_destrieux"/>
+        </record>
+
+        <record id="network_space_fslmni152_tpl_mghuschcp32_atlas_schaefer1000_desc_17networks" model="tvbo.network">
+            <field name="label">Schaefer1000 (17Networks)</field>
+            <field name="number_of_regions">1000</field>
+            <field name="tractogram">17Networks</field>
+            <field name="parcellation" ref="parcellation_schaefer1000"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_desikankilliany_desc_ppmi85" model="tvbo.network">
+            <field name="label">DesikanKilliany (PPMI85)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_desikankilliany"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_virtualdbs_desc_ppmi85" model="tvbo.network">
+            <field name="label">virtualdbs (PPMI85)</field>
+            <field name="number_of_regions">370</field>
+            <field name="tractogram">PPMI85</field>
+            <field name="parcellation" ref="parcellation_virtualdbs"/>
+        </record>
+
+        <record id="network_space_mni152nlin2009c_atlas_desikankillianyranked_desc_mghuschcp32" model="tvbo.network">
+            <field name="label">DesikanKillianyranked (MghUscHcp32)</field>
+            <field name="number_of_regions">87</field>
+            <field name="tractogram">MghUscHcp32</field>
+            <field name="parcellation" ref="parcellation_desikankillianyranked"/>
+        </record>
+
+    </data>
+</odoo>

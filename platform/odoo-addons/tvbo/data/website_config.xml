@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Update default website with TVBO branding and skip configurator -->
+        <record id="website.default_website" model="website">
+            <field name="name">TVBO - The Virtual Brain Ontology</field>
+            <field name="configurator_done" eval="True"/>
+        </record>
+
+        <!-- Update company info -->
+        <record id="base.main_company" model="res.company">
+            <field name="name">Charité Universitätsmedizin Berlin</field>
+            <field name="website">https://github.com/virtual-twin/tvbo</field>
+        </record>
+
+        <!-- Disable website configurator for all users -->
+        <function model="ir.config_parameter" name="set_param">
+            <value>website.configurator_done</value>
+            <value>True</value>
+        </function>
+
+    </data>
+</odoo>

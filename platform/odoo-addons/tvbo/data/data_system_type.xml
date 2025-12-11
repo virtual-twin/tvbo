@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="system_type_continuous" model="tvbo.system_type">
+            <field name="name">Continuous</field>
+            <field name="technical_name">continuous</field>
+            <field name="description">Continuous-time dynamics (e.g., ODE/SDE).</field>
+        </record>
+
+        <record id="system_type_discrete" model="tvbo.system_type">
+            <field name="name">Discrete</field>
+            <field name="technical_name">discrete</field>
+            <field name="description">Discrete-time dynamics (e.g., maps, iterated updates).</field>
+        </record>
+
+    </data>
+</odoo>

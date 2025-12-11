@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Literature references -->
+    <record id="view_literature_reference_tree" model="ir.ui.view">
+        <field name="name">tvbo.literature_reference.tree</field>
+        <field name="model">tvbo.literature_reference</field>
+        <field name="arch" type="xml">
+            <list string="Literature References">
+                <field name="title" />
+                <field name="pubmed_id" />
+                <field name="doi" />
+                <field name="year" />
+                <field name="journal" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_literature_reference_form" model="ir.ui.view">
+        <field name="name">tvbo.literature_reference.form</field>
+        <field name="model">tvbo.literature_reference</field>
+        <field name="arch" type="xml">
+            <form string="Literature Reference">
+                <sheet>
+                    <group>
+                        <field name="title" />
+                        <field name="key" />
+                        <field name="pubmed_id" />
+                        <field name="doi" />
+                        <field name="year" />
+                        <field name="journal" />
+                        <field name="authors" />
+                        <field name="abstract" />
+                        <field name="mesh_term_ids" widget="many2many_tags" />
+                        <field name="simulation_study_ids" />
+                        <field name="pubmed_url" />
+                        <field name="url" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Mesh terms -->
+    <record id="view_mesh_term_tree" model="ir.ui.view">
+        <field name="name">tvbo.mesh_term.tree</field>
+        <field name="model">tvbo.mesh_term</field>
+        <field name="arch" type="xml">
+            <list string="MeSH Terms">
+                <field name="name" />
+                <field name="tree_number" />
+                <field name="description" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mesh_term_form" model="ir.ui.view">
+        <field name="name">tvbo.mesh_term.form</field>
+        <field name="model">tvbo.mesh_term</field>
+        <field name="arch" type="xml">
+            <form string="MeSH Term">
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="tree_number" />
+                        <field name="description" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions and menus -->
+    <record id="action_literature_reference" model="ir.actions.act_window">
+        <field name="name">Literature</field>
+        <field name="res_model">tvbo.literature_reference</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_mesh_term" model="ir.actions.act_window">
+        <field name="name">MeSH Terms</field>
+        <field name="res_model">tvbo.mesh_term</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_tvbo_literature"
+              name="Literature References"
+              parent="menu_tvbo_database"
+              action="action_literature_reference"
+              sequence="70"/>
+
+    <menuitem id="menu_tvbo_mesh_terms"
+              name="MeSH Terms"
+              parent="menu_tvbo_database"
+              action="action_mesh_term"
+              sequence="75"/>
+
+    <!-- Extend SimulationStudy form to show linked references -->
+    <record id="view_simulation_study_form_literature" model="ir.ui.view">
+        <field name="name">tvbo.simulation_study.form.literature</field>
+        <field name="model">tvbo.simulation_study</field>
+        <field name="inherit_id" ref="tvbo.view_simulation_study_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='doi']" position="after">
+                <field name="reference_ids" widget="many2many_tags" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

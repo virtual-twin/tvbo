@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="julia_dynamics_lorenz96" model="tvbo.dynamics">
+            <field name="name">Lorenz96</field>
+            <field name="description">References: Lorenz1996; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_sprott_dissipative_conservative" model="tvbo.dynamics">
+            <field name="name">SprottDissipativeConservative</field>
+            <field name="description">References: Sprott2014b; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_hodgkin_huxley" model="tvbo.dynamics">
+            <field name="name">HodgkinHuxley</field>
+            <field name="description">References: HodgkinHuxley1952; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_labyrinth" model="tvbo.dynamics">
+            <field name="name">Labyrinth</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_stuartlandau_oscillator" model="tvbo.dynamics">
+            <field name="name">StuartLandauOscillator</field>
+            <field name="description">References: Landau1944; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_morris_lecar" model="tvbo.dynamics">
+            <field name="name">MorrisLecar</field>
+            <field name="description">References: MorrisLecar1981; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_lorenzdl" model="tvbo.dynamics">
+            <field name="name">LorenzDiffusionless</field>
+            <field name="description">References: Sprott2014; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_forced_pendulum" model="tvbo.dynamics">
+            <field name="name">ForcedPendulum</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_guckenheimer_holmes" model="tvbo.dynamics">
+            <field name="name">GuckenheimerHolmes</field>
+            <field name="description">References: GuckenheimerHolmes1983; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_antidots" model="tvbo.dynamics">
+            <field name="name">Antidots</field>
+            <field name="description">References: Datseris2019; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_more_chaos_example" model="tvbo.dynamics">
+            <field name="name">MoreChaosExample</field>
+            <field name="description">References: Sprott2020; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_shinriki" model="tvbo.dynamics">
+            <field name="name">Shinriki</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_nosehoover" model="tvbo.dynamics">
+            <field name="name">NoseHoover</field>
+            <field name="description">References: Hoover1995; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_lotkavolterra" model="tvbo.dynamics">
+            <field name="name">LotkaVolterraPredPrey</field>
+            <field name="description">References: Hoppensteadt2006; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_gissinger" model="tvbo.dynamics">
+            <field name="name">Gissinger</field>
+            <field name="description">References: Gissinger2012; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_vanderpol" model="tvbo.dynamics">
+            <field name="name">VanDerPolForced</field>
+            <field name="description">References: vanderpol1926; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_lorenz_bounded" model="tvbo.dynamics">
+            <field name="name">LorenzBounded</field>
+            <field name="description">References: SprottXiong2015; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_swinging_atwood" model="tvbo.dynamics">
+            <field name="name">SwingingAtwood</field>
+            <field name="description">References: Tufillaro1992; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_rikitake" model="tvbo.dynamics">
+            <field name="name">Rikitake</field>
+            <field name="description">References: Rikitake1958; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_sakarya" model="tvbo.dynamics">
+            <field name="name">Sakarya</field>
+            <field name="description">References: Li2015; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_ueda" model="tvbo.dynamics">
+            <field name="name">Ueda</field>
+            <field name="description">References: Ruelle1980, Ueda1961; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_henonheiles" model="tvbo.dynamics">
+            <field name="name">HenonHeiles</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_chua" model="tvbo.dynamics">
+            <field name="name">Chua</field>
+            <field name="description">References: Chua1992; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_lorenz84" model="tvbo.dynamics">
+            <field name="name">Lorenz84</field>
+            <field name="description">References: Freire2008; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_hyper_roessler" model="tvbo.dynamics">
+            <field name="name">HyperRoessler</field>
+            <field name="description">References: Stankevich2012; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_stommel_thermohaline" model="tvbo.dynamics">
+            <field name="name">StommelThermohaline</field>
+            <field name="description">References: Stommel1961; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_duffing" model="tvbo.dynamics">
+            <field name="name">DuffingForced</field>
+            <field name="description">References: Duffing1918; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_magnetic_pendulum" model="tvbo.dynamics">
+            <field name="name">MagneticPendulum</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_coupled_roessler" model="tvbo.dynamics">
+            <field name="name">CoupledRoessler</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_thomas_cyclical" model="tvbo.dynamics">
+            <field name="name">ThomasCyclical</field>
+            <field name="description">References: Thomas1999; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_roessler" model="tvbo.dynamics">
+            <field name="name">Roessler</field>
+            <field name="description">References: Roessler1976; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_lorenz" model="tvbo.dynamics">
+            <field name="name">Lorenz63</field>
+            <field name="description">References: Lorenz1963; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_double_pendulum" model="tvbo.dynamics">
+            <field name="name">DoublePendulum</field>
+            <field name="description">Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_riddled_basins" model="tvbo.dynamics">
+            <field name="name">RiddledBasins</field>
+            <field name="description">References: OttRiddled2014; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_qbh" model="tvbo.dynamics">
+            <field name="name">QuadrupoleBosonHamiltonian</field>
+            <field name="description">References: Eisenberg1975, Baran1998, MiclutaCampeanu2018; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_halvorsen" model="tvbo.dynamics">
+            <field name="name">Halvorsen</field>
+            <field name="description">References: Halvorsen2000; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_fitzhugh_nagumo" model="tvbo.dynamics">
+            <field name="name">FitzHughNagumo</field>
+            <field name="description">References: FitzHughNagumo; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_hindmarshrose" model="tvbo.dynamics">
+            <field name="name">HindmarshRose</field>
+            <field name="description">References: HindmarshRose1984; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_beta_transformation_map" model="tvbo.dynamics">
+            <field name="name">BetaTransformationMap</field>
+            <field name="description">References: Ott2002; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_ulam_ring_4" model="tvbo.dynamics">
+            <field name="name">UlamRing4</field>
+            <field name="description">References: Ulam1960s; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_zaslavskii_map" model="tvbo.dynamics">
+            <field name="name">ZaslavskiiMap</field>
+            <field name="description">References: Zaslavskii1978; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_grebogi_map" model="tvbo.dynamics">
+            <field name="name">GrebogiMap</field>
+            <field name="description">References: Grebogi1983; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_arnold_cat_map" model="tvbo.dynamics">
+            <field name="name">ArnoldCatMap</field>
+            <field name="description">References: ArnoldAvez1968; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_rulkov_map" model="tvbo.dynamics">
+            <field name="name">RulkovMap</field>
+            <field name="description">References: Rulkov2002, Rulkov2001, Cao2013; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_henon_map" model="tvbo.dynamics">
+            <field name="name">HenonMap</field>
+            <field name="description">References: Henon1976; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_towel_map" model="tvbo.dynamics">
+            <field name="name">TowelMap</field>
+            <field name="description">References: Roessler1979; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_ikeda_map" model="tvbo.dynamics">
+            <field name="name">IkedaMap</field>
+            <field name="description">References: Skiadas2008; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_coupled_standard_maps_3" model="tvbo.dynamics">
+            <field name="name">CoupledStandardMaps3</field>
+            <field name="description">References: KantzGrassberger1988; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_manneville_simple_map" model="tvbo.dynamics">
+            <field name="name">MannevilleSimpleMap</field>
+            <field name="description">References: Manneville1980; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_logistic_map" model="tvbo.dynamics">
+            <field name="name">LogisticMap</field>
+            <field name="description">References: May1976, Feigenbaum1978; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_standard_map" model="tvbo.dynamics">
+            <field name="name">StandardMap</field>
+            <field name="description">References: Chirikov1969, Greene1979; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_tent_map" model="tvbo.dynamics">
+            <field name="name">TentMap</field>
+            <field name="description">References: Ott2002; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_nld_coupled_logistic_maps" model="tvbo.dynamics">
+            <field name="name">NLDCoupledLogisticMaps4</field>
+            <field name="description">References: Custom; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+        <record id="julia_dynamics_pomeau_manneville_map" model="tvbo.dynamics">
+            <field name="name">PomeauMannevilleMap</field>
+            <field name="description">References: MannevillePomeau1980, Meyer2019; Source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl</field>
+        </record>
+
+    </data>
+</odoo>
