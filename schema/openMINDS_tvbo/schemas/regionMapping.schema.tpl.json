@@ -1,0 +1,29 @@
+{
+  "_type": "tvbo:RegionMapping",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "vertex_to_region": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "n_vertices": {
+      "type": "integer"
+    },
+    "n_regions": {
+      "type": "integer"
+    }
+  }
+}

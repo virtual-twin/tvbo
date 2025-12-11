@@ -1,0 +1,57 @@
+{
+  "_type": "tvbo:Function",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "acronym": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "definition": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "requirements": {
+      "_linkedTypes": [
+        "tvbo:SoftwareRequirement"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "iri": {
+      "type": "string"
+    },
+    "arguments": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "output": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "source_code": {
+      "type": "string"
+    },
+    "callable": {
+      "_embeddedTypes": [
+        "tvbo:Callable"
+      ]
+    }
+  }
+}

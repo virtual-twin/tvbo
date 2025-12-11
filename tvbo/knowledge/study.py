@@ -124,3 +124,78 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         # Apply base model merge
         self.update_experiment_model(exp_dm)
         return experiment.SimulationExperiment.from_datamodel(exp_dm)
+
+    # ---- OpenMINDS JSON-LD conversion ----
+    def to_openminds(
+        self,
+        filepath: str | None = None,
+        base_id: str | None = None,
+        include_context: bool = True,
+    ) -> dict:
+        """Export study to openMINDS JSON-LD format.
+
+        Parameters
+        ----------
+        filepath : str, optional
+            If provided, write JSON-LD to this file path.
+        base_id : str, optional
+            Base URI for generating @id values (e.g., "https://example.org/studies").
+            If not provided and study has a DOI, uses the DOI as @id.
+        include_context : bool
+            Whether to include the @context in the output. Default True.
+
+        Returns
+        -------
+        dict
+            OpenMINDS-compatible JSON-LD dictionary.
+
+        Example
+        -------
+        >>> study = SimulationStudy.from_file("study.yaml")
+        >>> jsonld = study.to_openminds()
+        >>> study.to_openminds("output.jsonld", base_id="https://example.org")
+        """
+        from tvbo.export.openminds import study_to_openminds, save_openminds
+
+        result = study_to_openminds(
+            self,
+            base_id=base_id,
+            include_context=include_context
+        )
+
+        if filepath:
+            save_openminds(self, filepath, base_id=base_id)
+
+        return result
+
+    @classmethod
+    def from_openminds(cls, source: str | dict) -> "SimulationStudy":
+        """Create a SimulationStudy from openMINDS JSON-LD.
+
+        Parameters
+        ----------
+        source : str or dict
+            Either a file path to a JSON-LD file, or a dict containing
+            JSON-LD data.
+
+        Returns
+        -------
+        SimulationStudy
+            New instance constructed from the openMINDS data.
+
+        Example
+        -------
+        >>> study = SimulationStudy.from_openminds("study.jsonld")
+        >>> study = SimulationStudy.from_openminds({"@type": "tvbo:SimulationStudy", ...})
+        """
+        from tvbo.export.openminds import study_from_openminds, load_openminds
+
+        if isinstance(source, str):
+            # It's a file path
+            data = load_openminds(source)
+        elif isinstance(source, dict):
+            data = study_from_openminds(source)
+        else:
+            raise TypeError(f"Expected str or dict, got {type(source)}")
+
+        return cls(**data)

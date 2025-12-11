@@ -1,0 +1,108 @@
+{
+  "_type": "tvbo:SimulationExperiment",
+  "_extends": "/computation/schemas/simulation.schema.tpl.json",
+  "_categories": [
+    "computationalActivity"
+  ],
+  "properties": {
+    "model": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ]
+    },
+    "id": {
+      "type": "integer"
+    },
+    "description": {
+      "type": "string"
+    },
+    "additional_equations": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "label": {
+      "type": "string"
+    },
+    "local_dynamics": {
+      "_embeddedTypes": [
+        "tvbo:Dynamics"
+      ]
+    },
+    "dynamics": {
+      "_embeddedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "integration": {
+      "_embeddedTypes": [
+        "tvbo:Integrator"
+      ]
+    },
+    "connectivity": {
+      "_embeddedTypes": [
+        "tvbo:Network"
+      ]
+    },
+    "network": {
+      "_embeddedTypes": [
+        "tvbo:Network"
+      ]
+    },
+    "coupling": {
+      "_embeddedTypes": [
+        "tvbo:Coupling"
+      ]
+    },
+    "monitors": {
+      "_embeddedTypes": [
+        "tvbo:Monitor"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "stimulation": {
+      "_embeddedTypes": [
+        "tvbo:Stimulus"
+      ]
+    },
+    "field_dynamics": {
+      "_embeddedTypes": [
+        "tvbo:PDE"
+      ]
+    },
+    "modelfitting": {
+      "_embeddedTypes": [
+        "tvbo:ModelFitting"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "environment": {
+      "_embeddedTypes": [
+        "tvbo:SoftwareEnvironment"
+      ]
+    },
+    "software": {
+      "_embeddedTypes": [
+        "tvbo:SoftwareRequirement"
+      ]
+    },
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

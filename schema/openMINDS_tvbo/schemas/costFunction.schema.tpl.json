@@ -1,0 +1,21 @@
+{
+  "_type": "tvbo:CostFunction",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

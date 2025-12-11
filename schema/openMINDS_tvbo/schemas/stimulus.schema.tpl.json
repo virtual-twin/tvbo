@@ -1,0 +1,47 @@
+{
+  "_type": "tvbo:Stimulus",
+  "properties": {
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "description": {
+      "type": "string"
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "duration": {
+      "type": "number"
+    },
+    "label": {
+      "type": "string"
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "weighting": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    }
+  }
+}

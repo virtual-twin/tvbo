@@ -1,0 +1,11 @@
+{
+  "_type": "tvbo:ConditionalBlock",
+  "properties": {
+    "condition": {
+      "type": "string"
+    },
+    "expression": {
+      "type": "string"
+    }
+  }
+}

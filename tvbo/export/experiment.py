@@ -219,6 +219,38 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         return yaml_loader.load(filepath, target_class=cls)
 
+    @classmethod
+    def from_string(cls, yaml_string: str) -> "SimulationExperiment":
+        """Create a SimulationExperiment from a YAML string.
+
+        This is useful for defining experiments inline in notebooks or scripts
+        using human-readable YAML syntax.
+
+        Parameters
+        ----------
+        yaml_string : str
+            YAML-formatted string defining the experiment.
+
+        Returns
+        -------
+        SimulationExperiment
+            New instance populated from the YAML definition.
+
+        Example
+        -------
+        >>> exp = SimulationExperiment.from_string('''
+        ... id: 1
+        ... label: My Experiment
+        ... local_dynamics:
+        ...   name: JansenRit
+        ...   parameters:
+        ...     A: {value: 3.25}
+        ... ''')
+        """
+        from linkml_runtime.loaders import yaml_loader
+
+        return yaml_loader.loads(yaml_string, target_class=cls)
+
     @property
     def metadata(self):
         return self
@@ -1576,3 +1608,78 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ts_label=ts_label,
             experiment=self,
         )
+
+    # ---- OpenMINDS JSON-LD conversion ----
+    def to_openminds(
+        self,
+        filepath: str | None = None,
+        base_id: str | None = None,
+        include_context: bool = True,
+    ) -> dict:
+        """Export experiment to openMINDS JSON-LD format.
+
+        Parameters
+        ----------
+        filepath : str, optional
+            If provided, write JSON-LD to this file path.
+        base_id : str, optional
+            Base URI for generating @id values (e.g., "https://example.org/simulations").
+        include_context : bool
+            Whether to include the @context in the output. Default True.
+
+        Returns
+        -------
+        dict
+            OpenMINDS-compatible JSON-LD dictionary.
+
+        Example
+        -------
+        >>> exp = SimulationExperiment(...)
+        >>> jsonld = exp.to_openminds()
+        >>> exp.to_openminds("output.jsonld", base_id="https://example.org")
+        """
+        from tvbo.export.openminds import experiment_to_openminds, save_openminds
+
+        result = experiment_to_openminds(
+            self,
+            base_id=base_id,
+            include_context=include_context
+        )
+
+        if filepath:
+            save_openminds(self, filepath, base_id=base_id)
+
+        return result
+
+    @classmethod
+    def from_openminds(cls, source: str | dict) -> "SimulationExperiment":
+        """Create a SimulationExperiment from openMINDS JSON-LD.
+
+        Parameters
+        ----------
+        source : str or dict
+            Either a file path to a JSON-LD file, or a dict containing
+            JSON-LD data.
+
+        Returns
+        -------
+        SimulationExperiment
+            New instance constructed from the openMINDS data.
+
+        Example
+        -------
+        >>> exp = SimulationExperiment.from_openminds("experiment.jsonld")
+        >>> exp = SimulationExperiment.from_openminds({"@type": "tvbo:SimulationExperiment", ...})
+        """
+        from tvbo.export.openminds import experiment_from_openminds, load_openminds
+
+        if isinstance(source, str):
+            # It's a file path
+            data = load_openminds(source)
+        elif isinstance(source, dict):
+            data = experiment_from_openminds(source)
+        else:
+            raise TypeError(f"Expected str or dict, got {type(source)}")
+
+        return cls(**data)
+

@@ -1,0 +1,34 @@
+{
+  "_type": "tvbo:DifferentialOperator",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "definition": {
+      "type": "string"
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "operator_type": {
+      "type": "string"
+    },
+    "coefficient": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "tensor_coefficient": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "expression": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    }
+  }
+}

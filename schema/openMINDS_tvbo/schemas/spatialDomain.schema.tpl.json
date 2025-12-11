@@ -1,0 +1,22 @@
+{
+  "_type": "tvbo:SpatialDomain",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "coordinate_space": {
+      "_linkedTypes": [
+        "sands:CommonCoordinateSpace"
+      ]
+    },
+    "region": {
+      "type": "string"
+    },
+    "geometry": {
+      "type": "string"
+    }
+  }
+}

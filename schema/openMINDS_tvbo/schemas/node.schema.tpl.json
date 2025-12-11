@@ -1,0 +1,46 @@
+{
+  "_type": "tvbo:Node",
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "id": {
+      "type": "integer"
+    },
+    "dynamics": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ]
+    },
+    "position": {
+      "_embeddedTypes": [
+        "sands:CoordinatePoint"
+      ]
+    },
+    "region": {
+      "type": "string"
+    },
+    "parameters": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "initial_state": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    }
+  }
+}
