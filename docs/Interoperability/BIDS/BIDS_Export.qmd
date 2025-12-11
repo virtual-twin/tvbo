@@ -17,13 +17,13 @@ execute:
 
 # Introduction
 
-This notebook demonstrates how to export simulation results from The Virtual Brain (TVB) to the 
-**Brain Imaging Data Structure (BIDS)** format, specifically following the 
+This notebook demonstrates how to export simulation results from The Virtual Brain (TVB) to the
+**Brain Imaging Data Structure (BIDS)** format, specifically following the
 **BEP034 Computational Modeling Extension**.
 
 ## What is BIDS?
 
-The Brain Imaging Data Structure (BIDS) is a standard for organizing and describing 
+The Brain Imaging Data Structure (BIDS) is a standard for organizing and describing
 neuroimaging data. It provides:
 
 - **Standardized file naming** conventions
@@ -65,7 +65,7 @@ from tvbo.knowledge import Integrator, Connectome
 
 # Create a Simulation Experiment
 
-First, let's set up a simulation experiment using the Wilson-Cowan model with 
+First, let's set up a simulation experiment using the Wilson-Cowan model with
 a sample connectome.
 
 ```{python}
@@ -130,7 +130,7 @@ plt.show()
 
 # Export to BIDS Format
 
-Now we'll export the simulation results to BIDS format. The `to_bids()` method 
+Now we'll export the simulation results to BIDS format. The `to_bids()` method
 creates a complete BIDS-compliant dataset structure.
 
 ## Method 1: Export via TimeSeries
@@ -156,7 +156,7 @@ print(f"BIDS dataset created at: {output_path}")
 
 ## Method 2: Export via SimulationExperiment
 
-Alternatively, you can export directly from the experiment (which will run 
+Alternatively, you can export directly from the experiment (which will run
 the simulation if needed):
 
 ```{python}
@@ -245,7 +245,7 @@ if os.path.exists(participants_path):
 
 # BIDS Validation
 
-To validate your BIDS dataset, you can use the 
+To validate your BIDS dataset, you can use the
 [BIDS Validator](https://bids-standard.github.io/bids-validator/):
 
 ```bash
@@ -306,7 +306,7 @@ The JSON sidecar includes simulation provenance:
 if sidecar_files:
     with open(sidecar_files[0], "r") as f:
         sidecar = json.load(f)
-    
+
     if "SimulationProvenance" in sidecar:
         print("Simulation Provenance:")
         print(json.dumps(sidecar["SimulationProvenance"], indent=2))
@@ -328,10 +328,10 @@ for i, coupling_strength in enumerate([0.01, 0.02, 0.03]):
     # Modify experiment parameters
     modified_exp = experiment.copy()
     modified_exp.coupling.parameters[0].value = coupling_strength
-    
+
     # Run simulation
     ts_i = modified_exp.run(format="jax")
-    
+
     # Export with subject number
     ts_i.to_bids(
         output_dir=multi_bids,

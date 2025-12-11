@@ -506,12 +506,12 @@ class TimeSeries(BaseTimeSeries):
     def compute_normalised_average_power(self, VOI=None):
         """
         Compute normalized average power spectrum using FFT.
-        
+
         Parameters
         ----------
         VOI : str, optional
             Variable of interest to analyze. Required if multiple state variables exist.
-            
+
         Returns
         -------
         frequency : ndarray
