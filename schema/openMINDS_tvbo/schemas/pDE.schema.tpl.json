@@ -2,12 +2,10 @@
   "_type": "tvbo:PDE",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "parameters": {
       "_embeddedTypes": [
@@ -15,20 +13,17 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "domain": {
       "_linkedTypes": [
         "tvbo:SpatialDomain"
-      ],
-      "_instruction": "Enter the domain."
+      ]
     },
     "mesh": {
       "_linkedTypes": [
         "tvbo:Mesh"
-      ],
-      "_instruction": "Shared mesh for all field state variables in this PDE."
+      ]
     },
     "state_variables": {
       "_linkedTypes": [
@@ -36,14 +31,12 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all state variables."
+      "uniqueItems": true
     },
     "field": {
       "_linkedTypes": [
         "tvbo:SpatialField"
-      ],
-      "_instruction": "Primary field being solved for (deprecated; use state_variables)."
+      ]
     },
     "operators": {
       "_linkedTypes": [
@@ -51,8 +44,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all operators."
+      "uniqueItems": true
     },
     "sources": {
       "_linkedTypes": [
@@ -60,8 +52,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all sources."
+      "uniqueItems": true
     },
     "boundary_conditions": {
       "_linkedTypes": [
@@ -69,14 +60,12 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all boundary conditions."
+      "uniqueItems": true
     },
     "solver": {
       "_linkedTypes": [
         "tvbo:PDESolver"
-      ],
-      "_instruction": "Enter the solver."
+      ]
     },
     "derived_parameters": {
       "_linkedTypes": [
@@ -84,8 +73,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all derived parameters."
+      "uniqueItems": true
     },
     "derived_variables": {
       "_linkedTypes": [
@@ -93,8 +81,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all derived variables."
+      "uniqueItems": true
     },
     "functions": {
       "_linkedTypes": [
@@ -102,8 +89,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all functions."
+      "uniqueItems": true
     }
   }
 }

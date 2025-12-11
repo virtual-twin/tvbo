@@ -2,12 +2,10 @@
   "_type": "tvbo:RandomStream",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "dataLocation": {
       "type": "string",

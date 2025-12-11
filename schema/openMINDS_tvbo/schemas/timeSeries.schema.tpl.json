@@ -5,12 +5,10 @@
   ],
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "dataLocation": {
       "type": "string",
@@ -19,22 +17,18 @@
     "data": {
       "_embeddedTypes": [
         "tvbo:Matrix"
-      ],
-      "_instruction": "Enter the data."
+      ]
     },
     "time": {
       "_embeddedTypes": [
         "tvbo:Matrix"
-      ],
-      "_instruction": "Enter the time."
+      ]
     },
     "sampling_rate": {
-      "type": "number",
-      "_instruction": "Enter the sampling rate."
+      "type": "number"
     },
     "unit": {
-      "type": "string",
-      "_instruction": "Enter the unit."
+      "type": "string"
     }
   }
 }

@@ -2,12 +2,10 @@
   "_type": "tvbo:Equation",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "definition": {
-      "type": "string",
-      "_instruction": "Enter the definition."
+      "type": "string"
     },
     "parameters": {
       "_embeddedTypes": [
@@ -15,16 +13,13 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "lefthandside": {
-      "type": "string",
-      "_instruction": "Enter the lefthandside."
+      "type": "string"
     },
     "righthandside": {
-      "type": "string",
-      "_instruction": "Enter the righthandside."
+      "type": "string"
     },
     "conditionals": {
       "_embeddedTypes": [
@@ -32,22 +27,18 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Conditional logic for piecewise equations."
+      "uniqueItems": true
     },
     "engine": {
       "_embeddedTypes": [
         "tvbo:SoftwareRequirement"
-      ],
-      "_instruction": "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software')."
+      ]
     },
     "pycode": {
-      "type": "string",
-      "_instruction": "Python code for the equation."
+      "type": "string"
     },
     "latex": {
-      "type": "boolean",
-      "_instruction": "Enter the latex."
+      "type": "boolean"
     }
   }
 }

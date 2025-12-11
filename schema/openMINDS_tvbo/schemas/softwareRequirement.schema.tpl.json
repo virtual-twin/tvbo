@@ -5,12 +5,10 @@
   ],
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "dataLocation": {
       "type": "string",
@@ -19,49 +17,39 @@
     "package": {
       "_linkedTypes": [
         "tvbo:SoftwarePackage"
-      ],
-      "_instruction": "Reference to the software package identity."
+      ]
     },
     "version_spec": {
-      "type": "string",
-      "_instruction": "Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2')."
+      "type": "string"
     },
     "role": {
-      "type": "string",
-      "_instruction": "Enter the role."
+      "type": "string"
     },
     "optional": {
-      "type": "boolean",
-      "_instruction": "Enter the optional."
+      "type": "boolean"
     },
     "hash": {
-      "type": "string",
-      "_instruction": "Build or artifact hash for exact reproducibility (wheel, sdist, image layer)."
+      "type": "string"
     },
     "source_url": {
-      "type": "string",
-      "_instruction": "Canonical source or repository URL."
+      "type": "string"
     },
     "url": {
-      "type": "string",
-      "_instruction": "(Deprecated) Use source_url."
+      "type": "string"
     },
     "license": {
-      "type": "string",
-      "_instruction": "Enter the license."
+      "type": "string"
     },
     "modules": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "(Deprecated) Former ad-hoc list; use environment.requirements list instead.",
       "items": {
         "type": "string"
       }
     },
     "version": {
-      "type": "string",
-      "_instruction": "(Deprecated) Use version_spec."
+      "type": "string"
     }
   }
 }

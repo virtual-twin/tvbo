@@ -2,40 +2,33 @@
   "_type": "tvbo:DifferentialOperator",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "definition": {
-      "type": "string",
-      "_instruction": "Enter the definition."
+      "type": "string"
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "operator_type": {
-      "type": "string",
-      "_instruction": "Enter the operator type."
+      "type": "string"
     },
     "coefficient": {
       "_linkedTypes": [
         "tvbo:Parameter"
-      ],
-      "_instruction": "Enter the coefficient."
+      ]
     },
     "tensor_coefficient": {
       "_linkedTypes": [
         "tvbo:Parameter"
-      ],
-      "_instruction": "Optional anisotropic tensor (e.g., diffusion)."
+      ]
     },
     "expression": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Symbolic form (e.g., '-div(D * grad(u))')."
+      ]
     }
   }
 }

@@ -2,74 +2,58 @@
   "_type": "tvbo:Parameter",
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "symbol": {
-      "type": "string",
-      "_instruction": "Enter the symbol."
+      "type": "string"
     },
     "definition": {
-      "type": "string",
-      "_instruction": "Enter the definition."
+      "type": "string"
     },
     "value": {
-      "type": "number",
-      "_instruction": "Enter the value."
+      "type": "number"
     },
     "default": {
-      "type": "string",
-      "_instruction": "Enter the default."
+      "type": "string"
     },
     "domain": {
       "_linkedTypes": [
         "tvbo:Range"
-      ],
-      "_instruction": "Enter the domain."
+      ]
     },
     "reported_optimum": {
-      "type": "number",
-      "_instruction": "Enter the reported optimum."
+      "type": "number"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "unit": {
-      "type": "string",
-      "_instruction": "Enter the unit."
+      "type": "string"
     },
     "comment": {
-      "type": "string",
-      "_instruction": "Enter the comment."
+      "type": "string"
     },
     "heterogeneous": {
-      "type": "boolean",
-      "_instruction": "Enter the heterogeneous."
+      "type": "boolean"
     },
     "free": {
-      "type": "boolean",
-      "_instruction": "Enter the free."
+      "type": "boolean"
     },
     "shape": {
-      "type": "string",
-      "_instruction": "Enter the shape."
+      "type": "string"
     },
     "explored_values": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "Add all explored values.",
       "items": {
         "type": "number"
       }

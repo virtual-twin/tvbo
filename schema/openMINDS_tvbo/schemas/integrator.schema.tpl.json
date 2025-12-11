@@ -2,12 +2,10 @@
   "_type": "tvbo:Integrator",
   "properties": {
     "time_scale": {
-      "type": "string",
-      "_instruction": "Enter the time scale."
+      "type": "string"
     },
     "unit": {
-      "type": "string",
-      "_instruction": "Enter the unit."
+      "type": "string"
     },
     "parameters": {
       "_embeddedTypes": [
@@ -15,51 +13,41 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "duration": {
-      "type": "number",
-      "_instruction": "Enter the duration."
+      "type": "number"
     },
     "method": {
-      "type": "string",
-      "_instruction": "Enter the method."
+      "type": "string"
     },
     "step_size": {
-      "type": "number",
-      "_instruction": "Enter the step size."
+      "type": "number"
     },
     "steps": {
-      "type": "integer",
-      "_instruction": "Enter the steps."
+      "type": "integer"
     },
     "noise": {
       "_embeddedTypes": [
         "tvbo:Noise"
-      ],
-      "_instruction": "Enter the noise."
+      ]
     },
     "state_wise_sigma": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "Add all state wise sigma.",
       "items": {
         "type": "number"
       }
     },
     "transient_time": {
-      "type": "number",
-      "_instruction": "Enter the transient time."
+      "type": "number"
     },
     "scipy_ode_base": {
-      "type": "boolean",
-      "_instruction": "Enter the scipy ode base."
+      "type": "boolean"
     },
     "number_of_stages": {
-      "type": "integer",
-      "_instruction": "Enter the number of stages."
+      "type": "integer"
     },
     "intermediate_expressions": {
       "_embeddedTypes": [
@@ -67,18 +55,15 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all intermediate expressions."
+      "uniqueItems": true
     },
     "update_expression": {
       "_embeddedTypes": [
         "tvbo:DerivedVariable"
-      ],
-      "_instruction": "Enter the update expression."
+      ]
     },
     "delayed": {
-      "type": "boolean",
-      "_instruction": "Enter the delayed."
+      "type": "boolean"
     }
   }
 }

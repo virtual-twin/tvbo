@@ -2,46 +2,37 @@
   "_type": "tvbo:SpatialField",
   "properties": {
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "quantity_kind": {
-      "type": "string",
-      "_instruction": "Scalar, vector, or tensor."
+      "type": "string"
     },
     "unit": {
-      "type": "string",
-      "_instruction": "Enter the unit."
+      "type": "string"
     },
     "mesh": {
       "_linkedTypes": [
         "tvbo:Mesh"
-      ],
-      "_instruction": "Enter the mesh."
+      ]
     },
     "values": {
       "_linkedTypes": [
         "tvbo:NDArray"
-      ],
-      "_instruction": "Enter the values."
+      ]
     },
     "time_dependent": {
-      "type": "boolean",
-      "_instruction": "Enter the time dependent."
+      "type": "boolean"
     },
     "initial_value": {
-      "type": "number",
-      "_instruction": "Constant initial value for the field."
+      "type": "number"
     },
     "initial_expression": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Analytic initial condition for the field."
+      ]
     }
   }
 }

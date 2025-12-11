@@ -2,14 +2,12 @@
   "_type": "tvbo:Distribution",
   "properties": {
     "name": {
-      "type": "string",
-      "_instruction": "Enter the name."
+      "type": "string"
     },
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "parameters": {
       "_embeddedTypes": [
@@ -17,8 +15,7 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "dependencies": {
       "_embeddedTypes": [
@@ -26,14 +23,12 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all dependencies."
+      "uniqueItems": true
     },
     "correlation": {
       "_embeddedTypes": [
         "tvbo:Matrix"
-      ],
-      "_instruction": "Enter the correlation."
+      ]
     }
   }
 }

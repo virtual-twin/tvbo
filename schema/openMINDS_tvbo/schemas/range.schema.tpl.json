@@ -2,16 +2,13 @@
   "_type": "tvbo:Range",
   "properties": {
     "lo": {
-      "type": "number",
-      "_instruction": "Enter the lo."
+      "type": "number"
     },
     "hi": {
-      "type": "number",
-      "_instruction": "Enter the hi."
+      "type": "number"
     },
     "step": {
-      "type": "number",
-      "_instruction": "Enter the step."
+      "type": "number"
     }
   }
 }

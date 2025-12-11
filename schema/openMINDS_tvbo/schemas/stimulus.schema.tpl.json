@@ -4,8 +4,7 @@
     "equation": {
       "_linkedTypes": [
         "tvbo:Equation"
-      ],
-      "_instruction": "Enter the equation."
+      ]
     },
     "parameters": {
       "_embeddedTypes": [
@@ -13,30 +12,25 @@
       ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "_instruction": "Add all parameters."
+      "uniqueItems": true
     },
     "description": {
-      "type": "string",
-      "_instruction": "Enter the description."
+      "type": "string"
     },
     "dataLocation": {
       "type": "string",
       "_instruction": "Enter the dataLocation."
     },
     "duration": {
-      "type": "number",
-      "_instruction": "Enter the duration."
+      "type": "number"
     },
     "label": {
-      "type": "string",
-      "_instruction": "Enter the label."
+      "type": "string"
     },
     "regions": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "Add all regions.",
       "items": {
         "type": "integer"
       }
@@ -45,7 +39,6 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "_instruction": "Add all weighting.",
       "items": {
         "type": "number"
       }
