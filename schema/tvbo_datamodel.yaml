@@ -973,6 +973,10 @@ classes:
         range: SimulationExperiment
 
   TimeSeries:
+    class_uri: tvbo:TimeSeries
+    description: >-
+      Time series data from simulations or measurements.
+      Supports BIDS-compatible export for computational modeling (BEP034).
     slots:
       - label
       - description
@@ -980,12 +984,68 @@ classes:
     attributes:
       data:
         range: Matrix
+        description: "The main data array (time x state_variables x regions x modes)."
       time:
         range: Matrix
+        description: "Time points corresponding to data samples."
       sampling_rate:
         range: float
+        description: "Sampling rate in Hz."
+      sampling_period:
+        range: float
+        description: "Time between samples (inverse of sampling_rate)."
+      sampling_period_unit:
+        range: string
+        ifabsent: "ms"
+        description: "Unit of the sampling period (e.g., 'ms', 's')."
       unit:
         range: string
+        description: "Physical unit of the time series values."
+      labels_ordering:
+        range: string
+        multivalued: true
+        description: "Ordering of dimensions: Time, State Variable, Space, Mode."
+      labels_dimensions:
+        range: string
+        description: "Mapping of dimension names to their labels (JSON-encoded dict)."
+      # Provenance fields for BIDS compatibility
+      source_experiment:
+        range: SimulationExperiment
+        description: "Reference to the SimulationExperiment that generated this TimeSeries."
+      generated_at:
+        range: datetime
+        description: "Timestamp when this TimeSeries was generated."
+      software_environment:
+        range: SoftwareEnvironment
+        description: "Software environment used to generate this data."
+      # BIDS metadata fields
+      task_name:
+        range: string
+        description: "BIDS task name for the simulation (e.g., 'rest', 'simulation')."
+      subject_id:
+        range: string
+        description: "BIDS subject identifier."
+      session_id:
+        range: string
+        description: "BIDS session identifier."
+      run_id:
+        range: integer
+        description: "BIDS run number."
+      modality:
+        range: ImagingModality
+        description: "Imaging modality or simulation output type."
+      model_equation_ref:
+        range: string
+        description: "BIDS ModelEq reference: path to _eq.xml LEMS file."
+      model_param_ref:
+        range: string
+        description: "BIDS ModelParam reference: path to _param.xml LEMS file."
+      connectivity_ref:
+        range: string
+        description: "Reference to connectivity data (_conndata-network_connectivity.tsv)."
+    comments:
+      - "Supports BIDS BEP034 computational modeling extension."
+      - "Use to_bids() method in Python class to export as BIDS dataset."
 
   SoftwareEnvironment:
     slots:
