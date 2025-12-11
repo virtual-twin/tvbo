@@ -728,11 +728,14 @@ class TimeSeries(BaseTimeSeries):
         run : int, optional
             Run number.
         suffix : str
-            BIDS suffix indicating the type of time series data:
-            - 'State' (default): Raw neural state variables from simulation
-            - 'BOLD': fMRI BOLD signal (if observation model applied)
-            - 'EEG': EEG signal (if observation model applied)
-            - 'MEG': MEG signal (if observation model applied)
+            BIDS suffix indicating the observation/output type:
+            - 'State' (default): Raw neural output (no observation model)
+            - 'BOLD': fMRI BOLD signal (output convolved with HRF)
+            - 'EEG': EEG signal (output with EEG forward model)
+            - 'MEG': MEG signal (output with MEG forward model)
+            The ts entity (ts-V, ts-W, ts-Diff) identifies which output variable,
+            which can be a state variable or derived output (e.g., Diff: V-W).
+            The suffix indicates the observation transformation applied.
         experiment : SimulationExperiment, optional
             The source simulation experiment for full provenance tracking.
             If not provided, uses self.source_experiment if available.
@@ -742,8 +745,12 @@ class TimeSeries(BaseTimeSeries):
             Whether to export connectivity data. Default: True.
         timeseries_format : str
             Format for time series output. Options:
-            - 'cifti' (default): CIFTI-2 ptseries.nii files with named parcels
-            - 'tsv': Tab-separated values files
+            - 'cifti' (default): CIFTI-2 ptseries.nii files with named parcels.
+              Splits data by state variable into separate files.
+            - 'tsv': Tab-separated values files. Splits by state variable.
+            - 'h5' or 'hdf5': HDF5 files preserving full dimensionality.
+              Does NOT split by state variable - keeps all dimensions intact.
+              Ideal for parameter sweeps (e.g., sweep, time, state, region, mode).
 
         Returns
         -------
@@ -762,6 +769,9 @@ class TimeSeries(BaseTimeSeries):
         >>> # Export as TSV instead of CIFTI
         >>> ts.to_bids("./derivatives/tvbo", timeseries_format="tsv")
 
+        >>> # Export as HDF5 preserving all dimensions (no state variable split)
+        >>> ts.to_bids("./derivatives/tvbo", timeseries_format="h5")
+
         Notes
         -----
         Follows BIDS BEP034 Computational Modeling extension v1.0.0.
@@ -774,18 +784,20 @@ class TimeSeries(BaseTimeSeries):
 
         # Import BEP034 module
         from tvbo.export.bids import (
-            NIBABEL_AVAILABLE,
+            H5PY_AVAILABLE,
             BEP034PathBuilder,
             CoordinateSidecar,
             DatasetDescription,
             EquationSidecar,
             NetworkSidecar,
             SimulationProvenance,
+            TimeSeriesHDF5Sidecar,
             TimeSeriesSidecar,
             compute_id,
             create_multi_state_cifti,
             to_float,
             write_cifti_ptseries,
+            write_hdf5_timeseries,
             write_sidecar,
             write_tsv,
         )
@@ -931,80 +943,189 @@ class TimeSeries(BaseTimeSeries):
         provenance = None
         if experiment is not None:
             provenance = SimulationProvenance(
-                Model=str(experiment.local_dynamics) if hasattr(experiment, "local_dynamics") else None,
-                Integrator=str(experiment.integration) if hasattr(experiment, "integration") else None,
-                Duration=to_float(experiment.duration) if hasattr(experiment, "duration") else None,
-                StepSize=to_float(experiment.integration.step_size) if hasattr(experiment, "integration") and hasattr(experiment.integration, "step_size") else None,
+                Model=(
+                    str(experiment.local_dynamics)
+                    if hasattr(experiment, "local_dynamics")
+                    else None
+                ),
+                Integrator=(
+                    str(experiment.integration)
+                    if hasattr(experiment, "integration")
+                    else None
+                ),
+                Duration=(
+                    to_float(experiment.duration)
+                    if hasattr(experiment, "duration")
+                    else None
+                ),
+                StepSize=(
+                    to_float(experiment.integration.step_size)
+                    if hasattr(experiment, "integration")
+                    and hasattr(experiment.integration, "step_size")
+                    else None
+                ),
                 GeneratedAt=datetime.now().isoformat(),
             )
 
         # Determine output format
-        use_cifti = timeseries_format.lower() == "cifti" and NIBABEL_AVAILABLE and region_labels is not None
+        use_cifti = (
+            timeseries_format.lower() == "cifti"
+            and region_labels is not None
+        )
+        use_h5 = timeseries_format.lower() in ("h5", "hdf5")
 
-        # Export each state variable as separate time series file
-        for sv_idx, sv_label in enumerate(self.variables_labels):
-            # Create sidecar metadata
-            ts_sidecar = TimeSeriesSidecar(
-                Description=f"Simulated parcellated time series - state variable {sv_label}",
-                StateVariable=sv_label,
+        if use_h5:
+            # =====================================================================
+            # HDF5 format: Preserve full dimensionality, don't split by state
+            # =====================================================================
+            if not H5PY_AVAILABLE:
+                raise ImportError(
+                    "h5py is required for HDF5 export. Install with: pip install h5py"
+                )
+
+            # Create HDF5 sidecar with full dimension info
+            # Filter out None values from labels_dimensions (e.g., Time may be None)
+            dim_labels = (
+                {k: v for k, v in self.labels_dimensions.items() if v is not None}
+                if self.labels_dimensions
+                else None
+            )
+            h5_sidecar = TimeSeriesHDF5Sidecar(
+                Description=f"Simulated time series - all state variables",
+                Format="HDF5",
+                Shape=list(self.data.shape),
+                Dimensions=list(self.labels_ordering),
+                DimensionLabels=dim_labels if dim_labels else None,
                 SamplingFrequency=sampling_freq,
                 SamplingPeriod=sample_period_val,
                 SamplingPeriodUnits=self.sample_period_unit,
                 StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
-                NumberOfTimepoints=int(self.data.shape[0]),
-                NumberOfNodes=int(self.data.shape[2]) if self.data.ndim > 2 else 1,
-                Columns=region_labels if not use_cifti else None,  # Columns for TSV only
                 Units="a.u.",
                 GeneratedAt=datetime.now().isoformat(),
                 Provenance=provenance,
+                StateVariables=(
+                    list(self.variables_labels)
+                    if len(self.variables_labels) > 0
+                    else None
+                ),
+                Datasets={
+                    "/data": f"Time series data with shape {self.data.shape}",
+                    "/time": "Time array",
+                    "/labels/*": "Labels for each dimension",
+                },
             )
 
-            # Extract data for this state variable (time x regions)
-            sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
+            # Build path - use first state variable for ts entity, or 'all' for multi-state
+            ts_entity = (
+                self.variables_labels[0] if len(self.variables_labels) == 1 else "all"
+            )
+            ts_rel_path = path_builder.build_ts_path(
+                subject=subject,
+                ts_label=ts_entity,
+                suffix=suffix,
+                desc=description,
+                session=session,
+                run=run,
+                extension=".h5",
+            )
+            ts_h5_path = os.path.join(output_dir, ts_rel_path)
+            ts_json_path = ts_h5_path.replace(".h5", ".json")
 
-            if use_cifti:
-                # Write CIFTI-2 ptseries file with nibabel
-                # ts entity = state variable label (V, W, etc.)
-                # suffix = State (raw neural) or BOLD/EEG/etc. (observation)
-                ts_rel_path = path_builder.build_ts_path(
-                    subject=subject,
-                    ts_label=sv_label,
-                    suffix=suffix,
-                    desc=description,
-                    session=session,
-                    run=run,
-                    extension=".ptseries.nii",
-                )
-                ts_cifti_path = os.path.join(output_dir, ts_rel_path)
-                ts_json_path = ts_cifti_path.replace(".ptseries.nii", ".json")
+            # Additional metadata for HDF5
+            metadata = {
+                "source": "tvbo simulation",
+                "model": (
+                    str(experiment.local_dynamics)
+                    if experiment and hasattr(experiment, "local_dynamics")
+                    else None
+                ),
+            }
 
-                write_cifti_ptseries(
-                    data=np.asarray(sv_data),
-                    region_labels=region_labels,
-                    path=ts_cifti_path,
-                    sample_period=sample_period_val or 1.0,
-                    sample_period_unit=self.sample_period_unit,
-                )
-            else:
-                # Write TSV file
-                ts_rel_path = path_builder.build_ts_path(
-                    subject=subject,
-                    ts_label=sv_label,
-                    suffix=suffix,
-                    desc=description,
-                    session=session,
-                    run=run,
-                    extension=".tsv",
-                )
-                ts_tsv_path = os.path.join(output_dir, ts_rel_path)
-                ts_json_path = ts_tsv_path.replace(".tsv", ".json")
+            write_hdf5_timeseries(
+                data=np.asarray(self.data),
+                time=np.asarray(self.time),
+                path=ts_h5_path,
+                labels_dimensions=(
+                    dict(self.labels_dimensions) if self.labels_dimensions else None
+                ),
+                labels_ordering=self.labels_ordering,
+                sample_period=sample_period_val,
+                sample_period_unit=self.sample_period_unit,
+                metadata=metadata,
+            )
 
-                ts_df = pd.DataFrame(np.asarray(sv_data), columns=region_labels)
-                ts_df.insert(0, "time", np.asarray(self.time))
-                write_tsv(ts_df, ts_tsv_path, include_index=False)
-
-            write_sidecar(ts_sidecar, ts_json_path)
+            write_sidecar(h5_sidecar, ts_json_path)
             created_files["ts"].append(ts_rel_path)
+
+        else:
+            # =====================================================================
+            # CIFTI/TSV format: Export each state variable as separate file
+            # =====================================================================
+            for sv_idx, sv_label in enumerate(self.variables_labels):
+                # Create sidecar metadata
+                ts_sidecar = TimeSeriesSidecar(
+                    Description=f"Simulated parcellated time series - state variable {sv_label}",
+                    StateVariable=sv_label,
+                    SamplingFrequency=sampling_freq,
+                    SamplingPeriod=sample_period_val,
+                    SamplingPeriodUnits=self.sample_period_unit,
+                    StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
+                    NumberOfTimepoints=int(self.data.shape[0]),
+                    NumberOfNodes=int(self.data.shape[2]) if self.data.ndim > 2 else 1,
+                    Columns=(
+                        region_labels if not use_cifti else None
+                    ),  # Columns for TSV only
+                    Units="a.u.",
+                    GeneratedAt=datetime.now().isoformat(),
+                    Provenance=provenance,
+                )
+
+                # Extract data for this state variable (time x regions)
+                sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
+
+                if use_cifti:
+                    # Write CIFTI-2 ptseries file with nibabel
+                    # ts entity = state variable label (V, W, etc.)
+                    # suffix = State (raw neural) or BOLD/EEG/etc. (observation)
+                    ts_rel_path = path_builder.build_ts_path(
+                        subject=subject,
+                        ts_label=sv_label,
+                        suffix=suffix,
+                        desc=description,
+                        session=session,
+                        run=run,
+                        extension=".ptseries.nii",
+                    )
+                    ts_cifti_path = os.path.join(output_dir, ts_rel_path)
+                    ts_json_path = ts_cifti_path.replace(".ptseries.nii", ".json")
+
+                    write_cifti_ptseries(
+                        data=np.asarray(sv_data),
+                        region_labels=region_labels,
+                        path=ts_cifti_path,
+                        sample_period=sample_period_val or 1.0,
+                        sample_period_unit=self.sample_period_unit,
+                    )
+                else:
+                    # Write TSV file
+                    ts_rel_path = path_builder.build_ts_path(
+                        subject=subject,
+                        ts_label=sv_label,
+                        suffix=suffix,
+                        desc=description,
+                        session=session,
+                        run=run,
+                        extension=".tsv",
+                    )
+                    ts_tsv_path = os.path.join(output_dir, ts_rel_path)
+                    ts_json_path = ts_tsv_path.replace(".tsv", ".json")
+
+                    ts_df = pd.DataFrame(np.asarray(sv_data), columns=region_labels)
+                    ts_df.insert(0, "time", np.asarray(self.time))
+                    write_tsv(ts_df, ts_tsv_path, include_index=False)
+
+                write_sidecar(ts_sidecar, ts_json_path)
+                created_files["ts"].append(ts_rel_path)
 
         # =====================================================================
         # 3. Export model equations to eq/ directory

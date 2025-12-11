@@ -72,8 +72,7 @@ output:
 """
 
 pendulum = SimulationExperiment(
-    local_dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),
-
+    dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),
 )
 results = pendulum.run(duration=5_000)
 ```
