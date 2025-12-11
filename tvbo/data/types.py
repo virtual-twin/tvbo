@@ -692,12 +692,13 @@ class TimeSeries(BaseTimeSeries):
         output_dir: str,
         subject: str = "01",
         session: str | None = None,
-        description: str = "tvbsim",
+        description: str | None = None,
         run: int | None = None,
-        ts_label: str = "sim",
+        suffix: str = "State",
         experiment=None,
         include_model: bool = True,
         include_connectivity: bool = True,
+        timeseries_format: str = "cifti",
     ) -> str:
         """
         Export TimeSeries data to BIDS-compliant format (BEP034).
@@ -705,7 +706,7 @@ class TimeSeries(BaseTimeSeries):
         Creates a BIDS dataset structure following the Computational Model
         Specification (BEP034 v1.0.0) with:
         - net/: Network connectivity files (weights, distances)
-        - ts/: Time series data files
+        - ts/: Time series data files (CIFTI-2 ptseries or TSV)
         - eq/: Model equations (tvbo format)
         - coord/: Region coordinates (if available)
         - JSON sidecar files with metadata
@@ -721,12 +722,17 @@ class TimeSeries(BaseTimeSeries):
             Subject identifier (without 'sub-' prefix). Default: '01'.
         session : str, optional
             Session identifier (without 'ses-' prefix).
-        description : str
-            Description label for the output files. Default: 'tvbsim'.
+        description : str, optional
+            Description label for the output files. If not provided, uses
+            the model name from experiment (e.g., 'wilsoncowan').
         run : int, optional
             Run number.
-        ts_label : str
-            Time series label (e.g., 'sim', 'bold', 'eeg'). Default: 'sim'.
+        suffix : str
+            BIDS suffix indicating the type of time series data:
+            - 'State' (default): Raw neural state variables from simulation
+            - 'BOLD': fMRI BOLD signal (if observation model applied)
+            - 'EEG': EEG signal (if observation model applied)
+            - 'MEG': MEG signal (if observation model applied)
         experiment : SimulationExperiment, optional
             The source simulation experiment for full provenance tracking.
             If not provided, uses self.source_experiment if available.
@@ -734,6 +740,10 @@ class TimeSeries(BaseTimeSeries):
             Whether to export model equations. Default: True.
         include_connectivity : bool
             Whether to export connectivity data. Default: True.
+        timeseries_format : str
+            Format for time series output. Options:
+            - 'cifti' (default): CIFTI-2 ptseries.nii files with named parcels
+            - 'tsv': Tab-separated values files
 
         Returns
         -------
@@ -743,8 +753,14 @@ class TimeSeries(BaseTimeSeries):
         Examples
         --------
         >>> ts = experiment.run()
-        >>> ts.to_bids("./derivatives/tvbo", subject="01", description="simulation")
+        >>> ts.to_bids("./derivatives/tvbo", subject="01")
         './derivatives/tvbo'
+
+        >>> # Export BOLD observation model output
+        >>> bold_ts.to_bids("./derivatives/tvbo", suffix="BOLD")
+
+        >>> # Export as TSV instead of CIFTI
+        >>> ts.to_bids("./derivatives/tvbo", timeseries_format="tsv")
 
         Notes
         -----
@@ -758,6 +774,7 @@ class TimeSeries(BaseTimeSeries):
 
         # Import BEP034 module
         from tvbo.export.bids import (
+            NIBABEL_AVAILABLE,
             BEP034PathBuilder,
             CoordinateSidecar,
             DatasetDescription,
@@ -766,7 +783,9 @@ class TimeSeries(BaseTimeSeries):
             SimulationProvenance,
             TimeSeriesSidecar,
             compute_id,
+            create_multi_state_cifti,
             to_float,
+            write_cifti_ptseries,
             write_sidecar,
             write_tsv,
         )
@@ -774,6 +793,15 @@ class TimeSeries(BaseTimeSeries):
         # Use source_experiment if not explicitly provided
         if experiment is None:
             experiment = getattr(self, "source_experiment", None)
+
+        # Auto-detect description from model name if not provided
+        if description is None and experiment is not None:
+            if hasattr(experiment, "local_dynamics"):
+                description = type(experiment.local_dynamics).__name__.lower()
+            else:
+                description = "simulation"
+        elif description is None:
+            description = "simulation"
 
         # Initialize path builder
         path_builder = BEP034PathBuilder()
@@ -888,7 +916,7 @@ class TimeSeries(BaseTimeSeries):
                 created_files["coord"].append(coord_rel_path)
 
         # =====================================================================
-        # 2. Export time series to ts/ directory
+        # 2. Export time series to ts/ directory as CIFTI-2 ptseries
         # =====================================================================
         sample_period_val = to_float(self.sample_period)
         if sample_period_val is not None and sample_period_val > 0:
@@ -910,10 +938,14 @@ class TimeSeries(BaseTimeSeries):
                 GeneratedAt=datetime.now().isoformat(),
             )
 
+        # Determine output format
+        use_cifti = timeseries_format.lower() == "cifti" and NIBABEL_AVAILABLE and region_labels is not None
+
         # Export each state variable as separate time series file
         for sv_idx, sv_label in enumerate(self.variables_labels):
+            # Create sidecar metadata
             ts_sidecar = TimeSeriesSidecar(
-                Description=f"Simulated time series - {sv_label}",
+                Description=f"Simulated parcellated time series - state variable {sv_label}",
                 StateVariable=sv_label,
                 SamplingFrequency=sampling_freq,
                 SamplingPeriod=sample_period_val,
@@ -921,31 +953,56 @@ class TimeSeries(BaseTimeSeries):
                 StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
                 NumberOfTimepoints=int(self.data.shape[0]),
                 NumberOfNodes=int(self.data.shape[2]) if self.data.ndim > 2 else 1,
-                Columns=["time"] + (region_labels or []),
+                Columns=region_labels if not use_cifti else None,  # Columns for TSV only
                 Units="a.u.",
                 GeneratedAt=datetime.now().isoformat(),
-                SimulationProvenance=provenance,
+                Provenance=provenance,
             )
-            ts_id = compute_id(ts_sidecar.to_dict())
-
-            ts_rel_path = path_builder.build_ts_path(
-                subject=subject,
-                ts_label=f"{ts_label}{sv_label}",
-                id_hash=ts_id,
-                desc=description,
-                session=session,
-                run=run,
-                extension=".tsv",
-            )
-            ts_tsv_path = os.path.join(output_dir, ts_rel_path)
-            ts_json_path = ts_tsv_path.replace(".tsv", ".json")
 
             # Extract data for this state variable (time x regions)
             sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
-            ts_df = pd.DataFrame(np.asarray(sv_data), columns=region_labels)
-            ts_df.insert(0, "time", np.asarray(self.time))
 
-            write_tsv(ts_df, ts_tsv_path, include_index=False)
+            if use_cifti:
+                # Write CIFTI-2 ptseries file with nibabel
+                # ts entity = state variable label (V, W, etc.)
+                # suffix = State (raw neural) or BOLD/EEG/etc. (observation)
+                ts_rel_path = path_builder.build_ts_path(
+                    subject=subject,
+                    ts_label=sv_label,
+                    suffix=suffix,
+                    desc=description,
+                    session=session,
+                    run=run,
+                    extension=".ptseries.nii",
+                )
+                ts_cifti_path = os.path.join(output_dir, ts_rel_path)
+                ts_json_path = ts_cifti_path.replace(".ptseries.nii", ".json")
+
+                write_cifti_ptseries(
+                    data=np.asarray(sv_data),
+                    region_labels=region_labels,
+                    path=ts_cifti_path,
+                    sample_period=sample_period_val or 1.0,
+                    sample_period_unit=self.sample_period_unit,
+                )
+            else:
+                # Write TSV file
+                ts_rel_path = path_builder.build_ts_path(
+                    subject=subject,
+                    ts_label=sv_label,
+                    suffix=suffix,
+                    desc=description,
+                    session=session,
+                    run=run,
+                    extension=".tsv",
+                )
+                ts_tsv_path = os.path.join(output_dir, ts_rel_path)
+                ts_json_path = ts_tsv_path.replace(".tsv", ".json")
+
+                ts_df = pd.DataFrame(np.asarray(sv_data), columns=region_labels)
+                ts_df.insert(0, "time", np.asarray(self.time))
+                write_tsv(ts_df, ts_tsv_path, include_index=False)
+
             write_sidecar(ts_sidecar, ts_json_path)
             created_files["ts"].append(ts_rel_path)
 
