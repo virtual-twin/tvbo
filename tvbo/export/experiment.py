@@ -84,6 +84,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
 
+        # If dynamics list is empty, populate from local_dynamics
+        if not getattr(self, "dynamics", None) and getattr(self, "local_dynamics", None):
+            self.dynamics = [self.local_dynamics]
+
         # Defaults
         if not getattr(self, "monitors", None):
             from tvbo.datamodel.tvbo_datamodel import Monitor
@@ -105,6 +109,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     ) -> "SimulationExperiment":
         # Leverage the unified initializer
         return cls(**dm._as_dict)
+
+    @classmethod
+    def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
+        """Create a SimulationExperiment from a Pydantic model instance.
+
+        Args:
+            pyd_obj: A Pydantic BaseModel instance (e.g., from tvbo.datamodel.tvbopydantic)
+
+        Returns:
+            SimulationExperiment instance
+        """
+        if hasattr(pyd_obj, 'model_dump'):
+            # Pydantic v2
+            return cls(**pyd_obj.model_dump(exclude_none=True))
+        elif hasattr(pyd_obj, 'dict'):
+            # Pydantic v1
+            return cls(**pyd_obj.dict(exclude_none=True))
+        else:
+            raise TypeError(f"Expected a Pydantic model, got {type(pyd_obj)}")
 
     @classmethod
     def from_tvb_simulator(cls, tvb_simulator):
@@ -236,22 +259,32 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def configure(self):
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
         try:
-            conn = (
-                self.network
-                if getattr(self, "network", None) is not None
-                else None
-            )
-            L = conn.lengths_matrix if conn is not None else None
-            if L is not None and (np.allclose(L, 0) or np.allclose(L.max() / conn.conduction_speed.value, 0)):
-                print("Connectome has no path lengths or conduction speed is infinite; ")
+            network = getattr(self, "network", None)
+            if network is None:
+                return
+
+            # Get the network as a Connectome (it might already be one)
+            if isinstance(network, Connectome):
+                conn = network
+            else:
+                conn = Connectome(network)
+
+            # Try to get lengths matrix
+            try:
+                L = conn.lengths_matrix
+            except Exception:
+                L = None
+
+            # Disable delays if lengths are None or all zeros
+            if L is None or np.allclose(L, 0) or np.allclose(L.max() / conn.conduction_speed.value, 0):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
                     self.coupling.delayed = False
         except Exception as e:
-            print(f"Error configuring experiment: {e}")
             # Best-effort; keep defaults if anything goes wrong
-            pass
+            import warnings
+            warnings.warn(f"Could not configure delays: {e}")
 
     def add_stimulus(self, stimulus):
         import owlready2 as owl

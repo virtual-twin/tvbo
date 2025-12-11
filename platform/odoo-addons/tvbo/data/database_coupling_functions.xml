@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="param_coupling_hyperbolictangent_b" model="tvbo.parameter">
+            <field name="name">b</field>
+            <field name="value">0.0</field>
+            <field name="description">Scaling factor for the variable</field>
+        </record>
+
+        <record id="param_coupling_hyperbolictangent_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">0.0</field>
+            <field name="description">Minimum of the sigmoid function</field>
+        </record>
+
+        <record id="param_coupling_hyperbolictangent_sigma" model="tvbo.parameter">
+            <field name="name">sigma</field>
+            <field name="value">1.0</field>
+            <field name="description">Standard deviation of the coupling</field>
+        </record>
+
+        <record id="param_coupling_hyperbolictangent_midpoint" model="tvbo.parameter">
+            <field name="name">midpoint</field>
+            <field name="value">0.0</field>
+            <field name="description">Midpoint of the linear portion of the sigmoid</field>
+        </record>
+
+        <record id="pre_expr_hyperbolictangent" model="tvbo.equation">
+            <field name="righthandside">a*(tanh((b*x_j - midpoint)/sigma) + 1)</field>
+        </record>
+
+        <record id="post_expr_hyperbolictangent" model="tvbo.equation">
+            <field name="righthandside">gx</field>
+        </record>
+
+        <record id="coupling_hyperbolictangent" model="tvbo.coupling">
+            <field name="name">HyperbolicTangent</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_hyperbolictangent_b'),ref('param_coupling_hyperbolictangent_a'),ref('param_coupling_hyperbolictangent_sigma'),ref('param_coupling_hyperbolictangent_midpoint')])]"/>
+            <field name="pre_expression" ref="pre_expr_hyperbolictangent"/>
+            <field name="post_expression" ref="post_expr_hyperbolictangent"/>
+        </record>
+
+        <record id="param_coupling_presigmoidal_theta" model="tvbo.parameter">
+            <field name="name">theta</field>
+            <field name="value">0.5</field>
+            <field name="description">Threshold</field>
+        </record>
+
+        <record id="param_coupling_presigmoidal_p" model="tvbo.parameter">
+            <field name="name">P</field>
+            <field name="value">1.0</field>
+            <field name="description">Excitation-Inhibition ratio</field>
+        </record>
+
+        <record id="param_coupling_presigmoidal_q" model="tvbo.parameter">
+            <field name="name">Q</field>
+            <field name="value">1.0</field>
+            <field name="description">Average</field>
+        </record>
+
+        <record id="param_coupling_presigmoidal_h" model="tvbo.parameter">
+            <field name="name">H</field>
+            <field name="value">0.5</field>
+            <field name="description">Global Factor</field>
+        </record>
+
+        <record id="param_coupling_presigmoidal_g" model="tvbo.parameter">
+            <field name="name">G</field>
+            <field name="value">60.0</field>
+            <field name="description">Gain</field>
+        </record>
+
+        <record id="pre_expr_presigmoidal" model="tvbo.equation">
+            <field name="righthandside">H*(Q + tanh(G*(P*x_j - theta)))</field>
+        </record>
+
+        <record id="post_expr_presigmoidal" model="tvbo.equation">
+            <field name="righthandside">gx</field>
+        </record>
+
+        <record id="coupling_presigmoidal" model="tvbo.coupling">
+            <field name="name">PreSigmoidal</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_presigmoidal_theta'),ref('param_coupling_presigmoidal_p'),ref('param_coupling_presigmoidal_q'),ref('param_coupling_presigmoidal_h'),ref('param_coupling_presigmoidal_g')])]"/>
+            <field name="pre_expression" ref="pre_expr_presigmoidal"/>
+            <field name="post_expression" ref="post_expr_presigmoidal"/>
+        </record>
+
+        <record id="param_coupling_sigmoidaljansenrit_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">1.0</field>
+            <field name="description">Scaling of the coupling term</field>
+        </record>
+
+        <record id="param_coupling_sigmoidaljansenrit_midpoint" model="tvbo.parameter">
+            <field name="name">midpoint</field>
+            <field name="value">6.0</field>
+            <field name="description">Midpoint of the linear portion of the sigmoid</field>
+        </record>
+
+        <record id="param_coupling_sigmoidaljansenrit_cmax" model="tvbo.parameter">
+            <field name="name">cmax</field>
+            <field name="value">0.005</field>
+            <field name="description">Maximum of the Sigmoid function</field>
+        </record>
+
+        <record id="param_coupling_sigmoidaljansenrit_r" model="tvbo.parameter">
+            <field name="name">r</field>
+            <field name="value">0.56</field>
+            <field name="description">The steepness of the sigmoidal transformation</field>
+        </record>
+
+        <record id="param_coupling_sigmoidaljansenrit_cmin" model="tvbo.parameter">
+            <field name="name">cmin</field>
+            <field name="value">0.0</field>
+            <field name="description">minimum of the Sigmoid function</field>
+        </record>
+
+        <record id="pre_expr_sigmoidaljansenrit" model="tvbo.equation">
+            <field name="righthandside">cmin + (cmax - cmin)/(exp(r*(midpoint - (x_j[0] - x_j[1]))) + 1.0)</field>
+        </record>
+
+        <record id="post_expr_sigmoidaljansenrit" model="tvbo.equation">
+            <field name="righthandside">a*gx</field>
+        </record>
+
+        <record id="coupling_sigmoidaljansenrit" model="tvbo.coupling">
+            <field name="name">SigmoidalJansenRit</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_sigmoidaljansenrit_a'),ref('param_coupling_sigmoidaljansenrit_midpoint'),ref('param_coupling_sigmoidaljansenrit_cmax'),ref('param_coupling_sigmoidaljansenrit_r'),ref('param_coupling_sigmoidaljansenrit_cmin')])]"/>
+            <field name="pre_expression" ref="pre_expr_sigmoidaljansenrit"/>
+            <field name="post_expression" ref="post_expr_sigmoidaljansenrit"/>
+        </record>
+
+        <record id="param_coupling_sigmoidal_midpoint" model="tvbo.parameter">
+            <field name="name">midpoint</field>
+            <field name="value">0.0</field>
+        </record>
+
+        <record id="param_coupling_sigmoidal_cmax" model="tvbo.parameter">
+            <field name="name">cmax</field>
+            <field name="value">1.0</field>
+            <field name="description">Maximum of the sigmoid function</field>
+        </record>
+
+        <record id="param_coupling_sigmoidal_sigma" model="tvbo.parameter">
+            <field name="name">sigma</field>
+            <field name="value">230.0</field>
+        </record>
+
+        <record id="param_coupling_sigmoidal_cmin" model="tvbo.parameter">
+            <field name="name">cmin</field>
+            <field name="value">-1.0</field>
+            <field name="description">Minimum of sigmoid function</field>
+        </record>
+
+        <record id="param_coupling_sigmoidal_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">1.0</field>
+            <field name="description">Scaling of sigmoidal</field>
+        </record>
+
+        <record id="pre_expr_sigmoidal" model="tvbo.equation">
+            <field name="righthandside">x_j</field>
+        </record>
+
+        <record id="post_expr_sigmoidal" model="tvbo.equation">
+            <field name="righthandside">cmin + (cmax - cmin)/(exp((-a)*(gx - midpoint)/sigma) + 1.0)</field>
+        </record>
+
+        <record id="coupling_sigmoidal" model="tvbo.coupling">
+            <field name="name">Sigmoidal</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_sigmoidal_midpoint'),ref('param_coupling_sigmoidal_cmax'),ref('param_coupling_sigmoidal_sigma'),ref('param_coupling_sigmoidal_cmin'),ref('param_coupling_sigmoidal_a')])]"/>
+            <field name="pre_expression" ref="pre_expr_sigmoidal"/>
+            <field name="post_expression" ref="post_expr_sigmoidal"/>
+        </record>
+
+        <record id="param_coupling_difference_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">0.1</field>
+        </record>
+
+        <record id="pre_expr_difference" model="tvbo.equation">
+            <field name="righthandside">-x_i + x_j</field>
+        </record>
+
+        <record id="post_expr_difference" model="tvbo.equation">
+            <field name="righthandside">a*gx</field>
+        </record>
+
+        <record id="coupling_difference" model="tvbo.coupling">
+            <field name="name">Difference</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_difference_a')])]"/>
+            <field name="pre_expression" ref="pre_expr_difference"/>
+            <field name="post_expression" ref="post_expr_difference"/>
+        </record>
+
+        <record id="param_coupling_kuramotocoupling_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">1.0</field>
+            <field name="description">Rescales the connection strength.</field>
+        </record>
+
+        <record id="param_coupling_kuramotocoupling_n" model="tvbo.parameter">
+            <field name="name">N</field>
+            <field name="value">1.0</field>
+            <field name="description">Number of nodes, i.e., size of network.</field>
+        </record>
+
+        <record id="pre_expr_kuramotocoupling" model="tvbo.equation">
+            <field name="righthandside">sin(-x_i + x_j)</field>
+        </record>
+
+        <record id="post_expr_kuramotocoupling" model="tvbo.equation">
+            <field name="righthandside">a*gx/N</field>
+        </record>
+
+        <record id="coupling_kuramotocoupling" model="tvbo.coupling">
+            <field name="name">KuramotoCoupling</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_kuramotocoupling_a'),ref('param_coupling_kuramotocoupling_n')])]"/>
+            <field name="pre_expression" ref="pre_expr_kuramotocoupling"/>
+            <field name="post_expression" ref="post_expr_kuramotocoupling"/>
+        </record>
+
+        <record id="param_coupling_scaling_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">0.00390625</field>
+            <field name="description">Linear scaling factor of the coupled (delayed) input.</field>
+        </record>
+
+        <record id="pre_expr_scaling" model="tvbo.equation">
+            <field name="righthandside">x_j</field>
+        </record>
+
+        <record id="post_expr_scaling" model="tvbo.equation">
+            <field name="righthandside">a*gx</field>
+        </record>
+
+        <record id="coupling_scaling" model="tvbo.coupling">
+            <field name="name">Scaling</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_scaling_a')])]"/>
+            <field name="pre_expression" ref="pre_expr_scaling"/>
+            <field name="post_expression" ref="post_expr_scaling"/>
+        </record>
+
+        <record id="param_coupling_linear_b" model="tvbo.parameter">
+            <field name="name">b</field>
+            <field name="value">0.0</field>
+            <field name="description">Shifts the base of the connection strength while maintaining the absolute difference between different values.</field>
+        </record>
+
+        <record id="param_coupling_linear_a" model="tvbo.parameter">
+            <field name="name">a</field>
+            <field name="value">0.00390625</field>
+            <field name="description">Linear scaling factor of the coupled (delayed) input.</field>
+        </record>
+
+        <record id="pre_expr_linear" model="tvbo.equation">
+            <field name="righthandside">x_j</field>
+        </record>
+
+        <record id="post_expr_linear" model="tvbo.equation">
+            <field name="righthandside">a*gx + b</field>
+        </record>
+
+        <record id="coupling_linear" model="tvbo.coupling">
+            <field name="name">Linear</field>
+            <field name="sparse">false</field>
+            <field name="delayed">true</field>
+            <field name="parameters" eval="[(6, 0, [ref('param_coupling_linear_b'),ref('param_coupling_linear_a')])]"/>
+            <field name="pre_expression" ref="pre_expr_linear"/>
+            <field name="post_expression" ref="post_expr_linear"/>
+        </record>
+
+    </data>
+</odoo>

@@ -72,7 +72,8 @@ def order_by_equations(derived_variables, dependent_equations):
 
 
 def class2metadata(ontoclass, metadata):
-    metadata.description = ontology.get_def(ontoclass, mode="long")
+    if not metadata.description:
+        metadata.description = ontology.get_def(ontoclass, mode="long")
     dependent_equations = equations.sort_equations_by_dependencies(
         equations.symbolic_model_equations(ontoclass)
     )
@@ -1510,13 +1511,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.utils.julia import get_julia
+            from tvbo.utils.julia import get_julia, eval_with_auto_install
 
-            jl, Main = get_julia(compiled_modules=True)
-            Main.eval(code)
+            jl, Main = get_julia(compiled_modules=False)
+            eval_with_auto_install(code)
             if format == "julia":
-                t = Main.eval("Array(sol.t)")
-                u_mat = Main.eval("Array(hcat(sol.u...))")  # states x time
+                t = eval_with_auto_install("Array(sol.t)")
+                u_mat = eval_with_auto_install("Array(hcat(sol.u...))")  # states x time
                 import numpy as _np
 
                 t_arr = _np.array(t, dtype=float)
@@ -1536,13 +1537,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
             elif format == "bifurcation-julia":
                 import numpy as _np
 
-                br_obj = Main.eval("bifurcation_result")
-                bif_res = BifurcationResult(br=br_obj, **kwargs)
+                br_obj = eval_with_auto_install("bifurcation_result")
+                bif_res = BifurcationResult(br=br_obj, model=self, **kwargs)
                 if "periodic_orbits" in kwargs and kwargs["periodic_orbits"]:
-                    po = Main.eval("po_results")
+                    po = eval_with_auto_install("po_results")
 
                     bif_res.periodic_orbits = [
-                        BifurcationResult(br=p, **kwargs) for p in po.branches
+                        BifurcationResult(br=p, model=self, **kwargs) for p in po.branches
                     ]
                 return bif_res
 

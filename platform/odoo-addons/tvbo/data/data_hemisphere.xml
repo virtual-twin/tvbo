@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="hemisphere_left" model="tvbo.hemisphere">
+            <field name="name">Left</field>
+            <field name="technical_name">left</field>
+        </record>
+
+        <record id="hemisphere_right" model="tvbo.hemisphere">
+            <field name="name">Right</field>
+            <field name="technical_name">right</field>
+        </record>
+
+        <record id="hemisphere_both" model="tvbo.hemisphere">
+            <field name="name">Both</field>
+            <field name="technical_name">both</field>
+        </record>
+
+    </data>
+</odoo>

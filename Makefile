@@ -5,8 +5,19 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release release all
+.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-test-all pypi-release release gen-linkml all
 all: build save
+
+# LinkML schema generation
+SCHEMA_PATH = schema/tvbo_datamodel.yaml
+DATAMODEL_DIR = tvbo/datamodel
+
+gen-linkml:
+	@echo "Generating Python datamodel from LinkML schema..."
+	@mkdir -p $(DATAMODEL_DIR)
+	@gen-pydantic $(SCHEMA_PATH) > $(DATAMODEL_DIR)/tvbopydantic.py
+	@gen-python $(SCHEMA_PATH) > $(DATAMODEL_DIR)/tvbo_datamodel.py
+	@echo "✓ LinkML datamodel generated in $(DATAMODEL_DIR)/"
 
 build:
 	DOCKER_BUILDKIT=1 docker build --secret id=gitlab_token,env=GITLAB_TOKEN -t $(IMAGE_FULL) .

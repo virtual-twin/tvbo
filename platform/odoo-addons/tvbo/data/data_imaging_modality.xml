@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="imaging_modality_BOLD" model="tvbo.imaging_modality">
+            <field name="name">Bold</field>
+            <field name="technical_name">BOLD</field>
+            <field name="description">Blood Oxygen Level Dependent signal.</field>
+        </record>
+
+        <record id="imaging_modality_EEG" model="tvbo.imaging_modality">
+            <field name="name">Eeg</field>
+            <field name="technical_name">EEG</field>
+            <field name="description">Electroencephalography.</field>
+        </record>
+
+        <record id="imaging_modality_MEG" model="tvbo.imaging_modality">
+            <field name="name">Meg</field>
+            <field name="technical_name">MEG</field>
+            <field name="description">Magnetoencephalography.</field>
+        </record>
+
+        <record id="imaging_modality_SEEG" model="tvbo.imaging_modality">
+            <field name="name">Seeg</field>
+            <field name="technical_name">SEEG</field>
+            <field name="description">Stereoelectroencephalography.</field>
+        </record>
+
+        <record id="imaging_modality_IEEG" model="tvbo.imaging_modality">
+            <field name="name">Ieeg</field>
+            <field name="technical_name">IEEG</field>
+            <field name="description">Intracranial Electroencephalography.</field>
+        </record>
+
+    </data>
+</odoo>

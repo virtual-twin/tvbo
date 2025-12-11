@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="environment_type_conda" model="tvbo.environment_type">
+            <field name="name">Conda</field>
+            <field name="technical_name">conda</field>
+        </record>
+
+        <record id="environment_type_venv" model="tvbo.environment_type">
+            <field name="name">Venv</field>
+            <field name="technical_name">venv</field>
+        </record>
+
+        <record id="environment_type_docker" model="tvbo.environment_type">
+            <field name="name">Docker</field>
+            <field name="technical_name">docker</field>
+        </record>
+
+        <record id="environment_type_singularity" model="tvbo.environment_type">
+            <field name="name">Singularity</field>
+            <field name="technical_name">singularity</field>
+        </record>
+
+        <record id="environment_type_system" model="tvbo.environment_type">
+            <field name="name">System</field>
+            <field name="technical_name">system</field>
+        </record>
+
+        <record id="environment_type_other" model="tvbo.environment_type">
+            <field name="name">Other</field>
+            <field name="technical_name">other</field>
+        </record>
+
+    </data>
+</odoo>
