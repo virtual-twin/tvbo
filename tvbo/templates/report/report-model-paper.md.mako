@@ -11,9 +11,9 @@ state_equations = [eq for k, eq in model.get_equations().items() if k in model.m
 
 derived_variables = [eq for k, eq in model.get_equations().items() if k in model.metadata.derived_variables]
 
-output_transforms = [
+output = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.metadata.output_transforms.values()
+    for p in model.metadata.output.values()
 ]
 
 derived_parameters = [
@@ -57,8 +57,8 @@ ${format_aligned_equations(functions)}
 ${format_aligned_equations(derived_variables)}
 % endif
 
-% if output_transforms:
-${format_aligned_equations(output_transforms)}
+% if output:
+${format_aligned_equations(output)}
 % endif
 
 ${"### Parameters"}

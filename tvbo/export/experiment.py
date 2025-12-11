@@ -13,18 +13,19 @@ import numpy as np
 from lems.base.util import validate_lems
 
 from tvbo import templates
-from tvbo.data.tvbo_data.connectomes import Connectome
+from tvbo.data.tvbo_data.connectomes import Network
 from tvbo.data.types import SimulationState, TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.export import templater
 from tvbo.export.templater import format_code
-from tvbo.knowledge import Connectome, Coupling, Integrator
+from tvbo.knowledge import Coupling, Integrator
 from tvbo.knowledge.simulation.localdynamics import Dynamics
-from tvbo.knowledge.simulation.network import Coupling, Network
+from tvbo.knowledge.simulation.network import Coupling, _Network
 from tvbo.parse import metadata
 from tvbo.utils import Bunch
 
 sessionid = 1
+
 
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def __init__(self, **kwargs):
@@ -37,10 +38,34 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         global sessionid
 
+        if 'dynamics' in kwargs and not isinstance(kwargs['dynamics'], dict):
+            # Convert list of Dynamics to dict keyed by name
+            dynamics_input = kwargs['dynamics']
+            if isinstance(dynamics_input, list):
+                dynamics_dict = {}
+                for dyn in dynamics_input:
+                    if dyn is not None and hasattr(dyn, 'name'):
+                        dynamics_dict[dyn.name] = dyn
+                kwargs['dynamics'] = dynamics_dict
+            elif hasattr(dynamics_input, 'name'):
+                # Single Dynamics instance - wrap in dict
+                kwargs['dynamics'] = {dynamics_input.name: dynamics_input}
+
         # Ensure an id exists (the datamodel requires it in __post_init__)
         if kwargs.get("id") is None:
             kwargs["id"] = sessionid
             sessionid += 1
+
+        # Handle pydantic Network - convert to dict before parent __init__
+        # This prevents the parent's __post_init__ from failing on pydantic objects
+        if "network" in kwargs and kwargs["network"] is not None:
+            net = kwargs["network"]
+            # Check if it's a pydantic model (has model_dump) - convert to dict
+            if hasattr(net, "model_dump"):
+                kwargs["network"] = net.model_dump(exclude_none=True)
+            elif hasattr(net, "dict") and not isinstance(net, dict):
+                # Pydantic v1
+                kwargs["network"] = net.dict(exclude_none=True)
 
         # Delegate to the parent dataclass initializer for normalization
         super().__init__(**kwargs)
@@ -77,16 +102,27 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "connectivity", None) and not getattr(self, "network", None):
             self.network = self.connectivity
 
-        if getattr(self, "network", None) and not isinstance(self.network, Connectome):
-            self.network = _coerce(Connectome, self.network)
-            self.connectivity = self.network  # backwards compatibility TODO: remove
+        if getattr(self, "network", None) and not isinstance(self.network, Network):
+            self.network = _coerce(Network, self.network)
 
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
 
-        # If dynamics list is empty, populate from local_dynamics
-        if not getattr(self, "dynamics", None) and getattr(self, "local_dynamics", None):
-            self.dynamics = [self.local_dynamics]
+        # If dynamics dict is empty, populate from local_dynamics
+        if not getattr(self, "dynamics", None) and getattr(
+            self, "local_dynamics", None
+        ):
+            ld = self.local_dynamics
+            self.dynamics = {ld.name: ld}
+
+        # If local_dynamics is empty but dynamics dict exists, use first entry
+        # This enables backwards-compatible single-model workflows
+        if not getattr(self, "local_dynamics", None) and getattr(self, "dynamics", None):
+            dynamics_dict = self.dynamics
+            if isinstance(dynamics_dict, dict) and dynamics_dict:
+                first_key = next(iter(dynamics_dict))
+                self.local_dynamics = dynamics_dict[first_key]
+                self.model = self.local_dynamics
 
         # Defaults
         if not getattr(self, "monitors", None):
@@ -95,7 +131,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.monitors["Raw"] = Monitor(name="Raw")
 
         if not getattr(self, "network", None):
-            self.network = Connectome()
+            self.network = Network()
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
@@ -111,6 +147,50 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return cls(**dm._as_dict)
 
     @classmethod
+    def from_pyrates(cls, filepath: str) -> "SimulationExperiment":
+        """Load a SimulationExperiment from a PyRates YAML template file.
+
+        Parses all OperatorTemplates in the file and creates a keyed dict
+        of Dynamics objects.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to PyRates YAML file.
+
+        Returns
+        -------
+        SimulationExperiment
+            New instance with dynamics dict populated from PyRates templates.
+
+        Example
+        -------
+        >>> exp = SimulationExperiment.from_pyrates("synaptic_plasticity.yaml")
+        >>> print(exp.dynamics.keys())  # ['tsodyks', 'depression', 'facilitation']
+        """
+        from tvbo.export.pyrates import from_pyrates_yaml_all
+
+        dynamics_dicts = from_pyrates_yaml_all(filepath)
+
+        # Convert dicts to Dynamics instances using lightweight construction
+        dynamics = {}
+        for name, dyn_dict in dynamics_dicts.items():
+            # Create instance with _skip_ontology=True to avoid slow lookups
+            dyn = Dynamics(_skip_ontology=True, **dyn_dict)
+            dynamics[name] = dyn
+
+        # Use the first dynamics as local_dynamics if available
+        local_dynamics = None
+        if dynamics:
+            first_key = next(iter(dynamics))
+            local_dynamics = dynamics[first_key]
+
+        return cls(
+            dynamics=dynamics,
+            local_dynamics=local_dynamics,
+        )
+
+    @classmethod
     def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
         """Create a SimulationExperiment from a Pydantic model instance.
 
@@ -120,10 +200,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Returns:
             SimulationExperiment instance
         """
-        if hasattr(pyd_obj, 'model_dump'):
+        if hasattr(pyd_obj, "model_dump"):
             # Pydantic v2
             return cls(**pyd_obj.model_dump(exclude_none=True))
-        elif hasattr(pyd_obj, 'dict'):
+        elif hasattr(pyd_obj, "dict"):
             # Pydantic v1
             return cls(**pyd_obj.dict(exclude_none=True))
         else:
@@ -228,10 +308,78 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             setattr(clone, k, _copy.deepcopy(v, memo))
         return clone
 
-    def to_yaml(self, filepath: str | None = None):
-        from tvbo.utils import to_yaml as _to_yaml
+    def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
+        """Export the experiment to YAML format.
 
-        return _to_yaml(self, filepath)
+        Parameters
+        ----------
+        filepath : str, optional
+            Path to write the YAML file. If None, returns the YAML string.
+        format : str
+            Output format: "tvbo" (default) or "pyrates".
+
+        Returns
+        -------
+        str
+            YAML string or filepath if written to file.
+        """
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import to_pyrates_yaml_string
+            from tvbo.knowledge.simulation import Dynamics as DynamicsClass
+
+            # Get network
+            network = getattr(self, "network", None)
+
+            # Handle dynamics based on whether we have a network or single model
+            if network is not None:
+                # Network case: pass dynamics as dict for heterogeneous networks
+                dynamics = self.dynamics
+                if dynamics is None:
+                    dynamics = {}
+                elif not isinstance(dynamics, dict):
+                    # Convert list to dict keyed by name
+                    if isinstance(dynamics, list):
+                        dynamics = {d.name: d for d in dynamics if d is not None}
+                    else:
+                        # Single model - wrap in dict
+                        dynamics = {dynamics.name: dynamics} if dynamics else {}
+
+                # Convert all datamodel Dynamics to full Dynamics class with methods
+                dynamics_converted = {}
+                for name, dyn in dynamics.items():
+                    if dyn is not None and not hasattr(dyn, "render_equation"):
+                        dynamics_converted[name] = DynamicsClass.from_datamodel(dyn)
+                    else:
+                        dynamics_converted[name] = dyn
+
+                return to_pyrates_yaml_string(
+                    dynamics=dynamics_converted,
+                    network=network,
+                    filepath=filepath,
+                )
+            else:
+                # Single model case (no network)
+                dynamics = getattr(self, "local_dynamics", None)
+                if dynamics is None:
+                    dynamics = self.dynamics
+                    if isinstance(dynamics, list) and len(dynamics) == 1:
+                        dynamics = dynamics[0]
+                    elif isinstance(dynamics, dict) and len(dynamics) == 1:
+                        dynamics = list(dynamics.values())[0]
+
+                # Convert datamodel Dynamics to full Dynamics class with methods
+                if dynamics is not None and not hasattr(dynamics, "render_equation"):
+                    dynamics = DynamicsClass.from_datamodel(dynamics)
+
+                return to_pyrates_yaml_string(
+                    dynamics=dynamics,
+                    network=network,
+                    filepath=filepath,
+                )
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+
+            return _to_yaml(self, filepath)
 
     def render_yaml(self) -> str:
         """Deprecated Render the YAML representation as a string.
@@ -263,11 +411,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if network is None:
                 return
 
-            # Get the network as a Connectome (it might already be one)
-            if isinstance(network, Connectome):
+            # Get the network as a Network (it might already be one)
+            if isinstance(network, Network):
                 conn = network
             else:
-                conn = Connectome(network)
+                conn = Network(network)
 
             # Try to get lengths matrix
             try:
@@ -276,7 +424,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 L = None
 
             # Disable delays if lengths are None or all zeros
-            if L is None or np.allclose(L, 0) or np.allclose(L.max() / conn.conduction_speed.value, 0):
+            if (
+                L is None
+                or np.allclose(L, 0)
+                or np.allclose(L.max() / conn.conduction_speed.value, 0)
+            ):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
@@ -284,6 +436,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         except Exception as e:
             # Best-effort; keep defaults if anything goes wrong
             import warnings
+
             warnings.warn(f"Could not configure delays: {e}")
 
     def add_stimulus(self, stimulus):
@@ -359,8 +512,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, jax.")
 
     def run(self, format="jax", initial_conditions=None, **kwargs):
-        if 'duration' in kwargs:
-            self.integration.duration = kwargs.pop('duration')
+        if "duration" in kwargs:
+            self.integration.duration = kwargs.pop("duration")
 
         self.configure()
         simulation_data = Bunch()
@@ -428,7 +581,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return ts
 
         elif format.lower() == "python":
-            bnm = Network(Connectome(self.network))
+            bnm = _Network(Network(self.network))
             bnm.add_local_model(self.local_dynamics)
             bnm.add_coupling(self.coupling)
 
@@ -513,12 +666,541 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Link TimeSeries to source experiment for provenance tracking
             ts.source_experiment = self
             return ts
+
+        elif format.lower() == "pyrates":
+            return self._run_pyrates(**kwargs)
+
         else:
             raise ValueError(
-                f"Format {format} not supported. Valid formats: tvb, jax, python"
+                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates"
             )
 
         return simulation_data
+
+    def _run_pyrates(
+        self,
+        solver: str | None = None,
+        inputs: dict | None = None,
+        outputs: list[str] | None = None,
+        matrix_edge_threshold: int = 100,
+        **kwargs,
+    ) -> TimeSeries:
+        """Run simulation using PyRates backend.
+
+        Parameters
+        ----------
+        solver : str, optional
+            ODE solver: "euler", "heun", "scipy". Defaults to mapped integration.method.
+        inputs : dict, optional
+            External inputs as {node/op/var: array} or will be auto-generated.
+        outputs : list[str], optional
+            Variables to monitor. If None, monitors all state variables.
+        matrix_edge_threshold : int, optional
+            For networks with N > threshold nodes, use add_edges_from_matrix instead
+            of YAML edges for efficiency. Default is 100.
+        **kwargs
+            Additional kwargs passed to circuit.run().
+
+        Returns
+        -------
+        TimeSeries
+            TVBO TimeSeries with simulation results.
+        """
+        import shutil
+        import sys
+        import tempfile
+        import uuid
+        from pyrates.frontend import CircuitTemplate
+        from pyrates import clear
+
+        # Get simulation parameters from metadata
+        integration = getattr(self, "integration", None)
+
+        # PyRates supported solvers
+        PYRATES_SOLVERS = {"euler", "heun", "scipy"}
+        TVBO_TO_PYRATES_SOLVER = {
+            "EulerDeterministic": "euler",
+            "Euler": "euler",
+            "HeunDeterministic": "heun",
+            "Heun": "heun",
+            "RungeKutta4thOrder": "scipy",
+            "RungeKutta4": "scipy",
+            "RK4": "scipy",
+        }
+
+        if solver is None:
+            method = getattr(integration, "method", None)
+            if method in TVBO_TO_PYRATES_SOLVER:
+                solver = TVBO_TO_PYRATES_SOLVER[method]
+            elif method in PYRATES_SOLVERS:
+                solver = method
+            elif method:
+                raise ValueError(
+                    f"Unsupported integration method '{method}' for PyRates. "
+                    f"Supported: {list(TVBO_TO_PYRATES_SOLVER.keys())}"
+                )
+            else:
+                solver = "heun"
+        elif solver not in PYRATES_SOLVERS:
+            raise ValueError(f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}")
+
+        network = getattr(self, "network", None)
+        n_nodes = 0
+        if network is not None:
+            n_nodes = getattr(network, 'number_of_nodes', 0) or (
+                len(network.nodes) if hasattr(network, 'nodes') and network.nodes else 0
+            )
+
+        # For large networks, use matrix-based edges (much faster)
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, 'weights_matrix')
+
+        # Build circuit from YAML (operators, nodes, and optionally edges)
+        circuit, tmpdir, pkg_name = self._load_pyrates_circuit_from_yaml(
+            include_edges=not use_matrix_edges
+        )
+
+        try:
+            # For large networks, add edges via matrix
+            if use_matrix_edges:
+                self._add_pyrates_edges_from_matrix(circuit, network)
+
+            # Build outputs/inputs if not provided
+            if outputs is None:
+                outputs = self._build_pyrates_outputs()
+            if inputs is None:
+                inputs = self._build_pyrates_inputs()
+
+            # Run simulation
+            result = circuit.run(
+                step_size=self.integration.step_size,
+                simulation_time=self.integration.duration,
+                inputs=inputs,
+                outputs=outputs,
+                solver=solver,
+                **kwargs,
+            )
+            clear(circuit)
+
+        except Exception:
+            clear(circuit)
+            raise
+        finally:
+            # Cleanup
+            if tmpdir in sys.path:
+                sys.path.remove(tmpdir)
+            modules_to_remove = [k for k in sys.modules if k.startswith(pkg_name)]
+            for mod in modules_to_remove:
+                del sys.modules[mod]
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+        # Compute algebraic output variables post-hoc
+        result = self._compute_pyrates_outputs(result)
+
+        return self._pyrates_result_to_timeseries(result)
+
+    def _load_pyrates_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
+        """Load PyRates circuit from YAML template.
+
+        Parameters
+        ----------
+        include_edges : bool
+            If True, include edges in YAML. If False, edges will be added separately.
+
+        Returns
+        -------
+        tuple
+            (circuit, tmpdir, pkg_name) for cleanup
+        """
+        import sys
+        import tempfile
+        import uuid
+        from pyrates.frontend import CircuitTemplate
+
+        # Export to PyRates YAML
+        yaml_content = self.to_yaml(format="pyrates")
+
+        # For large networks, strip edges from YAML (we'll add them via matrix)
+        if not include_edges:
+            yaml_content = self._strip_edges_from_yaml(yaml_content)
+
+        # Create temporary package
+        tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_")
+        pkg_name = f"_tvbo_pyrates_{uuid.uuid4().hex[:8]}"
+        pkg_path = os.path.join(tmpdir, pkg_name)
+        os.makedirs(pkg_path, exist_ok=True)
+        open(os.path.join(pkg_path, "__init__.py"), "w").close()
+
+        yaml_path = os.path.join(pkg_path, "model.yaml")
+        with open(yaml_path, "w") as f:
+            f.write(yaml_content)
+
+        sys.path.insert(0, tmpdir)
+
+        # Get circuit name
+        network = getattr(self, "network", None)
+        dynamics = getattr(self, "local_dynamics", None) or getattr(self, "dynamics", None)
+
+        if network is not None:
+            circuit_name = getattr(network, "label", None) or getattr(network, "name", None) or "tvbo_circuit"
+        elif dynamics is not None:
+            model_name = getattr(dynamics, "name", None) or "tvbo_model"
+            circuit_name = f"{model_name}_circuit"
+        else:
+            circuit_name = "tvbo_circuit"
+
+        circuit = CircuitTemplate.from_yaml(f"{pkg_name}.model.{circuit_name}")
+        return circuit, tmpdir, pkg_name
+
+    def _strip_edges_from_yaml(self, yaml_content: str) -> str:
+        """Remove edges section from YAML for large networks."""
+        import re
+        # Remove edges section from circuit definition
+        # Match "  edges:\n" followed by lines starting with "    -"
+        pattern = r'(  edges:\n(?:    - \[.*\]\n)*)'
+        return re.sub(pattern, '', yaml_content)
+
+    def _add_pyrates_edges_from_matrix(self, circuit, network) -> None:
+        """Add edges to circuit using weight matrix (efficient for large networks)."""
+        dynamics_dict = self.dynamics
+        if not isinstance(dynamics_dict, dict):
+            dynamics_dict = {d.name: d for d in (dynamics_dict or [])}
+
+        # Get node labels
+        node_labels = []
+        if hasattr(network, 'nodes') and network.nodes:
+            for node in network.nodes:
+                label = getattr(node, 'label', None) or f"node_{node.id}"
+                node_labels.append(str(label).replace(" ", "_").replace("-", "_"))
+        else:
+            n_nodes = network.weights_matrix.shape[0]
+            node_labels = [f"node_{i}" for i in range(n_nodes)]
+
+        # Get source/target variables from dynamics
+        first_dyn = next(iter(dynamics_dict.values()))
+        dyn_name = first_dyn.name
+
+        # Source: prefer output, fallback to first state variable
+        if first_dyn.output:
+            src_var = f"{dyn_name}_op/{list(first_dyn.output.keys())[0]}"
+        elif first_dyn.state_variables:
+            src_var = f"{dyn_name}_op/{list(first_dyn.state_variables.keys())[0]}"
+        else:
+            src_var = f"{dyn_name}_op/x"
+
+        # Target: coupling term
+        if first_dyn.coupling_terms:
+            tgt_var = f"{dyn_name}_op/{list(first_dyn.coupling_terms.keys())[0]}"
+        else:
+            tgt_var = src_var
+
+        # Add edges using matrix (MUCH faster!)
+        weights = network.weights_matrix
+        if weights is not None and weights.size > 0:
+            # Get delays - priority: explicit delays > computed from distances/lengths
+            delays = None
+
+            # First check for explicit delays from edges
+            if hasattr(network, '_delays_from_edges'):
+                delays = network._delays_from_edges()
+
+            # If no explicit delays, compute from lengths/distances
+            if delays is None:
+                lengths = getattr(network, 'lengths_matrix', None)
+                if lengths is not None and np.any(lengths > 0):
+                    delays = network.calculate_delays()
+
+            # Build edge_attr dict if we have delays
+            edge_attr = None
+            if delays is not None:
+                edge_attr = {'delay': delays}
+
+            circuit.add_edges_from_matrix(
+                source_var=src_var,
+                target_var=tgt_var,
+                source_nodes=node_labels,
+                weight=weights,
+                edge_attr=edge_attr,
+                min_weight=1e-12,
+            )
+
+    def _build_pyrates_outputs(self) -> dict:
+        """Build PyRates outputs dict from dynamics state variables.
+
+        Note: PyRates only tracks state variables (differential equations) in its
+        state vector. Algebraic outputs like 'v_pyr = y1 - y2' are computed inline
+        but not stored for recording. We only request state variables here, and
+        compute outputs post-hoc in _run_pyrates using _compute_pyrates_outputs.
+        """
+        outputs = {}
+
+        # Get dynamics - prefer dict form
+        dynamics = self.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        # Get default dynamics (first in dict)
+        default_dyn = next(iter(dynamics.values())) if dynamics else None
+
+        def add_outputs_for_dynamics(dyn, op_name: str, prefix: str = ""):
+            """Add state variables for a dynamics model."""
+            if not dyn:
+                return
+            # Add state variables only (PyRates can only record these)
+            for sv_name in (dyn.state_variables or {}).keys():
+                key = f"{prefix}{sv_name}" if prefix else sv_name
+                outputs[key] = f"{prefix.rstrip('_') or 'node_0'}/{op_name}/{sv_name}"
+
+        # Get network nodes if available
+        network = getattr(self, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+                # Get dynamics for this node, fall back to default
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
+
+                if dyn:
+                    op_name = f"{dyn.name}_op"
+                    add_outputs_for_dynamics(dyn, op_name, prefix=f"{safe_label}_")
+        else:
+            # Single dynamics case
+            if dynamics:
+                dyn = next(iter(dynamics.values()))
+                op_name = f"{dyn.name}_op"
+                add_outputs_for_dynamics(dyn, op_name)
+
+        return outputs
+
+    def _compute_pyrates_outputs(self, result: "pd.DataFrame") -> "pd.DataFrame":
+        """Compute algebraic output variables from PyRates simulation results.
+
+        PyRates only records state variables. This method evaluates output
+        equations (like 'v_pyr = y1 - y2') using the recorded state values.
+        """
+        import sympy as sp
+
+        # Get dynamics
+        dynamics = self.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        if not dynamics:
+            return result
+
+        # Get default dynamics
+        default_dyn = next(iter(dynamics.values()))
+
+        # Compute outputs for each dynamics model
+        network = getattr(self, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                prefix = f"{safe_label}_"
+
+                # Get dynamics for this node
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
+
+                if dyn and dyn.output:
+                    for out_name, out_var in dyn.output.items():
+                        eq = out_var.equation
+                        if eq and eq.rhs:
+                            # Parse and evaluate the equation
+                            expr = sp.sympify(eq.rhs)
+                            # Substitute state variable values
+                            subs = {}
+                            for sym in expr.free_symbols:
+                                col_name = f"{prefix}{sym.name}"
+                                if col_name in result.columns:
+                                    subs[sym] = result[col_name].values
+                            if subs:
+                                # Add output with same prefix as state variables
+                                out_col = f"{prefix}{out_name}"
+                                # Vectorized evaluation using lambdify
+                                func = sp.lambdify(list(subs.keys()), expr, 'numpy')
+                                result[out_col] = func(*subs.values())
+        else:
+            # Single dynamics case (no network/nodes)
+            dyn = default_dyn
+            if dyn and dyn.output:
+                for out_name, out_var in dyn.output.items():
+                    eq = out_var.equation
+                    if eq and eq.rhs:
+                        expr = sp.sympify(eq.rhs)
+                        subs = {}
+                        for sym in expr.free_symbols:
+                            if sym.name in result.columns:
+                                subs[sym] = result[sym.name].values
+                        if subs:
+                            func = sp.lambdify(list(subs.keys()), expr, 'numpy')
+                            result[out_name] = func(*subs.values())
+
+        return result
+
+    def _build_pyrates_inputs(self) -> dict:
+        """Build PyRates inputs dict from experiment stimulation.
+
+        Converts TVBO Stimulus objects to PyRates input format:
+        {"NodeLabel/DynamicsName_op/I_ext": np.array([...])}
+
+        Returns
+        -------
+        dict
+            PyRates-compatible inputs dictionary.
+        """
+        inputs = {}
+
+        stimulation = getattr(self, "stimulation", None)
+        if stimulation is None:
+            return inputs
+
+        # Get time array for stimulus evaluation
+        duration = self.integration.duration
+        step_size = self.integration.step_size
+        time = np.arange(0, duration, step_size)
+
+        # Get the stimulus function
+        try:
+            stim_func = stimulation.execute(format="python")
+        except Exception:
+            # If execute fails, try to evaluate directly
+            stim_func = None
+
+        if stim_func is None:
+            return inputs
+
+        # Evaluate stimulus over time
+        stim_values = stim_func(time)
+
+        # Determine target variable (default to I_ext for rate neurons)
+        target_var = getattr(stimulation, "target_variable", None) or "I_ext"
+
+        # Get regions/nodes to stimulate
+        regions = getattr(stimulation, "regions", None) or []
+        weighting = getattr(stimulation, "weighting", None) or []
+
+        # Get network nodes
+        network = getattr(self, "network", None)
+        dynamics = self.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            nodes = list(network.nodes)
+
+            # If no specific regions, apply to first node (Pre-synaptic)
+            if not regions:
+                regions = [0]
+
+            for i, region_idx in enumerate(regions):
+                if region_idx >= len(nodes):
+                    continue
+
+                node = nodes[region_idx]
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+                # Get dynamics name for this node
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+
+                if dyn_name:
+                    op_name = f"{dyn_name}_op"
+                    key = f"{safe_label}/{op_name}/{target_var}"
+
+                    # Apply weighting if available
+                    weight = weighting[i] if i < len(weighting) else 1.0
+                    inputs[key] = stim_values * weight
+
+        return inputs
+
+    def _pyrates_result_to_timeseries(self, result) -> TimeSeries:
+        """Convert PyRates pandas DataFrame result to TVBO TimeSeries.
+
+        Reshapes data from PyRates flat format to TVBO's standard format:
+        (time, state_variables, nodes, modes)
+        """
+        time = np.array(result.index)
+        columns = list(result.columns)
+
+        # Get known node labels from network
+        known_node_labels = []
+        network = getattr(self, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                known_node_labels.append(safe_label)
+
+        # Parse column names to extract node and state variable info
+        # Columns are named like "NodeLabel_statevariable" (e.g., "node_0_y1", "node_0_v_pyr")
+        node_names = []
+        sv_names = []
+        node_sv_pairs = []
+
+        for col in columns:
+            # Try to match against known node labels first
+            node_name = None
+            sv_name = None
+            for node_label in known_node_labels:
+                prefix = f"{node_label}_"
+                if col.startswith(prefix):
+                    node_name = node_label
+                    sv_name = col[len(prefix):]
+                    break
+
+            if node_name is None:
+                # Fallback: split on last underscore
+                parts = col.rsplit("_", 1)
+                if len(parts) == 2:
+                    node_name, sv_name = parts
+                else:
+                    node_name, sv_name = col, col
+
+            node_sv_pairs.append((node_name, sv_name))
+            if node_name not in node_names:
+                node_names.append(node_name)
+            if sv_name not in sv_names:
+                sv_names.append(sv_name)
+
+        n_time = len(time)
+        n_nodes = len(node_names)
+        n_svs = len(sv_names)
+
+        # Create properly shaped data array: (time, state_vars, nodes, modes=1)
+        data = np.zeros((n_time, n_svs, n_nodes, 1), dtype=np.float32)
+
+        # Fill in the data by mapping each column to its (sv_index, node_index)
+        for col_idx, (node_name, sv_name) in enumerate(node_sv_pairs):
+            node_idx = node_names.index(node_name)
+            sv_idx = sv_names.index(sv_name)
+            data[:, sv_idx, node_idx, 0] = result.iloc[:, col_idx].values
+
+        labels_dimensions = {
+            "State Variable": sv_names,
+            "Region": node_names,
+        }
+
+        return TimeSeries(
+            time=time,
+            data=data,
+            labels_dimensions=labels_dimensions,
+            sample_period=float(time[1] - time[0]) if len(time) > 1 else 1.0,
+        )
 
     def get_experiment_file_prefix(self):
         atlas = (

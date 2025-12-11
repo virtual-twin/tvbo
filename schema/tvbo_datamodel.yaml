@@ -356,15 +356,15 @@ classes:
         description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
         inlined: true
 
-      # Connectome/matrix-based attributes (backward compatibility)
+      # Network metadata
       number_of_regions:
         range: integer
         ifabsent: integer(1)
-        description: "Number of regions (backward compatibility)"
+        description: "Number of regions (derived from nodes if not set)"
       number_of_nodes:
         range: integer
         ifabsent: integer(1)
-        description: "Number of nodes in the network"
+        description: "Number of nodes in the network (derived from nodes if not set)"
       parcellation:
         range: Parcellation
         description: "Brain parcellation/atlas reference"
@@ -372,22 +372,10 @@ classes:
       tractogram:
         range: string
         description: "Reference to tractography data"
-      weights:
-        range: Matrix
-        description: "Adjacency/weight matrix (backward compatibility with Connectome)"
-        inlined: true
-      lengths:
-        range: Matrix
-        description: "Distance/length matrix (backward compatibility with Connectome)"
-        inlined: true
       normalization:
         range: Equation
         description: "Normalization equation for connectivity weights"
         inlined: true
-      node_labels:
-        multivalued: true
-        range: string
-        description: "Labels for nodes/regions"
 
       # Shared global parameters
       global_coupling_strength:
@@ -398,6 +386,14 @@ classes:
         range: Parameter
         description: "Conduction speed for computing delays from distances"
         inlined: true
+      distance_unit:
+        range: string
+        description: "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
+        ifabsent: string(mm)
+      time_unit:
+        range: string
+        description: "Default time unit for the network (e.g., 'ms', 's')"
+        ifabsent: string(ms)
 
   Node:
     class_uri: tvbo:Node
@@ -433,10 +429,11 @@ classes:
 
   Edge:
     class_uri: tvbo:Edge
-    description: "A directed edge in a network with coupling and connectivity properties"
+    description: "A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units."
     slots:
       - label
       - description
+      - parameters
     attributes:
       source:
         range: integer
@@ -446,25 +443,21 @@ classes:
         range: integer
         required: true
         description: "Target node ID"
+      source_var:
+        range: string
+        description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+      target_var:
+        range: string
+        description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
       coupling:
         range: Coupling
-        required: true
-        description: "Coupling function applied on this edge (can be shared across edges)"
-        inlined: true
-      weight:
-        range: float
-        ifabsent: float(1.0)
-        description: "Connection strength/weight"
-      delay:
-        range: float
-        ifabsent: float(0.0)
-        description: "Transmission delay (ms or specified time unit)"
-      distance:
-        range: float
-        description: "Physical distance between nodes (e.g., tract length in mm)"
-      tract_properties:
-        range: string
-        description: "Additional tract metadata or reference to tractography data"
+        required: false
+        description: "Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling."
+        inlined: false
+      directed:
+        range: boolean
+        ifabsent: false
+        description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
 
   ObservationModel:
     class_uri: tvbo:ObservationModel
@@ -625,7 +618,7 @@ classes:
         inlined: true
       modified:
         range: boolean
-      output_transforms:
+      output:
         multivalued: true
         range: DerivedVariable
         inlined: true
@@ -1081,7 +1074,7 @@ classes:
         multivalued: true
         range: Dynamics
         inlined: true
-        inlined_as_list: true
+        inlined_as_list: false
         description: "Dictionary of dynamics models keyed by name. Nodes reference these by name."
       integration:
         range: Integrator

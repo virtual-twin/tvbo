@@ -15,3 +15,9 @@ This module contains the simulation knowledge base for TVB-O.
 - [Simulation](![wiki]/Simulation/index.html)
 ```
 """
+
+from tvbo.data.tvbo_data.connectomes import Network
+from tvbo.knowledge.simulation.localdynamics import Dynamics, Model
+from tvbo.knowledge.simulation.network import Coupling
+
+__all__ = ["Dynamics", "Model", "Network", "Coupling"]

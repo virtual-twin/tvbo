@@ -282,7 +282,7 @@ def generate_database_views(
                 "derived_variables", "coupling_inputs", "coupling_terms",
                 "system_type", "functions", "stimulus", "modes",
                 "source", "references", "iri", "has_reference",
-                "is_modified", "output_transforms", "derived_from_model",
+                "is_modified", "output", "derived_from_model",
                 "local_coupling_term"
             ],
         },

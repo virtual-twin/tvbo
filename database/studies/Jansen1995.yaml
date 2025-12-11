@@ -100,7 +100,7 @@ model:
       equation:
         rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
       unit: mV*ms^-1
-  output_transforms:
+  output:
     - name: v_pyr
       description: "EEG-like output"
       equation:

@@ -884,6 +884,7 @@ class Equation(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -934,6 +935,7 @@ class Stimulus(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1035,6 +1037,7 @@ class TemporalApplicableEquation(Equation):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1426,16 +1429,15 @@ class Network(ConfiguredBaseModel):
     nodes: Optional[list[Node]] = Field(default=[], description="""List of nodes with individual dynamics (optional, for heterogeneous networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     edges: Optional[list[Edge]] = Field(default=[], description="""List of directed edges with coupling references (optional, for explicit edge definition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     coupling_library: Optional[dict[str, Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    number_of_regions: Optional[int] = Field(default=1, description="""Number of regions (backward compatibility)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
-    number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
+    number_of_regions: Optional[int] = Field(default=1, description="""Number of regions (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
+    number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
     parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     tractogram: Optional[str] = Field(default=None, description="""Reference to tractography data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    weights: Optional[Matrix] = Field(default=None, description="""Adjacency/weight matrix (backward compatibility with Connectome)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    lengths: Optional[Matrix] = Field(default=None, description="""Distance/length matrix (backward compatibility with Connectome)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     normalization: Optional[Equation] = Field(default=None, description="""Normalization equation for connectivity weights""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    node_labels: Optional[list[str]] = Field(default=[], description="""Labels for nodes/regions""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     global_coupling_strength: Optional[Parameter] = Field(default=None, description="""Global scaling factor for all coupling weights""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     conduction_speed: Optional[Parameter] = Field(default=None, description="""Conduction speed for computing delays from distances""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    distance_unit: Optional[str] = Field(default="mm", description="""Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(mm)'} })
+    time_unit: Optional[str] = Field(default="ms", description="""Default time unit for the network (e.g., 'ms', 's')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(ms)'} })
 
 
 class Node(ConfiguredBaseModel):
@@ -1521,6 +1523,7 @@ class Node(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1536,7 +1539,7 @@ class Node(ConfiguredBaseModel):
 
 class Edge(ConfiguredBaseModel):
     """
-    A directed edge in a network with coupling and connectivity properties
+    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge', 'from_schema': 'https://w3id.org/tvbo'})
 
@@ -1609,13 +1612,27 @@ class Edge(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'TemporalApplicableEquation',
+                       'Node',
+                       'Edge',
+                       'ObservationModel',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'CostFunction',
+                       'FittingTarget',
+                       'Integrator',
+                       'Monitor',
+                       'Coupling',
+                       'PDE']} })
     source: int = Field(default=..., description="""Source node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'ArgumentMapping', 'Dynamics']} })
     target: int = Field(default=..., description="""Target node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    coupling: Coupling = Field(default=..., description="""Coupling function applied on this edge (can be shared across edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
-    weight: Optional[float] = Field(default=1.0, description="""Connection strength/weight""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'float(1.0)'} })
-    delay: Optional[float] = Field(default=0.0, description="""Transmission delay (ms or specified time unit)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'float(0.0)'} })
-    distance: Optional[float] = Field(default=None, description="""Physical distance between nodes (e.g., tract length in mm)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    tract_properties: Optional[str] = Field(default=None, description="""Additional tract metadata or reference to tractography data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
+    directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'False'} })
 
 
 class ObservationModel(ConfiguredBaseModel):
@@ -1702,6 +1719,7 @@ class ObservationModel(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1870,6 +1888,7 @@ class DownsamplingModel(ObservationModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -1965,6 +1984,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -2017,7 +2037,7 @@ class Dynamics(ConfiguredBaseModel):
     coupling_inputs: Optional[dict[str, CouplingInput]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     state_variables: Optional[dict[str, StateVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     modified: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    output_transforms: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
+    output: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     derived_from_model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     number_of_modes: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'integer(1)'} })
     local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
@@ -2098,6 +2118,7 @@ class NeuralMassModel(Dynamics):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -2150,7 +2171,7 @@ class NeuralMassModel(Dynamics):
     coupling_inputs: Optional[dict[str, CouplingInput]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     state_variables: Optional[dict[str, StateVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     modified: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    output_transforms: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
+    output: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     derived_from_model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     number_of_modes: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'integer(1)'} })
     local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
@@ -2349,6 +2370,7 @@ class Distribution(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -2698,7 +2720,7 @@ class Function(ConfiguredBaseModel):
     requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     arguments: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
-    output: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    output: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     callable: Optional[Callable] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
 
@@ -3033,6 +3055,7 @@ class Noise(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3211,6 +3234,7 @@ class CostFunction(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3291,6 +3315,7 @@ class FittingTarget(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3396,6 +3421,7 @@ class Integrator(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3489,6 +3515,7 @@ class Monitor(ObservationModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3634,6 +3661,7 @@ class Coupling(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',
@@ -3835,7 +3863,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     local_dynamics: Optional[Dynamics] = Field(default=None, description="""Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    dynamics: Optional[list[Dynamics]] = Field(default=[], description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
+    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -5133,6 +5161,7 @@ class PDE(ConfiguredBaseModel):
                        'Stimulus',
                        'TemporalApplicableEquation',
                        'Node',
+                       'Edge',
                        'ObservationModel',
                        'Dynamics',
                        'Distribution',

@@ -187,15 +187,24 @@ def import_yaml_model(
             dv.name + model_suffix, onto.Function, properties, model_class
         )
 
-    for ot in model_data.output_transforms.values():
+    for ot in model_data.output.values():
+        # Handle outputs with or without equations
+        ot_name = str(ot.name) if ot.name else "output"
+        if ot.equation and ot.equation.rhs:
+            eq_rhs = str(ot.equation.rhs)
+            eq_lhs = str(ot.equation.lhs) if ot.equation.lhs else ot_name
+        else:
+            # Output just references a state variable (no transform)
+            eq_rhs = ot_name
+            eq_lhs = ot_name
         properties = {
-            "label": ot.name + model_suffix,
-            "equation": str(ot.equation.rhs),
-            "value": str(ot.equation.rhs),
-            "symbol": str(ot.equation.lhs if ot.equation.lhs else ot.name),
+            "label": ot_name + model_suffix,
+            "equation": eq_rhs,
+            "value": eq_rhs,
+            "symbol": eq_lhs,
         }
         create_onto_subclass(
-            ot.name + model_suffix, onto.Function, properties, model_class
+            ot_name + model_suffix, onto.Function, properties, model_class
         )
 
     for k, cterm in model_data.coupling_terms.items():

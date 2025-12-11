@@ -16,7 +16,7 @@ simulation_experiments:
         - label: omega
           value: 0.0628318530717959
 
-      output_transform: np.mod(VOI, 2*np.pi)
+      output: np.mod(VOI, 2*np.pi)
 
     dynamics:
       - "default"

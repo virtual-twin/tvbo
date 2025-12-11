@@ -27,6 +27,7 @@ lookup = TemplateLookup(
         join(root, "report"),
         join(root, "numcont"),
         join(root, "pde"),
+        join(root, "pyrates"),
     ],
     module_directory=join(root, "modules"),
 )

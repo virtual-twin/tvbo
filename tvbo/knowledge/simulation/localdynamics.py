@@ -10,34 +10,27 @@ import os
 import re
 import tempfile
 from os.path import basename, dirname, join, splitext
-from tvbo.knowledge.simulation.perturbation import Stimulus
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import owlready2
 from linkml_runtime.loaders import yaml_loader
 from matplotlib import colormaps
-from sympy import (
-    Derivative,
-    Eq,
-    Function,
-    Symbol,
-    latex,
-    pycode,
-    symbols,
-)
-from tvbo.parse.expression import parse_eq
+from sympy import Derivative, Eq, Function, Symbol, latex, pycode, symbols
 
 from tvbo import templates
+from tvbo.analysis import BifurcationResult
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.datamodel import tvbopydantic as _pdm
 from tvbo.datamodel.tvbo_datamodel import Case, DerivedVariable, Equation
-from tvbo.export import templater, report
+from tvbo.export import report, templater
 from tvbo.knowledge import ontology, query, simulation
 from tvbo.knowledge.simulation import equations
+from tvbo.knowledge.simulation.perturbation import Stimulus
 from tvbo.parse import metadata
-from tvbo.analysis import BifurcationResult
+from tvbo.parse.expression import parse_eq
 
 TEMPLATES = templates.root
 available_neural_mass_models = set(ontology.get_models().values())
@@ -135,7 +128,11 @@ def class2metadata(ontoclass, metadata):
                 setattr(state_var, attr, value)
 
     for k, v in functions.items():
-        if k not in metadata.derived_variables and k not in metadata.derived_parameters:
+        if (
+            k not in metadata.derived_variables
+            and k not in metadata.derived_parameters
+            and k not in metadata.output
+        ):
             metadata.derived_variables.update(
                 {
                     k: tvbo_datamodel.DerivedVariable(
@@ -388,12 +385,16 @@ def sort_equations(model, variable_type):
 
 
 class Dynamics(tvbo_datamodel.Dynamics):
-    def __init__(self, name="Dynamics", **kwargs):
+    def __init__(self, name="Dynamics", _skip_ontology: bool = False, **kwargs):
         if name is not None:
             kwargs["name"] = str(name)
 
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
+
+        # Skip ontology lookup when model is fully specified (e.g., from PyRates import)
+        if _skip_ontology:
+            return
 
         # Auto-populate only when a name was provided; keep default Dynamics() empty
         if name != "Dynamics":
@@ -435,6 +436,48 @@ class Dynamics(tvbo_datamodel.Dynamics):
         inst.calculate_derived_parameters()
         return inst
 
+    @classmethod
+    def from_string(cls, str: str) -> "Dynamics":
+        inst = yaml_loader.loads(str, cls)
+        inst._populate_from_ontology_if_available()
+        inst.update_metadata()
+        inst.calculate_derived_parameters()
+        return inst
+
+    @classmethod
+    def from_pyrates(cls, path: str, operator_key: str | None = None) -> "Dynamics":
+        """Load a Dynamics model from a PyRates YAML template file.
+
+        Parameters
+        ----------
+        path : str
+            Path to PyRates YAML file.
+        operator_key : str, optional
+            Name of the specific OperatorTemplate to load (without _op suffix).
+            If None, loads the first OperatorTemplate found.
+            Use SimulationExperiment.from_pyrates() to load all operators.
+
+        Returns
+        -------
+        Dynamics
+            New Dynamics instance populated from the PyRates template.
+
+        Example
+        -------
+        >>> model = Dynamics.from_pyrates("jansen_rit.yaml")
+        >>> # Load specific operator from multi-operator file
+        >>> tsodyks = Dynamics.from_pyrates("synaptic_plasticity.yaml", operator_key="tsodyks")
+        """
+        from tvbo.export.pyrates import from_pyrates_yaml
+
+        data = from_pyrates_yaml(path, operator_key=operator_key)
+        # Skip ontology lookup - PyRates YAML provides complete model definition
+        inst = cls(_skip_ontology=True, **data)
+        # Only calculate derived parameters if needed
+        if inst.derived_parameters:
+            inst.calculate_derived_parameters()
+        return inst
+
     # Internal helpers
     def _populate_from_ontology_if_available(self):
         oc = self.ontology
@@ -454,10 +497,35 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def __repr__(self) -> str:
         return f"{self.name} - {len(self.parameters)} parameters and {len(self.state_variables)} state variables"
 
-    def to_yaml(self, filepath: str | None = None):
-        from tvbo.utils import to_yaml as _to_yaml
+    def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
+        """Export the model to YAML format.
 
-        return _to_yaml(self, filepath)
+        Parameters
+        ----------
+        filepath : str, optional
+            Path to write the YAML file. If None, returns the YAML string.
+        format : str
+            Output format: "tvbo" (default) or "pyrates".
+            PyRates format generates a complete experiment YAML (model + network).
+
+        Returns
+        -------
+        str
+            YAML string or filepath if written to file.
+
+        Example
+        -------
+        >>> model.to_yaml("model.yaml")  # TVBO format
+        >>> model.to_yaml("model.yaml", format="pyrates")  # PyRates experiment format
+        """
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import to_pyrates_yaml_string
+
+            return to_pyrates_yaml_string(dynamics=self, filepath=filepath)
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+
+            return _to_yaml(self, filepath)
 
     # ---- Runtime convenience properties (no extra attributes) ----
     @property
@@ -515,7 +583,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             scope[str(name)] = Symbol(str(name))
         for name in getattr(self, "derived_variables", {}).keys():
             scope[str(name)] = Symbol(str(name))
-        for name in getattr(self, "output_transforms", {}).keys():
+        for name in getattr(self, "output", {}).keys():
             scope[str(name)] = Symbol(str(name))
 
         # State variables as Symbols
@@ -536,17 +604,23 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return scope
 
     def update_metadata(self):
+        # Pre-compute coupling term symbols for fast set intersection
+        coupling_symbols = set(symbols(list(self.coupling_terms.keys())))
+
         for v, eq in update_equations(self).items():
             equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=str(eq.rhs))
             if v in self.state_variables:
                 self.state_variables[v].equation = equation
+                # Check if any coupling term appears in the equation's free symbols
+                if coupling_symbols & eq.rhs.free_symbols:
+                    self.state_variables[v].coupling_variable = True
             elif v in self.derived_variables:
                 self.derived_variables[v].equation = equation
         # Build dependency order without storing state
         _ = self.get_dependency_tree()
         sort_equations(self, "derived_parameters")
         sort_equations(self, "derived_variables")
-        sort_equations(self, "output_transforms")
+        sort_equations(self, "output")
         # sort_equations(self, "state_variables") #TODO: Test if sorting is really not necessary
 
     # -----------------------
@@ -651,7 +725,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Known non-parameter entities: states, derived vars, output transforms, derived parameters, function arguments, and 't'
         nonparam_known = set(map(str, self.state_variables.keys()))
         nonparam_known |= set(map(str, self.derived_variables.keys()))
-        nonparam_known |= set(map(str, self.output_transforms.keys()))
+        nonparam_known |= set(map(str, self.output.keys()))
         nonparam_known |= set(map(str, self.derived_parameters.keys()))
         for f in self.functions.values():
             nonparam_known |= {str(arg.name) for arg in f.arguments.values()}
@@ -835,7 +909,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         return self
 
-    def add_output_transform(
+    def add_output(
         self,
         name: str,
         expression=None,
@@ -848,7 +922,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             if expression is not None
             else None
         )
-        self.output_transforms[str(name)] = tvbo_datamodel.DerivedVariable(
+        self.output[str(name)] = tvbo_datamodel.DerivedVariable(
             name=str(name), equation=eq, unit=unit, description=description
         )
         return self
@@ -882,14 +956,32 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         return network.plot_model(self.ontology, **kwargs)
 
-    def render_equation(self, obj, format="latex"):
+    def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         from tvbo.export.code import render_equation
+        from tvbo.knowledge.simulation.equations import sympify as tvbo_sympify
 
         scope = self.get_symbolic_elements()
         # Tell the printer which names are functions so it emits f(x) cleanly
         uf = {str(name): str(name) for name in getattr(self, "functions", {}).keys()}
+
+        # Build inline_funcs dict if requested
+        inline_funcs = None
+        if inline_functions and hasattr(self, "functions") and self.functions:
+            inline_funcs = {}
+            for fname, fdef in self.functions.items():
+                arg_names = list(fdef.arguments.keys())
+                body = tvbo_sympify(fdef.equation.rhs)
+                inline_funcs[fname] = (arg_names, body)
+            # Don't emit function names as user_functions if we're inlining them
+            uf = {}
+
         return render_equation(
-            obj.equation, local_dict=scope, format=format, user_functions=uf
+            obj.equation,
+            local_dict=scope,
+            format=format,
+            user_functions=uf,
+            inline_funcs=inline_funcs,
+            **kwargs,
         )
 
     def get_equations(self, format="metadata"):
@@ -958,7 +1050,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             return {_sv_name(_eq): _eq for _eq in equations["state-equations"]}
 
         equations["output-transformations"] = []
-        for k, ot in self.output_transforms.items():
+        for k, ot in self.output.items():
             equations["output-transformations"].append(
                 Eq(lhs=Symbol(k), rhs=parse_eq(ot.equation, local_dict=scope))
             )
@@ -999,7 +1091,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     evaluate=False,
                 ).subs({Symbol(p.name): p.value for p in self.parameters.values()})
                 sol = eq.evalf()
-                self.derived_parameters[k].value = sol
+                # Convert SymPy Float to Python float for YAML serialization
+                self.derived_parameters[k].value = float(sol)
 
             return {
                 k: self.derived_parameters[k].value for k in self.derived_parameters
@@ -1305,8 +1398,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         - lems.Model instance containing a ComponentType and a Component for this model
         """
         import lems.api as lems  # lazy import
-        from tvbo.knowledge import ontology as _ontology  # avoid shadowing
+
         from tvbo.export.lemsgenerator import setup_lems_model  # lazy to avoid cycles
+        from tvbo.knowledge import ontology as _ontology  # avoid shadowing
 
         model = setup_lems_model()
 
@@ -1511,7 +1605,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.utils.julia import get_julia, eval_with_auto_install
+            from tvbo.utils.julia import eval_with_auto_install, get_julia
 
             jl, Main = get_julia(compiled_modules=False)
             eval_with_auto_install(code)
@@ -1543,7 +1637,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     po = eval_with_auto_install("po_results")
 
                     bif_res.periodic_orbits = [
-                        BifurcationResult(br=p, model=self, **kwargs) for p in po.branches
+                        BifurcationResult(br=p, model=self, **kwargs)
+                        for p in po.branches
                     ]
                 return bif_res
 

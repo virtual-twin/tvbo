@@ -48,7 +48,7 @@ def clean_temp():
 
 
 from .data import tvbo_data
-from .data.tvbo_data.connectomes import Connectome
+from .data.tvbo_data.connectomes import Connectome, Network
 from .data.tvbo_data.atlases import Atlas
 from .export.experiment import SimulationExperiment
 from .knowledge.study import SimulationStudy

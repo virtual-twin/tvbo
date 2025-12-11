@@ -770,7 +770,7 @@
         Object.values(sv).forEach(s => pushEq(s?.equation));
       }
     }
-    // functions/output_transforms optional
+    // functions/output optional
     const fns = modelRoot?.functions;
     if (Array.isArray(fns)) {
       fns.forEach(fn => pushEq(fn?.equation || fn?.output));
@@ -860,7 +860,7 @@
   function extractOutputTransforms(modelItem) {
     const out = [];
     const root = modelItem?.model && typeof modelItem.model === 'object' ? modelItem.model : modelItem;
-    const outs = root?.output_transforms;
+    const outs = root?.output;
     const push = (name, def) => {
       if (!def) return;
       const eq = def.equation || def;
@@ -1050,7 +1050,7 @@
 
   const ALLOWED_MODEL_KEYS = new Set([
     'name','label','iri','has_reference','description',
-    'parameters','derived_parameters','derived_variables','state_variables','functions','output_transforms','modes','stimulus','local_coupling_term','coupling_terms','number_of_modes','modified','derived_from_model'
+    'parameters','derived_parameters','derived_variables','state_variables','functions','output','modes','stimulus','local_coupling_term','coupling_terms','number_of_modes','modified','derived_from_model'
   ]);
 
   function buildFullModelSpec(full, name, modelParams, derivedParamsOriginal, derivedVarsFromUI, derivedParamsFromUI, stateEqsUI, functionsUI, outputTransformsUI) {
@@ -1089,11 +1089,11 @@
     }
     // Output transforms
     if (outputTransformsUI && outputTransformsUI.length) {
-      base.output_transforms = outputTransformsUI.map(o => prune({ name: o.name, equation: prune({ rhs: o.equation?.rhs }) }));
+      base.output = outputTransformsUI.map(o => prune({ name: o.name, equation: prune({ rhs: o.equation?.rhs }) }));
     }
     // Reorder keys to canonical order for readability
     const ordered = {};
-    const order = ['name','label','iri','has_reference','description','parameters','derived_parameters','functions','state_variables','derived_variables','output_transforms','modes','stimulus','local_coupling_term','coupling_terms','number_of_modes','modified','derived_from_model'];
+    const order = ['name','label','iri','has_reference','description','parameters','derived_parameters','functions','state_variables','derived_variables','output','modes','stimulus','local_coupling_term','coupling_terms','number_of_modes','modified','derived_from_model'];
     order.forEach(k => { if (base[k] !== undefined) ordered[k] = base[k]; });
     // include any remaining keys
     Object.keys(base).forEach(k => { if (ordered[k] === undefined) ordered[k] = base[k]; });

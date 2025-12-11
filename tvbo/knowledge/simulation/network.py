@@ -317,7 +317,7 @@ def get_global_coupling_functions():
 available_coupling_functions = set(get_global_coupling_functions())
 
 
-class Network:
+class _Network:
     def __init__(self, connectome, normalize_weights=True):
         if normalize_weights:
             # Normalize using Connectome's schema-safe method
@@ -370,6 +370,28 @@ class Network:
             else:
                 for src, tgt in self.graph.edges:
                     self.graph[src][tgt]["coupling"] = coupling[src, tgt]
+
+    def to_yaml(self, format: str = "tvbo", filepath: str | None = None) -> str:
+        """Export Network to YAML format.
+
+        Parameters
+        ----------
+        format : str
+            Output format: "tvbo" (default) or "pyrates" for PyRates CircuitTemplate.
+        filepath : str, optional
+            Path to write the YAML file. If None, returns the YAML string.
+
+        Returns
+        -------
+        str
+            YAML string (or filepath if written to file).
+        """
+        if format.lower() == "pyrates":
+            from tvbo.export.pyrates import network_to_pyrates_yaml_string
+            return network_to_pyrates_yaml_string(self, filepath)
+        else:
+            from tvbo.utils import to_yaml as _to_yaml
+            return _to_yaml(self, filepath)
 
     def add_stimulus(self, node, stimulus, stvar=None, as_derived_variable=False):
         if as_derived_variable:
