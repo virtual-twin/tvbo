@@ -781,20 +781,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         output_dir: str,
         subject: str = "01",
         session: str | None = None,
-        task: str = "simulation",
+        description: str = "tvbsim",
         run: int | None = None,
-        description: str | None = None,
+        ts_label: str = "sim",
         timeseries: TimeSeries | None = None,
         run_simulation: bool = True,
         **run_kwargs,
     ) -> str:
         """
-        Export simulation experiment and results to BIDS-compliant format (BEP034).
+        Export simulation experiment and results to BIDS-compliant format (BEP034 v1.0.0).
 
         This method creates a complete BIDS dataset containing:
-        - Time series data from the simulation
-        - Model equations in LEMS XML format
-        - Connectivity data
+        - Time series data in ts/ directory
+        - Network connectivity in net/ directory
+        - Model equations in eq/ directory
+        - Coordinates in coord/ directory (if available)
         - JSON sidecar files with full metadata
 
         Parameters
@@ -805,12 +806,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             Subject identifier (without 'sub-' prefix). Default: '01'.
         session : str, optional
             Session identifier (without 'ses-' prefix).
-        task : str
-            Task name for the simulation. Default: 'simulation'.
+        description : str
+            Description label for the output files. Default: 'tvbsim'.
         run : int, optional
             Run number.
-        description : str, optional
-            Description label for the output files.
+        ts_label : str
+            Time series label (e.g., 'sim', 'bold', 'eeg'). Default: 'sim'.
         timeseries : TimeSeries, optional
             Pre-computed TimeSeries. If not provided and run_simulation=True,
             the simulation will be executed.
@@ -827,17 +828,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Examples
         --------
         >>> experiment = SimulationExperiment(...)
-        >>> experiment.to_bids("./bids_output", subject="01", task="rest")
-        './bids_output'
+        >>> experiment.to_bids("./derivatives/tvbo", subject="01", description="rest")
+        './derivatives/tvbo'
 
         >>> # Or with pre-computed timeseries
         >>> ts = experiment.run()
-        >>> experiment.to_bids("./bids_output", timeseries=ts)
-        './bids_output'
+        >>> experiment.to_bids("./derivatives/tvbo", timeseries=ts)
+        './derivatives/tvbo'
 
         Notes
         -----
-        Follows BIDS BEP034 Computational Modeling extension.
+        Follows BIDS BEP034 Computational Modeling extension v1.0.0.
+        Uses tvbo format for model equations.
         """
         # Run simulation if needed
         if timeseries is None and run_simulation:
@@ -854,8 +856,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             output_dir=output_dir,
             subject=subject,
             session=session,
-            task=task,
-            run=run,
             description=description,
+            run=run,
+            ts_label=ts_label,
             experiment=self,
         )
