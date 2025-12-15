@@ -65,19 +65,19 @@ class KnowledgeGraphAPI(http.Controller):
 
         # Neural Mass Models
         data.extend(self._get_models())
-        
+
         # Networks
         data.extend(self._get_networks())
-        
+
         # Integrators
         data.extend(self._get_integrators())
-        
+
         # Experiments
         data.extend(self._get_experiments())
-        
+
         # Studies
         data.extend(self._get_studies())
-        
+
         # Couplings
         data.extend(self._get_couplings())
 
@@ -97,21 +97,21 @@ class KnowledgeGraphAPI(http.Controller):
             "id": record.id,
             "type": record_type,
         }
-        
+
         # Standard fields that might exist
         for field in ['name', 'label', 'description']:
             if hasattr(record, field):
                 val = getattr(record, field)
                 if val:
                     result[field] = val
-        
+
         # Set title from name or label
         result['title'] = result.get('name') or result.get('label') or ''
-        
+
         # Ensure name exists
         if 'name' not in result or not result['name']:
             result['name'] = result.get('label') or result.get('title') or ''
-        
+
         # Extra fields
         if extra_fields:
             for field, default in extra_fields.items():
@@ -129,11 +129,11 @@ class KnowledgeGraphAPI(http.Controller):
                         result[field] = default
                 else:
                     result[field] = default
-        
+
         # Ensure required fields have defaults
         result.setdefault('tags', [])
         result.setdefault('description', '')
-        
+
         return result
 
     # ===================
@@ -157,25 +157,25 @@ class KnowledgeGraphAPI(http.Controller):
             'references': '',
             'iri': '',
         })
-        
+
         # Get system type name if it's a relation
         if model.system_type:
             if hasattr(model.system_type, 'name'):
                 result['system_type'] = model.system_type.name
             elif hasattr(model.system_type, 'technical_name'):
                 result['system_type'] = model.system_type.technical_name
-        
+
         # Build tags
         tags = []
         if result.get('system_type'):
             tags.append(result['system_type'])
-        
+
         # Add state variable names as tags
         if hasattr(model, 'state_variables'):
             for sv in model.state_variables:
                 if hasattr(sv, 'label') and sv.label:
                     tags.append(sv.label)
-        
+
         result['tags'] = tags
         return result
 
@@ -198,13 +198,13 @@ class KnowledgeGraphAPI(http.Controller):
             'number_of_regions': 0,
             'number_of_nodes': 0,
         })
-        
+
         # Build tags
         tags = []
         if hasattr(network, 'parcellation') and network.parcellation:
             if hasattr(network.parcellation, 'label') and network.parcellation.label:
                 tags.append(network.parcellation.label)
-        
+
         result['tags'] = tags
         return result
 
@@ -226,7 +226,7 @@ class KnowledgeGraphAPI(http.Controller):
         method = getattr(integrator, 'method', None) or ''
         step_size = getattr(integrator, 'step_size', None) or 0
         duration = getattr(integrator, 'duration', None) or 0
-        
+
         return {
             "id": integrator.id,
             "type": "integrator",
@@ -257,7 +257,7 @@ class KnowledgeGraphAPI(http.Controller):
         result = self._odoo_to_dict(exp, 'experiment', {
             'references': '',
         })
-        
+
         # Build tags
         tags = []
         if hasattr(exp, 'local_dynamics') and exp.local_dynamics:
@@ -266,7 +266,7 @@ class KnowledgeGraphAPI(http.Controller):
         if hasattr(exp, 'connectivity') and exp.connectivity:
             if hasattr(exp.connectivity, 'label') and exp.connectivity.label:
                 tags.append(exp.connectivity.label)
-        
+
         result['tags'] = tags
         result['abstract'] = result.get('description', '')
         return result
@@ -291,17 +291,17 @@ class KnowledgeGraphAPI(http.Controller):
             'doi': '',
             'title': '',
         })
-        
+
         # Ensure year is string
         if result.get('year'):
             result['year'] = str(result['year'])
-        
+
         # Build tags
         tags = []
         if hasattr(study, 'model') and study.model:
             if hasattr(study.model, 'name') and study.model.name:
                 tags.append(study.model.name)
-        
+
         result['tags'] = tags
         result['abstract'] = result.get('description', '')
         return result
@@ -323,20 +323,20 @@ class KnowledgeGraphAPI(http.Controller):
         """Serialize a coupling function."""
         name = getattr(coupling, 'name', None) or ''
         label = getattr(coupling, 'label', None) or name
-        
+
         # Build description from coupling function
         desc = ''
         if hasattr(coupling, 'coupling_function') and coupling.coupling_function:
             if hasattr(coupling.coupling_function, 'definition'):
                 desc = coupling.coupling_function.definition or ''
-        
+
         # Build tags
         tags = []
         if hasattr(coupling, 'delayed') and coupling.delayed:
             tags.append('delayed')
         if hasattr(coupling, 'sparse') and coupling.sparse:
             tags.append('sparse')
-        
+
         return {
             "id": coupling.id,
             "type": "coupling",
@@ -361,7 +361,7 @@ class KnowledgeGraphAPI(http.Controller):
                 content_type='application/json',
                 status=404
             )
-        
+
         # Use Pydantic if available for schema-consistent output
         if PYDANTIC_AVAILABLE:
             try:
@@ -374,7 +374,7 @@ class KnowledgeGraphAPI(http.Controller):
                 data = self._serialize_model_detail(model)
         else:
             data = self._serialize_model_detail(model)
-        
+
         return Response(
             json.dumps(data),
             content_type='application/json',
@@ -392,7 +392,7 @@ class KnowledgeGraphAPI(http.Controller):
                         label=p.label or None,
                         description=p.description or None,
                     )
-        
+
         state_vars = {}
         if hasattr(model, 'state_variables'):
             for sv in model.state_variables:
@@ -402,12 +402,12 @@ class KnowledgeGraphAPI(http.Controller):
                         label=sv.label,
                         description=sv.description or None,
                     )
-        
+
         system_type = None
         if model.system_type:
             if hasattr(model.system_type, 'technical_name'):
                 system_type = model.system_type.technical_name
-        
+
         return Dynamics(
             name=model.name or 'Unknown',
             label=model.label or None,
@@ -421,7 +421,7 @@ class KnowledgeGraphAPI(http.Controller):
     def _serialize_model_detail(self, model):
         """Fallback serialization for model details."""
         data = self._serialize_model(model)
-        
+
         # Add parameters
         data['parameters'] = []
         if hasattr(model, 'parameters'):
@@ -431,7 +431,7 @@ class KnowledgeGraphAPI(http.Controller):
                     "label": p.label or '',
                     "description": p.description or '',
                 })
-        
+
         # Add state variables
         data['state_variables'] = []
         if hasattr(model, 'state_variables'):
@@ -446,7 +446,7 @@ class KnowledgeGraphAPI(http.Controller):
                         "definition": sv.equation.definition or '',
                     }
                 data['state_variables'].append(sv_data)
-        
+
         return data
 
     @http.route('/tvbo/api/kg/network/<int:network_id>', type='http', auth='public', methods=['GET'], csrf=False)
@@ -459,16 +459,16 @@ class KnowledgeGraphAPI(http.Controller):
                 content_type='application/json',
                 status=404
             )
-        
+
         data = self._serialize_network(network)
-        
+
         # Add parcellation info
         if hasattr(network, 'parcellation') and network.parcellation:
             data['parcellation'] = {
                 "label": network.parcellation.label or '',
                 "data_source": network.parcellation.data_source or '' if hasattr(network.parcellation, 'data_source') else '',
             }
-        
+
         return Response(
             json.dumps(data),
             content_type='application/json',
