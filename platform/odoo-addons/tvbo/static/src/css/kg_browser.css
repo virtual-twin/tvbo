@@ -13,14 +13,18 @@
     padding: 0;
 }
 
-/* Search Container */
+/* Search Container - Always sticky in header */
 .tvbo-kg-container .search-container {
+    position: sticky;
+    top: 0;
+    z-index: 100;
     padding: 20px 30px;
     background: #fff;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     gap: 15px;
     align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .tvbo-kg-container .search-box {
@@ -48,7 +52,7 @@
 /* Main Content Layout */
 .tvbo-kg-container .main-content {
     display: flex;
-    min-height: calc(100vh - 280px);
+    min-height: calc(100vh - 200px);
 }
 
 /* Sidebar */
@@ -59,7 +63,10 @@
     padding: 20px;
     border-right: 1px solid #e2e8f0;
     overflow-y: auto;
-    max-height: calc(100vh - 280px);
+    max-height: calc(100vh - 140px);
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
 }
 
 /* Facet Groups */

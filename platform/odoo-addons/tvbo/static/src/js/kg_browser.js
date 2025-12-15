@@ -114,6 +114,19 @@ class KnowledgeGraphBrowser {
             console.log('✅ Facet index built');
             console.log('🎧 Setting up event listeners...');
             this.setupEventListeners();
+            
+            // Check for search query in URL (from header search)
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryFromUrl = urlParams.get('q');
+            if (queryFromUrl) {
+                console.log('🔗 Found search query in URL:', queryFromUrl);
+                const searchBox = document.getElementById('searchBox');
+                if (searchBox) {
+                    searchBox.value = queryFromUrl;
+                }
+                this.currentQuery = queryFromUrl;
+            }
+            
             console.log('🔍 Performing initial search...');
             this.search();
             console.log('✅ Browser initialized successfully');
