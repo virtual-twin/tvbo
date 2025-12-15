@@ -50,3 +50,8 @@ class TVBOWebsite(http.Controller):
         return request.render('tvbo.tvbo_studies_list', {
             'studies': studies,
         })
+
+    @http.route('/tvbo/kg', type='http', auth='public', website=True)
+    def knowledge_graph(self, **kw):
+        """Knowledge Graph Browser - API-powered search interface."""
+        return request.render('tvbo.tvbo_kg_browser', {})
