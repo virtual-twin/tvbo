@@ -98,7 +98,7 @@ class KnowledgeGraphBrowser {
         this.currentModalItem = null;
         this.searchIndex = new Map();
         this.facetIndex = {};
-        
+
         this.init();
     }
 
@@ -139,7 +139,7 @@ class KnowledgeGraphBrowser {
         }
         this.originalData = await dataResponse.json();
         console.log('📦 Data loaded:', this.originalData.length, 'items');
-        
+
         if (this.originalData.length === 0) {
             console.warn('⚠️ No data returned from API');
         }
@@ -521,7 +521,7 @@ class KnowledgeGraphBrowser {
             const typeLabel = item.type ? item.type : '';
             const typeBadge = typeLabel ? `<span class="badge ${typeClass}"><span class="material-icons">${typeIcon}</span>${typeLabel}</span>` : '';
             const studyMeta = (item.type === 'study') ? this.getStudyMeta(item) : '';
-            
+
             const header = `
                 <div class="field-display" style="margin-bottom:6px; display:flex; align-items:center; gap:8px;">
                     <span class="field-value" style="font-weight:700; color:#2d3748; font-size:1.05rem;">${this.escapeHtml(title)}</span>
@@ -531,12 +531,12 @@ class KnowledgeGraphBrowser {
                 <div class="card-body">
                     <div class="card-desc"><span class="field-value" style="color:#4a5568;">${this.escapeHtml(desc)}</span></div>
                 </div>` : '';
-            
+
             // Show tags if available
-            const tags = item.tags && item.tags.length > 0 
-                ? `<div class="card-tags">${item.tags.map(t => `<span class="tag-pill">${this.escapeHtml(t)}</span>`).join('')}</div>` 
+            const tags = item.tags && item.tags.length > 0
+                ? `<div class="card-tags">${item.tags.map(t => `<span class="tag-pill">${this.escapeHtml(t)}</span>`).join('')}</div>`
                 : '';
-            
+
             return `
                 <div class="result-card" data-idx="${originalIdx}">
                     ${header}
@@ -608,7 +608,7 @@ class KnowledgeGraphBrowser {
             }
 
             let html = '';
-            
+
             // Description
             if (detailData.description) {
                 html += `<div class="modal-section">
@@ -618,7 +618,7 @@ class KnowledgeGraphBrowser {
 
             // Type badge and metadata
             html += '<div class="modal-details">';
-            
+
             // Basic fields
             const basicFields = ['type', 'system_type', 'source', 'iri', 'year', 'journal', 'doi'];
             basicFields.forEach(key => {
@@ -636,7 +636,7 @@ class KnowledgeGraphBrowser {
                 html += `<div class="detail-row">
                     <div class="detail-label">Parameters:</div>
                     <div class="detail-value">
-                        ${detailData.parameters.map(p => 
+                        ${detailData.parameters.map(p =>
                             `<span class="badge">${this.escapeHtml(p.name || p.label || '')}</span>`
                         ).join(' ')}
                     </div>
@@ -664,7 +664,7 @@ class KnowledgeGraphBrowser {
                 html += `<div class="detail-row">
                     <div class="detail-label">Tags:</div>
                     <div class="detail-value">
-                        ${detailData.tags.map(t => 
+                        ${detailData.tags.map(t =>
                             `<span class="badge">${this.escapeHtml(t)}</span>`
                         ).join(' ')}
                     </div>
@@ -681,13 +681,13 @@ class KnowledgeGraphBrowser {
 
             html += '</div>';
             contentEl.innerHTML = html;
-            
+
             // Typeset math
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([contentEl]).catch(() => {});
             }
         }
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('show');
         modal.style.display = 'block';
