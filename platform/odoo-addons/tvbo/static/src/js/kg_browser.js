@@ -537,20 +537,39 @@ class KnowledgeGraphBrowser {
             const title = this.getItemTitle(item);
             const desc = this.truncateText(this.getItemDescription(item), 150);
             const type = (item.type || '').toLowerCase();
-            const typeIcon = type === 'model' ? 'functions'
+            const isOntology = type === 'ontology';
+            const ontologyType = item.ontology_type || '';
+
+            // Determine icon and styling
+            let typeIcon, typeClass, typeLabel;
+            if (isOntology) {
+                typeIcon = 'schema';
+                typeClass = 'type-ontology';
+                typeLabel = ontologyType || 'Ontology';
+            } else {
+                typeIcon = type === 'model' ? 'functions'
+                             : type === 'dynamics' ? 'functions'
                              : type === 'study' ? 'article'
                              : type === 'network' ? 'device_hub'
                              : type === 'coupling' ? 'compare_arrows'
                              : type === 'integrator' ? 'speed'
+                             : type === 'experiment' ? 'science'
                              : 'label';
-            const typeClass = type ? `type-${type}` : '';
-            const typeLabel = item.type ? item.type : '';
+                typeClass = type ? `type-${type}` : '';
+                typeLabel = item.type ? item.type : '';
+            }
+
             const typeBadge = typeLabel ? `<span class="badge ${typeClass}"><span class="material-icons">${typeIcon}</span>${typeLabel}</span>` : '';
             const studyMeta = (item.type === 'study') ? this.getStudyMeta(item) : '';
 
+            // Show symbol for ontology items
+            const symbolDisplay = isOntology && item.symbol && item.symbol !== title
+                ? `<span class="ontology-symbol">${item.symbol}</span>` : '';
+
             const header = `
-                <div class="field-display" style="margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <div class="field-display" style="margin-bottom:6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span class="field-value" style="font-weight:700; color:#2d3748; font-size:1.05rem;">${this.escapeHtml(title)}</span>
+                    ${symbolDisplay}
                     ${typeBadge}
                 </div>`;
             const body = desc ? `
@@ -617,9 +636,21 @@ class KnowledgeGraphBrowser {
         if (contentEl) {
             // Fetch detailed data if available
             let detailData = item;
+            const isOntology = item.type === 'ontology';
+
             try {
-                if (item.type === 'model' && item.id) {
+                if (isOntology && item.storid) {
+                    const resp = await fetch(`/tvbo/api/kg/ontology/node/${item.storid}`);
+                    if (resp.ok) {
+                        detailData = await resp.json();
+                    }
+                } else if (item.type === 'model' && item.id) {
                     const resp = await fetch(`/tvbo/api/kg/model/${item.id}`);
+                    if (resp.ok) {
+                        detailData = await resp.json();
+                    }
+                } else if (item.type === 'dynamics' && item.id) {
+                    const resp = await fetch(`/tvbo/api/kg/dynamics/${item.id}`);
                     if (resp.ok) {
                         detailData = await resp.json();
                     }
@@ -635,10 +666,25 @@ class KnowledgeGraphBrowser {
 
             let html = '';
 
-            // Description
-            if (detailData.description) {
+            // Ontology-specific header with symbol and IRI
+            if (isOntology) {
+                if (detailData.symbol && detailData.symbol !== detailData.label) {
+                    html += `<div class="ontology-header">
+                        <span class="ontology-symbol-large">${detailData.symbol}</span>
+                    </div>`;
+                }
+                if (detailData.iri) {
+                    html += `<div class="ontology-iri">
+                        <a href="${detailData.iri}" target="_blank" rel="noopener">${detailData.iri}</a>
+                    </div>`;
+                }
+            }
+
+            // Description / Definition
+            const descText = detailData.definition || detailData.description;
+            if (descText) {
                 html += `<div class="modal-section">
-                    <div class="detail-value">${renderMarkdownWithMath(detailData.description)}</div>
+                    <div class="detail-value">${renderMarkdownWithMath(descText)}</div>
                 </div>`;
             }
 
@@ -646,16 +692,42 @@ class KnowledgeGraphBrowser {
             html += '<div class="modal-details">';
 
             // Basic fields
-            const basicFields = ['type', 'system_type', 'source', 'iri', 'year', 'journal', 'doi'];
+            const basicFields = isOntology
+                ? ['ontology_type', 'type', 'iri']
+                : ['type', 'system_type', 'source', 'iri', 'year', 'journal', 'doi'];
             basicFields.forEach(key => {
                 const value = detailData[key];
-                if (value !== undefined && value !== null && value !== '') {
+                if (value !== undefined && value !== null && value !== '' && key !== 'iri') {
                     html += `<div class="detail-row">
                         <div class="detail-label">${this.formatLabel(key)}:</div>
                         <div class="detail-value">${this.escapeHtml(String(value))}</div>
                     </div>`;
                 }
             });
+
+            // Ontology hierarchy (is_a)
+            if (isOntology && detailData.is_a && detailData.is_a.length > 0) {
+                html += `<div class="detail-row">
+                    <div class="detail-label">Parent Classes:</div>
+                    <div class="detail-value">
+                        ${detailData.is_a.map(p =>
+                            `<span class="badge type-ontology">${this.escapeHtml(p)}</span>`
+                        ).join(' ')}
+                    </div>
+                </div>`;
+            }
+
+            // Ontology requirements
+            if (isOntology && detailData.requires && detailData.requires.length > 0) {
+                html += `<div class="detail-row">
+                    <div class="detail-label">Requires:</div>
+                    <div class="detail-value">
+                        ${detailData.requires.map(r =>
+                            `<span class="badge">${this.escapeHtml(String(r))}</span>`
+                        ).join(' ')}
+                    </div>
+                </div>`;
+            }
 
             // Parameters
             if (detailData.parameters && detailData.parameters.length > 0) {
