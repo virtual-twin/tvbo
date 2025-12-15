@@ -292,6 +292,35 @@
     border-color: #c8e6c9;
 }
 
+.tvbo-kg-container .badge.type-ontology {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    color: #5e35b1;
+    border-color: #d1c4e9;
+}
+
+.tvbo-kg-container .badge.type-dynamics {
+    background: #e3f2fd;
+    color: #1565c0;
+    border-color: #bbdefb;
+}
+
+.tvbo-kg-container .badge.type-experiment {
+    background: #fce4ec;
+    color: #c2185b;
+    border-color: #f8bbd0;
+}
+
+/* Ontology symbol display */
+.tvbo-kg-container .ontology-symbol {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: #5e35b1;
+    background: #f3e5f5;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
 /* No Results */
 .tvbo-kg-container .no-results {
     text-align: center;
@@ -427,6 +456,39 @@
     border-radius: 4px;
     font-size: 0.85rem;
     margin-top: 4px;
+}
+
+/* Ontology-specific modal styles */
+.tvbo-kg-container .ontology-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.tvbo-kg-container .ontology-symbol-large {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 2rem;
+    color: #5e35b1;
+    background: linear-gradient(135deg, #f3e5f5 0%, #e3f2fd 100%);
+    padding: 8px 20px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.tvbo-kg-container .ontology-iri {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+}
+
+.tvbo-kg-container .ontology-iri a {
+    color: #5e35b1;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.tvbo-kg-container .ontology-iri a:hover {
+    text-decoration: underline;
 }
 
 /* Responsive */
