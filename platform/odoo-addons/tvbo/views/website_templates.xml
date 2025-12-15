@@ -31,8 +31,8 @@
                         </button>
                         <div class="collapse navbar-collapse" id="tvbo-navbar">
                             <!-- Global Search Box -->
-                            <form class="tvbo-global-search mx-auto" action="/tvbo/kg" method="get">
-                                <input type="text" name="q" class="tvbo-search-input"
+                            <form class="tvbo-global-search mx-auto" action="/tvbo/kg" method="get" id="globalSearchForm">
+                                <input type="text" name="q" id="searchBox" class="tvbo-search-input"
                                     placeholder="Search models, networks, studies..."
                                     aria-label="Search"/>
                                 <button type="submit" class="tvbo-search-btn" aria-label="Search">
@@ -163,7 +163,7 @@
                     <div id="wrap" class="oe_structure oe_empty">
                         <!-- Hero Section -->
                         <section class="s_cover pt-5 pb-5"
-                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            style="background: linear-gradient(135deg, #3498DB 0%, #2C3E50 100%);">
                             <div class="container">
                                 <div class="row align-items-center">
                                     <div class="col-lg-12 text-center">
@@ -179,7 +179,7 @@
                                         </p>
                                         <div class="mt-5">
                                             <a href="/web" class="btn btn-light btn-lg me-3"
-                                                style="color: #667eea; font-weight: 600; padding: 0.75rem 2rem;">Explore
+                                                style="color: #3498DB; font-weight: 600; padding: 0.75rem 2rem;">Explore
                                                 Database</a>
                                             <a href="https://tvbo-docs.charite.de"
                                                 class="btn btn-outline-light btn-lg"
@@ -213,7 +213,7 @@
                                             <!-- Central Element: SimulationExperiment -->
                                             <div class="text-center mb-4">
                                                 <div
-                                                    style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(102,126,234,0.4);">
+                                                    style="display: inline-block; background: linear-gradient(135deg, #3498DB 0%, #2C3E50 100%); color: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(102,126,234,0.4);">
                                                     <div
                                                         style="font-size: 1.5rem; font-weight: 700;">
                                                         SimulationExperiment</div>
@@ -227,15 +227,15 @@
                                                 <svg width="100%" height="40"
                                                     style="max-width: 800px;">
                                                     <line x1="20%" y1="0" x2="20%" y2="40"
-                                                        stroke="#667eea" stroke-width="2" />
+                                                        stroke="#3498DB" stroke-width="2" />
                                                     <line x1="40%" y1="0" x2="40%" y2="40"
-                                                        stroke="#667eea" stroke-width="2" />
+                                                        stroke="#3498DB" stroke-width="2" />
                                                     <line x1="60%" y1="0" x2="60%" y2="40"
-                                                        stroke="#667eea" stroke-width="2" />
+                                                        stroke="#3498DB" stroke-width="2" />
                                                     <line x1="80%" y1="0" x2="80%" y2="40"
-                                                        stroke="#667eea" stroke-width="2" />
+                                                        stroke="#3498DB" stroke-width="2" />
                                                     <line x1="20%" y1="0" x2="80%" y2="0"
-                                                        stroke="#667eea" stroke-width="2" />
+                                                        stroke="#3498DB" stroke-width="2" />
                                                 </svg>
                                             </div>
 
@@ -243,7 +243,7 @@
                                             <div class="row g-3 mb-4">
                                                 <div class="col-md-3 col-6">
                                                     <div
-                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #667eea; height: 100%;">
+                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #3498DB; height: 100%;">
                                                         <div
                                                             style="font-size: 1.8rem; margin-bottom: 8px;">
                                                             🧬</div>
@@ -258,7 +258,7 @@
                                                 </div>
                                                 <div class="col-md-3 col-6">
                                                     <div
-                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #764ba2; height: 100%;">
+                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #2C3E50; height: 100%;">
                                                         <div
                                                             style="font-size: 1.8rem; margin-bottom: 8px;">
                                                             🔗</div>
@@ -273,7 +273,7 @@
                                                 </div>
                                                 <div class="col-md-3 col-6">
                                                     <div
-                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #667eea; height: 100%;">
+                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #3498DB; height: 100%;">
                                                         <div
                                                             style="font-size: 1.8rem; margin-bottom: 8px;">
                                                             ⚡</div>
@@ -287,7 +287,7 @@
                                                 </div>
                                                 <div class="col-md-3 col-6">
                                                     <div
-                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #764ba2; height: 100%;">
+                                                        style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #2C3E50; height: 100%;">
                                                         <div
                                                             style="font-size: 1.8rem; margin-bottom: 8px;">
                                                             📡</div>
@@ -305,21 +305,21 @@
                                             <div class="row mt-4">
                                                 <div class="col-md-4 text-center">
                                                     <div
-                                                        style="color: #667eea; font-weight: 600; margin-bottom: 5px;">📄
+                                                        style="color: #3498DB; font-weight: 600; margin-bottom: 5px;">📄
                                                         YAML / JSON</div>
                                                     <div style="font-size: 0.85rem; color: #6c757d;">Human-readable
                                                         configuration files</div>
                                                 </div>
                                                 <div class="col-md-4 text-center">
                                                     <div
-                                                        style="color: #764ba2; font-weight: 600; margin-bottom: 5px;">🔄
+                                                        style="color: #2C3E50; font-weight: 600; margin-bottom: 5px;">🔄
                                                         Reproducible</div>
                                                     <div style="font-size: 0.85rem; color: #6c757d;">Share
                                                         and replicate experiments</div>
                                                 </div>
                                                 <div class="col-md-4 text-center">
                                                     <div
-                                                        style="color: #667eea; font-weight: 600; margin-bottom: 5px;">🐍
+                                                        style="color: #3498DB; font-weight: 600; margin-bottom: 5px;">🐍
                                                         Python Ready</div>
                                                     <div style="font-size: 0.85rem; color: #6c757d;">Direct
                                                         integration with TVB &amp; JAX</div>
@@ -361,7 +361,7 @@
                                     </div>
                                     <div class="col-lg-6">
                                         <div class="card shadow-lg"
-                                            style="border: none; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);">
+                                            style="border: none; background: linear-gradient(135deg, #3498DB15 0%, #2C3E5015 100%);">
                                             <div class="card-body p-4" style="text-align: center;">
                                                 <div style="font-size: 4rem; margin-bottom: 1rem;">
                                                     🔬</div>
@@ -380,7 +380,7 @@
 
                         <!-- CTA Section -->
                         <section class="pt-5 pb-5"
-                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            style="background: linear-gradient(135deg, #3498DB 0%, #2C3E50 100%);">
                             <div class="container">
                                 <div class="row">
                                     <div class="col-lg-8 mx-auto text-center text-white">
@@ -392,7 +392,7 @@
                                         </p>
                                         <div>
                                             <a href="/web" class="btn btn-light btn-lg me-3"
-                                                style="color: #667eea; font-weight: 600; padding: 0.75rem 2rem;">Go
+                                                style="color: #3498DB; font-weight: 600; padding: 0.75rem 2rem;">Go
                                                 to Database</a>
                                             <a href="https://github.com/virtual-twin/tvbo"
                                                 class="btn btn-outline-light btn-lg"
@@ -424,10 +424,6 @@
                         <!-- Browser Container -->
                         <div class="tvbo-kg-container">
                             <div class="container-fluid">
-                                <div class="search-container">
-                                    <input type="text" id="searchBox" class="search-box" placeholder="Search models, networks, studies..."/>
-                                    <div class="performance-info" id="performanceInfo">Loading...</div>
-                                </div>
                                 <div class="main-content">
                                     <div class="sidebar" id="facetsSidebar">
                                         <!-- Facets will be generated here -->
@@ -436,6 +432,7 @@
                                         <div class="results-header">
                                             <div class="results-count" id="resultsCount">Loading...</div>
                                             <div style="display:flex; align-items:center; gap:12px;">
+                                                <span class="performance-info" id="performanceInfo"></span>
                                                 <label for="sortSelect" style="color:#4a5568; font-size:0.95rem;">Sort</label>
                                                 <select id="sortSelect" class="sort-select">
                                                     <option value="relevance">Relevance</option>
