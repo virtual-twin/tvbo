@@ -7,30 +7,33 @@
    ======================================== */
 
 .tvbo-header {
-    background: linear-gradient(135deg, #2C3E50 0%, #3498DB 100%);
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .tvbo-header .navbar {
     padding: 0.75rem 0;
+    background: transparent !important;
 }
 
 .tvbo-header .navbar-brand {
-    color: #fff !important;
+    color: #2C3E50 !important;
 }
 
 .tvbo-header .nav-link {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: #4a5568 !important;
     font-weight: 500;
     padding: 0.5rem 1rem !important;
     transition: color 0.2s ease;
 }
 
 .tvbo-header .nav-link:hover {
-    color: #fff !important;
+    color: #3498DB !important;
 }
 
 /* ========================================
@@ -40,10 +43,10 @@
 .tvbo-global-search {
     display: flex;
     align-items: center;
-    max-width: 420px;
-    width: 100%;
+    flex: 1;
     position: relative;
-    margin: 0 2rem;
+    margin: 0 1.5rem;
+    min-width: 200px;
 }
 
 .tvbo-search-input {
@@ -52,34 +55,28 @@
     font-size: 14px;
     font-weight: 400;
     letter-spacing: 0.01em;
-    border: none;
+    border: 2px solid #e2e8f0;
     border-radius: 50px;
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #fff;
+    background: #f8fafc;
+    color: #2C3E50;
     outline: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow:
-        inset 0 1px 2px rgba(0, 0, 0, 0.1),
-        0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .tvbo-search-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: #94a3b8;
     font-weight: 400;
 }
 
 .tvbo-search-input:hover {
-    background: rgba(255, 255, 255, 0.18);
+    border-color: #cbd5e1;
+    background: #fff;
 }
 
 .tvbo-search-input:focus {
-    background: rgba(255, 255, 255, 0.22);
-    box-shadow:
-        inset 0 1px 2px rgba(0, 0, 0, 0.1),
-        0 0 0 3px rgba(255, 255, 255, 0.15),
-        0 4px 20px rgba(0, 0, 0, 0.15);
+    border-color: #3498DB;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
 }
 
 .tvbo-search-btn {
@@ -87,10 +84,10 @@
     right: 6px;
     top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    background: linear-gradient(135deg, #3498DB 0%, #2C3E50 100%);
     border: none;
     border-radius: 50%;
-    color: rgba(255, 255, 255, 0.9);
+    color: #fff;
     width: 32px;
     height: 32px;
     cursor: pointer;
@@ -101,10 +98,9 @@
 }
 
 .tvbo-search-btn:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%);
-    color: #fff;
+    background: linear-gradient(135deg, #2980B9 0%, #1a252f 100%);
     transform: translateY(-50%) scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
 }
 
 .tvbo-search-btn:active {
@@ -125,7 +121,7 @@
     }
 
     .tvbo-search-input {
-        background: rgba(255, 255, 255, 0.2);
+        background: #f8fafc;
     }
 }
 

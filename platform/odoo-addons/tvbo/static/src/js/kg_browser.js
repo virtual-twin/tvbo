@@ -254,6 +254,19 @@ class KnowledgeGraphBrowser {
     setupEventListeners() {
         let searchTimeout;
         const searchBox = document.getElementById('searchBox');
+        const searchForm = document.getElementById('globalSearchForm');
+        
+        // Prevent form submission on KG browser page - use live search instead
+        if (searchForm) {
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (searchBox) {
+                    this.currentQuery = searchBox.value;
+                    this.search();
+                }
+            });
+        }
+        
         if (searchBox) {
             searchBox.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
