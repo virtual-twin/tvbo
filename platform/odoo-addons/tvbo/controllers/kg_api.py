@@ -5,32 +5,44 @@ Uses Pydantic models from tvbo.datamodel for consistent schema.
 """
 import json
 import logging
+
 from odoo import http
-from odoo.http import request, Response
+from odoo.http import Response, request
+
+from tvbo.datamodel.tvbopydantic import Coupling as PydanticCoupling
+from tvbo.datamodel.tvbopydantic import Dynamics as PydanticDynamics
+from tvbo.datamodel.tvbopydantic import Integrator as PydanticIntegrator
+from tvbo.datamodel.tvbopydantic import Network as PydanticNetwork
+from tvbo.datamodel.tvbopydantic import \
+    SimulationExperiment as PydanticSimulationExperiment
+from tvbo.datamodel.tvbopydantic import \
+    SimulationStudy as PydanticSimulationStudy
 
 _logger = logging.getLogger(__name__)
+_logger.info("Pydantic models loaded successfully for KG API")
 
-# Try to import Pydantic models
-try:
-    from tvbo.datamodel.tvbopydantic import (
-        Dynamics,
-        NeuralMassModel,
-        Network,
-        Coupling,
-        Integrator,
-        SimulationExperiment,
-        SimulationStudy,
-        Parameter,
-        StateVariable,
-    )
-    PYDANTIC_AVAILABLE = True
-except ImportError:
-    _logger.warning("tvbo.datamodel.tvbopydantic not available - using fallback serialization")
-    PYDANTIC_AVAILABLE = False
+
+def safe_get(record, field, default=None):
+    """Safely get field value from Odoo record."""
+    val = getattr(record, field, None)
+    if val is None or val is False:
+        return default
+    return val
+
+
+def get_relation_value(record, field, sub_field='name'):
+    """Get value from Many2one relation."""
+    rel = getattr(record, field, None)
+    if rel:
+        return getattr(rel, sub_field, None)
+    return None
 
 
 class KnowledgeGraphAPI(http.Controller):
-    """API endpoints for the Knowledge Graph Browser."""
+    """API endpoints for the Knowledge Graph Browser.
+    
+    Uses Pydantic models for serialization to ensure schema consistency.
+    """
 
     # ===================
     # Schema endpoint
@@ -40,7 +52,7 @@ class KnowledgeGraphAPI(http.Controller):
     def get_schema(self, **kw):
         """Get the search schema configuration for the browser."""
         schema = {
-            "searchableFields": ["name", "label", "title", "description", "abstract", "doi"],
+            "searchableFields": ["name", "label", "title", "description", "abstract", "doi", "method"],
             "facets": [
                 {"field": "type", "label": "Type", "type": "string"},
                 {"field": "system_type", "label": "System Type", "type": "string"},
@@ -63,23 +75,29 @@ class KnowledgeGraphAPI(http.Controller):
         """Get all knowledge graph data combined."""
         data = []
 
-        # Neural Mass Models
-        data.extend(self._get_models())
+        try:
+            # Neural Mass Models / Dynamics
+            data.extend(self._get_dynamics())
 
-        # Networks
-        data.extend(self._get_networks())
+            # Networks
+            data.extend(self._get_networks())
 
-        # Integrators
-        data.extend(self._get_integrators())
+            # Integrators
+            data.extend(self._get_integrators())
 
-        # Experiments
-        data.extend(self._get_experiments())
+            # Experiments
+            data.extend(self._get_experiments())
 
-        # Studies
-        data.extend(self._get_studies())
+            # Studies
+            data.extend(self._get_studies())
 
-        # Couplings
-        data.extend(self._get_couplings())
+            # Couplings
+            data.extend(self._get_couplings())
+
+            _logger.info(f"KG API: Returning {len(data)} items")
+
+        except Exception as e:
+            _logger.error(f"Error in get_all_data: {e}", exc_info=True)
 
         return Response(
             json.dumps(data),
@@ -88,95 +106,55 @@ class KnowledgeGraphAPI(http.Controller):
         )
 
     # ===================
-    # Helper: Convert Odoo record to dict
+    # Dynamics
     # ===================
 
-    def _odoo_to_dict(self, record, record_type, extra_fields=None):
-        """Convert Odoo record to a browser-compatible dict."""
-        result = {
-            "id": record.id,
-            "type": record_type,
-        }
+    def _get_dynamics(self):
+        """Fetch and serialize all dynamics models."""
+        results = []
+        records = request.env['tvbo.dynamics'].sudo().search([])
+        for r in records:
+            results.append(self._serialize_dynamics(r))
+        return results
 
-        # Standard fields that might exist
-        for field in ['name', 'label', 'description']:
-            if hasattr(record, field):
-                val = getattr(record, field)
-                if val:
-                    result[field] = val
+    def _serialize_dynamics(self, record):
+        """Serialize dynamics using Pydantic model."""
+        name = safe_get(record, 'name', '')
+        label = safe_get(record, 'label', '')
+        description = safe_get(record, 'description', '')
 
-        # Set title from name or label
-        result['title'] = result.get('name') or result.get('label') or ''
-
-        # Ensure name exists
-        if 'name' not in result or not result['name']:
-            result['name'] = result.get('label') or result.get('title') or ''
-
-        # Extra fields
-        if extra_fields:
-            for field, default in extra_fields.items():
-                if hasattr(record, field):
-                    val = getattr(record, field)
-                    if val:
-                        # Handle Many2one relations
-                        if hasattr(val, 'name'):
-                            result[field] = val.name
-                        elif hasattr(val, 'label'):
-                            result[field] = val.label
-                        else:
-                            result[field] = val
-                    else:
-                        result[field] = default
-                else:
-                    result[field] = default
-
-        # Ensure required fields have defaults
-        result.setdefault('tags', [])
-        result.setdefault('description', '')
-
-        return result
-
-    # ===================
-    # Models
-    # ===================
-
-    def _get_models(self):
-        """Fetch and serialize all neural mass models."""
-        try:
-            models = request.env['tvbo.neural_mass_model'].sudo().search([])
-            return [self._serialize_model(m) for m in models]
-        except Exception as e:
-            _logger.error(f"Error fetching models: {e}")
-            return []
-
-    def _serialize_model(self, model):
-        """Serialize a neural mass model."""
-        result = self._odoo_to_dict(model, 'model', {
-            'system_type': '',
-            'source': '',
-            'references': '',
-            'iri': '',
-        })
-
-        # Get system type name if it's a relation
-        if model.system_type:
-            if hasattr(model.system_type, 'name'):
-                result['system_type'] = model.system_type.name
-            elif hasattr(model.system_type, 'technical_name'):
-                result['system_type'] = model.system_type.technical_name
+        # Get system_type name
+        system_type_name = get_relation_value(record, 'system_type', 'technical_name')
+        if not system_type_name:
+            system_type_name = get_relation_value(record, 'system_type', 'name')
 
         # Build tags
         tags = []
-        if result.get('system_type'):
-            tags.append(result['system_type'])
+        if system_type_name:
+            tags.append(system_type_name)
 
-        # Add state variable names as tags
-        if hasattr(model, 'state_variables'):
-            for sv in model.state_variables:
-                if hasattr(sv, 'label') and sv.label:
-                    tags.append(sv.label)
+        # Add state variable labels as tags
+        for sv in safe_get(record, 'state_variables', []):
+            sv_label = safe_get(sv, 'label')
+            if sv_label:
+                tags.append(sv_label)
 
+        pydantic_obj = PydanticDynamics(
+            name=name or 'Unknown',
+            label=label or None,
+            description=description or None,
+            source=safe_get(record, 'source'),
+            iri=safe_get(record, 'iri'),
+        )
+        result = pydantic_obj.model_dump(exclude_none=True)
+
+        # Add browser-specific fields
+        result['id'] = record.id
+        result['type'] = 'dynamics'
+        result['title'] = name or label or ''
         result['tags'] = tags
+        result['system_type'] = system_type_name or ''
+
         return result
 
     # ===================
@@ -185,27 +163,40 @@ class KnowledgeGraphAPI(http.Controller):
 
     def _get_networks(self):
         """Fetch and serialize all networks."""
-        try:
-            networks = request.env['tvbo.network'].sudo().search([])
-            return [self._serialize_network(n) for n in networks]
-        except Exception as e:
-            _logger.error(f"Error fetching networks: {e}")
-            return []
+        results = []
+        records = request.env['tvbo.network'].sudo().search([])
+        for r in records:
+            results.append(self._serialize_network(r))
+        return results
 
-    def _serialize_network(self, network):
-        """Serialize a network."""
-        result = self._odoo_to_dict(network, 'network', {
-            'number_of_regions': 0,
-            'number_of_nodes': 0,
-        })
+    def _serialize_network(self, record):
+        """Serialize a network using Pydantic model."""
+        label = safe_get(record, 'label', '')
+        description = safe_get(record, 'description', '')
+        number_of_regions = safe_get(record, 'number_of_regions', 0)
+        number_of_nodes = safe_get(record, 'number_of_nodes', 0)
 
         # Build tags
         tags = []
-        if hasattr(network, 'parcellation') and network.parcellation:
-            if hasattr(network.parcellation, 'label') and network.parcellation.label:
-                tags.append(network.parcellation.label)
+        parcellation_label = get_relation_value(record, 'parcellation', 'label')
+        if parcellation_label:
+            tags.append(parcellation_label)
 
+        pydantic_obj = PydanticNetwork(
+            label=label or None,
+            description=description or None,
+            number_of_regions=number_of_regions or 1,
+            number_of_nodes=number_of_nodes or 1,
+        )
+        result = pydantic_obj.model_dump(exclude_none=True)
+
+        # Add browser-specific fields
+        result['id'] = record.id
+        result['type'] = 'network'
+        result['name'] = label or f'Network {record.id}'
+        result['title'] = label or f'Network {record.id}'
         result['tags'] = tags
+
         return result
 
     # ===================
@@ -214,30 +205,42 @@ class KnowledgeGraphAPI(http.Controller):
 
     def _get_integrators(self):
         """Fetch and serialize all integrators."""
-        try:
-            integrators = request.env['tvbo.integrator'].sudo().search([])
-            return [self._serialize_integrator(i) for i in integrators]
-        except Exception as e:
-            _logger.error(f"Error fetching integrators: {e}")
-            return []
+        results = []
+        records = request.env['tvbo.integrator'].sudo().search([])
+        for r in records:
+            results.append(self._serialize_integrator(r))
+        return results
 
-    def _serialize_integrator(self, integrator):
-        """Serialize an integrator."""
-        method = getattr(integrator, 'method', None) or ''
-        step_size = getattr(integrator, 'step_size', None) or 0
-        duration = getattr(integrator, 'duration', None) or 0
+    def _serialize_integrator(self, record):
+        """Serialize an integrator using Pydantic model."""
+        method = safe_get(record, 'method', '')
+        step_size = safe_get(record, 'step_size', 0.01220703125)
+        duration = safe_get(record, 'duration', 1000.0)
+        time_scale = safe_get(record, 'time_scale', 'ms')
 
-        return {
-            "id": integrator.id,
-            "type": "integrator",
-            "name": method,
-            "label": method,
-            "title": method,
-            "description": f"Step size: {step_size}, Duration: {duration}" if method else '',
-            "step_size": step_size,
-            "duration": duration,
-            "tags": [method] if method else [],
-        }
+        # Build tags
+        tags = []
+        if method:
+            tags.append(method)
+
+        pydantic_obj = PydanticIntegrator(
+            method=method or None,
+            step_size=step_size,
+            duration=duration,
+            time_scale=time_scale,
+        )
+        result = pydantic_obj.model_dump(exclude_none=True)
+
+        # Add browser-specific fields (Integrator doesn't have 'name' in Pydantic)
+        result['id'] = record.id
+        result['type'] = 'integrator'
+        result['name'] = method or f'Integrator {record.id}'
+        result['label'] = method or f'Integrator {record.id}'
+        result['title'] = method or f'Integrator {record.id}'
+        result['description'] = f"Method: {method}, Step size: {step_size}, Duration: {duration}" if method else ''
+        result['tags'] = tags
+
+        return result
 
     # ===================
     # Experiments
@@ -245,30 +248,43 @@ class KnowledgeGraphAPI(http.Controller):
 
     def _get_experiments(self):
         """Fetch and serialize all simulation experiments."""
-        try:
-            experiments = request.env['tvbo.simulation_experiment'].sudo().search([])
-            return [self._serialize_experiment(e) for e in experiments]
-        except Exception as e:
-            _logger.error(f"Error fetching experiments: {e}")
-            return []
+        results = []
+        records = request.env['tvbo.simulation_experiment'].sudo().search([])
+        for r in records:
+            results.append(self._serialize_experiment(r))
+        return results
 
-    def _serialize_experiment(self, exp):
-        """Serialize a simulation experiment."""
-        result = self._odoo_to_dict(exp, 'experiment', {
-            'references': '',
-        })
+    def _serialize_experiment(self, record):
+        """Serialize a simulation experiment using Pydantic model."""
+        label = safe_get(record, 'label', '')
+        description = safe_get(record, 'description', '')
 
         # Build tags
         tags = []
-        if hasattr(exp, 'local_dynamics') and exp.local_dynamics:
-            if hasattr(exp.local_dynamics, 'name') and exp.local_dynamics.name:
-                tags.append(exp.local_dynamics.name)
-        if hasattr(exp, 'connectivity') and exp.connectivity:
-            if hasattr(exp.connectivity, 'label') and exp.connectivity.label:
-                tags.append(exp.connectivity.label)
+        dynamics_name = get_relation_value(record, 'local_dynamics', 'name')
+        if dynamics_name:
+            tags.append(dynamics_name)
+        connectivity_label = get_relation_value(record, 'connectivity', 'label')
+        if connectivity_label:
+            tags.append(connectivity_label)
+        network_label = get_relation_value(record, 'network', 'label')
+        if network_label and network_label not in tags:
+            tags.append(network_label)
 
+        pydantic_obj = PydanticSimulationExperiment(
+            label=label or None,
+            description=description or None,
+        )
+        result = pydantic_obj.model_dump(exclude_none=True)
+
+        # Add browser-specific fields
+        result['id'] = record.id
+        result['type'] = 'experiment'
+        result['name'] = label or f'Experiment {record.id}'
+        result['title'] = label or f'Experiment {record.id}'
+        result['abstract'] = description or ''
         result['tags'] = tags
-        result['abstract'] = result.get('description', '')
+
         return result
 
     # ===================
@@ -277,33 +293,44 @@ class KnowledgeGraphAPI(http.Controller):
 
     def _get_studies(self):
         """Fetch and serialize all simulation studies."""
-        try:
-            studies = request.env['tvbo.simulation_study'].sudo().search([])
-            return [self._serialize_study(s) for s in studies]
-        except Exception as e:
-            _logger.error(f"Error fetching studies: {e}")
-            return []
+        results = []
+        records = request.env['tvbo.simulation_study'].sudo().search([])
+        for r in records:
+            results.append(self._serialize_study(r))
+        return results
 
-    def _serialize_study(self, study):
-        """Serialize a simulation study."""
-        result = self._odoo_to_dict(study, 'study', {
-            'year': '',
-            'doi': '',
-            'title': '',
-        })
-
-        # Ensure year is string
-        if result.get('year'):
-            result['year'] = str(result['year'])
+    def _serialize_study(self, record):
+        """Serialize a simulation study using Pydantic model."""
+        label = safe_get(record, 'label', '')
+        description = safe_get(record, 'description', '')
+        doi = safe_get(record, 'doi', '')
+        year = safe_get(record, 'year', '')
+        title = safe_get(record, 'title', '')
 
         # Build tags
         tags = []
-        if hasattr(study, 'model') and study.model:
-            if hasattr(study.model, 'name') and study.model.name:
-                tags.append(study.model.name)
+        model_name = get_relation_value(record, 'model', 'name')
+        if model_name:
+            tags.append(model_name)
 
+        pydantic_obj = PydanticSimulationStudy(
+            label=label or None,
+            description=description or None,
+            doi=doi or None,
+            title=title or None,
+        )
+        result = pydantic_obj.model_dump(exclude_none=True)
+
+        # Add browser-specific fields
+        result['id'] = record.id
+        result['type'] = 'study'
+        result['name'] = title or label or f'Study {record.id}'
+        result['title'] = title or label or f'Study {record.id}'
+        result['abstract'] = description or ''
+        result['year'] = str(year) if year else ''
+        result['doi'] = doi or ''
         result['tags'] = tags
-        result['abstract'] = result.get('description', '')
+
         return result
 
     # ===================
@@ -312,68 +339,91 @@ class KnowledgeGraphAPI(http.Controller):
 
     def _get_couplings(self):
         """Fetch and serialize all coupling functions."""
-        try:
-            couplings = request.env['tvbo.coupling'].sudo().search([])
-            return [self._serialize_coupling(c) for c in couplings]
-        except Exception as e:
-            _logger.error(f"Error fetching couplings: {e}")
-            return []
+        results = []
+        records = request.env['tvbo.coupling'].sudo().search([])
+        for r in records:
+            results.append(self._serialize_coupling(r))
+        return results
 
-    def _serialize_coupling(self, coupling):
-        """Serialize a coupling function."""
-        name = getattr(coupling, 'name', None) or ''
-        label = getattr(coupling, 'label', None) or name
+    def _serialize_coupling(self, record):
+        """Serialize a coupling function using Pydantic model."""
+        name = safe_get(record, 'name', '')
+        label = safe_get(record, 'label', '')
+        delayed = safe_get(record, 'delayed', False)
+        sparse = safe_get(record, 'sparse', False)
 
-        # Build description from coupling function
-        desc = ''
-        if hasattr(coupling, 'coupling_function') and coupling.coupling_function:
-            if hasattr(coupling.coupling_function, 'definition'):
-                desc = coupling.coupling_function.definition or ''
+        # Get description from coupling function equation
+        description = ''
+        coupling_func = safe_get(record, 'coupling_function')
+        if coupling_func:
+            description = safe_get(coupling_func, 'definition', '')
 
         # Build tags
         tags = []
-        if hasattr(coupling, 'delayed') and coupling.delayed:
+        if delayed:
             tags.append('delayed')
-        if hasattr(coupling, 'sparse') and coupling.sparse:
+        if sparse:
             tags.append('sparse')
 
-        return {
-            "id": coupling.id,
-            "type": "coupling",
-            "name": name,
-            "label": label,
-            "title": name,
-            "description": desc,
-            "tags": tags,
-        }
+        pydantic_obj = PydanticCoupling(
+            name=name or 'Linear',
+            label=label or None,
+            delayed=delayed,
+            sparse=sparse,
+        )
+        result = pydantic_obj.model_dump(exclude_none=True)
+
+        # Add browser-specific fields
+        result['id'] = record.id
+        result['type'] = 'coupling'
+        result['title'] = name or label or f'Coupling {record.id}'
+        result['description'] = description or ''
+        result['tags'] = tags
+
+        return result
 
     # ===================
     # Detail endpoints
     # ===================
 
-    @http.route('/tvbo/api/kg/model/<int:model_id>', type='http', auth='public', methods=['GET'], csrf=False)
-    def get_model_detail(self, model_id, **kw):
-        """Get detailed information about a specific neural mass model."""
-        model = request.env['tvbo.neural_mass_model'].sudo().browse(model_id)
-        if not model.exists():
+    @http.route('/tvbo/api/kg/dynamics/<int:dynamics_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    def get_dynamics_detail(self, dynamics_id, **kw):
+        """Get detailed information about a specific dynamics model."""
+        record = request.env['tvbo.dynamics'].sudo().browse(dynamics_id)
+        if not record.exists():
             return Response(
-                json.dumps({"error": "Model not found"}),
+                json.dumps({"error": "Dynamics not found"}),
                 content_type='application/json',
                 status=404
             )
 
-        # Use Pydantic if available for schema-consistent output
-        if PYDANTIC_AVAILABLE:
-            try:
-                pydantic_model = self._odoo_to_pydantic_dynamics(model)
-                data = pydantic_model.model_dump(exclude_none=True)
-                data['id'] = model.id
-                data['type'] = 'model'
-            except Exception as e:
-                _logger.warning(f"Pydantic conversion failed: {e}, using fallback")
-                data = self._serialize_model_detail(model)
-        else:
-            data = self._serialize_model_detail(model)
+        # Get base serialization
+        data = self._serialize_dynamics(record)
+
+        # Add detailed parameters
+        data['parameters'] = []
+        for p in safe_get(record, 'parameters', []):
+            data['parameters'].append({
+                "name": safe_get(p, 'name', ''),
+                "label": safe_get(p, 'label', ''),
+                "description": safe_get(p, 'description', ''),
+            })
+
+        # Add detailed state variables
+        data['state_variables'] = []
+        for sv in safe_get(record, 'state_variables', []):
+            sv_data = {
+                "name": safe_get(sv, 'name', ''),
+                "label": safe_get(sv, 'label', ''),
+                "description": safe_get(sv, 'description', ''),
+            }
+            equation = safe_get(sv, 'equation')
+            if equation:
+                sv_data['equation'] = {
+                    "label": safe_get(equation, 'label', ''),
+                    "definition": safe_get(equation, 'definition', ''),
+                }
+            data['state_variables'].append(sv_data)
 
         return Response(
             json.dumps(data),
@@ -381,93 +431,149 @@ class KnowledgeGraphAPI(http.Controller):
             headers={'Access-Control-Allow-Origin': '*'}
         )
 
-    def _odoo_to_pydantic_dynamics(self, model):
-        """Convert Odoo neural mass model to Pydantic Dynamics."""
-        params = {}
-        if hasattr(model, 'parameters'):
-            for p in model.parameters:
-                if p.name:
-                    params[p.name] = Parameter(
-                        name=p.name,
-                        label=p.label or None,
-                        description=p.description or None,
-                    )
-
-        state_vars = {}
-        if hasattr(model, 'state_variables'):
-            for sv in model.state_variables:
-                if sv.label:
-                    state_vars[sv.label] = StateVariable(
-                        name=sv.label,
-                        label=sv.label,
-                        description=sv.description or None,
-                    )
-
-        system_type = None
-        if model.system_type:
-            if hasattr(model.system_type, 'technical_name'):
-                system_type = model.system_type.technical_name
-
-        return Dynamics(
-            name=model.name or 'Unknown',
-            label=model.label or None,
-            description=model.description or None,
-            source=model.source or None,
-            parameters=params if params else None,
-            state_variables=state_vars if state_vars else None,
-            system_type=system_type,
-        )
-
-    def _serialize_model_detail(self, model):
-        """Fallback serialization for model details."""
-        data = self._serialize_model(model)
-
-        # Add parameters
-        data['parameters'] = []
-        if hasattr(model, 'parameters'):
-            for p in model.parameters:
-                data['parameters'].append({
-                    "name": p.name or '',
-                    "label": p.label or '',
-                    "description": p.description or '',
-                })
-
-        # Add state variables
-        data['state_variables'] = []
-        if hasattr(model, 'state_variables'):
-            for sv in model.state_variables:
-                sv_data = {
-                    "label": sv.label or '',
-                    "description": sv.description or '',
-                }
-                if hasattr(sv, 'equation') and sv.equation:
-                    sv_data['equation'] = {
-                        "label": sv.equation.label or '',
-                        "definition": sv.equation.definition or '',
-                    }
-                data['state_variables'].append(sv_data)
-
-        return data
-
     @http.route('/tvbo/api/kg/network/<int:network_id>', type='http', auth='public', methods=['GET'], csrf=False)
     def get_network_detail(self, network_id, **kw):
         """Get detailed information about a specific network."""
-        network = request.env['tvbo.network'].sudo().browse(network_id)
-        if not network.exists():
+        record = request.env['tvbo.network'].sudo().browse(network_id)
+        if not record.exists():
             return Response(
                 json.dumps({"error": "Network not found"}),
                 content_type='application/json',
                 status=404
             )
 
-        data = self._serialize_network(network)
+        data = self._serialize_network(record)
 
-        # Add parcellation info
-        if hasattr(network, 'parcellation') and network.parcellation:
+        # Add detailed parcellation info
+        parcellation = safe_get(record, 'parcellation')
+        if parcellation:
             data['parcellation'] = {
-                "label": network.parcellation.label or '',
-                "data_source": network.parcellation.data_source or '' if hasattr(network.parcellation, 'data_source') else '',
+                "label": safe_get(parcellation, 'label', ''),
+                "data_source": safe_get(parcellation, 'data_source', ''),
             }
+
+        return Response(
+            json.dumps(data),
+            content_type='application/json',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
+
+    @http.route('/tvbo/api/kg/integrator/<int:integrator_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    def get_integrator_detail(self, integrator_id, **kw):
+        """Get detailed information about a specific integrator."""
+        record = request.env['tvbo.integrator'].sudo().browse(integrator_id)
+        if not record.exists():
+            return Response(
+                json.dumps({"error": "Integrator not found"}),
+                content_type='application/json',
+                status=404
+            )
+
+        data = self._serialize_integrator(record)
+
+        # Add detailed parameters
+        data['parameters'] = []
+        for p in safe_get(record, 'parameters', []):
+            data['parameters'].append({
+                "name": safe_get(p, 'name', ''),
+                "label": safe_get(p, 'label', ''),
+                "value": safe_get(p, 'value', None),
+            })
+
+        return Response(
+            json.dumps(data),
+            content_type='application/json',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
+
+    @http.route('/tvbo/api/kg/coupling/<int:coupling_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    def get_coupling_detail(self, coupling_id, **kw):
+        """Get detailed information about a specific coupling."""
+        record = request.env['tvbo.coupling'].sudo().browse(coupling_id)
+        if not record.exists():
+            return Response(
+                json.dumps({"error": "Coupling not found"}),
+                content_type='application/json',
+                status=404
+            )
+
+        data = self._serialize_coupling(record)
+
+        # Add detailed coupling function
+        coupling_func = safe_get(record, 'coupling_function')
+        if coupling_func:
+            data['coupling_function'] = {
+                "label": safe_get(coupling_func, 'label', ''),
+                "definition": safe_get(coupling_func, 'definition', ''),
+            }
+
+        # Add detailed parameters
+        data['parameters'] = []
+        for p in safe_get(record, 'parameters', []):
+            data['parameters'].append({
+                "name": safe_get(p, 'name', ''),
+                "label": safe_get(p, 'label', ''),
+            })
+
+        return Response(
+            json.dumps(data),
+            content_type='application/json',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
+
+    @http.route('/tvbo/api/kg/experiment/<int:experiment_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    def get_experiment_detail(self, experiment_id, **kw):
+        """Get detailed information about a specific experiment."""
+        record = request.env['tvbo.simulation_experiment'].sudo().browse(experiment_id)
+        if not record.exists():
+            return Response(
+                json.dumps({"error": "Experiment not found"}),
+                content_type='application/json',
+                status=404
+            )
+
+        data = self._serialize_experiment(record)
+
+        # Add related entities
+        local_dynamics = safe_get(record, 'local_dynamics')
+        if local_dynamics:
+            data['local_dynamics'] = {
+                "id": local_dynamics.id,
+                "name": safe_get(local_dynamics, 'name', ''),
+            }
+
+        integration = safe_get(record, 'integration')
+        if integration:
+            data['integration'] = {
+                "id": integration.id,
+                "method": safe_get(integration, 'method', ''),
+            }
+
+        connectivity = safe_get(record, 'connectivity')
+        if connectivity:
+            data['connectivity'] = {
+                "id": connectivity.id,
+                "label": safe_get(connectivity, 'label', ''),
+            }
+
+        return Response(
+            json.dumps(data),
+            content_type='application/json',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
+
+    @http.route('/tvbo/api/kg/study/<int:study_id>', type='http', auth='public', methods=['GET'], csrf=False)
+    def get_study_detail(self, study_id, **kw):
+        """Get detailed information about a specific study."""
+        record = request.env['tvbo.simulation_study'].sudo().browse(study_id)
+        if not record.exists():
+            return Response(
+                json.dumps({"error": "Study not found"}),
+                content_type='application/json',
+                status=404
+            )
+
+        data = self._serialize_study(record)
 
         return Response(
             json.dumps(data),

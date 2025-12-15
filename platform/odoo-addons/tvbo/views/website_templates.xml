@@ -7,10 +7,17 @@
         </xpath>
     </template>
 
+    <!-- TVBO Main Stylesheet - Injected into all pages -->
+    <template id="tvbo_main_css" inherit_id="website.layout" name="TVBO Main CSS">
+        <xpath expr="//head" position="inside">
+            <link rel="stylesheet" href="/tvbo/static/src/css/main.css"/>
+        </xpath>
+    </template>
+
     <!-- TVBO Custom Header - Replace default website header -->
     <template id="tvbo_header" inherit_id="website.layout" name="TVBO Custom Header">
         <xpath expr="//header" position="replace">
-            <header class="o_header_standard">
+            <header class="o_header_standard tvbo-header">
                 <nav class="navbar navbar-expand-lg">
                     <div class="container">
                         <a class="navbar-brand d-flex align-items-center" href="/"
@@ -23,6 +30,18 @@
                             <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
                         </button>
                         <div class="collapse navbar-collapse" id="tvbo-navbar">
+                            <!-- Global Search Box -->
+                            <form class="tvbo-global-search mx-auto" action="/tvbo/kg" method="get">
+                                <input type="text" name="q" class="tvbo-search-input" 
+                                    placeholder="Search models, networks, studies..." 
+                                    aria-label="Search"/>
+                                <button type="submit" class="tvbo-search-btn" aria-label="Search">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.3-4.3"/>
+                                    </svg>
+                                </button>
+                            </form>
                             <ul class="navbar-nav ms-auto">
                                 <li class="nav-item">
                                     <a class="nav-link" href="/">Home</a>
