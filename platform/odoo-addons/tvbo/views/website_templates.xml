@@ -433,6 +433,14 @@
                                             <div class="results-count" id="resultsCount">Loading...</div>
                                             <div style="display:flex; align-items:center; gap:12px;">
                                                 <span class="performance-info" id="performanceInfo"></span>
+                                                <div class="view-toggle">
+                                                    <button class="view-btn active" id="listViewBtn" title="List View">
+                                                        <span class="material-icons">view_list</span>
+                                                    </button>
+                                                    <button class="view-btn" id="graphViewBtn" title="Graph View">
+                                                        <span class="material-icons">hub</span>
+                                                    </button>
+                                                </div>
                                                 <label for="sortSelect" style="color:#4a5568; font-size:0.95rem;">Sort</label>
                                                 <select id="sortSelect" class="sort-select">
                                                     <option value="relevance">Relevance</option>
@@ -443,6 +451,21 @@
                                             </div>
                                         </div>
                                         <div class="results-grid" id="resultsGrid"></div>
+                                        <div class="graph-container hidden" id="graphContainer">
+                                            <svg id="graphSvg"></svg>
+                                            <div class="graph-controls">
+                                                <button class="graph-control-btn" id="graphZoomIn" title="Zoom In">
+                                                    <span class="material-icons">add</span>
+                                                </button>
+                                                <button class="graph-control-btn" id="graphZoomOut" title="Zoom Out">
+                                                    <span class="material-icons">remove</span>
+                                                </button>
+                                                <button class="graph-control-btn" id="graphReset" title="Reset View">
+                                                    <span class="material-icons">center_focus_strong</span>
+                                                </button>
+                                            </div>
+                                            <div class="graph-legend" id="graphLegend"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -477,8 +500,10 @@
                         </script>
                         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
                         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+                        <script src="https://d3js.org/d3.v7.min.js"></script>
 
                         <!-- KG Browser JavaScript -->
+                        <script src="/tvbo/static/src/js/kg_graph.js"></script>
                         <script src="/tvbo/static/src/js/kg_browser.js"></script>
                     </div>
                 </t>

@@ -98,6 +98,8 @@ class KnowledgeGraphBrowser {
         this.currentModalItem = null;
         this.searchIndex = new Map();
         this.facetIndex = {};
+        this.currentView = 'list'; // 'list' or 'graph'
+        this.graphViz = null;
 
         this.init();
     }
@@ -322,6 +324,50 @@ class KnowledgeGraphBrowser {
         const downloadBtn = document.getElementById('modalDownload');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', () => this.downloadModalItem());
+        }
+
+        // View toggle handlers
+        const listViewBtn = document.getElementById('listViewBtn');
+        const graphViewBtn = document.getElementById('graphViewBtn');
+
+        if (listViewBtn) {
+            listViewBtn.addEventListener('click', () => this.switchView('list'));
+        }
+        if (graphViewBtn) {
+            graphViewBtn.addEventListener('click', () => this.switchView('graph'));
+        }
+    }
+
+    async switchView(view) {
+        this.currentView = view;
+
+        const resultsGrid = document.getElementById('resultsGrid');
+        const graphContainer = document.getElementById('graphContainer');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const graphViewBtn = document.getElementById('graphViewBtn');
+
+        if (view === 'list') {
+            resultsGrid?.classList.remove('hidden');
+            graphContainer?.classList.add('hidden');
+            listViewBtn?.classList.add('active');
+            graphViewBtn?.classList.remove('active');
+
+            // Cleanup graph
+            if (this.graphViz) {
+                this.graphViz.destroy();
+                this.graphViz = null;
+            }
+        } else {
+            resultsGrid?.classList.add('hidden');
+            graphContainer?.classList.remove('hidden');
+            listViewBtn?.classList.remove('active');
+            graphViewBtn?.classList.add('active');
+
+            // Initialize graph visualization
+            if (window.KnowledgeGraphVisualization) {
+                this.graphViz = new window.KnowledgeGraphVisualization();
+                await this.graphViz.init();
+            }
         }
     }
 
