@@ -114,7 +114,7 @@ class KnowledgeGraphBrowser {
             console.log('✅ Facet index built');
             console.log('🎧 Setting up event listeners...');
             this.setupEventListeners();
-            
+
             // Check for search query in URL (from header search)
             const urlParams = new URLSearchParams(window.location.search);
             const queryFromUrl = urlParams.get('q');
@@ -126,7 +126,7 @@ class KnowledgeGraphBrowser {
                 }
                 this.currentQuery = queryFromUrl;
             }
-            
+
             console.log('🔍 Performing initial search...');
             this.search();
             console.log('✅ Browser initialized successfully');
