@@ -8,19 +8,6 @@ DB_NAME=${DB_NAME:-tvbo}
 
 export PGPASSWORD="$DB_PASSWORD"
 
-# Install tvbo from mounted source (editable) if not already linked
-if [ -f /mnt/tvbo-src/pyproject.toml ]; then
-    # Check if editable install already exists and points to the right location
-    TVBO_LOC=$(python3 -c "import tvbo; print(tvbo.__file__)" 2>/dev/null || echo "")
-    if [[ "$TVBO_LOC" == /mnt/tvbo-src/* ]]; then
-        echo "tvbo already installed as editable from /mnt/tvbo-src"
-    else
-        echo "Installing tvbo from mounted source (editable)..."
-        pip install --break-system-packages -e /mnt/tvbo-src 2>&1 | tail -5
-        echo "tvbo installed successfully"
-    fi
-fi
-
 # Wait for PostgreSQL to be ready (explicitly hit the default "postgres" DB so we don't fail when the target DB is missing)
 until pg_isready -h "$DB_HOST" -U "$DB_USER" -d postgres > /dev/null 2>&1; do
   echo "Waiting for PostgreSQL at $DB_HOST..."
@@ -47,5 +34,5 @@ psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "INSERT INTO ir_config_paramet
 psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "UPDATE website SET configurator_done = true;" 2>/dev/null || true
 
 echo "TVBO module ready!"
-echo "Starting Odoo server in development mode..."
-exec odoo -d "$DB_NAME" --db_host="$DB_HOST" --db_user="$DB_USER" --db_password="$DB_PASSWORD" --db-filter="^${DB_NAME}$" --dev=all
+echo "Starting Odoo server..."
+exec odoo -d "$DB_NAME" --db_host="$DB_HOST" --db_user="$DB_USER" --db_password="$DB_PASSWORD" --db-filter="^${DB_NAME}$"

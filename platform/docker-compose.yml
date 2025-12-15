@@ -36,8 +36,8 @@ services:
 
   odoo:
     build:
-      context: .
-      dockerfile: Dockerfile.odoo
+      context: ..
+      dockerfile: platform/Dockerfile.odoo
     platform: linux/amd64
     container_name: odoo
     depends_on:
@@ -48,7 +48,6 @@ services:
       - USER=odoo
       - PASSWORD=odoo
       - TVBO_TEMPDIR=/tmp/tvbo
-      - PYTHONPATH=/mnt/tvbo-src
     ports:
       - "8169:8069"
     volumes:
@@ -57,8 +56,6 @@ services:
       - ./odoo-addons:/mnt/extra-addons
       - ./init-odoo.sh:/init-odoo.sh:ro
       - ../imgs:/mnt/imgs:ro
-      # Mount tvbo source for development (NOT read-only for editable install)
-      - ..:/mnt/tvbo-src
     networks:
       - tvbo-network
     restart: unless-stopped

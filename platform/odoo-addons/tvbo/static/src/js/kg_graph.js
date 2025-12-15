@@ -14,6 +14,7 @@ class KnowledgeGraphVisualization {
         this.zoom = null;
         this.g = null;
         this.selectedNode = null;
+        this.limit = 100; // Default limit for performance
 
         // Color scheme for node types
         this.colors = {
@@ -94,17 +95,75 @@ class KnowledgeGraphVisualization {
     }
 
     async loadGraph() {
-        const response = await fetch('/tvbo/api/kg/graph');
-        const data = await response.json();
+        try {
+            this.showLoading();
 
-        this.nodes = data.nodes;
-        this.links = data.links;
+            // Use limit parameter for better performance
+            const url = `/tvbo/api/kg/graph?limit=${this.limit}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const data = await response.json();
 
-        this.render();
-        this.renderLegend(data.stats);
+            this.nodes = data.nodes || [];
+            this.links = data.links || [];
+
+            if (this.nodes.length === 0) {
+                this.showError('No graph data available');
+                return;
+            }
+
+            this.render();
+            this.renderLegend(data.stats || {});
+        } catch (error) {
+            console.error('Failed to load graph:', error);
+            this.showError(`Failed to load graph: ${error.message}`);
+        }
+    }
+
+    showLoading() {
+        const container = document.getElementById('graphContainer');
+        if (container) {
+            // Clear any existing error messages but keep SVG structure
+            const existing = container.querySelector('.graph-loading');
+            if (!existing) {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'graph-loading';
+                loadingDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; text-align: center;';
+                loadingDiv.innerHTML = `
+                    <div style="font-size: 2rem;">⏳</div>
+                    <p>Loading knowledge graph...</p>
+                `;
+                container.style.position = 'relative';
+                container.appendChild(loadingDiv);
+            }
+        }
+    }
+
+    hideLoading() {
+        const loading = document.querySelector('.graph-loading');
+        if (loading) loading.remove();
+    }
+
+    showError(message) {
+        const container = document.getElementById('graphContainer');
+        if (container) {
+            container.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #e53e3e;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem;">⚠️</div>
+                        <p>${message}</p>
+                        <button onclick="window.kgBrowser?.graphViz?.init()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">Retry</button>
+                    </div>
+                </div>
+            `;
+        }
     }
 
     render() {
+        this.hideLoading();
+
         // Create link elements
         const link = this.g.append('g')
             .attr('class', 'links')

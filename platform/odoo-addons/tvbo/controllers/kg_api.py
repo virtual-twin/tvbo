@@ -489,13 +489,31 @@ class KnowledgeGraphAPI(http.Controller):
 
     @http.route('/tvbo/api/kg/graph', type='http', auth='public', methods=['GET'], csrf=False)
     def get_knowledge_graph(self, **kw):
-        """Get full knowledge graph: ontology + database items with relationships."""
-        api = get_ontology_api()
+        """Get full knowledge graph: ontology + database items with relationships.
 
-        # Get ontology class hierarchy as base graph
-        hierarchy = api.get_class_hierarchy()
-        nodes = hierarchy.get('nodes', [])
-        links = hierarchy.get('links', [])
+        Optional query params:
+          - limit: max ontology classes to include (default: all)
+          - db_only: if 'true', only include database items, not full ontology
+        """
+        api = get_ontology_api()
+        db_only = kw.get('db_only', 'false').lower() == 'true'
+        limit = int(kw.get('limit', 0)) if kw.get('limit') else 0
+
+        nodes = []
+        links = []
+
+        # Get ontology class hierarchy (unless db_only)
+        if not db_only:
+            hierarchy = api.get_class_hierarchy()
+            nodes = hierarchy.get('nodes', [])
+            links = hierarchy.get('links', [])
+
+            # Apply limit if specified
+            if limit > 0 and len(nodes) > limit:
+                nodes = nodes[:limit]
+                # Filter links to only include nodes in our limited set
+                node_ids = {n.get('storid') for n in nodes}
+                links = [l for l in links if l.get('source') in node_ids and l.get('target') in node_ids]
 
         # Add database items as nodes linked to their ontology classes
         db_items = []
