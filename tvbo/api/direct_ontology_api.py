@@ -36,12 +36,14 @@ CURIE_PREFIXES = {
 
 def _get_label(entity) -> str:
     """Get entity label."""
-    return entity.label.first() or entity.name
+    if hasattr(entity, 'label') and entity.label:
+        return entity.label.first() or entity.name
+    return entity.name
 
 
 def _get_symbol(entity) -> str:
     """Get LaTeX symbol representation."""
-    if entity.symbol.first():
+    if hasattr(entity, 'symbol') and entity.symbol and entity.symbol.first():
         return rf"${latex(symbols(entity.symbol.first()))}$"
     return _get_label(entity)
 
@@ -49,20 +51,28 @@ def _get_symbol(entity) -> str:
 def _get_type(entity) -> str:
     """Get primary type/class."""
     type_entity = ontology.get_type(entity)
-    return type_entity.label.first() or type_entity.name
+    if hasattr(type_entity, 'label') and type_entity.label:
+        return type_entity.label.first() or type_entity.name
+    return type_entity.name
 
 
 def _serialize_entity(entity) -> Dict[str, Any]:
     """Serialize an ontology entity to dict."""
-    definition = entity.definition.first() if entity.definition else ""
-    description = (
-        entity.description.first() if entity.description else
-        entity.title.first() if entity.title else
-        definition.split('.')[0] if definition else ""
-    )
+    # Safely get optional attributes
+    definition = ""
+    if hasattr(entity, 'definition') and entity.definition:
+        definition = entity.definition.first() or ""
+
+    description = ""
+    if hasattr(entity, 'description') and entity.description:
+        description = entity.description.first() or ""
+    elif hasattr(entity, 'title') and entity.title:
+        description = entity.title.first() or ""
+    elif definition:
+        description = definition.split('.')[0]
 
     is_a = [p.name for p in entity.is_a if isinstance(p, owl.ThingClass) and p.name != 'Thing']
-    requires = [r.storid for r in entity.requires] if hasattr(entity, 'requires') else []
+    requires = [r.storid for r in entity.requires] if hasattr(entity, 'requires') and entity.requires else []
 
     return {
         "id": f"onto_{entity.storid}",
@@ -181,6 +191,29 @@ class DirectOntologyAPI:
             links.extend(data["links"])
 
         return {"nodes": nodes, "links": links, "center": center}
+
+    def get_class_hierarchy(self) -> Dict[str, Any]:
+        """Get full ontology class hierarchy for graph visualization."""
+        nodes, links = [], []
+        seen = set()
+
+        # Get all classes in the ontology
+        for cls in onto.classes():
+            if cls.storid not in seen:
+                seen.add(cls.storid)
+                nodes.append(_serialize_entity(cls))
+
+                # Add is_a links to parents
+                for parent in cls.is_a:
+                    if isinstance(parent, owl.ThingClass) and parent.name != 'Thing':
+                        links.append({
+                            "source": cls.storid,
+                            "target": parent.storid,
+                            "type": "is_a",
+                            "label": "is_a",
+                        })
+
+        return {"nodes": nodes, "links": links}
 
     def get_schema_ontology_link(self, schema_class_name: str) -> Optional[Dict[str, Any]]:
         """Get ontology concept linked to a schema class."""

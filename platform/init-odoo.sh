@@ -8,11 +8,17 @@ DB_NAME=${DB_NAME:-tvbo}
 
 export PGPASSWORD="$DB_PASSWORD"
 
-# Install tvbo from mounted source if available
+# Install tvbo from mounted source (editable) if not already linked
 if [ -f /mnt/tvbo-src/pyproject.toml ]; then
-    echo "Installing tvbo from mounted source..."
-    pip install --break-system-packages -e /mnt/tvbo-src 2>&1 | tail -10
-    echo "tvbo installed successfully"
+    # Check if editable install already exists and points to the right location
+    TVBO_LOC=$(python3 -c "import tvbo; print(tvbo.__file__)" 2>/dev/null || echo "")
+    if [[ "$TVBO_LOC" == /mnt/tvbo-src/* ]]; then
+        echo "tvbo already installed as editable from /mnt/tvbo-src"
+    else
+        echo "Installing tvbo from mounted source (editable)..."
+        pip install --break-system-packages -e /mnt/tvbo-src 2>&1 | tail -5
+        echo "tvbo installed successfully"
+    fi
 fi
 
 # Wait for PostgreSQL to be ready (explicitly hit the default "postgres" DB so we don't fail when the target DB is missing)
