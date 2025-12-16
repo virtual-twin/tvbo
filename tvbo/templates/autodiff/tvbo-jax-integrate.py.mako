@@ -21,12 +21,12 @@ boundaries = [
 ]
 def get_lower_bound(sv):
     if sv.boundaries and sv.boundaries.lo is not None:
-        return sv.boundaries.lo
-    return -np.inf
+        return float(sv.boundaries.lo)
+    return float('-inf')
 def get_upper_bound(sv):
     if sv.boundaries and sv.boundaries.hi is not None:
-        return sv.boundaries.hi
-    return np.inf
+        return float(sv.boundaries.hi)
+    return float('inf')
 %>
 
 ## Helper that converts a array into a string that can be read as array again

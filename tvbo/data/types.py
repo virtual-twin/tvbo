@@ -1515,17 +1515,11 @@ class SimulationState:
 
     @property
     def state_variable_names(self):
-        # Prefer names explicitly attached by exporter
-        if hasattr(self, "_svar_names") and isinstance(self._svar_names, (list, tuple)):
-            return list(self._svar_names)
-        # Fallback to labels on initial conditions if present
-        try:
-            ld = getattr(self.initial_conditions, "labels_dimensions", {}) or {}
-            names = ld.get("State Variable", None)
-            if names:
-                return list(names)
-        except Exception:
-            pass
+
+        ld = getattr(self.initial_conditions, "labels_dimensions", {}) or {}
+        names = ld.get("State Variable", None)
+        if names is not None and len(names) == self.n_state_variables:
+            return names
         return [str(i) for i in range(self.n_state_variables)]
 
     def _ensure_noise_holder(self):

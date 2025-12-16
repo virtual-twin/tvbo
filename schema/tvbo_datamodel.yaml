@@ -49,9 +49,7 @@ slots:
     iri:
         range: string
     value:
-        any_of:
-            - range: float
-            - range: string
+        range: float
     file:
         range: string
     reported_optimum:
