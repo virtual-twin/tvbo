@@ -77,6 +77,25 @@ def import_yaml_model(
     acr = ontology.create_acronym(model_name)
     model_suffix = f"_{acr}"
 
+    def _to_native(val: Any) -> Any:
+        """Convert linkml extended types to native Python types for owlready2."""
+        if val is None:
+            return None
+        # Handle linkml extended_str and similar wrapper types
+        if type(val).__name__ == "extended_str":
+            return str(val)
+        if type(val).__name__ == "extended_int":
+            return int(val)
+        if type(val).__name__ == "extended_float":
+            return float(val)
+        # Handle lists/sequences recursively
+        if isinstance(val, (list, tuple)):
+            return type(val)(_to_native(v) for v in val)
+        # Handle dicts recursively
+        if isinstance(val, dict):
+            return {_to_native(k): _to_native(v) for k, v in val.items()}
+        return val
+
     def create_onto_subclass(name, base_class, properties, model_class):
         """
         Helper function to create ontology subclasses.
@@ -85,7 +104,9 @@ def import_yaml_model(
             new_class = type(name, (model_class, base_class), {})
             for prop_name, prop_value in properties.items():
                 if prop_value is not None:
-                    getattr(new_class, prop_name).append(prop_value)
+                    # Convert linkml extended types to native Python types
+                    native_value = _to_native(prop_value)
+                    getattr(new_class, prop_name).append(native_value)
             return new_class
 
     # Create the main model class in the ontology

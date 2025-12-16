@@ -20,55 +20,6 @@ from tvbo.knowledge import ontology
 from tvbo.knowledge.simulation import equations, network
 
 exec_globals = {}
-
-# exec_globals = {
-#     # TVB Imports (Classes)
-#     "Attr": import_module("tvb.basic.neotraits.api").Attr,
-#     "Final": import_module("tvb.basic.neotraits.api").Final,
-#     "HasTraits": import_module("tvb.basic.neotraits.api").HasTraits,
-#     "List": import_module("tvb.basic.neotraits.api").List,
-#     "NArray": import_module("tvb.basic.neotraits.api").NArray,
-#     "Range": import_module("tvb.basic.neotraits.api").Range,
-#     "Coupling": import_module("tvb.simulator.coupling").Coupling,
-#     "SparseCoupling": import_module("tvb.simulator.coupling").SparseCoupling,
-#     "SparseHistory": import_module("tvb.simulator.history").SparseHistory,
-#     "Model": import_module("tvb.simulator.models.base").Model,
-#     "Integrator": import_module("tvb.simulator.integrators").Integrator,
-#     "IntegratorStochastic": import_module(
-#         "tvb.simulator.integrators"
-#     ).IntegratorStochastic,
-#     "Simulator": import_module("tvb.simulator.simulator").Simulator,
-#     "SciPyODE": import_module("tvb.simulator.integrators").SciPyODE,
-#     "SciPySDE": import_module("tvb.simulator.integrators").SciPySDE,
-#     "Additive": import_module("tvb.simulator.noise").Additive,
-#     "Multiplicative": import_module("tvb.simulator.noise").Multiplicative,
-#     # Numba Imports (Functions)
-#     "float64": import_module("numba").float64,
-#     "f64": import_module("numba").float64,
-#     "guvectorize": import_module("numba").guvectorize,
-#     # SymPy Imports (Functions)
-#     "pycode": import_module("sympy").pycode,
-#     # Mako Imports (Classes)
-#     "Context": import_module("mako.runtime").Context,
-#     "Template": import_module("mako.template").Template,
-#     # TVB Imports (Functions)
-#     "simple_gen_astr": import_module("tvb.simulator.common").simple_gen_astr,
-#     # NumPy Imports (Modules)
-#     "numpy": import_module("numpy"),
-#     "exp": import_module("numpy").exp,
-#     "where": import_module("numpy").where,
-#     "log": import_module("numpy").log,
-#     "sqrt": import_module("numpy").sqrt,
-#     "sin": import_module("numpy").sin,
-#     "cos": import_module("numpy").cos,
-#     "tanh": import_module("numpy").tanh,
-#     "pi": import_module("numpy").pi,
-#     "inf": import_module("numpy").inf,
-#     "np": import_module("numpy"),
-#     # SymPy Imports (Modules)
-#     "sp": import_module("sympy"),
-# }
-
 TEMPLATES = templates.root
 
 
