@@ -1,4 +1,4 @@
-<%
+<%!
 from tvbo.export.code import render_expression
 
 def get_callable_info(func):
@@ -35,6 +35,8 @@ def get_jax_module(module):
         if module.startswith(prefix):
             return module.replace(prefix, jax_prefix, 1)
     return module
+%>
+<%
 
 pipeline_imports = set()
 for func in observation.pipeline:
@@ -51,7 +53,7 @@ from tvbo.data.types import TimeSeries
 %>
 from ${jax_module} import ${name}
 % endfor
-<%namespace name="jaxfunc" file="/jax-function.py.mako"/>
+<%namespace name="jaxfunc" file="/autodiff/jax-function.py.mako"/>
 <%def name="create_observation_pipeline(observation, dt)" filter="trim">
 <%
     func_name_to_output = {func.name: func.output for func in observation.pipeline}

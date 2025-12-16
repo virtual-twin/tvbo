@@ -1,4 +1,4 @@
-<%
+<%!
 from tvbo.export.code import render_expression
 %>
 <%def name="generate_function(func, func_name)" filter="trim">

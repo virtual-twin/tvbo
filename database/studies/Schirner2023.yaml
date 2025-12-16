@@ -8,6 +8,7 @@ doi: "10.1016/j.patter.2023.100787"
 
 simulation_experiments:
     - id: 1
+      label: "EIB full brain network model"
       local_dynamics:
           name: EIB_ReducedWongWangExcInh
           system_type: continuous
@@ -257,3 +258,7 @@ simulation_experiments:
             simulation_period: 720.0
             depends_on:
                 - { name: FIC } # EIB runs alongside FIC
+
+    # Reference to two-node model experiment
+    - file: Schirner2023_TwoNode.yaml
+      description: "Two-node EIB model for E/I balance studies"

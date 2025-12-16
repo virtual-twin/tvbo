@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-16T13:52:58
+# Generation date: 2025-12-16T17:50:57
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1143,7 +1143,6 @@ class Function(YAMLRoot):
     output_equation: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
     callable: Optional[Union[dict, "Callable"]] = None
-    operation_type: Optional[Union[str, "OperationType"]] = None
     apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
     time_range: Optional[Union[dict, Range]] = None
 
@@ -1192,9 +1191,6 @@ class Function(YAMLRoot):
         if self.callable is not None and not isinstance(self.callable, Callable):
             self.callable = Callable(**as_dict(self.callable))
 
-        if self.operation_type is not None and not isinstance(self.operation_type, OperationType):
-            self.operation_type = OperationType(self.operation_type)
-
         if self.apply_on_dimension is not None and not isinstance(self.apply_on_dimension, DimensionType):
             self.apply_on_dimension = DimensionType(self.apply_on_dimension)
 
@@ -1217,7 +1213,6 @@ class Callable(YAMLRoot):
     description: Optional[str] = None
     module: Optional[str] = None
     qualname: Optional[str] = None
-    reverse_kernel: Optional[Union[bool, Bool]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1234,9 +1229,6 @@ class Callable(YAMLRoot):
 
         if self.qualname is not None and not isinstance(self.qualname, str):
             self.qualname = str(self.qualname)
-
-        if self.reverse_kernel is not None and not isinstance(self.reverse_kernel, Bool):
-            self.reverse_kernel = Bool(self.reverse_kernel)
 
         if self.software is not None and not isinstance(self.software, SoftwareRequirement):
             self.software = SoftwareRequirement(**as_dict(self.software))
@@ -1590,9 +1582,9 @@ class TuningObjective(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     type: Optional[str] = None
-    target_variable: Optional[Union[dict, StateVariable]] = None
+    target_variable: Optional[Union[str, StateVariableName]] = None
     target_value: Optional[float] = None
-    target_data: Optional[Union[dict, Observation]] = None
+    target_data: Optional[Union[str, ObservationName]] = None
     metric: Optional[Union[dict, Equation]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1605,14 +1597,14 @@ class TuningObjective(YAMLRoot):
         if self.type is not None and not isinstance(self.type, str):
             self.type = str(self.type)
 
-        if self.target_variable is not None and not isinstance(self.target_variable, StateVariable):
-            self.target_variable = StateVariable(**as_dict(self.target_variable))
+        if self.target_variable is not None and not isinstance(self.target_variable, StateVariableName):
+            self.target_variable = StateVariableName(self.target_variable)
 
         if self.target_value is not None and not isinstance(self.target_value, float):
             self.target_value = float(self.target_value)
 
-        if self.target_data is not None and not isinstance(self.target_data, Observation):
-            self.target_data = Observation(**as_dict(self.target_data))
+        if self.target_data is not None and not isinstance(self.target_data, ObservationName):
+            self.target_data = ObservationName(self.target_data)
 
         if self.metric is not None and not isinstance(self.metric, Equation):
             self.metric = Equation(**as_dict(self.metric))
@@ -1705,6 +1697,7 @@ class Integrator(YAMLRoot):
     unit: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     duration: Optional[float] = 1000
+    description: Optional[str] = None
     method: Optional[str] = None
     step_size: Optional[float] = 0.01220703125
     steps: Optional[int] = None
@@ -1728,6 +1721,9 @@ class Integrator(YAMLRoot):
 
         if self.duration is not None and not isinstance(self.duration, float):
             self.duration = float(self.duration)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
 
         if self.method is not None and not isinstance(self.method, str):
             self.method = str(self.method)
@@ -1777,6 +1773,7 @@ class Coupling(YAMLRoot):
     name: Union[str, CouplingName] = "Linear"
     label: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    description: Optional[str] = None
     coupling_function: Optional[Union[dict, Equation]] = None
     sparse: Optional[Union[bool, Bool]] = False
     pre_expression: Optional[Union[dict, Equation]] = None
@@ -1800,6 +1797,9 @@ class Coupling(YAMLRoot):
             self.label = str(self.label)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
 
         if self.coupling_function is not None and not isinstance(self.coupling_function, Equation):
             self.coupling_function = Equation(**as_dict(self.coupling_function))
@@ -2222,9 +2222,9 @@ class SoftwareRequirement(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.SoftwareRequirement
 
     name: Union[str, SoftwareRequirementName] = None
-    package: Union[str, SoftwarePackageName] = None
     description: Optional[str] = None
     dataLocation: Optional[str] = None
+    package: Optional[Union[str, SoftwarePackageName]] = None
     version_spec: Optional[str] = None
     role: Optional[Union[str, "RequirementRole"]] = 'runtime'
     optional: Optional[Union[bool, Bool]] = False
@@ -2241,16 +2241,14 @@ class SoftwareRequirement(YAMLRoot):
         if not isinstance(self.name, SoftwareRequirementName):
             self.name = SoftwareRequirementName(self.name)
 
-        if self._is_empty(self.package):
-            self.MissingRequiredField("package")
-        if not isinstance(self.package, SoftwarePackageName):
-            self.package = SoftwarePackageName(self.package)
-
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
         if self.dataLocation is not None and not isinstance(self.dataLocation, str):
             self.dataLocation = str(self.dataLocation)
+
+        if self.package is not None and not isinstance(self.package, SoftwarePackageName):
+            self.package = SoftwarePackageName(self.package)
 
         if self.version_spec is not None and not isinstance(self.version_spec, str):
             self.version_spec = str(self.version_spec)
@@ -3439,21 +3437,6 @@ class ImagingModality(EnumDefinitionImpl):
         name="ImagingModality",
     )
 
-class OperationType(EnumDefinitionImpl):
-
-    select = PermissibleValue(text="select")
-    temporal_average = PermissibleValue(text="temporal_average")
-    subsample = PermissibleValue(text="subsample")
-    projection = PermissibleValue(text="projection")
-    reference_subtract = PermissibleValue(text="reference_subtract")
-    convolution = PermissibleValue(text="convolution")
-    node_coupling = PermissibleValue(text="node_coupling")
-    custom_transform = PermissibleValue(text="custom_transform")
-
-    _defn = EnumDefinition(
-        name="OperationType",
-    )
-
 class SystemType(EnumDefinitionImpl):
 
     continuous = PermissibleValue(
@@ -4040,9 +4023,6 @@ slots.function__source_code = Slot(uri=TVBO.source_code, name="function__source_
 slots.function__callable = Slot(uri=TVBO.callable, name="function__callable", curie=TVBO.curie('callable'),
                    model_uri=TVBO.function__callable, domain=None, range=Optional[Union[dict, Callable]])
 
-slots.function__operation_type = Slot(uri=TVBO.operation_type, name="function__operation_type", curie=TVBO.curie('operation_type'),
-                   model_uri=TVBO.function__operation_type, domain=None, range=Optional[Union[str, "OperationType"]])
-
 slots.function__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="function__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
                    model_uri=TVBO.function__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
 
@@ -4054,9 +4034,6 @@ slots.callable__module = Slot(uri=TVBO.module, name="callable__module", curie=TV
 
 slots.callable__qualname = Slot(uri=TVBO.qualname, name="callable__qualname", curie=TVBO.curie('qualname'),
                    model_uri=TVBO.callable__qualname, domain=None, range=Optional[str])
-
-slots.callable__reverse_kernel = Slot(uri=TVBO.reverse_kernel, name="callable__reverse_kernel", curie=TVBO.curie('reverse_kernel'),
-                   model_uri=TVBO.callable__reverse_kernel, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.callable__software = Slot(uri=TVBO.software, name="callable__software", curie=TVBO.curie('software'),
                    model_uri=TVBO.callable__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
@@ -4125,13 +4102,13 @@ slots.tuningObjective__type = Slot(uri=TVBO.type, name="tuningObjective__type", 
                    model_uri=TVBO.tuningObjective__type, domain=None, range=Optional[str])
 
 slots.tuningObjective__target_variable = Slot(uri=TVBO.target_variable, name="tuningObjective__target_variable", curie=TVBO.curie('target_variable'),
-                   model_uri=TVBO.tuningObjective__target_variable, domain=None, range=Optional[Union[dict, StateVariable]])
+                   model_uri=TVBO.tuningObjective__target_variable, domain=None, range=Optional[Union[str, StateVariableName]])
 
 slots.tuningObjective__target_value = Slot(uri=TVBO.target_value, name="tuningObjective__target_value", curie=TVBO.curie('target_value'),
                    model_uri=TVBO.tuningObjective__target_value, domain=None, range=Optional[float])
 
 slots.tuningObjective__target_data = Slot(uri=TVBO.target_data, name="tuningObjective__target_data", curie=TVBO.curie('target_data'),
-                   model_uri=TVBO.tuningObjective__target_data, domain=None, range=Optional[Union[dict, Observation]])
+                   model_uri=TVBO.tuningObjective__target_data, domain=None, range=Optional[Union[str, ObservationName]])
 
 slots.tuningObjective__metric = Slot(uri=TVBO.metric, name="tuningObjective__metric", curie=TVBO.curie('metric'),
                    model_uri=TVBO.tuningObjective__metric, domain=None, range=Optional[Union[dict, Equation]])
@@ -4404,7 +4381,7 @@ slots.softwareEnvironment__requirements = Slot(uri=TVBO.requirements, name="soft
                    model_uri=TVBO.softwareEnvironment__requirements, domain=None, range=Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]])
 
 slots.softwareRequirement__package = Slot(uri=TVBO.package, name="softwareRequirement__package", curie=TVBO.curie('package'),
-                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Union[str, SoftwarePackageName])
+                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Optional[Union[str, SoftwarePackageName]])
 
 slots.softwareRequirement__version_spec = Slot(uri=TVBO.version_spec, name="softwareRequirement__version_spec", curie=TVBO.curie('version_spec'),
                    model_uri=TVBO.softwareRequirement__version_spec, domain=None, range=Optional[str])

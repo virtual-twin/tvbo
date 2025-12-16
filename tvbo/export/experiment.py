@@ -124,12 +124,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 self.local_dynamics = dynamics_dict[first_key]
                 self.model = self.local_dynamics
 
-        # Defaults
-        if not getattr(self, "monitors", None):
-            from tvbo.datamodel.tvbo_datamodel import Monitor
-
-            self.monitors["Raw"] = Monitor(name="Raw")
-
         if not getattr(self, "network", None):
             self.network = Network()
 
@@ -654,7 +648,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if isinstance(m, monitoring.Monitor):
                     meta_list.append(m.metadata)
                 elif isinstance(m, dict):
-                    meta_list.append(tvbo_datamodel.Monitor(**m))
+                    meta_list.append(tvbo_datamodel.Observation(**m))
         if meta_list:
             self.monitors = meta_list
 
@@ -1503,11 +1497,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     @property
     def max_delay(self) -> float:
         """Compute the maximum delay (ms) from the current network/connectome."""
-        return (
-            float(np.max(self.network.compute_delays()))
-            if self.network is not None
-            else 0.0
-        )
+        if self.network is None:
+            return 0.0
+        delays = self.network.compute_delays()
+        # Use nanmax to ignore NaN values for non-existent edges
+        max_val = np.nanmax(delays)
+        return float(max_val) if not np.isnan(max_val) else 0.0
 
     @property
     def horizon(self, dt: float | None = None) -> int:

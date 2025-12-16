@@ -44,6 +44,7 @@ import jax.numpy as jnp
 <%include file="/jax-noise.py.mako" />
 <%namespace name="monitors" file="/jax-monitors.py.mako"/>
 <%namespace name="utils" file="/jax-utils.py.mako"/>
+<%namespace name="obs" file="/jax-observation.py.mako"/>
 
 ## Monitors
 ## % for i, monitor in enumerate(monitors_seq):
@@ -52,6 +53,11 @@ import jax.numpy as jnp
 def monitor_raw(time_steps, trace, params, t_offset = 0):
     dt = ${dt}
     return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw")
+
+## Observations
+% if hasattr(experiment, 'observations') and experiment.observations:
+${obs.create_all_observations(experiment)}
+% endif
 
 ## Transformation for derived parameters
 def transform_parameters(_p):

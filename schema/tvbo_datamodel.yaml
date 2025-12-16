@@ -894,14 +894,14 @@ classes:
                 description: "Type of objective: 'activity_target', 'fc_matching', 'custom'"
             target_variable:
                 range: StateVariable
-                inlined: true
+                inlined: false
                 description: State variable for activity targets (e.g., S_e)
             target_value:
                 range: float
                 description: Target value for activity objectives
             target_data:
                 range: Observation
-                inlined: true
+                inlined: false
                 description: Reference to empirical data observation for matching objectives
             metric:
                 range: Equation
@@ -966,6 +966,7 @@ classes:
             - unit
             - parameters
             - duration
+            - description
         attributes:
             method:
                 range: string
@@ -1006,6 +1007,7 @@ classes:
             - name
             - label
             - parameters
+            - description
         slot_usage:
             name:
                 ifabsent: "Linear"
@@ -1301,7 +1303,6 @@ classes:
         attributes:
             package:
                 range: SoftwarePackage
-                required: true
                 description: "Reference to the software package identity."
             version_spec:
                 range: string
