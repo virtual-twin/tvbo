@@ -21,10 +21,6 @@ from typing import (
     TypeVar,
     Union
 )
-from typing import (
-    TypeVar,
-    Union
-)
 
 from pydantic import (
     BaseModel,
@@ -36,11 +32,6 @@ from pydantic import (
     field_validator,
     model_serializer
 )
-
-if sys.version_info.minor >= 12:
-    from typing import TypeAliasType
-else:
-    from typing_extensions import TypeAliasType
 
 if sys.version_info.minor >= 12:
     from typing import TypeAliasType
@@ -243,6 +234,32 @@ class NoiseType(str, Enum):
     pink = "pink"
 
 
+class AggregationType(str, Enum):
+    """
+    How to aggregate time series data
+    """
+    mean = "mean"
+    """
+    Average over time
+    """
+    last = "last"
+    """
+    Last value in window
+    """
+    first = "first"
+    """
+    First value in window
+    """
+    window = "window"
+    """
+    Sliding window aggregation
+    """
+    none = "none"
+    """
+    No aggregation
+    """
+
+
 class RequirementRole(str, Enum):
     engine = "engine"
     """
@@ -268,6 +285,28 @@ class RequirementRole(str, Enum):
 
 class EnvironmentType(str, Enum):
     conda = "conda"
+
+
+class DimensionType(str, Enum):
+    """
+    Dimensions along which operations can be applied
+    """
+    time = "time"
+    """
+    Temporal dimension
+    """
+    state = "state"
+    """
+    State variable dimension
+    """
+    region = "region"
+    """
+    Spatial/regional dimension (nodes)
+    """
+    mode = "mode"
+    """
+    Mode dimension (e.g., coupling modes)
+    """
     venv = "venv"
     docker = "docker"
     singularity = "singularity"
@@ -303,18 +342,19 @@ class BrainAtlas(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -344,18 +384,19 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -364,6 +405,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -398,18 +440,19 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -442,15 +485,17 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -499,15 +544,17 @@ class Dataset(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -541,7 +588,7 @@ class Subject(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
 
     subject_id: str = Field(default=..., description="""Unique identifier for a subject within a dataset.""", json_schema_extra = { "linkml_meta": {'aliases': ['subject code', 'subject label'],
-         'domain_of': ['Subject'],
+         'domain_of': ['Subject', 'TimeSeries'],
          'exact_mappings': ['schema:identifier']} })
     age: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
     sex: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
@@ -599,15 +646,17 @@ class Contact(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -653,18 +702,19 @@ class DBSProtocol(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -682,11 +732,7 @@ class ClinicalScale(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
 
-    acronym: Optional[str] = Field(default=None, description="""Short abbreviation (e.g., UPDRS)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'ObservationModel',
-                       'Function',
-                       'Monitor']} })
+    acronym: Optional[str] = Field(default=None, description="""Short abbreviation (e.g., UPDRS)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
     name: Optional[str] = Field(default=None, description="""Full name of the scale (e.g., Unified Parkinson’s Disease Rating Scale)""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
@@ -694,18 +740,19 @@ class ClinicalScale(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -725,11 +772,7 @@ class ClinicalScore(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
 
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'ObservationModel',
-                       'Function',
-                       'Monitor']} })
+    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
     name: Optional[str] = Field(default=None, description="""Full name of the score (e.g., Unified Parkinson's Disease Rating Scale - Part III)""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
@@ -737,18 +780,19 @@ class ClinicalScore(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -760,18 +804,21 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -829,11 +876,14 @@ class EField(ConfiguredBaseModel):
 
 
 class Range(ConfiguredBaseModel):
+    """
+    Specifies a range for array generation or parameter bounds.
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    lo: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
-    hi: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
-    step: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    lo: Optional[str] = Field(default="0", description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'string(0)'} })
+    hi: Optional[str] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    step: Optional[str] = Field(default=None, description="""Step size. Can be: number, argument name, or expression. Use 'input.property' to reference input object properties (e.g., 'input.sample_period').""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
 
 
 class Equation(ConfiguredBaseModel):
@@ -850,15 +900,17 @@ class Equation(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -885,14 +937,13 @@ class Equation(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     lhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
@@ -917,7 +968,7 @@ class Stimulus(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -928,7 +979,7 @@ class Stimulus(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
@@ -936,14 +987,13 @@ class Stimulus(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
@@ -953,18 +1003,21 @@ class Stimulus(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1002,15 +1055,17 @@ class Stimulus(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1038,14 +1093,13 @@ class TemporalApplicableEquation(Equation):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
@@ -1063,15 +1117,17 @@ class TemporalApplicableEquation(Equation):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1115,15 +1171,17 @@ class Parcellation(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1141,7 +1199,7 @@ class Parcellation(ConfiguredBaseModel):
                        'PDE']} })
     region_labels: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
     center_coordinates: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
-    data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'DataInjection']} })
+    data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram']} })
     atlas: BrainAtlas = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
 
 
@@ -1158,18 +1216,19 @@ class Tractogram(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -1185,15 +1244,17 @@ class Tractogram(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1216,18 +1277,21 @@ class Tractogram(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1243,7 +1307,7 @@ class Tractogram(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    data_source: Optional[str] = Field(default=None, description="""Path or URI to the tractography data file""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'DataInjection']} })
+    data_source: Optional[str] = Field(default=None, description="""Path or URI to the tractography data file""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram']} })
     number_of_subjects: Optional[int] = Field(default=None, description="""Number of subjects in the tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
     acquisition: Optional[str] = Field(default=None, description="""Acquisition protocol or scanner information""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
     processing_pipeline: Optional[str] = Field(default=None, description="""Processing pipeline used to generate the tractography""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
@@ -1267,15 +1331,17 @@ class Matrix(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1298,18 +1364,21 @@ class Matrix(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1337,7 +1406,7 @@ class Matrix(ConfiguredBaseModel):
                        'Mesh']} })
     x: Optional[BrainRegionSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
     y: Optional[BrainRegionSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
-    values: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'DataInjection', 'SpatialField']} })
+    values: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'SpatialField']} })
 
 
 class BrainRegionSeries(ConfiguredBaseModel):
@@ -1346,7 +1415,7 @@ class BrainRegionSeries(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    values: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'DataInjection', 'SpatialField']} })
+    values: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'SpatialField']} })
 
 
 class Network(ConfiguredBaseModel):
@@ -1368,15 +1437,17 @@ class Network(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1399,18 +1470,21 @@ class Network(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1457,15 +1531,17 @@ class Node(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1488,18 +1564,21 @@ class Node(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1524,14 +1603,13 @@ class Node(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     initial_state: Optional[list[float]] = Field(default=[], description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
@@ -1554,15 +1632,17 @@ class Edge(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1585,18 +1665,21 @@ class Edge(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1617,17 +1700,16 @@ class Edge(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
-    source: int = Field(default=..., description="""Source node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'ArgumentMapping', 'Dynamics']} })
+    source: int = Field(default=..., description="""Source node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
     target: int = Field(default=..., description="""Target node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
@@ -1635,8 +1717,11 @@ class Edge(ConfiguredBaseModel):
     directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'False'} })
 
 
-class ObservationModel(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:ObservationModel', 'from_schema': 'https://w3id.org/tvbo'})
+class Observation(ConfiguredBaseModel):
+    """
+    Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input → output flow.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Observation', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -1645,27 +1730,61 @@ class ObservationModel(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'ObservationModel',
+    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
                        'Function',
-                       'Monitor']} })
+                       'DerivedVariable',
+                       'RandomStream',
+                       'CostFunction',
+                       'FittingTarget',
+                       'ModelFitting',
+                       'TuningObjective',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Stimulus',
                        'Tractogram',
@@ -1673,18 +1792,21 @@ class ObservationModel(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1701,7 +1823,7 @@ class ObservationModel(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -1712,7 +1834,7 @@ class ObservationModel(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
@@ -1720,194 +1842,24 @@ class ObservationModel(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel',
-                       'Monitor',
-                       'SimulationExperiment',
-                       'PDESolver']} })
-    transformation: Optional[Function] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    pipeline: Optional[list[ProcessingStep]] = Field(default=[], description="""Ordered sequence of processing functions""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    data_injections: Optional[list[DataInjection]] = Field(default=[], description="""External data added to the pipeline (e.g., timepoints, kernels)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    argument_mappings: Optional[list[ArgumentMapping]] = Field(default=[], description="""How inputs/outputs connect between pipeline steps""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    derivatives: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Side computations (e.g., functional connectivity)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-
-
-class ProcessingStep(ConfiguredBaseModel):
-    """
-    A single processing step in an observation model pipeline or standalone operation
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
-
-    order: Optional[int] = Field(default=None, description="""Execution order in the pipeline (optional for standalone operations)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-    transformation: Function = Field(default=..., description="""Function or transformation to apply""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep', 'Noise']} })
-    type: Optional[OperationType] = Field(default=None, description="""Kind of operation to perform (e.g., subsample, projection, convolution).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-    input_mapping: Optional[list[ArgumentMapping]] = Field(default=[], description="""Maps function arguments to pipeline data/outputs""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-    output_alias: Optional[str] = Field(default=None, description="""Optional name for this step's output (default: function name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-    apply_on_dimension: Optional[str] = Field(default=None, description="""Which dimension to apply function on (e.g., 'time', 'space')""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-    ensure_shape: Optional[str] = Field(default=None, description="""Ensure output has specific dimensionality (e.g., '4d')""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-    variables_of_interest: Optional[dict[str, StateVariable]] = Field(default=None, description="""Optional per-step variable selection""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep']} })
-
-
-class DataInjection(ConfiguredBaseModel):
-    """
-    External data injected into the observation pipeline
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
-
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Monitor',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    data_source: Optional[str] = Field(default=None, description="""Source of the data (file, array, generated)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'DataInjection']} })
-    values: Optional[AnyShapeArray[float]] = Field(default=None, description="""Actual data values (for small arrays)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'DataInjection', 'SpatialField']} })
-    shape: Optional[list[int]] = Field(default=[], description="""Shape of the injected data""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection', 'Parameter', 'NDArray']} })
-    generation_function: Optional[Function] = Field(default=None, description="""Function to generate the data (e.g., np.arange)""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection']} })
-
-
-class ArgumentMapping(ConfiguredBaseModel):
-    """
-    Maps function arguments to pipeline inputs/outputs
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
-
-    function_argument: str = Field(default=..., description="""Name of the function parameter""", json_schema_extra = { "linkml_meta": {'domain_of': ['ArgumentMapping']} })
-    source: str = Field(default=..., description="""Where the data comes from (e.g., 'Input', 'subsample', 'HRF')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'ArgumentMapping', 'Dynamics']} })
-    constant_value: Optional[str] = Field(default=None, description="""Use a constant value instead of pipeline data""", json_schema_extra = { "linkml_meta": {'domain_of': ['ArgumentMapping']} })
-
-
-class DownsamplingModel(ObservationModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DownsamplingModel', 'from_schema': 'https://w3id.org/tvbo'})
-
-    period: Optional[float] = Field(default=0.9765625, json_schema_extra = { "linkml_meta": {'domain_of': ['DownsamplingModel', 'Monitor'], 'ifabsent': 'float(0.9765625)'} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Monitor',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'ObservationModel',
-                       'Function',
-                       'Monitor']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Stimulus',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'ObservationModel',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'ModelFitting',
-                       'Monitor',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'Function',
-                       'Case',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Noise',
-                       'CostFunction',
-                       'FittingTarget',
-                       'Monitor',
-                       'DifferentialOperator'],
-         'slot_uri': 'tvbo:Equation'} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'TemporalApplicableEquation',
-                       'Node',
-                       'Edge',
-                       'ObservationModel',
-                       'Dynamics',
-                       'Distribution',
-                       'Noise',
-                       'CostFunction',
-                       'FittingTarget',
-                       'Integrator',
-                       'Monitor',
-                       'Coupling',
-                       'PDE']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel',
-                       'Monitor',
-                       'SimulationExperiment',
-                       'PDESolver']} })
-    transformation: Optional[Function] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    pipeline: Optional[list[ProcessingStep]] = Field(default=[], description="""Ordered sequence of processing functions""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    data_injections: Optional[list[DataInjection]] = Field(default=[], description="""External data added to the pipeline (e.g., timepoints, kernels)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    argument_mappings: Optional[list[ArgumentMapping]] = Field(default=[], description="""How inputs/outputs connect between pipeline steps""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    derivatives: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Side computations (e.g., functional connectivity)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
+    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
+    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
+    source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
+    source_observation: Optional[str] = Field(default=None, description="""Derive from another observation (e.g., FC derived from Bold)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    imaging_modality: Optional[ImagingModality] = Field(default=None, description="""Type of imaging modality (BOLD, EEG, MEG, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    aggregation: Optional[AggregationType] = Field(default=None, description="""How to aggregate over time""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Coupling']} })
+    window_size: Optional[int] = Field(default=None, description="""Number of samples for windowed aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    pipeline: Optional[list[Function]] = Field(default=[], description="""Ordered sequence of Functions. Each Function transforms input → output.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
 
 
 class Dynamics(ConfiguredBaseModel):
@@ -1927,18 +1879,19 @@ class Dynamics(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -1955,15 +1908,17 @@ class Dynamics(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1985,14 +1940,13 @@ class Dynamics(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
@@ -2002,18 +1956,21 @@ class Dynamics(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2029,7 +1986,7 @@ class Dynamics(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'ArgumentMapping', 'Dynamics']} })
+    source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
     references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
     derived_parameters: Optional[dict[str, DerivedParameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     derived_variables: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
@@ -2043,141 +2000,7 @@ class Dynamics(ConfiguredBaseModel):
     local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     stimulus: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    modes: Optional[dict[str, NeuralMassModel]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
-
-
-class NeuralMassModel(Dynamics):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'aliases': ['NeuralMassModel'],
-         'class_uri': 'tvbo:NeuralMassModel',
-         'comments': ['Deprecated in favor of Dynamics.'],
-         'from_schema': 'https://w3id.org/tvbo'})
-
-    has_reference: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    name: str = Field(default="Generic2dOscillator", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Monitor',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage'],
-         'ifabsent': 'Generic2dOscillator'} })
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Dataset',
-                       'Contact',
-                       'Equation',
-                       'Stimulus',
-                       'Parcellation',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'RandomStream',
-                       'CostFunction',
-                       'FittingTarget',
-                       'ModelFitting',
-                       'Monitor',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'DifferentialOperator',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'TemporalApplicableEquation',
-                       'Node',
-                       'Edge',
-                       'ObservationModel',
-                       'Dynamics',
-                       'Distribution',
-                       'Noise',
-                       'CostFunction',
-                       'FittingTarget',
-                       'Integrator',
-                       'Monitor',
-                       'Coupling',
-                       'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Stimulus',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'ObservationModel',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'ModelFitting',
-                       'Monitor',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'ArgumentMapping', 'Dynamics']} })
-    references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
-    derived_parameters: Optional[dict[str, DerivedParameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    derived_variables: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    coupling_terms: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    coupling_inputs: Optional[dict[str, CouplingInput]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    state_variables: Optional[dict[str, StateVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    modified: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    output: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
-    derived_from_model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    number_of_modes: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'integer(1)'} })
-    local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    stimulus: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    modes: Optional[dict[str, NeuralMassModel]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
+    modes: Optional[dict[str, Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
 
 
@@ -2191,18 +2014,19 @@ class StateVariable(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2223,15 +2047,17 @@ class StateVariable(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2265,18 +2091,21 @@ class StateVariable(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2293,7 +2122,7 @@ class StateVariable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -2304,12 +2133,13 @@ class StateVariable(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -2335,24 +2165,25 @@ class Distribution(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -2363,7 +2194,7 @@ class Distribution(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
@@ -2371,14 +2202,13 @@ class Distribution(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     dependencies: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution']} })
@@ -2395,18 +2225,19 @@ class Parameter(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2422,15 +2253,17 @@ class Parameter(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2457,7 +2290,8 @@ class Parameter(ConfiguredBaseModel):
                        'Function',
                        'FittingTarget',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'BoundaryCondition']} })
+    value: Optional[Union[float, str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}],
+         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -2472,18 +2306,21 @@ class Parameter(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2500,7 +2337,7 @@ class Parameter(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -2511,12 +2348,13 @@ class Parameter(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -2526,7 +2364,7 @@ class Parameter(ConfiguredBaseModel):
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection', 'Parameter', 'NDArray']} })
+    shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
 
 
@@ -2543,18 +2381,19 @@ class CouplingInput(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2566,18 +2405,21 @@ class CouplingInput(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2596,7 +2438,91 @@ class CouplingInput(ConfiguredBaseModel):
     dimension: Optional[int] = Field(default=1, description="""Dimensionality of the coupling input (number of coupled values)""", json_schema_extra = { "linkml_meta": {'domain_of': ['CouplingInput'], 'ifabsent': 'integer(1)'} })
 
 
+class Argument(ConfiguredBaseModel):
+    """
+    A function argument that can be a literal value or a reference to another output
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Argument', 'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'UpdateRule',
+                       'TuningAlgorithm',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    value: Optional[Union[float, int, str]] = Field(default=None, description="""The argument value (literal or reference)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'integer'}, {'range': 'string'}],
+         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+                       'StateVariable',
+                       'Parameter',
+                       'Argument',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Integrator',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialField']} })
+
+
 class Function(ConfiguredBaseModel):
+    """
+    A function with explicit input → transformation → output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Function', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
@@ -2606,27 +2532,24 @@ class Function(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'ObservationModel',
-                       'Function',
-                       'Monitor']} })
+    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
@@ -2638,15 +2561,17 @@ class Function(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2663,7 +2588,7 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -2674,7 +2599,7 @@ class Function(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     definition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
@@ -2690,18 +2615,21 @@ class Function(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2718,11 +2646,16 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
+    input: Optional[str] = Field(default=None, description="""Input reference: name of previous function's output in pipeline""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
-    arguments: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
-    output: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
+    arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
-    callable: Optional[Callable] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    operation_type: Optional[OperationType] = Field(default=None, description="""Kind of operation (convolution, subsample, transform, derive)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Which dimension to apply the transformation on""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    time_range: Optional[Range] = Field(default=None, description="""Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
 
 
 class Callable(ConfiguredBaseModel):
@@ -2735,18 +2668,19 @@ class Callable(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2758,18 +2692,21 @@ class Callable(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2787,6 +2724,7 @@ class Callable(ConfiguredBaseModel):
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
     qualname: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
+    reverse_kernel: Optional[bool] = Field(default=None, description="""For convolution operations, whether to reverse the kernel before convolution (needed for causal impulse responses)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
     software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
 
 
@@ -2795,7 +2733,7 @@ class Case(ConfiguredBaseModel):
 
     condition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Case']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -2806,7 +2744,7 @@ class Case(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator']} })
 
 
@@ -2820,18 +2758,19 @@ class DerivedParameter(Parameter):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2848,18 +2787,21 @@ class DerivedParameter(Parameter):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2876,7 +2818,7 @@ class DerivedParameter(Parameter):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -2887,12 +2829,13 @@ class DerivedParameter(Parameter):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -2910,15 +2853,17 @@ class DerivedParameter(Parameter):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2940,7 +2885,8 @@ class DerivedParameter(Parameter):
                        'Function',
                        'FittingTarget',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'BoundaryCondition']} })
+    value: Optional[Union[float, str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}],
+         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -2951,7 +2897,7 @@ class DerivedParameter(Parameter):
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection', 'Parameter', 'NDArray']} })
+    shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
 
 
@@ -2965,22 +2911,60 @@ class DerivedVariable(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'CostFunction',
+                       'FittingTarget',
+                       'ModelFitting',
+                       'TuningObjective',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
                        'DerivedParameter',
@@ -2993,18 +2977,21 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3021,7 +3008,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -3032,12 +3019,13 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -3056,18 +3044,17 @@ class Noise(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -3078,7 +3065,7 @@ class Noise(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     noise_type: Optional[str] = Field(default="gaussian", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise'], 'ifabsent': 'gaussian'} })
@@ -3088,7 +3075,7 @@ class Noise(ConfiguredBaseModel):
     seed: Optional[int] = Field(default=42, json_schema_extra = { "linkml_meta": {'domain_of': ['Noise'], 'ifabsent': 'integer(42)'} })
     random_state: Optional[RandomStream] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
     intensity: Optional[Parameter] = Field(default=None, description="""Optional scalar or vector intensity parameter for noise.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
-    function: Optional[Function] = Field(default=None, description="""Optional functional form of the noise (callable specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProcessingStep', 'Noise']} })
+    function: Optional[Function] = Field(default=None, description="""Optional functional form of the noise (callable specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
     pycode: Optional[str] = Field(default=None, description="""Inline Python code representation of the noise process.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation', 'Noise']} })
     targets: Optional[dict[str, StateVariable]] = Field(default=None, description="""State variables this noise applies to; if omitted, applies globally.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise', 'ModelFitting']} })
 
@@ -3107,15 +3094,17 @@ class RandomStream(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3138,18 +3127,21 @@ class RandomStream(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3191,15 +3183,17 @@ class CostFunction(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3216,7 +3210,7 @@ class CostFunction(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -3227,7 +3221,7 @@ class CostFunction(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
@@ -3235,14 +3229,13 @@ class CostFunction(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
 
@@ -3261,15 +3254,17 @@ class FittingTarget(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3286,7 +3281,7 @@ class FittingTarget(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -3297,7 +3292,7 @@ class FittingTarget(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
@@ -3316,14 +3311,13 @@ class FittingTarget(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
 
@@ -3342,15 +3336,17 @@ class ModelFitting(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3373,18 +3369,21 @@ class ModelFitting(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3404,13 +3403,267 @@ class ModelFitting(ConfiguredBaseModel):
     cost_function: Optional[CostFunction] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ModelFitting']} })
 
 
+class UpdateRule(ConfiguredBaseModel):
+    """
+    Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'UpdateRule',
+                       'TuningAlgorithm',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    target_parameter: Parameter = Field(default=..., description="""The parameter to update (e.g., J_i, wLRE)""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
+    equation: Equation = Field(default=..., description="""Update equation (e.g., 'J_i + eta * delta')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Observation',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'Function',
+                       'Case',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Noise',
+                       'CostFunction',
+                       'FittingTarget',
+                       'UpdateRule',
+                       'DifferentialOperator']} })
+    bounds: Optional[Range] = Field(default=None, description="""Constraints on parameter values after update""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
+    requires: Optional[list[str]] = Field(default=[], description="""Observables required by this update rule""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
+
+
+class TuningObjective(ConfiguredBaseModel):
+    """
+    Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'CostFunction',
+                       'FittingTarget',
+                       'ModelFitting',
+                       'TuningObjective',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective', 'TuningAlgorithm']} })
+    target_variable: Optional[StateVariable] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+    target_value: Optional[float] = Field(default=None, description="""Target value for activity objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+    target_data: Optional[Observation] = Field(default=None, description="""Reference to empirical data observation for matching objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+    metric: Optional[Equation] = Field(default=None, description="""Metric equation for matching (e.g., correlation, rmse)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+
+
+class TuningAlgorithm(ConfiguredBaseModel):
+    """
+    A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observables, and hyperparameters.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'UpdateRule',
+                       'TuningAlgorithm',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective', 'TuningAlgorithm']} })
+    objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    observables: Optional[dict[str, Observation]] = Field(default=None, description="""Quantities computed from simulation for update rules""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    update_rules: dict[str, UpdateRule] = Field(default=..., description="""How parameters are updated each iteration""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    learning_rate: Optional[float] = Field(default=None, description="""Learning rate (eta) for the tuning algorithm""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    n_iterations: Optional[int] = Field(default=None, description="""Number of iterations to run""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    learning_rate_schedule: Optional[str] = Field(default=None, description="""Learning rate schedule: 'constant', 'linear', 'exponential'""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    simulation_period: Optional[float] = Field(default=None, description="""Duration of each simulation step (e.g., one BOLD TR)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+    apply_every: Optional[int] = Field(default=1, description="""Apply update every N iterations""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm'], 'ifabsent': 'integer(1)'} })
+    depends_on: Optional[list[str]] = Field(default=[], description="""Other algorithms that must run first (e.g., EIB depends on FIC)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
+
+
 class Integrator(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Monitor'], 'ifabsent': 'ms'} })
+    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -3422,14 +3675,13 @@ class Integrator(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Integrator'], 'ifabsent': 'float(1000)'} })
@@ -3446,153 +3698,6 @@ class Integrator(ConfiguredBaseModel):
     delayed: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
 
 
-class Monitor(ObservationModel):
-    """
-    Observation model for monitoring simulation output with optional processing pipeline
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Monitor', 'from_schema': 'https://w3id.org/tvbo'})
-
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Monitor'], 'ifabsent': 'ms'} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Monitor',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Dataset',
-                       'Contact',
-                       'Equation',
-                       'Stimulus',
-                       'Parcellation',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'RandomStream',
-                       'CostFunction',
-                       'FittingTarget',
-                       'ModelFitting',
-                       'Monitor',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'DifferentialOperator',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'TemporalApplicableEquation',
-                       'Node',
-                       'Edge',
-                       'ObservationModel',
-                       'Dynamics',
-                       'Distribution',
-                       'Noise',
-                       'CostFunction',
-                       'FittingTarget',
-                       'Integrator',
-                       'Monitor',
-                       'Coupling',
-                       'PDE']} })
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'ObservationModel',
-                       'Function',
-                       'Monitor']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Stimulus',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'ObservationModel',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'ModelFitting',
-                       'Monitor',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'Function',
-                       'Case',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Noise',
-                       'CostFunction',
-                       'FittingTarget',
-                       'Monitor',
-                       'DifferentialOperator'],
-         'slot_uri': 'tvbo:Equation'} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel',
-                       'Monitor',
-                       'SimulationExperiment',
-                       'PDESolver']} })
-    period: Optional[float] = Field(default=None, description="""Sampling period for the monitor""", json_schema_extra = { "linkml_meta": {'domain_of': ['DownsamplingModel', 'Monitor']} })
-    imaging_modality: Optional[ImagingModality] = Field(default=None, description="""Type of imaging modality (BOLD, EEG, MEG, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Monitor']} })
-    transformation: Optional[Function] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    pipeline: Optional[list[ProcessingStep]] = Field(default=[], description="""Ordered sequence of processing functions""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    data_injections: Optional[list[DataInjection]] = Field(default=[], description="""External data added to the pipeline (e.g., timepoints, kernels)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    argument_mappings: Optional[list[ArgumentMapping]] = Field(default=[], description="""How inputs/outputs connect between pipeline steps""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-    derivatives: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Side computations (e.g., functional connectivity)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel']} })
-
-
 class Coupling(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Coupling',
          'from_schema': 'https://w3id.org/tvbo',
@@ -3605,18 +3710,19 @@ class Coupling(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3633,15 +3739,17 @@ class Coupling(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3662,28 +3770,27 @@ class Coupling(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     coupling_function: Optional[Equation] = Field(default=None, description="""Mathematical function defining the coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     sparse: Optional[bool] = Field(default=False, description="""Whether the coupling uses sparse representations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'False'} })
     pre_expression: Optional[Equation] = Field(default=None, description="""Pre-processing expression applied before coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     post_expression: Optional[Equation] = Field(default=None, description="""Post-processing expression applied after coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
-    incoming_states: Optional[StateVariable] = Field(default=None, description="""State variables from connected nodes (source)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
-    local_states: Optional[StateVariable] = Field(default=None, description="""State variables from local node (target)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
+    incoming_states: Optional[list[str]] = Field(default=[], description="""References to state variables from connected nodes (source)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
+    local_states: Optional[list[str]] = Field(default=[], description="""References to state variables from local node (target)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     delayed: Optional[bool] = Field(default=True, description="""Whether coupling includes transmission delays""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
     inner_coupling: Optional[Coupling] = Field(default=None, description="""For hierarchical coupling: inner coupling applied at regional level""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     region_mapping: Optional[RegionMapping] = Field(default=None, description="""For hierarchical coupling: vertex-to-region mapping for aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     regional_connectivity: Optional[Network] = Field(default=None, description="""For hierarchical coupling: region-to-region connectivity with weights and delays""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     aggregation: Optional[str] = Field(default=None, description="""For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'string'}, {'range': 'Function'}],
-         'domain_of': ['Coupling']} })
+         'domain_of': ['Observation', 'Coupling']} })
     distribution: Optional[str] = Field(default=None, description="""For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'string'}, {'range': 'Function'}],
          'domain_of': ['Coupling']} })
 
@@ -3705,15 +3812,17 @@ class RegionMapping(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3736,18 +3845,21 @@ class RegionMapping(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3799,18 +3911,21 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3838,15 +3953,17 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3868,14 +3985,12 @@ class SimulationExperiment(ConfiguredBaseModel):
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
-    monitors: Optional[dict[str, Monitor]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    observations: Optional[dict[str, Observation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     modelfitting: Optional[list[ModelFitting]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel',
-                       'Monitor',
-                       'SimulationExperiment',
-                       'PDESolver']} })
+    tuning_algorithms: Optional[dict[str, TuningAlgorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
     references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
 
@@ -3894,15 +4009,17 @@ class SimulationStudy(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3927,18 +4044,21 @@ class SimulationStudy(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3963,7 +4083,14 @@ class SimulationStudy(ConfiguredBaseModel):
 
 
 class TimeSeries(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    """
+    Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:TimeSeries',
+         'comments': ['Supports BIDS BEP034 computational modeling extension.',
+                      'Use to_bids() method in Python class to export as BIDS '
+                      'dataset.'],
+         'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
@@ -3976,15 +4103,17 @@ class TimeSeries(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4007,18 +4136,21 @@ class TimeSeries(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4046,16 +4178,32 @@ class TimeSeries(ConfiguredBaseModel):
                        'Mesh']} })
     data: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     time: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
-    sampling_rate: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    sampling_rate: Optional[float] = Field(default=None, description="""Sampling rate in Hz.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    sampling_period: Optional[float] = Field(default=None, description="""Time between samples (inverse of sampling_rate).""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    sampling_period_unit: Optional[str] = Field(default="ms", description="""Unit of the sampling period (e.g., 'ms', 's').""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries'], 'ifabsent': 'ms'} })
+    unit: Optional[str] = Field(default=None, description="""Physical unit of the time series values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
                        'TimeSeries',
                        'NDArray',
                        'SpatialField']} })
+    labels_ordering: Optional[list[str]] = Field(default=[], description="""Ordering of dimensions: Time, State Variable, Space, Mode.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    labels_dimensions: Optional[str] = Field(default=None, description="""Mapping of dimension names to their labels (JSON-encoded dict).""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    source_experiment: Optional[int] = Field(default=None, description="""Reference to the SimulationExperiment that generated this TimeSeries.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    generated_at: Optional[datetime ] = Field(default=None, description="""Timestamp when this TimeSeries was generated.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    software_environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Software environment used to generate this data.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    task_name: Optional[str] = Field(default=None, description="""BIDS task name for the simulation (e.g., 'rest', 'simulation').""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    subject_id: Optional[str] = Field(default=None, description="""BIDS subject identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'TimeSeries']} })
+    session_id: Optional[str] = Field(default=None, description="""BIDS session identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    run_id: Optional[int] = Field(default=None, description="""BIDS run number.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    modality: Optional[ImagingModality] = Field(default=None, description="""Imaging modality or simulation output type.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    model_equation_ref: Optional[str] = Field(default=None, description="""BIDS ModelEq reference: path to _eq.xml LEMS file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    model_param_ref: Optional[str] = Field(default=None, description="""BIDS ModelParam reference: path to _param.xml LEMS file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    connectivity_ref: Optional[str] = Field(default=None, description="""Reference to connectivity data (_conndata-network_connectivity.tsv).""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
 
 
 class SoftwareEnvironment(ConfiguredBaseModel):
@@ -4080,15 +4228,17 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4111,18 +4261,21 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4155,18 +4308,19 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4196,18 +4350,19 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4219,18 +4374,21 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4285,18 +4443,19 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4308,18 +4467,21 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4358,15 +4520,17 @@ class NDArray(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4389,18 +4553,21 @@ class NDArray(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4416,7 +4583,7 @@ class NDArray(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    shape: Optional[list[int]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['DataInjection', 'Parameter', 'NDArray']} })
+    shape: Optional[list[int]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'NDArray']} })
     dtype: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['NDArray']} })
     dataLocation: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Stimulus',
@@ -4431,6 +4598,7 @@ class NDArray(ConfiguredBaseModel):
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -4453,15 +4621,17 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4484,18 +4654,21 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4535,15 +4708,17 @@ class Mesh(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4566,18 +4741,21 @@ class Mesh(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4628,15 +4806,17 @@ class SpatialField(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4659,18 +4839,21 @@ class SpatialField(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4690,6 +4873,7 @@ class SpatialField(ConfiguredBaseModel):
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -4697,7 +4881,7 @@ class SpatialField(ConfiguredBaseModel):
                        'NDArray',
                        'SpatialField']} })
     mesh: Optional[Mesh] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SpatialField', 'FieldStateVariable', 'PDE']} })
-    values: Optional[NDArray] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'DataInjection', 'SpatialField']} })
+    values: Optional[NDArray] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'SpatialField']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
                        'SpatialField',
                        'BoundaryCondition'],
@@ -4720,15 +4904,17 @@ class FieldStateVariable(StateVariable):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4751,18 +4937,21 @@ class FieldStateVariable(StateVariable):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4787,18 +4976,19 @@ class FieldStateVariable(StateVariable):
                        'ClinicalScale',
                        'ClinicalScore',
                        'Tractogram',
-                       'ObservationModel',
-                       'DataInjection',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningAlgorithm',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4820,7 +5010,7 @@ class FieldStateVariable(StateVariable):
                        'Parameter',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -4831,12 +5021,13 @@ class FieldStateVariable(StateVariable):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
+                       'Argument',
                        'DerivedParameter',
                        'DerivedVariable',
                        'Integrator',
@@ -4866,15 +5057,17 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4897,7 +5090,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'FittingTarget',
                        'DifferentialOperator']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'ObservationModel',
+                       'Observation',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
@@ -4908,7 +5101,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
-                       'Monitor',
+                       'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
     operator_type: Optional[OperatorType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DifferentialOperator']} })
@@ -4931,15 +5124,17 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4962,18 +5157,21 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4991,7 +5189,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'PDE']} })
     bc_type: Optional[BoundaryConditionType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
     on_region: Optional[str] = Field(default=None, description="""Mesh/atlas subset where BC applies.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
-    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'BoundaryCondition']} })
+    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
                        'SpatialField',
                        'BoundaryCondition'],
@@ -5012,15 +5210,17 @@ class PDESolver(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5043,18 +5243,21 @@ class PDESolver(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -5071,10 +5274,7 @@ class PDESolver(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ObservationModel',
-                       'Monitor',
-                       'SimulationExperiment',
-                       'PDESolver']} })
+    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     time_integrator: Optional[str] = Field(default=None, description="""e.g., implicit Euler, Crank–Nicolson.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     step_size: Optional[float] = Field(default=None, description="""Time step (s).""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
@@ -5099,15 +5299,17 @@ class PDE(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'Function',
+                       'DerivedVariable',
                        'RandomStream',
                        'CostFunction',
                        'FittingTarget',
                        'ModelFitting',
-                       'Monitor',
+                       'TuningObjective',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5130,18 +5332,21 @@ class PDE(ConfiguredBaseModel):
                        'Network',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'StateVariable',
                        'Parameter',
                        'CouplingInput',
+                       'Argument',
                        'Function',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
                        'ModelFitting',
-                       'Monitor',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -5162,14 +5367,13 @@ class PDE(ConfiguredBaseModel):
                        'TemporalApplicableEquation',
                        'Node',
                        'Edge',
-                       'ObservationModel',
+                       'Observation',
                        'Dynamics',
                        'Distribution',
                        'Noise',
                        'CostFunction',
                        'FittingTarget',
                        'Integrator',
-                       'Monitor',
                        'Coupling',
                        'PDE']} })
     domain: Optional[SpatialDomain] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
@@ -5218,17 +5422,13 @@ BrainRegionSeries.model_rebuild()
 Network.model_rebuild()
 Node.model_rebuild()
 Edge.model_rebuild()
-ObservationModel.model_rebuild()
-ProcessingStep.model_rebuild()
-DataInjection.model_rebuild()
-ArgumentMapping.model_rebuild()
-DownsamplingModel.model_rebuild()
+Observation.model_rebuild()
 Dynamics.model_rebuild()
-NeuralMassModel.model_rebuild()
 StateVariable.model_rebuild()
 Distribution.model_rebuild()
 Parameter.model_rebuild()
 CouplingInput.model_rebuild()
+Argument.model_rebuild()
 Function.model_rebuild()
 Callable.model_rebuild()
 Case.model_rebuild()
@@ -5239,8 +5439,10 @@ RandomStream.model_rebuild()
 CostFunction.model_rebuild()
 FittingTarget.model_rebuild()
 ModelFitting.model_rebuild()
+UpdateRule.model_rebuild()
+TuningObjective.model_rebuild()
+TuningAlgorithm.model_rebuild()
 Integrator.model_rebuild()
-Monitor.model_rebuild()
 Coupling.model_rebuild()
 RegionMapping.model_rebuild()
 Sample.model_rebuild()

@@ -705,6 +705,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def collect_state(self, initial_conditions: TimeSeries | None = None):
         _ = self.noise_sigma_array
+        parameters = self.get_parameters_collection(
+            keys_to_exclude=[
+                "derived_parameters",
+                "conduction_speed",
+                "coupling_terms",
+            ]
+        )
+        # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
+        self._expand_coupling_parameter_shapes(parameters)
+
         state = SimulationState(
             initial_conditions=(
                 initial_conditions
@@ -716,13 +726,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             nt=int(np.ceil(self.integration.duration / self.integration.step_size)),
             # Provide a JAX-pytree-friendly Noise wrapper (or None)
             noise=self.integration.noise_wrapper,
-            parameters=self.get_parameters_collection(
-                keys_to_exclude=[
-                    "derived_parameters",
-                    "conduction_speed",
-                    "coupling_terms",
-                ]
-            ),
+            parameters=parameters,
             stimulus=None,
             monitor_parameters=None,
         )
@@ -732,6 +736,38 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         except Exception:
             pass
         return state
+
+    def _expand_coupling_parameter_shapes(self, parameters: Bunch) -> None:
+        """Expand coupling parameters that have shape annotations like (N, N) or (N,)."""
+        if not hasattr(parameters, 'coupling') or self.network is None:
+            return
+
+        N = self.network.number_of_nodes
+        coupling_params = parameters.coupling
+
+        # Get the coupling parameter definitions with shape info
+        if self.coupling is None:
+            return
+
+        for param_name, param_obj in (self.coupling.parameters or {}).items():
+            if param_name not in coupling_params:
+                continue
+
+            shape_str = getattr(param_obj, 'shape', None)
+            if not shape_str:
+                continue
+
+            current_value = coupling_params[param_name]
+
+            # Parse shape string and expand
+            if shape_str == "(N, N)" or shape_str == "(N,N)":
+                # Expand scalar to NxN matrix
+                if np.isscalar(current_value) or (hasattr(current_value, 'shape') and current_value.shape == ()):
+                    coupling_params[param_name] = np.full((N, N), float(current_value))
+            elif shape_str == "(N,)" or shape_str == "(N)":
+                # Expand scalar to N-vector
+                if np.isscalar(current_value) or (hasattr(current_value, 'shape') and current_value.shape == ()):
+                    coupling_params[param_name] = np.full((N,), float(current_value))
 
     def execute(self, format="tvb", **kwargs):
         if format.lower() == "tvb":

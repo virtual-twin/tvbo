@@ -24,16 +24,17 @@ class BaseTimeSeries:
 
     def tree_flatten(self):
         # Keep network as a child (not metadata) to avoid non-hashable/array metadata
-        # Store labels_dimensions in aux to preserve dimension labels across JAX transforms
+        # Store labels_dimensions and units in aux to preserve metadata across JAX transforms
         return (self.time, self.data, self.network), (
             self.title,
             self.sample_period,
             self.labels_dimensions,
+            self.units,
         )
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        # aux_data matches (__init__): title, sample_period, labels_dimensions
+        # aux_data matches (__init__): title, sample_period, labels_dimensions, units
         return cls(*children, *aux_data)
 
     def __init__(
@@ -44,9 +45,11 @@ class BaseTimeSeries:
         title="TimeSeries",
         sample_period=None,
         labels_dimensions={},
+        units=None,
     ):
         """
         labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] }
+        units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}
         """
         # 1. Essential Data
         self.time = time
@@ -61,7 +64,15 @@ class BaseTimeSeries:
         self.sample_period = self.dt = sample_period
         self.sample_period_unit = "ms"  # Default unit is milliseconds (ms)
 
-        # 4. Internal Configurations
+        # 4. Units for each dimension
+        self.units = units or {
+            "time": "ms",
+            "state": None,  # Typically mV, V, or dimensionless
+            "region": None,  # Spatial units
+            "mode": None,
+        }
+
+        # 5. Internal Configurations
         self.labels_ordering = ("Time", "State Variable", "Space", "Mode")
 
     @property
@@ -72,12 +83,6 @@ class BaseTimeSeries:
     def shape(self):
         return self.data.shape
 
-    # def __repr__(self):
-    #     try:
-    #         repr = f"{self.__class__.__name__}:\n├─ {self.data.shape[0] / self.sample_period} {self.sample_period_unit}\n├─ {self.data.shape[1]} State Variable{'s' if self.data.shape[1] > 1 else ''}\n├─ {self.data.shape[2]} Region{'s' if self.data.shape[2] > 1 else ''}\n└─ {self.data.shape[3]} Mode{'s' if self.data.shape[3] > 1 else ''}"
-    #     except:
-    #         repr = f"{self.__class__.__name__}:\nShape: {self.data.shape}"
-    #     return repr
     def __repr__(self):
         return format_pytree_as_string(self, self.__class__.__name__, "", False, False)
 
@@ -161,7 +166,7 @@ class BaseTimeSeries:
         sv_index = np.where(self.variables_labels == sv_label)[0][0]
         return sv_index
 
-    def get_state_variable(self, sv_label):
+    def get_state(self, sv_label):
         sv_data = self.data[:, self._get_index_of_state_variable(sv_label), :, :]
         subspace_labels_dimensions = deepcopy(self.labels_dimensions)
         subspace_labels_dimensions[self.labels_ordering[1]] = [sv_label]
@@ -170,6 +175,9 @@ class BaseTimeSeries:
         return self.duplicate(
             data=sv_data, labels_dimensions=subspace_labels_dimensions
         )
+
+    def get_state_variable(self, sv_label):
+        return self.get_state(sv_label)
 
     def _get_indices_for_labels(self, list_of_labels):
         list_of_indices_for_labels = []
@@ -205,6 +213,73 @@ class BaseTimeSeries:
         """Return a deep copy of the current instance."""
         return deepcopy(self)
 
+    def convert_units(self, dimension, target_unit):
+        """
+        Convert units for a specific dimension and return a new TimeSeries.
+
+        Parameters:
+        -----------
+        dimension : str
+            Dimension to convert ('time', 'state', 'region', 'mode')
+        target_unit : str
+            Target unit to convert to
+
+        Returns:
+        --------
+        TimeSeries
+            New TimeSeries with converted values
+        """
+        # Define conversion factors (to base units)
+        time_conversions = {
+            "s": 1.0,
+            "ms": 1e-3,
+            "us": 1e-6,
+            "ns": 1e-9,
+            "sec": 1.0,
+            "msec": 1e-3,
+            "usec": 1e-6,
+        }
+        voltage_conversions = {"V": 1.0, "mV": 1e-3, "uV": 1e-6, "kV": 1e3}
+
+        current_unit = self.units.get(dimension)
+        if current_unit is None:
+            raise ValueError(f"No unit specified for dimension '{dimension}'")
+
+        # Select appropriate conversion dict
+        if dimension == "time":
+            conversions = time_conversions
+            data_to_convert = self.time
+        elif dimension == "state":
+            conversions = voltage_conversions
+            data_to_convert = self.data
+        else:
+            raise NotImplementedError(
+                f"Unit conversion not implemented for dimension '{dimension}'"
+            )
+
+        if current_unit not in conversions or target_unit not in conversions:
+            raise ValueError(
+                f"Unsupported unit conversion: {current_unit} -> {target_unit}"
+            )
+
+        # Convert to base unit then to target unit
+        scale_factor = conversions[current_unit] / conversions[target_unit]
+
+        # Create new TimeSeries with converted values
+        new_units = self.units.copy()
+        new_units[dimension] = target_unit
+
+        if dimension == "time":
+            return self.duplicate(
+                time=self.time * scale_factor,
+                sample_period=(
+                    self.sample_period * scale_factor if self.sample_period else None
+                ),
+                units=new_units,
+            )
+        elif dimension == "state":
+            return self.duplicate(data=self.data * scale_factor, units=new_units)
+
     # def duplicate(self, **kwargs):
     #     """Return a copy of the current instance with optional attribute updates."""
     #     duplicate = self.copy()  # Use self.copy() instead of super()
@@ -218,15 +293,26 @@ class BaseTimeSeries:
         """
         Fast shallow-copy-based duplication with attribute update.
         """
+        new_time = kwargs.get("time", self.time)
+        # Recalculate sample_period if time changed and not explicitly provided
+        if "sample_period" in kwargs:
+            new_sample_period = kwargs["sample_period"]
+        elif "time" in kwargs and len(new_time) > 1:
+            # Time was changed, recalculate sample_period
+            new_sample_period = float(new_time[1] - new_time[0])
+        else:
+            new_sample_period = self.sample_period
+
         new = self.__class__(
-            time=self.time,
+            time=new_time,
             data=kwargs.get("data", self.data),
             network=self.network,
             title=self.title,
-            sample_period=self.sample_period,
+            sample_period=new_sample_period,
             labels_dimensions=kwargs.get(
                 "labels_dimensions", self.labels_dimensions.copy()
             ),
+            units=kwargs.get("units", self.units.copy() if self.units else None),
         )
         return new
 
@@ -252,12 +338,16 @@ class TimeSeries(BaseTimeSeries):
             data=sv_data, labels_dimensions=subspace_labels_dimensions
         )
 
-    def plot(self, ax=None, axis_labels=False, legend=True, **kwargs):
+    def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
         if not ax:
             fig, ax = plt.subplots()
             return_fig = True
         else:
             return_fig = False
+
+        if title:
+            ax.set_title(title)
+
 
         n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
         uses_modes = len(self.data.shape) > 3 and self.data.shape[3] > 1
@@ -285,7 +375,7 @@ class TimeSeries(BaseTimeSeries):
                 **kwargs,
             )
 
-        ax.set_xlabel(f"time [{self.time_unit}]")
+        ax.set_xlabel(f"time [{self.units['time']}]")
 
         if n_svar == 1 and self.labels_dimensions:
 
@@ -300,7 +390,7 @@ class TimeSeries(BaseTimeSeries):
             ax.set_ylabel("X")
 
         if axis_labels:  # ?
-            ax.set_xlabel(self.time_unit)
+            ax.set_xlabel(self.units["time"])
         if legend and any(labels):
             ax.legend(loc="upper right", fontsize="smaller")
             handles, labels = ax.get_legend_handles_labels()
@@ -968,10 +1058,7 @@ class TimeSeries(BaseTimeSeries):
             )
 
         # Determine output format
-        use_cifti = (
-            timeseries_format.lower() == "cifti"
-            and region_labels is not None
-        )
+        use_cifti = timeseries_format.lower() == "cifti" and region_labels is not None
         use_h5 = timeseries_format.lower() in ("h5", "hdf5")
 
         if use_h5:

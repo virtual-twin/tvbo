@@ -445,10 +445,12 @@ class Network(tvbo_datamodel.Network):
             meta_dict = dict(meta_dict) if hasattr(meta_dict, "__iter__") else {}
         # Remove weights, lengths, parcellation, and cache attributes from metadata
         # Parcellation is excluded to prevent reloading data during unflatten
+        # Also exclude private cached arrays set by from_matrix()
         meta_dict_without_arrays = {
             k: v
             for k, v in meta_dict.items()
-            if k not in ("weights", "lengths", "parcellation", "_pytree_data")
+            if k not in ("weights", "lengths", "parcellation", "_pytree_data",
+                        "_cached_weights", "_cached_lengths")
         }
         meta_json = _json.dumps(
             meta_dict_without_arrays, sort_keys=True, default=_jsonable

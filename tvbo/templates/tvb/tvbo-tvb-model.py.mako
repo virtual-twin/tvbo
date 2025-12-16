@@ -5,10 +5,19 @@ import numpy as np
 from tvbo.knowledge.simulation.equations import _clash1
 if 'experiment' in context.keys():
     model = context['experiment'].local_dynamics.metadata
+    standalone = False
 else:
     model = context['model'].metadata
+    standalone = True
 render = lambda obj: model.render_equation(obj, format='numpy')
 %>
+% if standalone:
+# Auto-generated standalone model file
+import numpy as np
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+% endif
 class ${model.name}(Model):
 
     % for p in model.parameters.values():

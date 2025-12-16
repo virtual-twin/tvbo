@@ -1,278 +1,259 @@
-id: 1
-label: ReducedWongWangEIB
+# Schirner2023: EIB Brain Network Model
+# DOI: 10.1016/j.patter.2023.100787
+
 key: Schirner2023
-model:
-    name: EIB_ReducedWongWangExcInh
-    parameters:
-        a_e:
-            value: 310.0
-            domain:
-                lo: 0.0
-                hi: 500.0
-                step: 1.0
-            description: Excitatory input gain.
-        b_e:
-            value: 125.0
-            domain:
-                lo: 0.0
-                hi: 200.0
-                step: 1.0
-            description: Excitatory input shift.
-            unit: Hz
-        d_e:
-            value: 0.160
-            domain:
-                lo: 0.0
-                hi: 0.2
-                step: 0.001
-            description: Excitatory input scaling.
-            unit: s
-        gamma_e:
-            value: 0.000641
-            domain:
-                lo: 0.0
-                hi: 0.001
-                step: 1.0e-05
-            description: Excitatory kinetic.
-        tau_e:
-            value: 100.0
-            domain:
-                lo: 50.0
-                hi: 150.0
-                step: 1.0
-            description: Excitatory NMDA decay.
-            unit: ms
-        w_p:
-            value: 1.2
-            domain:
-                lo: 0.0
-                hi: 2.0
-                step: 0.01
-            description: Excitatory recurrence weight.
-        J_N:
-            value: 0.15
-            domain:
-                lo: 0.001
-                hi: 0.5
-                step: 0.001
-            description: NMDA current.
-        W_e:
-            value: 1.0
-            domain:
-                lo: 0.0
-                hi: 2.0
-                step: 0.01
-            description: Excitatory external scaling.
-        a_i:
-            value: 615.0
-            domain:
-                lo: 0.0
-                hi: 1000.0
-                step: 1.0
-            description: Inhibitory input gain.
-        b_i:
-            value: 177.0
-            domain:
-                lo: 0.0
-                hi: 200.0
-                step: 1.0
-            description: Inhibitory input shift.
-            unit: Hz
-        d_i:
-            value: 0.087
-            domain:
-                lo: 0.0
-                hi: 0.2
-                step: 0.001
-            description: Inhibitory input scaling.
-            unit: s
-        gamma_i:
-            value: 0.001
-            domain:
-                lo: 0.0
-                hi: 0.002
-                step: 1.0e-05
-            description: Inhibitory kinetic.
-        tau_i:
-            value: 10.0
-            domain:
-                lo: 5.0
-                hi: 100.0
-                step: 1.0
-            description: Inhibitory NMDA decay.
-            unit: ms
-        J_i:
-            value: 1.2
-            domain:
-                lo: 0.001
-                hi: 2.0
-                step: 0.001
-            description: Local inhibitory current.
-        W_i:
-            value: 0.7
-            domain:
-                lo: 0.0
-                hi: 1.0
-                step: 0.01
-            description: Inhibitory external scaling.
-        I_o:
-            value: 0.382
-            domain:
-                lo: 0.0
-                hi: 1.0
-                step: 0.001
-            description: Effective external input.
-        I_ext:
-            value: 0.0
-            domain:
-                lo: 0.0
-                hi: 1.0
-                step: 0.001
-            description: Effective external stimulus.
-        lamda:
-            value: 0.1
-            domain:
-                lo: 0.0
-                hi: 1.0
-                step: 0.01
-            description: Inhibitory global coupling scaling.
-        G:
-            value: 2.0
-            domain:
-                lo: 0.0
-                hi: 10.0
-                step: 0.01
-            description: Global coupling scaling.
-    derived_variables:
-        c_lre:
-            name: c_lre
-            equation:
-                rhs: G * J_N * cpop_0
-        c_ffi:
-            name: c_ffi
-            equation:
-                rhs: G * J_N * cpop_1
-        x_e_pre:
-            name: x_e_pre
-            equation:
-                rhs: w_p * J_N * S_e - J_i * S_i + W_e * I_o + c_lre + I_ext
-            conditional: false
-        x_i_pre:
-            name: x_i_pre
-            equation:
-                rhs: J_N * S_e - S_i + W_i * I_o + lamda * c_ffi
-            conditional: false
-        x_e:
-            name: x_e
-            equation:
-                lhs: x_{ek}
-                rhs: a_e * x_e_pre - b_e
-            conditional: false
-        x_i:
-            name: x_i
-            equation:
-                lhs: x_{ik}
-                rhs: a_i * x_i_pre - b_i
-            conditional: false
-        H_e:
-            name: H_e
-            equation:
-                lhs: H(x_{ek})
-                rhs: x_e / (1 - exp(-d_e * x_e))
-            conditional: false
-        H_i:
-            name: H_i
-            equation:
-                lhs: H(x_{ik})
-                rhs: x_i / (1 - exp(-d_i * x_i))
-            conditional: false
-    state_variables:
-        S_e:
-            label: Excitatory Firing Rate
-            domain:
-                lo: 0.0
-                hi: 1.0
-            boundaries:
-                lo: 0.0
-                hi: 1.0
-            equation:
-                lhs: \frac{dS_e}{dt}
-                rhs: "- S_e / tau_e + (1 - S_e) * H_e * gamma_e"
-            unit: unitless
-            variable_of_interest: true
-            coupling_variable: true
-
-        S_i:
-            label: Inhibitory Firing Rate
-            domain:
-                lo: 0.0
-                hi: 1.0
-            boundaries:
-                lo: 0.0
-                hi: 1.0
-            equation:
-                lhs: \frac{dS_i}{dt}
-                rhs: "- S_i / tau_i + H_i * gamma_i"
-            unit: unitless
-            variable_of_interest: true
-
-    coupling_terms:
-        cpop_0:
-            description: "Local excitatory recurrence."
-        cpop_1:
-            description: "Local inhibitory recurrence."
+title: "Brain simulation augments machine learning-based classification of dementia"
+year: 2023
+doi: "10.1016/j.patter.2023.100787"
 
 simulation_experiments:
     - id: 1
-      coupling:
-          name: EIB_Linear
+      local_dynamics:
+          name: EIB_ReducedWongWangExcInh
+          system_type: continuous
+
           parameters:
-              a:
-                  value: 0.05
-                  domain:
-                      lo: 0.0
-                      hi: 1.0
-                      step: 0.01
-                  description: Rescales the connection strength while maintaining the ratio between different values.
-              b:
-                  value: 0.0
-                  description: Shifts the base of the connection strength while maintaining the absolute difference between different values.
-              w:
-                  value: 1
-                  domain:
-                      lo: 0.0
-                      hi: 10.0
-                      step: 0.01
-                  shape: (N, 2, N)
-                  description: Balancing of long-range excitatory and feedforward inhibitory synaptic. Needs to be defined and have the shape (nodes, 2, nodes)
-          sparse: true
-          pre_expression:
-              lhs: pre
-              rhs: x_j * w
-          post_expression:
-              lhs: post
-              rhs: a * gx + b
+              # Excitatory
+              a_e: { value: 310.0 }
+              b_e: { value: 125.0 }
+              d_e: { value: 0.160 }
+              gamma_e: { value: 0.000641 }
+              tau_e: { value: 100.0 }
+              w_p: { value: 1.4 }
+              J_N: { value: 0.15 }
+              W_e: { value: 1.0 }
+              # Inhibitory
+              a_i: { value: 615.0 }
+              b_i: { value: 177.0 }
+              d_i: { value: 0.087 }
+              gamma_i: { value: 0.001 }
+              tau_i: { value: 10.0 }
+              J_i: { value: 1.0 }
+              W_i: { value: 0.7 }
+              # External
+              I_o: { value: 0.382 }
+              I_ext: { value: 0.0 }
+              # EIB free parameters
+              G: { value: 2.0 }
+              lamda: { value: 1.0 }
+
+          derived_variables:
+              x_e_pre:
+                  {
+                      equation:
+                          {
+                              rhs: "w_p * J_N * S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext",
+                          },
+                  }
+              x_i_pre:
+                  {
+                      equation:
+                          {
+                              rhs: "J_N * S_e - S_i + W_i * I_o + lamda * J_N * c_ffi",
+                          },
+                  }
+              x_e: { equation: { rhs: "a_e * x_e_pre - b_e" } }
+              x_i: { equation: { rhs: "a_i * x_i_pre - b_i" } }
+              H_e: { equation: { rhs: "x_e / (1 - exp(-d_e * x_e))" } }
+              H_i: { equation: { rhs: "x_i / (1 - exp(-d_i * x_i))" } }
+
+          state_variables:
+              S_e:
+                  initial_value: 0.001
+                  boundaries: { lo: 0.0, hi: 1.0 }
+                  equation: { rhs: "-S_e / tau_e + (1 - S_e) * H_e * gamma_e" }
+                  coupling_variable: true
+                  noise:
+                      additive: true
+                      parameters:
+                          sigma: { value: 0.01 }
+              S_i:
+                  initial_value: 0.001
+                  boundaries: { lo: 0.0, hi: 1.0 }
+                  equation: { rhs: "-S_i / tau_i + H_i * gamma_i" }
+
+          coupling_inputs:
+              coupling: { dimension: 2 }
+
+          coupling_terms:
+              c_lre: {}
+              c_ffi: {}
+
+      coupling:
+          name: EIBLinearCoupling
+          parameters:
+              wLRE: { value: 1.0, shape: "(N, N)" }
+              wFFI: { value: 1.0, shape: "(N, N)" }
+          incoming_states: [S_e]
+          pre_expression: { rhs: "[S_e * wLRE, S_e * wFFI]" }
+          post_expression: { rhs: "gx" }
+
+      network:
+          number_of_regions: 379
+          parcellation: { atlas: { name: hcpmmp1 } }
+          tractogram: "dTOR"
+          global_coupling_strength: { name: "G", value: 2.0 }
+          conduction_speed: { name: "v", value: 6.0, unit: "m/s" }
 
       integration:
           method: Heun
-          step_size: 6
-          initial_value: 0.1
+          step_size: 0.1
           duration: 720
-          noise:
-              additive: true
-              correlated: false
-              parameters:
-                  sigma:
-                      value: 0.000005
+          unit: "ms"
 
-      monitors:
-          Raw:
+      observations:
           Bold:
-              period: 720
+              description: >-
+                  BOLD fMRI signal derived from excitatory synaptic activity (S_e)
+                  via Balloon-Windkessel hemodynamic model convolution.
+              source: S_e  # Keyed reference to state variable
+              imaging_modality: BOLD
+              period: 720.0
+              pipeline:
+                  # Function 1: Convolve with Hemodynamic Response Function
+                  - name: BalloonWindkessel
+                    description: "Balloon-Windkessel hemodynamic model for BOLD signal"
+                    output: BOLD_raw
+                    operation_type: convolution
+                    callable:
+                        name: HemodynamicResponseFunctionTVB
+                        module: tvb.analyzers.fmri_balloon
+                        qualname: BalloonModel
+                        software:
+                            name: tvb-library
+                            version: ">=2.0"
 
-      connectivity:
-          number_of_regions: 379
-          parcellation:
-              label: Glasser
-              atlas:
-                  name: hcpmmp1
+                  # Function 2: Downsample to fMRI TR
+                  - name: downsample
+                    input: BalloonWindkessel  # Keyed reference to previous function
+                    output: Bold
+                    operation_type: subsample
+                    equation:
+                        rhs: "(X[:-TR:TR] + X[TR::TR]) / 2"
+                    arguments:
+                        - { name: TR, value: 720.0, unit: "ms" }
+
+          # Functional Connectivity derived from BOLD
+          FC:
+              description: "Functional connectivity matrix (Pearson correlation)"
+              source_observation: Bold  # Keyed reference to Bold observation
+              pipeline:
+                  - name: corrcoef
+                    output: FC
+                    callable:
+                        module: numpy
+                        qualname: corrcoef
+                    arguments:
+                        - { name: rowvar, value: "False" }
+
+      modelfitting:
+          - targets:
+                - {
+                      symbol: "r_{FC}",
+                      equation: { rhs: "corr(FC_{sim}, FC_{emp})" },
+                  }
+            cost_function:
+                equation: { rhs: "1 - r_{FC}" }
+                parameters:
+                    G: { domain: { lo: 0.0, hi: 4.0, step: 0.1 } }
+                    lamda: { domain: { lo: 0.0, hi: 1.0, step: 0.1 } }
+
+      # ==========================================================================
+      # Iterative Tuning Algorithms
+      # ==========================================================================
+      tuning_algorithms:
+          # Feedback Inhibition Control (FIC)
+          # Maintains local E-I balance by adjusting J_i to keep S_e at target
+          - name: FIC
+            type: fic
+            description: >-
+                Feedback Inhibition Control maintains excitatory activity at a
+                target level by adaptively adjusting local inhibitory weights.
+
+            objective:
+                type: activity_target
+                target_variable: { name: S_e }
+                target_value: 0.25
+
+            observables:
+                - name: mean_S_e
+                  equation: { rhs: "mean(S_e, axis=0)" }
+                  source: state
+                  aggregation: mean
+                - name: mean_S_i
+                  equation: { rhs: "mean(S_i, axis=0)" }
+                  source: state
+                  aggregation: mean
+
+            update_rules:
+                - name: J_i_update
+                  target_parameter: { name: J_i }
+                  equation:
+                      rhs: "J_i + eta_fic * (mean_S_i * mean_S_e - target_fic * mean_S_i)"
+                  requires:
+                      - { name: mean_S_e }
+                      - { name: mean_S_i }
+
+            learning_rate: 0.5
+            n_iterations: 200
+            hyperparameters:
+                target_fic: { value: 0.25, description: "Target S_e activity" }
+
+            simulation_period: 720.0 # One BOLD TR per iteration
+
+          # Excitation-Inhibition Balance (EIB) Tuning
+          # Adjusts wLRE/wFFI to match empirical functional connectivity
+          - name: EIB
+            type: eib
+            description: >-
+                EIB tuning optimizes dual coupling weights (wLRE, wFFI) to match
+                empirical functional connectivity while maintaining local E-I balance.
+
+            objective:
+                type: fc_matching
+                target_data:
+                    name: fc_empirical
+                    source: empirical
+                metric: { rhs: "rmse(fc_pred, fc_target)" }
+
+            observables:
+                - name: fc_pred
+                  equation: { rhs: "compute_fc(bold_signal)" }
+                  source: bold
+                  aggregation: window
+                  window_size: 150
+                - name: diff_FC
+                  equation: { rhs: "fc_target - fc_pred" }
+                  source: fc
+                - name: rmse_FC
+                  equation: { rhs: "rmse(fc_target, fc_pred, axis=1)" }
+                  source: fc
+
+            update_rules:
+                - name: wLRE_update
+                  target_parameter: { name: wLRE }
+                  equation:
+                      rhs: "wLRE + eta_eib * diff_FC * rmse_FC"
+                  bounds: { lo: 0.0 }
+                  requires:
+                      - { name: diff_FC }
+                      - { name: rmse_FC }
+
+                - name: wFFI_update
+                  target_parameter: { name: wFFI }
+                  equation:
+                      rhs: "wFFI - eta_eib * diff_FC * rmse_FC"
+                  bounds: { lo: 0.0 }
+                  requires:
+                      - { name: diff_FC }
+                      - { name: rmse_FC }
+
+            hyperparameters:
+                window_size: { value: 150, description: "BOLD window for FC" }
+
+            learning_rate: 0.005
+            n_iterations: 2000
+            learning_rate_schedule: linear
+            simulation_period: 720.0
+            depends_on:
+                - { name: FIC } # EIB runs alongside FIC

@@ -1295,12 +1295,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         local_vars = {}
         if format == "tvb":
             rendered_code = clean_code(self.render_code(format=format, **kwargs))
-            exec(
-                rendered_code,
-                templater.exec_globals,
-                local_vars,
-            )
-            tvb_obj = local_vars[self.name](**kwargs)
+            namespace = {}
+            exec(rendered_code, namespace)
+            tvb_obj = namespace[self.name](**kwargs)
             tvb_obj.title = self.label
             tvb_obj.configure()
             return tvb_obj

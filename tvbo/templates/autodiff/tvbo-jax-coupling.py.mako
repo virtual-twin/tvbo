@@ -10,6 +10,18 @@ else:
     coupling = context['coupling']
     model = context.get('model', None)
 has_delay = coupling.delayed and (experiment.horizon > 1)
+
+# Get incoming_states names for variable assignment
+incoming_states_names = getattr(coupling, 'incoming_states', None) or []
+if isinstance(incoming_states_names, str):
+    incoming_states_names = [incoming_states_names]
+# Convert to list if it's some other iterable
+incoming_states_names = list(incoming_states_names) if incoming_states_names else []
+
+# Check if any incoming_states variable name is used in pre_expression
+pre_rhs = str(coupling.pre_expression.rhs)
+needs_x_j = 'x_j' in pre_rhs or any(str(name) in pre_rhs for name in incoming_states_names)
+is_list_expr = pre_rhs.strip().startswith('[') and pre_rhs.strip().endswith(']')
 %>
 
 ## Coupling function
@@ -19,7 +31,7 @@ def cfun(weights, history, current_state, p, delay_indices, t):
 ## History is "sparse", only states that are coupled are stored in history therefore we use cvar_idx (assumes cvar is ordered)
 ## JAX does not throw out of bounds errors but returns the last valid index, so be careful!
 ## Collect x_i and x_j as needed, pre needs all cvars at the same time
-% if 'x_i' in coupling.pre_expression.rhs: ## don't generate x_i if not required
+% if 'x_i' in pre_rhs: ## don't generate x_i if not required
     x_i = jnp.array([
 % for i, sv in enumerate(model.state_variables.values()):
     % if sv.coupling_variable:
@@ -33,8 +45,8 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     ## %endif
 % endif
 
-## if no non-zero idelays, use current state
-% if 'x_j' in coupling.pre_expression.rhs: ## don't generate x_j if not required (should always be present)
+## Collect incoming states from connected nodes (x_j)
+% if needs_x_j:
     x_j = jnp.array([
 <% cvar_idx = 0 %>
 % for i, sv in enumerate(model.state_variables.values()):
@@ -59,11 +71,18 @@ def cfun(weights, history, current_state, p, delay_indices, t):
 % if not scalar_pre: # We need to collect all states (history is equal to current_state here) for non scalar operations like Difference or SigmoidelJansenRit
     ## x_j = x_j.transpose(1, 0, 2) ## (n_node, n_cvar, ...) old TVB convention
 % endif
-
+## Assign named variables from incoming_states
+% for idx, state_name in enumerate(incoming_states_names):
+    ${state_name} = x_j[${idx}]
+% endfor
 % endif
 
 ## Apply pre-expression this can reduce and collapse the cvar dimension, eg. SigmoidalJansenRit
-    pre = ${jaxcode(coupling.pre_expression.rhs)}
+% if is_list_expr:
+    pre = jnp.stack(${jaxcode(pre_rhs)}, axis=0)
+% else:
+    pre = ${jaxcode(pre_rhs)}
+% endif
     ## %if has_delay:
     % if not scalar_pre:
     ## pre = pre.reshape(n_node, -1 ,n_node) ## Restore collapsed dimension if necessary

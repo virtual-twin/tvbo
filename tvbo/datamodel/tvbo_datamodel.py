@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-10T19:13:55
+# Generation date: 2025-12-16T13:52:58
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -56,8 +56,8 @@ from rdflib import (
     URIRef
 )
 
-from linkml_runtime.linkml_model.types import Boolean, Float, Integer, String
-from linkml_runtime.utils.metamodelcore import Bool
+from linkml_runtime.linkml_model.types import Boolean, Datetime, Float, Integer, String
+from linkml_runtime.utils.metamodelcore import Bool, XSDDateTime
 
 metamodel_version = "1.7.0"
 version = None
@@ -80,19 +80,11 @@ class TractogramName(extended_str):
     pass
 
 
-class ObservationModelName(extended_str):
-    pass
-
-
-class DownsamplingModelName(ObservationModelName):
+class ObservationName(extended_str):
     pass
 
 
 class DynamicsName(extended_str):
-    pass
-
-
-class NeuralMassModelName(DynamicsName):
     pass
 
 
@@ -112,6 +104,10 @@ class CouplingInputName(extended_str):
     pass
 
 
+class ArgumentName(extended_str):
+    pass
+
+
 class FunctionName(extended_str):
     pass
 
@@ -128,7 +124,11 @@ class DerivedVariableName(extended_str):
     pass
 
 
-class MonitorName(ObservationModelName):
+class UpdateRuleName(extended_str):
+    pass
+
+
+class TuningAlgorithmName(extended_str):
     pass
 
 
@@ -174,6 +174,9 @@ class DBSProtocolName(extended_str):
 
 @dataclass(repr=False)
 class Range(YAMLRoot):
+    """
+    Specifies a range for array generation or parameter bounds.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Range"]
@@ -181,19 +184,19 @@ class Range(YAMLRoot):
     class_name: ClassVar[str] = "Range"
     class_model_uri: ClassVar[URIRef] = TVBO.Range
 
-    lo: Optional[float] = None
-    hi: Optional[float] = None
-    step: Optional[float] = None
+    lo: Optional[str] = "0"
+    hi: Optional[str] = None
+    step: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self.lo is not None and not isinstance(self.lo, float):
-            self.lo = float(self.lo)
+        if self.lo is not None and not isinstance(self.lo, str):
+            self.lo = str(self.lo)
 
-        if self.hi is not None and not isinstance(self.hi, float):
-            self.hi = float(self.hi)
+        if self.hi is not None and not isinstance(self.hi, str):
+            self.hi = str(self.hi)
 
-        if self.step is not None and not isinstance(self.step, float):
-            self.step = float(self.step)
+        if self.step is not None and not isinstance(self.step, str):
+            self.step = str(self.step)
 
         super().__post_init__(**kwargs)
 
@@ -680,34 +683,45 @@ class Edge(YAMLRoot):
 
 
 @dataclass(repr=False)
-class ObservationModel(YAMLRoot):
+class Observation(YAMLRoot):
+    """
+    Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and
+    derived quantities. Pipeline is a sequence of Functions with input → output flow.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
-    class_class_uri: ClassVar[URIRef] = TVBO["ObservationModel"]
-    class_class_curie: ClassVar[str] = "tvbo:ObservationModel"
-    class_name: ClassVar[str] = "ObservationModel"
-    class_model_uri: ClassVar[URIRef] = TVBO.ObservationModel
+    class_class_uri: ClassVar[URIRef] = TVBO["Observation"]
+    class_class_curie: ClassVar[str] = "tvbo:Observation"
+    class_name: ClassVar[str] = "Observation"
+    class_model_uri: ClassVar[URIRef] = TVBO.Observation
 
-    name: Union[str, ObservationModelName] = None
+    name: Union[str, ObservationName] = None
     acronym: Optional[str] = None
+    label: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
-    transformation: Optional[Union[dict, "Function"]] = None
-    pipeline: Optional[Union[Union[dict, "ProcessingStep"], list[Union[dict, "ProcessingStep"]]]] = empty_list()
-    data_injections: Optional[Union[Union[dict, "DataInjection"], list[Union[dict, "DataInjection"]]]] = empty_list()
-    argument_mappings: Optional[Union[Union[dict, "ArgumentMapping"], list[Union[dict, "ArgumentMapping"]]]] = empty_list()
-    derivatives: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    time_scale: Optional[str] = "ms"
+    source: Optional[Union[str, StateVariableName]] = None
+    source_observation: Optional[Union[str, ObservationName]] = None
+    period: Optional[float] = None
+    imaging_modality: Optional[Union[str, "ImagingModality"]] = None
+    aggregation: Optional[Union[str, "AggregationType"]] = None
+    window_size: Optional[int] = None
+    pipeline: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, ObservationModelName):
-            self.name = ObservationModelName(self.name)
+        if not isinstance(self.name, ObservationName):
+            self.name = ObservationName(self.name)
 
         if self.acronym is not None and not isinstance(self.acronym, str):
             self.acronym = str(self.acronym)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -720,171 +734,28 @@ class ObservationModel(YAMLRoot):
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
 
-        if self.transformation is not None and not isinstance(self.transformation, Function):
-            self.transformation = Function(**as_dict(self.transformation))
+        if self.time_scale is not None and not isinstance(self.time_scale, str):
+            self.time_scale = str(self.time_scale)
 
-        if not isinstance(self.pipeline, list):
-            self.pipeline = [self.pipeline] if self.pipeline is not None else []
-        self.pipeline = [v if isinstance(v, ProcessingStep) else ProcessingStep(**as_dict(v)) for v in self.pipeline]
+        if self.source is not None and not isinstance(self.source, StateVariableName):
+            self.source = StateVariableName(self.source)
 
-        if not isinstance(self.data_injections, list):
-            self.data_injections = [self.data_injections] if self.data_injections is not None else []
-        self.data_injections = [v if isinstance(v, DataInjection) else DataInjection(**as_dict(v)) for v in self.data_injections]
-
-        if not isinstance(self.argument_mappings, list):
-            self.argument_mappings = [self.argument_mappings] if self.argument_mappings is not None else []
-        self.argument_mappings = [v if isinstance(v, ArgumentMapping) else ArgumentMapping(**as_dict(v)) for v in self.argument_mappings]
-
-        self._normalize_inlined_as_dict(slot_name="derivatives", slot_type=DerivedVariable, key_name="name", keyed=True)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class ProcessingStep(YAMLRoot):
-    """
-    A single processing step in an observation model pipeline or standalone operation
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["ProcessingStep"]
-    class_class_curie: ClassVar[str] = "tvbo:ProcessingStep"
-    class_name: ClassVar[str] = "ProcessingStep"
-    class_model_uri: ClassVar[URIRef] = TVBO.ProcessingStep
-
-    transformation: Union[dict, "Function"] = None
-    order: Optional[int] = None
-    type: Optional[Union[str, "OperationType"]] = None
-    input_mapping: Optional[Union[Union[dict, "ArgumentMapping"], list[Union[dict, "ArgumentMapping"]]]] = empty_list()
-    output_alias: Optional[str] = None
-    apply_on_dimension: Optional[str] = None
-    ensure_shape: Optional[str] = None
-    variables_of_interest: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.transformation):
-            self.MissingRequiredField("transformation")
-        if not isinstance(self.transformation, Function):
-            self.transformation = Function(**as_dict(self.transformation))
-
-        if self.order is not None and not isinstance(self.order, int):
-            self.order = int(self.order)
-
-        if self.type is not None and not isinstance(self.type, OperationType):
-            self.type = OperationType(self.type)
-
-        if not isinstance(self.input_mapping, list):
-            self.input_mapping = [self.input_mapping] if self.input_mapping is not None else []
-        self.input_mapping = [v if isinstance(v, ArgumentMapping) else ArgumentMapping(**as_dict(v)) for v in self.input_mapping]
-
-        if self.output_alias is not None and not isinstance(self.output_alias, str):
-            self.output_alias = str(self.output_alias)
-
-        if self.apply_on_dimension is not None and not isinstance(self.apply_on_dimension, str):
-            self.apply_on_dimension = str(self.apply_on_dimension)
-
-        if self.ensure_shape is not None and not isinstance(self.ensure_shape, str):
-            self.ensure_shape = str(self.ensure_shape)
-
-        self._normalize_inlined_as_dict(slot_name="variables_of_interest", slot_type=StateVariable, key_name="name", keyed=True)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class DataInjection(YAMLRoot):
-    """
-    External data injected into the observation pipeline
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["DataInjection"]
-    class_class_curie: ClassVar[str] = "tvbo:DataInjection"
-    class_name: ClassVar[str] = "DataInjection"
-    class_model_uri: ClassVar[URIRef] = TVBO.DataInjection
-
-    name: str = None
-    data_source: Optional[str] = None
-    values: Optional[Union[float, list[float]]] = empty_list()
-    shape: Optional[Union[int, list[int]]] = empty_list()
-    generation_function: Optional[Union[dict, "Function"]] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, str):
-            self.name = str(self.name)
-
-        if self.data_source is not None and not isinstance(self.data_source, str):
-            self.data_source = str(self.data_source)
-
-        if not isinstance(self.values, list):
-            self.values = [self.values] if self.values is not None else []
-        self.values = [v if isinstance(v, float) else float(v) for v in self.values]
-
-        if not isinstance(self.shape, list):
-            self.shape = [self.shape] if self.shape is not None else []
-        self.shape = [v if isinstance(v, int) else int(v) for v in self.shape]
-
-        if self.generation_function is not None and not isinstance(self.generation_function, Function):
-            self.generation_function = Function(**as_dict(self.generation_function))
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class ArgumentMapping(YAMLRoot):
-    """
-    Maps function arguments to pipeline inputs/outputs
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["ArgumentMapping"]
-    class_class_curie: ClassVar[str] = "tvbo:ArgumentMapping"
-    class_name: ClassVar[str] = "ArgumentMapping"
-    class_model_uri: ClassVar[URIRef] = TVBO.ArgumentMapping
-
-    function_argument: str = None
-    source: str = None
-    constant_value: Optional[str] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.function_argument):
-            self.MissingRequiredField("function_argument")
-        if not isinstance(self.function_argument, str):
-            self.function_argument = str(self.function_argument)
-
-        if self._is_empty(self.source):
-            self.MissingRequiredField("source")
-        if not isinstance(self.source, str):
-            self.source = str(self.source)
-
-        if self.constant_value is not None and not isinstance(self.constant_value, str):
-            self.constant_value = str(self.constant_value)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class DownsamplingModel(ObservationModel):
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["DownsamplingModel"]
-    class_class_curie: ClassVar[str] = "tvbo:DownsamplingModel"
-    class_name: ClassVar[str] = "DownsamplingModel"
-    class_model_uri: ClassVar[URIRef] = TVBO.DownsamplingModel
-
-    name: Union[str, DownsamplingModelName] = None
-    period: Optional[float] = 0.9765625
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, DownsamplingModelName):
-            self.name = DownsamplingModelName(self.name)
+        if self.source_observation is not None and not isinstance(self.source_observation, ObservationName):
+            self.source_observation = ObservationName(self.source_observation)
 
         if self.period is not None and not isinstance(self.period, float):
             self.period = float(self.period)
+
+        if self.imaging_modality is not None and not isinstance(self.imaging_modality, ImagingModality):
+            self.imaging_modality = ImagingModality(self.imaging_modality)
+
+        if self.aggregation is not None and not isinstance(self.aggregation, AggregationType):
+            self.aggregation = AggregationType(self.aggregation)
+
+        if self.window_size is not None and not isinstance(self.window_size, int):
+            self.window_size = int(self.window_size)
+
+        self._normalize_inlined_as_list(slot_name="pipeline", slot_type=Function, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -913,12 +784,12 @@ class Dynamics(YAMLRoot):
     state_variables: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
     modified: Optional[Union[bool, Bool]] = None
     output: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
-    derived_from_model: Optional[Union[str, NeuralMassModelName]] = None
+    derived_from_model: Optional[Union[str, DynamicsName]] = None
     number_of_modes: Optional[int] = 1
     local_coupling_term: Optional[Union[str, ParameterName]] = None
     functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     stimulus: Optional[Union[dict, Stimulus]] = None
-    modes: Optional[Union[dict[Union[str, NeuralMassModelName], Union[dict, "NeuralMassModel"]], list[Union[dict, "NeuralMassModel"]]]] = empty_dict()
+    modes: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     system_type: Optional[Union[str, "SystemType"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -963,8 +834,8 @@ class Dynamics(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="output", slot_type=DerivedVariable, key_name="name", keyed=True)
 
-        if self.derived_from_model is not None and not isinstance(self.derived_from_model, NeuralMassModelName):
-            self.derived_from_model = NeuralMassModelName(self.derived_from_model)
+        if self.derived_from_model is not None and not isinstance(self.derived_from_model, DynamicsName):
+            self.derived_from_model = DynamicsName(self.derived_from_model)
 
         if self.number_of_modes is not None and not isinstance(self.number_of_modes, int):
             self.number_of_modes = int(self.number_of_modes)
@@ -977,33 +848,13 @@ class Dynamics(YAMLRoot):
         if self.stimulus is not None and not isinstance(self.stimulus, Stimulus):
             self.stimulus = Stimulus(**as_dict(self.stimulus))
 
-        self._normalize_inlined_as_dict(slot_name="modes", slot_type=NeuralMassModel, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="modes", slot_type=Dynamics, key_name="name", keyed=True)
 
         if self.system_type is not None and not isinstance(self.system_type, SystemType):
             self.system_type = SystemType(self.system_type)
 
         if self.system_type is not None and not isinstance(self.system_type, str):
             self.system_type = str(self.system_type)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class NeuralMassModel(Dynamics):
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["NeuralMassModel"]
-    class_class_curie: ClassVar[str] = "tvbo:NeuralMassModel"
-    class_name: ClassVar[str] = "NeuralMassModel"
-    class_model_uri: ClassVar[URIRef] = TVBO.NeuralMassModel
-
-    name: Union[str, NeuralMassModelName] = "Generic2dOscillator"
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, NeuralMassModelName):
-            self.name = NeuralMassModelName(self.name)
 
         super().__post_init__(**kwargs)
 
@@ -1131,7 +982,7 @@ class Parameter(YAMLRoot):
     label: Optional[str] = None
     symbol: Optional[str] = None
     definition: Optional[str] = None
-    value: Optional[float] = None
+    value: Optional[str] = None
     default: Optional[str] = None
     domain: Optional[Union[dict, Range]] = None
     reported_optimum: Optional[float] = None
@@ -1159,8 +1010,8 @@ class Parameter(YAMLRoot):
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
 
-        if self.value is not None and not isinstance(self.value, float):
-            self.value = float(self.value)
+        if self.value is not None and not isinstance(self.value, str):
+            self.value = str(self.value)
 
         if self.default is not None and not isinstance(self.default, str):
             self.default = str(self.default)
@@ -1231,7 +1082,46 @@ class CouplingInput(YAMLRoot):
 
 
 @dataclass(repr=False)
+class Argument(YAMLRoot):
+    """
+    A function argument that can be a literal value or a reference to another output
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Argument"]
+    class_class_curie: ClassVar[str] = "tvbo:Argument"
+    class_name: ClassVar[str] = "Argument"
+    class_model_uri: ClassVar[URIRef] = TVBO.Argument
+
+    name: Union[str, ArgumentName] = None
+    description: Optional[str] = None
+    value: Optional[str] = None
+    unit: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, ArgumentName):
+            self.name = ArgumentName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.value is not None and not isinstance(self.value, str):
+            self.value = str(self.value)
+
+        if self.unit is not None and not isinstance(self.unit, str):
+            self.unit = str(self.unit)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class Function(YAMLRoot):
+    """
+    A function with explicit input → transformation → output flow. Can be equation-based (symbolic) or software-based
+    (callable). In a pipeline, functions are chained: output of one becomes input of next.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Function"]
@@ -1246,11 +1136,16 @@ class Function(YAMLRoot):
     definition: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
+    input: Optional[Union[str, FunctionName]] = None
+    output: Optional[str] = None
     iri: Optional[str] = None
-    arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
-    output: Optional[Union[dict, Equation]] = None
+    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
+    output_equation: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
     callable: Optional[Union[dict, "Callable"]] = None
+    operation_type: Optional[Union[str, "OperationType"]] = None
+    apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
+    time_range: Optional[Union[dict, Range]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1277,22 +1172,34 @@ class Function(YAMLRoot):
             self.requirements = [self.requirements] if self.requirements is not None else []
         self.requirements = [v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements]
 
+        if self.input is not None and not isinstance(self.input, FunctionName):
+            self.input = FunctionName(self.input)
+
+        if self.output is not None and not isinstance(self.output, str):
+            self.output = str(self.output)
+
         if self.iri is not None and not isinstance(self.iri, str):
             self.iri = str(self.iri)
 
-        if self.definition is not None and not isinstance(self.definition, str):
-            self.definition = str(self.definition)
+        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
-
-        if self.output is not None and not isinstance(self.output, Equation):
-            self.output = Equation(**as_dict(self.output))
+        if self.output_equation is not None and not isinstance(self.output_equation, Equation):
+            self.output_equation = Equation(**as_dict(self.output_equation))
 
         if self.source_code is not None and not isinstance(self.source_code, str):
             self.source_code = str(self.source_code)
 
         if self.callable is not None and not isinstance(self.callable, Callable):
             self.callable = Callable(**as_dict(self.callable))
+
+        if self.operation_type is not None and not isinstance(self.operation_type, OperationType):
+            self.operation_type = OperationType(self.operation_type)
+
+        if self.apply_on_dimension is not None and not isinstance(self.apply_on_dimension, DimensionType):
+            self.apply_on_dimension = DimensionType(self.apply_on_dimension)
+
+        if self.time_range is not None and not isinstance(self.time_range, Range):
+            self.time_range = Range(**as_dict(self.time_range))
 
         super().__post_init__(**kwargs)
 
@@ -1310,6 +1217,7 @@ class Callable(YAMLRoot):
     description: Optional[str] = None
     module: Optional[str] = None
     qualname: Optional[str] = None
+    reverse_kernel: Optional[Union[bool, Bool]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1326,6 +1234,9 @@ class Callable(YAMLRoot):
 
         if self.qualname is not None and not isinstance(self.qualname, str):
             self.qualname = str(self.qualname)
+
+        if self.reverse_kernel is not None and not isinstance(self.reverse_kernel, Bool):
+            self.reverse_kernel = Bool(self.reverse_kernel)
 
         if self.software is not None and not isinstance(self.software, SoftwareRequirement):
             self.software = SoftwareRequirement(**as_dict(self.software))
@@ -1401,6 +1312,7 @@ class DerivedVariable(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.DerivedVariable
 
     name: Union[str, DerivedVariableName] = None
+    label: Optional[str] = None
     symbol: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
@@ -1413,6 +1325,9 @@ class DerivedVariable(YAMLRoot):
             self.MissingRequiredField("name")
         if not isinstance(self.name, DerivedVariableName):
             self.name = DerivedVariableName(self.name)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
 
         if self.symbol is not None and not isinstance(self.symbol, str):
             self.symbol = str(self.symbol)
@@ -1612,6 +1527,172 @@ class ModelFitting(YAMLRoot):
 
 
 @dataclass(repr=False)
+class UpdateRule(YAMLRoot):
+    """
+    Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB
+    updates.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["UpdateRule"]
+    class_class_curie: ClassVar[str] = "tvbo:UpdateRule"
+    class_name: ClassVar[str] = "UpdateRule"
+    class_model_uri: ClassVar[URIRef] = TVBO.UpdateRule
+
+    name: Union[str, UpdateRuleName] = None
+    target_parameter: Union[dict, Parameter] = None
+    equation: Union[dict, Equation] = None
+    description: Optional[str] = None
+    bounds: Optional[Union[dict, Range]] = None
+    requires: Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]] = empty_list()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, UpdateRuleName):
+            self.name = UpdateRuleName(self.name)
+
+        if self._is_empty(self.target_parameter):
+            self.MissingRequiredField("target_parameter")
+        if not isinstance(self.target_parameter, Parameter):
+            self.target_parameter = Parameter(**as_dict(self.target_parameter))
+
+        if self._is_empty(self.equation):
+            self.MissingRequiredField("equation")
+        if not isinstance(self.equation, Equation):
+            self.equation = Equation(**as_dict(self.equation))
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.bounds is not None and not isinstance(self.bounds, Range):
+            self.bounds = Range(**as_dict(self.bounds))
+
+        if not isinstance(self.requires, list):
+            self.requires = [self.requires] if self.requires is not None else []
+        self.requires = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.requires]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class TuningObjective(YAMLRoot):
+    """
+    Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["TuningObjective"]
+    class_class_curie: ClassVar[str] = "tvbo:TuningObjective"
+    class_name: ClassVar[str] = "TuningObjective"
+    class_model_uri: ClassVar[URIRef] = TVBO.TuningObjective
+
+    label: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[str] = None
+    target_variable: Optional[Union[dict, StateVariable]] = None
+    target_value: Optional[float] = None
+    target_data: Optional[Union[dict, Observation]] = None
+    metric: Optional[Union[dict, Equation]] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.type is not None and not isinstance(self.type, str):
+            self.type = str(self.type)
+
+        if self.target_variable is not None and not isinstance(self.target_variable, StateVariable):
+            self.target_variable = StateVariable(**as_dict(self.target_variable))
+
+        if self.target_value is not None and not isinstance(self.target_value, float):
+            self.target_value = float(self.target_value)
+
+        if self.target_data is not None and not isinstance(self.target_data, Observation):
+            self.target_data = Observation(**as_dict(self.target_data))
+
+        if self.metric is not None and not isinstance(self.metric, Equation):
+            self.metric = Equation(**as_dict(self.metric))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class TuningAlgorithm(YAMLRoot):
+    """
+    A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives,
+    observables, and hyperparameters.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["TuningAlgorithm"]
+    class_class_curie: ClassVar[str] = "tvbo:TuningAlgorithm"
+    class_name: ClassVar[str] = "TuningAlgorithm"
+    class_model_uri: ClassVar[URIRef] = TVBO.TuningAlgorithm
+
+    name: Union[str, TuningAlgorithmName] = None
+    update_rules: Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]] = empty_dict()
+    description: Optional[str] = None
+    type: Optional[str] = None
+    objective: Optional[Union[dict, TuningObjective]] = None
+    observables: Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]] = empty_dict()
+    hyperparameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    learning_rate: Optional[float] = None
+    n_iterations: Optional[int] = None
+    learning_rate_schedule: Optional[str] = None
+    simulation_period: Optional[float] = None
+    apply_every: Optional[int] = 1
+    depends_on: Optional[Union[Union[str, TuningAlgorithmName], list[Union[str, TuningAlgorithmName]]]] = empty_list()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, TuningAlgorithmName):
+            self.name = TuningAlgorithmName(self.name)
+
+        if self._is_empty(self.update_rules):
+            self.MissingRequiredField("update_rules")
+        self._normalize_inlined_as_dict(slot_name="update_rules", slot_type=UpdateRule, key_name="name", keyed=True)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.type is not None and not isinstance(self.type, str):
+            self.type = str(self.type)
+
+        if self.objective is not None and not isinstance(self.objective, TuningObjective):
+            self.objective = TuningObjective(**as_dict(self.objective))
+
+        self._normalize_inlined_as_dict(slot_name="observables", slot_type=Observation, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.learning_rate is not None and not isinstance(self.learning_rate, float):
+            self.learning_rate = float(self.learning_rate)
+
+        if self.n_iterations is not None and not isinstance(self.n_iterations, int):
+            self.n_iterations = int(self.n_iterations)
+
+        if self.learning_rate_schedule is not None and not isinstance(self.learning_rate_schedule, str):
+            self.learning_rate_schedule = str(self.learning_rate_schedule)
+
+        if self.simulation_period is not None and not isinstance(self.simulation_period, float):
+            self.simulation_period = float(self.simulation_period)
+
+        if self.apply_every is not None and not isinstance(self.apply_every, int):
+            self.apply_every = int(self.apply_every)
+
+        if not isinstance(self.depends_on, list):
+            self.depends_on = [self.depends_on] if self.depends_on is not None else []
+        self.depends_on = [v if isinstance(v, TuningAlgorithmName) else TuningAlgorithmName(v) for v in self.depends_on]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class Integrator(YAMLRoot):
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1685,64 +1766,6 @@ class Integrator(YAMLRoot):
 
 
 @dataclass(repr=False)
-class Monitor(ObservationModel):
-    """
-    Observation model for monitoring simulation output with optional processing pipeline
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["Monitor"]
-    class_class_curie: ClassVar[str] = "tvbo:Monitor"
-    class_name: ClassVar[str] = "Monitor"
-    class_model_uri: ClassVar[URIRef] = TVBO.Monitor
-
-    name: Union[str, MonitorName] = None
-    time_scale: Optional[str] = "ms"
-    label: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
-    acronym: Optional[str] = None
-    description: Optional[str] = None
-    equation: Optional[Union[dict, Equation]] = None
-    environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
-    period: Optional[float] = None
-    imaging_modality: Optional[Union[str, "ImagingModality"]] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, MonitorName):
-            self.name = MonitorName(self.name)
-
-        if self.time_scale is not None and not isinstance(self.time_scale, str):
-            self.time_scale = str(self.time_scale)
-
-        if self.label is not None and not isinstance(self.label, str):
-            self.label = str(self.label)
-
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
-
-        if self.acronym is not None and not isinstance(self.acronym, str):
-            self.acronym = str(self.acronym)
-
-        if self.description is not None and not isinstance(self.description, str):
-            self.description = str(self.description)
-
-        if self.equation is not None and not isinstance(self.equation, Equation):
-            self.equation = Equation(**as_dict(self.equation))
-
-        if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
-            self.environment = SoftwareEnvironment(**as_dict(self.environment))
-
-        if self.period is not None and not isinstance(self.period, float):
-            self.period = float(self.period)
-
-        if self.imaging_modality is not None and not isinstance(self.imaging_modality, ImagingModality):
-            self.imaging_modality = ImagingModality(self.imaging_modality)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
 class Coupling(YAMLRoot):
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1758,8 +1781,8 @@ class Coupling(YAMLRoot):
     sparse: Optional[Union[bool, Bool]] = False
     pre_expression: Optional[Union[dict, Equation]] = None
     post_expression: Optional[Union[dict, Equation]] = None
-    incoming_states: Optional[Union[dict, StateVariable]] = None
-    local_states: Optional[Union[dict, StateVariable]] = None
+    incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
+    local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
     inner_coupling: Optional[Union[dict, "Coupling"]] = None
     region_mapping: Optional[Union[dict, "RegionMapping"]] = None
@@ -1790,11 +1813,13 @@ class Coupling(YAMLRoot):
         if self.post_expression is not None and not isinstance(self.post_expression, Equation):
             self.post_expression = Equation(**as_dict(self.post_expression))
 
-        if self.incoming_states is not None and not isinstance(self.incoming_states, StateVariable):
-            self.incoming_states = StateVariable(**as_dict(self.incoming_states))
+        if not isinstance(self.incoming_states, list):
+            self.incoming_states = [self.incoming_states] if self.incoming_states is not None else []
+        self.incoming_states = [v if isinstance(v, StateVariableName) else StateVariableName(v) for v in self.incoming_states]
 
-        if self.local_states is not None and not isinstance(self.local_states, StateVariable):
-            self.local_states = StateVariable(**as_dict(self.local_states))
+        if not isinstance(self.local_states, list):
+            self.local_states = [self.local_states] if self.local_states is not None else []
+        self.local_states = [v if isinstance(v, StateVariableName) else StateVariableName(v) for v in self.local_states]
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
@@ -1902,10 +1927,11 @@ class SimulationExperiment(YAMLRoot):
     connectivity: Optional[Union[dict, Network]] = None
     network: Optional[Union[dict, Network]] = None
     coupling: Optional[Union[dict, Coupling]] = None
-    monitors: Optional[Union[dict[Union[str, MonitorName], Union[dict, Monitor]], list[Union[dict, Monitor]]]] = empty_dict()
+    observations: Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]] = empty_dict()
     stimulation: Optional[Union[dict, Stimulus]] = None
     field_dynamics: Optional[Union[dict, "PDE"]] = None
     modelfitting: Optional[Union[Union[dict, ModelFitting], list[Union[dict, ModelFitting]]]] = empty_list()
+    tuning_algorithms: Optional[Union[dict[Union[str, TuningAlgorithmName], Union[dict, TuningAlgorithm]], list[Union[dict, TuningAlgorithm]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
     references: Optional[Union[str, list[str]]] = empty_list()
@@ -1946,7 +1972,7 @@ class SimulationExperiment(YAMLRoot):
         if self.coupling is not None and not isinstance(self.coupling, Coupling):
             self.coupling = Coupling(**as_dict(self.coupling))
 
-        self._normalize_inlined_as_dict(slot_name="monitors", slot_type=Monitor, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="observations", slot_type=Observation, key_name="name", keyed=True)
 
         if self.stimulation is not None and not isinstance(self.stimulation, Stimulus):
             self.stimulation = Stimulus(**as_dict(self.stimulation))
@@ -1957,6 +1983,8 @@ class SimulationExperiment(YAMLRoot):
         if not isinstance(self.modelfitting, list):
             self.modelfitting = [self.modelfitting] if self.modelfitting is not None else []
         self.modelfitting = [v if isinstance(v, ModelFitting) else ModelFitting(**as_dict(v)) for v in self.modelfitting]
+
+        self._normalize_inlined_as_dict(slot_name="tuning_algorithms", slot_type=TuningAlgorithm, key_name="name", keyed=True)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -2026,6 +2054,10 @@ class SimulationStudy(YAMLRoot):
 
 @dataclass(repr=False)
 class TimeSeries(YAMLRoot):
+    """
+    Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling
+    (BEP034).
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["TimeSeries"]
@@ -2039,7 +2071,22 @@ class TimeSeries(YAMLRoot):
     data: Optional[Union[dict, Matrix]] = None
     time: Optional[Union[dict, Matrix]] = None
     sampling_rate: Optional[float] = None
+    sampling_period: Optional[float] = None
+    sampling_period_unit: Optional[str] = "ms"
     unit: Optional[str] = None
+    labels_ordering: Optional[Union[str, list[str]]] = empty_list()
+    labels_dimensions: Optional[str] = None
+    source_experiment: Optional[Union[int, SimulationExperimentId]] = None
+    generated_at: Optional[Union[str, XSDDateTime]] = None
+    software_environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
+    task_name: Optional[str] = None
+    subject_id: Optional[str] = None
+    session_id: Optional[str] = None
+    run_id: Optional[int] = None
+    modality: Optional[Union[str, "ImagingModality"]] = None
+    model_equation_ref: Optional[str] = None
+    model_param_ref: Optional[str] = None
+    connectivity_ref: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -2060,8 +2107,54 @@ class TimeSeries(YAMLRoot):
         if self.sampling_rate is not None and not isinstance(self.sampling_rate, float):
             self.sampling_rate = float(self.sampling_rate)
 
+        if self.sampling_period is not None and not isinstance(self.sampling_period, float):
+            self.sampling_period = float(self.sampling_period)
+
+        if self.sampling_period_unit is not None and not isinstance(self.sampling_period_unit, str):
+            self.sampling_period_unit = str(self.sampling_period_unit)
+
         if self.unit is not None and not isinstance(self.unit, str):
             self.unit = str(self.unit)
+
+        if not isinstance(self.labels_ordering, list):
+            self.labels_ordering = [self.labels_ordering] if self.labels_ordering is not None else []
+        self.labels_ordering = [v if isinstance(v, str) else str(v) for v in self.labels_ordering]
+
+        if self.labels_dimensions is not None and not isinstance(self.labels_dimensions, str):
+            self.labels_dimensions = str(self.labels_dimensions)
+
+        if self.source_experiment is not None and not isinstance(self.source_experiment, SimulationExperimentId):
+            self.source_experiment = SimulationExperimentId(self.source_experiment)
+
+        if self.generated_at is not None and not isinstance(self.generated_at, XSDDateTime):
+            self.generated_at = XSDDateTime(self.generated_at)
+
+        if self.software_environment is not None and not isinstance(self.software_environment, SoftwareEnvironment):
+            self.software_environment = SoftwareEnvironment(**as_dict(self.software_environment))
+
+        if self.task_name is not None and not isinstance(self.task_name, str):
+            self.task_name = str(self.task_name)
+
+        if self.subject_id is not None and not isinstance(self.subject_id, str):
+            self.subject_id = str(self.subject_id)
+
+        if self.session_id is not None and not isinstance(self.session_id, str):
+            self.session_id = str(self.session_id)
+
+        if self.run_id is not None and not isinstance(self.run_id, int):
+            self.run_id = int(self.run_id)
+
+        if self.modality is not None and not isinstance(self.modality, ImagingModality):
+            self.modality = ImagingModality(self.modality)
+
+        if self.model_equation_ref is not None and not isinstance(self.model_equation_ref, str):
+            self.model_equation_ref = str(self.model_equation_ref)
+
+        if self.model_param_ref is not None and not isinstance(self.model_param_ref, str):
+            self.model_param_ref = str(self.model_param_ref)
+
+        if self.connectivity_ref is not None and not isinstance(self.connectivity_ref, str):
+            self.connectivity_ref = str(self.connectivity_ref)
 
         super().__post_init__(**kwargs)
 
@@ -3435,6 +3528,31 @@ class NoiseType(EnumDefinitionImpl):
         name="NoiseType",
     )
 
+class AggregationType(EnumDefinitionImpl):
+    """
+    How to aggregate time series data
+    """
+    mean = PermissibleValue(
+        text="mean",
+        description="Average over time")
+    last = PermissibleValue(
+        text="last",
+        description="Last value in window")
+    first = PermissibleValue(
+        text="first",
+        description="First value in window")
+    window = PermissibleValue(
+        text="window",
+        description="Sliding window aggregation")
+    none = PermissibleValue(
+        text="none",
+        description="No aggregation")
+
+    _defn = EnumDefinition(
+        name="AggregationType",
+        description="How to aggregate time series data",
+    )
+
 class RequirementRole(EnumDefinitionImpl):
 
     engine = PermissibleValue(
@@ -3460,6 +3578,27 @@ class RequirementRole(EnumDefinitionImpl):
 class EnvironmentType(EnumDefinitionImpl):
 
     conda = PermissibleValue(text="conda")
+
+    _defn = EnumDefinition(
+        name="EnvironmentType",
+    )
+
+class DimensionType(EnumDefinitionImpl):
+    """
+    Dimensions along which operations can be applied
+    """
+    time = PermissibleValue(
+        text="time",
+        description="Temporal dimension")
+    state = PermissibleValue(
+        text="state",
+        description="State variable dimension")
+    region = PermissibleValue(
+        text="region",
+        description="Spatial/regional dimension (nodes)")
+    mode = PermissibleValue(
+        text="mode",
+        description="Mode dimension (e.g., coupling modes)")
     venv = PermissibleValue(text="venv")
     docker = PermissibleValue(text="docker")
     singularity = PermissibleValue(text="singularity")
@@ -3467,7 +3606,8 @@ class EnvironmentType(EnumDefinitionImpl):
     other = PermissibleValue(text="other")
 
     _defn = EnumDefinition(
-        name="EnvironmentType",
+        name="DimensionType",
+        description="Dimensions along which operations can be applied",
     )
 
 class SpecimenEnum(EnumDefinitionImpl):
@@ -3538,7 +3678,7 @@ slots.iri = Slot(uri=TVBO.iri, name="iri", curie=TVBO.curie('iri'),
                    model_uri=TVBO.iri, domain=None, range=Optional[str])
 
 slots.value = Slot(uri=TVBO.value, name="value", curie=TVBO.curie('value'),
-                   model_uri=TVBO.value, domain=None, range=Optional[float])
+                   model_uri=TVBO.value, domain=None, range=Optional[str])
 
 slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie('file'),
                    model_uri=TVBO.file, domain=None, range=Optional[str])
@@ -3613,13 +3753,13 @@ slots.id = Slot(uri=TVBO_DBS.id, name="id", curie=TVBO_DBS.curie('id'),
                    model_uri=TVBO.id, domain=None, range=Optional[int])
 
 slots.range__lo = Slot(uri=TVBO.lo, name="range__lo", curie=TVBO.curie('lo'),
-                   model_uri=TVBO.range__lo, domain=None, range=Optional[float])
+                   model_uri=TVBO.range__lo, domain=None, range=Optional[str])
 
 slots.range__hi = Slot(uri=TVBO.hi, name="range__hi", curie=TVBO.curie('hi'),
-                   model_uri=TVBO.range__hi, domain=None, range=Optional[float])
+                   model_uri=TVBO.range__hi, domain=None, range=Optional[str])
 
 slots.range__step = Slot(uri=TVBO.step, name="range__step", curie=TVBO.curie('step'),
-                   model_uri=TVBO.range__step, domain=None, range=Optional[float])
+                   model_uri=TVBO.range__step, domain=None, range=Optional[str])
 
 slots.equation__lefthandside = Slot(uri=TVBO.lhs, name="equation__lefthandside", curie=TVBO.curie('lhs'),
                    model_uri=TVBO.equation__lefthandside, domain=None, range=Optional[str])
@@ -3765,71 +3905,26 @@ slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO
 slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
                    model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.observationModel__transformation = Slot(uri=TVBO.transformation, name="observationModel__transformation", curie=TVBO.curie('transformation'),
-                   model_uri=TVBO.observationModel__transformation, domain=None, range=Optional[Union[dict, Function]])
+slots.observation__source = Slot(uri=TVBO.source, name="observation__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.observation__source, domain=None, range=Optional[Union[str, StateVariableName]])
 
-slots.observationModel__pipeline = Slot(uri=TVBO.pipeline, name="observationModel__pipeline", curie=TVBO.curie('pipeline'),
-                   model_uri=TVBO.observationModel__pipeline, domain=None, range=Optional[Union[Union[dict, ProcessingStep], list[Union[dict, ProcessingStep]]]])
+slots.observation__source_observation = Slot(uri=TVBO.source_observation, name="observation__source_observation", curie=TVBO.curie('source_observation'),
+                   model_uri=TVBO.observation__source_observation, domain=None, range=Optional[Union[str, ObservationName]])
 
-slots.observationModel__data_injections = Slot(uri=TVBO.data_injections, name="observationModel__data_injections", curie=TVBO.curie('data_injections'),
-                   model_uri=TVBO.observationModel__data_injections, domain=None, range=Optional[Union[Union[dict, DataInjection], list[Union[dict, DataInjection]]]])
+slots.observation__period = Slot(uri=TVBO.period, name="observation__period", curie=TVBO.curie('period'),
+                   model_uri=TVBO.observation__period, domain=None, range=Optional[float])
 
-slots.observationModel__argument_mappings = Slot(uri=TVBO.argument_mappings, name="observationModel__argument_mappings", curie=TVBO.curie('argument_mappings'),
-                   model_uri=TVBO.observationModel__argument_mappings, domain=None, range=Optional[Union[Union[dict, ArgumentMapping], list[Union[dict, ArgumentMapping]]]])
+slots.observation__imaging_modality = Slot(uri=TVBO.imaging_modality, name="observation__imaging_modality", curie=TVBO.curie('imaging_modality'),
+                   model_uri=TVBO.observation__imaging_modality, domain=None, range=Optional[Union[str, "ImagingModality"]])
 
-slots.observationModel__derivatives = Slot(uri=TVBO.derivatives, name="observationModel__derivatives", curie=TVBO.curie('derivatives'),
-                   model_uri=TVBO.observationModel__derivatives, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+slots.observation__aggregation = Slot(uri=TVBO.aggregation, name="observation__aggregation", curie=TVBO.curie('aggregation'),
+                   model_uri=TVBO.observation__aggregation, domain=None, range=Optional[Union[str, "AggregationType"]])
 
-slots.processingStep__order = Slot(uri=TVBO.order, name="processingStep__order", curie=TVBO.curie('order'),
-                   model_uri=TVBO.processingStep__order, domain=None, range=Optional[int])
+slots.observation__window_size = Slot(uri=TVBO.window_size, name="observation__window_size", curie=TVBO.curie('window_size'),
+                   model_uri=TVBO.observation__window_size, domain=None, range=Optional[int])
 
-slots.processingStep__function = Slot(uri=TVBO.transformation, name="processingStep__function", curie=TVBO.curie('transformation'),
-                   model_uri=TVBO.processingStep__function, domain=None, range=Union[dict, Function])
-
-slots.processingStep__operation_type = Slot(uri=TVBO.type, name="processingStep__operation_type", curie=TVBO.curie('type'),
-                   model_uri=TVBO.processingStep__operation_type, domain=None, range=Optional[Union[str, "OperationType"]])
-
-slots.processingStep__input_mapping = Slot(uri=TVBO.input_mapping, name="processingStep__input_mapping", curie=TVBO.curie('input_mapping'),
-                   model_uri=TVBO.processingStep__input_mapping, domain=None, range=Optional[Union[Union[dict, ArgumentMapping], list[Union[dict, ArgumentMapping]]]])
-
-slots.processingStep__output_alias = Slot(uri=TVBO.output_alias, name="processingStep__output_alias", curie=TVBO.curie('output_alias'),
-                   model_uri=TVBO.processingStep__output_alias, domain=None, range=Optional[str])
-
-slots.processingStep__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="processingStep__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
-                   model_uri=TVBO.processingStep__apply_on_dimension, domain=None, range=Optional[str])
-
-slots.processingStep__ensure_shape = Slot(uri=TVBO.ensure_shape, name="processingStep__ensure_shape", curie=TVBO.curie('ensure_shape'),
-                   model_uri=TVBO.processingStep__ensure_shape, domain=None, range=Optional[str])
-
-slots.processingStep__variables_of_interest = Slot(uri=TVBO.variables_of_interest, name="processingStep__variables_of_interest", curie=TVBO.curie('variables_of_interest'),
-                   model_uri=TVBO.processingStep__variables_of_interest, domain=None, range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]])
-
-slots.dataInjection__name = Slot(uri=TVBO.name, name="dataInjection__name", curie=TVBO.curie('name'),
-                   model_uri=TVBO.dataInjection__name, domain=None, range=str)
-
-slots.dataInjection__data_source = Slot(uri=TVBO.data_source, name="dataInjection__data_source", curie=TVBO.curie('data_source'),
-                   model_uri=TVBO.dataInjection__data_source, domain=None, range=Optional[str])
-
-slots.dataInjection__values = Slot(uri=TVBO.values, name="dataInjection__values", curie=TVBO.curie('values'),
-                   model_uri=TVBO.dataInjection__values, domain=None, range=Optional[Union[float, list[float]]])
-
-slots.dataInjection__shape = Slot(uri=TVBO.shape, name="dataInjection__shape", curie=TVBO.curie('shape'),
-                   model_uri=TVBO.dataInjection__shape, domain=None, range=Optional[Union[int, list[int]]])
-
-slots.dataInjection__generation_function = Slot(uri=TVBO.generation_function, name="dataInjection__generation_function", curie=TVBO.curie('generation_function'),
-                   model_uri=TVBO.dataInjection__generation_function, domain=None, range=Optional[Union[dict, Function]])
-
-slots.argumentMapping__function_argument = Slot(uri=TVBO.function_argument, name="argumentMapping__function_argument", curie=TVBO.curie('function_argument'),
-                   model_uri=TVBO.argumentMapping__function_argument, domain=None, range=str)
-
-slots.argumentMapping__source = Slot(uri=TVBO.source, name="argumentMapping__source", curie=TVBO.curie('source'),
-                   model_uri=TVBO.argumentMapping__source, domain=None, range=str)
-
-slots.argumentMapping__constant_value = Slot(uri=TVBO.constant_value, name="argumentMapping__constant_value", curie=TVBO.curie('constant_value'),
-                   model_uri=TVBO.argumentMapping__constant_value, domain=None, range=Optional[str])
-
-slots.downsamplingModel__period = Slot(uri=TVBO.period, name="downsamplingModel__period", curie=TVBO.curie('period'),
-                   model_uri=TVBO.downsamplingModel__period, domain=None, range=Optional[float])
+slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipeline", curie=TVBO.curie('pipeline'),
+                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
 
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
                    model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
@@ -3853,7 +3948,7 @@ slots.dynamics__output = Slot(uri=TVBO.output, name="dynamics__output", curie=TV
                    model_uri=TVBO.dynamics__output, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
 
 slots.dynamics__derived_from_model = Slot(uri=TVBO.derived_from_model, name="dynamics__derived_from_model", curie=TVBO.curie('derived_from_model'),
-                   model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[str, NeuralMassModelName]])
+                   model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[str, DynamicsName]])
 
 slots.dynamics__number_of_modes = Slot(uri=TVBO.number_of_modes, name="dynamics__number_of_modes", curie=TVBO.curie('number_of_modes'),
                    model_uri=TVBO.dynamics__number_of_modes, domain=None, range=Optional[int])
@@ -3868,7 +3963,7 @@ slots.dynamics__stimulus = Slot(uri=TVBO.stimulus, name="dynamics__stimulus", cu
                    model_uri=TVBO.dynamics__stimulus, domain=None, range=Optional[Union[dict, Stimulus]])
 
 slots.dynamics__modes = Slot(uri=TVBO.modes, name="dynamics__modes", curie=TVBO.curie('modes'),
-                   model_uri=TVBO.dynamics__modes, domain=None, range=Optional[Union[dict[Union[str, NeuralMassModelName], Union[dict, NeuralMassModel]], list[Union[dict, NeuralMassModel]]]])
+                   model_uri=TVBO.dynamics__modes, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
 
 slots.dynamics__system_type = Slot(uri=TVBO.system_type, name="dynamics__system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.dynamics__system_type, domain=None, range=Optional[Union[str, "SystemType"]])
@@ -3918,17 +4013,26 @@ slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="paramete
 slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__dimension", curie=TVBO.curie('dimension'),
                    model_uri=TVBO.couplingInput__dimension, domain=None, range=Optional[int])
 
+slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
+                   model_uri=TVBO.argument__value, domain=None, range=Optional[str])
+
+slots.argument__unit = Slot(uri=TVBO.unit, name="argument__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.argument__unit, domain=None, range=Optional[str])
+
+slots.function__input = Slot(uri=TVBO.input, name="function__input", curie=TVBO.curie('input'),
+                   model_uri=TVBO.function__input, domain=None, range=Optional[Union[str, FunctionName]])
+
+slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.function__output, domain=None, range=Optional[str])
+
 slots.function__iri = Slot(uri=TVBO.iri, name="function__iri", curie=TVBO.curie('iri'),
                    model_uri=TVBO.function__iri, domain=None, range=Optional[str])
 
-slots.function__definition = Slot(uri=TVBO.definition, name="function__definition", curie=TVBO.curie('definition'),
-                   model_uri=TVBO.function__definition, domain=None, range=Optional[str])
-
 slots.function__arguments = Slot(uri=TVBO.arguments, name="function__arguments", curie=TVBO.curie('arguments'),
-                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
 
-slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TVBO.curie('output'),
-                   model_uri=TVBO.function__output, domain=None, range=Optional[Union[dict, Equation]])
+slots.function__output_equation = Slot(uri=TVBO.output_equation, name="function__output_equation", curie=TVBO.curie('output_equation'),
+                   model_uri=TVBO.function__output_equation, domain=None, range=Optional[Union[dict, Equation]])
 
 slots.function__source_code = Slot(uri=TVBO.source_code, name="function__source_code", curie=TVBO.curie('source_code'),
                    model_uri=TVBO.function__source_code, domain=None, range=Optional[str])
@@ -3936,11 +4040,23 @@ slots.function__source_code = Slot(uri=TVBO.source_code, name="function__source_
 slots.function__callable = Slot(uri=TVBO.callable, name="function__callable", curie=TVBO.curie('callable'),
                    model_uri=TVBO.function__callable, domain=None, range=Optional[Union[dict, Callable]])
 
+slots.function__operation_type = Slot(uri=TVBO.operation_type, name="function__operation_type", curie=TVBO.curie('operation_type'),
+                   model_uri=TVBO.function__operation_type, domain=None, range=Optional[Union[str, "OperationType"]])
+
+slots.function__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="function__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
+                   model_uri=TVBO.function__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.function__time_range = Slot(uri=TVBO.time_range, name="function__time_range", curie=TVBO.curie('time_range'),
+                   model_uri=TVBO.function__time_range, domain=None, range=Optional[Union[dict, Range]])
+
 slots.callable__module = Slot(uri=TVBO.module, name="callable__module", curie=TVBO.curie('module'),
                    model_uri=TVBO.callable__module, domain=None, range=Optional[str])
 
 slots.callable__qualname = Slot(uri=TVBO.qualname, name="callable__qualname", curie=TVBO.curie('qualname'),
                    model_uri=TVBO.callable__qualname, domain=None, range=Optional[str])
+
+slots.callable__reverse_kernel = Slot(uri=TVBO.reverse_kernel, name="callable__reverse_kernel", curie=TVBO.curie('reverse_kernel'),
+                   model_uri=TVBO.callable__reverse_kernel, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.callable__software = Slot(uri=TVBO.software, name="callable__software", curie=TVBO.curie('software'),
                    model_uri=TVBO.callable__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
@@ -3993,6 +4109,66 @@ slots.modelFitting__targets = Slot(uri=TVBO.targets, name="modelFitting__targets
 slots.modelFitting__cost_function = Slot(uri=TVBO.cost_function, name="modelFitting__cost_function", curie=TVBO.curie('cost_function'),
                    model_uri=TVBO.modelFitting__cost_function, domain=None, range=Optional[Union[dict, CostFunction]])
 
+slots.updateRule__target_parameter = Slot(uri=TVBO.target_parameter, name="updateRule__target_parameter", curie=TVBO.curie('target_parameter'),
+                   model_uri=TVBO.updateRule__target_parameter, domain=None, range=Union[dict, Parameter])
+
+slots.updateRule__equation = Slot(uri=TVBO.equation, name="updateRule__equation", curie=TVBO.curie('equation'),
+                   model_uri=TVBO.updateRule__equation, domain=None, range=Union[dict, Equation])
+
+slots.updateRule__bounds = Slot(uri=TVBO.bounds, name="updateRule__bounds", curie=TVBO.curie('bounds'),
+                   model_uri=TVBO.updateRule__bounds, domain=None, range=Optional[Union[dict, Range]])
+
+slots.updateRule__requires = Slot(uri=TVBO.requires, name="updateRule__requires", curie=TVBO.curie('requires'),
+                   model_uri=TVBO.updateRule__requires, domain=None, range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]])
+
+slots.tuningObjective__type = Slot(uri=TVBO.type, name="tuningObjective__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.tuningObjective__type, domain=None, range=Optional[str])
+
+slots.tuningObjective__target_variable = Slot(uri=TVBO.target_variable, name="tuningObjective__target_variable", curie=TVBO.curie('target_variable'),
+                   model_uri=TVBO.tuningObjective__target_variable, domain=None, range=Optional[Union[dict, StateVariable]])
+
+slots.tuningObjective__target_value = Slot(uri=TVBO.target_value, name="tuningObjective__target_value", curie=TVBO.curie('target_value'),
+                   model_uri=TVBO.tuningObjective__target_value, domain=None, range=Optional[float])
+
+slots.tuningObjective__target_data = Slot(uri=TVBO.target_data, name="tuningObjective__target_data", curie=TVBO.curie('target_data'),
+                   model_uri=TVBO.tuningObjective__target_data, domain=None, range=Optional[Union[dict, Observation]])
+
+slots.tuningObjective__metric = Slot(uri=TVBO.metric, name="tuningObjective__metric", curie=TVBO.curie('metric'),
+                   model_uri=TVBO.tuningObjective__metric, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.tuningAlgorithm__type = Slot(uri=TVBO.type, name="tuningAlgorithm__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.tuningAlgorithm__type, domain=None, range=Optional[str])
+
+slots.tuningAlgorithm__objective = Slot(uri=TVBO.objective, name="tuningAlgorithm__objective", curie=TVBO.curie('objective'),
+                   model_uri=TVBO.tuningAlgorithm__objective, domain=None, range=Optional[Union[dict, TuningObjective]])
+
+slots.tuningAlgorithm__observables = Slot(uri=TVBO.observables, name="tuningAlgorithm__observables", curie=TVBO.curie('observables'),
+                   model_uri=TVBO.tuningAlgorithm__observables, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
+
+slots.tuningAlgorithm__update_rules = Slot(uri=TVBO.update_rules, name="tuningAlgorithm__update_rules", curie=TVBO.curie('update_rules'),
+                   model_uri=TVBO.tuningAlgorithm__update_rules, domain=None, range=Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]])
+
+slots.tuningAlgorithm__hyperparameters = Slot(uri=TVBO.hyperparameters, name="tuningAlgorithm__hyperparameters", curie=TVBO.curie('hyperparameters'),
+                   model_uri=TVBO.tuningAlgorithm__hyperparameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.tuningAlgorithm__learning_rate = Slot(uri=TVBO.learning_rate, name="tuningAlgorithm__learning_rate", curie=TVBO.curie('learning_rate'),
+                   model_uri=TVBO.tuningAlgorithm__learning_rate, domain=None, range=Optional[float])
+
+slots.tuningAlgorithm__n_iterations = Slot(uri=TVBO.n_iterations, name="tuningAlgorithm__n_iterations", curie=TVBO.curie('n_iterations'),
+                   model_uri=TVBO.tuningAlgorithm__n_iterations, domain=None, range=Optional[int])
+
+slots.tuningAlgorithm__learning_rate_schedule = Slot(uri=TVBO.learning_rate_schedule, name="tuningAlgorithm__learning_rate_schedule", curie=TVBO.curie('learning_rate_schedule'),
+                   model_uri=TVBO.tuningAlgorithm__learning_rate_schedule, domain=None, range=Optional[str])
+
+slots.tuningAlgorithm__simulation_period = Slot(uri=TVBO.simulation_period, name="tuningAlgorithm__simulation_period", curie=TVBO.curie('simulation_period'),
+                   model_uri=TVBO.tuningAlgorithm__simulation_period, domain=None, range=Optional[float])
+
+slots.tuningAlgorithm__apply_every = Slot(uri=TVBO.apply_every, name="tuningAlgorithm__apply_every", curie=TVBO.curie('apply_every'),
+                   model_uri=TVBO.tuningAlgorithm__apply_every, domain=None, range=Optional[int])
+
+slots.tuningAlgorithm__depends_on = Slot(uri=TVBO.depends_on, name="tuningAlgorithm__depends_on", curie=TVBO.curie('depends_on'),
+                   model_uri=TVBO.tuningAlgorithm__depends_on, domain=None, range=Optional[Union[Union[str, TuningAlgorithmName], list[Union[str, TuningAlgorithmName]]]])
+
 slots.integrator__method = Slot(uri=TVBO.method, name="integrator__method", curie=TVBO.curie('method'),
                    model_uri=TVBO.integrator__method, domain=None, range=Optional[str])
 
@@ -4026,12 +4202,6 @@ slots.integrator__update_expression = Slot(uri=TVBO.update_expression, name="int
 slots.integrator__delayed = Slot(uri=TVBO.delayed, name="integrator__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.integrator__delayed, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.monitor__period = Slot(uri=TVBO.period, name="monitor__period", curie=TVBO.curie('period'),
-                   model_uri=TVBO.monitor__period, domain=None, range=Optional[float])
-
-slots.monitor__imaging_modality = Slot(uri=TVBO.imaging_modality, name="monitor__imaging_modality", curie=TVBO.curie('imaging_modality'),
-                   model_uri=TVBO.monitor__imaging_modality, domain=None, range=Optional[Union[str, "ImagingModality"]])
-
 slots.coupling__coupling_function = Slot(uri=TVBO.coupling_function, name="coupling__coupling_function", curie=TVBO.curie('coupling_function'),
                    model_uri=TVBO.coupling__coupling_function, domain=None, range=Optional[Union[dict, Equation]])
 
@@ -4045,10 +4215,10 @@ slots.coupling__post_expression = Slot(uri=TVBO.post_expression, name="coupling_
                    model_uri=TVBO.coupling__post_expression, domain=None, range=Optional[Union[dict, Equation]])
 
 slots.coupling__incoming_states = Slot(uri=TVBO.incoming_states, name="coupling__incoming_states", curie=TVBO.curie('incoming_states'),
-                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[dict, StateVariable]])
+                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
 
 slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local_states", curie=TVBO.curie('local_states'),
-                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[dict, StateVariable]])
+                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
 
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
@@ -4113,8 +4283,8 @@ slots.simulationExperiment__network = Slot(uri=TVBO.network, name="simulationExp
 slots.simulationExperiment__coupling = Slot(uri=TVBO.coupling, name="simulationExperiment__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.simulationExperiment__coupling, domain=None, range=Optional[Union[dict, Coupling]])
 
-slots.simulationExperiment__monitors = Slot(uri=TVBO.monitors, name="simulationExperiment__monitors", curie=TVBO.curie('monitors'),
-                   model_uri=TVBO.simulationExperiment__monitors, domain=None, range=Optional[Union[dict[Union[str, MonitorName], Union[dict, Monitor]], list[Union[dict, Monitor]]]])
+slots.simulationExperiment__observations = Slot(uri=TVBO.observations, name="simulationExperiment__observations", curie=TVBO.curie('observations'),
+                   model_uri=TVBO.simulationExperiment__observations, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
 
 slots.simulationExperiment__stimulation = Slot(uri=TVBO.stimulation, name="simulationExperiment__stimulation", curie=TVBO.curie('stimulation'),
                    model_uri=TVBO.simulationExperiment__stimulation, domain=None, range=Optional[Union[dict, Stimulus]])
@@ -4124,6 +4294,9 @@ slots.simulationExperiment__field_dynamics = Slot(uri=TVBO.field_dynamics, name=
 
 slots.simulationExperiment__modelfitting = Slot(uri=TVBO.modelfitting, name="simulationExperiment__modelfitting", curie=TVBO.curie('modelfitting'),
                    model_uri=TVBO.simulationExperiment__modelfitting, domain=None, range=Optional[Union[Union[dict, ModelFitting], list[Union[dict, ModelFitting]]]])
+
+slots.simulationExperiment__tuning_algorithms = Slot(uri=TVBO.tuning_algorithms, name="simulationExperiment__tuning_algorithms", curie=TVBO.curie('tuning_algorithms'),
+                   model_uri=TVBO.simulationExperiment__tuning_algorithms, domain=None, range=Optional[Union[dict[Union[str, TuningAlgorithmName], Union[dict, TuningAlgorithm]], list[Union[dict, TuningAlgorithm]]]])
 
 slots.simulationExperiment__environment = Slot(uri=TVBO.environment, name="simulationExperiment__environment", curie=TVBO.curie('environment'),
                    model_uri=TVBO.simulationExperiment__environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
@@ -4161,8 +4334,53 @@ slots.timeSeries__time = Slot(uri=TVBO.time, name="timeSeries__time", curie=TVBO
 slots.timeSeries__sampling_rate = Slot(uri=TVBO.sampling_rate, name="timeSeries__sampling_rate", curie=TVBO.curie('sampling_rate'),
                    model_uri=TVBO.timeSeries__sampling_rate, domain=None, range=Optional[float])
 
+slots.timeSeries__sampling_period = Slot(uri=TVBO.sampling_period, name="timeSeries__sampling_period", curie=TVBO.curie('sampling_period'),
+                   model_uri=TVBO.timeSeries__sampling_period, domain=None, range=Optional[float])
+
+slots.timeSeries__sampling_period_unit = Slot(uri=TVBO.sampling_period_unit, name="timeSeries__sampling_period_unit", curie=TVBO.curie('sampling_period_unit'),
+                   model_uri=TVBO.timeSeries__sampling_period_unit, domain=None, range=Optional[str])
+
 slots.timeSeries__unit = Slot(uri=TVBO.unit, name="timeSeries__unit", curie=TVBO.curie('unit'),
                    model_uri=TVBO.timeSeries__unit, domain=None, range=Optional[str])
+
+slots.timeSeries__labels_ordering = Slot(uri=TVBO.labels_ordering, name="timeSeries__labels_ordering", curie=TVBO.curie('labels_ordering'),
+                   model_uri=TVBO.timeSeries__labels_ordering, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.timeSeries__labels_dimensions = Slot(uri=TVBO.labels_dimensions, name="timeSeries__labels_dimensions", curie=TVBO.curie('labels_dimensions'),
+                   model_uri=TVBO.timeSeries__labels_dimensions, domain=None, range=Optional[str])
+
+slots.timeSeries__source_experiment = Slot(uri=TVBO.source_experiment, name="timeSeries__source_experiment", curie=TVBO.curie('source_experiment'),
+                   model_uri=TVBO.timeSeries__source_experiment, domain=None, range=Optional[Union[int, SimulationExperimentId]])
+
+slots.timeSeries__generated_at = Slot(uri=TVBO.generated_at, name="timeSeries__generated_at", curie=TVBO.curie('generated_at'),
+                   model_uri=TVBO.timeSeries__generated_at, domain=None, range=Optional[Union[str, XSDDateTime]])
+
+slots.timeSeries__software_environment = Slot(uri=TVBO.software_environment, name="timeSeries__software_environment", curie=TVBO.curie('software_environment'),
+                   model_uri=TVBO.timeSeries__software_environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+
+slots.timeSeries__task_name = Slot(uri=TVBO.task_name, name="timeSeries__task_name", curie=TVBO.curie('task_name'),
+                   model_uri=TVBO.timeSeries__task_name, domain=None, range=Optional[str])
+
+slots.timeSeries__subject_id = Slot(uri=TVBO.subject_id, name="timeSeries__subject_id", curie=TVBO.curie('subject_id'),
+                   model_uri=TVBO.timeSeries__subject_id, domain=None, range=Optional[str])
+
+slots.timeSeries__session_id = Slot(uri=TVBO.session_id, name="timeSeries__session_id", curie=TVBO.curie('session_id'),
+                   model_uri=TVBO.timeSeries__session_id, domain=None, range=Optional[str])
+
+slots.timeSeries__run_id = Slot(uri=TVBO.run_id, name="timeSeries__run_id", curie=TVBO.curie('run_id'),
+                   model_uri=TVBO.timeSeries__run_id, domain=None, range=Optional[int])
+
+slots.timeSeries__modality = Slot(uri=TVBO.modality, name="timeSeries__modality", curie=TVBO.curie('modality'),
+                   model_uri=TVBO.timeSeries__modality, domain=None, range=Optional[Union[str, "ImagingModality"]])
+
+slots.timeSeries__model_equation_ref = Slot(uri=TVBO.model_equation_ref, name="timeSeries__model_equation_ref", curie=TVBO.curie('model_equation_ref'),
+                   model_uri=TVBO.timeSeries__model_equation_ref, domain=None, range=Optional[str])
+
+slots.timeSeries__model_param_ref = Slot(uri=TVBO.model_param_ref, name="timeSeries__model_param_ref", curie=TVBO.curie('model_param_ref'),
+                   model_uri=TVBO.timeSeries__model_param_ref, domain=None, range=Optional[str])
+
+slots.timeSeries__connectivity_ref = Slot(uri=TVBO.connectivity_ref, name="timeSeries__connectivity_ref", curie=TVBO.curie('connectivity_ref'),
+                   model_uri=TVBO.timeSeries__connectivity_ref, domain=None, range=Optional[str])
 
 slots.softwareEnvironment__name = Slot(uri=TVBO.name, name="softwareEnvironment__name", curie=TVBO.curie('name'),
                    model_uri=TVBO.softwareEnvironment__name, domain=None, range=Optional[str])
