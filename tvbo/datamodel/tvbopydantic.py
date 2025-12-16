@@ -2299,8 +2299,7 @@ class Parameter(ConfiguredBaseModel):
                        'Function',
                        'FittingTarget',
                        'DifferentialOperator']} })
-    value: Optional[Union[float, str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}],
-         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -2904,8 +2903,7 @@ class DerivedParameter(Parameter):
                        'Function',
                        'FittingTarget',
                        'DifferentialOperator']} })
-    value: Optional[Union[float, str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}],
-         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',

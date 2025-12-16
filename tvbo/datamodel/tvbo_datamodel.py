@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-16T17:50:57
+# Generation date: 2025-12-16T20:36:50
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -982,7 +982,7 @@ class Parameter(YAMLRoot):
     label: Optional[str] = None
     symbol: Optional[str] = None
     definition: Optional[str] = None
-    value: Optional[str] = None
+    value: Optional[float] = None
     default: Optional[str] = None
     domain: Optional[Union[dict, Range]] = None
     reported_optimum: Optional[float] = None
@@ -1010,8 +1010,8 @@ class Parameter(YAMLRoot):
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
 
-        if self.value is not None and not isinstance(self.value, str):
-            self.value = str(self.value)
+        if self.value is not None and not isinstance(self.value, float):
+            self.value = float(self.value)
 
         if self.default is not None and not isinstance(self.default, str):
             self.default = str(self.default)
@@ -3661,7 +3661,7 @@ slots.iri = Slot(uri=TVBO.iri, name="iri", curie=TVBO.curie('iri'),
                    model_uri=TVBO.iri, domain=None, range=Optional[str])
 
 slots.value = Slot(uri=TVBO.value, name="value", curie=TVBO.curie('value'),
-                   model_uri=TVBO.value, domain=None, range=Optional[str])
+                   model_uri=TVBO.value, domain=None, range=Optional[float])
 
 slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie('file'),
                    model_uri=TVBO.file, domain=None, range=Optional[str])
