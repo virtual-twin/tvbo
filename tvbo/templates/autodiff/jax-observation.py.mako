@@ -30,7 +30,21 @@ JAX_MODULE_MAP = {
     'np': 'jax.numpy',
 }
 
-def get_jax_module(module):
+# Functions that don't exist in JAX - use scipy directly
+JAX_UNAVAILABLE = {
+    'scipy.signal': ['decimate'],
+    'numpy': ['corrcoef'],
+}
+
+def get_jax_module(module, func_name=None):
+    """Map module to JAX equivalent, but check if function is available."""
+    # Check if this specific function is known to be unavailable in JAX
+    if func_name:
+        for mod_prefix, unavailable_funcs in JAX_UNAVAILABLE.items():
+            if module.startswith(mod_prefix) and func_name in unavailable_funcs:
+                return module  # Use original module
+
+    # Otherwise try to map to JAX
     for prefix, jax_prefix in JAX_MODULE_MAP.items():
         if module.startswith(prefix):
             return module.replace(prefix, jax_prefix, 1)
@@ -39,26 +53,48 @@ def get_jax_module(module):
 <%
 
 pipeline_imports = set()
+callable_names = []
 for func in observation.pipeline:
     if func.callable:
         module, qualname = get_callable_info(func)
         pipeline_imports.add((module, qualname))
+        callable_names.append(qualname)
 %>
 import jax
 import jax.numpy as jnp
 from tvbo.data.types import TimeSeries
 % for module, name in sorted(pipeline_imports):
 <%
-    jax_module = get_jax_module(module)
+    jax_module = get_jax_module(module, name)
 %>
-from ${jax_module} import ${name}
+from ${jax_module} import ${name} as ${name}
 % endfor
-<%namespace name="jaxfunc" file="/autodiff/jax-function.py.mako"/>
+<%namespace name="jaxfunc" file="jax-function.py.mako"/>
 <%def name="create_observation_pipeline(observation, dt)" filter="trim">
 <%
     func_name_to_output = {func.name: func.output for func in observation.pipeline}
+    # Collect imports for this observation
+    obs_imports = set()
+    for func in observation.pipeline:
+        if func.callable:
+            module, qualname = get_callable_info(func)
+            obs_imports.add((module, qualname))
 %>
+# Import callable functions for ${observation.name}
+% for module, name in sorted(obs_imports):
+<%
+    jax_module = get_jax_module(module, name)
+%>
+from ${jax_module} import ${name}
+% endfor
+
 # Generate all transform functions from schema
+% for func in observation.pipeline:
+% if func.callable:
+_jax_${func.callable.name} = ${func.callable.name}  # Store reference to avoid recursion
+% endif
+% endfor
+
 % for func in observation.pipeline:
 ${jaxfunc.generate_function(func, func.name)}
 
@@ -72,8 +108,23 @@ def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" i
 
 % for func in observation.pipeline:
 <%
-    input_name = func_name_to_output.get(func.input, func.input) if func.input else 'ts'
+    # Check if input is from pipeline outputs or if it's another observation (needs to be called)
     pipeline_outputs = set([f.output for f in observation.pipeline])
+
+    if func.input:
+        # Check if input is from this pipeline's outputs
+        if func.input in pipeline_outputs or func.input in func_name_to_output.values():
+            input_name = func_name_to_output.get(func.input, func.input)
+        # Check if input matches the observation's source_observation (cross-observation dependency)
+        elif hasattr(observation, 'source_observation') and func.input == observation.source_observation:
+            # Need to call the source observation function
+            input_name = f"{func.input}(ts)"
+        else:
+            # Unknown input - use as variable name
+            input_name = func.input
+    else:
+        input_name = 'ts'
+
     params_dict = get_parameters(func, pipeline_outputs)
     # Build argument list: input + schema arguments
     args = [input_name]

@@ -103,7 +103,7 @@ local_dynamics:
             dimension: 1
             description: "Global coupling input (split into LRE/FFI based on EI_ratio)"
 
-    derived_variables:
+    coupling_terms:
         # Split global coupling into LRE and FFI based on EI_ratio
         # LRE = EI_ratio / (EI_ratio + 1), FFI = 1 / (EI_ratio + 1)
         c_lre:
@@ -116,6 +116,7 @@ local_dynamics:
                 rhs: "c_global * (1 / (EI_ratio + 1))"
             description: "Feedforward inhibition component"
 
+    derived_variables:
         # Excitatory current (Eq. 3 Deco2014 modified)
         I_E:
             equation:
