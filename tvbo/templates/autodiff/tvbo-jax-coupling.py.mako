@@ -102,3 +102,4 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     ## gx = gx.T
 % endif
     return ${jaxcode(coupling.post_expression.rhs)}
+

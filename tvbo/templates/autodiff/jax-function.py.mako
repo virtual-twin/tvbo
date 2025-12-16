@@ -43,7 +43,6 @@ from tvbo.export.code import render_expression
     # Build kwargs string for lambda
     call_kwargs = ', '.join([f'{k}={k}' for k in params.keys()]) if params else ''
 %>
-${callable_ref} = ${func.callable.name}  # Store reference to avoid recursion
 def ${func_name}(${func_signature}):
 % if callable_ts_args:
     # Secondary inputs (e.g., kernels) - extract 1D data
