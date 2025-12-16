@@ -897,6 +897,7 @@ class Network(tvbo_datamodel.Network):
         """Compute transmission delays from lengths and conduction speed.
 
         Uses sympy for unit-aware computation: delay = length / speed.
+        For explicit edge-based networks, extracts delays from edge parameters.
 
         Parameters
         ----------
@@ -906,7 +907,7 @@ class Network(tvbo_datamodel.Network):
         Returns
         -------
         np.ndarray or jax.Array
-            Delay matrix (N x N) in the specified time unit.
+            Delay matrix (N x N) in the specified time unit. NaN for non-existent edges.
 
         Raises
         ------
@@ -916,6 +917,20 @@ class Network(tvbo_datamodel.Network):
         import sympy.physics.units as u
         from sympy import nsimplify
         from sympy.parsing.sympy_parser import parse_expr
+
+        # If using explicit edges, construct delay matrix from edge parameters
+        if hasattr(self, 'edges') and self.edges:
+            n = self.number_of_nodes or 1
+            delays = np.full((n, n), np.nan)
+            for edge in self.edges:
+                if hasattr(edge, 'source') and hasattr(edge, 'target'):
+                    delay_val = 0.0
+                    if hasattr(edge, 'parameters') and edge.parameters:
+                        delay_param = edge.parameters.get('delay')
+                        if delay_param and hasattr(delay_param, 'value'):
+                            delay_val = float(delay_param.value)
+                    delays[edge.source, edge.target] = delay_val
+            return delays
 
         lengths = self.lengths_matrix
         if lengths is None:

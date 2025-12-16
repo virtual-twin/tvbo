@@ -168,17 +168,6 @@ class ImagingModality(str, Enum):
     """
 
 
-class OperationType(str, Enum):
-    select = "select"
-    temporal_average = "temporal_average"
-    subsample = "subsample"
-    projection = "projection"
-    reference_subtract = "reference_subtract"
-    convolution = "convolution"
-    node_coupling = "node_coupling"
-    custom_transform = "custom_transform"
-
-
 class SystemType(str, Enum):
     continuous = "continuous"
     """
@@ -819,6 +808,8 @@ class ClinicalScore(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1018,6 +1009,8 @@ class Stimulus(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1292,6 +1285,8 @@ class Tractogram(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1379,6 +1374,8 @@ class Matrix(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1485,6 +1482,8 @@ class Network(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1579,6 +1578,8 @@ class Node(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1680,6 +1681,8 @@ class Edge(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1807,6 +1810,8 @@ class Observation(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -1971,6 +1976,8 @@ class Dynamics(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2106,6 +2113,8 @@ class StateVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2321,6 +2330,8 @@ class Parameter(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2420,6 +2431,8 @@ class CouplingInput(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2490,6 +2503,8 @@ class Argument(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2630,6 +2645,8 @@ class Function(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2653,7 +2670,6 @@ class Function(ConfiguredBaseModel):
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
-    operation_type: Optional[OperationType] = Field(default=None, description="""Kind of operation (convolution, subsample, transform, derive)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Which dimension to apply the transformation on""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     time_range: Optional[Range] = Field(default=None, description="""Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
 
@@ -2707,6 +2723,8 @@ class Callable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2724,7 +2742,6 @@ class Callable(ConfiguredBaseModel):
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
     qualname: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
-    reverse_kernel: Optional[bool] = Field(default=None, description="""For convolution operations, whether to reverse the kernel before convolution (needed for causal impulse responses)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
     software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
 
 
@@ -2802,6 +2819,8 @@ class DerivedParameter(Parameter):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -2992,6 +3011,8 @@ class DerivedVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3142,6 +3163,8 @@ class RandomStream(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3384,6 +3407,8 @@ class ModelFitting(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3455,6 +3480,8 @@ class UpdateRule(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3554,6 +3581,8 @@ class TuningObjective(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3570,9 +3599,9 @@ class TuningObjective(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective', 'TuningAlgorithm']} })
-    target_variable: Optional[StateVariable] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+    target_variable: Optional[str] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     target_value: Optional[float] = Field(default=None, description="""Target value for activity objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
-    target_data: Optional[Observation] = Field(default=None, description="""Reference to empirical data observation for matching objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+    target_data: Optional[str] = Field(default=None, description="""Reference to empirical data observation for matching objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     metric: Optional[Equation] = Field(default=None, description="""Metric equation for matching (e.g., correlation, rmse)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
 
 
@@ -3628,6 +3657,8 @@ class TuningAlgorithm(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3685,6 +3716,45 @@ class Integrator(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Integrator'], 'ifabsent': 'float(1000)'} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
     method: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     step_size: Optional[float] = Field(default=0.01220703125, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'float(0.01220703125)'} })
     steps: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
@@ -3779,6 +3849,45 @@ class Coupling(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'ModelFitting',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
     coupling_function: Optional[Equation] = Field(default=None, description="""Mathematical function defining the coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     sparse: Optional[bool] = Field(default=False, description="""Whether the coupling uses sparse representations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'False'} })
     pre_expression: Optional[Equation] = Field(default=None, description="""Pre-processing expression applied before coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
@@ -3860,6 +3969,8 @@ class RegionMapping(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -3926,6 +4037,8 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4059,6 +4172,8 @@ class SimulationStudy(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4151,6 +4266,8 @@ class TimeSeries(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4276,6 +4393,8 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4389,6 +4508,8 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4414,7 +4535,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
-    package: str = Field(default=..., description="""Reference to the software package identity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    package: Optional[str] = Field(default=None, description="""Reference to the software package identity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
     version_spec: Optional[str] = Field(default=None, description="""Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2').""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
     role: Optional[RequirementRole] = Field(default=RequirementRole.runtime, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement'], 'ifabsent': 'runtime'} })
     optional: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement'], 'ifabsent': 'False'} })
@@ -4482,6 +4603,8 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4568,6 +4691,8 @@ class NDArray(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4669,6 +4794,8 @@ class SpatialDomain(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4756,6 +4883,8 @@ class Mesh(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4854,6 +4983,8 @@ class SpatialField(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -4952,6 +5083,8 @@ class FieldStateVariable(StateVariable):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -5172,6 +5305,8 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -5258,6 +5393,8 @@ class PDESolver(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',
@@ -5347,6 +5484,8 @@ class PDE(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
                        'SimulationStudy',

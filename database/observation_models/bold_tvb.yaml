@@ -32,13 +32,13 @@ pipeline:
     # TVB computes HRF at _stock_sample_rate = 0.25 Hz = 4ms period
     - name: HemodynamicResponseFunctionTVB
       acronym: HRF
-      output: hrf_kernel_forward
+      output: hrf_kernel
       time_range:
           lo: 0
           hi: duration
           step: stock_dt
       equation:
-          # TVB's Volterra kernel - computed forward in time
+          # TVB's Volterra kernel
           rhs: "1/3 * exp(-0.5*(t / tau_s)) * sin(sqrt(1/tau_f - 1/(4*tau_s**2)) * t) / sqrt(1/tau_f - 1/(4*tau_s**2))"
           parameters:
               tau_f:
@@ -56,15 +56,6 @@ pipeline:
             value: 0.004
             unit: s
             description: "Stock sample period = 4ms (1/_stock_sample_rate)"
-
-    # Step 2b: Reverse HRF kernel (TVB does G = G[::-1])
-    # "Reverse it, need it into the past for matrix-multiply of stock" - TVB comment
-    - name: reverse_hrf
-      input: HemodynamicResponseFunctionTVB
-      output: hrf_kernel
-      equation:
-          rhs: "X[::-1]"
-      apply_on_dimension: time
 
     # Step 3: Convolve averaged signal with HRF (mimics TVB's matrix multiply)
     # TVB does: bold = dot(hrf, stock) where stock contains temporally averaged samples
@@ -95,12 +86,13 @@ pipeline:
       apply_on_dimension: time
 
     # Step 5: Apply Volterra nonlinear transformation
-    # TVB: (convolved - 1.0) * k1_V0
+    # TVB: bold = (dot(hrf, stock) - 1.0) * k1_V0
+    # where k1_V0 = k_1 * V_0 = 5.6 * 0.02 = 0.112
     - name: volterra_transform
       input: subsample_to_TR
       output: Bold
       equation:
-          rhs: "(X - 1) * k_1 * V_0"
+          rhs: "(X - 1.0) * k_1 * V_0"
           parameters:
               k_1:
                   value: 5.6
