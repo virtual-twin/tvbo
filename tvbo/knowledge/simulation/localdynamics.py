@@ -356,6 +356,10 @@ def update_equations(model):
 
 
 def sort_equations(model, variable_type):
+    # Skip sorting for list format (e.g., output as list of names)
+    if isinstance(model[variable_type], list):
+        return
+
     # sort equations (compute dependency tree on the fly; avoid stored state)
     G_dep = model.get_dependency_tree()
     if isinstance(G_dep, tuple):
@@ -429,8 +433,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return inst
 
     @classmethod
-    def from_file(cls, path: str) -> "Dynamics":
-        inst = yaml_loader.load(path, cls)
+    def from_file(cls, path: str | os.PathLike) -> "Dynamics":
+        inst = yaml_loader.load(str(path), cls)
         inst._populate_from_ontology_if_available()
         inst.update_metadata()
         inst.calculate_derived_parameters()
@@ -583,7 +587,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
             scope[str(name)] = Symbol(str(name))
         for name in getattr(self, "derived_variables", {}).keys():
             scope[str(name)] = Symbol(str(name))
-        for name in getattr(self, "output", {}).keys():
+
+        # Output is a list of string references
+        for name in getattr(self, "output", []):
             scope[str(name)] = Symbol(str(name))
 
         # State variables as Symbols
@@ -593,7 +599,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Functions: undefined function heads; also add their argument symbols
         for fname, f in getattr(self, "functions", {}).items():
             scope[str(fname)] = Function(str(fname))
-            for arg in getattr(f, "arguments", {}).values():
+            for arg in getattr(f, "arguments", []):
                 scope[str(arg.name)] = Symbol(str(arg.name))
 
         if "e" not in scope:
@@ -725,10 +731,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Known non-parameter entities: states, derived vars, output transforms, derived parameters, function arguments, and 't'
         nonparam_known = set(map(str, self.state_variables.keys()))
         nonparam_known |= set(map(str, self.derived_variables.keys()))
-        nonparam_known |= set(map(str, self.output.keys()))
+        nonparam_known |= set(map(str, self.output))  # output is list of strings
         nonparam_known |= set(map(str, self.derived_parameters.keys()))
         for f in self.functions.values():
-            nonparam_known |= {str(arg.name) for arg in f.arguments.values()}
+            nonparam_known |= {str(arg.name) for arg in f.arguments}
         nonparam_known.add("t")
 
         # If any existing parameters clash with known entities, remove them (they were falsely inferred earlier)
@@ -917,14 +923,20 @@ class Dynamics(tvbo_datamodel.Dynamics):
         unit: str | None = None,
         description: str | None = None,
     ):
+        """Add an output variable. Creates a derived_variable and adds its name to output list."""
+        name_str = str(name)
+        # Create derived variable with the equation
         eq = (
-            self._coerce_equation(expression, lhs=str(name))
+            self._coerce_equation(expression, lhs=name_str)
             if expression is not None
             else None
         )
-        self.output[str(name)] = tvbo_datamodel.DerivedVariable(
-            name=str(name), equation=eq, unit=unit, description=description
+        self.derived_variables[name_str] = tvbo_datamodel.DerivedVariable(
+            name=name_str, equation=eq, unit=unit, description=description
         )
+        # Add reference to output list
+        if name_str not in self.output:
+            self.output.append(name_str)
         return self
 
     # Derived parameters
@@ -969,7 +981,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         if inline_functions and hasattr(self, "functions") and self.functions:
             inline_funcs = {}
             for fname, fdef in self.functions.items():
-                arg_names = list(fdef.arguments.keys())
+                arg_names = [str(arg.name) for arg in fdef.arguments]
                 body = tvbo_sympify(fdef.equation.rhs)
                 inline_funcs[fname] = (arg_names, body)
             # Don't emit function names as user_functions if we're inlining them
@@ -1003,7 +1015,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         equations["functions"] = []
         for k, f in self.functions.items():
-            arguments = [Symbol(arg.name) for arg in f.arguments.values()]
+            arguments = [Symbol(arg.name) for arg in f.arguments]
             k = Function(k)(*arguments)
             equations["functions"].append(
                 Eq(lhs=k, rhs=parse_eq(f.equation, local_dict=scope))
@@ -1050,10 +1062,24 @@ class Dynamics(tvbo_datamodel.Dynamics):
             return {_sv_name(_eq): _eq for _eq in equations["state-equations"]}
 
         equations["output-transformations"] = []
-        for k, ot in self.output.items():
-            equations["output-transformations"].append(
-                Eq(lhs=Symbol(k), rhs=parse_eq(ot.equation, local_dict=scope))
-            )
+        # Output is a list of string references to derived_variables or state_variables
+        for var_name in self.output:
+            var_name_str = str(var_name)
+            if var_name_str in self.derived_variables:
+                dv = self.derived_variables[var_name_str]
+                equations["output-transformations"].append(
+                    Eq(lhs=Symbol(var_name_str), rhs=parse_eq(dv.equation, local_dict=scope))
+                )
+            elif var_name_str in self.state_variables:
+                # State variable directly as output - no transformation needed
+                # We still record it but with evaluate=False to prevent Eq(x, x) -> True
+                equations["output-transformations"].append(
+                    Eq(Symbol(var_name_str), Symbol(var_name_str), evaluate=False)
+                )
+            else:
+                raise ValueError(
+                    f"Output variable '{var_name_str}' not found in derived_variables or state_variables"
+                )
         # self.keyed_equations = equations
         if format == "dict":
             return equations

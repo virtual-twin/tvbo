@@ -545,8 +545,8 @@ classes:
                 range: boolean
             output:
                 multivalued: true
-                range: DerivedVariable
-                inlined: true
+                range: string
+                description: "Output variable names to include in simulation results. References to state_variables or derived_variables by name."
             derived_from_model:
                 range: Dynamics
             number_of_modes:

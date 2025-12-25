@@ -32,6 +32,16 @@ derived_variables:
             lhs: I
             rhs: c_glob+lc_0
         conditional: false
+    phase:
+        name: phase
+        description: "Normalized phase output"
+        equation:
+            rhs: theta / (2*pi)
+    signal:
+        name: signal
+        description: "Sinusoidal signal output"
+        equation:
+            rhs: sin(theta)
 
 coupling_terms:
     c_glob:
@@ -54,10 +64,5 @@ state_variables:
         initial_value: 0.1
 
 output:
-    phase:
-        equation:
-            rhs: theta / (2*pi)
-
-    signal:
-        equation:
-            rhs: sin(theta)
+    - phase
+    - signal

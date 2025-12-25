@@ -95,10 +95,6 @@ local_dynamics:
         r0:
             value: 0.25
             description: "FIC target S_E activity level"
-        t_fic_cutoff:
-            value: 20000.0
-            unit: "ms"
-            description: "FIC tuning cutoff (matching standalone FIC_ts)"
 
         # External input
         W_E:
@@ -324,18 +320,6 @@ local_dynamics:
                 rhs: "(a_MW * I_B2 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_B2 - b_MW)))"
             description: "Firing rate of population B2"
 
-        fic_on:
-            conditional: true
-            equation:
-                rhs: Piecewise((1, t < t_fic_cutoff), (0, True))
-            cases:
-                - condition: t < t_fic_cutoff
-                  equation:
-                      rhs: 1
-                - condition: "True"
-                  equation:
-                      rhs: 0
-
     state_variables:
         S_E:
             description: "Excitatory synaptic gating variable"
@@ -373,7 +357,7 @@ local_dynamics:
             boundaries: { lo: 0.0, hi: 1.0 }
             initial_value: 0.0
             equation:
-                rhs: "(1 - fic_on) * (-S_A1 / tau_MW + gamma_MW * (1.0 - S_A1) * r_A1 / 1000.0)"
+                rhs: "-S_A1 / tau_MW + gamma_MW * (1.0 - S_A1) * r_A1 / 1000.0"
 
         S_B1:
             description: "Synaptic gating variable for population B1 (Module 1)"
@@ -381,7 +365,7 @@ local_dynamics:
             boundaries: { lo: 0.0, hi: 1.0 }
             initial_value: 0.0
             equation:
-                rhs: "(1 - fic_on) * (-S_B1 / tau_MW + gamma_MW * (1.0 - S_B1) * r_B1 / 1000.0)"
+                rhs: "-S_B1 / tau_MW + gamma_MW * (1.0 - S_B1) * r_B1 / 1000.0"
 
         S_A2:
             description: "Synaptic gating variable for population A2 (Module 2)"
@@ -389,7 +373,7 @@ local_dynamics:
             boundaries: { lo: 0.0, hi: 1.0 }
             initial_value: 0.0
             equation:
-                rhs: "(1 - fic_on) * (-S_A2 / tau_MW + gamma_MW * (1.0 - S_A2) * r_A2 / 1000.0)"
+                rhs: "-S_A2 / tau_MW + gamma_MW * (1.0 - S_A2) * r_A2 / 1000.0"
 
         S_B2:
             description: "Synaptic gating variable for population B2 (Module 2)"
@@ -397,7 +381,7 @@ local_dynamics:
             boundaries: { lo: 0.0, hi: 1.0 }
             initial_value: 0.0
             equation:
-                rhs: "(1 - fic_on) * (-S_B2 / tau_MW + gamma_MW * (1.0 - S_B2) * r_B2 / 1000.0)"
+                rhs: "-S_B2 / tau_MW + gamma_MW * (1.0 - S_B2) * r_B2 / 1000.0"
 
         # FIC: J_i as state variable (Inhibitory Synaptic Plasticity)
         J_i:
@@ -406,13 +390,8 @@ local_dynamics:
             boundaries: { lo: 0.0, hi: 10.0 }
             initial_value: 0.685
             equation:
-                rhs: "fic_on * eta * (S_I * S_E - r0 * S_I)"
+                rhs: "eta * (S_I * S_E - r0 * S_I)"
 
-    output:
-        - r_A1
-        - r_B1
-        - r_A2
-        - r_B2
 
 # ============================================================================
 # Coupling: Dual-Mode (LRE + FFI)
@@ -526,6 +505,7 @@ integration:
     duration: 25000
     unit: "ms"
     description: "FIC tuning: 20s, then 5s simulation (25s total)"
+
 # # ============================================================================
 # # Observations
 # # ============================================================================

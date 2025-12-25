@@ -7,6 +7,7 @@ from sympy.parsing.latex import parse_latex
 
 from tvbo.datamodel.tvbo_datamodel import Equation
 
+
 def parse_eq(
     equation: Equation,
     parameters=None,
@@ -52,7 +53,7 @@ def parse_eq(
         Parsed SymPy expression.
     """
 
-    # Start with user-provided locals (no hidden defaults)
+    # Start with user-provided locals (sympy's parse_expr handles pi, E, etc. by default)
     local_dict = dict(kwargs.pop("local_dict", {}))
 
     # Helper to coerce iterables/mappings into name -> sympy object entries

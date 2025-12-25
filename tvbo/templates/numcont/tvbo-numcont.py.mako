@@ -47,7 +47,7 @@ class ${model.metadata.name}BifModel(cs.ContSystem):
 
     % if model.metadata.functions:
         % for f in model.metadata.functions.values():
-        def ${f.name}(${", ".join([arg.name for arg in f.arguments.values()])}):
+        def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
             return ${render_eq(f.equation, format='numpy')}
         % endfor
     % endif

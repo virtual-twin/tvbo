@@ -49,12 +49,18 @@ derived_parameters:
     C4:
         equation:
             rhs: 0.25*C
+derived_variables:
+    v_pyr:
+        name: v_pyr
+        description: "EEG-like output: pyramidal potential difference"
+        equation:
+            rhs: y1 - y2
+        unit: mV
 functions:
     Sigm:
         definition: "JR sigmoid transformation"
         arguments:
-            v:
-                name: v
+            - v
         equation:
             rhs: 2*e0 / (1 + exp(r*(v0 - v)))
 coupling_terms:
@@ -92,8 +98,4 @@ state_variables:
             rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
         unit: mV*ms^-1
 output:
-    - name: v_pyr
-      description: "EEG-like output"
-      equation:
-          rhs: y1 - y2
-      unit: mV
+    - v_pyr
