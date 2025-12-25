@@ -3885,7 +3885,7 @@ class Integrator(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    method: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
+    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'string(euler)'} })
     step_size: Optional[float] = Field(default=0.01220703125, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'float(0.01220703125)'} })
     steps: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
