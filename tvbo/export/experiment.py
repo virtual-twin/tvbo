@@ -38,18 +38,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         global sessionid
 
-        if 'dynamics' in kwargs and not isinstance(kwargs['dynamics'], dict):
+        if "dynamics" in kwargs and not isinstance(kwargs["dynamics"], dict):
             # Convert list of Dynamics to dict keyed by name
-            dynamics_input = kwargs['dynamics']
+            dynamics_input = kwargs["dynamics"]
             if isinstance(dynamics_input, list):
                 dynamics_dict = {}
                 for dyn in dynamics_input:
-                    if dyn is not None and hasattr(dyn, 'name'):
+                    if dyn is not None and hasattr(dyn, "name"):
                         dynamics_dict[dyn.name] = dyn
-                kwargs['dynamics'] = dynamics_dict
-            elif hasattr(dynamics_input, 'name'):
+                kwargs["dynamics"] = dynamics_dict
+            elif hasattr(dynamics_input, "name"):
                 # Single Dynamics instance - wrap in dict
-                kwargs['dynamics'] = {dynamics_input.name: dynamics_input}
+                kwargs["dynamics"] = {dynamics_input.name: dynamics_input}
 
         # Ensure an id exists (the datamodel requires it in __post_init__)
         if kwargs.get("id") is None:
@@ -117,7 +117,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # If local_dynamics is empty but dynamics dict exists, use first entry
         # This enables backwards-compatible single-model workflows
-        if not getattr(self, "local_dynamics", None) and getattr(self, "dynamics", None):
+        if not getattr(self, "local_dynamics", None) and getattr(
+            self, "dynamics", None
+        ):
             dynamics_dict = self.dynamics
             if isinstance(dynamics_dict, dict) and dynamics_dict:
                 first_key = next(iter(dynamics_dict))
@@ -330,7 +332,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             network = Network(
                 weights=net_data["weights"],
                 tract_lengths=net_data.get("distances"),
-                region_labels=np.array(net_data["region_labels"]) if net_data["region_labels"] else None,
+                region_labels=(
+                    np.array(net_data["region_labels"])
+                    if net_data["region_labels"]
+                    else None
+                ),
             )
 
             # Add coordinates if available
@@ -353,7 +359,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 local_dynamics = Dynamics.from_ontology(model_type)
                 # Apply stored parameters
                 for param_name, param_value in params.items():
-                    if hasattr(local_dynamics, 'parameters') and param_name in local_dynamics.parameters:
+                    if (
+                        hasattr(local_dynamics, "parameters")
+                        and param_name in local_dynamics.parameters
+                    ):
                         local_dynamics.parameters[param_name].value = param_value
             except Exception:
                 # Fallback: create minimal Dynamics
@@ -379,7 +388,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Check sidecars for provenance info
             for sidecar in ts_data.get("sidecars", []):
-                provenance = sidecar.get("Provenance") or sidecar.get("SimulationProvenance")
+                provenance = sidecar.get("Provenance") or sidecar.get(
+                    "SimulationProvenance"
+                )
                 if provenance:
                     if "StepSize" in provenance and provenance["StepSize"]:
                         integration.step_size = float(provenance["StepSize"])
@@ -455,15 +466,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Compare shapes
             if ts_rerun.shape != timeseries.shape:
-                print(f"WARNING: Shape mismatch! Loaded: {timeseries.shape}, Rerun: {ts_rerun.shape}")
+                print(
+                    f"WARNING: Shape mismatch! Loaded: {timeseries.shape}, Rerun: {ts_rerun.shape}"
+                )
             else:
                 # Compare data
-                max_diff = np.max(np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data)))
+                max_diff = np.max(
+                    np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data))
+                )
                 if max_diff < 1e-6:
                     print(f"✓ Verification passed! Max difference: {max_diff:.2e}")
                 else:
                     print(f"⚠ Data differs. Max difference: {max_diff:.2e}")
-                    print("  This may be expected if noise was used or parameters differ.")
+                    print(
+                        "  This may be expected if noise was used or parameters differ."
+                    )
 
         return experiment, timeseries
 
@@ -733,7 +750,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def _expand_coupling_parameter_shapes(self, parameters: Bunch) -> None:
         """Expand coupling parameters that have shape annotations like (N, N) or (N,)."""
-        if not hasattr(parameters, 'coupling') or self.network is None:
+        if not hasattr(parameters, "coupling") or self.network is None:
             return
 
         N = self.network.number_of_nodes
@@ -747,7 +764,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if param_name not in coupling_params:
                 continue
 
-            shape_str = getattr(param_obj, 'shape', None)
+            shape_str = getattr(param_obj, "shape", None)
             if not shape_str:
                 continue
 
@@ -756,11 +773,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Parse shape string and expand
             if shape_str == "(N, N)" or shape_str == "(N,N)":
                 # Expand scalar to NxN matrix
-                if np.isscalar(current_value) or (hasattr(current_value, 'shape') and current_value.shape == ()):
+                if np.isscalar(current_value) or (
+                    hasattr(current_value, "shape") and current_value.shape == ()
+                ):
                     coupling_params[param_name] = np.full((N, N), float(current_value))
             elif shape_str == "(N,)" or shape_str == "(N)":
                 # Expand scalar to N-vector
-                if np.isscalar(current_value) or (hasattr(current_value, 'shape') and current_value.shape == ()):
+                if np.isscalar(current_value) or (
+                    hasattr(current_value, "shape") and current_value.shape == ()
+                ):
                     coupling_params[param_name] = np.full((N,), float(current_value))
 
     def execute(self, format="tvb", **kwargs):
@@ -774,6 +795,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             sim.initial_conditions = self.collect_initial_conditions().data
             sim.configure()
             return sim
+
+        elif format.lower() in ["tvboptim", "tvb-optim"]:
+            # Return namespace with all generated functions for tvboptim workflows
+            # This allows: ns = exp.execute('tvboptim')
+            #              spectrum, cauchy_pdf = ns.spectrum, ns.cauchy_pdf
+            namespace = {}
+            code = self.render_code("tvboptim")
+            exec(code, namespace)
+            return Bunch(**namespace)
 
         elif format.lower() in ["autodiff", "jax"]:
             jit = kwargs.get("jit", True)
@@ -793,7 +823,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return namespace
 
         else:
-            raise ValueError(f"Format {format} not supported. Valid formats: tvb, jax.")
+            raise ValueError(
+                f"Format {format} not supported. Valid formats: tvb, tvboptim, jax."
+            )
 
     def run(self, format="jax", initial_conditions=None, **kwargs):
         if "duration" in kwargs:
@@ -839,6 +871,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Link TimeSeries to source experiment for provenance tracking
             ts.source_experiment = self
             return ts
+
+        elif format.lower() in ["tvboptim", "tvb-optim"]:
+            # Get the namespace (reuse execute to avoid code duplication)
+            ns = self.execute("tvboptim")
+
+            # Mode defaults to 'all' - run complete workflow
+            mode = kwargs.pop("mode", "all")
+
+            # Run the experiment
+            return ns.run_experiment(
+                weights=self.network.weights,
+                distances=self.network.distances,
+                mode=mode,
+                **kwargs,
+            )
 
         elif format.lower() in ["autodiff", "jax"]:
             state = self.collect_state(initial_conditions=initial_conditions)
@@ -1026,17 +1073,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             else:
                 solver = "heun"
         elif solver not in PYRATES_SOLVERS:
-            raise ValueError(f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}")
+            raise ValueError(
+                f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}"
+            )
 
         network = getattr(self, "network", None)
         n_nodes = 0
         if network is not None:
-            n_nodes = getattr(network, 'number_of_nodes', 0) or (
-                len(network.nodes) if hasattr(network, 'nodes') and network.nodes else 0
+            n_nodes = getattr(network, "number_of_nodes", 0) or (
+                len(network.nodes) if hasattr(network, "nodes") and network.nodes else 0
             )
 
         # For large networks, use matrix-based edges (much faster)
-        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, 'weights_matrix')
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(
+            network, "weights_matrix"
+        )
 
         # Build circuit from YAML (operators, nodes, and optionally edges)
         circuit, tmpdir, pkg_name = self._load_pyrates_circuit_from_yaml(
@@ -1122,10 +1173,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Get circuit name
         network = getattr(self, "network", None)
-        dynamics = getattr(self, "local_dynamics", None) or getattr(self, "dynamics", None)
+        dynamics = getattr(self, "local_dynamics", None) or getattr(
+            self, "dynamics", None
+        )
 
         if network is not None:
-            circuit_name = getattr(network, "label", None) or getattr(network, "name", None) or "tvbo_circuit"
+            circuit_name = (
+                getattr(network, "label", None)
+                or getattr(network, "name", None)
+                or "tvbo_circuit"
+            )
         elif dynamics is not None:
             model_name = getattr(dynamics, "name", None) or "tvbo_model"
             circuit_name = f"{model_name}_circuit"
@@ -1138,10 +1195,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _strip_edges_from_yaml(self, yaml_content: str) -> str:
         """Remove edges section from YAML for large networks."""
         import re
+
         # Remove edges section from circuit definition
         # Match "  edges:\n" followed by lines starting with "    -"
-        pattern = r'(  edges:\n(?:    - \[.*\]\n)*)'
-        return re.sub(pattern, '', yaml_content)
+        pattern = r"(  edges:\n(?:    - \[.*\]\n)*)"
+        return re.sub(pattern, "", yaml_content)
 
     def _add_pyrates_edges_from_matrix(self, circuit, network) -> None:
         """Add edges to circuit using weight matrix (efficient for large networks)."""
@@ -1151,9 +1209,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Get node labels
         node_labels = []
-        if hasattr(network, 'nodes') and network.nodes:
+        if hasattr(network, "nodes") and network.nodes:
             for node in network.nodes:
-                label = getattr(node, 'label', None) or f"node_{node.id}"
+                label = getattr(node, "label", None) or f"node_{node.id}"
                 node_labels.append(str(label).replace(" ", "_").replace("-", "_"))
         else:
             n_nodes = network.weights_matrix.shape[0]
@@ -1184,19 +1242,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             delays = None
 
             # First check for explicit delays from edges
-            if hasattr(network, '_delays_from_edges'):
+            if hasattr(network, "_delays_from_edges"):
                 delays = network._delays_from_edges()
 
             # If no explicit delays, compute from lengths/distances
             if delays is None:
-                lengths = getattr(network, 'lengths_matrix', None)
+                lengths = getattr(network, "lengths_matrix", None)
                 if lengths is not None and np.any(lengths > 0):
                     delays = network.calculate_delays()
 
             # Build edge_attr dict if we have delays
             edge_attr = None
             if delays is not None:
-                edge_attr = {'delay': delays}
+                edge_attr = {"delay": delays}
 
             circuit.add_edges_from_matrix(
                 source_var=src_var,
@@ -1312,7 +1370,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                                 # Add output with same prefix as state variables
                                 out_col = f"{prefix}{out_name}"
                                 # Vectorized evaluation using lambdify
-                                func = sp.lambdify(list(subs.keys()), expr, 'numpy')
+                                func = sp.lambdify(list(subs.keys()), expr, "numpy")
                                 result[out_col] = func(*subs.values())
         else:
             # Single dynamics case (no network/nodes)
@@ -1327,7 +1385,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                             if sym.name in result.columns:
                                 subs[sym] = result[sym.name].values
                         if subs:
-                            func = sp.lambdify(list(subs.keys()), expr, 'numpy')
+                            func = sp.lambdify(list(subs.keys()), expr, "numpy")
                             result[out_name] = func(*subs.values())
 
         return result
@@ -1444,7 +1502,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 prefix = f"{node_label}_"
                 if col.startswith(prefix):
                     node_name = node_label
-                    sv_name = col[len(prefix):]
+                    sv_name = col[len(prefix) :]
                     break
 
             if node_name is None:
@@ -1686,14 +1744,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
         elif format.lower() == "tvboptim":
-            template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-sim.py.mako")
+            template = templates.lookup.get_template(
+                "tvboptim/tvbo-tvboptim-experiment.py.mako"
+            )
             rendered_code = format_code(
                 template.render(experiment=self, **kwargs),
                 use_black=False,
             )
 
         else:
-            raise ValueError(f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim")
+            raise ValueError(
+                f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim"
+            )
 
         return rendered_code
 
@@ -1904,9 +1966,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.export.openminds import experiment_to_openminds, save_openminds
 
         result = experiment_to_openminds(
-            self,
-            base_id=base_id,
-            include_context=include_context
+            self, base_id=base_id, include_context=include_context
         )
 
         if filepath:
@@ -1945,4 +2005,3 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise TypeError(f"Expected str or dict, got {type(source)}")
 
         return cls(**data)
-

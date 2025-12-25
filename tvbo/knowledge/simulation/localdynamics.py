@@ -193,8 +193,9 @@ def class2metadata(ontoclass, metadata):
                 }
             )
 
+    # Only add ontology coupling terms if they are required in state equations
     for k, v in ontology.get_model_coupling_terms(ontoclass, only_global=False).items():
-        if k not in metadata.coupling_terms:
+        if k in required_symbols and k not in metadata.coupling_terms:
             metadata.coupling_terms.update(
                 {
                     k: tvbo_datamodel.Parameter(
@@ -595,11 +596,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         for p in getattr(self, "parameters", {}).values():
             scope[str(p.name)] = Symbol(str(p.name))
 
-        # Coupling terms and default local_coupling
+        # Coupling terms (only those explicitly defined in the model)
         for ct in getattr(self, "coupling_terms", {}).keys():
             scope[str(ct)] = Symbol(str(ct))
-        if "local_coupling" not in scope:
-            scope["local_coupling"] = Symbol("local_coupling")
 
         # Derived parameters / variables / output transforms as Symbols
         for name in getattr(self, "derived_parameters", {}).keys():
@@ -1124,7 +1123,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Substitute parameters and defaults into equations (useful for fixed-point search)
         sub = self.keyed_parameters
         sub.update(kwargs)
-        sub.update({"c_pop0": 0, "local_coupling": 0})
+        # Set all coupling terms to 0 for fixed-point analysis
+        for ct in self.coupling_terms.keys():
+            sub[ct] = 0
         return [eq.subs(sub) for eq in self.get_equations().values()]
 
     def calculate_derived_parameters(self):
@@ -1165,11 +1166,12 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         symbol_onto_mapping = {}
         onto_symbol_mapping = {}
+        # Coupling terms don't have model-specific suffixes in ontology
+        coupling_term_names = set(self.coupling_terms.keys())
         for n in G.nodes:
             suffix = (
                 ontology.get_model_suffix(self.ontology or self.name)
-                if str(n)
-                not in ["c_pop0", "c_pop1", "local_coupling", "c_loc", "c_glob"]
+                if str(n) not in coupling_term_names
                 else ""
             )
             if isinstance(n, sympy.core.function.Derivative):

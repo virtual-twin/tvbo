@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-25T20:31:33
+# Generation date: 2025-12-25T22:44:29
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1780,7 +1780,7 @@ class Integrator(YAMLRoot):
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     duration: Optional[float] = 1000
     description: Optional[str] = None
-    method: Optional[str] = None
+    method: Optional[str] = "euler"
     step_size: Optional[float] = 0.01220703125
     steps: Optional[int] = None
     noise: Optional[Union[dict, Noise]] = None

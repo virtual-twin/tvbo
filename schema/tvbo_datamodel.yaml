@@ -1031,6 +1031,8 @@ classes:
         attributes:
             method:
                 range: string
+                ifabsent: string(euler)
+                description: Integration method (euler, heun, rk4, etc.)
             step_size:
                 range: float
                 ifabsent: float(0.01220703125)
