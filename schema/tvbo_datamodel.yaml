@@ -161,7 +161,7 @@ enums:
 
 classes:
     Range:
-        description: "Specifies a range for array generation or parameter bounds."
+        description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
             lo:
                 range: string
@@ -172,7 +172,14 @@ classes:
                 description: "Upper bound or stopping value. Can be a number or argument name."
             step:
                 range: string
-                description: "Step size. Can be: number, argument name, or expression. Use 'input.property' to reference input object properties (e.g., 'input.sample_period')."
+                description: "Step size. Can be: number, argument name, or expression."
+            n:
+                range: integer
+                description: "Number of points (alternative to step for grid exploration)."
+            log_scale:
+                range: boolean
+                ifabsent: false
+                description: "Whether to use logarithmic spacing."
 
     Equation:
         slots:
@@ -383,6 +390,22 @@ classes:
                 range: string
                 description: "Default time unit for the network (e.g., 'ms', 's')"
                 ifabsent: string(ms)
+
+            edge_matrix_files:
+                range: File
+                multivalued: true
+
+    File:
+        slots:
+            - name
+            - description
+        attributes:
+            type:
+                range: string
+            path:
+                range: string
+            extension:
+                range: string
 
     Node:
         class_uri: tvbo:Node
@@ -821,32 +844,72 @@ classes:
             - description
             - dataLocation
 
-    CostFunction:
+    Optimization:
+        description: "Configuration for parameter optimization."
         slots:
-            - label
-            - equation
-            - parameters
-
-    FittingTarget:
-        slots:
-            - label
-            - equation
-            - symbol
-            - definition
-            - parameters
-
-    ModelFitting:
-        slots:
+            - name
             - label
             - description
         attributes:
             targets:
                 multivalued: true
-                range: FittingTarget
+                range: Observation
+                inlined: false
+                description: "Target observations to fit against"
+            loss:
+                range: Equation
                 inlined: true
-            cost_function:
-                range: CostFunction
+                description: "Loss/cost function equation"
+            free_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: false
+                description: "Parameters to optimize (references by name)"
+            algorithm:
+                range: string
+                ifabsent: string(adam)
+                description: "Optimizer: 'adam', 'adamw', 'sgd', 'lbfgs', 'fic', 'grid', etc."
+            learning_rate:
+                range: float
+                ifabsent: float(0.001)
+            max_iterations:
+                range: integer
+                ifabsent: integer(100)
+            hyperparameters:
+                multivalued: true
+                range: Parameter
                 inlined: true
+                description: "Algorithm-specific hyperparameters"
+
+    # =============================================================================
+    # Parameter Exploration
+    # =============================================================================
+
+    Exploration:
+        description: "Parameter space exploration (grid search, sweep)."
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            parameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                required: true
+                description: "Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)"
+            mode:
+                range: string
+                ifabsent: string(product)
+                description: "Combination mode: 'product' (full grid), 'zip' (paired)"
+            observable:
+                range: Observation
+                inlined: false
+                description: "Observable to compute at each point"
+            n_parallel:
+                range: integer
+                ifabsent: integer(1)
+                description: "Parallel evaluations"
 
     # =============================================================================
     # Iterative Tuning Algorithms (FIC, EIB, etc.)
@@ -1138,10 +1201,16 @@ classes:
             field_dynamics:
                 range: PDE # Distributed, spatially resolved dynamics (PDE)
                 inlined: true
-            modelfitting:
+            optimization:
                 multivalued: true
-                range: ModelFitting
+                range: Optimization
                 inlined: true
+                description: "Parameter optimization configurations"
+            explorations:
+                multivalued: true
+                range: Exploration
+                inlined: true
+                description: "Parameter exploration/grid search specifications"
             tuning_algorithms:
                 multivalued: true
                 range: TuningAlgorithm

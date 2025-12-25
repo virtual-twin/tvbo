@@ -127,12 +127,29 @@ def class2metadata(ontoclass, metadata):
             for attr, value in updates.items():
                 setattr(state_var, attr, value)
 
+    # Collect all free symbols from state variable equations
+    from sympy import sympify
+    required_symbols = set()
+    for sv in metadata.state_variables.values():
+        if sv.equation and sv.equation.rhs:
+            try:
+                eq = sympify(sv.equation.rhs)
+                required_symbols.update(str(s) for s in eq.free_symbols)
+            except Exception:
+                pass
+
+    # Already defined symbols (no need to fetch from ontology)
+    defined_symbols = (
+        set(metadata.parameters.keys())
+        | set(metadata.state_variables.keys())
+        | set(metadata.derived_variables.keys())
+        | set(metadata.derived_parameters.keys())
+        | set(metadata.output.keys() if isinstance(metadata.output, dict) else [])
+    )
+
+    # Only add ontology functions if they are required but not yet defined
     for k, v in functions.items():
-        if (
-            k not in metadata.derived_variables
-            and k not in metadata.derived_parameters
-            and k not in metadata.output
-        ):
+        if k in required_symbols and k not in defined_symbols:
             metadata.derived_variables.update(
                 {
                     k: tvbo_datamodel.DerivedVariable(
@@ -149,30 +166,32 @@ def class2metadata(ontoclass, metadata):
             )
 
     for condpar in ontology.get_model_conditionals(ontoclass).values():
-        val = simulation.equations.sympify_value(condpar)
         name = ontology.replace_suffix(condpar)
-        metadata.derived_variables.update(
-            {
-                name: DerivedVariable(
-                    name=name,
-                    symbol=condpar.symbol.first(),
-                    conditional=True,
-                    cases=[
-                        Case(condition=condition, equation=Equation(lhs=name, rhs=expr))
-                        for expr, condition in val.args
-                    ],
-                    equation=tvbo_datamodel.Equation(
-                        lhs=name,
-                        conditionals=[
-                            tvbo_datamodel.ConditionalBlock(
-                                condition=condtion, expression=expr
-                            )
-                            for expr, condtion in val.args
+        # Only add conditional if it's required but not yet defined
+        if name in required_symbols and name not in defined_symbols:
+            val = simulation.equations.sympify_value(condpar)
+            metadata.derived_variables.update(
+                {
+                    name: DerivedVariable(
+                        name=name,
+                        symbol=condpar.symbol.first(),
+                        conditional=True,
+                        cases=[
+                            Case(condition=condition, equation=Equation(lhs=name, rhs=expr))
+                            for expr, condition in val.args
                         ],
-                    ),
-                )
-            }
-        )
+                        equation=tvbo_datamodel.Equation(
+                            lhs=name,
+                            conditionals=[
+                                tvbo_datamodel.ConditionalBlock(
+                                    condition=condtion, expression=expr
+                                )
+                                for expr, condtion in val.args
+                            ],
+                        ),
+                    )
+                }
+            )
 
     for k, v in ontology.get_model_coupling_terms(ontoclass, only_global=False).items():
         if k not in metadata.coupling_terms:

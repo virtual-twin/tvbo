@@ -1,0 +1,134 @@
+---
+title: "TVB-Optim Interoperability"
+subtitle: "Generating tvboptim Network Dynamics code from TVBO specifications"
+format:
+    html:
+        code-fold: false
+        toc: true
+        echo: true
+        embed-resources: true
+        fig-width: 8
+        out-width: "100%"
+jupyter: python3
+execute:
+    cache: true
+---
+
+## Overview
+
+TVBO provides Mako templates for generating [tvboptim](https://github.com/virtual-twin/tvboptim) Network Dynamics code directly from YAML model specifications. This enables a declarative workflow where brain network models are defined once in YAML and can be exported to tvboptim's JAX-based simulation framework.
+
+**Key benefits:**
+
+- **Declarative model definition**: Define models in human-readable YAML
+- **Automatic code generation**: Generate optimized JAX code from specifications
+- **Consistency**: Single source of truth for model equations
+- **Interoperability**: Same model definition works with multiple backends (tvboptim, TVB, PyRates)
+
+## Available Templates
+
+| Template | Output |
+|----------|--------|
+| `tvbo-tvboptim-dfun.py.mako` | `AbstractDynamics` subclass |
+| `tvbo-tvboptim-cfun.py.mako` | Coupling function classes |
+| `tvbo-tvboptim-solver.py.mako` | Solver configuration |
+| `tvbo-tvboptim-noise.py.mako` | Noise model setup |
+| `tvbo-tvboptim-observation.py.mako` | BOLD monitors and FC computation |
+| `tvbo-tvboptim-target.py.mako` | Target/fitting target generation |
+| `tvbo-tvboptim-loss.py.mako` | Loss function generation |
+| `tvbo-tvboptim-optim.py.mako` | Optimizer configuration |
+| `tvbo-tvboptim-sim.py.mako` | Complete simulation workflow |
+
+## Basic Usage
+
+```python
+from tvbo import Dynamics, SimulationExperiment
+from tvbo.templates import lookup
+
+# Load a model from YAML
+model = Dynamics.from_file("database/models/JansenRit.yaml")
+
+# Generate tvboptim dynamics code
+template = lookup.get_template("tvbo-tvboptim-dfun.py.mako")
+code = template.render(model=model)
+print(code)
+```
+
+## Full Workflow Generation
+
+For complete simulation workflows, use `SimulationExperiment`:
+
+```python
+from tvbo import SimulationExperiment
+from tvbo.templates import lookup
+
+# Define experiment inline or load from file
+exp = SimulationExperiment.from_string('''
+id: 1
+label: JR Frequency Optimization
+local_dynamics:
+  name: JansenRit
+  parameters:
+    a: {value: 0.075}
+    b: {value: 0.075}
+    mu: {value: 0.15}
+coupling:
+  name: SigmoidalJansenRit
+  delayed: true
+integration:
+  method: Heun
+  step_size: 1.0
+  noise:
+    sigma: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+''')
+
+# Generate full workflow
+template = lookup.get_template("tvbo-tvboptim-sim.py.mako")
+workflow_code = template.render(experiment=exp)
+```
+
+## Workflow Examples
+
+See the following tutorials for complete examples:
+
+- [Jansen-Rit Frequency Optimization](JR_tvboptim.qmd) - Reproduces the tvboptim JR.qmd workflow
+- [Reduced Wong-Wang FC Fitting](RWW_tvboptim.qmd) - Reproduces the tvboptim RWW.qmd workflow
+
+## Template Details
+
+### Dynamics Template (`tvbo-tvboptim-dfun.py.mako`)
+
+Generates an `AbstractDynamics` subclass with:
+
+- `STATE_NAMES`, `INITIAL_STATE`, `AUXILIARY_NAMES` class attributes
+- `DEFAULT_PARAMS` as a `Bunch` object
+- `COUPLING_INPUTS` specification
+- Full `dynamics()` method with JAX-compatible equations
+
+### Coupling Template (`tvbo-tvboptim-cfun.py.mako`)
+
+Generates coupling classes inheriting from:
+
+- `InstantaneousCoupling` for non-delayed coupling
+- `DelayedCoupling` for transmission delay support
+
+Includes `pre()` and `post()` transformation methods.
+
+### Full Simulation Template (`tvbo-tvboptim-sim.py.mako`)
+
+Generates a complete runnable script including:
+
+- Model class definitions
+- `create_network()` function for network assembly
+- `run_simulation()` function using tvboptim's `prepare()` pattern
+- `run_with_bold()` for BOLD signal and FC computation
+- Plotting utilities
+
+## Comparison with Direct tvboptim Usage
+
+| Aspect | Direct tvboptim | TVBO → tvboptim |
+|--------|----------------|-----------------|
+| Model definition | Python classes | YAML specification |
+| Equation editing | Modify Python code | Edit YAML, regenerate |
+| Parameter metadata | Manual documentation | Built-in from schema |
+| Multi-backend | tvboptim only | TVB, PyRates, Julia, etc. |

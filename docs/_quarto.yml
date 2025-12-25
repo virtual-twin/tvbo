@@ -17,6 +17,7 @@ project:
     - api/**/*.qmd
     - datamodel/**/*.qmd
     - Usage/*.qmd
+    - Interoperability/**/*.qmd
     - "!_archive/*"
   output-dir: _site
 
@@ -61,6 +62,14 @@ website:
                 #     href: Usage/RunSimulations.qmd
                 #   - text: "Analyzing Results"
                 #     href: Usage/AnalyzeResults.qmd
+            - text: "Interoperability"
+              menu:
+                  - text: "tvboptim Backend"
+                    href: Interoperability/tvboptim/index.qmd
+                  - text: "JR Workflow"
+                    href: Interoperability/tvboptim/JR_tvboptim.qmd
+                  - text: "RWW Workflow"
+                    href: Interoperability/tvboptim/RWW_tvboptim.qmd
 
         tools:
             - icon: github
@@ -96,6 +105,18 @@ website:
                 contents:
                   - datamodel/classes/Parameter.qmd
                   - datamodel/classes/StateVariable.qmd
+        - id: interoperability
+          title: "Interoperability"
+          collapse-level: 2
+          contents:
+              - text: "tvboptim Backend"
+                href: Interoperability/tvboptim/index.qmd
+              - section: "Workflow Examples"
+                contents:
+                  - text: "Jansen-Rit"
+                    href: Interoperability/tvboptim/JR_tvboptim.qmd
+                  - text: "Reduced Wong-Wang"
+                    href: Interoperability/tvboptim/RWW_tvboptim.qmd
 
     page-footer:
         center: |

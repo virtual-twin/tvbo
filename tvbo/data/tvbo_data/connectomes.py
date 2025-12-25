@@ -86,13 +86,28 @@ class Network(tvbo_datamodel.Network):
 
         # Load normative data if parcellation/atlas specified and no nodes/edges
         if not has_nodes and not has_edges:
-            if "parcellation" in kwargs:
+            if kwargs.get("parcellation"):
                 if isinstance(kwargs["parcellation"], str):
                     kwargs["parcellation"] = tvbo_datamodel.Parcellation(
                         label=kwargs["parcellation"],
                         atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
                     )._as_dict
-                atlas_name = kwargs["parcellation"]["atlas"].get("name")
+                # Safely get atlas name, handling missing atlas
+                parcellation = kwargs["parcellation"]
+                atlas = (
+                    parcellation.get("atlas")
+                    if isinstance(parcellation, dict)
+                    else getattr(parcellation, "atlas", None)
+                )
+                atlas_name = (
+                    atlas.get("name")
+                    if isinstance(atlas, dict)
+                    else getattr(atlas, "name", None) if atlas else None
+                )
+                if not atlas_name:
+                    # Skip normative data loading if no atlas specified
+                    super().__init__(**kwargs)
+                    return
                 tractogram = kwargs.get("tractogram", "dTOR")
                 w_matrix, l_matrix = get_normative_connectome_data(
                     atlas_name, tractogram
@@ -272,7 +287,6 @@ class Network(tvbo_datamodel.Network):
         # Store matrices directly for efficient access (not in schema, runtime only)
         instance._cached_weights = weights
         instance._cached_lengths = lengths if lengths is not None else None
-
         return instance
 
     @classmethod
@@ -378,7 +392,9 @@ class Network(tvbo_datamodel.Network):
         else:
             from tvbo.utils import to_yaml as _to_yaml
 
-            return _to_yaml(self, filepath)
+            kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+            clean = self.__class__.__bases__[0](**kwargs)
+            return _to_yaml(clean, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----
     def tree_flatten(self) -> Tuple[Tuple[JaxArray, JaxArray], Tuple[str]]:
@@ -449,8 +465,15 @@ class Network(tvbo_datamodel.Network):
         meta_dict_without_arrays = {
             k: v
             for k, v in meta_dict.items()
-            if k not in ("weights", "lengths", "parcellation", "_pytree_data",
-                        "_cached_weights", "_cached_lengths")
+            if k
+            not in (
+                "weights",
+                "lengths",
+                "parcellation",
+                "_pytree_data",
+                "_cached_weights",
+                "_cached_lengths",
+            )
         }
         meta_json = _json.dumps(
             meta_dict_without_arrays, sort_keys=True, default=_jsonable
@@ -733,6 +756,10 @@ class Network(tvbo_datamodel.Network):
         return self.lengths_matrix
 
     @property
+    def distances(self):
+        return self.lengths_matrix
+
+    @property
     def labels(self) -> Dict[str, str]:
         """Brain region labels from atlas.
 
@@ -919,15 +946,15 @@ class Network(tvbo_datamodel.Network):
         from sympy.parsing.sympy_parser import parse_expr
 
         # If using explicit edges, construct delay matrix from edge parameters
-        if hasattr(self, 'edges') and self.edges:
+        if hasattr(self, "edges") and self.edges:
             n = self.number_of_nodes or 1
             delays = np.full((n, n), np.nan)
             for edge in self.edges:
-                if hasattr(edge, 'source') and hasattr(edge, 'target'):
+                if hasattr(edge, "source") and hasattr(edge, "target"):
                     delay_val = 0.0
-                    if hasattr(edge, 'parameters') and edge.parameters:
-                        delay_param = edge.parameters.get('delay')
-                        if delay_param and hasattr(delay_param, 'value'):
+                    if hasattr(edge, "parameters") and edge.parameters:
+                        delay_param = edge.parameters.get("delay")
+                        if delay_param and hasattr(delay_param, "value"):
                             delay_val = float(delay_param.value)
                     delays[edge.source, edge.target] = delay_val
             return delays
@@ -980,8 +1007,9 @@ class Network(tvbo_datamodel.Network):
         ```
         """
         if format == "tvb":
-            from tvb.datatypes.connectivity import \
-                Connectivity  # type: ignore[import-not-found]
+            from tvb.datatypes.connectivity import (
+                Connectivity,
+            )  # type: ignore[import-not-found]
 
             # Ensure TVB receives plain NumPy arrays (no JAX tracers)
             _weights = np.asarray(self.weights_matrix, dtype=float)

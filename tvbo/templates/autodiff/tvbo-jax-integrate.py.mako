@@ -147,7 +147,7 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     % for i, cterm in enumerate(model.coupling_terms.keys()):
     ${cterm} = cX[${i}]
     % endfor
-    
+
     ## Compute derived variables in dependency order
     % for dv_name in all_integrate_derived_vars:
     <%
@@ -156,7 +156,7 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     %>
     ${dv_name} = ${rendered_eq}
     % endfor
-    
+
     ## Stack output derived vars into array
     _output_derived = jnp.stack([${', '.join(output_derived_in_integrate)}], axis=0)
 % endif
