@@ -128,7 +128,7 @@ if is_network:
                 tgt_dyn = node_dynamics_map.get(tgt_id)
                 # Prefer output variable for source, fall back to first state variable
                 if src_dyn and src_dyn.output:
-                    src_var = list(src_dyn.output.keys())[0]
+                    src_var = src_dyn.output[0] if isinstance(src_dyn.output, list) else list(src_dyn.output.keys())[0]
                 elif src_dyn and src_dyn.state_variables:
                     src_var = list(src_dyn.state_variables.keys())[0]
                 else:
@@ -177,7 +177,7 @@ if is_network:
             tgt_m = tgt_node_data.get('model')
             # Prefer output variable for source, fall back to first state variable
             if src_m and src_m.output:
-                src_var = list(src_m.output.keys())[0]
+                src_var = src_m.output[0] if isinstance(src_m.output, list) else list(src_m.output.keys())[0]
             elif src_m and src_m.state_variables:
                 src_var = list(src_m.state_variables.keys())[0]
             else:

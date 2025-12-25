@@ -59,7 +59,7 @@ def ${model.metadata.name}(
 % if model.metadata.functions:
     # Functions
 % for f in model.metadata.functions.values():
-    def ${f.name}(${", ".join([arg.name for arg in f.arguments.values()])}):
+    def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
         return ${model.render_equation(f, format='jax' if jax else 'numpy')}
 % endfor
 % endif

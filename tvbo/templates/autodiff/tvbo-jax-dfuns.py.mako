@@ -18,7 +18,7 @@ import jax.scipy as jsp
 from collections import namedtuple
 
 ## Derivatives of state variables
-def dfun(current_state, cX, _p , local_coupling=0):
+def dfun(current_state, cX, _p, t, local_coupling=0):
     ${', '.join(parameters)} = _p.${', _p.'.join(parameters)}
 
     # unpack coupling terms and states as in dfun
@@ -33,7 +33,7 @@ def dfun(current_state, cX, _p , local_coupling=0):
     % if metadata.functions:
     # Functions
     % for f in metadata.functions.values():
-    def ${f.name}(${", ".join([arg.name for arg in f.arguments.values()])}):
+    def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
         return ${jaxcode(f)}
     % endfor
     % endif

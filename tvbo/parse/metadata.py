@@ -208,10 +208,24 @@ def import_yaml_model(
             dv.name + model_suffix, onto.Function, properties, model_class
         )
 
-    for ot in model_data.output.values():
+    # Handle both list format (variable names) and dict format (full objects)
+    output_items = []
+    if isinstance(model_data.output, list):
+        # List format: variable names referencing derived_variables
+        output_items = [(name, model_data.derived_variables.get(name)) for name in model_data.output]
+    elif isinstance(model_data.output, dict):
+        # Dict format: full DerivedVariable objects
+        output_items = list(model_data.output.items())
+
+    for ot_name, ot in output_items:
+        if ot is None:
+            continue  # Skip if variable not found in derived_variables
+
         # Handle outputs with or without equations
-        ot_name = str(ot.name) if ot.name else "output"
-        if ot.equation and ot.equation.rhs:
+        if not isinstance(ot_name, str):
+            ot_name = str(ot.name) if hasattr(ot, 'name') and ot.name else "output"
+
+        if hasattr(ot, 'equation') and ot.equation and ot.equation.rhs:
             eq_rhs = str(ot.equation.rhs)
             eq_lhs = str(ot.equation.lhs) if ot.equation.lhs else ot_name
         else:

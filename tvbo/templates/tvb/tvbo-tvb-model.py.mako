@@ -72,9 +72,10 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 ########## Variables Of Interest ##########
     <%
-    choices = tuple(model.state_variables.keys()) + (tuple(model.output.keys()) if model.output else ())
+    output_keys = model.output if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
+    choices = tuple(model.state_variables.keys()) + output_keys
 
-    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + (tuple(model.output.keys()) if model.output else ())
+    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + output_keys
     %>
 
     variables_of_interest = List(
@@ -132,9 +133,15 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % for ot in model.output.values():
+                    % if isinstance(model.output, list):
+                        % for var_name in model.output:
+                    "    ${var_name} = {derived_expr}\n"
+                        % endfor
+                    % else:
+                        % for ot in model.output.values():
                     "    ${ot.name} = ${render(ot)}\n"
-                    % endfor
+                        % endfor
+                    % endif
                     "    return numpy.array([{voi_names}])")
         svars = ','.join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -166,7 +173,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % if model.functions:
         # Functions
 % for f in model.functions.values():
-        def ${f.name}(${", ".join([arg.name for arg in f.arguments.values()])}):
+        def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
             return ${render(f)}
 % endfor
 % endif

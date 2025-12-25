@@ -535,10 +535,16 @@ class TimeSeries(BaseTimeSeries):
     def cut_transient(self, start_time):
         start_index = jnp.searchsorted(self.time, start_time, side="left")
 
-        ts_cut = deepcopy(self)
-        ts_cut.time = self.time[start_index:]
-        ts_cut.data = self.data[start_index:]
-        ts_cut.start_time = self.time[start_index]
+        # Avoid deepcopy to prevent JAX tracer leaks - manually construct new instance
+        ts_cut = self.__class__(
+            time=self.time[start_index:],
+            data=self.data[start_index:],
+            network=self.network,
+            title=self.title,
+            sample_period=self.sample_period,
+            labels_dimensions=self.labels_dimensions,
+            units=self.units,
+        )
         return ts_cut
 
     def subset(self, start, end):

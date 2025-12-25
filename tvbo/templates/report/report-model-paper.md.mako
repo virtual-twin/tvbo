@@ -11,10 +11,13 @@ state_equations = [eq for k, eq in model.get_equations().items() if k in model.m
 
 derived_variables = [eq for k, eq in model.get_equations().items() if k in model.metadata.derived_variables]
 
-output = [
-    Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.metadata.output.values()
-]
+if isinstance(model.metadata.output, list):
+    output = [eq for k, eq in model.get_equations().items() if k in model.metadata.output]
+else:
+    output = [
+        Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
+        for p in model.metadata.output.values()
+    ]
 
 derived_parameters = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
