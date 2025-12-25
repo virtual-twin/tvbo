@@ -1685,6 +1685,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 template.render(experiment=self), use_black=True
             )
 
+        elif format.lower() == "tvboptim":
+            template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-sim.py.mako")
+            rendered_code = format_code(
+                template.render(experiment=self, **kwargs),
+                use_black=False,
+            )
+
+        else:
+            raise ValueError(f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim")
+
         return rendered_code
 
     def save_code(self, dir, file_name=None):

@@ -1,0 +1,377 @@
+---
+title: "Reduced Wong-Wang BOLD FC Optimization"
+subtitle: "Reproducing the tvboptim RWW.qmd workflow using TVBO specifications"
+format:
+    html:
+        code-fold: false
+        toc: true
+        echo: true
+        embed-resources: true
+        fig-width: 8
+        out-width: "100%"
+jupyter: python3
+execute:
+    cache: true
+    eval: true
+---
+
+## Introduction
+
+This tutorial demonstrates how to reproduce the [tvboptim RWW.qmd workflow](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/RWW.qmd) using TVBO's declarative YAML specifications. This workflow shows:
+
+1. Loading the Reduced Wong-Wang model from TVBO's database
+2. Building a whole-brain network with structural connectivity
+3. Simulating BOLD signals and computing functional connectivity
+4. Setting up optimization to fit empirical FC data
+
+## Environment Setup
+
+```{python}
+#| output: false
+import os
+cpu = True
+if cpu:
+    N = 8
+    os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count={N}'
+
+import numpy as np
+import matplotlib.pyplot as plt
+import jax
+import jax.numpy as jnp
+
+# Enable 64-bit precision for reliable gradients
+jax.config.update("jax_enable_x64", True)
+```
+
+## Loading the Reduced Wong-Wang Model
+
+```{python}
+from tvbo import Dynamics
+
+# Load the Reduced Wong-Wang model
+rww_model = Dynamics.from_file("../../../database/models/ReducedWongWang.yaml")
+
+print(f"Model: {rww_model.name}")
+print(f"Description: {rww_model.description[:200]}...")
+```
+
+## Model Specification Details
+
+```{python}
+# Parameters
+print("Parameters:")
+for name, param in rww_model.parameters.items():
+    unit = param.unit if hasattr(param, 'unit') and param.unit else ''
+    print(f"  {name}: {param.value} {unit}")
+
+# State variable
+print("\nState variable:")
+for name, sv in rww_model.state_variables.items():
+    print(f"  {name}: d{name}/dt = {sv.equation.rhs}")
+
+# Derived variables
+print("\nDerived variables:")
+for name, dv in rww_model.derived_variables.items():
+    print(f"  {name} = {dv.equation.rhs}")
+```
+
+## Creating a SimulationExperiment for FC Fitting
+
+```{python}
+from tvbo import SimulationExperiment
+
+# Define experiment matching the tvboptim RWW.qmd workflow
+rww_experiment = SimulationExperiment.from_string('''
+id: 2
+label: "Reduced Wong-Wang FC Optimization"
+description: >-
+  Fitting functional connectivity from resting-state fMRI using the
+  Reduced Wong-Wang neural mass model with BOLD signal transformation.
+
+local_dynamics:
+  name: ReducedWongWang
+  parameters:
+    a: {value: 0.27}
+    b: {value: 0.108}
+    d: {value: 154.0}
+    gamma: {value: 0.641}
+    tau_s: {value: 100.0}
+    w: {value: 0.5}
+    J_N: {value: 0.2609}
+    I_o: {value: 0.32}
+  state_variables:
+    S:
+      initial_value: 0.3
+
+coupling:
+  name: FastLinearCoupling
+  delayed: false
+  parameters:
+    G: {value: 0.5}
+
+integration:
+  method: Heun
+  step_size: 4.0
+  noise:
+    sigma: [0.00283]
+
+network:
+  number_of_regions: 84
+  conduction_speed: 3.0
+''')
+
+print(f"Experiment: {rww_experiment.label}")
+print(f"Model: {rww_experiment.local_dynamics.name}")
+print(f"Coupling: {rww_experiment.coupling.name}")
+print(f"Integration: {rww_experiment.integration.method}, dt={rww_experiment.integration.step_size}ms")
+```
+
+## Generating tvboptim Code
+
+### Dynamics Class
+
+```{python}
+from tvbo.templates import lookup
+
+# Generate the dynamics class
+dfun_template = lookup.get_template("tvbo-tvboptim-dfun.py.mako")
+dfun_code = dfun_template.render(model=rww_experiment.local_dynamics)
+
+print("Generated ReducedWongWang Class:")
+print("=" * 50)
+for line in dfun_code.split('\n')[:70]:
+    print(line)
+print("...")
+```
+
+### Coupling Function
+
+```{python}
+# Generate coupling class
+cfun_template = lookup.get_template("tvbo-tvboptim-cfun.py.mako")
+cfun_code = cfun_template.render(
+    coupling=rww_experiment.coupling,
+    model=rww_experiment.local_dynamics
+)
+
+print("Generated Coupling Class:")
+print("=" * 50)
+for line in cfun_code.split('\n')[:50]:
+    print(line)
+print("...")
+```
+
+### Noise Configuration
+
+```{python}
+# Generate noise setup
+noise_template = lookup.get_template("tvbo-tvboptim-noise.py.mako")
+noise_code = noise_template.render(
+    experiment=rww_experiment,
+    integration=rww_experiment.integration,
+    model=rww_experiment.local_dynamics
+)
+
+print("Generated Noise Configuration:")
+print("=" * 50)
+for line in noise_code.split('\n')[:40]:
+    print(line)
+print("...")
+```
+
+### Observation Functions
+
+```{python}
+# Generate observation functions for BOLD and FC
+obs_template = lookup.get_template("tvbo-tvboptim-observation.py.mako")
+obs_code = obs_template.render(experiment=rww_experiment)
+
+print("Generated Observation Functions:")
+print("=" * 50)
+for line in obs_code.split('\n')[:60]:
+    print(line)
+print("...")
+```
+
+## Running with tvboptim (Native Implementation)
+
+Here's the equivalent tvboptim code from RWW.qmd:
+
+```{python}
+#| eval: false
+# This requires tvboptim to be installed
+from tvboptim.experimental.network_dynamics import Network, prepare
+from tvboptim.experimental.network_dynamics.dynamics.tvb import ReducedWongWang
+from tvboptim.experimental.network_dynamics.coupling import FastLinearCoupling
+from tvboptim.experimental.network_dynamics.graph import DenseGraph
+from tvboptim.experimental.network_dynamics.solvers import Heun
+from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+from tvboptim.data import load_structural_connectivity, load_functional_connectivity
+from tvboptim.observations.tvb_monitors.bold import Bold
+from tvboptim.observations.observation import compute_fc, fc_corr, rmse
+
+# Load structural connectivity
+weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
+weights = weights / np.max(weights)
+n_nodes = weights.shape[0]
+
+# Load target FC
+fc_target = load_functional_connectivity(name="dk_average")
+
+# Create network components (matching our YAML spec)
+graph = DenseGraph(weights, region_labels=region_labels)
+dynamics = ReducedWongWang(w=0.5, I_o=0.32, INITIAL_STATE=(0.3,))
+coupling = FastLinearCoupling(local_states=["S"], G=0.5)
+noise = AdditiveNoise(sigma=0.00283, apply_to="S")
+
+# Assemble the network
+network = Network(
+    dynamics=dynamics,
+    coupling={'instant': coupling},
+    graph=graph,
+    noise=noise
+)
+
+# Simulation parameters
+t1 = 120_000  # 2 minutes
+dt = 4.0
+
+# Prepare and run
+model_fn, state = prepare(network, Heun(), t1=t1, dt=dt)
+
+# Initial transient
+result_init = model_fn(state)
+
+# Update history and run again
+network.update_history(result_init)
+model_fn, state = prepare(network, Heun(), t1=t1, dt=dt)
+result = model_fn(state)
+
+# BOLD transformation
+bold_monitor = Bold(
+    period=1000.0,
+    downsample_period=dt,
+    voi=0,
+    history=result_init
+)
+bold_result = bold_monitor(result)
+
+# Compute FC
+fc_sim = compute_fc(bold_result, skip_t=20)
+
+# Evaluate fit
+correlation = fc_corr(fc_sim, fc_target)
+error = rmse(fc_sim, fc_target)
+print(f"FC correlation: {correlation:.3f}")
+print(f"FC RMSE: {error:.4f}")
+```
+
+## Comparison: TVBO YAML vs tvboptim Python
+
+| Component | TVBO YAML | tvboptim Python |
+|-----------|-----------|-----------------|
+| Model | `ReducedWongWang` with `w: 0.5, I_o: 0.32` | `ReducedWongWang(w=0.5, I_o=0.32)` |
+| Initial state | `S: {initial_value: 0.3}` | `INITIAL_STATE=(0.3,)` |
+| Coupling | `FastLinearCoupling` with `G: 0.5` | `FastLinearCoupling(local_states=["S"], G=0.5)` |
+| Noise | `noise: {sigma: [0.00283]}` | `AdditiveNoise(sigma=0.00283, apply_to="S")` |
+| Integration | `method: Heun, step_size: 4.0` | `Heun()`, `dt=4.0` |
+
+## Setting Up Optimization
+
+The TVBO specification can be extended with optimization targets:
+
+```{python}
+from tvbo import SimulationExperiment
+
+# Extended experiment with observation specification
+rww_optim_experiment = SimulationExperiment.from_string('''
+id: 3
+label: "RWW FC Optimization with Target"
+description: Optimize coupling strength G to fit empirical FC
+
+local_dynamics:
+  name: ReducedWongWang
+  parameters:
+    w: {value: 0.5}
+    I_o: {value: 0.32}
+    tau_s: {value: 100.0}
+    gamma: {value: 0.641}
+    a: {value: 0.27}
+    b: {value: 0.108}
+    d: {value: 154.0}
+    J_N: {value: 0.2609}
+
+coupling:
+  name: FastLinearCoupling
+  parameters:
+    G:
+      value: 0.5
+      domain:
+        lo: 0.0
+        hi: 2.0
+
+integration:
+  method: Heun
+  step_size: 4.0
+  noise:
+    sigma: [0.00283]
+
+network:
+  number_of_regions: 84
+''')
+
+# Show optimizable parameter
+G_param = rww_optim_experiment.coupling.parameters.get('G')
+if G_param and hasattr(G_param, 'domain') and G_param.domain:
+    print(f"Optimizable parameter: G")
+    print(f"  Initial value: {G_param.value}")
+    print(f"  Domain: [{G_param.domain.lo}, {G_param.domain.hi}]")
+```
+
+## Optimization with tvboptim
+
+```{python}
+#| eval: false
+# Optimization loop using tvboptim's OptaxOptimizer
+import optax
+from tvboptim.optim.optax import OptaxOptimizer
+from tvboptim.optim.callbacks import DefaultPrintCallback
+
+# Define observation function
+def observation(state):
+    result = model_fn(state)
+    bold = bold_monitor(result)
+    fc = compute_fc(bold, skip_t=20)
+    return fc
+
+# Define loss function
+def loss(state):
+    fc = observation(state)
+    return rmse(fc, fc_target)
+
+# Create optimizer
+optimizer = OptaxOptimizer(
+    loss_fn=loss,
+    optimizer=optax.adam(1e-3),
+    max_iterations=100,
+    callbacks=[DefaultPrintCallback(every=10)]
+)
+
+# Run optimization
+final_state, history = optimizer.run(state)
+print(f"Final loss: {history['loss'][-1]:.4f}")
+```
+
+## Key Workflow Steps Summary
+
+1. **Define model in YAML** - Human-readable, version-controllable specification
+2. **Load with TVBO** - `Dynamics.from_file()` or `SimulationExperiment.from_string()`
+3. **Generate tvboptim code** - Use Mako templates for target backend
+4. **Run simulation** - Execute generated code or use tvboptim directly
+5. **Optimize parameters** - Leverage tvboptim's gradient-based optimization
+
+## Next Steps
+
+- Explore the [TVBO model database](../../../database/models/) for other models
+- See [EI Tuning workflow](https://virtual-twin.github.io/tvboptim/workflows/EI_Tuning.html) in tvboptim
+- Check [tvboptim optimization documentation](https://virtual-twin.github.io/tvboptim/basics/parameters_and_optimization.html)

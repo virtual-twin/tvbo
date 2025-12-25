@@ -1,0 +1,458 @@
+---
+title: "Jansen-Rit Spectral Fitting via tvboptim"
+---
+
+This example shows how to define a **complete simulation & optimization experiment** entirely as TVBO metadata using `SimulationExperiment.from_string()`. Everything—equations, parameters, integration, coupling, observation pipeline, target data, and loss function—is specified inline in a single YAML string.
+
+The information below mirrors the [JR.qmd tutorial](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/JR.qmd) from tvboptim.
+
+## Full Experiment as TVBO Metadata
+
+```{python}
+#| eval: false
+
+from tvbo import SimulationExperiment
+
+# === COMPLETE EXPERIMENT SPEC AS YAML (Schema-Conformant) ===
+experiment_yaml = """
+# SimulationExperiment requires 'id' (integer identifier)
+id: 1
+label: "JR Peak Frequency Optimization"
+description: >
+  Reproducing MEG Resting-State Frequency Gradients with Network Dynamics.
+  This experiment fits region-specific Jansen-Rit parameters to reproduce
+  the empirical frequency gradient from visual cortex (11 Hz) to association
+  areas (7 Hz).
+
+# --------------------------------------------------------
+# LOCAL DYNAMICS: Jansen-Rit Neural Mass Model (6-dimensional)
+# From tvboptim.experimental.network_dynamics.dynamics.tvb.JansenRit
+# --------------------------------------------------------
+local_dynamics:
+  name: JansenRit
+  label: "Jansen-Rit Neural Mass Model"
+  description: >
+    Neural mass model with three populations (pyramidal, excitatory interneurons,
+    inhibitory interneurons). Produces characteristic alpha-band oscillations.
+
+  # --- PARAMETERS (from JansenRit.DEFAULT_PARAMS in JR.qmd) ---
+  parameters:
+    A:
+      value: 3.25
+      description: "Maximum amplitude of EPSP [mV]"
+      unit: mV
+    B:
+      value: 22.0
+      description: "Maximum amplitude of IPSP [mV]"
+      unit: mV
+    a:
+      value: 0.065
+      description: "Reciprocal of membrane time constant (excitatory)"
+      domain: {lo: 0.001, hi: 0.2}
+      unit: ms^-1
+      free: true
+      heterogeneous: true
+    b:
+      value: 0.065
+      description: "Reciprocal of membrane time constant (inhibitory)"
+      domain: {lo: 0.001, hi: 0.2}
+      unit: ms^-1
+      free: true
+      heterogeneous: true
+    v0:
+      value: 5.52
+      description: "Firing threshold [mV]"
+      unit: mV
+    nu_max:
+      value: 0.0025
+      description: "Maximum firing rate"
+      unit: ms^-1
+    r:
+      value: 0.56
+      description: "Steepness of sigmoid"
+      unit: mV^-1
+    J:
+      value: 135.0
+      description: "Average number of synapses"
+    a_1:
+      value: 1.0
+      description: "Excitatory feedback probability"
+    a_2:
+      value: 0.8
+      description: "Slow excitatory feedback probability"
+    a_3:
+      value: 0.25
+      description: "Inhibitory feedback probability"
+    a_4:
+      value: 0.25
+      description: "Slow inhibitory feedback probability"
+    mu:
+      value: 0.15
+      description: "Mean input firing rate"
+
+  # --- DERIVED VARIABLES (sigmoid activations) ---
+  derived_variables:
+    sigm_y1_y2:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))"
+      description: "Sigmoid of y1-y2"
+    sigm_y0_1:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))"
+      description: "Sigmoid of a_1*J*y0"
+    sigm_y0_3:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))"
+      description: "Sigmoid of a_3*J*y0"
+
+  # --- STATE VARIABLES (6D system) ---
+  state_variables:
+    y0:
+      equation:
+        rhs: "y3"
+      initial_value: 0.0
+    y1:
+      equation:
+        rhs: "y4"
+      initial_value: 5.0
+    y2:
+      equation:
+        rhs: "y5"
+      initial_value: 5.0
+    y3:
+      equation:
+        rhs: "A * a * sigm_y1_y2 - 2.0 * a * y3 - a**2 * y0"
+      initial_value: 0.0
+    y4:
+      equation:
+        rhs: "A * a * (mu + a_2 * J * sigm_y0_1 + c_instant + c_delayed) - 2.0 * a * y4 - a**2 * y1"
+      initial_value: 0.0
+      coupling_variable: true
+    y5:
+      equation:
+        rhs: "B * b * (a_4 * J * sigm_y0_3) - 2.0 * b * y5 - b**2 * y2"
+      initial_value: 0.0
+
+  # --- COUPLING INPUTS (multi-coupling: instant + delayed) ---
+  coupling_inputs:
+    c_instant:
+      dimension: 1
+    c_delayed:
+      dimension: 1
+
+  coupling_terms:
+    c_instant: {}
+    c_delayed: {}
+
+# --------------------------------------------------------
+# COUPLING: DelayedSigmoidalJansenRit
+# --------------------------------------------------------
+coupling:
+  name: DelayedSigmoidalJansenRit
+  description: "Sigmoidal Jansen-Rit coupling function with delays"
+  parameters:
+    G:
+      value: 15.0
+      description: "Global coupling strength"
+      free: true
+    cmin:
+      value: 0.0
+    cmax:
+      value: 0.005
+      description: "2 * nu_max from TVB default"
+    midpoint:
+      value: 6.0
+    r:
+      value: 0.56
+  incoming_states: [y1, y2]
+  pre_expression:
+    rhs: "cmin + (cmax - cmin) / (1.0 + exp(r * (midpoint - (y1 - y2))))"
+  post_expression:
+    rhs: "G * gx"
+  delayed: true
+
+# --------------------------------------------------------
+# INTEGRATION: Heun solver with dt=1.0 ms
+# --------------------------------------------------------
+integration:
+  method: Heun
+  step_size: 1.0
+  duration: 1000
+  transient_time: 20000
+  noise:
+    additive: true
+    parameters:
+      sigma:
+        value: 0.0001
+
+# --------------------------------------------------------
+# OBSERVATIONS: Spectrum via Welch's method
+# --------------------------------------------------------
+observations:
+  - name: spectrum
+    label: "Power Spectral Density"
+    description: "Power spectral density using Welch's method (subsampled to 100 Hz)"
+    source: y0
+    equation:
+      rhs: "welch(y0[::10], fs=100)"
+    parameters:
+      fs:
+        value: 100
+        description: "Sampling frequency after 10x subsampling"
+
+  - name: avg_spectrum
+    label: "Average Spectrum"
+    description: "Mean power spectrum across all regions"
+    source_observation: spectrum
+    equation:
+      rhs: "mean(Pxx, axis=0)"
+
+  - name: peak_freq
+    label: "Peak Frequency"
+    description: "Extract peak frequency from average spectrum"
+    source_observation: avg_spectrum
+    equation:
+      rhs: "f[argmax(S)]"
+
+  - name: target_psd
+    label: "Target Power Spectra"
+    description: >
+      Cauchy distribution centered at target frequency for each region.
+      Target frequency computed as: f_max - delta_f * (dist - min_dist)
+      where f_min=7 Hz, f_max=11 Hz, dist=tract length from visual cortex.
+    equation:
+      rhs: "cauchy_pdf(f, peak_freqs, gamma=1)"
+    parameters:
+      f_min:
+        value: 7.0
+        description: "Minimum frequency at maximum distance"
+      f_max:
+        value: 11.0
+        description: "Maximum frequency at visual cortex"
+      gamma:
+        value: 1.0
+        description: "Cauchy scale parameter (peak width)"
+
+# --------------------------------------------------------
+# MODEL FITTING: Target frequencies & correlation loss
+# --------------------------------------------------------
+optimization:
+  - name: spectral_gradient_fit
+    label: "Spectral Gradient Fitting"
+    description: >
+      Fit region-specific a and b parameters to reproduce the MEG frequency
+      gradient. Target frequencies range from 11 Hz (visual cortex) to 7 Hz
+      (most distant regions from lateral occipital gyrus).
+
+    # Free parameters to optimize (references to local_dynamics.parameters by name)
+    free_parameters:
+      - a
+      - b
+
+    # Target observations for fitting
+    targets:
+      - spectrum  # Reference to observation above
+
+    # Loss function: 1 - mean correlation between simulated and target PSDs
+    loss:
+      rhs: "1 - mean(vmap(corrcoef)(predicted_psd, target_psd))"
+      label: "Spectral Correlation Loss"
+
+    # Optimizer configuration
+    algorithm: adamaxw
+    learning_rate: 0.001
+    max_iterations: 151
+
+    # Additional optimizer hyperparameters
+    hyperparameters:
+      has_aux:
+        value: 1
+        description: "Loss function returns auxiliary data (predicted PSDs)"
+
+# --------------------------------------------------------
+# PARAMETER EXPLORATION: Grid search over a and b
+# --------------------------------------------------------
+explorations:
+  - name: frequency_landscape
+    label: "Frequency Landscape Exploration"
+    description: >
+      Grid search over a and b parameters to map the relationship between
+      time constants and peak oscillation frequency. Used to understand
+      the parameter landscape before optimization.
+
+    # Parameters with grid specifications (use domain with n for grid points)
+    parameters:
+      - name: a
+        domain:
+          lo: 0.001
+          hi: 0.2
+          n: 32
+          log_scale: false
+      - name: b
+        domain:
+          lo: 0.001
+          hi: 0.2
+          n: 32
+          log_scale: false
+
+    # Grid combination mode
+    mode: product  # Full Cartesian product (32x32 = 1024 points)
+
+    # Observable to compute at each grid point
+    observable: peak_freq
+
+
+references:
+  - "Mahjoory et al. (2020) eLife 9:e53715 - MEG frequency gradient"
+  - "Jansen & Rit (1995) Biol Cybern 73:357-366 - Neural mass model"
+"""
+
+# === LOAD FROM STRING ===
+exp = SimulationExperiment.from_string(experiment_yaml)
+print(f"Loaded: {exp.label}")
+print(f"Dynamics: {exp.local_dynamics.name}")
+print(f"Network: {exp.network.number_of_regions} regions")
+```
+
+```{python}
+from tvbo import Network
+from tvboptim.data import load_structural_connectivity
+
+# Load structural connectivity and attach to experiment
+# This becomes part of the metadata and will be included in generated code
+weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
+exp.network = Network.from_matrix(weights, lengths, region_labels)
+
+print(f"Network: {exp.network.number_of_regions} regions")
+print(f"Connectivity shape: {exp.network.weights.shape}")
+```
+
+## Template-Based Code Generation
+
+After loading the experiment with full metadata (including connectivity), generate tvboptim-compatible Python code using `render_code()`. **Everything—dynamics, coupling, network connectivity, observations, exploration, and optimization—is generated from the metadata.**
+
+```{python}
+# Generate complete workflow code from metadata
+code = exp.render_code('tvboptim')
+print(code)
+```
+
+
+```{python}
+exec(code)
+```
+
+
+## Target_data
+```{python}
+# | output: false
+# | echo: true
+# | code-fold: true
+# | code-summary: "Compute distance-based frequency targets"
+
+import pandas as pd
+import nibabel as nib
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
+from nilearn import plotting
+import bsplot
+
+dk_info = pd.read_csv(
+    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/fs_default_freesurfer_idx.csv"
+)
+dk = nib.load(
+    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/aparc+aseg-mni_09c.nii.gz"
+)
+
+dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
+
+# Load structural connectivity with region labels
+weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
+
+ab_map = np.zeros(dk.shape)
+# freesurfer index where acronym == name in df dk_info
+# Lateral Occipital Gyrus
+idx = dk_info[dk_info.acronym == "L.LOG"].freesurfer_idx.values[0]
+ab_map = np.where(dk.get_fdata() == idx, 1, ab_map)
+idx = dk_info[dk_info.acronym == "R.LOG"].freesurfer_idx.values[0]
+ab_map = np.where(dk.get_fdata() == idx, 1, ab_map)
+
+region_labels = np.array(region_labels)
+idx_l = np.where(region_labels == "L.LOG")[0]
+idx_r = np.where(region_labels == "R.LOG")[0]
+dist_from_vc = np.array(np.squeeze(0.5 * (lengths[idx_l, :] + lengths[idx_r, :])))
+
+dist_map = np.zeros(dk.shape)
+
+for name, dist in zip(region_labels, dist_from_vc):
+    idx = dk_info[dk_info.acronym == name].freesurfer_idx.values[0]
+    dist_map = np.where(dk.get_fdata() == idx, dist, dist_map)
+
+n_nodes = 84
+f_min = 7  # at max distance
+f_max = 11  # at VC
+min_dist = dist_from_vc.min()
+max_dist = dist_from_vc.max()
+delta_f = (f_max - f_min) / (max_dist - min_dist)
+peak_freqs = f_max - delta_f * (dist_from_vc - min_dist)
+
+f_map_target = np.zeros_like(dk.get_fdata())
+for name, fp in zip(region_labels, peak_freqs):
+    idx = dk_info[dk_info.acronym == name].freesurfer_idx.values[0]
+    f_map_target = np.where(dk.get_fdata() == idx, fp, f_map_target)
+
+
+fig, (ax_gb, ax_freq) = plt.subplots(1, 2, figsize=(8.1, 4.05))
+
+# Plot glass brain with distance map
+mappable_dist = bsplot.brain.glass_brain(
+    nib.Nifti1Image(dist_map, dk.affine),
+    cmap="cividis",
+    view="horizontal",
+    threshold=0,
+    vmin=dist_from_vc.min(),
+    vmax=dist_from_vc.max(),
+    ax=ax_gb,
+)
+
+# Overlay glass brain with anatomical map
+bsplot.anat.plot_img(
+    nib.Nifti1Image(ab_map, dk.affine),
+    cmap="Greys",
+    threshold=0,
+    ax=ax_gb,
+    view="horizontal",
+    intensity_projection="absmax",
+    set_axis_extent=False,
+    outline=True,
+    color="red",
+    linewidth=2,
+)
+
+ax_gb.axis("off")
+ax_freq.axis("off")
+
+# Plot frequency map with fixed colorbar range
+mappable_freq = bsplot.brain.glass_brain(
+    nib.Nifti1Image(f_map_target, dk.affine),
+    cmap="cividis_r",
+    threshold=0,
+    vmin=6.5,
+    vmax=11.5,
+    ax=ax_freq,
+    view="horizontal",
+)
+
+fig.colorbar(mappable_freq, ax=ax_freq, label="Target Frequenzy [Hz]")
+fig.colorbar(mappable_dist, ax=ax_gb, label="Distance from V1 [mm]")
+# Finalize figure
+fig.tight_layout()
+```
+
+
+```{python}
+run_experiment(
+    exp.network.weights, distances=exp.network.distances, target_data=f_map_target
+)
+
+```

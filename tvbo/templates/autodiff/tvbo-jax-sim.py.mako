@@ -32,7 +32,7 @@
 
     svars = list(model.state_variables.keys())
     svars_is_vois = svars == vois
-    
+
     # Identify output derived variables that depend on dfun arguments (coupling, t, noise, stimulus)
     # These must be computed inside integrate and returned as part of scan output
     dfun_args = set(model.coupling_terms.keys()) | {'t', 'noise', 'stimulus'}
@@ -41,14 +41,14 @@
     param_names = [p.name for p in model.parameters.values()]
     output_vars = list(model.output) if model.output else svars
     has_output = len(output_vars) > 0
-    
+
     # Get dependency graph
     G = model.get_dependency_tree()
-    
+
     # Categorize output derived vars: those needing integrate vs those computable from trace
     output_derived_in_integrate = []  # Must be computed in integrate (depend on coupling/t/noise)
     output_derived_from_trace = []    # Can be computed post-hoc from trace
-    
+
     for var_name in output_vars:
         if var_name in derived_var_names:
             var_sym = Symbol(var_name)
@@ -61,7 +61,7 @@
                     output_derived_from_trace.append(var_name)
             else:
                 output_derived_from_trace.append(var_name)
-    
+
     # Collect ALL derived variables needed in integrate (in dependency order)
     all_integrate_derived_vars = []
     for var_name in output_derived_in_integrate:
@@ -74,7 +74,7 @@
                     all_integrate_derived_vars.append(anc_name)
             if var_name not in all_integrate_derived_vars:
                 all_integrate_derived_vars.append(var_name)
-    
+
     # Sort by topological order
     if all_integrate_derived_vars:
         all_syms = [Symbol(n) for n in all_integrate_derived_vars]

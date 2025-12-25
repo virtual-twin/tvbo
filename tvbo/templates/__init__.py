@@ -28,6 +28,7 @@ lookup = TemplateLookup(
         join(root, "numcont"),
         join(root, "pde"),
         join(root, "pyrates"),
+        join(root, "tvboptim"),
     ],
     module_directory=join(root, "modules"),
 )

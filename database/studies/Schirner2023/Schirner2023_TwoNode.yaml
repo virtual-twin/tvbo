@@ -409,6 +409,10 @@ local_dynamics:
                 rhs: "fic_on * eta * (S_I * S_E - r0 * S_I)"
 
     output:
+        # - S_E
+        # - S_I
+        - J_i
+        - S_A1
         - r_A1
         - r_B1
         - r_A2
