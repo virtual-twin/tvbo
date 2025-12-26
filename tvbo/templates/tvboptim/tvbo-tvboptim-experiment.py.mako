@@ -190,6 +190,31 @@ elif hasattr(observations_raw, '__iter__') and not isinstance(observations_raw, 
 else:
     observations = {}
 
+# Helper: Get observation object by name
+def get_obs(name):
+    """Look up observation by name from observations dict."""
+    obs = observations.get(name) if hasattr(observations, 'get') else None
+    if obs is None:
+        for o in (observations.values() if hasattr(observations, 'values') else observations):
+            if getattr(o, 'name', None) == name:
+                return o
+    return obs
+
+# Helper: Get the "main" output key from an observation's pipeline
+def get_pipeline_output_key(obs_name):
+    """Extract the last pipeline step's output key for an observation."""
+    obs_obj = get_obs(obs_name)
+    if obs_obj:
+        pipeline = getattr(obs_obj, 'pipeline', None) or []
+        if pipeline:
+            last_step = pipeline[-1] if hasattr(pipeline, '__getitem__') else list(pipeline)[-1]
+            last_output = getattr(last_step, 'output', None)
+            if last_output:
+                # Handle multi-output (comma-separated) - take the last one as the "main" output
+                outputs = [o.strip() for o in str(last_output).split(',')]
+                return outputs[-1]
+    return None
+
 # === Exploration metadata ===
 exploration_dict = getattr(experiment, 'explorations', None) or {}
 if isinstance(exploration_dict, dict):
@@ -234,23 +259,7 @@ for expl in exploration_list:
     if observable:
         obs_name = getattr(observable, 'name', str(observable))
         exp_info['observable'] = obs_name
-        # Get the output key from the observation's last pipeline step
-        obs_obj = observations.get(obs_name) if hasattr(observations, 'get') else None
-        if obs_obj is None:
-            # Try to find by iterating
-            for o in (observations.values() if hasattr(observations, 'values') else observations):
-                if getattr(o, 'name', None) == obs_name:
-                    obs_obj = o
-                    break
-        if obs_obj:
-            pipeline = getattr(obs_obj, 'pipeline', None) or []
-            if pipeline:
-                last_step = pipeline[-1] if hasattr(pipeline, '__getitem__') else list(pipeline)[-1]
-                last_output = getattr(last_step, 'output', None)
-                if last_output:
-                    # Handle multi-output (comma-separated) - take the last one as the "main" output
-                    outputs = [o.strip() for o in str(last_output).split(',')]
-                    exp_info['output_key'] = outputs[-1]
+        exp_info['output_key'] = get_pipeline_output_key(obs_name)
     explorations.append(exp_info)
 
 has_observations = len(observations) > 0
@@ -493,23 +502,8 @@ for opt in optim_list:
         targets = getattr(opt, 'targets', [])
         target_names = [getattr(t, 'name', str(t)) if hasattr(t, 'name') else str(t) for t in targets] if targets else []
 
-        # Get output key from target observation's pipeline (like explorations)
-        output_key = None
-        if target_names:
-            obs_obj = observations.get(target_names[0]) if hasattr(observations, 'get') else None
-            if obs_obj is None:
-                for o in (observations.values() if hasattr(observations, 'values') else observations):
-                    if getattr(o, 'name', None) == target_names[0]:
-                        obs_obj = o
-                        break
-            if obs_obj:
-                pipeline = getattr(obs_obj, 'pipeline', None) or []
-                if pipeline:
-                    last_step = pipeline[-1] if hasattr(pipeline, '__getitem__') else list(pipeline)[-1]
-                    last_output = getattr(last_step, 'output', None)
-                    if last_output:
-                        outputs = [o.strip() for o in str(last_output).split(',')]
-                        output_key = outputs[-1]  # Use last output as predicted value
+        # Get output key from target observation's pipeline
+        output_key = get_pipeline_output_key(target_names[0]) if target_names else None
 
         loss_functions.append({
             'name': getattr(opt, 'name', 'loss'),
