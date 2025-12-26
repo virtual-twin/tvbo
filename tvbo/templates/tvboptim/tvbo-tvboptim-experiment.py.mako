@@ -94,6 +94,42 @@ t1_default = float(integration.duration)
 transient_time = float(integration.transient_time) if integration.transient_time else 0.0
 has_transient = transient_time > 0
 
+# Observation names (for computing all observations in run_simulation)
+# Only compute LEAF observations (those not used as source by others)
+# This avoids redundant computation since derived obs call their parents
+def obs_has_all_args(obs):
+    """Check if observation has all required arguments satisfied."""
+    pipeline = getattr(obs, 'pipeline', None) or []
+    for func in pipeline:
+        args = getattr(func, 'arguments', None) or []
+        if hasattr(args, '__iter__'):
+            for arg in args:
+                if getattr(arg, 'name', None) and getattr(arg, 'value', None) is None:
+                    return False  # Argument without value = requires runtime input
+    return True
+
+_observations = getattr(experiment, 'observations', None) or []
+if hasattr(_observations, 'items'):
+    _obs_list = list(_observations.items())
+elif hasattr(_observations, '__iter__'):
+    _obs_list = [(getattr(o, 'name', f'obs_{i}'), o) for i, o in enumerate(_observations)]
+else:
+    _obs_list = []
+
+# Find which observations are used as sources by others
+_used_as_source = set()
+for name, obs in _obs_list:
+    src_obs = getattr(obs, 'source_observation', None)
+    if src_obs:
+        src_name = getattr(src_obs, 'name', str(src_obs)) if hasattr(src_obs, 'name') else str(src_obs)
+        _used_as_source.add(src_name)
+
+# Only compute leaf observations (not used as source) that have all args
+observation_names = [
+    name for name, obs in _obs_list
+    if obs_has_all_args(obs) and name not in _used_as_source
+]
+
 # Class names
 dynamics_class = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
 
@@ -145,6 +181,15 @@ if has_optimization:
     assert learning_rate is not None, "optimization.learning_rate not found (schema default: 0.001)"
     assert max_steps is not None, "optimization.max_iterations not found (schema default: 100)"
 
+# === Observations metadata ===
+observations_raw = getattr(experiment, 'observations', None) or {}
+if hasattr(observations_raw, 'values'):
+    observations = dict(observations_raw.items()) if hasattr(observations_raw, 'items') else {}
+elif hasattr(observations_raw, '__iter__') and not isinstance(observations_raw, dict):
+    observations = {getattr(o, 'name', f'obs_{i}'): o for i, o in enumerate(observations_raw)}
+else:
+    observations = {}
+
 # === Exploration metadata ===
 exploration_dict = getattr(experiment, 'explorations', None) or {}
 if isinstance(exploration_dict, dict):
@@ -187,15 +232,26 @@ for expl in exploration_list:
         })
     observable = getattr(expl, 'observable', None)
     if observable:
-        exp_info['observable'] = getattr(observable, 'name', str(observable))
+        obs_name = getattr(observable, 'name', str(observable))
+        exp_info['observable'] = obs_name
+        # Get the output key from the observation's last pipeline step
+        obs_obj = observations.get(obs_name) if hasattr(observations, 'get') else None
+        if obs_obj is None:
+            # Try to find by iterating
+            for o in (observations.values() if hasattr(observations, 'values') else observations):
+                if getattr(o, 'name', None) == obs_name:
+                    obs_obj = o
+                    break
+        if obs_obj:
+            pipeline = getattr(obs_obj, 'pipeline', None) or []
+            if pipeline:
+                last_step = pipeline[-1] if hasattr(pipeline, '__getitem__') else list(pipeline)[-1]
+                last_output = getattr(last_step, 'output', None)
+                if last_output:
+                    # Handle multi-output (comma-separated) - take the last one as the "main" output
+                    outputs = [o.strip() for o in str(last_output).split(',')]
+                    exp_info['output_key'] = outputs[-1]
     explorations.append(exp_info)
-
-# === Observations metadata ===
-observations = getattr(experiment, 'observations', None) or {}
-if hasattr(observations, 'values'):
-    observations = dict(observations.items()) if hasattr(observations, 'items') else {}
-elif hasattr(observations, '__iter__') and not isinstance(observations, dict):
-    observations = {getattr(o, 'name', f'obs_{i}'): o for i, o in enumerate(observations)}
 
 has_observations = len(observations) > 0
 has_fc = any('fc' in str(getattr(obs, 'name', '')).lower() for obs in observations.values())
@@ -357,7 +413,8 @@ def run_simulation(
     dt: float = ${dt},
     t0: float = 0.0,
     t_transient: float = ${transient_time},
-) -> tuple:
+    **kwargs,
+) -> Bunch:
     """Run network simulation with optional transient settling.
 
     If t_transient > 0, runs a transient simulation first to settle the network,
@@ -397,139 +454,30 @@ def run_simulation(
     # Main simulation
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
     result = model_fn(state)
-    return Bunch(model_fn=model_fn, state=state, result=result, result_transient=result_transient)
+
+    # Compute all observations
+    observations = Bunch()
+% for obs_name in observation_names:
+    observations.${obs_name} = ${obs_name}(model_fn, state, **kwargs)
+% endfor
+
+    return Bunch(model_fn=model_fn, state=state, result=result, transient=result_transient, observations=observations)
 
 
 # =============================================================================
-# Target Data Generation
+# Observable Functions (Generated from Pipeline Metadata)
+# =============================================================================
+
+<%include file="tvbo-tvboptim-observation.py.mako" />
+
+
+# =============================================================================
+# Utility Functions
 # =============================================================================
 
 def cauchy_pdf(x: jnp.ndarray, x0: float, gamma: float = 1.0) -> jnp.ndarray:
     """Cauchy (Lorentzian) distribution for target spectra."""
-    return 1.0 / (np.pi * gamma * (1.0 + ((x - x0) / gamma) ** 2))
-
-
-def gaussian_pdf(x: jnp.ndarray, mu: float, sigma: float = 1.0) -> jnp.ndarray:
-    """Gaussian distribution for target spectra."""
-    return jnp.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * jnp.sqrt(2 * np.pi))
-
-
-def generate_target_peak_frequencies(
-    lengths: jnp.ndarray,
-    reference_idx: int = 0,
-    f_min: float = 7.0,
-    f_max: float = 11.0,
-) -> jnp.ndarray:
-    """Generate target peak frequencies from distance to reference region."""
-    dist_from_ref = lengths[reference_idx, :]
-    min_dist = dist_from_ref.min()
-    max_dist = dist_from_ref.max()
-    delta_f = (f_max - f_min) / (max_dist - min_dist + 1e-8)
-    peak_freqs = f_max - delta_f * (dist_from_ref - min_dist)
-    return peak_freqs
-
-
-def generate_target_spectra(
-    frequencies: jnp.ndarray,
-    peak_freqs: jnp.ndarray,
-    gamma: float = 1.0,
-) -> jnp.ndarray:
-    """Generate target PSDs from peak frequencies using Cauchy distribution."""
-    target_psds = jax.vmap(lambda fp: cauchy_pdf(frequencies, fp, gamma))(peak_freqs)
-    return target_psds
-
-
-# =============================================================================
-# Observable Functions (Generated from Metadata)
-# =============================================================================
-<%
-# Build observation dependency graph
-obs_by_name = {obs_name: obs for obs_name, obs in observations.items()}
-
-def get_obs_equation(obs):
-    """Extract equation RHS from observation."""
-    if hasattr(obs, 'equation') and obs.equation:
-        return getattr(obs.equation, 'rhs', None)
-    return None
-
-def get_obs_params(obs):
-    """Extract parameters from observation."""
-    params = {}
-    if hasattr(obs, 'parameters') and obs.parameters:
-        for pname, p in obs.parameters.items():
-            if hasattr(p, 'value'):
-                params[pname] = p.value
-    return params
-%>
-% for obs_name, obs in observations.items():
-<%
-    eq_rhs = get_obs_equation(obs)
-    obs_params = get_obs_params(obs)
-    src_obs = getattr(obs, 'source_observation', None)
-    if src_obs:
-        src_obs_name = getattr(src_obs, 'name', str(src_obs)) if hasattr(src_obs, 'name') else str(src_obs)
-    else:
-        src_obs_name = None
-%>
-
-def ${obs_name}(model_fn, state, dt: float = ${dt}, downsample: int = 10, **kwargs):
-    """${getattr(obs, 'description', obs_name) or obs_name}"""
-% if eq_rhs and 'welch' in eq_rhs.lower():
-    # Spectral analysis via Welch's method
-    result = model_fn(state)
-    fs = kwargs.get('fs', ${obs_params.get('fs', '1000.0 / (dt * downsample)')})
-    data = result.data[::downsample, 0, :]
-    f, Pxx = jax.scipy.signal.welch(data.T, fs=fs)
-    return f, Pxx
-% elif eq_rhs and 'mean' in eq_rhs.lower():
-    # Averaging operation: ${eq_rhs}
-    f, Pxx = ${src_obs_name if src_obs_name else 'spectrum'}(model_fn, state, dt=dt, downsample=downsample, **kwargs)
-    return f, jnp.mean(Pxx, axis=0)
-% elif eq_rhs and 'argmax' in eq_rhs.lower():
-    # Peak extraction: ${eq_rhs}
-    f, S = ${src_obs_name if src_obs_name else 'avg_spectrum'}(model_fn, state, dt=dt, downsample=downsample, **kwargs)
-    return f[jnp.argmax(S)]
-% elif eq_rhs and 'cauchy' in eq_rhs.lower():
-    # Target distribution generation: ${eq_rhs}
-    gamma = kwargs.get('gamma', ${obs_params.get('gamma', 1.0)})
-    f = kwargs.get('frequencies')
-    peak_freqs = kwargs.get('peak_freqs')
-    return jax.vmap(lambda fp: cauchy_pdf(f, fp, gamma))(peak_freqs)
-% elif src_obs_name and not eq_rhs:
-    # Pure delegation to: ${src_obs_name}
-    return ${src_obs_name}(model_fn, state, dt=dt, downsample=downsample, **kwargs)
-% else:
-    # Generic observation - return simulation result
-    result = model_fn(state)
-    return result.data
-% endif
-
-% endfor
-% if not has_observations:
-# No observations defined in metadata - providing basic spectral functions
-
-def spectrum(model_fn, state, dt: float = ${dt}, downsample: int = 10, fs: float = None):
-    """Compute power spectral density using Welch's method."""
-    result = model_fn(state)
-    if fs is None:
-        fs = 1000.0 / (dt * downsample)
-    data = result.data[::downsample, 0, :]
-    f, Pxx = jax.scipy.signal.welch(data.T, fs=fs)
-    return f, Pxx
-
-
-def avg_spectrum(model_fn, state, **kwargs):
-    """Compute average power spectrum across all regions."""
-    f, Pxx = spectrum(model_fn, state, **kwargs)
-    return f, jnp.mean(Pxx, axis=0)
-
-
-def peak_frequency(model_fn, state, **kwargs):
-    """Extract peak frequency from average spectrum."""
-    f, S = avg_spectrum(model_fn, state, **kwargs)
-    return f[jnp.argmax(S)]
-
-% endif
+    return 1.0 / (jnp.pi * gamma * (1.0 + ((x - x0) / gamma) ** 2))
 
 # =============================================================================
 # Loss Functions (Generated from Metadata)
@@ -544,11 +492,31 @@ for opt in optim_list:
         loss_label = getattr(loss_eq, 'label', 'loss')
         targets = getattr(opt, 'targets', [])
         target_names = [getattr(t, 'name', str(t)) if hasattr(t, 'name') else str(t) for t in targets] if targets else []
+
+        # Get output key from target observation's pipeline (like explorations)
+        output_key = None
+        if target_names:
+            obs_obj = observations.get(target_names[0]) if hasattr(observations, 'get') else None
+            if obs_obj is None:
+                for o in (observations.values() if hasattr(observations, 'values') else observations):
+                    if getattr(o, 'name', None) == target_names[0]:
+                        obs_obj = o
+                        break
+            if obs_obj:
+                pipeline = getattr(obs_obj, 'pipeline', None) or []
+                if pipeline:
+                    last_step = pipeline[-1] if hasattr(pipeline, '__getitem__') else list(pipeline)[-1]
+                    last_output = getattr(last_step, 'output', None)
+                    if last_output:
+                        outputs = [o.strip() for o in str(last_output).split(',')]
+                        output_key = outputs[-1]  # Use last output as predicted value
+
         loss_functions.append({
             'name': getattr(opt, 'name', 'loss'),
             'rhs': loss_rhs,
             'label': loss_label,
             'targets': target_names,
+            'output_key': output_key,
         })
 %>
 # Utility functions for loss computation
@@ -567,14 +535,23 @@ def mse(x: jnp.ndarray, y: jnp.ndarray) -> float:
     return jnp.mean((x - y) ** 2)
 
 % for loss_fn in loss_functions:
+<%
+    output_key = loss_fn.get('output_key')
+%>
 
 def loss_${loss_fn['name']}(model_fn, state, target_data: jnp.ndarray):
     """${loss_fn['label']}: ${loss_fn['rhs'] or 'correlation-based loss'}"""
 % if loss_fn['targets']:
     # Target observation: ${', '.join(loss_fn['targets'])}
-    f, predicted = ${loss_fn['targets'][0]}(model_fn, state)
+    _obs_result = ${loss_fn['targets'][0]}(model_fn, state)
 % else:
-    f, predicted = spectrum(model_fn, state)
+    _obs_result = spectrum(model_fn, state)
+% endif
+% if output_key:
+    predicted = _obs_result['${output_key}']
+% else:
+    # Fallback: use 'data' key or first array value
+    predicted = _obs_result.get('data', next(v for v in _obs_result.values() if hasattr(v, 'shape')))
 % endif
 % if loss_fn['rhs'] and 'corrcoef' in str(loss_fn['rhs']).lower():
     # Correlation-based loss: ${loss_fn['rhs']}
@@ -595,7 +572,7 @@ def loss_${loss_fn['name']}(model_fn, state, target_data: jnp.ndarray):
     )
     loss_value = 1.0 - correlations.mean()
 % endif
-    return loss_value, predicted
+    return loss_value, _obs_result
 
 % endfor
 % if not loss_functions:
@@ -603,12 +580,13 @@ def loss_${loss_fn['name']}(model_fn, state, target_data: jnp.ndarray):
 
 def loss_default(model_fn, state, target_data: jnp.ndarray):
     """Default correlation-based loss function."""
-    f, predicted = spectrum(model_fn, state)
+    _obs_result = spectrum(model_fn, state)
+    predicted = _obs_result.get('data', next(v for v in _obs_result.values() if hasattr(v, 'shape')))
     correlations = jax.vmap(lambda pred, targ: jnp.corrcoef(pred, targ)[0, 1])(
         predicted, target_data
     )
     loss_value = 1.0 - correlations.mean()
-    return loss_value, predicted
+    return loss_value, _obs_result
 
 % endif
 % if has_fc:
@@ -727,21 +705,31 @@ def run_optimization(
     for ax in expl['axes']:
         total_points *= ax['n']
 %>
+<%
+    output_key = expl.get('output_key')
+%>
 def ${expl['name']}(state, model_fn, n_pmap: int = ${expl['n_parallel']}):
     """${expl['label']} - Parameter exploration.
 
     Grid: ${' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']])} = ${total_points} points
-    Observable: ${expl['observable']}
+    Observable: ${expl['observable']}${"['" + output_key + "']" if output_key else ""}
     """
     grid_state = copy.deepcopy(state)
     % for ax in expl['axes']:
     grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=${ax['n']})
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
+% if output_key:
+    # Extract '${output_key}' from observation dict
+    def observable_fn(s):
+        result = ${expl['observable']}(model_fn, s)
+        return result['${output_key}'] if isinstance(result, dict) else result
+% else:
     observable_fn = lambda s: ${expl['observable']}(model_fn, s)
+% endif
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     results = exec_runner.run()
-    return {'grid': grid, 'results': jnp.stack(results)}
+    return Bunch(grid=grid, results=jnp.stack(results))
 
 
 % endfor
@@ -790,15 +778,17 @@ def run_experiment(
 
     Returns
     -------
-    dict
-        Results dictionary containing:
-        - 'model_fn': Compiled model function
-        - 'state': Initial state
-        - 'result': Simulation result (if mode includes simulation)
-        - 'network': Network instance
-        - 'fitted_params': Optimized parameters (if mode='optimization')
-        - 'fitting_data': Optimization history (if mode='optimization')
-        - 'exploration_results': Grid search results (if mode='exploration')
+    Bunch
+        Results Bunch containing:
+        - model_fn: Compiled model function
+        - state: Initial state
+        - result: Simulation result
+        - transient: Transient simulation result (if t_transient > 0)
+        - network: Network instance
+        - observations: Computed observations (Bunch)
+        - fitted_params: Optimized parameters (if mode='optimization')
+        - fitting_data: Optimization history (if mode='optimization')
+        - explorations: Grid search results as Bunch (if mode='exploration')
     """
     weights = jnp.array(weights)
 
@@ -815,15 +805,17 @@ def run_experiment(
     model_fn = sim_result.model_fn
     state = sim_result.state
     result = sim_result.result
-    result_transient = sim_result.result_transient
+    transient = sim_result.transient
+    observations = sim_result.observations
 
-    results = {
-        'model_fn': model_fn,
-        'state': state,
-        'result': result,
-        'result_transient': result_transient,
-        'network': network,
-    }
+    results = Bunch(
+        model_fn=model_fn,
+        state=state,
+        result=result,
+        transient=transient,
+        network=network,
+        observations=observations,
+    )
 
     % if has_optimization:
     # Optimization workflow
@@ -854,15 +846,15 @@ def run_experiment(
     % if has_explorations:
     # Exploration workflow
     if mode in ('exploration', 'all'):
-        exploration_results = {}
+        explorations_result = Bunch()
 
         % for expl in explorations:
-        exploration_results['${expl['name']}'] = ${expl['name']}(
+        explorations_result.${expl['name']} = ${expl['name']}(
             state, model_fn, n_pmap=kwargs.get('n_pmap', ${expl['n_parallel']})
         )
         % endfor
 
-        results['exploration_results'] = exploration_results
+        results.explorations = explorations_result
     % endif
 
     return results

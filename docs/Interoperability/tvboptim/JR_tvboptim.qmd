@@ -197,52 +197,103 @@ integration:
         value: 0.0001
 
 # --------------------------------------------------------
-# OBSERVATIONS: Spectrum via Welch's method
+# OBSERVATIONS: Spectrum via Welch's method (pipeline-based)
 # --------------------------------------------------------
 observations:
+  # Primary observation: Power Spectral Density
   - name: spectrum
     label: "Power Spectral Density"
-    description: "Power spectral density using Welch's method (subsampled to 100 Hz)"
+    description: "Power spectral density using Welch's method"
     source: y0
-    equation:
-      rhs: "welch(y0[::10], fs=100)"
-    parameters:
-      fs:
-        value: 100
-        description: "Sampling frequency after 10x subsampling"
+    pipeline:
+      # Step 1: Subsample time series (dt=1ms -> 10ms = 100 Hz)
+      - name: subsample
+        output: subsampled
+        source_code: "lambda X, step=10: X[::step]"
+        arguments:
+          - name: step
+            value: 10
+            description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
+        apply_on_dimension: time
 
+      # Step 2: Transpose for welch (samples, channels) -> (channels, samples)
+      - name: transpose
+        input: subsampled
+        output: transposed
+        source_code: "lambda X: X.T"
+
+      # Step 3: Compute PSD via Welch's method (returns frequencies and power)
+      - name: welch
+        input: transposed
+        output: "frequencies, psd"
+        callable:
+          name: welch
+          module: jax.scipy.signal
+          qualname: welch
+        arguments:
+          - name: fs
+            value: 100.0
+            unit: Hz
+            description: "Sampling frequency after downsampling"
+          - name: nperseg
+            value: 256
+            description: "Length of each segment for Welch"
+
+  # Derived observation: Average spectrum across regions
   - name: avg_spectrum
     label: "Average Spectrum"
     description: "Mean power spectrum across all regions"
     source_observation: spectrum
-    equation:
-      rhs: "mean(Pxx, axis=0)"
+    pipeline:
+      - name: mean_regions
+        input: psd
+        output: avg_psd
+        callable:
+          name: mean
+          module: jax.numpy
+          qualname: mean
+        arguments:
+          - name: axis
+            value: 0
+            description: "Average over regions dimension"
 
+  # Derived observation: Peak frequency extraction
   - name: peak_freq
     label: "Peak Frequency"
     description: "Extract peak frequency from average spectrum"
     source_observation: avg_spectrum
-    equation:
-      rhs: "f[argmax(S)]"
+    pipeline:
+      - name: argmax
+        input: avg_psd
+        output: peak_idx
+        callable:
+          name: argmax
+          module: jax.numpy
+          qualname: argmax
+      - name: index_frequency
+        output: peak_frequency
+        source_code: "lambda _outputs: _outputs['frequencies'][_outputs['peak_idx']]"
 
+  # Target distribution: Cauchy/Lorentzian for spectral fitting
   - name: target_psd
     label: "Target Power Spectra"
     description: >
-      Cauchy distribution centered at target frequency for each region.
-      Target frequency computed as: f_max - delta_f * (dist - min_dist)
-      where f_min=7 Hz, f_max=11 Hz, dist=tract length from visual cortex.
-    equation:
-      rhs: "cauchy_pdf(f, peak_freqs, gamma=1)"
-    parameters:
-      f_min:
-        value: 7.0
-        description: "Minimum frequency at maximum distance"
-      f_max:
-        value: 11.0
-        description: "Maximum frequency at visual cortex"
-      gamma:
-        value: 1.0
-        description: "Cauchy scale parameter (peak width)"
+      Cauchy (Lorentzian) distribution centered at target frequency for each region.
+      Target frequencies are computed externally from tract lengths to visual cortex.
+    source_observation: spectrum
+    pipeline:
+      - name: cauchy_pdf
+        output: target_spectra
+        source_code: |
+          lambda _outputs, peak_freqs, gamma=1.0: jax.vmap(
+              lambda fp: 1.0 / (jnp.pi * gamma * (1.0 + ((_outputs['frequencies'] - fp) / gamma) ** 2))
+          )(peak_freqs)
+        arguments:
+          - name: peak_freqs
+            description: "Target peak frequencies per region (from tract lengths)"
+          - name: gamma
+            value: 1.0
+            description: "Cauchy scale parameter (half-width at half-maximum)"
 
 # --------------------------------------------------------
 # MODEL FITTING: Target frequencies & correlation loss
@@ -332,7 +383,7 @@ print(f"Dynamics: {exp.local_dynamics.name}")
 We load the Desikan-Killiany parcellation atlas and structural connectivity data.
 
 ```{python}
-# | code-fold: true
+## | code-fold: true
 # | code-summary: "Load structural connectivity and atlas data"
 from tvbo import Network
 from tvboptim.data import load_structural_connectivity
@@ -454,16 +505,16 @@ sim_results = exp.run("tvboptim", mode="simulation")
 ```
 
 ```{python}
-#| label: fig-simulations
-#| fig-cap: "**Network dynamics from transient and quasi-stationary simulations for y0.** Top: First 1000 ms showing transient behavior from random initial conditions. Bottom: Dynamics after the network has settled into a quasi-stationary state."
+# | label: fig-simulations
+# | fig-cap: "**Network dynamics from transient and quasi-stationary simulations for y0.** Top: First 1000 ms showing transient behavior from random initial conditions. Bottom: Dynamics after the network has settled into a quasi-stationary state."
 from matplotlib.colors import Normalize
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.1, 4.05), sharex=True)
 t_max = int(1000 / ns.DT)
 
 # First simulation (transient)
-time1 = sim_results['result_transient'].time[0:t_max]
-data1 = sim_results['result_transient'].data[0:t_max, 0, :]
+time1 = sim_results.transient.time[0:t_max]
+data1 = sim_results.transient.data[0:t_max, 0, :]
 num_lines = data1.shape[1]
 cmap = plt.cm.cividis
 mean_values = np.mean(data1, axis=0)
@@ -471,20 +522,36 @@ norm = Normalize(vmin=np.min(mean_values), vmax=np.max(mean_values))
 for i in range(num_lines):
     color = cmap(norm(mean_values[i]))
     ax1.plot(time1, data1[:, i], color=color, linewidth=0.5)
-ax1.text(0.95, 0.95, "Transient", transform=ax1.transAxes, fontsize=12,
-         ha='right', va='top', bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+ax1.text(
+    0.95,
+    0.95,
+    "Transient",
+    transform=ax1.transAxes,
+    fontsize=12,
+    ha="right",
+    va="top",
+    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+)
 ax1.set_ylabel("y0 [a.u.]")
 
 # Second simulation (updated initial conditions)
-time2 = sim_results['result'].time[0:t_max]
-data2 = sim_results['result'].data[0:t_max, 0, :]
+time2 = sim_results.result.time[0:t_max]
+data2 = sim_results.result.data[0:t_max, 0, :]
 mean_values = np.mean(data2, axis=0)
 norm = Normalize(vmin=np.min(mean_values), vmax=np.max(mean_values))
 for i in range(num_lines):
     color = cmap(norm(mean_values[i]))
     ax2.plot(time2, data2[:, i], color=color, linewidth=0.5)
-ax2.text(0.95, 0.95, "Updated Initial Conditions", transform=ax2.transAxes, fontsize=12,
-         ha='right', va='top', bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+ax2.text(
+    0.95,
+    0.95,
+    "Updated Initial Conditions",
+    transform=ax2.transAxes,
+    fontsize=12,
+    ha="right",
+    va="top",
+    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+)
 ax2.set_xlabel("Time [ms]")
 ax2.set_ylabel("y0 [a.u.]")
 
@@ -494,21 +561,20 @@ plt.tight_layout()
 ## Step 2: Spectral Analysis
 
 ```{python}
-#| label: fig-initial-spectrum
-#| fig-cap: "**Power spectral density of initial network dynamics.** Gray lines show individual region spectra, black line shows network-average spectrum."
-f, Pxx = ns.spectrum(sim_results['model_fn'], sim_results['state'])
-f, S = ns.avg_spectrum(sim_results['model_fn'], sim_results['state'])
-pf = ns.peak_freq(sim_results['model_fn'], sim_results['state'])
+# | label: fig-initial-spectrum
+# | fig-cap: "**Power spectral density of initial network dynamics.** Gray lines show individual region spectra, black line shows network-average spectrum."
+obs = sim_results.observations.peak_freq
 
 fig, ax = plt.subplots(1, 1, figsize=(8.1, 3.0375))
-ax.plot(f, Pxx.T, linewidth=1, color='k', alpha=0.15)
-ax.plot(f, S, linewidth=2, color='k')
-ax.set_xlabel('Frequency [Hz]')
-ax.set_ylabel('Power')
-ax.text(0.95, 0.95, f'Peak @ {pf:.1f} Hz', transform=ax.transAxes, fontsize=12,
-        ha='right', va='top', bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+ax.plot(obs["frequencies"], obs["psd"].T, linewidth=1, color="k", alpha=0.15)
+ax.plot(obs["frequencies"], obs["avg_psd"], linewidth=2, color="k")
+ax.set_xlabel("Frequency [Hz]")
+ax.set_ylabel("Power")
+ax.text(0.95, 0.95, f"Peak @ {obs['peak_frequency']:.1f} Hz", transform=ax.transAxes,
+        fontsize=12, ha="right", va="top",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
 ax.set_xlim(0, 20)
-ax.set_yscale('log')
+ax.set_yscale("log")
 plt.tight_layout()
 ```
 
@@ -519,33 +585,22 @@ expl_results = exp.run("tvboptim", mode="exploration")
 ```
 
 ```{python}
-#| label: fig-parameter-landscape
-#| fig-cap: "**Peak frequency landscape across parameter space.** The heatmap shows how the network's dominant frequency varies with the excitatory (a) and inhibitory (b) time constants."
-expl_data = expl_results['exploration_results']['frequency_landscape']
-grid = expl_data['grid']
-
-pc = grid.collect()
-a_vals = pc.dynamics.a
-b_vals = pc.dynamics.b
-a_min, a_max = min(a_vals), max(a_vals)
-b_min, b_max = min(b_vals), max(b_vals)
-
-n = 32
-freq_landscape = expl_data['results'].reshape(n, n)
+# | label: fig-parameter-landscape
+# | fig-cap: "**Peak frequency landscape across parameter space.** The heatmap shows how the network's dominant frequency varies with the excitatory (a) and inhibitory (b) time constants."
+expl = expl_results.explorations.frequency_landscape
+pc = expl.grid.collect()
 
 fig, ax = plt.subplots(figsize=(8.1, 4.05))
-im = ax.imshow(freq_landscape.T,
-               cmap='cividis',
-               extent=[a_min, a_max, b_min, b_max],
-               origin='lower',
-               aspect='auto',
-               interpolation='none')
-
-ax.scatter(expl_results['state'].dynamics.a, expl_results['state'].dynamics.b, color='k', marker='x', s=50, linewidths=2)
-cbar = plt.colorbar(im, label='Peak Frequency [Hz]')
-ax.set_xlabel(r'a [ms$^{-1}$]')
-ax.set_ylabel(r'b [ms$^{-1}$]')
-ax.set_title('Network Dynamics')
+im = ax.imshow(expl.results.reshape(32, 32).T, cmap="cividis",
+               extent=[min(pc.dynamics.a), max(pc.dynamics.a),
+                       min(pc.dynamics.b), max(pc.dynamics.b)],
+               origin="lower", aspect="auto", interpolation="none")
+ax.scatter(expl_results.state.dynamics.a, expl_results.state.dynamics.b,
+           color="k", marker="x", s=50, linewidths=2)
+plt.colorbar(im, label="Peak Frequency [Hz]")
+ax.set_xlabel(r"a [ms$^{-1}$]")
+ax.set_ylabel(r"b [ms$^{-1}$]")
+ax.set_title("Network Dynamics")
 plt.tight_layout()
 ```
 
@@ -554,18 +609,15 @@ plt.tight_layout()
 ```{python}
 #| label: fig-target-spectra
 #| fig-cap: "**Comparison of initial and target spectra.** Black lines show current power spectra, blue lines show target spectra with region-specific peak frequencies."
-target_PSDs = jnp.vstack([ns.cauchy_pdf(f, fp, 1) for fp in peak_freqs])
+obs = sim_results.observations.peak_freq
+target_PSDs = jnp.vstack([ns.cauchy_pdf(obs["frequencies"], fp, 1) for fp in peak_freqs])
 
 fig, ax = plt.subplots(figsize=(8.1, 3.0375))
-n_show = 7
-for (y, y2) in zip(Pxx[:n_show], target_PSDs[:n_show]):
-    ax.plot(f, y, alpha=0.3, color="k", linewidth=1.5)
-    ax.plot(f, y2, alpha=0.3, color="royalblue", linewidth=1.5)
-ax.set_xlabel('Frequency [Hz]')
-ax.set_ylabel('Power')
-ax.set_title(f'{n_show} Initial vs Target Power Spectra')
-ax.set_xlim(0, 20)
-ax.set_yscale('log')
+for y, y2 in zip(obs["psd"][:7], target_PSDs[:7]):
+    ax.plot(obs["frequencies"], y, alpha=0.3, color="k", linewidth=1.5)
+    ax.plot(obs["frequencies"], y2, alpha=0.3, color="royalblue", linewidth=1.5)
+ax.set(xlabel='Frequency [Hz]', ylabel='Power', title='7 Initial vs Target Power Spectra',
+       xlim=(0, 20), yscale='log')
 ax.legend(['Initial', 'Target'], loc='upper right')
 plt.tight_layout()
 ```
@@ -580,18 +632,14 @@ opt_results = exp.run("tvboptim", mode="optimization", target_data=target_PSDs)
 #| label: fig-optimized-params
 #| fig-cap: "**Optimized parameters overlaid on the frequency landscape.** Each white dot represents the fitted (a, b) parameters for one brain region."
 fig, ax = plt.subplots(figsize=(8.1, 5.207))
-im = ax.imshow(freq_landscape.T,
-               cmap='cividis',
-               extent=[a_min, a_max, b_min, b_max],
-               origin='lower',
-               aspect='auto')
-
-a_fit = opt_results['fitted_params'].dynamics.a.value
-b_fit = opt_results['fitted_params'].dynamics.b.value
-ax.scatter(a_fit, b_fit, color='white', s=20, marker='o',
-           edgecolors='black', linewidths=1, zorder=5, alpha=0.7)
-
-cbar = plt.colorbar(im, label='Peak Frequency [Hz]')
+im = ax.imshow(expl.results.reshape(32, 32).T, cmap='cividis',
+               extent=[min(pc.dynamics.a), max(pc.dynamics.a),
+                       min(pc.dynamics.b), max(pc.dynamics.b)],
+               origin='lower', aspect='auto')
+ax.scatter(opt_results.fitted_params.dynamics.a.value,
+           opt_results.fitted_params.dynamics.b.value,
+           color='white', s=20, marker='o', edgecolors='black', linewidths=1, zorder=5, alpha=0.7)
+plt.colorbar(im, label='Peak Frequency [Hz]')
 ax.set_xlabel(r'a [ms$^{-1}$]')
 ax.set_ylabel(r'b [ms$^{-1}$]')
 plt.tight_layout()
@@ -602,30 +650,18 @@ plt.tight_layout()
 ```{python}
 #| label: fig-frequency-maps
 #| fig-cap: "**Comparison of initial and fitted peak frequencies.** Left: Before optimization. Right: After optimization matching target gradient."
-_, PSDs_fit = ns.spectrum(opt_results['model_fn'], opt_results['fitted_params'])
-_, PSDs_init = ns.spectrum(opt_results['model_fn'], opt_results['state'])
+obs_fit = ns.spectrum(opt_results.model_fn, opt_results.fitted_params)
+obs_init = ns.spectrum(opt_results.model_fn, opt_results.state)
 
-peak_freqs_fitted = np.array([f[np.argmax(psd)] for psd in PSDs_fit])
-peak_freqs_init = np.array([f[np.argmax(psd)] for psd in PSDs_init])
+peak_freqs_fitted = np.array([obs_fit["frequencies"][np.argmax(psd)] for psd in obs_fit["psd"]])
+peak_freqs_init = np.array([obs_init["frequencies"][np.argmax(psd)] for psd in obs_init["psd"]])
 
 fig, axes = plt.subplots(1, 2, figsize=(8.1, 3.5))
-
-axes[0].scatter(peak_freqs, peak_freqs_init, alpha=0.6, s=20)
-axes[0].plot([7, 11], [7, 11], 'k--', linewidth=1)
-axes[0].set_xlabel('Target Peak Frequency [Hz]')
-axes[0].set_ylabel('Initial Peak Frequency [Hz]')
-axes[0].set_title('Before Optimization')
-axes[0].set_xlim(6.5, 11.5)
-axes[0].set_ylim(6.5, 11.5)
-
-axes[1].scatter(peak_freqs, peak_freqs_fitted, alpha=0.6, s=20)
-axes[1].plot([7, 11], [7, 11], 'k--', linewidth=1)
-axes[1].set_xlabel('Target Peak Frequency [Hz]')
-axes[1].set_ylabel('Fitted Peak Frequency [Hz]')
-axes[1].set_title('After Optimization')
-axes[1].set_xlim(6.5, 11.5)
-axes[1].set_ylim(6.5, 11.5)
-
+for ax, pf_sim, title in zip(axes, [peak_freqs_init, peak_freqs_fitted], ['Before', 'After']):
+    ax.scatter(peak_freqs, pf_sim, alpha=0.6, s=20)
+    ax.plot([7, 11], [7, 11], 'k--', linewidth=1)
+    ax.set(xlabel='Target Peak Frequency [Hz]', ylabel=f'{title} Peak Frequency [Hz]',
+           title=f'{title} Optimization', xlim=(6.5, 11.5), ylim=(6.5, 11.5))
 plt.tight_layout()
 ```
 
@@ -634,57 +670,28 @@ plt.tight_layout()
 ```{python}
 # | label: fig-brain-frequency-maps
 # | fig-cap: "**Comparison of initial, target, and fitted frequency gradients.** Left: Initial homogeneous peak frequency. Center: Target frequency gradient from visual cortex. Right: Fitted peak frequencies after optimization."
-
 from matplotlib.colors import Normalize
 
-f_map_init = np.zeros_like(dk.get_fdata())
-f_map_fitted = np.zeros_like(dk.get_fdata())
+# Build frequency maps
+def build_freq_map(freqs):
+    fmap = np.zeros_like(dk.get_fdata())
+    for i, name in enumerate(region_labels):
+        idx = dk_info[dk_info.acronym == name].freesurfer_idx.values[0]
+        fmap = np.where(dk.get_fdata() == idx, freqs[i], fmap)
+    return fmap
 
-for i, name in enumerate(region_labels):
-    idx = dk_info[dk_info.acronym == name].freesurfer_idx.values[0]
-    f_map_init = np.where(dk.get_fdata() == idx, peak_freqs_init[i], f_map_init)
-    f_map_fitted = np.where(dk.get_fdata() == idx, peak_freqs_fitted[i], f_map_fitted)
+f_maps = [build_freq_map(peak_freqs_init), f_map_target, build_freq_map(peak_freqs_fitted)]
+titles = ["Initial (Homogeneous)", "Target", "Fitted"]
 
 fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-
 norm = Normalize(vmin=6.5, vmax=11.5)
 
-mappable_init = bsplot.brain.glass_brain(
-    nib.Nifti1Image(f_map_init, dk.affine),
-    cmap="cividis_r",
-    view="horizontal",
-    threshold=0,
-    norm=norm,
-    ax=axes[0],
-)
-axes[0].set_title("Initial (Homogeneous)")
-axes[0].axis("off")
-
-mappable_target = bsplot.brain.glass_brain(
-    nib.Nifti1Image(f_map_target, dk.affine),
-    cmap="cividis_r",
-    view="horizontal",
-    threshold=0,
-    norm=norm,
-    ax=axes[1],
-)
-axes[1].set_title("Target")
-axes[1].axis("off")
-
-mappable_fitted = bsplot.brain.glass_brain(
-    nib.Nifti1Image(f_map_fitted, dk.affine),
-    cmap="cividis_r",
-    view="horizontal",
-    threshold=0,
-    norm=norm,
-    ax=axes[2],
-)
-axes[2].set_title("Fitted")
-axes[2].axis("off")
-
-fig.colorbar(mappable_fitted, ax=axes[2], label="Peak Frequency [Hz]", shrink=0.8)
-fig.colorbar(mappable_target, ax=axes[1], label="Peak Frequency [Hz]", shrink=0.8)
-fig.colorbar(mappable_init, ax=axes[0], label="Peak Frequency [Hz]", shrink=0.8)
-
+for ax, fmap, title in zip(axes, f_maps, titles):
+    mappable = bsplot.brain.glass_brain(
+        nib.Nifti1Image(fmap, dk.affine), cmap="cividis_r", view="horizontal",
+        threshold=0, norm=norm, ax=ax)
+    ax.set_title(title)
+    ax.axis("off")
+    fig.colorbar(mappable, ax=ax, label="Peak Frequency [Hz]", shrink=0.8)
 fig.tight_layout()
 ```
