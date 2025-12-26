@@ -332,8 +332,8 @@ print(f"Dynamics: {exp.local_dynamics.name}")
 We load the Desikan-Killiany parcellation atlas and structural connectivity data.
 
 ```{python}
-#| code-fold: true
-#| code-summary: "Load structural connectivity and atlas data"
+# | code-fold: true
+# | code-summary: "Load structural connectivity and atlas data"
 from tvbo import Network
 from tvboptim.data import load_structural_connectivity
 import pandas as pd
@@ -356,9 +356,11 @@ dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
 # Load structural connectivity with region labels
 weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
 
-weights = weights / jnp.max(weights)
+# weights = weights / jnp.max(weights)
 # Attach network to experiment
-exp.network = Network.from_matrix(weights, lengths, region_labels)
+exp.network = Network.from_matrix(
+    weights, lengths, region_labels, normalization=exp.network.normalization
+)
 print(f"Network: {exp.network.number_of_regions} regions")
 print(f"Connectivity shape: {exp.network.weights.shape}")
 ```
@@ -666,7 +668,7 @@ mappable_target = bsplot.brain.glass_brain(
     norm=norm,
     ax=axes[1],
 )
-axes[1].set_title("Target (Gradient)")
+axes[1].set_title("Target")
 axes[1].axis("off")
 
 mappable_fitted = bsplot.brain.glass_brain(
