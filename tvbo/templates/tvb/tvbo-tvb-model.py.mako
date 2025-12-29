@@ -1,5 +1,6 @@
 ## -*- coding: utf-8 -*-
 ##
+<%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
 from tvbo.knowledge.simulation.equations import _clash1
@@ -173,8 +174,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % if model.functions:
         # Functions
 % for f in model.functions.values():
-        def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
-            return ${render(f)}
+        ${fn.function_def(f, format='numpy', render_func=render) | trim,n}
 % endfor
 % endif
 

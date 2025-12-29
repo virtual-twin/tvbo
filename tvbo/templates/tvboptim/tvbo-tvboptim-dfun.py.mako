@@ -12,16 +12,30 @@ Context Variables:
 Output:
 - Python class inheriting from AbstractDynamics
 </%doc>
+<%namespace name="fn" file="/base/function-def.mako"/>
 <%
 from tvbo.export.code import render_expression
 
 # Get model from context
 if 'experiment' in context.keys():
     model = experiment.local_dynamics
+    # Also collect experiment-level functions if available
+    _exp_functions = getattr(experiment, 'functions', None) or {}
 else:
     model = context['model']
+    _exp_functions = {}
 
-jaxcode = lambda expr: render_expression(expr, format='jax')
+# Collect user-defined functions from model.functions and experiment.functions
+# These are functions defined in YAML that need to be recognized by the code printer.
+# Map function name -> function name (identity mapping) so printer emits them as-is.
+_model_functions = getattr(model, 'functions', None) or {}
+user_functions = {}
+if hasattr(_model_functions, 'keys'):
+    user_functions.update({str(fname): str(fname) for fname in _model_functions.keys()})
+if hasattr(_exp_functions, 'items'):
+    user_functions.update({str(fname): str(fname) for fname in _exp_functions.keys()})
+
+jaxcode = lambda expr: render_expression(expr, format='jax', user_functions=user_functions)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
 # Extract metadata
@@ -113,8 +127,7 @@ class ${class_name}(AbstractDynamics):
         % if model.functions:
         # Helper functions
         % for f in model.functions.values():
-        def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
-            return ${jaxcode_obj(f)}
+        ${fn.function_def(f, format='jax', render_func=jaxcode_obj) | trim,n}
         % endfor
         % endif
 

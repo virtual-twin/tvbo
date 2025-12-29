@@ -56,3 +56,4 @@ from .knowledge.simulation import localdynamics
 from .knowledge.simulation.localdynamics import Dynamics
 from .knowledge.simulation.network import Coupling
 from .knowledge.simulation.integration import Noise
+from .knowledge.function import Function, LossFunction

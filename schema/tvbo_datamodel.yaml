@@ -149,15 +149,32 @@ enums:
                 description: "Temporal dimension"
             state:
                 description: "State variable dimension"
+            node:
+                description: "Network node dimension (general graph term)"
             region:
-                description: "Spatial/regional dimension (nodes)"
+                description: "Spatial/regional dimension (alias for node in brain networks)"
             mode:
                 description: "Mode dimension (e.g., coupling modes)"
-            venv: {}
-            docker: {}
-            singularity: {}
-            system: {}
-            other: {}
+            sample:
+                description: "Sample/trial/realization dimension"
+            batch:
+                description: "Batch dimension (for parallel processing)"
+            frequency:
+                description: "Frequency dimension (spectral analysis)"
+
+    ReductionType:
+        description: "Operations for reducing/aggregating values across dimensions"
+        permissible_values:
+            mean:
+                description: "Arithmetic mean"
+            sum:
+                description: "Sum of values"
+            max:
+                description: "Maximum value"
+            min:
+                description: "Minimum value"
+            none:
+                description: "No reduction (return per-element values)"
 
 classes:
     Range:
@@ -500,12 +517,33 @@ classes:
             # Monitor attributes (for BOLD, EEG, etc.)
             period:
                 range: float
-                description: "Sampling period for monitors (ms)"
+                description: "Sampling period for monitors (ms). For BOLD: TR in ms."
+            downsample_period:
+                range: float
+                description: "Intermediate downsampling period (ms). For BOLD: typically matches dt."
+            voi:
+                range: integer
+                description: "Variable of interest index (which state variable to monitor). Default: 0."
             imaging_modality:
                 range: ImagingModality
                 description: "Type of imaging modality (BOLD, EEG, MEG, etc.)"
+            warmup_source:
+                range: string
+                description: "Reference to transient simulation result for history initialization (e.g., 'result_init')."
+
+            # External data loading (makes empirical data an Observation too)
+            data_source:
+                range: DataSource
+                inlined: true
+                description: >-
+                    Load data from external source (file, database, API).
+                    When specified, this observation represents empirical/external data
+                    rather than simulated data. Enables unified treatment of all data.
 
             # Observable/aggregation attributes (for tuning algorithms)
+            skip_t:
+                range: integer
+                description: "Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs."
             aggregation:
                 range: AggregationType
                 description: "How to aggregate over time"
@@ -680,13 +718,20 @@ classes:
 
     Argument:
         class_uri: tvbo:Argument
-        description: "A function argument that can be a literal value or a reference to another output"
+        description: >-
+            A function argument with explicit value specification.
+            Value can be: literal (number/string), reference to input (input.key),
+            or cross-observation reference (observation_name.output_key).
         slots:
             - name
             - description
         attributes:
             value:
-                description: "The argument value (literal or reference)"
+                description: >-
+                    Argument value. Can be:
+                    - Literal: 1.0, "string", etc.
+                    - Input reference: "input.frequencies" (from source_observation outputs)
+                    - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
                 any_of:
                     - range: float
                     - range: integer
@@ -711,7 +756,9 @@ classes:
         attributes:
             # Input specification (within pipeline context)
             input:
-                description: "Input reference: name of previous function's output in pipeline"
+                description: >-
+                    Simple input reference: name of previous function's output in pipeline.
+                    For multi-argument functions, use arguments with value references instead.
                 range: Function
                 inlined: false
             # Output specification
@@ -745,14 +792,39 @@ classes:
                 range: Range
                 inlined: true
 
+    Aggregation:
+        description: >-
+            Specifies how to aggregate values across a dimension.
+            Used for loss functions to define per-element loss with reduction.
+        attributes:
+            over:
+                description: "Dimension to aggregate over (e.g., node, time, state)"
+                range: DimensionType
+            type:
+                description: "Aggregation operation (mean, sum, max, min, none)"
+                range: ReductionType
+                ifabsent: string(mean)
+
+    LossFunction:
+        is_a: Function
+        description: >-
+            A loss function for optimization with optional aggregation.
+            Extends Function with aggregation specification for per-element losses.
+        attributes:
+            aggregate:
+                description: >-
+                    How to aggregate the loss across dimensions.
+                    Example: aggregate.over=node, aggregate.type=mean
+                    computes loss per node, then averages.
+                range: Aggregation
+                inlined: true
+
     Callable:
         slots:
             - name
             - description
         attributes:
             module:
-                range: string
-            qualname:
                 range: string
             software:
                 range: SoftwareRequirement
@@ -844,31 +916,53 @@ classes:
             - description
             - dataLocation
 
-    Optimization:
-        description: "Configuration for parameter optimization."
+    DataSource:
+        description: "Specification for loading external/empirical data."
         slots:
             - name
             - label
             - description
         attributes:
-            targets:
-                multivalued: true
-                range: Observation
-                inlined: false
-                description: "Target observations to fit against"
-            loss:
-                range: Equation
+            path:
+                range: string
+                description: "File path or URI to the data"
+            loader:
+                range: Callable
                 inlined: true
-                description: "Loss/cost function equation"
+                description: "Callable that loads the data (e.g., load_functional_connectivity)"
+            format:
+                range: string
+                description: "Data format: 'npy', 'mat', 'csv', 'nifti', etc."
+            key:
+                range: string
+                description: "Key/variable name within the file (for .mat, .npz, etc.)"
+            preprocessing:
+                range: Function
+                inlined: true
+                description: "Optional preprocessing to apply after loading"
+
+    OptimizationStage:
+        description: >-
+            A single stage in a multi-stage optimization workflow.
+            Stages run sequentially, with each stage potentially using
+            different parameters, shapes, learning rates, and algorithms.
+        slots:
+            - name
+            - label
+            - description
+        attributes:
             free_parameters:
                 multivalued: true
                 range: Parameter
-                inlined: false
-                description: "Parameters to optimize (references by name)"
+                inlined: true
+                description: >-
+                    Parameters to optimize in this stage.
+                    Use 'shape' attribute to specify scalar vs regional.
+                    Example: {name: w, shape: "(n_nodes,)"} for heterogeneous.
             algorithm:
                 range: string
                 ifabsent: string(adam)
-                description: "Optimizer: 'adam', 'adamw', 'sgd', 'lbfgs', 'fic', 'grid', etc."
+                description: "Optimizer for this stage: 'adam', 'adamw', 'sgd', etc."
             learning_rate:
                 range: float
                 ifabsent: float(0.001)
@@ -879,7 +973,70 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
-                description: "Algorithm-specific hyperparameters"
+                description: "Stage-specific hyperparameters (e.g., b2=0.9999 for adam)"
+            freeze_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: false
+                description: "Parameters from previous stages to freeze (keep at optimized value but not update)"
+            warmup_from:
+                range: OptimizationStage
+                inlined: false
+                description: "Previous stage to initialize from. Final values from that stage become initial values for this stage."
+
+    Optimization:
+        description: >-
+            Configuration for parameter optimization.
+            Loss equation references observations directly by name.
+            Both simulated and empirical data are observations (use data_source for empirical).
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            # Loss specification - references observations by name
+            loss:
+                range: LossFunction
+                inlined: true
+                description: >-
+                    Loss function with optional aggregation.
+                    Variables in equation are observation names.
+                    Example: equation.rhs = "1 - correlation(sim_psd, target)"
+                    with aggregate: {over: node, type: mean}
+
+            # Multi-stage optimization (preferred for complex workflows)
+            stages:
+                multivalued: true
+                range: OptimizationStage
+                inlined: true
+                description: >-
+                    Ordered list of optimization stages. Stages run sequentially.
+                    Stage n+1 starts from optimized values of stage n.
+                    Example: Stage 1 (global params) -> Stage 2 (regional params).
+
+            # Single-stage optimization (backward compatible, simple cases)
+            free_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: false
+                description: "Parameters to optimize (single-stage mode, ignored if stages defined)"
+            algorithm:
+                range: string
+                ifabsent: string(adam)
+                description: "Optimizer (single-stage mode): 'adam', 'adamw', 'sgd', 'lbfgs', etc."
+            learning_rate:
+                range: float
+                ifabsent: float(0.001)
+                description: "Learning rate (single-stage mode)"
+            max_iterations:
+                range: integer
+                ifabsent: integer(100)
+                description: "Max iterations (single-stage mode)"
+            hyperparameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: "Algorithm-specific hyperparameters (single-stage mode)"
 
     # =============================================================================
     # Parameter Exploration
@@ -1197,6 +1354,13 @@ classes:
                 multivalued: true
                 range: Observation
                 inlined: true
+            functions:
+                multivalued: true
+                range: Function
+                inlined: true
+                description: >-
+                    Reusable function definitions. Referenced by name in observation pipelines.
+                    Enables DRY: define compute_fc once, use in both simulated and empirical paths.
             stimulation:
                 range: Stimulus
                 inlined: true

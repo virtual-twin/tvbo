@@ -6,10 +6,26 @@ This example shows how to define a **complete simulation & optimization experime
 
 The information below mirrors the [JR.qmd tutorial](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/JR.qmd) from tvboptim.
 
+**Key design principle: EVERYTHING IS AN OBSERVATION**
+
+- Simulated data: observations with `source`/`source_observation` + `pipeline`
+- Empirical data: observations with `data_source`
+- Loss equation: directly references observation names
+- No binding layers, no indirection—maximally declarative.
+
 ## Full Experiment as TVBO Metadata
 
 ```{python}
 from tvbo import SimulationExperiment
+from tvbo import Network
+from tvboptim.data import load_structural_connectivity
+import pandas as pd
+import nibabel as nib
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
+import bsplot
+import numpy as np
+import jax.numpy as jnp
 
 experiment_yaml = """
 # SimulationExperiment requires 'id' (integer identifier)
@@ -196,108 +212,175 @@ integration:
       sigma:
         value: 0.0001
 
-# --------------------------------------------------------
-# OBSERVATIONS: Spectrum via Welch's method (pipeline-based)
-# --------------------------------------------------------
+# =============================================================================
+# REUSABLE FUNCTIONS (DRY principle)
+# =============================================================================
+# Priority: equation > callable > source_code (last resort)
+functions:
+  # Array operations (source_code for Python indexing patterns)
+  subsample:
+    name: subsample
+    description: "Downsample array by step factor"
+    source_code: "X[::step]"
+    arguments:
+      - name: X
+        description: "Input array"
+      - name: step
+        value: 10
+        description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
+
+  transpose:
+    name: transpose
+    description: "Transpose array"
+    callable:
+      module: jax.numpy
+      name: transpose
+
+  welch:
+    name: welch
+    description: "Welch power spectral density estimate"
+    callable:
+      module: jax.scipy.signal
+      name: welch
+    arguments:
+      - name: fs
+        value: 100.0
+        unit: Hz
+        description: "Sampling frequency after downsampling"
+      - name: nperseg
+        value: 256
+        description: "Length of each segment for Welch"
+
+  mean_regions:
+    name: mean_regions
+    description: "Mean across regions dimension"
+    callable:
+      module: jax.numpy
+      name: mean
+    arguments:
+      - name: axis
+        value: 0
+        description: "Average over regions dimension"
+
+  argmax:
+    name: argmax
+    description: "Index of maximum value"
+    callable:
+      module: jax.numpy
+      name: argmax
+
+  index_at:
+    name: index_at
+    description: "Index into array at given position"
+    source_code: "arr[idx]"
+    arguments:
+      - name: arr
+        description: "Input array"
+      - name: idx
+        description: "Index position"
+
+  # Mathematical functions (equation-based)
+  compute_target_frequencies:
+    name: compute_target_frequencies
+    description: "Compute target frequencies from tract lengths to visual cortex"
+    equation:
+      rhs: "f_max - (f_max - f_min) * (d - min(d)) / (max(d) - min(d))"
+      definition: "Linear mapping from distance to frequency: f_max at visual cortex, f_min at maximum distance"
+    arguments:
+      - name: d
+        description: "Distance array from visual cortex for each region"
+      - name: f_min
+        value: 7.0
+        description: "Minimum frequency at max distance [Hz]"
+      - name: f_max
+        value: 11.0
+        description: "Maximum frequency at visual cortex [Hz]"
+
+  cauchy_pdf:
+    name: cauchy_pdf
+    description: "Cauchy-Lorentz probability density function"
+    equation:
+      rhs: "1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))"
+      definition: "Cauchy-Lorentz distribution centered at x0 with scale gamma"
+    arguments:
+      - name: x
+        description: "Input values (frequency axis)"
+      - name: x0
+        description: "Peak location for each region (target frequencies)"
+      - name: gamma
+        value: 1.0
+        description: "Scale parameter (half-width at half-maximum)"
+
+  correlation:
+    name: correlation
+    description: "Pearson correlation coefficient"
+    equation:
+      rhs: "Sum((x[i] - mean(x)) * (y[i] - mean(y)), (i, 0, n-1)) / sqrt(Sum((x[i] - mean(x))**2, (i, 0, n-1)) * Sum((y[i] - mean(y))**2, (i, 0, n-1)))"
+      definition: "Pearson product-moment correlation coefficient"
+    arguments:
+      - name: x
+        description: "First array"
+      - name: y
+        description: "Second array"
+
+# =============================================================================
+# OBSERVATIONS: Derived from simulation data
+# =============================================================================
+# These compute summaries from simulation output (state variables).
+# Dependencies inferred from argument references (observation.key syntax).
+# =============================================================================
 observations:
-  # Primary observation: Power Spectral Density
-  - name: spectrum
-    label: "Power Spectral Density"
-    description: "Power spectral density using Welch's method"
+  # Root: Power Spectral Density from simulation state variable y0
+  simulated_psd:
+    name: simulated_psd
+    label: "Simulated Power Spectral Density"
+    description: "Power spectral density using Welch's method on simulated y0"
     source: y0
     pipeline:
-      # Step 1: Subsample time series (dt=1ms -> 10ms = 100 Hz)
       - name: subsample
+        input: data
         output: subsampled
-        source_code: "lambda X, step=10: X[::step]"
-        arguments:
-          - name: step
-            value: 10
-            description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
-        apply_on_dimension: time
-
-      # Step 2: Transpose for welch (samples, channels) -> (channels, samples)
       - name: transpose
         input: subsampled
         output: transposed
-        source_code: "lambda X: X.T"
-
-      # Step 3: Compute PSD via Welch's method (returns frequencies and power)
       - name: welch
         input: transposed
         output: "frequencies, psd"
-        callable:
-          name: welch
-          module: jax.scipy.signal
-          qualname: welch
-        arguments:
-          - name: fs
-            value: 100.0
-            unit: Hz
-            description: "Sampling frequency after downsampling"
-          - name: nperseg
-            value: 256
-            description: "Length of each segment for Welch"
 
-  # Derived observation: Average spectrum across regions
-  - name: avg_spectrum
+  # Derived: Average spectrum across regions
+  avg_spectrum:
+    name: avg_spectrum
     label: "Average Spectrum"
     description: "Mean power spectrum across all regions"
-    source_observation: spectrum
     pipeline:
       - name: mean_regions
-        input: psd
         output: avg_psd
-        callable:
-          name: mean
-          module: jax.numpy
-          qualname: mean
         arguments:
-          - name: axis
-            value: 0
-            description: "Average over regions dimension"
+          - name: data
+            value: simulated_psd.psd
 
-  # Derived observation: Peak frequency extraction
-  - name: peak_freq
+  # Derived: Peak frequency from average spectrum
+  peak_freq:
+    name: peak_freq
     label: "Peak Frequency"
     description: "Extract peak frequency from average spectrum"
-    source_observation: avg_spectrum
     pipeline:
       - name: argmax
-        input: avg_psd
         output: peak_idx
-        callable:
-          name: argmax
-          module: jax.numpy
-          qualname: argmax
-      - name: index_frequency
-        output: peak_frequency
-        source_code: "lambda _outputs: _outputs['frequencies'][_outputs['peak_idx']]"
-
-  # Target distribution: Cauchy/Lorentzian for spectral fitting
-  - name: target_psd
-    label: "Target Power Spectra"
-    description: >
-      Cauchy (Lorentzian) distribution centered at target frequency for each region.
-      Target frequencies are computed externally from tract lengths to visual cortex.
-    source_observation: spectrum
-    pipeline:
-      - name: cauchy_pdf
-        output: target_spectra
-        source_code: |
-          lambda _outputs, peak_freqs, gamma=1.0: jax.vmap(
-              lambda fp: 1.0 / (jnp.pi * gamma * (1.0 + ((_outputs['frequencies'] - fp) / gamma) ** 2))
-          )(peak_freqs)
         arguments:
-          - name: peak_freqs
-            description: "Target peak frequencies per region (from tract lengths)"
-          - name: gamma
-            value: 1.0
-            description: "Cauchy scale parameter (half-width at half-maximum)"
+          - name: data
+            value: avg_spectrum.avg_psd
+      - name: index_at
+        output: peak_frequency
+        arguments:
+          - name: arr
+            value: simulated_psd.frequencies
+          - name: idx
+            value: input.peak_idx
 
-# --------------------------------------------------------
-# MODEL FITTING: Target frequencies & correlation loss
-# --------------------------------------------------------
+# =============================================================================
+# OPTIMIZATION: Loss compares simulated_psd.psd to external target_data
+# =============================================================================
 optimization:
   - name: spectral_gradient_fit
     label: "Spectral Gradient Fitting"
@@ -311,14 +394,19 @@ optimization:
       - a
       - b
 
-    # Target observations for fitting
-    targets:
-      - spectrum  # Reference to observation above
-
-    # Loss function: 1 - mean correlation between simulated and target PSDs
+    # Loss function: compares simulated_psd.psd to target_data (passed externally)
     loss:
-      rhs: "1 - mean(vmap(corrcoef)(predicted_psd, target_psd))"
+      name: spectral_correlation
       label: "Spectral Correlation Loss"
+      equation:
+        rhs: "1 - correlation(simulated_psd.psd, target_data)"
+      aggregate:
+        over: node
+        type: mean
+      description: >
+        Pearson correlation between simulated and target power spectra.
+        Loss computed per node, then averaged across all nodes.
+        simulated_psd.psd comes from observation, target_data passed to optimizer.
 
     # Optimizer configuration
     algorithm: adamaxw
@@ -376,35 +464,7 @@ references:
 exp = SimulationExperiment.from_string(experiment_yaml)
 print(f"Loaded: {exp.label}")
 print(f"Dynamics: {exp.local_dynamics.name}")
-```
 
-## Loading Structural Data
-
-We load the Desikan-Killiany parcellation atlas and structural connectivity data.
-
-```{python}
-## | code-fold: true
-# | code-summary: "Load structural connectivity and atlas data"
-from tvbo import Network
-from tvboptim.data import load_structural_connectivity
-import pandas as pd
-import nibabel as nib
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import matplotlib.pyplot as plt
-import bsplot
-import numpy as np
-import jax.numpy as jnp
-
-# Load atlas info for visualization
-dk_info = pd.read_csv(
-    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/fs_default_freesurfer_idx.csv"
-)
-dk = nib.load(
-    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/aparc+aseg-mni_09c.nii.gz"
-)
-dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
-
-# Load structural connectivity with region labels
 weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
 
 # weights = weights / jnp.max(weights)
@@ -412,9 +472,9 @@ weights, lengths, region_labels = load_structural_connectivity(name="dk_average"
 exp.network = Network.from_matrix(
     weights, lengths, region_labels, normalization=exp.network.normalization
 )
-print(f"Network: {exp.network.number_of_regions} regions")
-print(f"Connectivity shape: {exp.network.weights.shape}")
+sim_results = exp.run("tvboptim", mode="simulation")
 ```
+
 
 ## The Jansen-Rit Model
 
@@ -431,12 +491,26 @@ ns.JansenRit(a=0.075, b=0.075, mu=0.15).plot(t1=1000, dt=1)
 
 The target frequency gradient is based on empirical observations that brain regions exhibit characteristic peak frequencies that vary with their distance from visual cortex: 11 Hz at visual cortex, decreasing to 7 Hz at the most distant association areas.
 
+**Note:** Target frequencies are computed from tract lengths via the `target_data` section. The code below replicates the computation for visualization purposes.
+
 ```{python}
 #| label: fig-distance-visual-cortex
 #| fig-cap: "**Distance from visual cortex and target frequency gradient.** Left: Tract length distance from lateral occipital gyrus (visual cortex, outlined in red). Right: Target peak frequencies derived from distance."
 #| code-fold: true
-#| code-summary: "Compute target frequencies from distance"
-# Create visual cortex mask
+#| code-summary: "Compute target frequencies from distance (visualization)"
+# Create visual cortex mask (this replicates the observation pipeline logic for visualization)
+
+# Load atlas info for visualization
+dk_info = pd.read_csv(
+    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/fs_default_freesurfer_idx.csv"
+)
+dk = nib.load(
+    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/aparc+aseg-mni_09c.nii.gz"
+)
+dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
+
+# Loa
+
 region_labels = np.array(region_labels)
 ab_map = np.zeros(dk.shape)
 idx = dk_info[dk_info.acronym == "L.LOG"].freesurfer_idx.values[0]
@@ -563,14 +637,17 @@ plt.tight_layout()
 ```{python}
 # | label: fig-initial-spectrum
 # | fig-cap: "**Power spectral density of initial network dynamics.** Gray lines show individual region spectra, black line shows network-average spectrum."
-obs = sim_results.observations.peak_freq
+# Access observations by name - peak_freq inherits data from simulated_psd → avg_spectrum
+psd_obs = sim_results.observations.simulated_psd
+avg_obs = sim_results.observations.avg_spectrum
+peak_obs = sim_results.observations.peak_freq
 
 fig, ax = plt.subplots(1, 1, figsize=(8.1, 3.0375))
-ax.plot(obs["frequencies"], obs["psd"].T, linewidth=1, color="k", alpha=0.15)
-ax.plot(obs["frequencies"], obs["avg_psd"], linewidth=2, color="k")
+ax.plot(psd_obs["frequencies"], psd_obs["psd"].T, linewidth=1, color="k", alpha=0.15)
+ax.plot(psd_obs["frequencies"], avg_obs["avg_psd"], linewidth=2, color="k")
 ax.set_xlabel("Frequency [Hz]")
 ax.set_ylabel("Power")
-ax.text(0.95, 0.95, f"Peak @ {obs['peak_frequency']:.1f} Hz", transform=ax.transAxes,
+ax.text(0.95, 0.95, f"Peak @ {peak_obs['peak_frequency']:.1f} Hz", transform=ax.transAxes,
         fontsize=12, ha="right", va="top",
         bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
 ax.set_xlim(0, 20)
@@ -604,28 +681,42 @@ ax.set_title("Network Dynamics")
 plt.tight_layout()
 ```
 
-## Step 4: Create Target Data
+## Step 4: Target Data
+
+Target data is computed in Python from the tract lengths and frequency gradient (already computed in the visualization section above).
 
 ```{python}
 #| label: fig-target-spectra
 #| fig-cap: "**Comparison of initial and target spectra.** Black lines show current power spectra, blue lines show target spectra with region-specific peak frequencies."
-obs = sim_results.observations.peak_freq
-target_PSDs = jnp.vstack([ns.cauchy_pdf(obs["frequencies"], fp, 1) for fp in peak_freqs])
+# Get simulated PSD from observations
+sim_obs = sim_results.observations.simulated_psd
+
+# Compute target PSDs using Cauchy distribution centered at target peak frequencies
+# peak_freqs was computed earlier from dist_from_vc
+frequencies = np.array(sim_obs["frequencies"])
+gamma = 1.0  # Cauchy scale parameter
+
+# Cauchy PDF for each region's target frequency
+target_psd = np.array([1 / (np.pi * gamma * (1 + ((frequencies - f0) / gamma)**2))
+                       for f0 in peak_freqs])
 
 fig, ax = plt.subplots(figsize=(8.1, 3.0375))
-for y, y2 in zip(obs["psd"][:7], target_PSDs[:7]):
-    ax.plot(obs["frequencies"], y, alpha=0.3, color="k", linewidth=1.5)
-    ax.plot(obs["frequencies"], y2, alpha=0.3, color="royalblue", linewidth=1.5)
+for y, y2 in zip(sim_obs["psd"][:7], target_psd[:7]):
+    ax.plot(sim_obs["frequencies"], y, alpha=0.3, color="k", linewidth=1.5)
+    ax.plot(sim_obs["frequencies"], y2, alpha=0.3, color="royalblue", linewidth=1.5)
 ax.set(xlabel='Frequency [Hz]', ylabel='Power', title='7 Initial vs Target Power Spectra',
        xlim=(0, 20), yscale='log')
-ax.legend(['Initial', 'Target'], loc='upper right')
+ax.legend(['Simulated', 'Target'], loc='upper right')
 plt.tight_layout()
 ```
 
 ## Step 5: Optimization
 
+Target data (computed above) is passed to the optimizer.
+
 ```{python}
-opt_results = exp.run("tvboptim", mode="optimization", target_data=target_PSDs)
+# Pass target_psd computed above to optimizer
+opt_results = exp.run("tvboptim", mode="optimization", target_data=target_psd)
 ```
 
 ```{python}
@@ -650,15 +741,19 @@ plt.tight_layout()
 ```{python}
 #| label: fig-frequency-maps
 #| fig-cap: "**Comparison of initial and fitted peak frequencies.** Left: Before optimization. Right: After optimization matching target gradient."
-obs_fit = ns.spectrum(opt_results.model_fn, opt_results.fitted_params)
-obs_init = ns.spectrum(opt_results.model_fn, opt_results.state)
+# Get spectra before and after optimization using simulated_psd observation
+obs_fit = ns.simulated_psd(opt_results.model_fn, opt_results.fitted_params)
+obs_init = ns.simulated_psd(opt_results.model_fn, opt_results.state)
 
 peak_freqs_fitted = np.array([obs_fit["frequencies"][np.argmax(psd)] for psd in obs_fit["psd"]])
 peak_freqs_init = np.array([obs_init["frequencies"][np.argmax(psd)] for psd in obs_init["psd"]])
 
+# Target frequencies computed earlier from tract lengths
+target_peak_freqs = peak_freqs
+
 fig, axes = plt.subplots(1, 2, figsize=(8.1, 3.5))
 for ax, pf_sim, title in zip(axes, [peak_freqs_init, peak_freqs_fitted], ['Before', 'After']):
-    ax.scatter(peak_freqs, pf_sim, alpha=0.6, s=20)
+    ax.scatter(target_peak_freqs, pf_sim, alpha=0.6, s=20)
     ax.plot([7, 11], [7, 11], 'k--', linewidth=1)
     ax.set(xlabel='Target Peak Frequency [Hz]', ylabel=f'{title} Peak Frequency [Hz]',
            title=f'{title} Optimization', xlim=(6.5, 11.5), ylim=(6.5, 11.5))
@@ -680,7 +775,10 @@ def build_freq_map(freqs):
         fmap = np.where(dk.get_fdata() == idx, freqs[i], fmap)
     return fmap
 
-f_maps = [build_freq_map(peak_freqs_init), f_map_target, build_freq_map(peak_freqs_fitted)]
+# Target frequencies computed from tract lengths
+f_map_target_obs = build_freq_map(target_peak_freqs)
+
+f_maps = [build_freq_map(peak_freqs_init), f_map_target_obs, build_freq_map(peak_freqs_fitted)]
 titles = ["Initial (Homogeneous)", "Target", "Fitted"]
 
 fig, axes = plt.subplots(1, 3, figsize=(12, 4))
