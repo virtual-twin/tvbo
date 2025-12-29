@@ -212,20 +212,6 @@ functions:
               value: 5000
               description: "Number of samples to prepend from history"
 
-    bold_convolve:
-        description: "Convolve signal with HRF kernel"
-        callable:
-            module: jax.scipy.signal
-            name: fftconvolve
-        apply_on_dimension: node
-        arguments:
-            - name: data
-              description: "Signal with history prepended (time, nodes)"
-            - name: hrf
-              description: "HRF kernel array"
-            - name: mode
-              value: "valid"
-
     volterra_transform:
         name: volterra_transform
         description: "Volterra nonlinear BOLD transformation"
@@ -238,26 +224,20 @@ functions:
                 V_0:
                     value: 0.02
                     description: "Resting blood volume fraction"
+        arguments:
+            - name: data
+              description: "Input data from previous step"
 
     subsample_bold:
         name: subsample_bold
         description: "Subsample to BOLD TR (final_period / downsample_period)"
         source_code: "data[::step]"
         arguments:
+            - name: data
+              description: "Input time series"
             - name: step
               value: 250
               description: "Subsample factor (TR/downsample_period = 1000/4 = 250)"
-
-    compute_fc:
-        name: compute_fc
-        description: "Compute functional connectivity from BOLD signal"
-        callable:
-            name: compute_fc
-            module: tvboptim.observations.observation
-        arguments:
-            - name: skip_t
-              value: 20
-              description: "Skip first 20 TRs to avoid transient effects"
 
     rmse:
         name: rmse
@@ -278,45 +258,59 @@ functions:
             module: tvboptim.observations.observation
 
 observations:
-    simulated_bold:
-        name: simulated_bold
+    bold:
         label: "Simulated BOLD Signal"
         description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
         source: S
         pipeline:
-            - name: hrf_kernel
-              output: hrf
+            - function: hrf_kernel
 
-            - name: prepend_history
-              input: data
-              output: data_with_history
+            - function: prepend_history
               arguments:
-                  - name: history
-                    value: integration.transient
-                  - name: kernel_samples
-                    value: 5000
+                - name: data
+                  value: integration.result
+                - name: history
+                  value: integration.transient
+                - name: kernel_samples
+                  value: 5000
 
-            - name: bold_convolve
-              input: data_with_history
-              output: convolved
+            - output: bold_convolve
+              callable:
+                  module: jax.scipy.signal
+                  name: fftconvolve
+              apply_on_dimension: node
               arguments:
-                  - name: hrf
-                    value: input.hrf
+                - name: in1
+                  value: prepend_history
+                - name: in2
+                  value: hrf_kernel
+                - name: mode
+                  value: valid
 
-            - name: volterra_transform
-              input: convolved
-              output: bold_scaled
+            - function: volterra_transform
+              arguments:
+                - name: data
+                  value: bold_convolve
 
-            - name: subsample_bold
-              input: bold_scaled
-              output: simulated_bold
+            - function: subsample_bold
+              arguments:
+                - name: data
+                  value: volterra_transform
 
     fc:
-        label: "Simulated Functional Connectivity"
-        description: "Pearson correlation matrix from BOLD time series"
-        source_observation: simulated_bold
-        pipeline:
-            - compute_fc
+      label: "Simulated Functional Connectivity"
+      description: "Pearson correlation matrix from BOLD time series"
+      source_observation: bold
+      pipeline:
+        - callable:
+            name: compute_fc
+            module: tvboptim.observations.observation
+          arguments:
+            - name: timeseries
+              value: bold
+            - name: skip_t
+              value: 20
+              description: "Skip first 20 TRs to avoid transient effects"
 
 optimization:
     - name: fc_fitting
@@ -327,11 +321,12 @@ optimization:
           Stage 2: Regional parameters (w, I_o) - heterogeneous across regions.
 
       loss:
-          name: fc_rmse
-          label: "FC RMSE Loss"
-          equation:
-              rhs: "sqrt(mean((simulated_fc - empirical_fc)**2))"
-          description: "Root mean squared error between FC matrices"
+          function: rmse
+          arguments:
+            - name: simulated_fc
+              description: "Simulated functional connectivity matrix"
+            - name: empirical_fc
+              description: "Empirical functional connectivity matrix (target)"
 
       stages:
           - name: global_optimization
@@ -413,6 +408,8 @@ n_nodes = weights.shape[0]
 exp.network = Network.from_matrix(
     weights, lengths, region_labels, normalization=exp.network.normalization
 )
+
+print(exp.render_code("tvboptim"))
 ```
 
 

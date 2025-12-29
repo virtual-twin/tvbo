@@ -16,6 +16,7 @@ Context Variables:
 Output:
 - Complete Python module for running the full experiment
 </%doc>
+<%namespace name="fn" file="/base/function-def.mako"/>
 <%
 from tvbo.export.code import render_expression
 import numpy as np
@@ -43,7 +44,7 @@ else:
 # JAX code generation helpers
 # (Array function mappings like sum->jnp.sum are built into the printers)
 # Pass user_functions so custom functions (correlation, cauchy_pdf, etc.) are recognized
-jaxcode = lambda expr: render_expression(expr, format='jax', user_functions=user_functions)
+jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
 # Extract key metadata
@@ -509,203 +510,65 @@ else:
 # Collect all function names for user_functions mapping
 all_func_names = {str(fname): str(fname) for fname in exp_funcs.keys()}
 
-# Collect callable imports: {module: [(qualname, alias), ...]}
-callable_imports = {}
+def is_simple_callable(fdef, fname):
+    """Check if function is a simple callable (just import, no wrapper needed).
+
+    Simple = has callable + no apply_on_dimension + no equation + no source_code.
+    Argument defaults in YAML are just documentation, not code to generate.
+    """
+    c = getattr(fdef, 'callable', None)
+    if not c:
+        return False
+    # No apply_on_dimension (needs vmap wrapper)
+    if getattr(fdef, 'apply_on_dimension', None):
+        return False
+    # No equation (hybrid callable+equation not supported as simple)
+    if getattr(fdef, 'equation', None):
+        return False
+    # No source_code
+    if getattr(fdef, 'source_code', None):
+        return False
+    return True
+
+# Classify callables: simple (just import) vs complex (need wrapper)
+simple_callable_imports = {}  # {(module, cname): fname} - direct import
+complex_callable_imports = {}  # {(module, cname): _callable_cname} - prefixed import
+funcs_needing_def = []  # Functions that need actual definition
+
 for fname, fdef in exp_funcs.items():
-    callable_def = getattr(fdef, 'callable', None)
-    if callable_def:
-        module = getattr(callable_def, 'module', None)
-        qualname = getattr(callable_def, 'qualname', None) or getattr(callable_def, 'name', None)
-        if module and qualname:
-            if module not in callable_imports:
-                callable_imports[module] = []
-            callable_imports[module].append((qualname, str(fname)))
-
-def to_numeric(val):
-    """Convert string to numeric if possible."""
-    if isinstance(val, (int, float)):
-        return val
-    if isinstance(val, str):
-        try:
-            return int(val) if '.' not in val else float(val)
-        except ValueError:
-            return val
-    return val
-
-# Generate functions from source_code OR equation (skip callables - they're imported)
-standalone_funcs = []
-for fname, fdef in exp_funcs.items():
-    # Skip callable functions - they're handled via imports
-    callable_def = getattr(fdef, 'callable', None)
-    if callable_def and (getattr(callable_def, 'module', None)):
-        continue
-
-    source_code = getattr(fdef, 'source_code', None)
-    equation = getattr(fdef, 'equation', None)
-    eq_rhs = getattr(equation, 'rhs', None) if equation else None
-    time_range = getattr(fdef, 'time_range', None)
-
-    # Get arguments for function signature
-    args_raw = getattr(fdef, 'arguments', None) or []
-    arg_list = []
-    arg_names = []  # Just the names, for passing to parser
-    if hasattr(args_raw, '__iter__'):
-        for arg in args_raw:
-            arg_name = getattr(arg, 'name', None)
-            arg_value = getattr(arg, 'value', None)
-            if arg_name:
-                if arg_value is not None:
-                    # Convert to proper numeric type
-                    numeric_val = to_numeric(arg_value)
-                    arg_list.append(f"{arg_name}={repr(numeric_val)}")
-                else:
-                    arg_list.append(str(arg_name))
-                # Also collect just the names for parsing (to override SymPy builtins)
-                arg_names.append(str(arg_name))
-
-    if source_code:
-        code_str = str(source_code).strip()
-        lines = code_str.split('\n')
-        standalone_funcs.append({
-            'name': str(fname),
-            'source_code': code_str,
-            'equation': None,
-            'time_range': None,
-            'description': getattr(fdef, 'description', ''),
-            'is_multiline': len(lines) > 1,
-            'is_lambda': code_str.startswith('lambda '),
-            'args': arg_list,
-        })
-    elif time_range and eq_rhs:
-        # Kernel generator with time_range - generates t array and evaluates equation
-        tr_lo = getattr(time_range, 'lo', 0)
-        tr_hi = getattr(time_range, 'hi', 'duration')
-        tr_step = getattr(time_range, 'step', 'dt')
-        # Get equation parameters for local variable assignments
-        eq_params = getattr(equation, 'parameters', None) or {}
-        param_assigns = {}
-        param_names_for_eq = ['t']  # t is always available in time_range equations
-        if hasattr(eq_params, 'items'):
-            for pname, pobj in eq_params.items():
-                pval = getattr(pobj, 'value', None)
-                if pval is not None:
-                    param_assigns[str(pname)] = to_numeric(pval)
-                param_names_for_eq.append(str(pname))
-        # Render equation with t and equation parameters as symbols
-        rendered = render_expression(str(eq_rhs), format='jax', user_functions=all_func_names, parameters=param_names_for_eq)
-        standalone_funcs.append({
-            'name': str(fname),
-            'source_code': None,
-            'equation': rendered,
-            'time_range': {'lo': tr_lo, 'hi': str(tr_hi), 'step': str(tr_step)},
-            'param_assigns': param_assigns,
-            'description': getattr(fdef, 'description', ''),
-            'is_multiline': False,
-            'is_lambda': False,
-            'args': arg_list,  # duration, dt as function arguments
-        })
-    elif eq_rhs:
-        # Generate from equation - render to JAX code
-        # Pass arg_names as parameters so they become Symbols (overriding SymPy functions like gamma)
-        rendered = render_expression(str(eq_rhs), format='jax', user_functions=all_func_names, parameters=arg_names)
-        standalone_funcs.append({
-            'name': str(fname),
-            'source_code': None,
-            'equation': rendered,
-            'time_range': None,
-            'description': getattr(fdef, 'description', '') or getattr(equation, 'definition', ''),
-            'is_multiline': False,
-            'is_lambda': False,
-            'args': arg_list,
-        })
+    fname = str(fname)
+    c = getattr(fdef, 'callable', None)
+    if c:
+        module = getattr(c, 'module', None)
+        cname = getattr(c, 'name', None) or getattr(c, 'qualname', None)
+        if module and cname:
+            if is_simple_callable(fdef, fname):
+                # Just import directly as the function name
+                simple_callable_imports[(module, cname)] = fname
+            else:
+                # Need wrapper, import with prefix
+                complex_callable_imports[(module, cname)] = f"_callable_{cname}"
+                funcs_needing_def.append((fname, fdef))
+    else:
+        funcs_needing_def.append((fname, fdef))
 %>
-# Callable imports (functions from external modules)
-% for module, imports in callable_imports.items():
-% for qualname, alias in imports:
-% if qualname == alias:
-from ${module} import ${qualname}
+# Simple callable imports (direct, no wrapper needed)
+% for (module, cname), local_name in sorted(simple_callable_imports.items()):
+% if local_name != cname:
+from ${module} import ${cname} as ${local_name}
 % else:
-from ${module} import ${qualname} as ${alias}
+from ${module} import ${cname}
 % endif
 % endfor
+
+# Complex callable imports (prefixed, wrapper will be generated)
+% for (module, cname), local_name in sorted(complex_callable_imports.items()):
+from ${module} import ${cname} as ${local_name}
 % endfor
 
-% for func in standalone_funcs:
-# ${func['description'] or func['name']}
-<%
-    if func.get('time_range'):
-        # Kernel generator with time_range - generates t array and evaluates equation
-        tr = func['time_range']
-        args_str = ', '.join(func['args']) if func['args'] else ''
-        # Build parameter assignments from equation.parameters
-        param_assigns = func.get('param_assigns', {})
-        param_lines = '\n    '.join([f"{k} = {v}" for k, v in param_assigns.items()])
-        body_lines = []
-        if param_lines:
-            body_lines.append(param_lines)
-        body_lines.append(f"t = jnp.arange({tr['lo']}, {tr['hi']}, {tr['step']})")
-        body_lines.append(f"return {func['equation']}")
-        body = '\n    '.join(body_lines)
-        out_line = f"def {func['name']}({args_str}):\n    {body}"
-    elif func['equation']:
-        # Generated from equation.rhs - create a simple function
-        # Extract free symbols from equation as parameters if no args specified
-        args_str = ', '.join(func['args']) if func['args'] else 'x, y'
-        out_line = f"def {func['name']}({args_str}):\n    return {func['equation']}"
-    elif func['is_lambda'] and not func['is_multiline']:
-        # Simple single-line lambda: name = lambda ...
-        out_line = f"{func['name']} = {func['source_code']}"
-    elif func['is_lambda'] and func['is_multiline']:
-        # Multiline lambda - need to convert to def function
-        code = func['source_code']
-        import re
-        lambda_pattern = r'^lambda\s+([^:]+):'
-        match = re.match(lambda_pattern, code.split('\n')[0])
-        if match:
-            params = match.group(1).strip()
-            first_line = code.split('\n')[0]
-            colon_idx = first_line.find(':')
-            first_body_part = first_line[colon_idx+1:].strip() if colon_idx >= 0 else ''
-            remaining_lines = '\n'.join(code.split('\n')[1:])
-            body_parts = []
-            if first_body_part:
-                body_parts.append(first_body_part)
-            if remaining_lines.strip():
-                body_parts.append(remaining_lines)
-            body = '\n'.join(body_parts)
-            body_lines = body.split('\n')
-            if body_lines:
-                min_indent = float('inf')
-                for line in body_lines:
-                    if line.strip():
-                        indent = len(line) - len(line.lstrip())
-                        min_indent = min(min_indent, indent)
-                if min_indent == float('inf'):
-                    min_indent = 0
-                body_lines = [line[min_indent:] if len(line) > min_indent else line.lstrip() for line in body_lines]
-            has_return = any('return ' in line for line in body_lines)
-            if not has_return and body_lines:
-                for i, line in enumerate(body_lines):
-                    if line.strip() and not line.strip().startswith('#'):
-                        body_lines[i] = 'return ' + line
-                        break
-            body = '\n    '.join(body_lines)
-            out_line = f"def {func['name']}({params}): {body}"
-        else:
-            out_line = f"{func['name']} = {func['source_code']}"
-    else:
-        # Plain source_code expression - wrap in function definition
-        args_str = ', '.join(func['args']) if func['args'] else ''
-        code = func['source_code']
-        if '\n' in code or code.strip().startswith('def '):
-            # Multi-line or already a function definition
-            out_line = code
-        else:
-            # Single expression - wrap in function
-            out_line = f"def {func['name']}({args_str}):\n    return {code}"
-%>
-${out_line}
-
+# User-defined functions (generated via base function-def.mako)
+% for fname, fdef in funcs_needing_def:
+${fn.function_def(fdef, format='jax', user_functions=all_func_names)}
 % endfor
 
 
@@ -714,264 +577,69 @@ ${out_line}
 # =============================================================================
 <%
 # Extract loss functions from optimization metadata
-# Loss is now a Function with source_code, equation, or callable options
+# Loss is now a FunctionCall - it references a function, not defines one
 loss_functions = []
 for opt in optim_list:
-    loss_fn = getattr(opt, 'loss', None)
-    if loss_fn:
-        # Function-based loss
-        loss_info = {
+    loss_call = getattr(opt, 'loss', None)
+    if loss_call:
+        # FunctionCall has 'function' (reference) or 'callable' (inline)
+        func_ref = getattr(loss_call, 'function', None)
+        callable_ref = getattr(loss_call, 'callable', None)
+
+        # Determine the function name to call
+        if func_ref:
+            # Reference to user-defined function (e.g., 'rmse')
+            func_name = str(func_ref) if isinstance(func_ref, str) else getattr(func_ref, 'name', str(func_ref))
+        elif callable_ref:
+            func_name = getattr(callable_ref, 'name', None) or getattr(callable_ref, 'qualname', 'loss')
+        else:
+            func_name = 'loss'
+
+        # Get argument names
+        loss_args = getattr(loss_call, 'arguments', []) or []
+        arg_names = [getattr(arg, 'name', None) for arg in loss_args if getattr(arg, 'name', None)]
+
+        loss_functions.append({
             'opt_name': getattr(opt, 'name', 'loss'),
-            'name': getattr(loss_fn, 'name', 'loss'),
-            'label': getattr(loss_fn, 'label', '') or getattr(opt, 'label', 'Loss'),
-            'source_code': getattr(loss_fn, 'source_code', None),
-            'equation': None,
-            'callable': None,
-            'input_key': None,  # Which key from predicted observation to use
-            'output_key': None,  # Name for loss output
-        }
-
-        # Check for equation (supports rhs or output_equation)
-        eq = getattr(loss_fn, 'equation', None) or getattr(loss_fn, 'output_equation', None)
-        if eq:
-            loss_info['equation'] = getattr(eq, 'rhs', None)
-
-        # Check for aggregate specification (LossFunction attribute)
-        aggregate = getattr(loss_fn, 'aggregate', None)
-        if aggregate:
-            loss_info['aggregate'] = {
-                'over': getattr(aggregate, 'over', None),
-                'type': getattr(aggregate, 'type', 'mean'),
-            }
-        else:
-            loss_info['aggregate'] = None
-
-        # Check for callable
-        callable_def = getattr(loss_fn, 'callable', None)
-        if callable_def:
-            loss_info['callable'] = {
-                'module': getattr(callable_def, 'module', None),
-                'qualname': getattr(callable_def, 'qualname', None),
-            }
-
-        # Extract variable names from arguments
-        # First argument = predicted data key, 'target' argument = target data key
-        loss_args = getattr(loss_fn, 'arguments', []) or []
-        arg_names = []
-        for arg in loss_args:
-            arg_name = getattr(arg, 'name', None)
-            if arg_name:
-                arg_names.append(arg_name)
-        # First non-target argument is the predicted key
-        if arg_names:
-            loss_info['input_key'] = arg_names[0]
-            # Look for explicit 'target' argument, otherwise use second arg
-            if 'target' in arg_names:
-                loss_info['target_key'] = 'target'
-            elif len(arg_names) > 1:
-                loss_info['target_key'] = arg_names[1]
-
-        # Get predicted_from and targets observations
-        predicted_from = getattr(opt, 'predicted_from', None)
-        if predicted_from:
-            pred_name = getattr(predicted_from, 'name', str(predicted_from)) if hasattr(predicted_from, 'name') else str(predicted_from)
-            loss_info['predicted_from'] = pred_name
-            # If no explicit input_key, use last pipeline output from predicted_from
-            if not loss_info['input_key']:
-                loss_info['input_key'] = get_pipeline_output_key(pred_name)
-        else:
-            loss_info['predicted_from'] = None
-
-        targets = getattr(opt, 'targets', [])
-        target_names = [getattr(t, 'name', str(t)) if hasattr(t, 'name') else str(t) for t in targets] if targets else []
-        loss_info['targets'] = target_names
-        # Get target output key
-        if target_names:
-            loss_info['target_output_key'] = get_pipeline_output_key(target_names[0])
-
-        loss_functions.append(loss_info)
-
-# Helper: extract observation names that might be referenced in an equation
-def extract_obs_refs_from_equation(eq_str, obs_names):
-    """Find observation names referenced in an equation string."""
-    if not eq_str:
-        return []
-    refs = []
-    for obs_name in obs_names:
-        if obs_name in eq_str:
-            refs.append(obs_name)
-    return refs
+            'func_name': func_name,
+            'arg_names': arg_names,
+            'predicted_from': getattr(opt, 'predicted_from', None),
+        })
 %>
+# Loss function wrappers (call observations, then referenced loss function)
 % for loss_fn in loss_functions:
 <%
-    input_key = loss_fn.get('input_key')
-    target_key = loss_fn.get('target_key')
+    func_name = loss_fn['func_name']
+    opt_name = loss_fn['opt_name']
+    arg_names = loss_fn['arg_names']
+
+    # Get predicted_from observation
     predicted_from = loss_fn.get('predicted_from')
-    targets = loss_fn.get('targets', [])
-    source_code = loss_fn.get('source_code')
-    equation = loss_fn.get('equation')
-    callable_info = loss_fn.get('callable')
+    if predicted_from:
+        pred_name = getattr(predicted_from, 'name', str(predicted_from)) if hasattr(predicted_from, 'name') else str(predicted_from)
+    else:
+        pred_name = None
 
-    # Validate: loss MUST have equation, source_code, or callable
-    has_loss_def = bool(source_code or equation or (callable_info and callable_info.get('qualname')))
-    assert has_loss_def, f"Loss '{loss_fn['opt_name']}' must specify equation, source_code, or callable"
-
-    # Default key names if not specified
-    pred_var = input_key or 'predicted'
-    targ_var = target_key or 'target'
-
-    # Find observation names referenced in the equation
-    # These observations need to be called and their outputs made available
-    all_obs_names = list(observations.keys()) if observations else []
-    obs_refs = extract_obs_refs_from_equation(equation, all_obs_names) if equation else []
+    # First arg is typically simulated, second is empirical/target
+    sim_arg = arg_names[0] if arg_names else 'simulated'
+    emp_arg = arg_names[1] if len(arg_names) > 1 else 'empirical'
 %>
+def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
+    """Loss wrapper calling ${func_name}
 
-def loss_${loss_fn['opt_name']}(model_fn, state, target_data: jnp.ndarray = None):
-    """${loss_fn['label']}
-
-    Predicted from: ${predicted_from or 'first target'}
-    Targets: ${', '.join(targets) if targets else 'None'}
-    Input key: ${input_key or 'auto'} -> ${pred_var}
-    Target key: ${target_key or 'auto'} -> ${targ_var}
-% if obs_refs:
-    Observations called: ${', '.join(obs_refs)}
-% endif
+    Calls observation '${pred_name or 'fc'}' and computes loss against target_data.
     """
-% if obs_refs:
-    # Call observations referenced in the loss equation and extract their primary outputs
-% for obs_name in obs_refs:
-<%
-    # Get the primary output key for this observation (last pipeline step output)
-    obs_output_key = get_pipeline_output_key(obs_name)
-    # Use _data suffix to avoid shadowing the observation function name
-    var_name = obs_name + '_data'
-%>
-    _${obs_name}_result = ${obs_name}(model_fn, state)
-% if obs_output_key:
-    ${var_name} = _${obs_name}_result['${obs_output_key}']
+% if pred_name:
+    _obs_result = ${pred_name}(model_fn, state)
+    ${sim_arg} = _obs_result[_obs_result._primary_key]
 % else:
-    ${var_name} = _${obs_name}_result.get('data', next((v for v in _${obs_name}_result.values() if hasattr(v, 'shape')), _${obs_name}_result))
+    # Default: call fc observation
+    _obs_result = fc(model_fn, state)
+    ${sim_arg} = _obs_result[_obs_result._primary_key]
 % endif
-% endfor
-
-<%
-    # Replace observation.key references in equation with proper dict access
-    # e.g., simulated_psd.psd -> _simulated_psd_result['psd']
-    rendered_eq = str(equation)
-    import re
-    # Find all observation.key patterns and build variable mappings
-    var_mappings = {}  # Maps variable names to their source expressions
-    for obs_name in obs_refs:
-        # Replace obs_name.key with variable name (for use in vmap)
-        pattern = re.escape(obs_name) + r'\.(\w+)'
-        matches = re.findall(pattern, rendered_eq)
-        for key in matches:
-            var_name = f"{obs_name}_{key}"
-            var_mappings[var_name] = f"_{obs_name}_result['{key}']"
-            rendered_eq = re.sub(re.escape(obs_name) + r'\.' + re.escape(key), var_name, rendered_eq)
-        # Also replace bare obs_name (without .key) with obs_name_data
-        rendered_eq = re.sub(r'\b' + re.escape(obs_name) + r'\b(?!_result|_)', obs_name + '_data', rendered_eq)
-
-    # Get aggregate specification from loss function
-    aggregate = loss_fn.get('aggregate')
-    has_aggregation = aggregate is not None and aggregate.get('over')
-    aggregate_over = aggregate.get('over') if aggregate else None
-    # Handle enum values (may be PermissibleValue with .text attribute or string)
-    _agg_type = aggregate.get('type', 'mean') if aggregate else 'mean'
-    aggregate_type = getattr(_agg_type, 'text', str(_agg_type)) if _agg_type else 'mean'
-%>
-% if has_aggregation and var_mappings:
-    # Aggregated loss: apply per-${aggregate_over}, then ${aggregate_type}
-<%
-    # Get the variable names for vmap arguments
-    vmapped_vars = list(var_mappings.keys())
-    vmapped_sources = [var_mappings[v] for v in vmapped_vars]
-%>
-    def _per_element_loss(${', '.join(vmapped_vars)}, _target):
-        return ${rendered_eq.replace('target_data', '_target')}
-    _per_element_losses = jax.vmap(_per_element_loss)(${', '.join(vmapped_sources)}, target_data)
-% if aggregate_type == 'mean':
-    loss_value = jnp.mean(_per_element_losses)
-% elif aggregate_type == 'sum':
-    loss_value = jnp.sum(_per_element_losses)
-% elif aggregate_type == 'max':
-    loss_value = jnp.max(_per_element_losses)
-% elif aggregate_type == 'min':
-    loss_value = jnp.min(_per_element_losses)
-% else:
-    loss_value = _per_element_losses  # No reduction
-% endif
-% else:
-    # Compute loss directly (no aggregation)
-    loss_value = ${rendered_eq}
-% endif
-    _aux = {${', '.join(["'" + obs + "': " + obs + "_data" for obs in obs_refs])}}
-
-
-% elif predicted_from:
-    # Run predicted observation
-    _pred_result = ${predicted_from}(model_fn, state)
-% if input_key:
-    # Extract predicted data with exact key name for equation
-    ${pred_var} = _pred_result['${input_key}']
-% else:
-    # Fallback: use 'data' key or first array value
-    ${pred_var} = _pred_result.get('data', next(v for v in _pred_result.values() if hasattr(v, 'shape')))
-% endif
-
-% if equation:
-    # Equation-based loss using exact keys: ${equation}
-    # Apply vmap for per-row computation on 2D arrays, then average
-    def _scalar_loss(${pred_var}, ${targ_var}):
-        return ${jaxcode(equation)}
-    # vmap over first axis (rows) and average the results
-    loss_value = jnp.mean(jax.vmap(_scalar_loss)(${pred_var}, target_data))
-% elif source_code:
-    # Source code loss
-    _loss_fn = ${source_code.strip()}
-    loss_value = _loss_fn(${pred_var}, target_data)
-% elif callable_info and callable_info.get('qualname'):
-    # Callable loss: ${callable_info.get('module', '')}.${callable_info['name']}
-    loss_value = ${callable_info['name']}(${pred_var}, target_data)
-% endif
-    _aux = _pred_result
-% elif targets:
-    # Fallback: use first target observation for predictions
-    _pred_result = ${targets[0]}(model_fn, state)
-% if input_key:
-    ${pred_var} = _pred_result['${input_key}']
-% else:
-    ${pred_var} = _pred_result.get('data', next(v for v in _pred_result.values() if hasattr(v, 'shape')))
-% endif
-% if equation:
-    def _scalar_loss(${pred_var}, ${targ_var}):
-        return ${jaxcode(equation)}
-    loss_value = jnp.mean(jax.vmap(_scalar_loss)(${pred_var}, target_data))
-% elif source_code:
-    _loss_fn = ${source_code.strip()}
-    loss_value = _loss_fn(${pred_var}, target_data)
-% endif
-    _aux = _pred_result
-% else:
-    # No observation specified, run generic simulation
-    _pred_result = model_fn(state)
-% if input_key:
-    ${pred_var} = _pred_result['${input_key}']
-% else:
-    ${pred_var} = _pred_result.get('data', next(v for v in _pred_result.values() if hasattr(v, 'shape')))
-% endif
-% if equation:
-    def _scalar_loss(${pred_var}, ${targ_var}):
-        return ${jaxcode(equation)}
-    loss_value = jnp.mean(jax.vmap(_scalar_loss)(${pred_var}, target_data))
-% elif source_code:
-    _loss_fn = ${source_code.strip()}
-    loss_value = _loss_fn(${pred_var}, target_data)
-% endif
-    _aux = _pred_result
-% endif
-
-    return loss_value, _aux
+    ${emp_arg} = target_data
+    loss_value = ${func_name}(${sim_arg}, ${emp_arg})
+    return loss_value, _obs_result
 
 % endfor
 

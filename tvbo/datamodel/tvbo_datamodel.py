@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-27T17:53:51
+# Generation date: 2025-12-29T14:00:49
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -787,7 +787,7 @@ class Observation(YAMLRoot):
     skip_t: Optional[int] = None
     aggregation: Optional[Union[str, "AggregationType"]] = None
     window_size: Optional[int] = None
-    pipeline: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
+    pipeline: Optional[Union[Union[dict, "FunctionCall"], list[Union[dict, "FunctionCall"]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -848,7 +848,9 @@ class Observation(YAMLRoot):
         if self.window_size is not None and not isinstance(self.window_size, int):
             self.window_size = int(self.window_size)
 
-        self._normalize_inlined_as_list(slot_name="pipeline", slot_type=Function, key_name="name", keyed=True)
+        if not isinstance(self.pipeline, list):
+            self.pipeline = [self.pipeline] if self.pipeline is not None else []
+        self.pipeline = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.pipeline]
 
         super().__post_init__(**kwargs)
 
@@ -1351,6 +1353,43 @@ class LossFunction(Function):
 
 
 @dataclass(repr=False)
+class FunctionCall(YAMLRoot):
+    """
+    Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly
+    for external library functions. Use arguments to specify inputs by name (referencing previous outputs or values).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["FunctionCall"]
+    class_class_curie: ClassVar[str] = "tvbo:FunctionCall"
+    class_name: ClassVar[str] = "FunctionCall"
+    class_model_uri: ClassVar[URIRef] = TVBO.FunctionCall
+
+    function: Optional[Union[str, FunctionName]] = None
+    callable: Optional[Union[dict, "Callable"]] = None
+    output: Optional[str] = None
+    apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
+    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.function is not None and not isinstance(self.function, FunctionName):
+            self.function = FunctionName(self.function)
+
+        if self.callable is not None and not isinstance(self.callable, Callable):
+            self.callable = Callable(**as_dict(self.callable))
+
+        if self.output is not None and not isinstance(self.output, str):
+            self.output = str(self.output)
+
+        if self.apply_on_dimension is not None and not isinstance(self.apply_on_dimension, DimensionType):
+            self.apply_on_dimension = DimensionType(self.apply_on_dimension)
+
+        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class Callable(YAMLRoot):
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1701,7 +1740,7 @@ class Optimization(YAMLRoot):
     name: Union[str, OptimizationName] = None
     label: Optional[str] = None
     description: Optional[str] = None
-    loss: Optional[Union[dict, LossFunction]] = None
+    loss: Optional[Union[dict, FunctionCall]] = None
     stages: Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]] = empty_dict()
     free_parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
     algorithm: Optional[str] = "adam"
@@ -1721,8 +1760,8 @@ class Optimization(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if self.loss is not None and not isinstance(self.loss, LossFunction):
-            self.loss = LossFunction(**as_dict(self.loss))
+        if self.loss is not None and not isinstance(self.loss, FunctionCall):
+            self.loss = FunctionCall(**as_dict(self.loss))
 
         self._normalize_inlined_as_dict(slot_name="stages", slot_type=OptimizationStage, key_name="name", keyed=True)
 
@@ -4250,7 +4289,7 @@ slots.observation__window_size = Slot(uri=TVBO.window_size, name="observation__w
                    model_uri=TVBO.observation__window_size, domain=None, range=Optional[int])
 
 slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipeline", curie=TVBO.curie('pipeline'),
-                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
+                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
 
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
                    model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
@@ -4381,6 +4420,21 @@ slots.aggregation__type = Slot(uri=TVBO.type, name="aggregation__type", curie=TV
 slots.lossFunction__aggregate = Slot(uri=TVBO.aggregate, name="lossFunction__aggregate", curie=TVBO.curie('aggregate'),
                    model_uri=TVBO.lossFunction__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
 
+slots.functionCall__function = Slot(uri=TVBO.function, name="functionCall__function", curie=TVBO.curie('function'),
+                   model_uri=TVBO.functionCall__function, domain=None, range=Optional[Union[str, FunctionName]])
+
+slots.functionCall__callable = Slot(uri=TVBO.callable, name="functionCall__callable", curie=TVBO.curie('callable'),
+                   model_uri=TVBO.functionCall__callable, domain=None, range=Optional[Union[dict, Callable]])
+
+slots.functionCall__output = Slot(uri=TVBO.output, name="functionCall__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.functionCall__output, domain=None, range=Optional[str])
+
+slots.functionCall__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="functionCall__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
+                   model_uri=TVBO.functionCall__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.functionCall__arguments = Slot(uri=TVBO.arguments, name="functionCall__arguments", curie=TVBO.curie('arguments'),
+                   model_uri=TVBO.functionCall__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
 slots.callable__module = Slot(uri=TVBO.module, name="callable__module", curie=TVBO.curie('module'),
                    model_uri=TVBO.callable__module, domain=None, range=Optional[str])
 
@@ -4466,7 +4520,7 @@ slots.optimizationStage__warmup_from = Slot(uri=TVBO.warmup_from, name="optimiza
                    model_uri=TVBO.optimizationStage__warmup_from, domain=None, range=Optional[Union[str, OptimizationStageName]])
 
 slots.optimization__loss = Slot(uri=TVBO.loss, name="optimization__loss", curie=TVBO.curie('loss'),
-                   model_uri=TVBO.optimization__loss, domain=None, range=Optional[Union[dict, LossFunction]])
+                   model_uri=TVBO.optimization__loss, domain=None, range=Optional[Union[dict, FunctionCall]])
 
 slots.optimization__stages = Slot(uri=TVBO.stages, name="optimization__stages", curie=TVBO.curie('stages'),
                    model_uri=TVBO.optimization__stages, domain=None, range=Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]])

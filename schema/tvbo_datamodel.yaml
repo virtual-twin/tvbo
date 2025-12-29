@@ -556,7 +556,7 @@ classes:
                 description: "Ordered sequence of Functions. Each Function transforms input → output."
                 multivalued: true
                 inlined_as_list: true
-                range: Function
+                range: FunctionCall
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input → process → output flow directly
@@ -818,6 +818,30 @@ classes:
                     computes loss per node, then averages.
                 range: Aggregation
                 inlined: true
+    FunctionCall:
+        description: >-
+            Invocation of a function in a pipeline. Can reference a defined Function by name,
+            OR inline a callable directly for external library functions.
+            Use arguments to specify inputs by name (referencing previous outputs or values).
+        attributes:
+            function:
+                description: "Reference to a defined Function (by name)"
+                range: Function
+                inlined: false
+            callable:
+                description: "Direct callable specification (alternative to function reference)"
+                range: Callable
+                inlined: true
+            output:
+                description: "Name for this step's output (referenced by subsequent functions)"
+                range: string
+            apply_on_dimension:
+                description: "Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node."
+                range: DimensionType
+            arguments:
+                range: Argument
+                multivalued: true
+                inlined_as_list: true
 
     Callable:
         slots:
@@ -994,15 +1018,15 @@ classes:
             - label
             - description
         attributes:
-            # Loss specification - references observations by name
+            # Loss specification - FunctionCall that references or inlines the loss function
             loss:
-                range: LossFunction
+                range: FunctionCall
                 inlined: true
                 description: >-
-                    Loss function with optional aggregation.
-                    Variables in equation are observation names.
-                    Example: equation.rhs = "1 - correlation(sim_psd, target)"
-                    with aggregate: {over: node, type: mean}
+                    Loss function call. Uses FunctionCall to either:
+                    1. Reference existing function: function: rmse
+                    2. Inline callable: callable: {module: ..., name: ...}
+                    Arguments specify inputs (simulated_fc, empirical_fc, etc.)
 
             # Multi-stage optimization (preferred for complex workflows)
             stages:

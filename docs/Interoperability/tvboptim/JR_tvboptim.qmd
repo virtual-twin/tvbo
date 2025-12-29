@@ -337,12 +337,12 @@ observations:
     description: "Power spectral density using Welch's method on simulated y0"
     source: y0
     pipeline:
-      - name: subsample
-        input: data
-        output: subsampled
-      - name: transpose
+      - function: subsample
+        arguments:
+            - name: data
+              value: integration.result
+      - function: transpose
         input: subsampled
-        output: transposed
       - name: welch
         input: transposed
         output: "frequencies, psd"
