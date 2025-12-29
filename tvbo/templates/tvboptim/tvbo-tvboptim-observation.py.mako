@@ -1,55 +1,33 @@
 # -*- coding: utf-8 -*-
 <%doc>
-TVB-Optim Observation/Monitor Template
-======================================
+TVB-Optim Observation Template
+==============================
 
 Generates observation functions from pipeline-based Observation definitions.
 
-Each Observation can have:
-- source: StateVariable to observe
-- source_observation: Another Observation to derive from
-- pipeline: List of Function steps with callable/equation definitions
+Reference Syntax (declarative):
+- step_name        → pipeline step output (_outputs['step_name'])
+- obs.step_name    → self-referential observation.step (_outputs['step_name'])
+- input.key        → pipeline local output (_outputs['key'])
+- integration.transient → transient simulation data
+- integration.result    → main simulation result
+- observation.key  → another observation's output
 
-Pipeline Functions support:
-- callable: {name, module, qualname} for importing external functions
-- equation: {rhs, parameters} for symbolic expressions
-- arguments: Named arguments with values
-- input/output: Data flow between pipeline steps
-
-All monitors (BOLD, EEG, MEG, etc.) are handled via pipeline functions with callables.
-No special-case handling - everything is declarative via function definitions.
-
-Context Variables:
-- experiment: SimulationExperiment instance (required)
-
-Output:
-- Observation functions with proper imports and pipeline execution
+Context: experiment (SimulationExperiment instance)
 </%doc>
 <%
 from tvbo.export.code import render_expression
 
-# Get experiment info
+# =============================================================================
+# Configuration
+# =============================================================================
 model = experiment.local_dynamics
 state_names = list(model.state_variables.keys()) if model else ['x']
 dt = experiment.integration.step_size if experiment.integration else 0.1
 
-# Collect user-defined functions from experiment.functions
-# These are functions defined in YAML (e.g., correlation, cauchy_pdf) that need to be
-# recognized by the code printer. Map function name -> function name (identity mapping)
-# so the printer emits them as-is rather than raising PrintMethodNotImplementedError.
-_exp_functions = getattr(experiment, 'functions', None) or {}
-if hasattr(_exp_functions, 'items'):
-    user_functions = {str(fname): str(fname) for fname in _exp_functions.keys()}
-elif hasattr(_exp_functions, '__iter__'):
-    user_functions = {str(getattr(f, 'name', f)): str(getattr(f, 'name', f)) for f in _exp_functions}
-else:
-    user_functions = {}
-
-# JAX code generation helper (array function mappings are built into the printer)
-# Pass user_functions so custom functions (correlation, cauchy_pdf, etc.) are recognized
-# Parameters argument allows user-defined names (like 'gamma') to override SymPy builtins
-jaxcode = lambda expr, parameters=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=parameters)
-
+# =============================================================================
+# Helper Functions
+# =============================================================================
 def to_numeric(val):
     """Convert string to numeric if possible."""
     if isinstance(val, (int, float)):
@@ -61,246 +39,408 @@ def to_numeric(val):
             return val
     return val
 
-def parse_arg_value(val):
-    """Parse argument value and classify as reference or literal.
+def get_attr(obj, name, default=None):
+    """Safe attribute access."""
+    return getattr(obj, name, default) if obj else default
 
-    Returns tuple: (type, value) where type is:
-    - 'observation': value is (obs_name, key) - reference to another observation's output
-    - 'input': value is key - reference to pipeline local _outputs dict
-    - 'integration': value is key - reference to integration result (transient, result)
-    - 'literal': value is the literal value
+def is_numeric_string(s):
+    """Check if string represents a number."""
+    return s.replace('.', '').replace('-', '').replace('_', '').isdigit()
+
+# =============================================================================
+# Reference Parser
+# =============================================================================
+def parse_reference(val, step_names=None, current_obs_name=None):
+    """Parse argument value into (ref_type, ref_value).
+
+    Reference types:
+    - 'step'        : pipeline step output (_outputs[step_name])
+    - 'input'       : pipeline local (_outputs[key])
+    - 'integration' : simulation result (transient/result)
+    - 'observation' : another observation's output
+    - 'source_data' : data from source_observation (used when value matches source_observation name)
+    - 'literal'     : direct value
     """
-    if isinstance(val, str):
-        # Check for prefix.key reference syntax
-        if '.' in val and not val.replace('.', '').replace('-', '').replace('_', '').isdigit():
-            parts = val.split('.', 1)
-            prefix, key = parts[0], parts[1]
-            # Check if it's 'input.key' pattern (pipeline local reference)
-            if prefix == 'input':
-                return ('input', key)
-            # Check if it's 'integration.key' pattern (simulation result reference)
-            # integration.transient -> transient simulation data
-            # integration.result -> main simulation data
-            if prefix == 'integration':
-                return ('integration', key)
-            # Check if it's a known observation name
-            if prefix in observations:
-                return ('observation', (prefix, key))
-        # Try to convert to numeric
-        try:
-            if '.' in val:
-                return ('literal', float(val))
-            else:
-                return ('literal', int(val))
-        except ValueError:
-            pass
-    return ('literal', val)
+    if not isinstance(val, str):
+        return ('literal', val)
 
-# Build a lookup dict for experiment.functions by name
-# This allows pipeline steps to reference functions by name without inline definitions
-exp_functions_by_name = {}
+    # Check for prefix.key syntax
+    if '.' in val and not is_numeric_string(val):
+        prefix, key = val.split('.', 1)
+
+        if prefix == 'input':
+            return ('input', key)
+        if prefix == 'integration':
+            return ('integration', key)
+        # Self-referential: bold.hrf_kernel within bold observation
+        if current_obs_name and prefix == current_obs_name:
+            return ('step', key)
+        if prefix in observations:
+            return ('observation', (prefix, key))
+
+    # Check for direct step name reference (e.g., hrf_kernel)
+    if step_names and val in step_names:
+        return ('step', val)
+
+    # Check for source observation reference (e.g., 'bold' when source_observation: bold)
+    # This happens when an observation references its source observation's data
+    if val in observations:
+        return ('source_data', val)
+
+    # Try numeric conversion
+    try:
+        return ('literal', float(val) if '.' in val else int(val))
+    except ValueError:
+        return ('literal', val)
+
+def ref_to_code(ref_type, ref_val, state_idx=None):
+    """Convert reference to Python code expression."""
+    if ref_type == 'step':
+        return f"_outputs['{ref_val}']"
+    if ref_type == 'input':
+        return f"_outputs['{ref_val}']"
+    if ref_type == 'source_data':
+        # Reference to source observation data (already in _outputs['data'] or _outputs)
+        return "_outputs.get('data', _outputs)"
+    if ref_type == 'integration':
+        if ref_val == 'transient':
+            if state_idx is not None:
+                # Slice to source state and squeeze state dimension → (time, nodes)
+                return f"_result_transient.data[:, {state_idx}, :]"
+            return "_result_transient.data"
+        if ref_val == 'result':
+            if state_idx is not None:
+                # Slice to source state and squeeze state dimension → (time, nodes)
+                return f"_result.data[:, {state_idx}, :]"
+            return "_result.data"
+        return f"_result_{ref_val}"
+    if ref_type == 'observation':
+        obs_name, key = ref_val
+        return f"_{obs_name}_result['{key}']"
+    return repr(ref_val)
+
+# =============================================================================
+# Data Collection
+# =============================================================================
+
+# Build function lookup from experiment.functions
+_exp_functions = get_attr(experiment, 'functions', {})
 if hasattr(_exp_functions, 'items'):
-    for fname, fdef in _exp_functions.items():
-        exp_functions_by_name[str(fname)] = fdef
-elif hasattr(_exp_functions, '__iter__'):
-    for fdef in _exp_functions:
-        name = getattr(fdef, 'name', None)
+    functions_by_name = {str(k): v for k, v in _exp_functions.items()}
+else:
+    functions_by_name = {str(get_attr(f, 'name', '')): f for f in (_exp_functions or [])}
+
+# User-defined function names for expression rendering
+user_functions = {name: name for name in functions_by_name.keys()}
+jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
+
+# Get observations dict
+_obs_raw = get_attr(experiment, 'observations', {})
+if hasattr(_obs_raw, 'items'):
+    observations = dict(_obs_raw.items())
+elif hasattr(_obs_raw, '__iter__') and not isinstance(_obs_raw, dict):
+    observations = {get_attr(o, 'name', f'obs_{i}'): o for i, o in enumerate(_obs_raw)}
+else:
+    observations = {}
+
+# =============================================================================
+# Parse Pipeline Step
+# =============================================================================
+def parse_step(func, step_name):
+    """Parse a pipeline step into a clean dict structure."""
+    _inp = get_attr(func, 'input')
+    step = {
+        'name': step_name,
+        'output': get_attr(func, 'output'),
+        'input': str(_inp) if _inp else None,
+        'callable': None,
+        'equation': None,
+        'equation_params': {},  # Local equation constants, not function args
+        'source_code': get_attr(func, 'source_code'),
+        'arguments': {},
+        'arg_names': [],
+        'apply_on_dimension': None,
+    }
+
+    # Parse apply_on_dimension (for vmap generation)
+    apply_dim = get_attr(func, 'apply_on_dimension')
+    if apply_dim:
+        step['apply_on_dimension'] = str(apply_dim).split('.')[-1]  # Handle 'DimensionType.node' -> 'node'
+
+    # Parse callable (inline on FunctionCall or on Function)
+    c = get_attr(func, 'callable')
+    if c:
+        cname = get_attr(c, 'name')
+        cmodule = get_attr(c, 'module')
+        step['callable'] = {
+            'name': cname,
+            'module': cmodule,
+            # Full qualified call: module.name
+            'full_call': f"{cmodule}.{cname}" if cmodule else cname,
+        }
+
+    # Parse equation
+    eq = get_attr(func, 'equation')
+    if eq:
+        step['equation'] = get_attr(eq, 'rhs')
+        # Note: equation.parameters are LOCAL constants, not function arguments
+        # They are used when rendering the equation, not passed as kwargs
+        step['equation_params'] = {}
+        for pname, pobj in (get_attr(eq, 'parameters') or {}).items():
+            if hasattr(pobj, 'value'):
+                step['equation_params'][str(pname)] = to_numeric(pobj.value)
+
+    # Parse arguments (these ARE function arguments)
+    for arg in (get_attr(func, 'arguments') or []):
+        name = get_attr(arg, 'name')
         if name:
-            exp_functions_by_name[str(name)] = fdef
+            step['arg_names'].append(name)
+            val = get_attr(arg, 'value')
+            if val is not None:
+                step['arguments'][name] = val
 
-def lookup_function_def(step_name):
-    """Look up function definition from experiment.functions by name."""
-    return exp_functions_by_name.get(step_name)
+    # Lookup from functions section if no inline definition
+    if not (step['source_code'] or step['callable'] or step['equation']):
+        fn_def = functions_by_name.get(step_name)
+        if fn_def:
+            step['source_code'] = get_attr(fn_def, 'source_code')
 
-# Get observations
-observations = getattr(experiment, 'observations', None) or {}
-if hasattr(observations, 'values'):
-    observations = dict(observations.items()) if hasattr(observations, 'items') else {}
-elif hasattr(observations, '__iter__') and not isinstance(observations, dict):
-    observations = {getattr(o, 'name', f'obs_{i}'): o for i, o in enumerate(observations)}
+            fn_callable = get_attr(fn_def, 'callable')
+            if fn_callable:
+                cname = get_attr(fn_callable, 'name')
+                cmodule = get_attr(fn_callable, 'module')
+                step['callable'] = {
+                    'name': cname,
+                    'module': cmodule,
+                    'full_call': f"{cmodule}.{cname}" if cmodule else cname,
+                }
 
-# Collect all unique imports from callables across all observations AND experiment.functions
+            fn_eq = get_attr(fn_def, 'equation')
+            if fn_eq:
+                step['equation'] = get_attr(fn_eq, 'rhs')
+
+            # Merge function arguments (step args take precedence)
+            for arg in (get_attr(fn_def, 'arguments') or []):
+                name = get_attr(arg, 'name')
+                if name and name not in step['arg_names']:
+                    step['arg_names'].append(name)
+                val = get_attr(arg, 'value')
+                if name and val is not None and name not in step['arguments']:
+                    step['arguments'][name] = to_numeric(val)
+
+    return step
+
+# =============================================================================
+# Analyze Pipeline
+# =============================================================================
+def analyze_pipeline(pipeline):
+    """Analyze pipeline to determine data requirements."""
+    needs_transient = False
+    needs_result = False
+
+    for step in pipeline:
+        # Check step input field
+        step_input = step.get('input')
+        if step_input:
+            ref_type, ref_val = parse_reference(step_input)
+            if ref_type == 'integration':
+                if 'transient' in str(ref_val):
+                    needs_transient = True
+                if 'result' in str(ref_val):
+                    needs_result = True
+
+        # Check arguments
+        for val in step.get('arguments', {}).values():
+            ref_type, ref_val = parse_reference(val)
+            if ref_type == 'integration':
+                if 'transient' in str(ref_val):
+                    needs_transient = True
+                if 'result' in str(ref_val):
+                    needs_result = True
+
+    return needs_transient, needs_result
+
+def is_kernel_generator(step_name):
+    """Check if function is a kernel generator (has time_range)."""
+    fn_def = functions_by_name.get(step_name)
+    return fn_def and get_attr(fn_def, 'time_range')
+
+def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx):
+    """Build a vmap-wrapped callable for apply_on_dimension: node.
+
+    For fftconvolve: vmap(lambda x: fftconvolve(x, kernel, mode='valid'), in_axes=1, out_axes=1)(data)
+    """
+    args = step['arguments']
+    arg_names = list(args.keys())
+
+    # First argument is the data being vmapped over
+    data_arg = arg_names[0] if arg_names else 'x'
+    data_val = args.get(data_arg)
+    ref_type, ref_val = parse_reference(data_val, step_names=step_names, current_obs_name=current_obs_name)
+    data_code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
+
+    # Remaining arguments are constants (kernel, mode, etc.)
+    const_args = []
+    for name in arg_names[1:]:
+        val = args[name]
+        ref_type, ref_val = parse_reference(val, step_names=step_names, current_obs_name=current_obs_name)
+        if ref_type == 'literal':
+            # Quote strings
+            if isinstance(ref_val, str):
+                const_args.append(f"'{ref_val}'")
+            else:
+                const_args.append(str(ref_val))
+        else:
+            const_args.append(ref_to_code(ref_type, ref_val, state_idx=state_idx))
+
+    const_str = ', '.join(const_args) if const_args else ''
+    inner_call = f"{callable_ref}(x, {const_str})" if const_str else f"{callable_ref}(x)"
+
+    return f"jax.vmap(lambda x: {inner_call}, in_axes=1, out_axes=1)({data_code})"
+
+# =============================================================================
+# Build Step Call
+# =============================================================================
+def build_step_call(step, step_input, step_names=None, current_obs_name=None, state_idx=None):
+    """Build the function call for a pipeline step.
+
+    For inline callables (step has 'callable'), use only explicit arguments.
+    For defined functions, may add implicit input if needed.
+    """
+    args = step['arguments']
+    keyword = []
+    obs_deps = set()
+    has_inline_callable = step.get('callable') is not None
+
+    for name, val in args.items():
+        ref_type, ref_val = parse_reference(val, step_names=step_names, current_obs_name=current_obs_name)
+        code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
+
+        if ref_type == 'observation':
+            obs_deps.add(ref_val[0])
+
+        keyword.append(f"{name}={code}")
+
+    # For inline callables, use ONLY explicit arguments - no implicit input
+    # For defined functions without explicit args, may need implicit input
+    if not has_inline_callable and not args and not is_kernel_generator(step['name']):
+        # Parse step_input as a reference
+        ref_type, ref_val = parse_reference(step_input, step_names=step_names, current_obs_name=current_obs_name)
+        input_code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
+        if ref_type == 'literal' and isinstance(ref_val, str):
+            input_code = f"_outputs['{ref_val}']"
+        keyword.insert(0, input_code)  # As positional first arg
+
+    call_args = ', '.join(keyword)
+    return call_args, obs_deps
+
+# =============================================================================
+# Parse All Observations
+# =============================================================================
+obs_list = []
 callable_imports = {}  # {module: set(qualnames)}
 
-# First collect from experiment.functions
-for fname, fdef in exp_functions_by_name.items():
-    callable_def = getattr(fdef, 'callable', None)
-    if callable_def:
-        module = getattr(callable_def, 'module', None)
-        qualname = getattr(callable_def, 'qualname', None)
-        if module and qualname:
-            if module not in callable_imports:
-                callable_imports[module] = set()
-            callable_imports[module].add(qualname)
-
-# Then collect from inline observation pipeline callables
 for obs_name, obs in observations.items():
-    pipeline = getattr(obs, 'pipeline', None) or []
-    for func in pipeline:
-        callable_def = getattr(func, 'callable', None)
-        if callable_def:
-            module = getattr(callable_def, 'module', None)
-            qualname = getattr(callable_def, 'qualname', None)
-            if module and qualname:
-                if module not in callable_imports:
-                    callable_imports[module] = set()
-                callable_imports[module].add(qualname)
-
-# Parse observations into structured info
-obs_list = []
-
-for obs_name, obs in observations.items():
-    obs_info = {
+    info = {
         'name': obs_name,
-        'label': getattr(obs, 'label', ''),
-        'description': getattr(obs, 'description', ''),
+        'label': get_attr(obs, 'label', ''),
+        'description': get_attr(obs, 'description', ''),
         'source': None,
         'source_observation': None,
         'pipeline': [],
     }
 
     # Source state variable
-    if hasattr(obs, 'source') and obs.source:
-        src = obs.source
-        obs_info['source'] = getattr(src, 'name', str(src)) if hasattr(src, 'name') else str(src)
+    src = get_attr(obs, 'source')
+    if src:
+        info['source'] = get_attr(src, 'name', str(src)) if hasattr(src, 'name') else str(src)
 
-    # Source observation (for derived observations)
-    if hasattr(obs, 'source_observation') and obs.source_observation:
-        src_obs = obs.source_observation
-        obs_info['source_observation'] = getattr(src_obs, 'name', str(src_obs)) if hasattr(src_obs, 'name') else str(src_obs)
+    # Source observation
+    src_obs = get_attr(obs, 'source_observation')
+    if src_obs:
+        info['source_observation'] = get_attr(src_obs, 'name', str(src_obs)) if hasattr(src_obs, 'name') else str(src_obs)
 
-    # Parse pipeline steps
-    pipeline = getattr(obs, 'pipeline', None) or []
-    for func in pipeline:
-        step_name = getattr(func, 'name', 'step')
-        func_info = {
-            'name': step_name,
-            'output': getattr(func, 'output', None),
-            'input': None,
-            'callable': None,
-            'equation': None,
-            'source_code': None,
-            'arguments': {},
-            'arg_names': [],  # All argument names (even without values) for equation parsing
-        }
+    # Parse pipeline - handle FunctionCall objects
+    for func_call in (get_attr(obs, 'pipeline') or []):
+        # FunctionCall can have:
+        # 1. function: reference to a defined Function
+        # 2. callable: inline callable specification (no function reference needed)
 
-        # Input reference
-        if hasattr(func, 'input') and func.input:
-            inp = func.input
-            func_info['input'] = getattr(inp, 'name', str(inp)) if hasattr(inp, 'name') else str(inp)
+        func_ref = get_attr(func_call, 'function')
+        inline_callable = get_attr(func_call, 'callable')
 
-        # Callable reference
-        callable_def = getattr(func, 'callable', None)
-        if callable_def:
-            func_info['callable'] = {
-                'name': getattr(callable_def, 'name', None),
-                'module': getattr(callable_def, 'module', None),
-                'qualname': getattr(callable_def, 'qualname', None),
-            }
+        if func_ref:
+            # Referenced function - get name from function reference
+            step_name = str(func_ref) if isinstance(func_ref, str) else get_attr(func_ref, 'name', str(func_ref))
+            # Look up the actual Function definition
+            func_def = functions_by_name.get(step_name)
+            # Parse using Function definition with FunctionCall overrides
+            step = parse_step(func_def or func_call, step_name)
+        elif inline_callable:
+            # Inline callable - use output or callable.name as step identifier
+            cname = get_attr(inline_callable, 'name')
+            step_name = get_attr(func_call, 'output') or cname or 'callable_step'
+            # Parse the FunctionCall directly (it has the callable)
+            step = parse_step(func_call, step_name)
+        else:
+            # Fallback
+            step_name = get_attr(func_call, 'name', 'step')
+            step = parse_step(func_call, step_name)
 
-        # Source code (inline function definition)
-        source_code = getattr(func, 'source_code', None)
-        if source_code:
-            func_info['source_code'] = str(source_code)
+        # Override arguments from FunctionCall if provided
+        for arg in (get_attr(func_call, 'arguments') or []):
+            name = get_attr(arg, 'name')
+            val = get_attr(arg, 'value')
+            if name and val is not None:
+                step['arguments'][str(name)] = val
+                if str(name) not in step['arg_names']:
+                    step['arg_names'].append(str(name))
 
-        # Equation
-        eq = getattr(func, 'equation', None)
-        if eq:
-            func_info['equation'] = getattr(eq, 'rhs', None)
-            # Extract equation parameters
-            eq_params = getattr(eq, 'parameters', None) or {}
-            if hasattr(eq_params, 'items'):
-                for pname, pobj in eq_params.items():
-                    if hasattr(pobj, 'value'):
-                        func_info['arguments'][pname] = to_numeric(pobj.value)
+        info['pipeline'].append(step)
 
-        # Arguments from inline step - store raw values for reference resolution later
-        args = getattr(func, 'arguments', None) or []
-        if hasattr(args, '__iter__'):
-            for arg in args:
-                arg_name = getattr(arg, 'name', None)
-                arg_value = getattr(arg, 'value', None)
-                if arg_name:
-                    # Track all argument names for equation parsing
-                    if arg_name not in func_info['arg_names']:
-                        func_info['arg_names'].append(arg_name)
-                    # Store raw value (will be parsed for references in code generation)
-                    if arg_value is not None:
-                        func_info['arguments'][arg_name] = arg_value  # Keep raw for reference parsing
+        # Collect callable imports (use module for import)
+        c = step['callable']
+        if c and c.get('module'):
+            # Import the top-level module
+            callable_imports.setdefault(c['module'], set())
 
-        # === LOOKUP from experiment.functions if no inline definition ===
-        # If step has no source_code/callable/equation, look up by name in experiment.functions
-        has_inline_def = bool(func_info['source_code'] or func_info['callable'] or func_info['equation'])
-        if not has_inline_def:
-            fn_def = lookup_function_def(step_name)
-            if fn_def:
-                # Get source_code from function definition
-                fn_source = getattr(fn_def, 'source_code', None)
-                if fn_source:
-                    func_info['source_code'] = str(fn_source)
+    obs_list.append(info)
 
-                # Get callable from function definition
-                fn_callable = getattr(fn_def, 'callable', None)
-                if fn_callable:
-                    func_info['callable'] = {
-                        'name': getattr(fn_callable, 'name', None),
-                        'module': getattr(fn_callable, 'module', None),
-                        'qualname': getattr(fn_callable, 'qualname', None),
-                    }
+# Also collect imports from functions section
+for fname, fdef in functions_by_name.items():
+    c = get_attr(fdef, 'callable')
+    if c:
+        module = get_attr(c, 'module')
+        if module:
+            callable_imports.setdefault(module, set())
 
-                # Get equation from function definition
-                fn_eq = getattr(fn_def, 'equation', None)
-                if fn_eq:
-                    func_info['equation'] = getattr(fn_eq, 'rhs', None)
-
-                # Merge arguments from function definition (step args take precedence)
-                fn_args = getattr(fn_def, 'arguments', None) or []
-                if hasattr(fn_args, '__iter__'):
-                    for arg in fn_args:
-                        arg_name = getattr(arg, 'name', None)
-                        arg_value = getattr(arg, 'value', None)
-                        if arg_name:
-                            # Track all argument names for equation parsing
-                            if arg_name not in func_info['arg_names']:
-                                func_info['arg_names'].append(arg_name)
-                            # Only add to 'arguments' dict if has a value (for code generation)
-                            if arg_value is not None and arg_name not in func_info['arguments']:
-                                func_info['arguments'][arg_name] = to_numeric(arg_value)
-
-        obs_info['pipeline'].append(func_info)
-
-    obs_list.append(obs_info)
+# Determine unique top-level modules to import
+top_level_modules = set()
+for module in callable_imports.keys():
+    top_level_modules.add(module.split('.')[0])
 %>
 """
 Observation Functions for tvboptim
 ==================================
 
-Auto-generated from TVBO pipeline-based Observation definitions.
+Auto-generated from TVBO Observation definitions.
 
-Observations defined: ${len(obs_list)}
+Observations: ${len(obs_list)}
 % for obs in obs_list:
-- ${obs['name']}: ${obs['label'] or obs['description'][:50] + '...' if obs['description'] and len(obs['description']) > 50 else obs['description'] or 'No description'}
+- ${obs['name']}: ${obs['label'] or obs['description'][:50] + '...' if obs['description'] and len(obs['description']) > 50 else obs['description'] or '(no description)'}
 % endfor
 """
 
 import jax
 import jax.numpy as jnp
 import numpy as np
-from typing import Tuple, Any
+from typing import Any
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 
-# Pipeline callable imports
-% for module, qualnames in sorted(callable_imports.items()):
-% if '.' in module:
-<%
-    parts = module.split('.')
-    base_module = parts[0]
-%>
-import ${base_module}
-% for qn in sorted(qualnames):
-${qn} = ${module}.${qn}
-% endfor
-% else:
-from ${module} import ${', '.join(sorted(qualnames))}
+# Callable module imports
+% for module in sorted(top_level_modules):
+% if module not in ('jax', 'numpy', 'np', 'jnp'):
+import ${module}
 % endif
 % endfor
 
@@ -314,215 +454,118 @@ from ${module} import ${', '.join(sorted(qualnames))}
     obs_source = obs['source']
     obs_src_obs = obs['source_observation']
     pipeline = obs['pipeline']
-    has_pipeline = len(pipeline) > 0
+
+    # Analyze pipeline for data requirements
+    needs_transient, needs_result_from_pipeline = analyze_pipeline(pipeline)
+
+    # Determine state index from source
+    state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else None
+
+    # Determine simulation needs
+    needs_simulation = bool(obs_source) or needs_result_from_pipeline
+    if not obs_src_obs and not obs_source and pipeline:
+        # Check if any step needs implicit simulation input
+        for step in pipeline:
+            has_data_ref = any(
+                parse_reference(v)[0] in ('observation', 'input', 'integration')
+                for v in step.get('arguments', {}).values()
+            )
+            if not has_data_ref and not step.get('input') and not is_kernel_generator(step['name']):
+                needs_simulation = True
+                break
+
+    # Determine final output key
+    final_key = pipeline[-1]['output'] or pipeline[-1]['name'] if pipeline else 'data'
 %>
 
-def ${obs_name}(model_fn, state, dt: float = ${dt}, **kwargs) -> Any:
+def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwargs) -> Bunch:
     """${obs['label'] or obs_name}
 
     ${obs['description'] or 'Auto-generated observation function.'}
-% if has_pipeline:
+% if pipeline:
 
-    Pipeline steps:
-% for i, step in enumerate(pipeline):
-    ${i + 1}. ${step['name']}: ${'callable=' + step['callable']['module'] + '.' + step['callable']['name'] if step['callable'] and step['callable']['module'] else 'equation=' + (step['equation'][:40] + '...' if step['equation'] and len(step['equation']) > 40 else step['equation'] or 'N/A')}
-% endfor
+    Pipeline: ${' -> '.join([s['name'] for s in pipeline])}
 % endif
+
+    Returns
+    -------
+    Bunch
+        All pipeline outputs. Primary output: '${final_key}'
     """
-    # Initialize outputs dictionary
-    _outputs = {}
+    _outputs = Bunch() if outputs is None else outputs
 
-<%
-    # Determine if this observation needs simulation data or is purely derived
-    # An observation is purely derived if:
-    # 1. No source state variable
-    # 2. No source_observation
-    # 3. Has a pipeline AND all pipeline data comes from observation references
-
-    needs_simulation = False
-    needs_transient = False  # Track if integration.transient is referenced
-
-    if obs_src_obs:
-        needs_simulation = False  # Uses another observation's output
-    elif obs_source:
-        needs_simulation = True  # Uses a state variable directly
-    elif has_pipeline:
-        # Check if any pipeline step has NO data references (i.e., uses implicit input from simulation)
-        for step in pipeline:
-            step_has_data_ref = False
-            for aname, aval in step.get('arguments', {}).items():
-                ref_type, ref_val = parse_arg_value(aval)
-                if ref_type in ('observation', 'input'):
-                    step_has_data_ref = True
-                elif ref_type == 'integration':
-                    # Track integration references
-                    if ref_val == 'transient':
-                        needs_transient = True
-                    elif ref_val == 'result':
-                        needs_simulation = True
-            # Check if step is a kernel generator (time_range function) - doesn't need simulation
-            step_fn_def = exp_functions_by_name.get(step['name'])
-            step_is_kernel_gen = step_fn_def and getattr(step_fn_def, 'time_range', None)
-            if not step_has_data_ref and not step.get('input') and not step_is_kernel_gen:
-                # Step has no data references, no explicit input, and is not a kernel generator -> needs simulation
-                needs_simulation = True
-    else:
-        # No pipeline, no source - assume needs simulation
-        needs_simulation = True
-%>
 % if obs_src_obs:
-    # Derived observation - get data from source observation
-    _source_result = ${obs_src_obs}(model_fn, state, dt=dt, **kwargs)
-    if isinstance(_source_result, dict):
-        _outputs.update(_source_result)
-    else:
-        _outputs['data'] = _source_result
+    # Source: ${obs_src_obs} observation
+    _source = ${obs_src_obs}(model_fn, state, dt=dt, outputs=_outputs, **kwargs)
+    _outputs.update(_source)
+    _outputs['data'] = _source.get(_source._primary_key, _source.get('data'))
 % elif obs_source:
-    # Root observation - use pre-computed result if available, otherwise run simulation
-    _result = kwargs.get('result', None)
-    if _result is None:
-        _result = model_fn(state)
-    _outputs['data'] = _result.data[:, ${state_names.index(obs_source) if obs_source in state_names else 0}, :]
+    # Source: ${obs_source} state variable (index ${state_idx})
+    _result = kwargs.get('result') or model_fn(state)
+    _outputs['data'] = _result.data[:, ${state_idx}, :]  # Shape: (time, nodes)
 % elif needs_simulation:
-    # Generic observation - use pre-computed result if available, otherwise run simulation
-    _result = kwargs.get('result', None)
-    if _result is None:
-        _result = model_fn(state)
+    # Get simulation result
+    _result = kwargs.get('result') or model_fn(state)
     _outputs['data'] = _result.data
-% else:
-    # Purely derived observation - all data comes from other observations via references
-    pass
 % endif
 % if needs_transient:
-    # Get transient simulation data (integration.transient reference)
-    _result_transient = kwargs.get('result_transient', None)
+    # Integration transient data
+    _result_transient = kwargs.get('result_transient')
 % endif
-% if has_pipeline:
+% if pipeline:
 
-    # Execute pipeline
+    # Pipeline execution
+<%
+    # Collect all step names in this pipeline for reference resolution
+    step_names = {s['name'] for s in pipeline}
+%>
 % for step_idx, step in enumerate(pipeline):
 <%
     step_name = step['name']
-    # Last step defaults to observation name, intermediate steps default to 'data'
-    is_last_step = (step_idx == len(pipeline) - 1)
-    step_output = step['output'] or (obs_name if is_last_step else 'data')
-    step_input = step['input'] or 'data'
-    step_callable = step['callable']
-    step_equation = step['equation']
-    step_source_code = step['source_code']
-    step_args = step['arguments']  # Arguments with values (for kwargs)
-    step_arg_names = step.get('arg_names', [])  # All argument names
+    is_last = step_idx == len(pipeline) - 1
+    # Output defaults to function name (declarative: function name = output key)
+    step_output = step['output'] or step_name
+    # Input defaults to previous step's output, or 'data' for first step
+    prev_output = pipeline[step_idx - 1]['output'] or pipeline[step_idx - 1]['name'] if step_idx > 0 else 'data'
+    step_input = step['input'] or prev_output
 
-    # Check if this function is defined globally in experiment.functions
-    fn_is_global = step_name in exp_functions_by_name
+    call_args, obs_deps = build_step_call(step, step_input, step_names=step_names, current_obs_name=obs_name, state_idx=state_idx)
 
-    # Get the global function definition if available
-    fn_def = exp_functions_by_name.get(step_name)
-    fn_def_args = []
-    if fn_def:
-        fn_args_raw = getattr(fn_def, 'arguments', None) or []
-        if hasattr(fn_args_raw, '__iter__'):
-            for a in fn_args_raw:
-                aname = getattr(a, 'name', None)
-                if aname:
-                    fn_def_args.append(str(aname))
-
-    # Parse argument values for references
-    # Build list of (arg_name, code_expr) where code_expr is Python code to get the value
-    arg_code_parts = []
-    obs_calls_needed = set()  # Observations that need to be called first
-    has_data_reference = False  # Track if any arg is a data reference (observation/input)
-
-    for aname, aval in step_args.items():
-        ref_type, ref_val = parse_arg_value(aval)
-        if ref_type == 'observation':
-            obs_name, key = ref_val
-            obs_calls_needed.add(obs_name)
-            code_expr = f"_{obs_name}_result['{key}']"
-            has_data_reference = True
-        elif ref_type == 'input':
-            code_expr = f"_outputs['{ref_val}']"
-            has_data_reference = True
-        elif ref_type == 'integration':
-            # Map integration.transient -> _result_transient, integration.result -> _result
-            if ref_val == 'transient':
-                code_expr = "_result_transient.data"
-            elif ref_val == 'result':
-                code_expr = "_result.data"
-            else:
-                code_expr = f"_result_{ref_val}"
-        else:
-            code_expr = repr(ref_val)
-        arg_code_parts.append((aname, code_expr))
-
-    # Determine the first positional argument (the input data)
-    # If first explicit arg is named data/x/a/arr/input/array, use it positionally
-    # If no data references in args, use _outputs[step_input] as implicit first arg
-    # If explicit data references exist, only use those (no implicit input)
-    positional_args = []
-    kwarg_parts = []
-
-    for i, (aname, code) in enumerate(arg_code_parts):
-        if i == 0 and aname.lower() in ('data', 'x', 'a', 'arr', 'input', 'array'):
-            # First arg is explicitly the data - use positionally
-            positional_args.append(code)
-        else:
-            kwarg_parts.append(f"{aname}={code}")
-
-    # Check if function has time_range (kernel generator - generates data, no input needed)
-    fn_has_time_range = fn_def and getattr(fn_def, 'time_range', None)
-
-    # Add implicit pipeline input if there are no data references
-    # (i.e., args are only default values like step=10, fs=100.0)
-    # BUT skip for kernel generators (time_range functions) that don't take data input
-    if not has_data_reference and not fn_has_time_range:
-        positional_args.insert(0, f"_outputs['{step_input}']")
-
-    # Build full args string
-    all_args = positional_args + kwarg_parts
-    args_str = ', '.join(all_args)
-
-    # Check if output contains comma (multiple outputs)
     outputs = [o.strip() for o in step_output.split(',')]
-    is_multi_output = len(outputs) > 1
     output_lhs = ', '.join([f"_outputs['{o}']" for o in outputs])
+
+    fn_is_global = step_name in functions_by_name
+    step_callable = step['callable']
+    apply_dim = step.get('apply_on_dimension')
 %>
-    # Step: ${step_name} (${step_input} -> ${step_output})
-% for obs_call in sorted(obs_calls_needed):
-    if '_${obs_call}_result' not in dir():
-        _${obs_call}_result = ${obs_call}(model_fn, state, dt=dt, **kwargs)
+    # ${step_name}: ${step_input} -> ${step_output}
+% for dep in sorted(obs_deps):
+    _${dep}_result = _${dep}_result if '_${dep}_result' in dir() else ${dep}(model_fn, state, dt=dt, **kwargs)
 % endfor
 % if fn_is_global:
-    ${output_lhs} = ${step_name}(${args_str})
-% elif step_callable and step_callable.get('module') and step_callable.get('qualname'):
-<%
-    fn_ref = step_callable['name']
-%>
-% if is_multi_output:
-    ${output_lhs} = ${fn_ref}(${args_str})
+    ${output_lhs} = ${step_name}(${call_args})
+% elif step_callable and step_callable.get('full_call'):
+% if apply_dim == 'node':
+    # apply_on_dimension: node - vmap over axis=1 (nodes)
+    ${output_lhs} = ${build_vmap_call(step_callable['full_call'], step, step_names, obs_name, state_idx)}
 % else:
-    _outputs['${step_output}'] = ${fn_ref}(${args_str})
+    ${output_lhs} = ${step_callable['full_call']}(${call_args})
 % endif
-% elif step_source_code:
-    # Inline source_code (should be rare - prefer defining functions globally)
-    _outputs['${step_output}'] = (lambda _in: ${step_source_code.replace('_input', '_in') if '_input' in step_source_code else step_source_code})(_outputs['${step_input}'])
-% elif step_equation:
+% elif step['source_code']:
+    ${output_lhs} = (lambda _in: ${step['source_code'].replace('_input', '_in')})(_outputs['${step_input}'])
+% elif step['equation']:
 <%
-    step_param_names = step_arg_names if step_arg_names else list(step_args.keys()) if step_args else []
-    rendered_eq = jaxcode(step_equation, parameters=step_param_names)
+    params = step['arg_names'] or list(step['arguments'].keys())
 %>
-    # Inline equation (should be rare - prefer defining functions globally)
-    _outputs['${step_output}'] = ${rendered_eq}
+    ${output_lhs} = ${jaxcode(step['equation'], params)}
 % else:
-    raise NotImplementedError("Pipeline step '${step_name}' has no implementation - define it in functions section")
+    raise NotImplementedError("Step '${step_name}' has no implementation")
 % endif
 % endfor
 % endif
 
-    # Return: if only output is the observation name itself, return value directly
-    # Otherwise return full dict
-    if list(_outputs.keys()) == ['${obs_name}']:
-        return _outputs['${obs_name}']
+    # Mark primary output for convenience
+    _outputs._primary_key = '${final_key}'
     return _outputs
 
 % endfor

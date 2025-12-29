@@ -29,16 +29,23 @@ from tvbo.export.code import render_expression, parse_eq
 # =============================================================================
 
 def get_func_args(func):
-    """Extract argument names from a Function object.
+    """Extract positional argument names (those WITHOUT default values).
 
     Handles both dict-style (func.arguments.values()) and list-style arguments.
+    Only returns arguments that don't have a value set (positional args).
     """
     if not func.arguments:
         return []
     args = func.arguments
     if hasattr(args, 'values'):
         args = args.values()
-    return [arg.name if hasattr(arg, 'name') else str(arg) for arg in args]
+    # Only include args WITHOUT values (positional args)
+    # Args WITH values go in get_func_params_with_defaults
+    return [
+        arg.name if hasattr(arg, 'name') else str(arg)
+        for arg in args
+        if not (hasattr(arg, 'value') and arg.value is not None)
+    ]
 
 
 def get_func_params_with_defaults(func):
@@ -156,12 +163,17 @@ def ${func.name}(${signature}):\
 <%
     """Generate a complete function definition.
 
-    Handles equation-based, source-code, and time-range functions.
-    For callable-based or aggregation, use specialized defs.
+    Handles all function types:
+    - source_code: Raw Python code
+    - time_range: Kernel generators with time array
+    - callable: External function wrappers with apply_on_dimension support
+    - equation: Symbolic expression
     """
     # Determine function type and generate body
     source = get_source_code(func)
     rhs = get_equation_rhs(func)
+    has_callable = hasattr(func, 'callable') and func.callable is not None
+    has_time_range = hasattr(func, 'time_range') and func.time_range
 
     # Build docstring
     doc = docstring or (func.description if hasattr(func, 'description') and func.description else None)
@@ -172,9 +184,33 @@ def ${func.name}(${signature}):\
     all_args = args + param_strs
     signature = ', '.join(all_args)
 
-    # Compute body inline (avoid calling render_body which confuses Mako context)
+    # Collect all parameter names for expression rendering
+    all_param_names = args + [name for name, _ in params]
+
+    # Handle callable-based functions
+    callable_ref = None
+    callable_name = None
+    apply_on_node = False
+    is_simple_callable = False  # No wrapper needed, just import
+    if has_callable:
+        c = func.callable
+        module = getattr(c, 'module', None)
+        callable_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
+        # Use _callable_{name} as reference (assumes import generated elsewhere)
+        if module and callable_name:
+            callable_ref = f"_callable_{callable_name}"
+        elif callable_name:
+            callable_ref = callable_name
+        # Check apply_on_dimension
+        apply_dim = get_enum_text(getattr(func, 'apply_on_dimension', None))
+        apply_on_node = apply_dim == 'node'
+        # Check if simple callable (no wrapper needed): no args with defaults, no apply_on_dimension, name matches
+        if not apply_on_node and not params and str(func.name) == callable_name:
+            is_simple_callable = True
+
+    # Compute body for equation-based functions
     body = None
-    if rhs and not source and not (hasattr(func, 'time_range') and func.time_range):
+    if rhs and not source and not has_time_range and not has_callable:
         if render_func is not None:
             body = render_func(func)
         elif '[' in rhs and ('::' in rhs or ':' in rhs):
@@ -182,7 +218,7 @@ def ${func.name}(${signature}):\
             body = rhs
         else:
             # Parse and render symbolic expression
-            body = render_expression(rhs, format=format, user_functions=user_functions or {})
+            body = render_expression(rhs, format=format, user_functions=user_functions or {}, parameters=all_param_names)
 %>\
 % if source:
 ## Source code function - use raw code
@@ -190,10 +226,31 @@ def ${func.name}(${signature}):
 % if doc:
     """${doc}"""
 % endif
-${source | trim}
-% elif hasattr(func, 'time_range') and func.time_range:
+    return ${source | trim}
+% elif has_time_range:
 ## Time-range kernel generator
 ${time_range_function(func, format=format)}
+% elif has_callable and callable_ref:
+## Callable-based function
+% if is_simple_callable:
+## Simple callable - no wrapper needed (just use import)
+## SKIP: ${func.name} = ${callable_ref} (import handles this)
+% elif apply_on_node and args:
+def ${func.name}(${signature}):
+% if doc:
+    """${doc}
+
+    Applied per-node via vmap (axis=1 in, axis=1 out).
+    """
+% endif
+    return jax.vmap(lambda x: ${callable_ref}(x, ${', '.join([f'{n}={n}' for n in [name for name, _ in params]])}), in_axes=1, out_axes=1)(${args[0]})
+% else:
+def ${func.name}(${signature}):
+% if doc:
+    """${doc}"""
+% endif
+    return ${callable_ref}(${', '.join(all_args)})
+% endif
 % elif rhs:
 ## Equation-based function
 def ${func.name}(${signature}):
@@ -211,49 +268,58 @@ def ${func.name}(${signature}):
 % endif
 </%def>
 
-<%def name="time_range_function(func, format='jax')">
+<%def name="time_range_function(func, format='jax', simple=None)">
 <%
-    """Generate a time-range based kernel/signal generator function."""
+    """Generate a time-range based kernel/signal generator function.
+    
+    Parameters
+    ----------
+    simple : bool, optional
+        If True, return just array (for tvboptim). If None, auto-detect from arguments.
+        If function has 'duration' and 'dt' arguments (no 'ts'), use simple mode.
+    """
     lo = func.time_range.lo if func.time_range.lo else 0
     hi = func.time_range.hi
-    step = func.time_range.step.replace('input.', 'ts.') if func.time_range.step else 'ts.sample_period'
+    step = func.time_range.step if func.time_range.step else 'dt'
 
+    # Get function arguments
+    args = get_func_args(func)
     params = get_func_params_with_defaults(func)
     param_strs = [f"{name}={value}" for name, value in params]
-    signature = ', '.join(['ts'] + param_strs)
 
-    # Render the equation body
+    # Auto-detect simple mode: if 'duration' and 'dt' are args, use simple output
+    if simple is None:
+        arg_names = set(args + [n for n, _ in params])
+        simple = ('duration' in arg_names or 'dt' in arg_names) and 'ts' not in arg_names
+
+    # Render the equation body with 't' as a known parameter
     rhs = get_equation_rhs(func)
-    body = render_expression(rhs, format=format) if rhs else '0.0'
-
-    # Check for expected time unit
-    expected_time_unit = None
+    eq_param_names = []
     if func.equation and hasattr(func.equation, 'parameters') and func.equation.parameters:
-        for param_name, param in func.equation.parameters.items():
-            if hasattr(param, 'unit') and param.unit in ['s', 'ms', 'us', 'ns']:
-                expected_time_unit = param.unit
-                break
-    if not expected_time_unit and func.arguments:
-        args = func.arguments.values() if hasattr(func.arguments, 'values') else func.arguments
-        for arg in args:
-            if hasattr(arg, 'unit') and arg.unit in ['s', 'ms', 'us', 'ns']:
-                expected_time_unit = arg.unit
-                break
+        eq_param_names = list(func.equation.parameters.keys())
+    all_params = ['t'] + eq_param_names + args + [n for n, _ in params]
+    body = render_expression(rhs, format=format, parameters=all_params) if rhs else '0.0'
 
     np_module = 'jnp' if format == 'jax' else 'np'
+
+    # Build signature
+    if simple:
+        signature = ', '.join(args + param_strs)
+    else:
+        signature = ', '.join(['ts'] + args + param_strs)
+        step = step.replace('input.', 'ts.') if isinstance(step, str) else step
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
-% if expected_time_unit:
-    # Auto-convert time units if necessary
-    if ts.units and ts.units.get('time') and ts.units.get('time') != '${expected_time_unit}':
-        ts = ts.convert_units('time', '${expected_time_unit}')
-% endif
     t = ${np_module}.arange(${lo}, ${hi}, ${step})
+% if simple:
+    return ${body}
+% else:
     data = ${body}
     return ts.duplicate(time=t, data=data, title='${func.name}')
+% endif
 </%def>
 
 <%def name="callable_function(func, format='jax', callable_ref=None)">
