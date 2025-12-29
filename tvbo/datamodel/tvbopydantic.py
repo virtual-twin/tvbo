@@ -288,19 +288,56 @@ class DimensionType(str, Enum):
     """
     State variable dimension
     """
+    node = "node"
+    """
+    Network node dimension (general graph term)
+    """
     region = "region"
     """
-    Spatial/regional dimension (nodes)
+    Spatial/regional dimension (alias for node in brain networks)
     """
     mode = "mode"
     """
     Mode dimension (e.g., coupling modes)
     """
-    venv = "venv"
-    docker = "docker"
-    singularity = "singularity"
-    system = "system"
-    other = "other"
+    sample = "sample"
+    """
+    Sample/trial/realization dimension
+    """
+    batch = "batch"
+    """
+    Batch dimension (for parallel processing)
+    """
+    frequency = "frequency"
+    """
+    Frequency dimension (spectral analysis)
+    """
+
+
+class ReductionType(str, Enum):
+    """
+    Operations for reducing/aggregating values across dimensions
+    """
+    mean = "mean"
+    """
+    Arithmetic mean
+    """
+    sum = "sum"
+    """
+    Sum of values
+    """
+    max = "max"
+    """
+    Maximum value
+    """
+    min = "min"
+    """
+    Minimum value
+    """
+    none = "none"
+    """
+    No reduction (return per-element values)
+    """
 
 
 
@@ -343,6 +380,8 @@ class BrainAtlas(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -388,6 +427,8 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -447,6 +488,8 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -490,6 +533,8 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -548,6 +593,8 @@ class Dataset(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -649,6 +696,8 @@ class Contact(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -709,6 +758,8 @@ class DBSProtocol(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -750,6 +801,8 @@ class ClinicalScale(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -793,6 +846,8 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -820,6 +875,8 @@ class ClinicalScore(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -917,6 +974,8 @@ class Equation(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1019,6 +1078,8 @@ class Stimulus(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1070,6 +1131,8 @@ class Stimulus(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1130,6 +1193,8 @@ class TemporalApplicableEquation(Equation):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1182,6 +1247,8 @@ class Parcellation(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1202,7 +1269,7 @@ class Parcellation(ConfiguredBaseModel):
                        'PDE']} })
     region_labels: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
     center_coordinates: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
-    data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram']} })
+    data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'Observation']} })
     atlas: BrainAtlas = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation']} })
 
 
@@ -1231,6 +1298,8 @@ class Tractogram(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1257,6 +1326,8 @@ class Tractogram(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1294,6 +1365,8 @@ class Tractogram(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1316,7 +1389,7 @@ class Tractogram(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    data_source: Optional[str] = Field(default=None, description="""Path or URI to the tractography data file""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram']} })
+    data_source: Optional[str] = Field(default=None, description="""Path or URI to the tractography data file""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'Observation']} })
     number_of_subjects: Optional[int] = Field(default=None, description="""Number of subjects in the tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
     acquisition: Optional[str] = Field(default=None, description="""Acquisition protocol or scanner information""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
     processing_pipeline: Optional[str] = Field(default=None, description="""Processing pipeline used to generate the tractography""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
@@ -1347,6 +1420,8 @@ class Matrix(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1384,6 +1459,8 @@ class Matrix(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1456,6 +1533,8 @@ class Network(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1493,6 +1572,8 @@ class Network(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1552,6 +1633,8 @@ class File(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1579,6 +1662,8 @@ class File(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1601,8 +1686,8 @@ class File(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    type: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'TuningObjective', 'TuningAlgorithm']} })
-    path: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File']} })
+    type: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'TuningAlgorithm']} })
+    path: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'DataSource']} })
     extension: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File']} })
 
 
@@ -1630,6 +1715,8 @@ class Node(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1667,6 +1754,8 @@ class Node(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1733,6 +1822,8 @@ class Edge(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1770,6 +1861,8 @@ class Edge(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1838,6 +1931,8 @@ class Observation(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1865,6 +1960,8 @@ class Observation(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -1902,6 +1999,8 @@ class Observation(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -1954,8 +2053,13 @@ class Observation(ConfiguredBaseModel):
     time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
     source_observation: Optional[str] = Field(default=None, description="""Derive from another observation (e.g., FC derived from Bold)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    downsample_period: Optional[float] = Field(default=None, description="""Intermediate downsampling period (ms). For BOLD: typically matches dt.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    voi: Optional[int] = Field(default=None, description="""Variable of interest index (which state variable to monitor). Default: 0.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     imaging_modality: Optional[ImagingModality] = Field(default=None, description="""Type of imaging modality (BOLD, EEG, MEG, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    warmup_source: Optional[str] = Field(default=None, description="""Reference to transient simulation result for history initialization (e.g., 'result_init').""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    data_source: Optional[DataSource] = Field(default=None, description="""Load data from external source (file, database, API). When specified, this observation represents empirical/external data rather than simulated data. Enables unified treatment of all data.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'Observation']} })
+    skip_t: Optional[int] = Field(default=None, description="""Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     aggregation: Optional[AggregationType] = Field(default=None, description="""How to aggregate over time""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Coupling']} })
     window_size: Optional[int] = Field(default=None, description="""Number of samples for windowed aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     pipeline: Optional[list[Function]] = Field(default=[], description="""Ordered sequence of Functions. Each Function transforms input → output.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -1990,6 +2094,8 @@ class Dynamics(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2017,6 +2123,8 @@ class Dynamics(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -2068,6 +2176,8 @@ class Dynamics(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2102,7 +2212,7 @@ class Dynamics(ConfiguredBaseModel):
     derived_from_model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     number_of_modes: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'integer(1)'} })
     local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
+    functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment', 'PDE']} })
     stimulus: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     modes: Optional[dict[str, Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
@@ -2130,6 +2240,8 @@ class StateVariable(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2160,6 +2272,8 @@ class StateVariable(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -2207,6 +2321,8 @@ class StateVariable(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2283,6 +2399,8 @@ class Distribution(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2343,6 +2461,8 @@ class Parameter(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2369,6 +2489,8 @@ class Parameter(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -2423,6 +2545,8 @@ class Parameter(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2500,6 +2624,8 @@ class CouplingInput(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2527,6 +2653,8 @@ class CouplingInput(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2554,7 +2682,7 @@ class CouplingInput(ConfiguredBaseModel):
 
 class Argument(ConfiguredBaseModel):
     """
-    A function argument that can be a literal value or a reference to another output
+    A function argument with explicit value specification. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Argument', 'from_schema': 'https://w3id.org/tvbo'})
 
@@ -2577,6 +2705,8 @@ class Argument(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2604,6 +2734,8 @@ class Argument(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2626,7 +2758,7 @@ class Argument(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    value: Optional[Union[float, int, str]] = Field(default=None, description="""The argument value (literal or reference)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'integer'}, {'range': 'string'}],
+    value: Optional[Union[float, int, str]] = Field(default=None, description="""Argument value. Can be: - Literal: 1.0, \"string\", etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'integer'}, {'range': 'string'}],
          'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
@@ -2665,6 +2797,8 @@ class Function(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2692,6 +2826,8 @@ class Function(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -2747,6 +2883,8 @@ class Function(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2770,7 +2908,166 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
-    input: Optional[str] = Field(default=None, description="""Input reference: name of previous function's output in pipeline""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
+    iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
+    arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Which dimension to apply the transformation on""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+    time_range: Optional[Range] = Field(default=None, description="""Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
+
+
+class Aggregation(ConfiguredBaseModel):
+    """
+    Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with reduction.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    over: Optional[DimensionType] = Field(default=None, description="""Dimension to aggregate over (e.g., node, time, state)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Aggregation']} })
+    type: Optional[ReductionType] = Field(default=ReductionType.mean, description="""Aggregation operation (mean, sum, max, min, none)""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'TuningAlgorithm'],
+         'ifabsent': 'string(mean)'} })
+
+
+class LossFunction(Function):
+    """
+    A loss function for optimization with optional aggregation. Extends Function with aggregation specification for per-element losses.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['LossFunction']} })
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningAlgorithm',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'TuningObjective',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Observation',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'Function',
+                       'Case',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Noise',
+                       'UpdateRule',
+                       'DifferentialOperator'],
+         'slot_uri': 'tvbo:Equation'} })
+    definition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DifferentialOperator']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
+    input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
@@ -2803,6 +3100,8 @@ class Callable(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2830,6 +3129,8 @@ class Callable(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2853,7 +3154,6 @@ class Callable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
-    qualname: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
     software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
 
 
@@ -2897,6 +3197,8 @@ class DerivedParameter(Parameter):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2928,6 +3230,8 @@ class DerivedParameter(Parameter):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -2991,6 +3295,8 @@ class DerivedParameter(Parameter):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3051,6 +3357,8 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3077,6 +3385,8 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3118,6 +3428,8 @@ class DerivedVariable(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3205,7 +3517,7 @@ class Noise(ConfiguredBaseModel):
     intensity: Optional[Parameter] = Field(default=None, description="""Optional scalar or vector intensity parameter for noise.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
     function: Optional[Function] = Field(default=None, description="""Optional functional form of the noise (callable specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
     pycode: Optional[str] = Field(default=None, description="""Inline Python code representation of the noise process.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation', 'Noise']} })
-    targets: Optional[dict[str, StateVariable]] = Field(default=None, description="""State variables this noise applies to; if omitted, applies globally.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise', 'Optimization']} })
+    targets: Optional[dict[str, StateVariable]] = Field(default=None, description="""State variables this noise applies to; if omitted, applies globally.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
 
 
 class RandomStream(ConfiguredBaseModel):
@@ -3229,6 +3541,8 @@ class RandomStream(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3266,6 +3580,8 @@ class RandomStream(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3300,9 +3616,9 @@ class RandomStream(ConfiguredBaseModel):
                        'Mesh']} })
 
 
-class Optimization(ConfiguredBaseModel):
+class DataSource(ConfiguredBaseModel):
     """
-    Configuration for parameter optimization.
+    Specification for loading external/empirical data.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
@@ -3325,6 +3641,8 @@ class Optimization(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3351,6 +3669,8 @@ class Optimization(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3388,6 +3708,8 @@ class Optimization(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3410,13 +3732,263 @@ class Optimization(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    targets: Optional[list[str]] = Field(default=[], description="""Target observations to fit against""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise', 'Optimization']} })
-    loss: Optional[Equation] = Field(default=None, description="""Loss/cost function equation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
-    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize (references by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer: 'adam', 'adamw', 'sgd', 'lbfgs', 'fic', 'grid', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization'], 'ifabsent': 'string(adam)'} })
-    learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'TuningAlgorithm'], 'ifabsent': 'float(0.001)'} })
-    max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization'], 'ifabsent': 'integer(100)'} })
-    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Algorithm-specific hyperparameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'TuningAlgorithm']} })
+    path: Optional[str] = Field(default=None, description="""File path or URI to the data""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'DataSource']} })
+    loader: Optional[Callable] = Field(default=None, description="""Callable that loads the data (e.g., load_functional_connectivity)""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource']} })
+    format: Optional[str] = Field(default=None, description="""Data format: 'npy', 'mat', 'csv', 'nifti', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource']} })
+    key: Optional[str] = Field(default=None, description="""Key/variable name within the file (for .mat, .npz, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource', 'SimulationStudy']} })
+    preprocessing: Optional[Function] = Field(default=None, description="""Optional preprocessing to apply after loading""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource']} })
+
+
+class OptimizationStage(ConfiguredBaseModel):
+    """
+    A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningAlgorithm',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'TuningObjective',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    free_parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization']} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'string(adam)'} })
+    learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm'],
+         'ifabsent': 'float(0.001)'} })
+    max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'integer(100)'} })
+    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Stage-specific hyperparameters (e.g., b2=0.9999 for adam)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
+    freeze_parameters: Optional[list[str]] = Field(default=[], description="""Parameters from previous stages to freeze (keep at optimized value but not update)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
+    warmup_from: Optional[str] = Field(default=None, description="""Previous stage to initialize from. Final values from that stage become initial values for this stage.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
+
+
+class Optimization(ConfiguredBaseModel):
+    """
+    Configuration for parameter optimization. Loss equation references observations directly by name. Both simulated and empirical data are observations (use data_source for empirical).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Tractogram',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningAlgorithm',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'TuningObjective',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Stimulus',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Optimization',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'TuningAlgorithm',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    loss: Optional[LossFunction] = Field(default=None, description="""Loss function with optional aggregation. Variables in equation are observation names. Example: equation.rhs = \"1 - correlation(sim_psd, target)\" with aggregate: {over: node, type: mean}""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
+    stages: Optional[dict[str, OptimizationStage]] = Field(default=None, description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. Example: Stage 1 (global params) -> Stage 2 (regional params).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
+    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize (single-stage mode, ignored if stages defined)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization']} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer (single-stage mode): 'adam', 'adamw', 'sgd', 'lbfgs', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'string(adam)'} })
+    learning_rate: Optional[float] = Field(default=0.001, description="""Learning rate (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm'],
+         'ifabsent': 'float(0.001)'} })
+    max_iterations: Optional[int] = Field(default=100, description="""Max iterations (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'integer(100)'} })
+    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Algorithm-specific hyperparameters (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
 
 
 class Exploration(ConfiguredBaseModel):
@@ -3444,6 +4016,8 @@ class Exploration(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3470,6 +4044,8 @@ class Exploration(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3507,6 +4083,8 @@ class Exploration(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3573,6 +4151,8 @@ class UpdateRule(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3600,6 +4180,8 @@ class UpdateRule(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3663,6 +4245,8 @@ class TuningObjective(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3700,6 +4284,8 @@ class TuningObjective(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3722,7 +4308,7 @@ class TuningObjective(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'TuningObjective', 'TuningAlgorithm']} })
+    type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'TuningAlgorithm']} })
     target_variable: Optional[str] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     target_value: Optional[float] = Field(default=None, description="""Target value for activity objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     target_data: Optional[str] = Field(default=None, description="""Reference to empirical data observation for matching objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
@@ -3754,6 +4340,8 @@ class TuningAlgorithm(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3781,6 +4369,8 @@ class TuningAlgorithm(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3803,12 +4393,12 @@ class TuningAlgorithm(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'TuningObjective', 'TuningAlgorithm']} })
+    type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'TuningAlgorithm']} })
     objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
     observables: Optional[dict[str, Observation]] = Field(default=None, description="""Quantities computed from simulation for update rules""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
     update_rules: dict[str, UpdateRule] = Field(default=..., description="""How parameters are updated each iteration""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
-    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'TuningAlgorithm']} })
-    learning_rate: Optional[float] = Field(default=None, description="""Learning rate (eta) for the tuning algorithm""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'TuningAlgorithm']} })
+    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
+    learning_rate: Optional[float] = Field(default=None, description="""Learning rate (eta) for the tuning algorithm""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
     n_iterations: Optional[int] = Field(default=None, description="""Number of iterations to run""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
     learning_rate_schedule: Optional[str] = Field(default=None, description="""Learning rate schedule: 'constant', 'linear', 'exponential'""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
     simulation_period: Optional[float] = Field(default=None, description="""Duration of each simulation step (e.g., one BOLD TR)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningAlgorithm']} })
@@ -3863,6 +4453,8 @@ class Integrator(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3922,6 +4514,8 @@ class Coupling(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -3949,6 +4543,8 @@ class Coupling(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -3999,6 +4595,8 @@ class Coupling(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4061,6 +4659,8 @@ class RegionMapping(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4098,6 +4698,8 @@ class RegionMapping(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4168,6 +4770,8 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4209,6 +4813,8 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4234,6 +4840,7 @@ class SimulationExperiment(ConfiguredBaseModel):
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
     observations: Optional[dict[str, Observation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    functions: Optional[dict[str, Function]] = Field(default=None, description="""Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment', 'PDE']} })
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     optimization: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -4265,6 +4872,8 @@ class SimulationStudy(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4304,6 +4913,8 @@ class SimulationStudy(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4326,7 +4937,7 @@ class SimulationStudy(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    key: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
+    key: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource', 'SimulationStudy']} })
     title: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
     year: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
     doi: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy', 'SoftwarePackage']} })
@@ -4362,6 +4973,8 @@ class TimeSeries(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4399,6 +5012,8 @@ class TimeSeries(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4490,6 +5105,8 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4527,6 +5144,8 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4578,6 +5197,8 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4623,6 +5244,8 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4650,6 +5273,8 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4723,6 +5348,8 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4750,6 +5377,8 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4802,6 +5431,8 @@ class NDArray(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4839,6 +5470,8 @@ class NDArray(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4906,6 +5539,8 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -4943,6 +5578,8 @@ class SpatialDomain(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -4996,6 +5633,8 @@ class Mesh(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5033,6 +5672,8 @@ class Mesh(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5097,6 +5738,8 @@ class SpatialField(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5134,6 +5777,8 @@ class SpatialField(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5198,6 +5843,8 @@ class FieldStateVariable(StateVariable):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5235,6 +5882,8 @@ class FieldStateVariable(StateVariable):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5278,6 +5927,8 @@ class FieldStateVariable(StateVariable):
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5353,6 +6004,8 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5416,6 +6069,8 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5453,6 +6108,8 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5505,6 +6162,8 @@ class PDESolver(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5542,6 +6201,8 @@ class PDESolver(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5597,6 +6258,8 @@ class PDE(ConfiguredBaseModel):
                        'Function',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'TuningObjective',
@@ -5634,6 +6297,8 @@ class PDE(ConfiguredBaseModel):
                        'DerivedParameter',
                        'DerivedVariable',
                        'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
                        'Optimization',
                        'Exploration',
                        'UpdateRule',
@@ -5683,7 +6348,7 @@ class PDE(ConfiguredBaseModel):
     solver: Optional[PDESolver] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     derived_parameters: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     derived_variables: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    functions: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
+    functions: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment', 'PDE']} })
 
 
 # Model rebuild
@@ -5724,12 +6389,16 @@ Parameter.model_rebuild()
 CouplingInput.model_rebuild()
 Argument.model_rebuild()
 Function.model_rebuild()
+Aggregation.model_rebuild()
+LossFunction.model_rebuild()
 Callable.model_rebuild()
 Case.model_rebuild()
 DerivedParameter.model_rebuild()
 DerivedVariable.model_rebuild()
 Noise.model_rebuild()
 RandomStream.model_rebuild()
+DataSource.model_rebuild()
+OptimizationStage.model_rebuild()
 Optimization.model_rebuild()
 Exploration.model_rebuild()
 UpdateRule.model_rebuild()

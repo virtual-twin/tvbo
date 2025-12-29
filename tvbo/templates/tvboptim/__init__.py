@@ -17,12 +17,11 @@ Templates:
 - tvbo-tvboptim-cfun.py.mako: Coupling function generation
 - tvbo-tvboptim-solver.py.mako: Solver/integrator generation
 - tvbo-tvboptim-noise.py.mako: Noise model generation
-- tvbo-tvboptim-observation.py.mako: Observation/monitor generation
-- tvbo-tvboptim-target.py.mako: Target/fitting target generation
-- tvbo-tvboptim-loss.py.mako: Loss function generation
+- tvbo-tvboptim-observation.py.mako: Observation/monitor generation (metadata-driven pipelines)
 - tvbo-tvboptim-optim.py.mako: Optimizer configuration generation
 - tvbo-tvboptim-exploration.py.mako: Parameter exploration (grid search) generation
 - tvbo-tvboptim-sim.py.mako: Full simulation workflow generation
+- tvbo-tvboptim-experiment.py.mako: Complete experiment generation (fully metadata-driven)
 
 Usage:
 ------
@@ -80,11 +79,10 @@ TEMPLATES = {
     'solver': 'tvboptim/tvbo-tvboptim-solver.py.mako',
     'noise': 'tvboptim/tvbo-tvboptim-noise.py.mako',
     'observation': 'tvboptim/tvbo-tvboptim-observation.py.mako',
-    'target': 'tvboptim/tvbo-tvboptim-target.py.mako',
-    'loss': 'tvboptim/tvbo-tvboptim-loss.py.mako',
     'optim': 'tvboptim/tvbo-tvboptim-optim.py.mako',
     'exploration': 'tvboptim/tvbo-tvboptim-exploration.py.mako',
     'sim': 'tvboptim/tvbo-tvboptim-sim.py.mako',
+    'experiment': 'tvboptim/tvbo-tvboptim-experiment.py.mako',
 }
 
 __all__ = [

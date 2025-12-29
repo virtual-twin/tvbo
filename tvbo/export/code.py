@@ -8,7 +8,57 @@ from sympy import latex
 from sympy.printing import StrPrinter
 from tvbo.datamodel.tvbo_datamodel import Equation
 from tvbo.knowledge.simulation.equations import _clash1, sympify as tvbo_sympify
-from tvbo.parse.expression import parse_eq
+from tvbo.parse.expression import parse_eq, ARRAY_FUNCTIONS
+
+
+# =============================================================================
+# Array Function Printer Mappings
+# =============================================================================
+# Maps the ARRAY_FUNCTIONS (defined in tvbo.parse.expression) to their target
+# implementations for each output format. Printers use these via known_functions.
+
+ARRAY_FUNCTION_MAPPINGS = {
+    "jax": {
+        "sum": "jnp.sum",
+        "mean": "jnp.mean",
+        "std": "jnp.std",
+        "var": "jnp.var",
+        "max": "jnp.max",
+        "min": "jnp.min",
+        "abs": "jnp.abs",
+        "prod": "jnp.prod",
+    },
+    "numpy": {
+        "sum": "np.sum",
+        "mean": "np.mean",
+        "std": "np.std",
+        "var": "np.var",
+        "max": "np.max",
+        "min": "np.min",
+        "abs": "np.abs",
+        "prod": "np.prod",
+    },
+    "julia": {
+        "sum": "sum",
+        "mean": "mean",
+        "std": "std",
+        "var": "var",
+        "max": "maximum",
+        "min": "minimum",
+        "abs": "abs",
+        "prod": "prod",
+    },
+    "python": {
+        "sum": "sum",
+        "mean": "statistics.mean",
+        "std": "statistics.stdev",
+        "var": "statistics.variance",
+        "max": "max",
+        "min": "min",
+        "abs": "abs",
+        "prod": "math.prod",
+    },
+}
 
 
 def inline_functions(expr, func_defs):
@@ -97,6 +147,8 @@ class NumPyPrinter(spn.NumPyPrinter):
         self._kf.update({"erfc": "scipy.special.erfc"})
         self._kf.update({"erf": "scipy.special.erf"})
         super().__init__(settings=settings)
+        # Add array function mappings
+        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["numpy"])
 
     def _print_Piecewise(self, expr):
         return print_Piecewise(self, expr)
@@ -112,9 +164,55 @@ class JaxPrinter(spn.JaxPrinter):
         self._kf.update({"erfc": "jsp.special.erfc"})
         self._kf.update({"erf": "jsp.special.erf"})
         super().__init__(settings=settings)
+        # Add array function mappings
+        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["jax"])
 
     def _print_Piecewise(self, expr):
         return print_Piecewise(self, expr)
+
+    def _print_Sum(self, expr):
+        """Convert SymPy Sum to jnp.sum for array operations.
+
+        Handles patterns like:
+        - Sum(x[i], (i, 0, n-1)) -> jnp.sum(x)
+        - Sum(x[i]*y[i], (i, 0, n-1)) -> jnp.sum(x*y)
+        - Sum(f(x[i]), (i, 0, n-1)) -> jnp.sum(f(x))
+
+        The dummy index is removed and the expression is printed as an
+        elementwise operation, then wrapped in jnp.sum().
+        """
+        from sympy import Indexed, Symbol
+
+        func = expr.function  # The expression being summed
+        limits = expr.limits  # ((i, lower, upper),)
+
+        if not limits:
+            # No limits - just print the function
+            return f"{self._module}.sum({self._print(func)})"
+
+        # Get the dummy variable (index)
+        dummy = limits[0][0]
+
+        # Replace indexed expressions: x[i] -> x, for all bases
+        # This converts the indexed form back to array form
+        def remove_indexing(ex):
+            """Recursively remove indexing by dummy variable."""
+            if isinstance(ex, Indexed):
+                # Check if indexed by our dummy variable
+                if dummy in ex.indices:
+                    return ex.base  # Return just the base (array)
+            return ex
+
+        # Use SymPy's replace to handle all Indexed instances
+        from sympy import preorder_traversal, Indexed
+
+        result = func
+        for sub_expr in list(preorder_traversal(func)):
+            if isinstance(sub_expr, Indexed) and dummy in sub_expr.indices:
+                # Replace x[i] with x (the IndexedBase)
+                result = result.subs(sub_expr, sub_expr.base)
+
+        return f"{self._module}.sum({self._print(result)})"
 
 
 class JuliaPrinter(spj.JuliaCodePrinter):
@@ -123,6 +221,8 @@ class JuliaPrinter(spj.JuliaCodePrinter):
         # Be tolerant: allow partial printing instead of raising for unknown constructs.
         settings.setdefault("strict", False)
         super().__init__(settings=settings)
+        # Add array function mappings (Julia uses _known_functions internally)
+        self._known_functions.update(ARRAY_FUNCTION_MAPPINGS["julia"])
 
     # SymPy's JuliaCodePrinter does not implement IndexedBase by default; our templates
     # occasionally introduce placeholder IndexedBase symbols (e.g. x_i, x_j) for clarity.
@@ -175,6 +275,8 @@ class PythonCodePrinter(_PythonCodePrinter):
             "ceil": "math.ceil",
             "sign": "math.copysign(1, {0})",  # Python's math doesn't have sign directly
         })
+        # Add array function mappings
+        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["python"])
 
     def _print_Piecewise(self, expr):
         # Basic nested conditional for plain Python
@@ -218,23 +320,37 @@ def get_printer(format):
 def render_expression(
     expression,
     format="jax",
-    # module="np",
-    # fully_qualified_modules=False,
     user_functions={},
+    parameters=None,
 ):
-    indexed_symbols = {"x_j": IndexedBase("x_j"), "x_i": IndexedBase("x_i")}
+    """Render a SymPy expression or string to target format code.
 
+    Uses parse_eq for proper handling of indexed expressions and Sum/Product.
+
+    Parameters
+    ----------
+    expression : str or sympy.Expr
+        The expression to render.
+    format : str
+        Target format ('jax', 'numpy', 'julia', 'python', etc.)
+    user_functions : dict
+        Custom function name mappings for the printer. These are also passed
+        to parse_eq so they're recognized as functions (not implicit multiplication).
+    parameters : list of str, optional
+        Parameter names to define as Symbols. These OVERRIDE SymPy built-in
+        functions (e.g., 'gamma' becomes Symbol('gamma'), not the gamma function).
+    """
     if isinstance(expression, str):
-        try:
-            expression = parse_expr(expression, {**_clash1, **indexed_symbols})
-        except Exception:
-            print("Failed to parse expression string; trying tvbo.sympify.")
-            # Fallback: use sympify from equations.py when parse_expr cannot handle the input
-            expression = tvbo_sympify(expression)
-    printer = get_printer(format)
-    printer.known_functions.update(user_functions)
+        # Pass user_functions as functions to parse_eq so they're recognized
+        # This prevents implicit multiplication from breaking function names
+        func_names = list(user_functions.keys()) if user_functions else None
+        expression = parse_eq(expression, parameters=parameters, functions=func_names)
 
-    # Printer._settings.update({"fully_qualified_modules": fully_qualified_modules})
+    printer = get_printer(format)
+    # User functions take precedence over built-in mappings
+    if user_functions:
+        printer.known_functions.update(user_functions)
+
     return printer.doprint(expression)
 
 
@@ -294,19 +410,22 @@ def render_equation(
     if inline_funcs:
         expr = inline_functions(expr, inline_funcs)
 
-    # Build a minimal user_functions mapping so printers emit f(x) for model-defined
-    # symbolic functions. Prefer SymPy function heads (is_Function) and avoid tagging
-    # arbitrary Python callables to reduce false-positives.
+    # Build user_functions mapping for model-defined symbolic functions
+    # Printers already have ARRAY_FUNCTION_MAPPINGS built-in
     uf = dict(user_functions) if isinstance(user_functions, dict) else {}
-    if not uf and isinstance(local_dict, dict) and local_dict:
+
+    # Auto-detect model-defined functions from local_dict
+    if isinstance(local_dict, dict) and local_dict:
         for name, obj in local_dict.items():
-            if getattr(obj, "is_Function", False):
+            if getattr(obj, "is_Function", False) and name not in uf:
                 uf[str(name)] = str(name)
 
     printer = get_printer(format)
-    # Update printer known functions if available (NumPy/JAX printers support this)
-    try:
-        printer.known_functions.update(uf)
-    except Exception:
-        pass
+    # User functions take precedence over built-in mappings
+    if uf:
+        try:
+            printer.known_functions.update(uf)
+        except AttributeError:
+            pass  # Some printers don't have known_functions
+
     return printer.doprint(expr)

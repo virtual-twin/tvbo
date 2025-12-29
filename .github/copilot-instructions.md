@@ -7,6 +7,26 @@
 3. **MVP First:** No fallbacks, no try-except blocks. Code should work as expected; if it breaks, we debug.
 4. **Readable:** Clear variable names, simple control flow, no unnecessary abstractions.
 
+## Symbolic Mathematics Principles
+
+TVBO aims for a complete symbolic representation of SimulationExperiment using SymPy:
+
+1. **Pure SymPy First:** Always try approaches using built-in SymPy classes (`Sum`, `Product`, `IndexedBase`, `Function`, etc.) before creating custom functions.
+2. **No Overriding:** Never override or monkey-patch existing SymPy classes. Extend via subclassing only when absolutely necessary.
+3. **Custom Printers Only:** Code generation customization should happen in custom `Printer` subclasses (e.g., `JAXPrinter`), not in the symbolic expressions themselves.
+4. **Mathematical Fidelity:** The symbolic expression should match the mathematical notation exactly. E.g., mean = `Sum(...)/N`, not a custom `Mean()` function.
+5. **Parseable Strings:** Equation strings in YAML should be parseable by `sympy.parsing.sympy_parser.parse_expr` with a well-defined `local_dict`.
+
+Example - correct approach for aggregated loss:
+```python
+# Pure SymPy: L = (1/N) * Sum(1 - corr(x[i], y[i]), (i, 0, N-1))
+from sympy import Sum, IndexedBase, Symbol, Function
+x, y = IndexedBase('x'), IndexedBase('y')
+i, N = Symbol('i'), Symbol('N')
+corr = Function('correlation')
+L = Sum(1 - corr(x[i], y[i]), (i, 0, N-1)) / N  # NOT a custom Mean() function
+```
+
 ## Core Architecture
 
 - **Data Model:** `schema/tvbo_datamodel.yaml` is the LinkML schema source of truth. Use it for correct metadata handling.

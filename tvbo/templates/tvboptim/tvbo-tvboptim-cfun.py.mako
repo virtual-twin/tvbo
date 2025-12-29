@@ -24,8 +24,6 @@ else:
     coupling = context['coupling']
     model = context.get('model', None)
 
-jaxcode = lambda expr: render_expression(expr, format='jax')
-
 # Determine if coupling is delayed
 has_delay = hasattr(coupling, 'delayed') and coupling.delayed
 
@@ -57,6 +55,13 @@ base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
 # Number of output states - this is always 1 for a single coupling function
 # (represents one scalar/vector output per node from this coupling)
 n_output = 1
+
+# All symbol names: params + incoming_states + local_states + common names
+# These must be passed to render_expression so they're parsed as Symbols, not as products
+all_symbol_names = param_names + incoming_states + local_states + ['gx', 'G']
+
+# JAX code generation helper - pass all symbols as parameters to prevent implicit multiplication
+jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbol_names)
 %>
 
 class ${class_name}(${base_class}):

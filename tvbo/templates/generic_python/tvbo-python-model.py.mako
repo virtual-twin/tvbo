@@ -1,4 +1,10 @@
 ## -*- coding: utf-8 -*-
+<%namespace name="fn" file="/base/function-def.mako"/>
+<%
+# Create render function for model context
+_format = 'jax' if jax else 'numpy'
+render_func = lambda obj: model.render_equation(obj, format=_format)
+%>
 %if jax:
 import jax.scipy as jsp
 import jax.numpy as jnp
@@ -59,8 +65,7 @@ def ${model.metadata.name}(
 % if model.metadata.functions:
     # Functions
 % for f in model.metadata.functions.values():
-    def ${f.name}(${', '.join([arg.name if hasattr(arg, 'name') else str(arg) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)])}):
-        return ${model.render_equation(f, format='jax' if jax else 'numpy')}
+    ${fn.function_def(f, format=_format, render_func=render_func) | trim,n}
 % endfor
 % endif
 

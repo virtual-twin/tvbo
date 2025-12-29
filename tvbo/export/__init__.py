@@ -32,3 +32,15 @@ from tvbo.export.pyrates import (
     # Alias
     network_to_pyrates_yaml_string,
 )
+
+from tvbo.export.functions import (
+    # Standalone function code generation
+    generate_function,
+    generate_loss_function,
+    generate_indexed_function,
+    generate_callable_function,
+    generate_inline_function,
+    function_to_callable,
+    # Convenience alias
+    generate,
+)

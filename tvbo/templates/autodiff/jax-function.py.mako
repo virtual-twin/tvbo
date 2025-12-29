@@ -1,3 +1,16 @@
+<%doc>
+JAX Function Template (Pipeline-style)
+======================================
+
+Generates JAX functions for TimeSeries processing pipelines.
+Uses the base function-def.mako for core function generation.
+
+This template provides the `generate_function` def for pipeline transformations
+that operate on TimeSeries objects (with .data, .time attributes).
+
+For standalone mathematical functions, use base/function-def.mako directly.
+</%doc>
+<%namespace name="fn" file="/base/function-def.mako"/>
 <%!
 from tvbo.export.code import render_expression
 %>
@@ -6,17 +19,20 @@ from tvbo.export.code import render_expression
     # Collect parameters
     params = {}
     if func.arguments:
-        for arg in func.arguments:
+        args = func.arguments.values() if hasattr(func.arguments, 'values') else func.arguments
+        for arg in args:
             # Skip pipeline references (in1, in2, etc.) - these are variable names not parameters
-            if arg.name not in ['in1', 'in2']:
+            if arg.name not in ['in1', 'in2', 'in3']:
                 # Quote string values
-                value = arg.value
-                if isinstance(value, str) and not value.replace('.','').replace('-','').isdigit():
-                    value = f"'{value}'"
-                params[arg.name] = value
-    if func.equation and func.equation.parameters:
+                value = arg.value if hasattr(arg, 'value') else None
+                if value is not None:
+                    if isinstance(value, str) and not value.replace('.','').replace('-','').isdigit():
+                        value = f"'{value}'"
+                    params[arg.name] = value
+    if func.equation and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for name, param in func.equation.parameters.items():
-            params[name] = param.value
+            if hasattr(param, 'value') and param.value is not None:
+                params[name] = param.value
     param_args = ', '.join([f"{name}={value}" for name, value in params.items()])
 
     # Store callable reference to avoid name collision
@@ -26,7 +42,8 @@ from tvbo.export.code import render_expression
     # vs regular parameters (use as-is)
     callable_ts_args = []  # Arguments that are TimeSeries
     if func.callable and func.arguments:
-        for arg in func.arguments:
+        args = func.arguments.values() if hasattr(func.arguments, 'values') else func.arguments
+        for arg in args:
             # in1, in2, etc. are TimeSeries inputs from pipeline
             if arg.name in ['in1', 'in2', 'in3']:
                 callable_ts_args.append(arg.name)
@@ -44,6 +61,9 @@ from tvbo.export.code import render_expression
     call_kwargs = ', '.join([f'{k}={k}' for k in params.keys()]) if params else ''
 %>
 def ${func_name}(${func_signature}):
+% if hasattr(func, 'description') and func.description:
+    """${func.description}"""
+% endif
 % if callable_ts_args:
     # Secondary inputs (e.g., kernels) - extract 1D data
     kernel_data = ${callable_ts_args[0]}.data.squeeze()  # Assume 1D kernel
@@ -64,7 +84,7 @@ def ${func_name}(${func_signature}):
     # Time axis: preserve if same length, otherwise reconstruct
     time = signal_ts.time if data.shape[0] == len(signal_ts.time) else jnp.arange(data.shape[0]) * signal_ts.sample_period
     return signal_ts.duplicate(time=time, data=data, title='${func_name}')
-% elif func.time_range:
+% elif hasattr(func, 'time_range') and func.time_range:
 <%
     # Kernel generator: creates TimeSeries over specified time range
     lo = func.time_range.lo if func.time_range.lo else 0
@@ -74,19 +94,23 @@ def ${func_name}(${func_signature}):
 
     # Collect expected time unit from equation parameters
     expected_time_unit = None
-    if func.equation and hasattr(func.equation, 'parameters'):
+    if func.equation and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for param_name, param in func.equation.parameters.items():
             if hasattr(param, 'unit') and param.unit in ['s', 'ms', 'us', 'ns']:
                 expected_time_unit = param.unit
                 break
     # Also check arguments
     if not expected_time_unit and func.arguments:
-        for arg in func.arguments:
+        args = func.arguments.values() if hasattr(func.arguments, 'values') else func.arguments
+        for arg in args:
             if hasattr(arg, 'unit') and arg.unit in ['s', 'ms', 'us', 'ns']:
                 expected_time_unit = arg.unit
                 break
 %>
 def ${func_name}(ts, ${param_args}):
+% if hasattr(func, 'description') and func.description:
+    """${func.description}"""
+% endif
 % if expected_time_unit:
     # Auto-convert time units if necessary
     if ts.units and ts.units.get('time') and ts.units.get('time') != '${expected_time_unit}':
@@ -98,19 +122,22 @@ def ${func_name}(ts, ${param_args}):
 % else:
 <%
     # Check if equation contains array slicing (e.g., X[::stepsize])
-    rhs = func.equation.rhs
+    rhs = func.equation.rhs if func.equation else ''
     if '[' in rhs and ']' in rhs:
         # Direct Python code - use as is
         jax_code = rhs
     else:
         # Symbolic expression - render it
-        jax_code = render_expression(rhs, format='jax')
+        jax_code = render_expression(rhs, format='jax') if rhs else '0.0'
 
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
 %>
 def ${func_name}(ts, ${param_args}):
+% if hasattr(func, 'description') and func.description:
+    """${func.description}"""
+% endif
     data = ${jax_code.replace('X', 'ts.data')}
 % if has_apply_on_time:
     time = ${jax_code.replace('X', 'ts.time')}
@@ -119,4 +146,15 @@ def ${func_name}(ts, ${param_args}):
     return ts.duplicate(data=data, title='${func_name}')
 % endif
 % endif
+</%def>
+
+## =============================================================================
+## Standalone function generation (uses base template)
+## =============================================================================
+<%def name="standalone_function(func, format='jax', user_functions=None)">
+${fn.function_def(func, format=format, user_functions=user_functions)}
+</%def>
+
+<%def name="loss_function(func, format='jax', user_functions=None, inner_func_names=None)">
+${fn.function_def_with_aggregation(func, format=format, user_functions=user_functions, inner_func_names=inner_func_names)}
 </%def>

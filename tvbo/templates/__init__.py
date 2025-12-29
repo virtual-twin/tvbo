@@ -20,6 +20,7 @@ root = abspath(dirname(__file__))
 lookup = TemplateLookup(
     directories=[
         root,
+        join(root, "base"),
         join(root, "autodiff"),
         join(root, "tvb"),
         join(root, "julia"),
