@@ -221,53 +221,13 @@ functions:
   subsample:
     name: subsample
     description: "Downsample array by step factor"
-    source_code: "X[::step]"
+    source_code: "data[::step]"
     arguments:
-      - name: X
+      - name: data
         description: "Input array"
       - name: step
         value: 10
         description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
-
-  transpose:
-    name: transpose
-    description: "Transpose array"
-    callable:
-      module: jax.numpy
-      name: transpose
-
-  welch:
-    name: welch
-    description: "Welch power spectral density estimate"
-    callable:
-      module: jax.scipy.signal
-      name: welch
-    arguments:
-      - name: fs
-        value: 100.0
-        unit: Hz
-        description: "Sampling frequency after downsampling"
-      - name: nperseg
-        value: 256
-        description: "Length of each segment for Welch"
-
-  mean_regions:
-    name: mean_regions
-    description: "Mean across regions dimension"
-    callable:
-      module: jax.numpy
-      name: mean
-    arguments:
-      - name: axis
-        value: 0
-        description: "Average over regions dimension"
-
-  argmax:
-    name: argmax
-    description: "Index of maximum value"
-    callable:
-      module: jax.numpy
-      name: argmax
 
   index_at:
     name: index_at
@@ -323,6 +283,17 @@ functions:
       - name: y
         description: "Second array"
 
+  spectral_loss:
+    name: spectral_loss
+    description: "1 - correlation between simulated and target spectra (per-element)"
+    equation:
+      rhs: "1 - correlation(simulated, target)"
+    arguments:
+      - name: simulated
+        description: "Simulated power spectrum for one region"
+      - name: target
+        description: "Target power spectrum for one region"
+
 # =============================================================================
 # OBSERVATIONS: Derived from simulation data
 # =============================================================================
@@ -339,44 +310,72 @@ observations:
     pipeline:
       - function: subsample
         arguments:
-            - name: data
-              value: integration.result
-      - function: transpose
-        input: subsampled
-      - name: welch
-        input: transposed
-        output: "frequencies, psd"
+          - name: data
+            description: "Input time series from simulation"
+      - callable:
+            module: jax.numpy
+            name: transpose
+        output: transposed
+        arguments:
+          - name: a
+            value: subsample
+            description: "Subsampled time series"
+      - callable:
+            module: jax.scipy.signal
+            name: welch
+        output: frequencies, psd
+        arguments:
+          - name: x
+            value: transposed
+            description: "Transposed time series (nodes, time)"
+          - name: fs
+            value: 100.0
+            description: "Sampling frequency (Hz)"
+          - name: nperseg
+            value: 256
+            description: "Segment length for Welch"
 
   # Derived: Average spectrum across regions
   avg_spectrum:
     name: avg_spectrum
     label: "Average Spectrum"
     description: "Mean power spectrum across all regions"
+    source_observation: simulated_psd
     pipeline:
-      - name: mean_regions
+      - callable:
+            module: jax.numpy
+            name: mean
         output: avg_psd
         arguments:
-          - name: data
+          - name: a
             value: simulated_psd.psd
+            description: "Power spectrum from simulated_psd observation"
+          - name: axis
+            value: 0
+            description: "Average over regions dimension"
 
   # Derived: Peak frequency from average spectrum
-  peak_freq:
-    name: peak_freq
+  peak_frequency:
     label: "Peak Frequency"
     description: "Extract peak frequency from average spectrum"
+    source_observation: avg_spectrum
     pipeline:
-      - name: argmax
+      - callable:
+            module: jax.numpy
+            name: argmax
         output: peak_idx
         arguments:
-          - name: data
+          - name: a
             value: avg_spectrum.avg_psd
-      - name: index_at
-        output: peak_frequency
+            description: "Average power spectrum"
+      - function: index_at
         arguments:
           - name: arr
             value: simulated_psd.frequencies
+            description: "Frequency array from PSD"
           - name: idx
-            value: input.peak_idx
+            value: peak_idx
+            description: "Index of peak frequency"
 
 # =============================================================================
 # OPTIMIZATION: Loss compares simulated_psd.psd to external target_data
@@ -394,19 +393,20 @@ optimization:
       - a
       - b
 
-    # Loss function: compares simulated_psd.psd to target_data (passed externally)
+    # Loss function: references spectral_loss from functions
+    # Aggregate specifies vmap (per-node) + reduction (mean)
+    # Arguments with 'value' reference observations; without 'value' = runtime input
     loss:
-      name: spectral_correlation
-      label: "Spectral Correlation Loss"
-      equation:
-        rhs: "1 - correlation(simulated_psd.psd, target_data)"
+      function: spectral_loss
       aggregate:
         over: node
         type: mean
-      description: >
-        Pearson correlation between simulated and target power spectra.
-        Loss computed per node, then averaged across all nodes.
-        simulated_psd.psd comes from observation, target_data passed to optimizer.
+      arguments:
+        - name: simulated
+          value: observations.simulated_psd.psd
+          description: "Simulated power spectrum from observation (n_regions, n_freqs)"
+        - name: target
+          description: "Target power spectrum (passed to optimizer at runtime)"
 
     # Optimizer configuration
     algorithm: adamaxw
@@ -446,13 +446,13 @@ explorations:
           log_scale: false
 
     # Grid combination mode
-    mode: product  # Full Cartesian product (32x32 = 1024 points)
+    mode: product  # Full Cartesian product (n x n points)
 
     # Parallelization
     n_parallel: 1  # Number of parallel workers for pmap
 
     # Observable to compute at each grid point
-    observable: peak_freq
+    observable: peak_frequency
 
 
 references:
@@ -633,23 +633,29 @@ plt.tight_layout()
 ```
 
 ## Step 2: Spectral Analysis
-
 ```{python}
 # | label: fig-initial-spectrum
 # | fig-cap: "**Power spectral density of initial network dynamics.** Gray lines show individual region spectra, black line shows network-average spectrum."
-# Access observations by name - peak_freq inherits data from simulated_psd → avg_spectrum
+# Access observations by name - peak_frequency inherits data from simulated_psd → avg_spectrum
 psd_obs = sim_results.observations.simulated_psd
 avg_obs = sim_results.observations.avg_spectrum
-peak_obs = sim_results.observations.peak_freq
+peak_obs = sim_results.observations.peak_frequency
 
 fig, ax = plt.subplots(1, 1, figsize=(8.1, 3.0375))
 ax.plot(psd_obs["frequencies"], psd_obs["psd"].T, linewidth=1, color="k", alpha=0.15)
 ax.plot(psd_obs["frequencies"], avg_obs["avg_psd"], linewidth=2, color="k")
 ax.set_xlabel("Frequency [Hz]")
 ax.set_ylabel("Power")
-ax.text(0.95, 0.95, f"Peak @ {peak_obs['peak_frequency']:.1f} Hz", transform=ax.transAxes,
-        fontsize=12, ha="right", va="top",
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+ax.text(
+    0.95,
+    0.95,
+    f"Peak @ {peak_obs[peak_obs['_primary_key']]:.1f} Hz",
+    transform=ax.transAxes,
+    fontsize=12,
+    ha="right",
+    va="top",
+    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+)
 ax.set_xlim(0, 20)
 ax.set_yscale("log")
 plt.tight_layout()
@@ -667,13 +673,30 @@ expl_results = exp.run("tvboptim", mode="exploration")
 expl = expl_results.explorations.frequency_landscape
 pc = expl.grid.collect()
 
+n1 = exp.explorations['frequency_landscape'].parameters['a'].domain.n
+n2 = exp.explorations['frequency_landscape'].parameters['b'].domain.n
 fig, ax = plt.subplots(figsize=(8.1, 4.05))
-im = ax.imshow(expl.results.reshape(32, 32).T, cmap="cividis",
-               extent=[min(pc.dynamics.a), max(pc.dynamics.a),
-                       min(pc.dynamics.b), max(pc.dynamics.b)],
-               origin="lower", aspect="auto", interpolation="none")
-ax.scatter(expl_results.state.dynamics.a, expl_results.state.dynamics.b,
-           color="k", marker="x", s=50, linewidths=2)
+im = ax.imshow(
+    expl.results.reshape(n1, n2).T,
+    cmap="cividis",
+    extent=[
+        min(pc.dynamics.a),
+        max(pc.dynamics.a),
+        min(pc.dynamics.b),
+        max(pc.dynamics.b),
+    ],
+    origin="lower",
+    aspect="auto",
+    interpolation="none",
+)
+ax.scatter(
+    expl_results.state.dynamics.a,
+    expl_results.state.dynamics.b,
+    color="k",
+    marker="x",
+    s=50,
+    linewidths=2,
+)
 plt.colorbar(im, label="Peak Frequency [Hz]")
 ax.set_xlabel(r"a [ms$^{-1}$]")
 ax.set_ylabel(r"b [ms$^{-1}$]")
@@ -723,7 +746,7 @@ opt_results = exp.run("tvboptim", mode="optimization", target_data=target_psd)
 #| label: fig-optimized-params
 #| fig-cap: "**Optimized parameters overlaid on the frequency landscape.** Each white dot represents the fitted (a, b) parameters for one brain region."
 fig, ax = plt.subplots(figsize=(8.1, 5.207))
-im = ax.imshow(expl.results.reshape(32, 32).T, cmap='cividis',
+im = ax.imshow(expl.results.reshape(n1, n2).T, cmap='cividis',
                extent=[min(pc.dynamics.a), max(pc.dynamics.a),
                        min(pc.dynamics.b), max(pc.dynamics.b)],
                origin='lower', aspect='auto')

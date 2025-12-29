@@ -301,17 +301,22 @@ def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx)
 # =============================================================================
 # Build Step Call
 # =============================================================================
-def build_step_call(step, step_input, step_names=None, current_obs_name=None, state_idx=None):
+def build_step_call(step, step_input, step_names=None, current_obs_name=None, state_idx=None, is_first_step=False):
     """Build the function call for a pipeline step.
 
     For inline callables (step has 'callable'), use only explicit arguments.
     For defined functions, may add implicit input if needed.
+
+    If is_first_step=True and an argument has no value, default to _outputs['data']
+    (which comes from observation source or integration.result).
     """
     args = step['arguments']
+    arg_names = step.get('arg_names', [])
     keyword = []
     obs_deps = set()
     has_inline_callable = step.get('callable') is not None
 
+    # Build keyword args from explicit arguments
     for name, val in args.items():
         ref_type, ref_val = parse_reference(val, step_names=step_names, current_obs_name=current_obs_name)
         code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
@@ -321,9 +326,17 @@ def build_step_call(step, step_input, step_names=None, current_obs_name=None, st
 
         keyword.append(f"{name}={code}")
 
+    # Handle arguments that have names but no values
+    # For first step, default to _outputs['data'] (from source)
+    for name in arg_names:
+        if name not in args:
+            if is_first_step and name in ('data', 'X', 'x', 'input', 'timeseries'):
+                # First step's primary input defaults to observation source data
+                keyword.append(f"{name}=_outputs['data']")
+
     # For inline callables, use ONLY explicit arguments - no implicit input
     # For defined functions without explicit args, may need implicit input
-    if not has_inline_callable and not args and not is_kernel_generator(step['name']):
+    if not has_inline_callable and not args and not arg_names and not is_kernel_generator(step['name']):
         # Parse step_input as a reference
         ref_type, ref_val = parse_reference(step_input, step_names=step_names, current_obs_name=current_obs_name)
         input_code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
@@ -376,6 +389,10 @@ for obs_name, obs in observations.items():
             func_def = functions_by_name.get(step_name)
             # Parse using Function definition with FunctionCall overrides
             step = parse_step(func_def or func_call, step_name)
+            # Override output from FunctionCall if specified (func_call's output takes precedence)
+            fc_output = get_attr(func_call, 'output')
+            if fc_output:
+                step['output'] = fc_output
         elif inline_callable:
             # Inline callable - use output or callable.name as step identifier
             cname = get_attr(inline_callable, 'name')
@@ -474,8 +491,12 @@ import ${module}
                 needs_simulation = True
                 break
 
-    # Determine final output key
-    final_key = pipeline[-1]['output'] or pipeline[-1]['name'] if pipeline else 'data'
+    # Determine final output key (defaults to observation name if last step has no explicit output)
+    if pipeline:
+        last_step_output = pipeline[-1].get('output')
+        final_key = last_step_output if last_step_output else obs_name
+    else:
+        final_key = 'data'
 %>
 
 def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwargs) -> Bunch:
@@ -499,14 +520,18 @@ def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwa
     _source = ${obs_src_obs}(model_fn, state, dt=dt, outputs=_outputs, **kwargs)
     _outputs.update(_source)
     _outputs['data'] = _source.get(_source._primary_key, _source.get('data'))
+    if 'time' in _source:
+        _outputs['time'] = _source['time']
 % elif obs_source:
     # Source: ${obs_source} state variable (index ${state_idx})
     _result = kwargs.get('result') or model_fn(state)
     _outputs['data'] = _result.data[:, ${state_idx}, :]  # Shape: (time, nodes)
+    _outputs['time'] = _result.time  # Time axis from simulation
 % elif needs_simulation:
     # Get simulation result
     _result = kwargs.get('result') or model_fn(state)
     _outputs['data'] = _result.data
+    _outputs['time'] = _result.time  # Time axis from simulation
 % endif
 % if needs_transient:
     # Integration transient data
@@ -516,20 +541,31 @@ def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwa
 
     # Pipeline execution
 <%
-    # Collect all step names in this pipeline for reference resolution
-    step_names = {s['name'] for s in pipeline}
+    # Collect all step names AND output names in this pipeline for reference resolution
+    # References can use either the function name or the output key
+    step_names = set()
+    for s in pipeline:
+        step_names.add(s['name'])
+        if s.get('output'):
+            # Also track individual outputs (for tuple unpacking like 'frequencies, psd')
+            for out in s['output'].split(','):
+                step_names.add(out.strip())
 %>
 % for step_idx, step in enumerate(pipeline):
 <%
     step_name = step['name']
     is_last = step_idx == len(pipeline) - 1
-    # Output defaults to function name (declarative: function name = output key)
-    step_output = step['output'] or step_name
+    is_first_step = step_idx == 0
+    # Output defaults: last step -> observation name, otherwise -> function name
+    if is_last:
+        step_output = step['output'] or obs_name
+    else:
+        step_output = step['output'] or step_name
     # Input defaults to previous step's output, or 'data' for first step
     prev_output = pipeline[step_idx - 1]['output'] or pipeline[step_idx - 1]['name'] if step_idx > 0 else 'data'
     step_input = step['input'] or prev_output
 
-    call_args, obs_deps = build_step_call(step, step_input, step_names=step_names, current_obs_name=obs_name, state_idx=state_idx)
+    call_args, obs_deps = build_step_call(step, step_input, step_names=step_names, current_obs_name=obs_name, state_idx=state_idx, is_first_step=is_first_step)
 
     outputs = [o.strip() for o in step_output.split(',')]
     output_lhs = ', '.join([f"_outputs['{o}']" for o in outputs])

@@ -40,77 +40,55 @@ local_dynamics:
         Captures slow dynamics relevant for resting-state fMRI.
 
     parameters:
-        w:
-            label: "Excitatory recurrence"
-            value: 0.5
-            description: "Local feedback strength"
-            free: true
-            domain:
-                lo: 0.0
-                hi: 1.0
-
-        I_o:
-            label: "External input"
-            value: 0.32
-            description: "External input current"
-            free: true
-            domain:
-                lo: 0.0
-                hi: 0.5
-
+        a:
+            label: "Input gain parameter"
+            value: 0.270
+            unit: n/C
+        b:
+            label: Input shift parameter
+            unit: kHz
+            value: 0.108
+        d:
+            label: Parameter for H function
+            value: 154.0
+            unit: ms
+        gamma:
+            label: "Kinetic parameter"
+            value: 0.641
         tau_s:
             label: "Synaptic time constant"
             value: 100.0
             unit: ms
-            description: "NMDA receptor time constant"
-
-        gamma:
-            label: "Kinetic parameter"
-            value: 0.641
-            description: "Saturation factor for firing rate"
-
+        w:
+            label: "Excitatory recurrence"
+            value: 0.6
         J_N:
-            label: "NMDA efficacy"
-            value: 0.15
-            description: "Effective NMDA receptor conductance"
-
-        a_tf:
-            label: "Transfer function slope"
-            value: 270.0
-            unit: Hz/nA
-            description: "Slope of input-output transfer function"
-
-        b_tf:
-            label: "Transfer function offset"
-            value: 108.0
-            unit: Hz
-            description: "Offset of transfer function"
-
-        d_tf:
-            label: "Transfer function time constant"
-            value: 0.154
-            unit: s
-            description: "Time constant of transfer function"
+            label: Excitatory recurrence
+            value: 0.2609
+        I_o:
+            label: "External input"
+            value: 0.33
+        
 
     derived_variables:
         x:
             label: "Total synaptic input"
             equation:
-                rhs: "w * J_N * S + I_o + c_instant"
+                rhs: "w * J_N * S + I_o + J_N * c_instant + J_N * c_delayed"
             description: "Sum of local recurrence, external input, and long-range coupling"
 
         H:
             label: "Population firing rate"
             equation:
-                rhs: "(a_tf * x - b_tf) / (1 - exp(-d_tf * (a_tf * x - b_tf)) + 1e-10)"
+                rhs: "(a * x - b) / (1 - exp(-d * (a * x - b)))"
             description: "Sigmoidal transfer function converting input to firing rate"
 
     state_variables:
         S:
             label: "Synaptic gating"
             equation:
-                rhs: "-S / tau_s + (1 - S) * H * gamma"
-            initial_value: 0.3
+                rhs: "-(S / tau_s) + (1 - S) * H * gamma"
+            initial_value: 0.1
             domain:
                 lo: 0.0
                 hi: 1.0
@@ -123,6 +101,7 @@ local_dynamics:
 
     coupling_terms:
         c_instant: {}
+        c_delayed: {}
 
 coupling:
     name: FastLinearCoupling
@@ -453,7 +432,7 @@ ax1.set_xlabel("Time [ms]")
 ax1.set_ylabel("S [a.u.]")
 
 # Plot BOLD signal (first 60 TRs)
-bold_obs = sim_results.observations.simulated_bold
+bold_obs = sim_results.observations.bold
 t_bold_max = 60
 time_bold = bold_obs["time"][:t_bold_max]
 data_bold = bold_obs["data"][:t_bold_max, :]

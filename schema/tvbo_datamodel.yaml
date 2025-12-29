@@ -838,6 +838,13 @@ classes:
             apply_on_dimension:
                 description: "Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node."
                 range: DimensionType
+            aggregate:
+                description: >-
+                    How to aggregate the result across dimensions.
+                    Example: aggregate.over=node, aggregate.type=mean
+                    applies function per node, then averages. Used in loss functions.
+                range: Aggregation
+                inlined: true
             arguments:
                 range: Argument
                 multivalued: true

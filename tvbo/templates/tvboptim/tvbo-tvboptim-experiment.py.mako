@@ -113,13 +113,24 @@ has_transient = transient_time > 0
 # Observation names (for computing all observations in run_simulation)
 # Include all observations that have complete argument specifications
 def obs_has_all_args(obs):
-    """Check if observation has all required arguments satisfied."""
+    """Check if observation has all required arguments satisfied.
+    
+    First step's data/input argument is implicitly satisfied by observation source.
+    """
     pipeline = getattr(obs, 'pipeline', None) or []
-    for func in pipeline:
+    has_source = getattr(obs, 'source', None) or getattr(obs, 'source_observation', None)
+
+    for step_idx, func in enumerate(pipeline):
+        is_first_step = step_idx == 0
         args = getattr(func, 'arguments', None) or []
         if hasattr(args, '__iter__'):
             for arg in args:
-                if getattr(arg, 'name', None) and getattr(arg, 'value', None) is None:
+                arg_name = getattr(arg, 'name', None)
+                arg_value = getattr(arg, 'value', None)
+                if arg_name and arg_value is None:
+                    # First step's data-like args are satisfied by source
+                    if is_first_step and has_source and arg_name in ('data', 'X', 'x', 'input', 'timeseries', 'a'):
+                        continue  # Implicitly satisfied
                     return False  # Argument without value = requires runtime input
     return True
 
@@ -211,7 +222,10 @@ def get_obs(name):
 
 # Helper: Get the "main" output key from an observation's pipeline
 def get_pipeline_output_key(obs_name):
-    """Extract the last pipeline step's output key for an observation."""
+    """Extract the last pipeline step's output key for an observation.
+    
+    Defaults to observation name if last step has no explicit output.
+    """
     obs_obj = get_obs(obs_name)
     if obs_obj:
         pipeline = getattr(obs_obj, 'pipeline', None) or []
@@ -222,7 +236,9 @@ def get_pipeline_output_key(obs_name):
                 # Handle multi-output (comma-separated) - take the last one as the "main" output
                 outputs = [o.strip() for o in str(last_output).split(',')]
                 return outputs[-1]
-    return None
+            # Default: last step output is the observation name
+            return obs_name
+    return obs_name
 
 # === Exploration metadata ===
 exploration_dict = getattr(experiment, 'explorations', None) or {}
@@ -578,6 +594,12 @@ ${fn.function_def(fdef, format='jax', user_functions=all_func_names)}
 <%
 # Extract loss functions from optimization metadata
 # Loss is now a FunctionCall - it references a function, not defines one
+# Argument value patterns:
+#   - observations.simulated_psd.psd  -> call simulated_psd(), get ['psd']
+#   - observations.simulated_psd      -> call simulated_psd(), get primary output
+#   - (no value)                      -> runtime input (target_data)
+# Aggregate patterns:
+#   - aggregate.over=node, aggregate.type=mean -> vmap over axis 0, then .mean()
 loss_functions = []
 for opt in optim_list:
     loss_call = getattr(opt, 'loss', None)
@@ -588,22 +610,80 @@ for opt in optim_list:
 
         # Determine the function name to call
         if func_ref:
-            # Reference to user-defined function (e.g., 'rmse')
             func_name = str(func_ref) if isinstance(func_ref, str) else getattr(func_ref, 'name', str(func_ref))
         elif callable_ref:
             func_name = getattr(callable_ref, 'name', None) or getattr(callable_ref, 'qualname', 'loss')
         else:
             func_name = 'loss'
 
-        # Get argument names
+        # Parse aggregate specification
+        aggregate = getattr(loss_call, 'aggregate', None)
+        agg_over = None
+        agg_type = None
+        if aggregate:
+            agg_over_raw = getattr(aggregate, 'over', None)
+            agg_type_raw = getattr(aggregate, 'type', None)
+            # Handle enum values (e.g., DimensionType.node -> 'node')
+            agg_over = str(agg_over_raw).split('.')[-1] if agg_over_raw else None
+            agg_type = str(agg_type_raw).split('.')[-1] if agg_type_raw else 'mean'
+
+        # Parse arguments: value = observation reference, no value = runtime input
         loss_args = getattr(loss_call, 'arguments', []) or []
-        arg_names = [getattr(arg, 'name', None) for arg in loss_args if getattr(arg, 'name', None)]
+        parsed_args = []
+        obs_refs = set()  # Track which observations we need to call
+        for arg in loss_args:
+            arg_name = getattr(arg, 'name', None)
+            arg_value = getattr(arg, 'value', None)
+            if arg_name:
+                if arg_value:
+                    val_str = str(arg_value)
+                    # Parse: observations.obs_name.output_key or observations.obs_name
+                    if val_str.startswith('observations.'):
+                        parts = val_str.split('.', 2)  # ['observations', 'obs_name', 'output_key']
+                        obs_name = parts[1] if len(parts) > 1 else None
+                        output_key = parts[2] if len(parts) > 2 else None
+                        if obs_name:
+                            obs_refs.add(obs_name)
+                            parsed_args.append({
+                                'name': arg_name,
+                                'type': 'observation',
+                                'obs_name': obs_name,
+                                'output_key': output_key,
+                            })
+                    else:
+                        # Fallback: treat as literal or old-style obs_name.key
+                        if '.' in val_str:
+                            obs_name, output_key = val_str.split('.', 1)
+                            obs_refs.add(obs_name)
+                            parsed_args.append({
+                                'name': arg_name,
+                                'type': 'observation',
+                                'obs_name': obs_name,
+                                'output_key': output_key,
+                            })
+                        else:
+                            # Just observation name - use primary output
+                            obs_refs.add(val_str)
+                            parsed_args.append({
+                                'name': arg_name,
+                                'type': 'observation',
+                                'obs_name': val_str,
+                                'output_key': None,
+                            })
+                else:
+                    # No value = runtime input (target_data)
+                    parsed_args.append({
+                        'name': arg_name,
+                        'type': 'runtime',
+                    })
 
         loss_functions.append({
             'opt_name': getattr(opt, 'name', 'loss'),
             'func_name': func_name,
-            'arg_names': arg_names,
-            'predicted_from': getattr(opt, 'predicted_from', None),
+            'args': parsed_args,
+            'obs_refs': obs_refs,
+            'agg_over': agg_over,
+            'agg_type': agg_type,
         })
 %>
 # Loss function wrappers (call observations, then referenced loss function)
@@ -611,35 +691,56 @@ for opt in optim_list:
 <%
     func_name = loss_fn['func_name']
     opt_name = loss_fn['opt_name']
-    arg_names = loss_fn['arg_names']
-
-    # Get predicted_from observation
-    predicted_from = loss_fn.get('predicted_from')
-    if predicted_from:
-        pred_name = getattr(predicted_from, 'name', str(predicted_from)) if hasattr(predicted_from, 'name') else str(predicted_from)
-    else:
-        pred_name = None
-
-    # First arg is typically simulated, second is empirical/target
-    sim_arg = arg_names[0] if arg_names else 'simulated'
-    emp_arg = arg_names[1] if len(arg_names) > 1 else 'empirical'
+    args = loss_fn['args']
+    obs_refs = loss_fn['obs_refs']
+    agg_over = loss_fn['agg_over']
+    agg_type = loss_fn['agg_type']
+    # Map dimension name to axis (node=0 for arrays shaped (n_nodes, ...))
+    agg_axis = 0 if agg_over == 'node' else (1 if agg_over == 'time' else None)
+    # Map reduction type to JAX function
+    agg_func = {'mean': 'mean', 'sum': 'sum', 'max': 'max', 'min': 'min'}.get(agg_type, 'mean')
 %>
 def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
     """Loss wrapper calling ${func_name}
 
-    Calls observation '${pred_name or 'fc'}' and computes loss against target_data.
-    """
-% if pred_name:
-    _obs_result = ${pred_name}(model_fn, state)
-    ${sim_arg} = _obs_result[_obs_result._primary_key]
-% else:
-    # Default: call fc observation
-    _obs_result = fc(model_fn, state)
-    ${sim_arg} = _obs_result[_obs_result._primary_key]
+    Observations used: ${', '.join(sorted(obs_refs)) or '(none)'}
+% if agg_over:
+    Aggregation: ${agg_type} over ${agg_over} (axis ${agg_axis})
 % endif
-    ${emp_arg} = target_data
-    loss_value = ${func_name}(${sim_arg}, ${emp_arg})
-    return loss_value, _obs_result
+    """
+    # Call required observations
+% for obs_name in sorted(obs_refs):
+    _${obs_name} = ${obs_name}(model_fn, state)
+% endfor
+
+    # Prepare loss function arguments
+% for arg in args:
+% if arg['type'] == 'observation':
+% if arg['output_key']:
+    ${arg['name']} = _${arg['obs_name']}['${arg['output_key']}']
+% else:
+    ${arg['name']} = _${arg['obs_name']}[_${arg['obs_name']}._primary_key]
+% endif
+% else:
+    ${arg['name']} = target_data
+% endif
+% endfor
+
+    # Compute loss
+% if agg_over and agg_axis is not None:
+    # Apply ${func_name} per-${agg_over} via vmap, then aggregate with ${agg_type}
+    per_element_loss = jax.vmap(${func_name})(${', '.join([a['name'] for a in args])})
+    loss_value = per_element_loss.${agg_func}()
+% else:
+    loss_value = ${func_name}(${', '.join([a['name'] for a in args])})
+% endif
+% if obs_refs:
+    # Return only JAX-compatible arrays (exclude _primary_key string attribute)
+    _aux = {k: v for k, v in _${list(obs_refs)[0]}.items() if not k.startswith('_')}
+    return loss_value, _aux
+% else:
+    return loss_value, None
+% endif
 
 % endfor
 
