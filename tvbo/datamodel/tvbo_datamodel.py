@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-29T14:00:49
+# Generation date: 2025-12-29T15:34:43
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1369,6 +1369,7 @@ class FunctionCall(YAMLRoot):
     callable: Optional[Union[dict, "Callable"]] = None
     output: Optional[str] = None
     apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
+    aggregate: Optional[Union[dict, Aggregation]] = None
     arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1383,6 +1384,9 @@ class FunctionCall(YAMLRoot):
 
         if self.apply_on_dimension is not None and not isinstance(self.apply_on_dimension, DimensionType):
             self.apply_on_dimension = DimensionType(self.apply_on_dimension)
+
+        if self.aggregate is not None and not isinstance(self.aggregate, Aggregation):
+            self.aggregate = Aggregation(**as_dict(self.aggregate))
 
         self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
@@ -4431,6 +4435,9 @@ slots.functionCall__output = Slot(uri=TVBO.output, name="functionCall__output", 
 
 slots.functionCall__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="functionCall__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
                    model_uri=TVBO.functionCall__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.functionCall__aggregate = Slot(uri=TVBO.aggregate, name="functionCall__aggregate", curie=TVBO.curie('aggregate'),
+                   model_uri=TVBO.functionCall__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
 
 slots.functionCall__arguments = Slot(uri=TVBO.arguments, name="functionCall__arguments", curie=TVBO.curie('arguments'),
                    model_uri=TVBO.functionCall__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])

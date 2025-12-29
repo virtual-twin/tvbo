@@ -2936,7 +2936,7 @@ class LossFunction(Function):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['LossFunction']} })
+    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['LossFunction', 'FunctionCall']} })
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
@@ -3088,6 +3088,7 @@ class FunctionCall(ConfiguredBaseModel):
     callable: Optional[Callable] = Field(default=None, description="""Direct callable specification (alternative to function reference)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this step's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
     apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
+    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the result across dimensions. Example: aggregate.over=node, aggregate.type=mean applies function per node, then averages. Used in loss functions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['LossFunction', 'FunctionCall']} })
     arguments: Optional[list[Argument]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
 
 
