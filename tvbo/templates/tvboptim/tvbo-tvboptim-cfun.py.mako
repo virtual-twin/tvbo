@@ -48,6 +48,13 @@ local_states = list(local_states) if local_states else []
 pre_expr = coupling.pre_expression if hasattr(coupling, 'pre_expression') and coupling.pre_expression else None
 post_expr = coupling.post_expression if hasattr(coupling, 'post_expression') and coupling.post_expression else None
 
+# Check for vectorized mode - returns local_states from pre() for matmul optimization
+# Explicitly set via 'vectorized: true' or inferred when local_states specified without incoming_states
+vectorized = getattr(coupling, 'vectorized', False)
+if not vectorized and local_states and not incoming_states:
+    # Infer vectorized mode when only local_states specified
+    vectorized = True
+
 # Class name and base class
 class_name = coupling.name.replace(' ', '').replace('-', '') if hasattr(coupling, 'name') and coupling.name else 'GeneratedCoupling'
 base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
@@ -82,7 +89,13 @@ class ${class_name}(${base_class}):
     )
 
     def __init__(self, **kwargs):
-        % if incoming_states:
+        % if vectorized:
+        # Vectorized mode: only local_states needed for matmul optimization
+        super().__init__(
+            local_states=${local_states},
+            **kwargs
+        )
+        % elif incoming_states:
         super().__init__(
             incoming_states=${incoming_states},
             % if local_states:
@@ -90,11 +103,24 @@ class ${class_name}(${base_class}):
             % endif
             **kwargs
         )
+        % elif local_states:
+        super().__init__(
+            local_states=${local_states},
+            **kwargs
+        )
         % else:
         super().__init__(**kwargs)
         % endif
 
-    % if pre_expr:
+    % if vectorized:
+    def pre(self, incoming_states, local_states, params):
+        """Return local states to trigger vectorized mode.
+
+        By returning [n_local, n_nodes] (2D), we trigger the vectorized
+        path which uses matmul instead of per-edge ops.
+        """
+        return local_states
+    % elif pre_expr:
     def pre(self, incoming_states, local_states, params):
         % for name in param_names:
         ${name} = params.${name}

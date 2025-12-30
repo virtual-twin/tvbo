@@ -203,6 +203,7 @@ classes:
             - label
             - definition
             - parameters
+            - description
         attributes:
             lefthandside:
                 range: string
@@ -558,6 +559,17 @@ classes:
                 inlined_as_list: true
                 range: FunctionCall
 
+            # Direct class reference (alternative to pipeline)
+            class_reference:
+                description: >-
+                    Direct class reference (alternative to pipeline). Use for external library
+                    classes like tvboptim.Bold, custom monitors, or any callable class.
+                    The class is instantiated with constructor_args and called with call_args.
+                    Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold,
+                    constructor_args: [{name: period, value: 1000.0}]}
+                range: ClassReference
+                inlined: true
+
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input → process → output flow directly
 
@@ -822,6 +834,7 @@ classes:
         description: >-
             Invocation of a function in a pipeline. Can reference a defined Function by name,
             OR inline a callable directly for external library functions.
+            OR inline a class_call for classes that need instantiation then calling.
             Use arguments to specify inputs by name (referencing previous outputs or values).
         attributes:
             function:
@@ -831,6 +844,13 @@ classes:
             callable:
                 description: "Direct callable specification (alternative to function reference)"
                 range: Callable
+                inlined: true
+            class_call:
+                description: >-
+                    Class instantiation and call (alternative to callable/function).
+                    Use for external library classes that need __init__ then __call__.
+                    Example: Bold monitor from tvboptim.
+                range: ClassReference
                 inlined: true
             output:
                 description: "Name for this step's output (referenced by subsequent functions)"
@@ -860,6 +880,36 @@ classes:
             software:
                 range: SoftwareRequirement
                 inlined: true
+
+    ClassReference:
+        description: >-
+            Reference to a class that can be instantiated and called.
+            Used for external library classes (e.g., tvboptim.Bold, custom monitors).
+            The class is instantiated with constructor_args, then called with call_args.
+            Generalizable pattern: works for tvboptim, TVB, or any Python class.
+        is_a: Callable
+        attributes:
+            constructor_args:
+                description: >-
+                    Arguments passed to __init__ when instantiating the class.
+                    Example: period=1000.0, downsample_period=4.0 for Bold monitor.
+                multivalued: true
+                range: Argument
+                inlined_as_list: true
+            call_args:
+                description: >-
+                    Arguments passed when calling the instance (__call__).
+                    Usually the input data from simulation result.
+                    Example: result (simulation output array).
+                multivalued: true
+                range: Argument
+                inlined_as_list: true
+            warmup_source:
+                description: >-
+                    Reference to transient simulation result for history initialization.
+                    Some monitors (e.g., Bold) require history from warmup simulation.
+                    Value should reference a simulation result name (e.g., 'result_init').
+                range: string
 
     Case:
         attributes:
@@ -985,7 +1035,7 @@ classes:
             free_parameters:
                 multivalued: true
                 range: Parameter
-                inlined: true
+                inlined: false
                 description: >-
                     Parameters to optimize in this stage.
                     Use 'shape' attribute to specify scalar vs regional.

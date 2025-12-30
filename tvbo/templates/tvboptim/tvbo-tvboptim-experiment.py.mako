@@ -172,35 +172,116 @@ else:
 
 has_optimization = len(optim_list) > 0
 
-# Extract optimizable parameters
-optim_params = []
+
+# Extract optimizable parameters from optimization stages
+# Track parameter info: {name: {'heterogeneous': bool}}
+optim_param_info = {}
+
+# 1. optimization.stages.free_parameters (primary source)
+for opt in optim_list:
+    stages = getattr(opt, 'stages', None) or []
+    if hasattr(stages, 'values'):
+        stages = list(stages.values())
+    for stage in stages:
+        free_params = getattr(stage, 'free_parameters', None) or []
+        if hasattr(free_params, 'values'):
+            free_params = list(free_params.values())
+        for fp in free_params:
+            if isinstance(fp, str):
+                # Simple string: global parameter
+                optim_param_info[fp] = {'heterogeneous': False}
+            elif hasattr(fp, 'name'):
+                # Object with name attribute
+                pname = str(fp.name)
+                # Check for heterogeneous flag or shape
+                is_hetero = getattr(fp, 'heterogeneous', False)
+                shape = getattr(fp, 'shape', None)
+                if shape and 'n_nodes' in str(shape):
+                    is_hetero = True
+                optim_param_info[pname] = {'heterogeneous': is_hetero}
+            elif isinstance(fp, dict) and 'name' in fp:
+                # Dict with 'name' key
+                pname = str(fp['name'])
+                is_hetero = fp.get('heterogeneous', False)
+                shape = fp.get('shape', None)
+                if shape and 'n_nodes' in str(shape):
+                    is_hetero = True
+                optim_param_info[pname] = {'heterogeneous': is_hetero}
+
+# 2. fallback: param.free (legacy) or param.heterogeneous
 for name, param in model.parameters.items():
-    if getattr(param, 'free', False):
+    if getattr(param, 'free', False) and str(name) not in optim_param_info:
+        is_hetero = getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+        optim_param_info[str(name)] = {'heterogeneous': bool(is_hetero)}
+
+# Now collect the actual param objects with heterogeneous info
+# Separate dynamics vs coupling parameters
+optim_params = []  # Dynamics parameters
+optim_coupling_params = []  # Coupling parameters
+
+for name, param in model.parameters.items():
+    if str(name) in optim_param_info:
+        # Attach heterogeneous info to param for template use
+        param._optim_heterogeneous = optim_param_info[str(name)]['heterogeneous']
         optim_params.append(param)
 
-
-# Note: Coupling parameters with free=True are collected but not currently
-# used for optimization because the state structure stores coupling params
-# differently (under state.coupling[key].params). See mark_parameters_optimizable.
-coupling_optim_params = []
+# Check coupling parameters
 if coupling and hasattr(coupling, 'parameters'):
     for name, param in coupling.parameters.items():
-        if getattr(param, 'free', False):
-            coupling_optim_params.append(param)
+        pname = str(name)
+        if pname in optim_param_info or getattr(param, 'free', False):
+            is_hetero = optim_param_info.get(pname, {}).get('heterogeneous', False)
+            if not is_hetero:
+                is_hetero = getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+            param._optim_heterogeneous = bool(is_hetero)
+            optim_coupling_params.append(param)
 
-# Extract optimizer settings - uses schema ifabsent defaults
-# Schema defaults: algorithm='adam', learning_rate=0.001, max_iterations=100
+# Legacy support: coupling params with free=True that weren't in free_parameters
+coupling_optim_params = optim_coupling_params  # Alias for backwards compatibility
+
+# Extract optimizer settings from optimization or stages
+# Priority: FIRST stage with settings > optimization level > schema defaults
+# (Use first stage as defaults since multi-stage execution isn't implemented yet)
 optimizer_name = None
 learning_rate = None
 max_steps = None
+optimizer_hyperparams = {}  # For b1, b2, etc.
+_got_first_stage = False  # Only use first stage's settings
 
 for opt in optim_list:
-    if hasattr(opt, 'algorithm') and opt.algorithm:
+    # Check optimization level first (fallback)
+    if hasattr(opt, 'algorithm') and opt.algorithm and optimizer_name is None:
         optimizer_name = str(opt.algorithm)
-    if hasattr(opt, 'learning_rate') and opt.learning_rate is not None:
+    if hasattr(opt, 'learning_rate') and opt.learning_rate is not None and learning_rate is None:
         learning_rate = float(opt.learning_rate)
-    if hasattr(opt, 'max_iterations') and opt.max_iterations is not None:
+    if hasattr(opt, 'max_iterations') and opt.max_iterations is not None and max_steps is None:
         max_steps = int(opt.max_iterations)
+
+    # Check stages - use FIRST stage with settings as defaults
+    stages = getattr(opt, 'stages', None) or []
+    if hasattr(stages, 'values'):
+        stages = list(stages.values())
+    for stage in stages:
+        if _got_first_stage:
+            break  # Only use first stage
+        if hasattr(stage, 'algorithm') and stage.algorithm:
+            optimizer_name = str(stage.algorithm)
+            _got_first_stage = True
+        if hasattr(stage, 'learning_rate') and stage.learning_rate is not None:
+            learning_rate = float(stage.learning_rate)
+            _got_first_stage = True
+        if hasattr(stage, 'max_iterations') and stage.max_iterations is not None:
+            max_steps = int(stage.max_iterations)
+            _got_first_stage = True
+        # Extract hyperparameters (b1, b2, etc.)
+        hyperparams = getattr(stage, 'hyperparameters', None) or []
+        if hasattr(hyperparams, 'values'):
+            hyperparams = list(hyperparams.values())
+        for hp in hyperparams:
+            hp_name = getattr(hp, 'name', None)
+            hp_value = getattr(hp, 'value', None)
+            if hp_name and hp_value is not None:
+                optimizer_hyperparams[str(hp_name)] = float(hp_value)
 
 # Schema provides ifabsent defaults, so these should always be populated
 # Only assert if optimization is requested but values somehow missing
@@ -748,7 +829,7 @@ for opt in optim_list:
     # Map reduction type to JAX function
     agg_func = {'mean': 'mean', 'sum': 'sum', 'max': 'max', 'min': 'min'}.get(agg_type, 'mean')
 %>
-def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
+def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None, result_transient=None):
     """Loss wrapper calling ${func_name}
 
     Observations used: ${', '.join(sorted(obs_refs)) or '(none)'}
@@ -756,9 +837,9 @@ def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
     Aggregation: ${agg_type} over ${agg_over} (axis ${agg_axis})
 % endif
     """
-    # Call required observations
+    # Call required observations (passing result_transient for HRF/BOLD pipeline)
 % for obs_name in sorted(obs_refs):
-    _${obs_name} = ${obs_name}(model_fn, state)
+    _${obs_name} = ${obs_name}(model_fn, state, result_transient=result_transient)
 % endfor
 
     # Prepare loss function arguments
@@ -783,18 +864,26 @@ def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
     loss_value = ${func_name}(${', '.join([a['name'] for a in args])})
 % endif
 % if obs_refs:
-    return loss_value, _${list(obs_refs)[0]}
+    # Return data array (not ObservationResult) for JAX compatibility
+    _aux_data = _${list(obs_refs)[0]}.data if hasattr(_${list(obs_refs)[0]}, 'data') else _${list(obs_refs)[0]}
+    return loss_value, _aux_data
 % else:
     return loss_value, None
 % endif
 
 % endfor
 
-def make_loss_fn(model_fn, target_data, loss_type: str = None):
+def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = None):
     """Create a loss function closure for optimization.
 
     Loss functions are generated from optimization metadata.
     Each loss MUST specify equation, source_code, or callable.
+
+    Args:
+        model_fn: Compiled model function
+        target_data: Target data for fitting (e.g., empirical FC)
+        result_transient: Transient simulation result for HRF/BOLD pipeline warmup
+        loss_type: Which loss function to use (defaults to first available)
     """
 % if loss_functions:
     # Available loss functions from metadata: ${', '.join([lf['opt_name'] for lf in loss_functions])}
@@ -802,7 +891,7 @@ def make_loss_fn(model_fn, target_data, loss_type: str = None):
         loss_type = "${loss_functions[0]['opt_name']}"
 % for loss_fn in loss_functions:
     ${'if' if loop.first else 'elif'} loss_type == "${loss_fn['opt_name']}":
-        return lambda state: loss_${loss_fn['opt_name']}(model_fn, state, target_data)
+        return lambda state: loss_${loss_fn['opt_name']}(model_fn, state, target_data, result_transient)
 % endfor
     else:
         raise ValueError(f"Unknown loss type: {loss_type}. Available: ${', '.join([lf['opt_name'] for lf in loss_functions])}")
@@ -820,10 +909,12 @@ def mark_parameters_optimizable(state, n_nodes: int = ${n_nodes}):
     """Mark parameters as optimizable and set their shapes."""
     init_state = copy.deepcopy(state)
 
+    # Dynamics parameters
     % for param in optim_params:
 <%
     param_name = param.name
-    is_heterogeneous = getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+    # Use _optim_heterogeneous set during extraction, fallback to param attributes
+    is_heterogeneous = getattr(param, '_optim_heterogeneous', False) or getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
 %>
     init_state.dynamics.${param_name} = Parameter(init_state.dynamics.${param_name})
     % if is_heterogeneous:
@@ -831,11 +922,17 @@ def mark_parameters_optimizable(state, n_nodes: int = ${n_nodes}):
     % endif
     % endfor
 
-    # Note: Coupling parameters are stored under state.coupling[coupling_key].params
-    # and require different handling than dynamics parameters.
-    # For now, only dynamics parameters are marked as optimizable.
-    # To optimize coupling parameters, access them via:
-    #   init_state.coupling['${target_coupling_term}'].params.G = Parameter(...)
+    # Coupling parameters (stored under state.coupling[coupling_key].param_name)
+    % for param in optim_coupling_params:
+<%
+    param_name = param.name
+    is_heterogeneous = getattr(param, '_optim_heterogeneous', False) or getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+%>
+    init_state.coupling.${target_coupling_term}.${param_name} = Parameter(init_state.coupling.${target_coupling_term}.${param_name})
+    % if is_heterogeneous:
+    init_state.coupling.${target_coupling_term}.${param_name}.shape = (n_nodes,)
+    % endif
+    % endfor
 
     return init_state
 
@@ -846,6 +943,7 @@ def create_optimizer(
     learning_rate: float = ${learning_rate},
     print_every: int = 10,
     has_aux: bool = True,
+    **opt_kwargs,
 ):
     """Create configured optimizer."""
     optimizers = {
@@ -856,8 +954,18 @@ def create_optimizer(
         "sgd": optax.sgd,
     }
     opt_fn = optimizers.get(optimizer, optax.adamaxw)
+
+    # Build optimizer kwargs (hyperparameters like b1, b2)
+    optimizer_kwargs = {**opt_kwargs}
+% if optimizer_hyperparams:
+    # Default hyperparameters from YAML
+% for hp_name, hp_value in optimizer_hyperparams.items():
+    optimizer_kwargs.setdefault('${hp_name}', ${hp_value})
+% endfor
+% endif
+
     callback = MultiCallback([DefaultPrintCallback(every=print_every)])
-    return OptaxOptimizer(loss_fn, opt_fn(learning_rate), callback=callback, has_aux=has_aux)
+    return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=has_aux)
 
 
 def run_optimization(
@@ -912,27 +1020,41 @@ def ${expl['name']}(state, model_fn, target_data=None, result_transient=None, n_
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
 
+    # Create observation monitors ONCE with history baked in (optimized pattern)
 % if obs_type == 'function_call':
-    def observable_fn(s):
-        # Run simulation
-        result = model_fn(s)
-        # Call required observations (pass shared transient)
-% for arg in obs_args:
-% if arg['obs']:
-        _${arg['obs']} = ${arg['obs']}(model_fn, s, result=result, result_transient=result_transient)
-% endif
+<%
+    # Collect unique observations used
+    obs_used = set(a['obs'] for a in obs_args if a.get('obs'))
+%>
+% for obs in sorted(obs_used):
+<%
+    obs_class = ''.join(word.capitalize() for word in obs.split('_'))
+%>
+    _${obs}_monitor = ${obs_class}(history=result_transient)
 % endfor
-        # Compute observable
+
+    @jax.jit
+    def observable_fn(s):
+        result = model_fn(s)
+% for obs in sorted(obs_used):
+        _${obs} = _${obs}_monitor(result)
+% endfor
         return ${obs_func}(${', '.join([('_' + a['obs'] + '.data') if a['obs'] else 'target_data' for a in obs_args])})
-% elif output_key:
-    def observable_fn(s):
-        result = model_fn(s)
-        obs_result = ${obs_name}(model_fn, s, result=result, result_transient=result_transient)
-        return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result
 % else:
+<%
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+%>
+    _${obs_name}_monitor = ${obs_class}(history=result_transient)
+
+    @jax.jit
     def observable_fn(s):
         result = model_fn(s)
-        return ${obs_name}(model_fn, s, result=result, result_transient=result_transient)
+        obs_result = _${obs_name}_monitor(result)
+% if output_key:
+        return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result.data
+% else:
+        return obs_result.data
+% endif
 % endif
 
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
@@ -1036,9 +1158,9 @@ def run_experiment(
         # Mark parameters as optimizable
         init_state = mark_parameters_optimizable(state)
 
-        # Create loss function with target data (loss_type defaults to first from metadata)
+        # Create loss function with target data and transient (for HRF/BOLD pipeline)
         loss_type = kwargs.get('loss_type', None)
-        loss_fn = make_loss_fn(model_fn, target_data, loss_type=loss_type)
+        loss_fn = make_loss_fn(model_fn, target_data, result_transient=transient, loss_type=loss_type)
 
         # Run optimization
         fitted_params, fitting_data = run_optimization(

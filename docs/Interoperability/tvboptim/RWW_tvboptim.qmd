@@ -41,6 +41,9 @@ local_dynamics:
     description: >
         Biophysically-based neural mass model for BOLD FC fitting.
         Captures slow dynamics relevant for resting-state fMRI.
+    output:
+        - S
+        - H
 
     parameters:
         a:
@@ -64,13 +67,13 @@ local_dynamics:
             unit: ms
         w:
             label: "Excitatory recurrence"
-            value: 0.6
+            value: 0.5
         J_N:
             label: Excitatory recurrence
             value: 0.2609
         I_o:
             label: "External input"
-            value: 0.33
+            value: 0.32
 
 
     derived_variables:
@@ -91,7 +94,7 @@ local_dynamics:
             label: "Synaptic gating"
             equation:
                 rhs: "-(S / tau_s) + (1 - S) * H * gamma"
-            initial_value: 0.1
+            initial_value: 0.3
             domain:
                 lo: 0.0
                 hi: 1.0
@@ -120,10 +123,11 @@ coupling:
             domain:
                 lo: 0.0
                 hi: 1.0
-    incoming_states:
+    local_states:
         - S
     pre_expression:
-        rhs: "S"
+        rhs: "local_states"
+        description: "Return local states to trigger vectorized matmul mode"
     post_expression:
         rhs: "G * gx"
 
@@ -306,19 +310,18 @@ optimization:
           function: rmse
           arguments:
             - name: simulated_fc
-              description: "Simulated functional connectivity matrix"
+              value: observations.fc.data
+              description: "Simulated functional connectivity matrix from fc observation"
             - name: empirical_fc
-              description: "Empirical functional connectivity matrix (target)"
+              description: "Empirical functional connectivity matrix (target, passed at runtime)"
 
       stages:
           - name: global_optimization
             label: "Global Parameter Optimization"
             description: "Optimize global w and G (same value for all regions)"
             free_parameters:
-                - name: w
-                  value: 0.5
-                - name: G
-                  value: 0.5
+                - w
+                - G
             algorithm: adam
             learning_rate: 0.01
             max_iterations: 300
@@ -333,10 +336,10 @@ optimization:
             warmup_from: global_optimization
             free_parameters:
                 - name: w
-                  shape: "(n_nodes,)"
+                  heterogeneous: true
                   description: "Region-specific excitatory recurrence"
                 - name: I_o
-                  shape: "(n_nodes,)"
+                  heterogeneous: true
                   description: "Region-specific external input"
             freeze_parameters:
                 - G
@@ -547,7 +550,9 @@ plt.tight_layout()
 We use gradient-based optimization to find the best global parameters (same values for all regions) that minimize the FC mismatch.
 
 ```{python}
-opt_results = exp.run("tvboptim", mode="optimization", stage="global_optimization")
+opt_results = exp.run(
+    "tvboptim", mode="optimization", stage="global_optimization", target_data=fc_target)
+
 ```
 
 ```{python}

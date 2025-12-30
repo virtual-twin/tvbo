@@ -566,11 +566,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return clone
 
     def __deepcopy__(self, memo):
+        import dataclasses
+
         cls = self.__class__
-        clone = cls.__new__(cls)
+        # For dataclasses, we need to copy all fields, not just __dict__
+        # __dict__ may not include fields that are still at their default values
+        data = {}
+        if dataclasses.is_dataclass(self):
+            for field in dataclasses.fields(self):
+                value = getattr(self, field.name, None)
+                data[field.name] = _copy.deepcopy(value, memo)
+        else:
+            # Fallback for non-dataclass
+            for k, v in self.__dict__.items():
+                data[k] = _copy.deepcopy(v, memo)
+
+        # Create clone using proper constructor to ensure all defaults are set
+        clone = cls(**data)
         memo[id(self)] = clone
-        for k, v in self.__dict__.items():
-            setattr(clone, k, _copy.deepcopy(v, memo))
         return clone
 
     def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
@@ -873,19 +886,45 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return ts
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
+            import time
+
+            benchmark = kwargs.pop("benchmark", False)
+            timings = Bunch() if benchmark else None
+
             # Get the namespace (reuse execute to avoid code duplication)
+            if benchmark:
+                t0 = time.perf_counter()
             ns = self.execute("tvboptim")
+            if benchmark:
+                timings.code_generation = time.perf_counter() - t0
 
             # Mode defaults to 'all' - run complete workflow
             mode = kwargs.pop("mode", "all")
 
-            # Run the experiment
-            return ns.run_experiment(
-                weights=self.network.weights,
-                distances=self.network.distances,
-                mode=mode,
-                **kwargs,
-            )
+            # Run the experiment with optional per-step timing
+            if benchmark:
+                # Run with detailed timing
+                t0 = time.perf_counter()
+                results = ns.run_experiment(
+                    weights=self.network.weights,
+                    distances=self.network.distances,
+                    mode=mode,
+                    **kwargs,
+                )
+                # Wait for JAX async dispatch to complete
+                jax.block_until_ready(results.result.data if hasattr(results, 'result') else results)
+                timings.total = time.perf_counter() - t0
+
+                # Add timings to results
+                results.timings = timings
+                return results
+            else:
+                return ns.run_experiment(
+                    weights=self.network.weights,
+                    distances=self.network.distances,
+                    mode=mode,
+                    **kwargs,
+                )
 
         elif format.lower() in ["autodiff", "jax"]:
             state = self.collect_state(initial_conditions=initial_conditions)

@@ -379,10 +379,43 @@ def build_step_call(step, step_input, step_names=None, current_obs_name=None, st
     return call_args, obs_deps
 
 # =============================================================================
+# Parse ClassReference
+# =============================================================================
+def parse_class_reference(class_ref, obs):
+    """Parse a ClassReference into a clean dict structure."""
+    if not class_ref:
+        return None
+
+    result = {
+        'name': get_attr(class_ref, 'name'),
+        'module': get_attr(class_ref, 'module'),
+        'constructor_args': {},
+        'call_args': {},
+        'warmup_source': get_attr(class_ref, 'warmup_source') or get_attr(obs, 'warmup_source'),
+    }
+
+    # Parse constructor_args
+    for arg in (get_attr(class_ref, 'constructor_args') or []):
+        name = get_attr(arg, 'name')
+        val = get_attr(arg, 'value')
+        if name:
+            result['constructor_args'][str(name)] = to_numeric(val) if val is not None else None
+
+    # Parse call_args
+    for arg in (get_attr(class_ref, 'call_args') or []):
+        name = get_attr(arg, 'name')
+        val = get_attr(arg, 'value')
+        if name:
+            result['call_args'][str(name)] = val
+
+    return result
+
+# =============================================================================
 # Parse All Observations
 # =============================================================================
 obs_list = []
 callable_imports = {}  # {module: set(qualnames)}
+class_ref_imports = {}  # {module: class_name}
 
 for obs_name, obs in observations.items():
     info = {
@@ -392,8 +425,17 @@ for obs_name, obs in observations.items():
         'source': None,
         'source_observation': None,
         'pipeline': [],
+        'class_reference': None,  # New: direct class reference
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
     }
+
+    # Check for class_reference first (takes precedence over pipeline)
+    class_ref = get_attr(obs, 'class_reference')
+    if class_ref:
+        info['class_reference'] = parse_class_reference(class_ref, obs)
+        # Collect import
+        if info['class_reference']['module']:
+            class_ref_imports[info['class_reference']['module']] = info['class_reference']['name']
 
     # Source state variable
     src = get_attr(obs, 'source')
@@ -484,54 +526,50 @@ for obs in obs_list:
                 'const_name': f'_PRECOMPUTED_{step_name.upper()}',
             }
 %>
-"""
-Observation Functions for tvboptim
-==================================
+"""Observation classes (equinox.Module) for tvboptim."""
 
-Auto-generated from TVBO Observation definitions.
-
-Observations: ${len(obs_list)}
-% for obs in obs_list:
-- ${obs['name']}: ${obs['label'] or obs['description'][:50] + '...' if obs['description'] and len(obs['description']) > 50 else obs['description'] or '(no description)'}
-% endfor
-"""
-
+import math
+import equinox as eqx
 import jax
 import jax.numpy as jnp
-import numpy as np
-from typing import Any
+import jax.scipy as jsp
+from types import SimpleNamespace
 from tvboptim.experimental.network_dynamics.result import NativeSolution
+
+
+class ObservationResult(SimpleNamespace):
+    """Result from an observation pipeline with named outputs.
+
+    Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies)
+    while maintaining NativeSolution-like interface (.data, .time, .dt).
+    """
+
+    @property
+    def data(self):
+        """Primary data output (alias for ys)."""
+        return getattr(self, 'ys', None)
+
+    @property
+    def time(self):
+        """Time array (alias for ts)."""
+        return getattr(self, 'ts', None)
+
 
 # Callable module imports
 % for module in sorted(top_level_modules):
-% if module not in ('jax', 'numpy', 'np', 'jnp'):
+% if module not in ('jax', 'numpy', 'np', 'jnp', 'equinox', 'eqx'):
 import ${module}
 % endif
 % endfor
 
-% if precomputable_steps:
-# =============================================================================
-# Precomputed Constants (no data dependency - computed once at module load)
-# =============================================================================
-# These values are computed once when the module loads, not on every function call.
-# This significantly speeds up parameter exploration where the same kernel is used
-# for thousands of grid points.
-
-% for step_name, info in sorted(precomputable_steps.items()):
-${info['const_name']} = None  # Lazy initialization (requires user functions to be defined first)
+# Class reference imports (external library classes)
+# Aliased with _Ext prefix to avoid name collision with wrapper classes
+% for module, class_name in class_ref_imports.items():
+from ${module} import ${class_name} as _Ext${class_name}
 % endfor
 
-def _init_precomputed():
-    """Initialize precomputed constants (called after user functions are defined)."""
-    global ${', '.join([info['const_name'] for info in precomputable_steps.values()])}
-% for step_name, info in sorted(precomputable_steps.items()):
-    ${info['const_name']} = ${info['call']}
-% endfor
-
-% endif
-
 # =============================================================================
-# Observation Functions
+# Observation Classes (equinox.Module pattern)
 # =============================================================================
 % for obs in obs_list:
 <%
@@ -539,140 +577,478 @@ def _init_precomputed():
     obs_source = obs['source']
     obs_src_obs = obs['source_observation']
     pipeline = obs['pipeline']
+    class_ref = obs.get('class_reference')
+    class_name = ''.join(word.capitalize() for word in obs_name.split('_'))
 
+    # Determine state index from source
+    state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
+%>
+% if class_ref:
+## =============================================================================
+## Class Reference Observation (direct external class usage)
+## =============================================================================
+<%
+    ext_class_name = class_ref['name']
+    ext_module = class_ref['module']
+    constructor_args = class_ref['constructor_args']
+    call_args = class_ref['call_args']
+    warmup_source = class_ref.get('warmup_source')
+
+    # Build constructor kwargs string
+    init_kwargs = []
+    for arg_name, arg_val in constructor_args.items():
+        if arg_val is not None:
+            if isinstance(arg_val, str) and not arg_val.replace('.', '').replace('-', '').isdigit():
+                init_kwargs.append(f"{arg_name}='{arg_val}'")
+            else:
+                init_kwargs.append(f"{arg_name}={arg_val}")
+    init_kwargs_str = ', '.join(init_kwargs)
+
+    # Check if history is needed (warmup_source specified)
+    needs_history = bool(warmup_source)
+%>
+
+class ${class_name}(eqx.Module):
+    """${obs['label'] or obs_name} observation (external class wrapper).
+
+    ${obs['description'] or f'Wraps external class {ext_class_name} from {ext_module}.'}
+
+    Uses: ${ext_module}.${ext_class_name}
+    """
+    # External monitor instance
+    _monitor: eqx.Module
+
+    def __init__(self, history=None, voi: int = ${state_idx}, dt: float = ${dt}, **kwargs):
+        """Initialize observation using external class.
+
+        Args:
+            history: NativeSolution from transient simulation (for warmup)
+            voi: Variable of interest index (default: ${state_idx})
+            dt: Time step (default: ${dt})
+            **kwargs: Additional arguments passed to ${ext_class_name}
+        """
+        # Merge default constructor args with kwargs (filter out internal keys)
+        _init_kwargs = {${', '.join([f"'{k}': {repr(v)}" for k, v in constructor_args.items() if v is not None])}}
+        # Filter out internal keys not meant for external class
+        _internal_keys = {'result', 'result_transient', 'model_fn', 'state'}
+        _init_kwargs.update({k: v for k, v in kwargs.items() if k not in _internal_keys})
+% if needs_history:
+        _init_kwargs['history'] = history
+% endif
+% if 'voi' in constructor_args or needs_history:
+        _init_kwargs.setdefault('voi', voi)
+% endif
+
+        self._monitor = _Ext${ext_class_name}(**_init_kwargs)
+
+    def __call__(self, result):
+        """Process simulation result using external class.
+
+        Args:
+            result: NativeSolution from simulation
+
+        Returns:
+            NativeSolution with observation data
+        """
+        return self._monitor(result)
+
+
+# Convenience function (wraps external class directly)
+def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
+    """${obs['label'] or obs_name} - convenience wrapper for ${ext_class_name}.
+
+    Can be used as:
+    - Class instantiation: ${obs_name}(history=result_transient)
+    - Direct call: ${obs_name}(model_fn, state, result_transient=...)
+    """
+    if model_fn is None:
+        # Return monitor instance for later use
+        return ${class_name}(history=history, dt=dt, **kwargs)
+
+    # Direct call mode - create monitor and apply
+    _history = kwargs.pop('result_transient', history)
+    result = kwargs.pop('result', None) or model_fn(state)
+    monitor = ${class_name}(history=_history, dt=dt, **kwargs)
+    return monitor(result)
+
+% else:
+## =============================================================================
+## Pipeline-based Observation (existing implementation)
+## =============================================================================
+<%
     # Analyze pipeline for data requirements
     needs_transient, needs_result_from_pipeline = analyze_pipeline(pipeline)
 
     # Determine state index from source
-    state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else None
+    state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
 
-    # Determine simulation needs
-    needs_simulation = bool(obs_source) or needs_result_from_pipeline
-    if not obs_src_obs and not obs_source and pipeline:
-        # Check if any step needs implicit simulation input
-        for step in pipeline:
-            has_data_ref = any(
-                parse_reference(v)[0] in ('observation', 'input', 'integration')
-                for v in step.get('arguments', {}).values()
-            )
-            if not has_data_ref and not step.get('input') and not is_kernel_generator(step['name']):
-                needs_simulation = True
-                break
+    # Identify precomputable steps (kernels) and history steps
+    static_steps = []  # Kernel generators - computed in __init__, stored as static
+    history_steps = []  # Steps that reference integration.transient
+    dynamic_steps = []  # Everything else - computed in __call__
 
-    # Determine final output key (defaults to observation name if last step has no explicit output)
+    for step in pipeline:
+        step_name = step['name']
+        if is_kernel_generator(step_name):
+            static_steps.append(step)
+        else:
+            # Check if step references transient
+            refs_transient = False
+            for val in step.get('arguments', {}).values():
+                if isinstance(val, str) and 'transient' in val:
+                    refs_transient = True
+                    break
+            if refs_transient:
+                history_steps.append(step)
+            else:
+                dynamic_steps.append(step)
+
+    # Determine final output key - must match the actual variable name generated
     if pipeline:
-        last_step_output = pipeline[-1].get('output')
-        final_key = last_step_output if last_step_output else obs_name
+        last_step = pipeline[-1]
+        # Use the step's output if set, otherwise the step name (matches the variable generation)
+        final_key = last_step.get('output') or last_step['name']
     else:
         final_key = 'data'
-%>
 
-def ${obs_name}(model_fn, state, dt: float = ${dt}, **kwargs) -> NativeSolution:
-    """${obs['label'] or obs_name}
-
-    ${obs['description'] or 'Auto-generated observation function.'}
-% if pipeline:
-
-    Pipeline: ${' -> '.join([s['name'] for s in pipeline])}
-% endif
-
-    Returns
-    -------
-    NativeSolution
-        .data: final observation data, .time: time axis
-    """
-    _outputs = {}
-
-% if obs_src_obs:
-    # Source: ${obs_src_obs} observation
-    _source = ${obs_src_obs}(model_fn, state, dt=dt, **kwargs)
-    _outputs['data'] = _source.data
-    _outputs['time'] = _source.time
-% elif obs_source:
-    # Source: ${obs_source} state variable (index ${state_idx})
-    _result = kwargs.get('result') or model_fn(state)
-    _outputs['data'] = _result.data[:, ${state_idx}, :]  # Shape: (time, nodes)
-    _outputs['time'] = _result.time  # Time axis from simulation
-% elif needs_simulation:
-    # Get simulation result
-    _result = kwargs.get('result') or model_fn(state)
-    _outputs['data'] = _result.data
-    _outputs['time'] = _result.time  # Time axis from simulation
-% endif
-% if needs_transient:
-    # Integration transient data (shared across all exploration points)
-    _result_transient = kwargs.get('result_transient')
-% endif
-% if pipeline:
-
-    # Pipeline execution
-<%
-    # Collect all step names AND output names in this pipeline for reference resolution
-    # References can use either the function name or the output key
+    # Collect step names and named outputs for reference resolution
     step_names = set()
+    named_outputs = []  # All named outputs to expose on result
     for s in pipeline:
         step_names.add(s['name'])
         if s.get('output'):
-            # Also track individual outputs (for tuple unpacking like 'frequencies, psd')
             for out in s['output'].split(','):
-                step_names.add(out.strip())
+                out_name = out.strip()
+                step_names.add(out_name)
+                named_outputs.append(out_name)
+
+    # Collect all observation references in pipeline (for cross-observation access)
+    # e.g., simulated_psd.frequencies when source_observation is avg_spectrum
+    referenced_observations = set()
+    for s in pipeline:
+        for arg_val in s.get('arguments', {}).values():
+            if isinstance(arg_val, str) and '.' in arg_val:
+                prefix = arg_val.split('.')[0]
+                if prefix in observations and prefix != obs_src_obs:
+                    referenced_observations.add(prefix)
+
+    # Check if pipeline has explicit prepend_history step (avoids redundant auto-generation)
+    has_prepend_history_step = any(s['name'] == 'prepend_history' for s in pipeline)
 %>
+
+class ${class_name}(eqx.Module):
+    """${obs['label'] or obs_name} observation.
+
+    ${obs['description'] or 'Auto-generated observation class.'}
+% if pipeline:
+    Pipeline: ${' -> '.join([s['name'] for s in pipeline])}
+% endif
+    """
+    # Configuration
+    voi: int = ${state_idx}  # Variable of interest (state index)
+    dt: float = ${dt}
+
+% for step in static_steps:
+    # Precomputed: ${step['name']} (kernel)
+    _${step['name']}: jax.Array
+% endfor
+% if needs_transient:
+    # History buffer (preprocessed from transient)
+    _history: jax.Array = None
+% endif
+% if obs_src_obs:
+    # Source observation monitor
+    _source_monitor: eqx.Module = None
+% endif
+% for ref_obs in referenced_observations:
+    # Referenced observation monitor: ${ref_obs}
+    _${ref_obs}_monitor: eqx.Module = None
+% endfor
+
+    def __init__(self, history=None, voi: int = ${state_idx}, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}):
+        """Initialize observation.
+
+        Args:
+            history: NativeSolution from transient simulation (optional)
+            voi: Variable of interest index (default: ${state_idx})
+            dt: Time step (default: ${dt})
+        """
+        self.voi = voi
+        self.dt = dt
+
+% for step in static_steps:
+<%
+    step_name = step['name']
+    fn_def = functions_by_name.get(step_name)
+    # Build default args from function definition
+    default_args = []
+    for arg in (get_attr(fn_def, 'arguments') or []):
+        arg_name = get_attr(arg, 'name')
+        arg_val = get_attr(arg, 'value')
+        if arg_name and arg_val is not None:
+            default_args.append(f"{arg_name}={to_numeric(arg_val)}")
+%>
+        # Precompute ${step_name} kernel
+        self._${step_name} = ${step_name}(${', '.join(default_args)})
+% endfor
+
+% if needs_transient:
+        # Preprocess history from transient
+        if history is not None:
+            if hasattr(history, 'data'):
+                # NativeSolution - extract and downsample
+% if static_steps:
+                n_samples = int(math.ceil(self._${static_steps[0]['name']}.shape[0]))
+% else:
+                n_samples = 5000  # Default history length
+% endif
+                self._history = history.data[-n_samples:, self.voi, :]
+            else:
+                self._history = history
+% endif
+
+% if obs_src_obs:
+        # Initialize source observation monitor
+        self._source_monitor = ${obs_src_obs.replace('_', ' ').title().replace(' ', '')}(history=history, voi=voi, dt=dt)
+% endif
+% for ref_obs in referenced_observations:
+        # Initialize referenced observation monitor: ${ref_obs}
+        self._${ref_obs}_monitor = ${ref_obs.replace('_', ' ').title().replace(' ', '')}(history=history, voi=voi, dt=dt)
+% endfor
+
+    def __call__(self, result):
+        """Process simulation result.
+
+        Args:
+            result: NativeSolution from simulation
+
+        Returns:
+            NativeSolution with observation data
+        """
+% if obs_src_obs:
+        # Get source observation
+        _source = self._source_monitor(result)
+        # Create named reference for cross-observation access (e.g., simulated_psd.psd)
+        _${obs_src_obs}_result = _source
+        _data = _source.data if hasattr(_source, 'data') else _source
+        _time = _source.time if hasattr(_source, 'time') else None
+% for ref_obs in referenced_observations:
+        # Get referenced observation: ${ref_obs}
+        _${ref_obs}_result = self._${ref_obs}_monitor(result)
+% endfor
+% elif obs_source:
+        # Extract source state variable
+        _data = result.data[:, self.voi, :]
+        _time = result.time
+% else:
+        _data = result.data
+        _time = result.time
+% endif
+
+% if needs_transient and not has_prepend_history_step:
+        # Prepend history for warmup (auto-generated, no explicit prepend_history step)
+        _data_with_history = jnp.concatenate([self._history, _data], axis=0)
+% endif
+
 % for step_idx, step in enumerate(pipeline):
 <%
     step_name = step['name']
-    is_last = step_idx == len(pipeline) - 1
-    is_first_step = step_idx == 0
-    # Output defaults: last step -> observation name, otherwise -> function name
-    if is_last:
-        step_output = step['output'] or obs_name
-    else:
-        step_output = step['output'] or step_name
-    # Input defaults to previous step's output, or 'data' for first step
-    prev_output = pipeline[step_idx - 1]['output'] or pipeline[step_idx - 1]['name'] if step_idx > 0 else 'data'
-    step_input = step['input'] or prev_output
-
-    call_args, obs_deps = build_step_call(step, step_input, step_names=step_names, current_obs_name=obs_name, state_idx=state_idx, is_first_step=is_first_step)
-
-    outputs = [o.strip() for o in step_output.split(',')]
-    output_lhs = ', '.join([f"_outputs['{o}']" for o in outputs])
-
-    fn_is_global = step_name in functions_by_name
+    step_output = step.get('output') or step_name
     step_callable = step['callable']
     apply_dim = step.get('apply_on_dimension')
-    is_precomputed = step_name in precomputable_steps
+    is_static = step in static_steps
+
+    # Handle multi-output steps: "frequencies, psd" -> "_frequencies, _psd"
+    def prefix_outputs(out_str):
+        """Prefix all output names with underscore."""
+        parts = [o.strip() for o in out_str.split(',')]
+        return ', '.join(f'_{p}' for p in parts)
+
+    prefixed_output = prefix_outputs(step_output)
+
+    # Determine input variable
+    if step_idx == 0:
+        # First step always gets _data; prepend_history step handles concatenation if needed
+        input_var = '_data'
+    else:
+        prev_step = pipeline[step_idx - 1]
+        prev_output = prev_step.get('output') or prev_step['name']
+        # For multi-output, use last output as input to next step
+        prev_parts = [o.strip() for o in prev_output.split(',')]
+        input_var = f"_{prev_parts[-1]}"
 %>
-    # ${step_name}: ${step_input} -> ${step_output}
-% for dep in sorted(obs_deps):
-    _${dep}_result = _${dep}_result if '_${dep}_result' in dir() else ${dep}(model_fn, state, dt=dt, **kwargs)
-% endfor
-% if is_precomputed:
-    ${output_lhs} = ${precomputable_steps[step_name]['const_name']}
-% elif fn_is_global:
-    ${output_lhs} = ${step_name}(${call_args})
+% if is_static:
+        # ${step_name}: use precomputed kernel
+        ${prefixed_output} = self._${step_name}
 % elif step_callable and step_callable.get('full_call'):
-% if apply_dim == 'node':
-    # apply_on_dimension: node - vmap over axis=1 (nodes)
-    ${output_lhs} = ${build_vmap_call(step_callable['full_call'], step, step_names, obs_name, state_idx)}
-% else:
-    ${output_lhs} = ${step_callable['full_call']}(${call_args})
-% endif
-% elif step['source_code']:
-    ${output_lhs} = (lambda _in: ${step['source_code'].replace('_input', '_in')})(_outputs['${step_input}'])
-% elif step['equation']:
 <%
-    params = step['arg_names'] or list(step['arguments'].keys())
+    full_call = step_callable['full_call']
+    args = step.get('arguments', {})
+
+    # Build call arguments
+    call_parts = []
+    for arg_name, arg_val in args.items():
+        if isinstance(arg_val, str):
+            if arg_val in step_names or arg_val == 'data':
+                # Reference to previous step output
+                if arg_val == 'data':
+                    call_parts.append(f"{arg_name}={input_var}")
+                else:
+                    call_parts.append(f"{arg_name}=_{arg_val}")
+            elif 'transient' in arg_val:
+                call_parts.append(f"{arg_name}=self._history")
+            elif arg_val.startswith('integration.'):
+                # Reference to simulation data
+                call_parts.append(f"{arg_name}=_data")
+            elif arg_val in observations or arg_val == obs_src_obs:
+                # Reference to source observation data
+                call_parts.append(f"{arg_name}=_data")
+            elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').isdigit():
+                # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
+                prefix, attr = arg_val.split('.', 1)
+                if prefix == obs_src_obs or prefix in referenced_observations:
+                    # Reference to observation's named output (e.g., simulated_psd.frequencies)
+                    # Observation result is stored in _<prefix>_result
+                    call_parts.append(f"{arg_name}=_{prefix}_result.{attr}")
+                elif prefix in observations:
+                    # Reference to observation not in our dependency set - warn
+                    call_parts.append(f"{arg_name}='{arg_val}'  # WARNING: observation not accessible")
+                else:
+                    # Unknown dotted reference - pass as string literal
+                    call_parts.append(f"{arg_name}='{arg_val}'")
+            elif arg_val.replace('.', '').replace('-', '').isdigit():
+                call_parts.append(f"{arg_name}={arg_val}")
+            else:
+                call_parts.append(f"{arg_name}='{arg_val}'")
+        else:
+            call_parts.append(f"{arg_name}={repr(arg_val)}")
+
+    # Handle vmap for node dimension
+    if apply_dim == 'node':
+        # For convolution, build the lambda
+        kernel_arg = None
+        mode_arg = "'valid'"
+        for arg_name, arg_val in args.items():
+            if arg_name in ('in2', 'kernel'):
+                if arg_val in step_names:
+                    kernel_arg = f"_{arg_val}"
+                else:
+                    kernel_arg = f"self._{arg_val}"
+            elif arg_name == 'mode':
+                mode_arg = f"'{arg_val}'" if isinstance(arg_val, str) else repr(arg_val)
+        callable_code = f"jax.vmap(lambda x: {full_call}(x, {kernel_arg or '_kernel'}, {mode_arg}), in_axes=1, out_axes=1)({input_var})"
+        callable_comment = f"# {step_name}: vmap over nodes"
+    else:
+        callable_code = f"{full_call}({', '.join(call_parts) if call_parts else input_var})"
+        callable_comment = f"# {step_name}"
 %>
-    ${output_lhs} = ${jaxcode(step['equation'], params)}
+        ${callable_comment}
+        ${prefixed_output} = ${callable_code}
+% elif step_name in functions_by_name:
+<%
+    # User-defined function call
+    args = step.get('arguments', {})
+    call_parts = []
+    for arg_name, arg_val in args.items():
+        if isinstance(arg_val, str):
+            if arg_val in step_names:
+                # Reference to a previous pipeline step output
+                call_parts.append(f"{arg_name}=_{arg_val}")
+            elif 'transient' in arg_val:
+                # Reference to transient history
+                call_parts.append(f"{arg_name}=self._history")
+            elif arg_val.startswith('integration.'):
+                # Reference to simulation data - use _data (raw simulation output)
+                # Functions that need history should reference integration.transient separately
+                call_parts.append(f"{arg_name}=_data")
+            elif arg_val == 'data':
+                # Generic data reference - use input_var (previous step output)
+                call_parts.append(f"{arg_name}={input_var}")
+            elif arg_val in observations or arg_val == obs_src_obs:
+                # Reference to source observation data
+                call_parts.append(f"{arg_name}=_data")
+            elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').replace('_', '').isdigit():
+                # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
+                prefix, attr = arg_val.split('.', 1)
+                if prefix == obs_src_obs or prefix in referenced_observations:
+                    # Reference to observation's named output (e.g., simulated_psd.frequencies)
+                    call_parts.append(f"{arg_name}=_{prefix}_result.{attr}")
+                elif prefix in observations:
+                    # Reference to observation not in our dependency set - warn
+                    call_parts.append(f"{arg_name}='{arg_val}'  # WARNING: observation not accessible")
+                else:
+                    # Unknown dotted reference - pass as string literal
+                    call_parts.append(f"{arg_name}='{arg_val}'")
+            elif arg_val.replace('.', '').replace('-', '').replace('_', '').isdigit():
+                # Numeric value
+                call_parts.append(f"{arg_name}={arg_val}")
+            else:
+                # String literal
+                call_parts.append(f"{arg_name}='{arg_val}'")
+        else:
+            call_parts.append(f"{arg_name}={repr(arg_val)}")
+    if not call_parts:
+        call_parts.append(input_var)
+%>
+        ${prefixed_output} = ${step_name}(${', '.join(call_parts)})
+% elif step.get('source_code'):
+        ${prefixed_output} = ${step['source_code'].replace('_input', input_var)}
 % else:
-    raise NotImplementedError("Step '${step_name}' has no implementation")
+        # ${step_name}: passthrough
+        ${prefixed_output} = ${input_var}
 % endif
 % endfor
+
+        # Return result with all named pipeline outputs
+<%
+    # Determine primary data - last output name or 'data'
+    final_outputs = [o.strip() for o in final_key.split(',')]
+    primary_output = final_outputs[-1] if final_outputs else 'data'
+%>
+        _final = _${primary_output}
+        if isinstance(_final, NativeSolution):
+            return _final
+
+        # Handle scalar vs array results for time axis
+        _is_scalar = _final.ndim == 0 if hasattr(_final, 'ndim') else True
+        if _is_scalar:
+            _ts = None  # Scalar result has no time dimension
+        elif _time is not None and len(_time) >= len(_final):
+            _ts = _time[:len(_final)]
+        else:
+            _ts = jnp.arange(len(_final)) * self.dt
+% if named_outputs:
+        # Return ObservationResult with named outputs accessible as attributes
+        return ObservationResult(
+            ts=_ts,
+            ys=_final,
+            dt=self.dt,
+% for out_name in named_outputs:
+            ${out_name}=_${out_name},
+% endfor
+        )
+% else:
+        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=self.dt)
 % endif
 
-    # Return final output (NativeSolution from pipeline or wrap raw data)
-    _final = _outputs['${final_key}']
-    if isinstance(_final, NativeSolution):
-        return _final
-    return NativeSolution(ts=_outputs.get('time', jnp.arange(_final.shape[0]) * dt), ys=_final, dt=dt)
 
+# Convenience function (wraps class)
+def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
+    """${obs['label'] or obs_name} - convenience wrapper.
+
+    Can be used as:
+    - Class instantiation: ${obs_name}(history=result_transient)
+    - Direct call: ${obs_name}(model_fn, state, result_transient=...)
+    """
+    if model_fn is None:
+        # Return monitor instance for later use
+        return ${class_name}(history=history, dt=dt)
+
+    # Direct call mode - create monitor and apply
+    _history = kwargs.get('result_transient', history)
+    monitor = ${class_name}(history=_history, dt=dt)
+    result = kwargs.get('result') or model_fn(state)
+    return monitor(result)
+
+% endif
 % endfor
