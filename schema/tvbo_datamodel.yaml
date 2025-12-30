@@ -1091,9 +1091,9 @@ classes:
                 ifabsent: string(product)
                 description: "Combination mode: 'product' (full grid), 'zip' (paired)"
             observable:
-                range: Observation
-                inlined: false
-                description: "Observable to compute at each point"
+                range: FunctionCall
+                inlined: true
+                description: "Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall."
             n_parallel:
                 range: integer
                 ifabsent: integer(1)
@@ -1343,6 +1343,29 @@ classes:
             size:
                 range: integer
 
+    ExecutionConfig:
+        description: "Configuration for computational execution (parallelization, precision, hardware)."
+        attributes:
+            n_workers:
+                range: integer
+                ifabsent: integer(1)
+                description: "Number of parallel workers (maps to pmap devices in JAX, processes in multiprocessing)"
+            n_threads:
+                range: integer
+                ifabsent: integer(-1)
+                description: "Number of CPU threads per worker (-1 = auto-detect)"
+            precision:
+                range: string
+                ifabsent: string(float64)
+                description: "Floating point precision: 'float32' or 'float64'"
+            accelerator:
+                range: string
+                ifabsent: string(cpu)
+                description: "Hardware accelerator: 'cpu', 'gpu', 'tpu'"
+            batch_size:
+                range: integer
+                description: "Batch size for vectorized operations (None = auto)"
+
     SimulationExperiment:
         tree_root: true
         class_uri: tvbo:Simulation
@@ -1419,6 +1442,10 @@ classes:
                 range: SoftwareEnvironment
                 description: "Execution environment (collection of requirements)."
                 inlined: true
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Computational execution configuration (parallelization, devices)."
             software:
                 range: SoftwareRequirement
                 description: "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
