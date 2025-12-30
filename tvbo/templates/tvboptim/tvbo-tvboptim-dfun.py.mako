@@ -42,7 +42,20 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 state_names = list(model.state_variables.keys())
 initial_state = [float(sv.initial_value) if sv.initial_value is not None else 0.0
                  for sv in model.state_variables.values()]
-aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
+
+# Determine auxiliary variables from 'output' attribute
+# If output is specified, only derived variables in output list become auxiliaries
+# State variables in output are already state variables, not auxiliaries
+output_vars = getattr(model, 'output', None) or []
+if isinstance(output_vars, str):
+    output_vars = [output_vars]
+
+if output_vars:
+    # Filter output to only include derived variables (exclude state variables)
+    aux_names = [v for v in output_vars if v in (model.derived_variables or {}).keys()]
+else:
+    # Default: all derived variables become auxiliaries
+    aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
 param_names = [p.name for p in model.parameters.values()]
 param_defaults = {p.name: float(p.value) if p.value is not None else 1.0
                   for p in model.parameters.values()}

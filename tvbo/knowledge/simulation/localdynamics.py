@@ -1090,10 +1090,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 )
             elif var_name_str in self.state_variables:
                 # State variable directly as output - no transformation needed
-                # We still record it but with evaluate=False to prevent Eq(x, x) -> True
-                equations["output-transformations"].append(
-                    Eq(Symbol(var_name_str), Symbol(var_name_str), evaluate=False)
-                )
+                # Don't add identity equation Eq(S, S) as it would overwrite the
+                # real state equation in the flat dict returned by get_equations()
+                pass
             else:
                 raise ValueError(
                     f"Output variable '{var_name_str}' not found in derived_variables or state_variables"

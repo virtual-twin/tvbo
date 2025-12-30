@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-29T16:33:02
+# Generation date: 2025-12-30T14:45:16
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -124,6 +124,10 @@ class CallableName(extended_str):
     pass
 
 
+class ClassReferenceName(CallableName):
+    pass
+
+
 class DerivedParameterName(ParameterName):
     pass
 
@@ -245,6 +249,7 @@ class Equation(YAMLRoot):
     label: Optional[str] = None
     definition: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    description: Optional[str] = None
     lhs: Optional[str] = None
     rhs: Optional[str] = None
     conditionals: Optional[Union[Union[dict, "ConditionalBlock"], list[Union[dict, "ConditionalBlock"]]]] = empty_list()
@@ -260,6 +265,9 @@ class Equation(YAMLRoot):
             self.definition = str(self.definition)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
 
         if self.lhs is not None and not isinstance(self.lhs, str):
             self.lhs = str(self.lhs)
@@ -788,6 +796,7 @@ class Observation(YAMLRoot):
     aggregation: Optional[Union[str, "AggregationType"]] = None
     window_size: Optional[int] = None
     pipeline: Optional[Union[Union[dict, "FunctionCall"], list[Union[dict, "FunctionCall"]]]] = empty_list()
+    class_reference: Optional[Union[dict, "ClassReference"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -851,6 +860,9 @@ class Observation(YAMLRoot):
         if not isinstance(self.pipeline, list):
             self.pipeline = [self.pipeline] if self.pipeline is not None else []
         self.pipeline = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.pipeline]
+
+        if self.class_reference is not None and not isinstance(self.class_reference, ClassReference):
+            self.class_reference = ClassReference(**as_dict(self.class_reference))
 
         super().__post_init__(**kwargs)
 
@@ -1356,7 +1368,8 @@ class LossFunction(Function):
 class FunctionCall(YAMLRoot):
     """
     Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly
-    for external library functions. Use arguments to specify inputs by name (referencing previous outputs or values).
+    for external library functions. OR inline a class_call for classes that need instantiation then calling. Use
+    arguments to specify inputs by name (referencing previous outputs or values).
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1367,6 +1380,7 @@ class FunctionCall(YAMLRoot):
 
     function: Optional[Union[str, FunctionName]] = None
     callable: Optional[Union[dict, "Callable"]] = None
+    class_call: Optional[Union[dict, "ClassReference"]] = None
     output: Optional[str] = None
     apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
     aggregate: Optional[Union[dict, Aggregation]] = None
@@ -1378,6 +1392,9 @@ class FunctionCall(YAMLRoot):
 
         if self.callable is not None and not isinstance(self.callable, Callable):
             self.callable = Callable(**as_dict(self.callable))
+
+        if self.class_call is not None and not isinstance(self.class_call, ClassReference):
+            self.class_call = ClassReference(**as_dict(self.class_call))
 
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
@@ -1421,6 +1438,41 @@ class Callable(YAMLRoot):
 
         if self.software is not None and not isinstance(self.software, SoftwareRequirement):
             self.software = SoftwareRequirement(**as_dict(self.software))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class ClassReference(Callable):
+    """
+    Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold,
+    custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable
+    pattern: works for tvboptim, TVB, or any Python class.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["ClassReference"]
+    class_class_curie: ClassVar[str] = "tvbo:ClassReference"
+    class_name: ClassVar[str] = "ClassReference"
+    class_model_uri: ClassVar[URIRef] = TVBO.ClassReference
+
+    name: Union[str, ClassReferenceName] = None
+    constructor_args: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
+    call_args: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
+    warmup_source: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, ClassReferenceName):
+            self.name = ClassReferenceName(self.name)
+
+        self._normalize_inlined_as_list(slot_name="constructor_args", slot_type=Argument, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_list(slot_name="call_args", slot_type=Argument, key_name="name", keyed=True)
+
+        if self.warmup_source is not None and not isinstance(self.warmup_source, str):
+            self.warmup_source = str(self.warmup_source)
 
         super().__post_init__(**kwargs)
 
@@ -1685,7 +1737,7 @@ class OptimizationStage(YAMLRoot):
     name: Union[str, OptimizationStageName] = None
     label: Optional[str] = None
     description: Optional[str] = None
-    free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    free_parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
     algorithm: Optional[str] = "adam"
     learning_rate: Optional[float] = 0.001
     max_iterations: Optional[int] = 100
@@ -1705,7 +1757,9 @@ class OptimizationStage(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_dict(slot_name="free_parameters", slot_type=Parameter, key_name="name", keyed=True)
+        if not isinstance(self.free_parameters, list):
+            self.free_parameters = [self.free_parameters] if self.free_parameters is not None else []
+        self.free_parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.free_parameters]
 
         if self.algorithm is not None and not isinstance(self.algorithm, str):
             self.algorithm = str(self.algorithm)
@@ -4336,6 +4390,9 @@ slots.observation__window_size = Slot(uri=TVBO.window_size, name="observation__w
 slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipeline", curie=TVBO.curie('pipeline'),
                    model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
 
+slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
+                   model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
+
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
                    model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
 
@@ -4471,6 +4528,9 @@ slots.functionCall__function = Slot(uri=TVBO.function, name="functionCall__funct
 slots.functionCall__callable = Slot(uri=TVBO.callable, name="functionCall__callable", curie=TVBO.curie('callable'),
                    model_uri=TVBO.functionCall__callable, domain=None, range=Optional[Union[dict, Callable]])
 
+slots.functionCall__class_call = Slot(uri=TVBO.class_call, name="functionCall__class_call", curie=TVBO.curie('class_call'),
+                   model_uri=TVBO.functionCall__class_call, domain=None, range=Optional[Union[dict, ClassReference]])
+
 slots.functionCall__output = Slot(uri=TVBO.output, name="functionCall__output", curie=TVBO.curie('output'),
                    model_uri=TVBO.functionCall__output, domain=None, range=Optional[str])
 
@@ -4488,6 +4548,15 @@ slots.callable__module = Slot(uri=TVBO.module, name="callable__module", curie=TV
 
 slots.callable__software = Slot(uri=TVBO.software, name="callable__software", curie=TVBO.curie('software'),
                    model_uri=TVBO.callable__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
+
+slots.classReference__constructor_args = Slot(uri=TVBO.constructor_args, name="classReference__constructor_args", curie=TVBO.curie('constructor_args'),
+                   model_uri=TVBO.classReference__constructor_args, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.classReference__call_args = Slot(uri=TVBO.call_args, name="classReference__call_args", curie=TVBO.curie('call_args'),
+                   model_uri=TVBO.classReference__call_args, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.classReference__warmup_source = Slot(uri=TVBO.warmup_source, name="classReference__warmup_source", curie=TVBO.curie('warmup_source'),
+                   model_uri=TVBO.classReference__warmup_source, domain=None, range=Optional[str])
 
 slots.case__condition = Slot(uri=TVBO.condition, name="case__condition", curie=TVBO.curie('condition'),
                    model_uri=TVBO.case__condition, domain=None, range=Optional[str])
@@ -4547,7 +4616,7 @@ slots.dataSource__preprocessing = Slot(uri=TVBO.preprocessing, name="dataSource_
                    model_uri=TVBO.dataSource__preprocessing, domain=None, range=Optional[Union[dict, Function]])
 
 slots.optimizationStage__free_parameters = Slot(uri=TVBO.free_parameters, name="optimizationStage__free_parameters", curie=TVBO.curie('free_parameters'),
-                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
 
 slots.optimizationStage__algorithm = Slot(uri=TVBO.algorithm, name="optimizationStage__algorithm", curie=TVBO.curie('algorithm'),
                    model_uri=TVBO.optimizationStage__algorithm, domain=None, range=Optional[str])
