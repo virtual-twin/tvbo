@@ -265,6 +265,37 @@ def is_kernel_generator(step_name):
     fn_def = functions_by_name.get(step_name)
     return fn_def and get_attr(fn_def, 'time_range')
 
+def can_precompute(step):
+    """Check if a pipeline step can be precomputed (no data dependency).
+
+    A step can be precomputed if:
+    1. It's a kernel generator (has time_range), OR
+    2. It has no arguments that reference runtime data (integration.*, observation.*, etc.)
+
+    Currently we only precompute kernel generators since they're the most common case.
+    """
+    step_name = step.get('name')
+    if is_kernel_generator(step_name):
+        return True
+    return False
+
+def get_precompute_call(step):
+    """Generate the function call for precomputation."""
+    step_name = step['name']
+    args = step.get('arguments', {})
+
+    # Build keyword arguments (only literals, no data references)
+    kwargs = []
+    for name, val in args.items():
+        ref_type, ref_val = parse_reference(val)
+        if ref_type == 'literal':
+            if isinstance(ref_val, str):
+                kwargs.append(f"{name}='{ref_val}'")
+            else:
+                kwargs.append(f"{name}={ref_val}")
+
+    return f"{step_name}({', '.join(kwargs)})"
+
 def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx):
     """Build a vmap-wrapped callable for apply_on_dimension: node.
 
@@ -361,6 +392,7 @@ for obs_name, obs in observations.items():
         'source': None,
         'source_observation': None,
         'pipeline': [],
+        'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
     }
 
     # Source state variable
@@ -435,6 +467,22 @@ for fname, fdef in functions_by_name.items():
 top_level_modules = set()
 for module in callable_imports.keys():
     top_level_modules.add(module.split('.')[0])
+
+# =============================================================================
+# Collect Precomputable Steps
+# =============================================================================
+# Identify pipeline steps that can be precomputed (no data dependency)
+# These will be computed once at module level instead of inside each function call
+precomputable_steps = {}  # {step_name: {'call': 'fn(...)', 'const_name': '_PRECOMPUTED_...'}}
+
+for obs in obs_list:
+    for step in obs.get('pipeline', []):
+        step_name = step.get('name')
+        if step_name and can_precompute(step) and step_name not in precomputable_steps:
+            precomputable_steps[step_name] = {
+                'call': get_precompute_call(step),
+                'const_name': f'_PRECOMPUTED_{step_name.upper()}',
+            }
 %>
 """
 Observation Functions for tvboptim
@@ -452,7 +500,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from typing import Any
-from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.result import NativeSolution
 
 # Callable module imports
 % for module in sorted(top_level_modules):
@@ -461,6 +509,26 @@ import ${module}
 % endif
 % endfor
 
+% if precomputable_steps:
+# =============================================================================
+# Precomputed Constants (no data dependency - computed once at module load)
+# =============================================================================
+# These values are computed once when the module loads, not on every function call.
+# This significantly speeds up parameter exploration where the same kernel is used
+# for thousands of grid points.
+
+% for step_name, info in sorted(precomputable_steps.items()):
+${info['const_name']} = None  # Lazy initialization (requires user functions to be defined first)
+% endfor
+
+def _init_precomputed():
+    """Initialize precomputed constants (called after user functions are defined)."""
+    global ${', '.join([info['const_name'] for info in precomputable_steps.values()])}
+% for step_name, info in sorted(precomputable_steps.items()):
+    ${info['const_name']} = ${info['call']}
+% endfor
+
+% endif
 
 # =============================================================================
 # Observation Functions
@@ -499,7 +567,7 @@ import ${module}
         final_key = 'data'
 %>
 
-def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwargs) -> Bunch:
+def ${obs_name}(model_fn, state, dt: float = ${dt}, **kwargs) -> NativeSolution:
     """${obs['label'] or obs_name}
 
     ${obs['description'] or 'Auto-generated observation function.'}
@@ -510,18 +578,16 @@ def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwa
 
     Returns
     -------
-    Bunch
-        All pipeline outputs. Primary output: '${final_key}'
+    NativeSolution
+        .data: final observation data, .time: time axis
     """
-    _outputs = Bunch() if outputs is None else outputs
+    _outputs = {}
 
 % if obs_src_obs:
     # Source: ${obs_src_obs} observation
-    _source = ${obs_src_obs}(model_fn, state, dt=dt, outputs=_outputs, **kwargs)
-    _outputs.update(_source)
-    _outputs['data'] = _source.get(_source._primary_key, _source.get('data'))
-    if 'time' in _source:
-        _outputs['time'] = _source['time']
+    _source = ${obs_src_obs}(model_fn, state, dt=dt, **kwargs)
+    _outputs['data'] = _source.data
+    _outputs['time'] = _source.time
 % elif obs_source:
     # Source: ${obs_source} state variable (index ${state_idx})
     _result = kwargs.get('result') or model_fn(state)
@@ -534,7 +600,7 @@ def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwa
     _outputs['time'] = _result.time  # Time axis from simulation
 % endif
 % if needs_transient:
-    # Integration transient data
+    # Integration transient data (shared across all exploration points)
     _result_transient = kwargs.get('result_transient')
 % endif
 % if pipeline:
@@ -573,12 +639,15 @@ def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwa
     fn_is_global = step_name in functions_by_name
     step_callable = step['callable']
     apply_dim = step.get('apply_on_dimension')
+    is_precomputed = step_name in precomputable_steps
 %>
     # ${step_name}: ${step_input} -> ${step_output}
 % for dep in sorted(obs_deps):
     _${dep}_result = _${dep}_result if '_${dep}_result' in dir() else ${dep}(model_fn, state, dt=dt, **kwargs)
 % endfor
-% if fn_is_global:
+% if is_precomputed:
+    ${output_lhs} = ${precomputable_steps[step_name]['const_name']}
+% elif fn_is_global:
     ${output_lhs} = ${step_name}(${call_args})
 % elif step_callable and step_callable.get('full_call'):
 % if apply_dim == 'node':
@@ -600,8 +669,10 @@ def ${obs_name}(model_fn, state, dt: float = ${dt}, outputs: Bunch = None, **kwa
 % endfor
 % endif
 
-    # Mark primary output for convenience
-    _outputs._primary_key = '${final_key}'
-    return _outputs
+    # Return final output (NativeSolution from pipeline or wrap raw data)
+    _final = _outputs['${final_key}']
+    if isinstance(_final, NativeSolution):
+        return _final
+    return NativeSolution(ts=_outputs.get('time', jnp.arange(_final.shape[0]) * dt), ys=_final, dt=dt)
 
 % endfor

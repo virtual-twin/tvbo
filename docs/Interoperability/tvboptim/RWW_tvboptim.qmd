@@ -16,6 +16,9 @@ The information below mirrors the [RWW.qmd tutorial](https://github.com/virtual-
 ## Full Experiment as TVBO Metadata
 
 ```{python}
+import os
+os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count=8'
+
 from tvbo import SimulationExperiment
 from tvbo import Network
 from tvboptim.data import load_structural_connectivity, load_functional_connectivity
@@ -68,7 +71,7 @@ local_dynamics:
         I_o:
             label: "External input"
             value: 0.33
-        
+
 
     derived_variables:
         x:
@@ -241,9 +244,9 @@ observations:
         label: "Simulated BOLD Signal"
         description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
         source: S
+        period: 1000.0  # BOLD TR in ms (for time array computation)
         pipeline:
             - function: hrf_kernel
-
             - function: prepend_history
               arguments:
                 - name: data
@@ -365,13 +368,20 @@ explorations:
                 n: 32
 
       mode: product
-      n_parallel: 8
-      observable: fc_rmse
+      observable:
+          function: rmse
+          arguments:
+            - name: simulated_fc
+              value: fc.data
+            - name: empirical_fc
+              description: "Target FC (passed at runtime)"
 
 references:
     - "Wong & Wang (2006) J Neurosci 26:1314-1328 - Reduced Wong-Wang model"
     - "Deco et al. (2014) J Neurosci 34:7886-7898 - Resting-state FC modeling"
 
+execution:
+    n_workers: 8
 """
 
 # === LOAD FROM STRING ===
@@ -434,8 +444,8 @@ ax1.set_ylabel("S [a.u.]")
 # Plot BOLD signal (first 60 TRs)
 bold_obs = sim_results.observations.bold
 t_bold_max = 60
-time_bold = bold_obs["time"][:t_bold_max]
-data_bold = bold_obs["data"][:t_bold_max, :]
+time_bold = bold_obs.time[:t_bold_max]
+data_bold = bold_obs.data[:t_bold_max, :]
 
 num_lines = data_bold.shape[1]
 mean_values = np.mean(data_bold, axis=0)
@@ -463,7 +473,7 @@ from tvboptim.observations.observation import fc_corr
 fc_target = load_functional_connectivity(name="dk_average")
 
 # Get simulated FC from observations
-fc_initial = np.array(sim_results.observations.fc)
+fc_initial = np.array(sim_results.observations.fc.data)
 
 # Create figure
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.1, 3.54375))
@@ -504,7 +514,7 @@ plt.tight_layout()
 Before optimization, we explore how the model parameters affect FC quality. We systematically vary the excitatory recurrence `w` and global coupling strength `G` across a 2D grid.
 
 ```{python}
-expl_results = exp.run("tvboptim", mode="exploration")
+expl_results = exp.run("tvboptim", mode="exploration", target_data=fc_target)
 ```
 
 ```{python}
@@ -541,42 +551,84 @@ opt_results = exp.run("tvboptim", mode="optimization", stage="global_optimizatio
 ```
 
 ```{python}
-#| label: fig-optimization-trajectory
-#| fig-cap: "**Optimization trajectory in parameter space.** White points show the path taken by gradient descent from initial parameters to optimized values."
+# | label: fig-optimization-trajectory
+# | fig-cap: "**Optimization trajectory in parameter space.** White points show the path taken by gradient descent from initial parameters to optimized values."
 fig, ax = plt.subplots(figsize=(8.1, 4.725))
 
-im = ax.imshow(jnp.stack(expl.results).reshape(32, 32).T,
-               cmap='cividis_r',
-               extent=[G_min, G_max, w_min, w_max],
-               origin='lower',
-               aspect='auto',
-               interpolation='none')
+im = ax.imshow(
+    jnp.stack(expl.results).reshape(32, 32).T,
+    cmap="cividis_r",
+    extent=[G_min, G_max, w_min, w_max],
+    origin="lower",
+    aspect="auto",
+    interpolation="none",
+)
 
 # Mark initial value
 G_init = expl_results.state.coupling.instant.G
 w_init = expl_results.state.dynamics.w
-ax.scatter(G_init, w_init, color='white', s=100, marker='o',
-           edgecolors='k', linewidths=2, zorder=5)
-ax.annotate('Initial', xy=(G_init, w_init),
-            xytext=(G_init, w_init+0.05*(w_max-w_min)),
-            color='white', fontweight='bold', ha='center', zorder=5,
-            path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+ax.scatter(
+    G_init,
+    w_init,
+    color="white",
+    s=100,
+    marker="o",
+    edgecolors="k",
+    linewidths=2,
+    zorder=5,
+)
+ax.annotate(
+    "Initial",
+    xy=(G_init, w_init),
+    xytext=(G_init, w_init + 0.05 * (w_max - w_min)),
+    color="white",
+    fontweight="bold",
+    ha="center",
+    zorder=5,
+    path_effects=[path_effects.withStroke(linewidth=3, foreground="black")],
+)
 
 # Mark fitted value
 G_fit = opt_results.fitted_params.coupling.instant.G.value
 w_fit = opt_results.fitted_params.dynamics.w.value
-ax.scatter(G_fit, w_fit, color='white', s=100, marker='o',
-           edgecolors='k', linewidths=2, zorder=5)
-ax.annotate('Optimized', xy=(G_fit, w_fit),
-            xytext=(G_fit, w_fit-0.08*(w_max-w_min)),
-            color='white', fontweight='bold', ha='center', zorder=5,
-            path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+ax.scatter(
+    G_fit,
+    w_fit,
+    color="white",
+    s=100,
+    marker="o",
+    edgecolors="k",
+    linewidths=2,
+    zorder=5,
+)
+ax.annotate(
+    "Optimized",
+    xy=(G_fit, w_fit),
+    xytext=(G_fit, w_fit - 0.08 * (w_max - w_min)),
+    color="white",
+    fontweight="bold",
+    ha="center",
+    zorder=5,
+    path_effects=[path_effects.withStroke(linewidth=3, foreground="black")],
+)
 
 # Add optimization trajectory
-G_route = np.array([ds.coupling.instant.G.value for ds in opt_results.fitting_data["state"].save])
-w_route = np.array([ds.dynamics.w.value for ds in opt_results.fitting_data["state"].save])
-ax.scatter(G_route[::2], w_route[::2], color='white', s=15, marker='o',
-           linewidths=1, zorder=4, edgecolors='k')
+G_route = np.array(
+    [ds.coupling.instant.G.value for ds in opt_results.fitting_data["state"].save]
+)
+w_route = np.array(
+    [ds.dynamics.w.value for ds in opt_results.fitting_data["state"].save]
+)
+ax.scatter(
+    G_route[::2],
+    w_route[::2],
+    color="white",
+    s=15,
+    marker="o",
+    linewidths=1,
+    zorder=4,
+    edgecolors="k",
+)
 
 ax.set_xticks([])
 ax.set_yticks([])
@@ -588,8 +640,12 @@ plt.tight_layout()
 Global parameters may not capture region-specific variations. We now optimize heterogeneous parameters: each brain region gets its own `w` and `I_o` values.
 
 ```{python}
-opt_results_het = exp.run("tvboptim", mode="optimization", stage="regional_optimization",
-                          warmup_state=opt_results.fitted_params)
+opt_results_het = exp.run(
+    "tvboptim",
+    mode="optimization",
+    stage="regional_optimization",
+    warmup_state=opt_results.fitted_params,
+)
 ```
 
 ## Step 6: Results Comparison

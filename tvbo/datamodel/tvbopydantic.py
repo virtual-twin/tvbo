@@ -4136,7 +4136,7 @@ class Exploration(ConfiguredBaseModel):
                        'PDE']} })
     mode: Optional[str] = Field(default="product", description="""Combination mode: 'product' (full grid), 'zip' (paired)""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration'],
          'ifabsent': 'string(product)'} })
-    observable: Optional[str] = Field(default=None, description="""Observable to compute at each point""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration']} })
+    observable: Optional[FunctionCall] = Field(default=None, description="""Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration']} })
     n_parallel: Optional[int] = Field(default=1, description="""Parallel evaluations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration'], 'ifabsent': 'integer(1)'} })
 
 
@@ -4758,6 +4758,19 @@ class Sample(ConfiguredBaseModel):
     size: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Sample']} })
 
 
+class ExecutionConfig(ConfiguredBaseModel):
+    """
+    Configuration for computational execution (parallelization, precision, hardware).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    n_workers: Optional[int] = Field(default=1, description="""Number of parallel workers (maps to pmap devices in JAX, processes in multiprocessing)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'integer(1)'} })
+    n_threads: Optional[int] = Field(default=-1, description="""Number of CPU threads per worker (-1 = auto-detect)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'integer(-1)'} })
+    precision: Optional[str] = Field(default="float64", description="""Floating point precision: 'float32' or 'float64'""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'string(float64)'} })
+    accelerator: Optional[str] = Field(default="cpu", description="""Hardware accelerator: 'cpu', 'gpu', 'tpu'""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'string(cpu)'} })
+    batch_size: Optional[int] = Field(default=None, description="""Batch size for vectorized operations (None = auto)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig']} })
+
+
 class SimulationExperiment(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Simulation',
          'from_schema': 'https://w3id.org/tvbo',
@@ -4861,6 +4874,7 @@ class SimulationExperiment(ConfiguredBaseModel):
     explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     tuning_algorithms: Optional[dict[str, TuningAlgorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
     references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
 
@@ -6423,6 +6437,7 @@ Integrator.model_rebuild()
 Coupling.model_rebuild()
 RegionMapping.model_rebuild()
 Sample.model_rebuild()
+ExecutionConfig.model_rebuild()
 SimulationExperiment.model_rebuild()
 SimulationStudy.model_rebuild()
 TimeSeries.model_rebuild()

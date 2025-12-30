@@ -452,7 +452,8 @@ explorations:
     n_parallel: 1  # Number of parallel workers for pmap
 
     # Observable to compute at each grid point
-    observable: peak_frequency
+    observable:
+      function: peak_frequency
 
 
 references:

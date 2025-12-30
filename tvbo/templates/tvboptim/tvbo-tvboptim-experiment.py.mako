@@ -110,11 +110,19 @@ t1_default = float(integration.duration)
 transient_time = float(integration.transient_time) if integration.transient_time else 0.0
 has_transient = transient_time > 0
 
+# Execution config - parallelization settings (generic, mapped to JAX)
+_exec = getattr(experiment, 'execution', None)
+n_workers = int(getattr(_exec, 'n_workers', 1) or 1) if _exec else 1
+n_threads = int(getattr(_exec, 'n_threads', -1) or -1) if _exec else -1
+precision = str(getattr(_exec, 'precision', 'float64') or 'float64') if _exec else 'float64'
+accelerator = str(getattr(_exec, 'accelerator', 'cpu') or 'cpu') if _exec else 'cpu'
+enable_x64 = precision == 'float64'
+
 # Observation names (for computing all observations in run_simulation)
 # Include all observations that have complete argument specifications
 def obs_has_all_args(obs):
     """Check if observation has all required arguments satisfied.
-    
+
     First step's data/input argument is implicitly satisfied by observation source.
     """
     pipeline = getattr(obs, 'pipeline', None) or []
@@ -223,7 +231,7 @@ def get_obs(name):
 # Helper: Get the "main" output key from an observation's pipeline
 def get_pipeline_output_key(obs_name):
     """Extract the last pipeline step's output key for an observation.
-    
+
     Defaults to observation name if last step has no explicit output.
     """
     obs_obj = get_obs(obs_name)
@@ -274,17 +282,47 @@ for expl in exploration_list:
         assert domain.lo is not None, f"domain.lo required for {getattr(param, 'name', param)}"
         assert domain.hi is not None, f"domain.hi required for {getattr(param, 'name', param)}"
         assert hasattr(domain, 'n') and domain.n, f"domain.n required for {getattr(param, 'name', param)}"
+        pname = getattr(param, 'name', str(param))
+        # Determine if this is a dynamics or coupling parameter
+        is_coupling_param = pname in coupling_param_names
         exp_info['axes'].append({
-            'name': getattr(param, 'name', str(param)),
+            'name': pname,
             'lo': float(domain.lo),
             'hi': float(domain.hi),
             'n': int(domain.n),
+            'is_coupling': is_coupling_param,
+            'coupling_key': target_coupling_term if is_coupling_param else None,
         })
     observable = getattr(expl, 'observable', None)
     if observable:
-        obs_name = getattr(observable, 'name', str(observable))
-        exp_info['observable'] = obs_name
-        exp_info['output_key'] = get_pipeline_output_key(obs_name)
+        # FunctionCall: always has 'function' attribute
+        func = getattr(observable, 'function', None)
+        func_name = getattr(func, 'name', str(func)) if func else None
+        args = getattr(observable, 'arguments', None) or []
+
+        if args:
+            # FunctionCall with arguments (e.g., rmse(fc.data, target))
+            exp_info['observable_type'] = 'function_call'
+            exp_info['observable_func'] = func_name
+            exp_info['observable_args'] = []
+            for arg in args:
+                arg_name = getattr(arg, 'name', str(arg))
+                arg_value = getattr(arg, 'value', None)
+                if arg_value:
+                    # Value references observation.output (e.g., "fc.data")
+                    if '.' in str(arg_value):
+                        obs_ref, output_key = str(arg_value).split('.', 1)
+                        exp_info['observable_args'].append({'name': arg_name, 'obs': obs_ref, 'key': output_key})
+                    else:
+                        exp_info['observable_args'].append({'name': arg_name, 'obs': str(arg_value), 'key': 'data'})
+                else:
+                    # No value = runtime input (target_data)
+                    exp_info['observable_args'].append({'name': arg_name, 'obs': None, 'key': None})
+        else:
+            # Simple observation reference (function: obs_name, no arguments)
+            exp_info['observable_type'] = 'observation'
+            exp_info['observable'] = func_name
+            exp_info['output_key'] = get_pipeline_output_key(func_name) if func_name else None
     explorations.append(exp_info)
 
 has_observations = len(observations) > 0
@@ -333,8 +371,13 @@ Workflows:
 # =============================================================================
 # Imports
 # =============================================================================
-
+import os
 import copy
+
+%if accelerator == 'cpu':
+os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count=${n_workers}'
+% endif
+
 import jax
 import jax.numpy as jnp
 import jax.scipy.signal
@@ -587,6 +630,11 @@ from ${module} import ${cname} as ${local_name}
 ${fn.function_def(fdef, format='jax', user_functions=all_func_names)}
 % endfor
 
+# Initialize precomputed constants (kernel generators, etc.)
+# These are computed once at module load, not on every observation call
+if '_init_precomputed' in dir():
+    _init_precomputed()
+
 
 # =============================================================================
 # Loss Functions (Generated from Metadata)
@@ -717,9 +765,9 @@ def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
 % for arg in args:
 % if arg['type'] == 'observation':
 % if arg['output_key']:
-    ${arg['name']} = _${arg['obs_name']}['${arg['output_key']}']
+    ${arg['name']} = _${arg['obs_name']}.${arg['output_key']}
 % else:
-    ${arg['name']} = _${arg['obs_name']}[_${arg['obs_name']}._primary_key]
+    ${arg['name']} = _${arg['obs_name']}.data
 % endif
 % else:
     ${arg['name']} = target_data
@@ -735,9 +783,7 @@ def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None):
     loss_value = ${func_name}(${', '.join([a['name'] for a in args])})
 % endif
 % if obs_refs:
-    # Return only JAX-compatible arrays (exclude _primary_key string attribute)
-    _aux = {k: v for k, v in _${list(obs_refs)[0]}.items() if not k.startswith('_')}
-    return loss_value, _aux
+    return loss_value, _${list(obs_refs)[0]}
 % else:
     return loss_value, None
 % endif
@@ -839,29 +885,56 @@ def run_optimization(
     total_points = 1
     for ax in expl['axes']:
         total_points *= ax['n']
-%>
-<%
+    obs_type = expl.get('observable_type', 'observation')
+    obs_func = expl.get('observable_func', '')
+    obs_args = expl.get('observable_args', [])
+    obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
 %>
-def ${expl['name']}(state, model_fn, n_pmap: int = ${expl['n_parallel']}):
+def ${expl['name']}(state, model_fn, target_data=None, result_transient=None, n_pmap: int = ${n_workers}):
     """${expl['label']} - Parameter exploration.
 
     Grid: ${' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']])} = ${total_points} points
-    Observable: ${expl['observable']}${"['" + output_key + "']" if output_key else ""}
+    N_PMAP: Auto-detected from available devices (default: ${n_workers})
+% if obs_type == 'function_call':
+    Observable: ${obs_func}(${', '.join([a['name'] for a in obs_args])})
+% else:
+    Observable: ${obs_name}${"['" + output_key + "']" if output_key else ""}
+% endif
     """
     grid_state = copy.deepcopy(state)
     % for ax in expl['axes']:
+    % if ax.get('is_coupling'):
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=${ax['n']})
+    % else:
     grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=${ax['n']})
+    % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
-% if output_key:
-    # Extract '${output_key}' from observation dict
+
+% if obs_type == 'function_call':
     def observable_fn(s):
-        result = ${expl['observable']}(model_fn, s)
-        return result['${output_key}'] if isinstance(result, dict) else result
-% else:
-    observable_fn = lambda s: ${expl['observable']}(model_fn, s)
+        # Run simulation
+        result = model_fn(s)
+        # Call required observations (pass shared transient)
+% for arg in obs_args:
+% if arg['obs']:
+        _${arg['obs']} = ${arg['obs']}(model_fn, s, result=result, result_transient=result_transient)
 % endif
+% endfor
+        # Compute observable
+        return ${obs_func}(${', '.join([('_' + a['obs'] + '.data') if a['obs'] else 'target_data' for a in obs_args])})
+% elif output_key:
+    def observable_fn(s):
+        result = model_fn(s)
+        obs_result = ${obs_name}(model_fn, s, result=result, result_transient=result_transient)
+        return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result
+% else:
+    def observable_fn(s):
+        result = model_fn(s)
+        return ${obs_name}(model_fn, s, result=result, result_transient=result_transient)
+% endif
+
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     results = exec_runner.run()
     return Bunch(grid=grid, results=jnp.stack(results))
@@ -925,6 +998,8 @@ def run_experiment(
         - fitting_data: Optimization history (if mode='optimization')
         - explorations: Grid search results as Bunch (if mode='exploration')
     """
+
+
     weights = jnp.array(weights)
 
     # Setup network
@@ -985,7 +1060,9 @@ def run_experiment(
 
         % for expl in explorations:
         explorations_result.${expl['name']} = ${expl['name']}(
-            state, model_fn, n_pmap=kwargs.get('n_pmap', ${expl['n_parallel']})
+            state, model_fn,
+            target_data=target_data,
+            result_transient=transient,
         )
         % endfor
 

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-29T15:34:43
+# Generation date: 2025-12-29T16:33:02
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1804,7 +1804,7 @@ class Exploration(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     mode: Optional[str] = "product"
-    observable: Optional[Union[str, ObservationName]] = None
+    observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1826,8 +1826,8 @@ class Exploration(YAMLRoot):
         if self.mode is not None and not isinstance(self.mode, str):
             self.mode = str(self.mode)
 
-        if self.observable is not None and not isinstance(self.observable, ObservationName):
-            self.observable = ObservationName(self.observable)
+        if self.observable is not None and not isinstance(self.observable, FunctionCall):
+            self.observable = FunctionCall(**as_dict(self.observable))
 
         if self.n_parallel is not None and not isinstance(self.n_parallel, int):
             self.n_parallel = int(self.n_parallel)
@@ -2225,6 +2225,43 @@ class Sample(YAMLRoot):
 
 
 @dataclass(repr=False)
+class ExecutionConfig(YAMLRoot):
+    """
+    Configuration for computational execution (parallelization, precision, hardware).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["ExecutionConfig"]
+    class_class_curie: ClassVar[str] = "tvbo:ExecutionConfig"
+    class_name: ClassVar[str] = "ExecutionConfig"
+    class_model_uri: ClassVar[URIRef] = TVBO.ExecutionConfig
+
+    n_workers: Optional[int] = 1
+    n_threads: Optional[int] = -1
+    precision: Optional[str] = "float64"
+    accelerator: Optional[str] = "cpu"
+    batch_size: Optional[int] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.n_workers is not None and not isinstance(self.n_workers, int):
+            self.n_workers = int(self.n_workers)
+
+        if self.n_threads is not None and not isinstance(self.n_threads, int):
+            self.n_threads = int(self.n_threads)
+
+        if self.precision is not None and not isinstance(self.precision, str):
+            self.precision = str(self.precision)
+
+        if self.accelerator is not None and not isinstance(self.accelerator, str):
+            self.accelerator = str(self.accelerator)
+
+        if self.batch_size is not None and not isinstance(self.batch_size, int):
+            self.batch_size = int(self.batch_size)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class SimulationExperiment(YAMLRoot):
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -2252,6 +2289,7 @@ class SimulationExperiment(YAMLRoot):
     explorations: Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]] = empty_dict()
     tuning_algorithms: Optional[Union[dict[Union[str, TuningAlgorithmName], Union[dict, TuningAlgorithm]], list[Union[dict, TuningAlgorithm]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
+    execution: Optional[Union[dict, ExecutionConfig]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
     references: Optional[Union[str, list[str]]] = empty_list()
 
@@ -2309,6 +2347,9 @@ class SimulationExperiment(YAMLRoot):
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
+
+        if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
+            self.execution = ExecutionConfig(**as_dict(self.execution))
 
         if self.software is not None and not isinstance(self.software, SoftwareRequirement):
             self.software = SoftwareRequirement(**as_dict(self.software))
@@ -4554,7 +4595,7 @@ slots.exploration__mode = Slot(uri=TVBO.mode, name="exploration__mode", curie=TV
                    model_uri=TVBO.exploration__mode, domain=None, range=Optional[str])
 
 slots.exploration__observable = Slot(uri=TVBO.observable, name="exploration__observable", curie=TVBO.curie('observable'),
-                   model_uri=TVBO.exploration__observable, domain=None, range=Optional[Union[str, ObservationName]])
+                   model_uri=TVBO.exploration__observable, domain=None, range=Optional[Union[dict, FunctionCall]])
 
 slots.exploration__n_parallel = Slot(uri=TVBO.n_parallel, name="exploration__n_parallel", curie=TVBO.curie('n_parallel'),
                    model_uri=TVBO.exploration__n_parallel, domain=None, range=Optional[int])
@@ -4703,6 +4744,21 @@ slots.sample__groups = Slot(uri=TVBO.groups, name="sample__groups", curie=TVBO.c
 slots.sample__size = Slot(uri=TVBO.size, name="sample__size", curie=TVBO.curie('size'),
                    model_uri=TVBO.sample__size, domain=None, range=Optional[int])
 
+slots.executionConfig__n_workers = Slot(uri=TVBO.n_workers, name="executionConfig__n_workers", curie=TVBO.curie('n_workers'),
+                   model_uri=TVBO.executionConfig__n_workers, domain=None, range=Optional[int])
+
+slots.executionConfig__n_threads = Slot(uri=TVBO.n_threads, name="executionConfig__n_threads", curie=TVBO.curie('n_threads'),
+                   model_uri=TVBO.executionConfig__n_threads, domain=None, range=Optional[int])
+
+slots.executionConfig__precision = Slot(uri=TVBO.precision, name="executionConfig__precision", curie=TVBO.curie('precision'),
+                   model_uri=TVBO.executionConfig__precision, domain=None, range=Optional[str])
+
+slots.executionConfig__accelerator = Slot(uri=TVBO.accelerator, name="executionConfig__accelerator", curie=TVBO.curie('accelerator'),
+                   model_uri=TVBO.executionConfig__accelerator, domain=None, range=Optional[str])
+
+slots.executionConfig__batch_size = Slot(uri=TVBO.batch_size, name="executionConfig__batch_size", curie=TVBO.curie('batch_size'),
+                   model_uri=TVBO.executionConfig__batch_size, domain=None, range=Optional[int])
+
 slots.simulationExperiment__id = Slot(uri=TVBO.id, name="simulationExperiment__id", curie=TVBO.curie('id'),
                    model_uri=TVBO.simulationExperiment__id, domain=None, range=URIRef)
 
@@ -4756,6 +4812,9 @@ slots.simulationExperiment__tuning_algorithms = Slot(uri=TVBO.tuning_algorithms,
 
 slots.simulationExperiment__environment = Slot(uri=TVBO.environment, name="simulationExperiment__environment", curie=TVBO.curie('environment'),
                    model_uri=TVBO.simulationExperiment__environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+
+slots.simulationExperiment__execution = Slot(uri=TVBO.execution, name="simulationExperiment__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.simulationExperiment__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
 
 slots.simulationExperiment__software = Slot(uri=TVBO.software, name="simulationExperiment__software", curie=TVBO.curie('software'),
                    model_uri=TVBO.simulationExperiment__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
