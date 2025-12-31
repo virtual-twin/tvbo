@@ -38,6 +38,9 @@ local_dynamics:
         w:
             label: "Excitatory recurrence"
             value: 0.5
+            domain:
+                lo: 0.0
+                hi: 1.0
         J_N:
             label: Excitatory recurrence
             value: 0.2609

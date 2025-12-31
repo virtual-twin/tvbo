@@ -809,8 +809,13 @@ class ${class_name}(eqx.Module):
 % else:
                 n_samples = 5000  # Default history length
 % endif
-                # Keep 3D shape (time, state, node) for proper double vmap
+% if obs_source:
+                # Slice history to source state variable → 3D: (time, 1, nodes)
+                self._history = history.data[-n_samples:, voi:voi+1, :]
+% else:
+                # Keep full 3D shape (time, states, nodes)
                 self._history = history.data[-n_samples:, :, :]
+% endif
             else:
                 self._history = history
 % endif
@@ -845,10 +850,12 @@ class ${class_name}(eqx.Module):
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
 % endfor
 % elif obs_source:
-        # Keep full 3D shape (time, state, node) for proper double vmap
-        _data = result.data
+        # Slice to source state variable (${obs_source}) → 3D: (time, 1, nodes)
+        # Keeps state dimension for consistent vmap handling
+        _data = result.data[:, self.voi:self.voi+1, :]
         _time = result.time
 % else:
+        # All states → 3D: (time, states, nodes)
         _data = result.data
         _time = result.time
 % endif
