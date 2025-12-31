@@ -31,7 +31,17 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
-coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['default']
+
+# Build coupling_inputs dict from coupling_inputs (preferred) or coupling_terms (deprecated fallback)
+coupling_inputs_dict = {}
+if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
+    for ci_name, ci in model.coupling_inputs.items():
+        dim = getattr(ci, 'dimension', 1) or 1
+        coupling_inputs_dict[ci_name] = dim
+elif hasattr(model, 'coupling_terms') and model.coupling_terms:
+    for ct_name in model.coupling_terms.keys():
+        coupling_inputs_dict[ct_name] = 1
+coupling_input_names = list(coupling_inputs_dict.keys()) if coupling_inputs_dict else ['coupling']
 
 # Coupling metadata
 has_delay = hasattr(coupling, 'delayed') and coupling.delayed
@@ -163,7 +173,7 @@ def create_network(
 
     return Network(
         dynamics=dynamics,
-        coupling={'${coupling_terms[0]}': coupling},
+        coupling={'${coupling_input_names[0]}': coupling},
         graph=graph,
         noise=noise,
     )

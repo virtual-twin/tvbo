@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-31T14:29:24
+# Generation date: 2025-12-31T18:21:31
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -156,7 +156,7 @@ class UpdateRuleName(extended_str):
     pass
 
 
-class TuningAlgorithmName(extended_str):
+class AlgorithmName(extended_str):
     pass
 
 
@@ -1984,19 +1984,19 @@ class TuningObjective(YAMLRoot):
 
 
 @dataclass(repr=False)
-class TuningAlgorithm(YAMLRoot):
+class Algorithm(YAMLRoot):
     """
     A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives,
     observables, and hyperparameters.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
-    class_class_uri: ClassVar[URIRef] = TVBO["TuningAlgorithm"]
-    class_class_curie: ClassVar[str] = "tvbo:TuningAlgorithm"
-    class_name: ClassVar[str] = "TuningAlgorithm"
-    class_model_uri: ClassVar[URIRef] = TVBO.TuningAlgorithm
+    class_class_uri: ClassVar[URIRef] = TVBO["Algorithm"]
+    class_class_curie: ClassVar[str] = "tvbo:Algorithm"
+    class_name: ClassVar[str] = "Algorithm"
+    class_model_uri: ClassVar[URIRef] = TVBO.Algorithm
 
-    name: Union[str, TuningAlgorithmName] = None
+    name: Union[str, AlgorithmName] = None
     update_rules: Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]] = empty_dict()
     description: Optional[str] = None
     type: Optional[str] = None
@@ -2008,13 +2008,13 @@ class TuningAlgorithm(YAMLRoot):
     learning_rate_schedule: Optional[str] = None
     simulation_period: Optional[float] = None
     apply_every: Optional[int] = 1
-    depends_on: Optional[Union[Union[str, TuningAlgorithmName], list[Union[str, TuningAlgorithmName]]]] = empty_list()
+    depends_on: Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
-        if not isinstance(self.name, TuningAlgorithmName):
-            self.name = TuningAlgorithmName(self.name)
+        if not isinstance(self.name, AlgorithmName):
+            self.name = AlgorithmName(self.name)
 
         if self._is_empty(self.update_rules):
             self.MissingRequiredField("update_rules")
@@ -2050,7 +2050,7 @@ class TuningAlgorithm(YAMLRoot):
 
         if not isinstance(self.depends_on, list):
             self.depends_on = [self.depends_on] if self.depends_on is not None else []
-        self.depends_on = [v if isinstance(v, TuningAlgorithmName) else TuningAlgorithmName(v) for v in self.depends_on]
+        self.depends_on = [v if isinstance(v, AlgorithmName) else AlgorithmName(v) for v in self.depends_on]
 
         super().__post_init__(**kwargs)
 
@@ -2345,7 +2345,7 @@ class SimulationExperiment(YAMLRoot):
     field_dynamics: Optional[Union[dict, "PDE"]] = None
     optimization: Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]] = empty_dict()
     explorations: Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]] = empty_dict()
-    tuning_algorithms: Optional[Union[dict[Union[str, TuningAlgorithmName], Union[dict, TuningAlgorithm]], list[Union[dict, TuningAlgorithm]]]] = empty_dict()
+    algorithms: Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     execution: Optional[Union[dict, ExecutionConfig]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
@@ -2401,7 +2401,7 @@ class SimulationExperiment(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="tuning_algorithms", slot_type=TuningAlgorithm, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="algorithms", slot_type=Algorithm, key_name="name", keyed=True)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -4700,38 +4700,38 @@ slots.tuningObjective__target_data = Slot(uri=TVBO.target_data, name="tuningObje
 slots.tuningObjective__metric = Slot(uri=TVBO.metric, name="tuningObjective__metric", curie=TVBO.curie('metric'),
                    model_uri=TVBO.tuningObjective__metric, domain=None, range=Optional[Union[dict, Equation]])
 
-slots.tuningAlgorithm__type = Slot(uri=TVBO.type, name="tuningAlgorithm__type", curie=TVBO.curie('type'),
-                   model_uri=TVBO.tuningAlgorithm__type, domain=None, range=Optional[str])
+slots.algorithm__type = Slot(uri=TVBO.type, name="algorithm__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.algorithm__type, domain=None, range=Optional[str])
 
-slots.tuningAlgorithm__objective = Slot(uri=TVBO.objective, name="tuningAlgorithm__objective", curie=TVBO.curie('objective'),
-                   model_uri=TVBO.tuningAlgorithm__objective, domain=None, range=Optional[Union[dict, TuningObjective]])
+slots.algorithm__objective = Slot(uri=TVBO.objective, name="algorithm__objective", curie=TVBO.curie('objective'),
+                   model_uri=TVBO.algorithm__objective, domain=None, range=Optional[Union[dict, TuningObjective]])
 
-slots.tuningAlgorithm__observables = Slot(uri=TVBO.observables, name="tuningAlgorithm__observables", curie=TVBO.curie('observables'),
-                   model_uri=TVBO.tuningAlgorithm__observables, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
+slots.algorithm__observables = Slot(uri=TVBO.observables, name="algorithm__observables", curie=TVBO.curie('observables'),
+                   model_uri=TVBO.algorithm__observables, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
 
-slots.tuningAlgorithm__update_rules = Slot(uri=TVBO.update_rules, name="tuningAlgorithm__update_rules", curie=TVBO.curie('update_rules'),
-                   model_uri=TVBO.tuningAlgorithm__update_rules, domain=None, range=Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]])
+slots.algorithm__update_rules = Slot(uri=TVBO.update_rules, name="algorithm__update_rules", curie=TVBO.curie('update_rules'),
+                   model_uri=TVBO.algorithm__update_rules, domain=None, range=Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]])
 
-slots.tuningAlgorithm__hyperparameters = Slot(uri=TVBO.hyperparameters, name="tuningAlgorithm__hyperparameters", curie=TVBO.curie('hyperparameters'),
-                   model_uri=TVBO.tuningAlgorithm__hyperparameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+slots.algorithm__hyperparameters = Slot(uri=TVBO.hyperparameters, name="algorithm__hyperparameters", curie=TVBO.curie('hyperparameters'),
+                   model_uri=TVBO.algorithm__hyperparameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
-slots.tuningAlgorithm__learning_rate = Slot(uri=TVBO.learning_rate, name="tuningAlgorithm__learning_rate", curie=TVBO.curie('learning_rate'),
-                   model_uri=TVBO.tuningAlgorithm__learning_rate, domain=None, range=Optional[float])
+slots.algorithm__learning_rate = Slot(uri=TVBO.learning_rate, name="algorithm__learning_rate", curie=TVBO.curie('learning_rate'),
+                   model_uri=TVBO.algorithm__learning_rate, domain=None, range=Optional[float])
 
-slots.tuningAlgorithm__n_iterations = Slot(uri=TVBO.n_iterations, name="tuningAlgorithm__n_iterations", curie=TVBO.curie('n_iterations'),
-                   model_uri=TVBO.tuningAlgorithm__n_iterations, domain=None, range=Optional[int])
+slots.algorithm__n_iterations = Slot(uri=TVBO.n_iterations, name="algorithm__n_iterations", curie=TVBO.curie('n_iterations'),
+                   model_uri=TVBO.algorithm__n_iterations, domain=None, range=Optional[int])
 
-slots.tuningAlgorithm__learning_rate_schedule = Slot(uri=TVBO.learning_rate_schedule, name="tuningAlgorithm__learning_rate_schedule", curie=TVBO.curie('learning_rate_schedule'),
-                   model_uri=TVBO.tuningAlgorithm__learning_rate_schedule, domain=None, range=Optional[str])
+slots.algorithm__learning_rate_schedule = Slot(uri=TVBO.learning_rate_schedule, name="algorithm__learning_rate_schedule", curie=TVBO.curie('learning_rate_schedule'),
+                   model_uri=TVBO.algorithm__learning_rate_schedule, domain=None, range=Optional[str])
 
-slots.tuningAlgorithm__simulation_period = Slot(uri=TVBO.simulation_period, name="tuningAlgorithm__simulation_period", curie=TVBO.curie('simulation_period'),
-                   model_uri=TVBO.tuningAlgorithm__simulation_period, domain=None, range=Optional[float])
+slots.algorithm__simulation_period = Slot(uri=TVBO.simulation_period, name="algorithm__simulation_period", curie=TVBO.curie('simulation_period'),
+                   model_uri=TVBO.algorithm__simulation_period, domain=None, range=Optional[float])
 
-slots.tuningAlgorithm__apply_every = Slot(uri=TVBO.apply_every, name="tuningAlgorithm__apply_every", curie=TVBO.curie('apply_every'),
-                   model_uri=TVBO.tuningAlgorithm__apply_every, domain=None, range=Optional[int])
+slots.algorithm__apply_every = Slot(uri=TVBO.apply_every, name="algorithm__apply_every", curie=TVBO.curie('apply_every'),
+                   model_uri=TVBO.algorithm__apply_every, domain=None, range=Optional[int])
 
-slots.tuningAlgorithm__depends_on = Slot(uri=TVBO.depends_on, name="tuningAlgorithm__depends_on", curie=TVBO.curie('depends_on'),
-                   model_uri=TVBO.tuningAlgorithm__depends_on, domain=None, range=Optional[Union[Union[str, TuningAlgorithmName], list[Union[str, TuningAlgorithmName]]]])
+slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
+                   model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])
 
 slots.integrator__method = Slot(uri=TVBO.method, name="integrator__method", curie=TVBO.curie('method'),
                    model_uri=TVBO.integrator__method, domain=None, range=Optional[str])
@@ -4883,8 +4883,8 @@ slots.simulationExperiment__optimization = Slot(uri=TVBO.optimization, name="sim
 slots.simulationExperiment__explorations = Slot(uri=TVBO.explorations, name="simulationExperiment__explorations", curie=TVBO.curie('explorations'),
                    model_uri=TVBO.simulationExperiment__explorations, domain=None, range=Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]])
 
-slots.simulationExperiment__tuning_algorithms = Slot(uri=TVBO.tuning_algorithms, name="simulationExperiment__tuning_algorithms", curie=TVBO.curie('tuning_algorithms'),
-                   model_uri=TVBO.simulationExperiment__tuning_algorithms, domain=None, range=Optional[Union[dict[Union[str, TuningAlgorithmName], Union[dict, TuningAlgorithm]], list[Union[dict, TuningAlgorithm]]]])
+slots.simulationExperiment__algorithms = Slot(uri=TVBO.algorithms, name="simulationExperiment__algorithms", curie=TVBO.curie('algorithms'),
+                   model_uri=TVBO.simulationExperiment__algorithms, domain=None, range=Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]])
 
 slots.simulationExperiment__environment = Slot(uri=TVBO.environment, name="simulationExperiment__environment", curie=TVBO.curie('environment'),
                    model_uri=TVBO.simulationExperiment__environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])

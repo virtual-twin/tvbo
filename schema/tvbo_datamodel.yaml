@@ -1210,7 +1210,7 @@ classes:
                 inlined: true
                 description: "Metric equation for matching (e.g., correlation, rmse)"
 
-    TuningAlgorithm:
+    Algorithm:
         description: >-
             A complete specification of an iterative parameter tuning algorithm.
             Combines update rules, objectives, observables, and hyperparameters.
@@ -1259,7 +1259,7 @@ classes:
                 description: Apply update every N iterations
             depends_on:
                 multivalued: true
-                range: TuningAlgorithm
+                range: Algorithm
                 description: Other algorithms that must run first (e.g., EIB depends on FIC)
 
     Integrator:
@@ -1488,9 +1488,9 @@ classes:
                 range: Exploration
                 inlined: true
                 description: "Parameter exploration/grid search specifications"
-            tuning_algorithms:
+            algorithms:
                 multivalued: true
-                range: TuningAlgorithm
+                range: Algorithm
                 inlined: true
                 description: "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
             # Either reference a full reusable environment (preferred) or, for
