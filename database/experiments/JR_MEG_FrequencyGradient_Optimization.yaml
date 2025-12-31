@@ -119,10 +119,6 @@ local_dynamics:
     c_delayed:
       dimension: 1
 
-  coupling_terms:
-    c_instant: {}
-    c_delayed: {}
-
 # --------------------------------------------------------
 # COUPLING: DelayedSigmoidalJansenRit
 # --------------------------------------------------------

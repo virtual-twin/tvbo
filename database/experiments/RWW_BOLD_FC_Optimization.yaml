@@ -82,10 +82,8 @@ local_dynamics:
     coupling_inputs:
         c_instant:
             dimension: 1
-
-    coupling_terms:
-        c_instant: {}
-        c_delayed: {}
+        c_delayed:
+            dimension: 1
 
 coupling:
     name: FastLinearCoupling

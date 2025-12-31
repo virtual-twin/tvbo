@@ -51,29 +51,29 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
-coupling_terms_raw = list(model.coupling_terms.keys()) if model.coupling_terms else ['default']
 
-# Map TVBO coupling term names to tvboptim convention
-# TVBO uses c_instant/c_delayed, tvboptim uses instant/delayed
-def to_tvboptim_coupling_name(name):
-    """Strip 'c_' prefix for tvboptim compatibility."""
-    if name.startswith('c_'):
-        return name[2:]  # Remove 'c_' prefix
-    return name
-
-coupling_terms = [to_tvboptim_coupling_name(ct) for ct in coupling_terms_raw]
+# Build coupling_inputs dict from coupling_inputs (preferred) or coupling_terms (deprecated fallback)
+coupling_inputs_dict = {}
+if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
+    for ci_name, ci in model.coupling_inputs.items():
+        dim = getattr(ci, 'dimension', 1) or 1
+        coupling_inputs_dict[ci_name] = dim
+elif hasattr(model, 'coupling_terms') and model.coupling_terms:
+    for ct_name in model.coupling_terms.keys():
+        coupling_inputs_dict[ct_name] = 1
 
 # Coupling metadata
 has_delay = hasattr(coupling, 'delayed') and coupling.delayed
 
 # Select the appropriate coupling term based on delay status
-# Use tvboptim convention: 'delayed' or 'instant' (without c_ prefix)
+# Use names exactly as defined in YAML (e.g., c_instant, c_delayed, coupling)
+coupling_input_names = list(coupling_inputs_dict.keys()) if coupling_inputs_dict else ['coupling']
 if has_delay:
-    # Prefer coupling term containing 'delayed', otherwise use first
-    target_coupling_term = next((ct for ct in coupling_terms if 'delayed' in ct.lower()), coupling_terms[0])
+    # Prefer coupling input containing 'delayed', otherwise use first
+    target_coupling_term = next((ci for ci in coupling_input_names if 'delayed' in ci.lower()), coupling_input_names[0])
 else:
-    # Prefer coupling term containing 'instant', otherwise use first
-    target_coupling_term = next((ct for ct in coupling_terms if 'instant' in ct.lower()), coupling_terms[0])
+    # Prefer coupling input containing 'instant', otherwise use first
+    target_coupling_term = next((ci for ci in coupling_input_names if 'instant' in ci.lower()), coupling_input_names[0])
 coupling_class = coupling.name.replace(' ', '').replace('-', '')
 coupling_param_names = [p.name for p in coupling.parameters.values()] if hasattr(coupling, 'parameters') and coupling.parameters else []
 coupling_param_defaults = {p.name: float(p.value) for p in coupling.parameters.values() if p.value is not None} if hasattr(coupling, 'parameters') and coupling.parameters else {}
@@ -202,6 +202,17 @@ else:
     optim_list = [optim_raw] if optim_raw else []
 
 has_optimization = len(optim_list) > 0
+
+# === Algorithm metadata (FIC, etc.) ===
+algorithms_raw = getattr(experiment, 'algorithms', None) or []
+if isinstance(algorithms_raw, dict):
+    algorithms_list = list(algorithms_raw.values())
+elif isinstance(algorithms_raw, list):
+    algorithms_list = algorithms_raw
+else:
+    algorithms_list = [algorithms_raw] if algorithms_raw else []
+
+has_algorithms = len(algorithms_list) > 0
 
 
 # Extract optimizable parameters from optimization stages
@@ -952,8 +963,20 @@ for opt in optim_list:
             arg_name = getattr(arg, 'name', None)
             arg_value = getattr(arg, 'value', None)
             if arg_name:
-                if arg_value:
+                if arg_value is not None:
                     val_str = str(arg_value)
+                    # Check if it's a scalar constant (numeric)
+                    try:
+                        float_val = float(arg_value)
+                        # It's a numeric constant
+                        parsed_args.append({
+                            'name': arg_name,
+                            'type': 'constant',
+                            'value': arg_value,
+                        })
+                        continue
+                    except (ValueError, TypeError):
+                        pass
                     # Parse: observations.obs_name.output_key or observations.obs_name
                     if val_str.startswith('observations.'):
                         parts = val_str.split('.', 2)  # ['observations', 'obs_name', 'output_key']
@@ -1069,6 +1092,8 @@ def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = 
 % else:
             ${arg['name']} = _${arg['obs_name']}.data
 % endif
+% elif arg['type'] == 'constant':
+            ${arg['name']} = ${arg['value']}
 % else:
             ${arg['name']} = target_data
 % endif
@@ -1091,6 +1116,13 @@ def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = 
 % else:
     raise ValueError("No loss functions defined in optimization metadata. Each optimization must specify a loss with equation, source_code, or callable.")
 % endif
+
+
+# =============================================================================
+# Iterative Algorithms (FIC, etc.)
+# =============================================================================
+
+<%include file="tvbo-tvboptim-algorithm.py.mako" />
 
 
 % if has_optimization:

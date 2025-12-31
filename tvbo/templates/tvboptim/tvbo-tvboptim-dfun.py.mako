@@ -60,19 +60,23 @@ param_names = [p.name for p in model.parameters.values()]
 param_defaults = {p.name: float(p.value) if p.value is not None else 1.0
                   for p in model.parameters.values()}
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
-coupling_terms_raw = list(model.coupling_terms.keys()) if model.coupling_terms else ['default']
 
-# Map TVBO coupling term names to tvboptim convention
-# TVBO uses c_instant/c_delayed, tvboptim uses instant/delayed
-def to_tvboptim_coupling_name(name):
-    """Strip 'c_' prefix for tvboptim compatibility."""
-    if name.startswith('c_'):
-        return name[2:]  # Remove 'c_' prefix
-    return name
-
-# Create mapping: TVBO name -> tvboptim name
-coupling_term_map = {ct: to_tvboptim_coupling_name(ct) for ct in coupling_terms_raw}
-coupling_terms = list(coupling_term_map.values())  # tvboptim names for COUPLING_INPUTS
+# Build COUPLING_INPUTS from coupling_inputs (preferred) or coupling_terms (deprecated fallback)
+# coupling_inputs is the source of truth: {name: dimension}
+# coupling_terms is deprecated but still supported for backwards compatibility
+coupling_inputs_dict = {}
+if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
+    # Preferred: use coupling_inputs directly
+    for ci_name, ci in model.coupling_inputs.items():
+        dim = getattr(ci, 'dimension', 1) or 1
+        coupling_inputs_dict[ci_name] = dim
+elif hasattr(model, 'coupling_terms') and model.coupling_terms:
+    # Deprecated fallback: use coupling_terms with dimension 1 each
+    for ct_name in model.coupling_terms.keys():
+        coupling_inputs_dict[ct_name] = 1
+else:
+    # No coupling defined - use empty dict (dynamics without coupling)
+    pass
 
 class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
 %>
@@ -101,8 +105,8 @@ class ${class_name}(AbstractDynamics):
     )
 
     COUPLING_INPUTS = {
-        % for ct in coupling_terms:
-        '${ct}': 1,
+        % for ci_name, ci_dim in coupling_inputs_dict.items():
+        '${ci_name}': ${ci_dim},
         % endfor
     }
 
@@ -132,9 +136,13 @@ class ${class_name}(AbstractDynamics):
         ${svar} = state[${i}]
         % endfor
 
-        # Unpack coupling (tvboptim uses instant/delayed, TVBO equations use c_instant/c_delayed)
-        % for tvbo_name, tvboptim_name in coupling_term_map.items():
-        ${tvbo_name} = coupling.${tvboptim_name}[0] if hasattr(coupling, '${tvboptim_name}') else 0.0
+        # Unpack coupling inputs
+        % for ci_name, ci_dim in coupling_inputs_dict.items():
+        % if ci_dim == 1:
+        ${ci_name} = coupling.${ci_name}[0] if hasattr(coupling, '${ci_name}') else 0.0
+        % else:
+        ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})
+        % endif
         % endfor
 
         % if model.functions:
