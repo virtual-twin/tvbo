@@ -297,9 +297,14 @@ def get_precompute_call(step):
     return f"{step_name}({', '.join(kwargs)})"
 
 def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx):
-    """Build a vmap-wrapped callable for apply_on_dimension: node.
+    """Build a double-vmap-wrapped callable for apply_on_dimension: node.
 
-    For fftconvolve: vmap(lambda x: fftconvolve(x, kernel, mode='valid'), in_axes=1, out_axes=1)(data)
+    For 3D data (time, state, node), wraps with double vmap:
+    - Outer vmap: iterate over states (axis=1)
+    - Inner vmap: iterate over nodes (axis=1 of each state slice)
+
+    For fftconvolve:
+        jax.vmap(lambda y: jax.vmap(lambda x: fftconvolve(x, kernel, mode), in_axes=1, out_axes=1)(y), in_axes=1, out_axes=1)(data)
     """
     args = step['arguments']
     arg_names = list(args.keys())
@@ -327,7 +332,9 @@ def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx)
     const_str = ', '.join(const_args) if const_args else ''
     inner_call = f"{callable_ref}(x, {const_str})" if const_str else f"{callable_ref}(x)"
 
-    return f"jax.vmap(lambda x: {inner_call}, in_axes=1, out_axes=1)({data_code})"
+    # Double vmap for 3D data (time, state, node)
+    inner_vmap = f"jax.vmap(lambda x: {inner_call}, in_axes=1, out_axes=1)"
+    return f"jax.vmap(lambda y: {inner_vmap}(y), in_axes=1, out_axes=1)({data_code})"
 
 # =============================================================================
 # Build Step Call
@@ -802,7 +809,8 @@ class ${class_name}(eqx.Module):
 % else:
                 n_samples = 5000  # Default history length
 % endif
-                self._history = history.data[-n_samples:, self.voi, :]
+                # Keep 3D shape (time, state, node) for proper double vmap
+                self._history = history.data[-n_samples:, :, :]
             else:
                 self._history = history
 % endif
@@ -837,8 +845,8 @@ class ${class_name}(eqx.Module):
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
 % endfor
 % elif obs_source:
-        # Extract source state variable
-        _data = result.data[:, self.voi, :]
+        # Keep full 3D shape (time, state, node) for proper double vmap
+        _data = result.data
         _time = result.time
 % else:
         _data = result.data
@@ -924,6 +932,7 @@ class ${class_name}(eqx.Module):
             call_parts.append(f"{arg_name}={repr(arg_val)}")
 
     # Handle vmap for node dimension
+    # For 3D data (time, state, node), use double vmap: outer over states, inner over nodes
     if apply_dim == 'node':
         # For convolution, build the lambda
         kernel_arg = None
@@ -936,8 +945,12 @@ class ${class_name}(eqx.Module):
                     kernel_arg = f"self._{arg_val}"
             elif arg_name == 'mode':
                 mode_arg = f"'{arg_val}'" if isinstance(arg_val, str) else repr(arg_val)
-        callable_code = f"jax.vmap(lambda x: {full_call}(x, {kernel_arg or '_kernel'}, {mode_arg}), in_axes=1, out_axes=1)({input_var})"
-        callable_comment = f"# {step_name}: vmap over nodes"
+        # Double vmap for 3D data (time, state, node):
+        # - Outer vmap: iterate over states (axis=1)
+        # - Inner vmap: iterate over nodes (axis=1 of each state slice)
+        inner_vmap = f"jax.vmap(lambda x: {full_call}(x, {kernel_arg or '_kernel'}, {mode_arg}), in_axes=1, out_axes=1)"
+        callable_code = f"jax.vmap(lambda y: {inner_vmap}(y), in_axes=1, out_axes=1)({input_var})"
+        callable_comment = f"# {step_name}: double vmap over states and nodes"
     else:
         callable_code = f"{full_call}({', '.join(call_parts) if call_parts else input_var})"
         callable_comment = f"# {step_name}"

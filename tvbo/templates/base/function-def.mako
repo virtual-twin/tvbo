@@ -277,10 +277,20 @@ def ${func.name}(${signature}):
     simple : bool, optional
         If True, return just array (for tvboptim). If None, auto-detect from arguments.
         If function has 'duration' and 'dt' arguments (no 'ts'), use simple mode.
+    
+    Time generation:
+    - If time_range.n is set: use linspace(lo, hi, n) for exact sample count
+    - If time_range.step is set: use arange(lo, hi, step) for exact step size
     """
     lo = func.time_range.lo if func.time_range.lo else 0
     hi = func.time_range.hi
-    step = func.time_range.step if func.time_range.step else 'dt'
+    step = func.time_range.step if hasattr(func.time_range, 'step') and func.time_range.step else None
+    n_samples = func.time_range.n if hasattr(func.time_range, 'n') and func.time_range.n else None
+
+    # Determine time generation method
+    use_linspace = n_samples is not None
+    if not use_linspace and step is None:
+        step = 'dt'  # Default to dt if neither specified
 
     # Get function arguments
     args = get_func_args(func)
@@ -307,13 +317,18 @@ def ${func.name}(${signature}):
         signature = ', '.join(args + param_strs)
     else:
         signature = ', '.join(['ts'] + args + param_strs)
-        step = step.replace('input.', 'ts.') if isinstance(step, str) else step
+        if step:
+            step = step.replace('input.', 'ts.') if isinstance(step, str) else step
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
+% if use_linspace:
+    t = ${np_module}.linspace(${lo}, ${hi}, ${n_samples})
+% else:
     t = ${np_module}.arange(${lo}, ${hi}, ${step})
+% endif
 % if simple:
     return ${body}
 % else:
