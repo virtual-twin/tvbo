@@ -314,7 +314,7 @@ for opt in optim_list:
     stages_raw = getattr(opt, 'stages', None) or []
     if hasattr(stages_raw, 'values'):
         stages_raw = list(stages_raw.values())
-    
+
     for stage in stages_raw:
         stage_info = {
             'name': str(getattr(stage, 'name', f'stage_{len(optimization_stages)}')),
@@ -326,7 +326,7 @@ for opt in optim_list:
             'free_parameters': [],
             'hyperparameters': {},
         }
-        
+
         # Parse free_parameters
         free_params = getattr(stage, 'free_parameters', None) or []
         if hasattr(free_params, 'values'):
@@ -335,7 +335,7 @@ for opt in optim_list:
             parsed = parse_free_param(fp)
             if parsed:
                 stage_info['free_parameters'].append(parsed)
-        
+
         # Parse hyperparameters
         hyperparams = getattr(stage, 'hyperparameters', None) or []
         if hasattr(hyperparams, 'values'):
@@ -345,7 +345,7 @@ for opt in optim_list:
             hp_value = getattr(hp, 'value', None)
             if hp_name and hp_value is not None:
                 stage_info['hyperparameters'][str(hp_name)] = float(hp_value)
-        
+
         optimization_stages.append(stage_info)
 
 # For single-stage or default case, extract settings from first stage
@@ -1019,12 +1019,12 @@ stage_warmup_from = stage['warmup_from']
 
 def mark_parameters_${stage_name}(state, n_nodes: int = ${n_nodes}):
     """Mark parameters as optimizable for stage: ${stage_name}
-    
+
     Free parameters: ${', '.join(p['name'] for p in stage_free_params)}
     """
     # Start by unwrapping all Parameters to plain values (freeze all)
     init_state = unwrap_all_parameters(copy.deepcopy(state))
-    
+
     # Now mark only this stage's free parameters as optimizable
 % for fp in stage_free_params:
 <%
@@ -1060,7 +1060,7 @@ def run_stage_${stage_name}(
     **kwargs,
 ):
     """Run optimization for stage: ${stage_name}
-    
+
     Algorithm: ${stage_algorithm}
     Learning rate: ${stage_lr}
     Max iterations: ${stage_max_iter}
@@ -1070,13 +1070,13 @@ def run_stage_${stage_name}(
     """
     # Mark this stage's parameters
     marked_state = mark_parameters_${stage_name}(init_state)
-    
+
     # Build optimizer kwargs
     opt_kwargs = {**kwargs}
 % for hp_name, hp_value in stage_hyperparams.items():
     opt_kwargs.setdefault('${hp_name}', ${hp_value})
 % endfor
-    
+
     opt = create_optimizer(
         loss_fn,
         optimizer="${stage_algorithm}",
@@ -1316,7 +1316,7 @@ def run_experiment(
         # This preserves internal state (_internal, coupling history, etc.)
         # while using the custom dynamics/coupling parameters
         use_state = copy.deepcopy(default_state)
-        
+
         # Copy dynamics parameters from custom state
         if hasattr(state, 'dynamics'):
             for key in state.dynamics.keys():
@@ -1326,7 +1326,7 @@ def run_experiment(
                     if hasattr(val, 'value'):
                         val = val.value
                     use_state.dynamics[key] = val
-        
+
         # Copy coupling parameters from custom state
         if hasattr(state, 'coupling'):
             for coupling_name in state.coupling.keys():
@@ -1340,7 +1340,7 @@ def run_experiment(
                             if hasattr(val, 'value'):
                                 val = val.value
                             dst_coupling[key] = val
-        
+
         # Re-run simulation with custom parameters
         result = model_fn(use_state)
         state = use_state
@@ -1383,7 +1383,7 @@ def run_experiment(
 % if len(optimization_stages) > 1:
         # Multi-stage optimization with optional stage filtering
         all_stage_names = [${', '.join(f"'{s['name']}'" for s in optimization_stages)}]
-        
+
         if stage is not None:
             if stage not in all_stage_names:
                 raise ValueError(f"Unknown stage '{stage}'. Available stages: {all_stage_names}")
