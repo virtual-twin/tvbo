@@ -88,8 +88,38 @@ solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
 # step_size has schema ifabsent: float(0.01220703125)
 dt = float(integration.step_size)
-has_noise = integration.noise is not None
-noise_sigma = np.asarray(experiment.noise_sigma_array).flatten().tolist() if has_noise else [0.0]
+
+# Noise configuration - read directly from metadata
+# Priority: 1) state_variable.noise.parameters.sigma  2) integration.noise.parameters.sigma
+noise_sigma_per_state = []
+noise_targets = []  # State variable names that receive noise
+for sv_name, sv in model.state_variables.items():
+    sigma = 0.0
+    if hasattr(sv, 'noise') and sv.noise is not None:
+        sv_noise = sv.noise
+        if hasattr(sv_noise, 'parameters') and sv_noise.parameters:
+            params = sv_noise.parameters
+            if isinstance(params, dict) and 'sigma' in params:
+                sigma_param = params['sigma']
+                sigma = float(sigma_param.value) if hasattr(sigma_param, 'value') else float(sigma_param)
+        if sigma > 0:
+            noise_targets.append(sv_name)
+    noise_sigma_per_state.append(sigma)
+
+# Fallback: integration-level noise applies to all states
+if not any(s > 0 for s in noise_sigma_per_state) and integration.noise is not None:
+    integ_noise = integration.noise
+    if hasattr(integ_noise, 'parameters') and integ_noise.parameters:
+        params = integ_noise.parameters
+        if isinstance(params, dict) and 'sigma' in params:
+            sigma_param = params['sigma']
+            sigma = float(sigma_param.value) if hasattr(sigma_param, 'value') else float(sigma_param)
+            noise_sigma_per_state = [sigma] * len(model.state_variables)
+            noise_targets = list(model.state_variables.keys())  # All states
+
+has_noise = any(s > 0 for s in noise_sigma_per_state)
+# For single-state models or uniform noise, use scalar sigma
+noise_sigma = noise_sigma_per_state if len(set(noise_sigma_per_state)) > 1 else [noise_sigma_per_state[0]] if noise_sigma_per_state else [0.0]
 
 # Network metadata
 n_nodes = network.number_of_regions
@@ -117,6 +147,7 @@ n_threads = int(getattr(_exec, 'n_threads', -1) or -1) if _exec else -1
 precision = str(getattr(_exec, 'precision', 'float64') or 'float64') if _exec else 'float64'
 accelerator = str(getattr(_exec, 'accelerator', 'cpu') or 'cpu') if _exec else 'cpu'
 enable_x64 = precision == 'float64'
+random_seed = int(getattr(_exec, 'random_seed', 0) or 0) if _exec else 0
 
 # Observation names (for computing all observations in run_simulation)
 # Include all observations that have complete argument specifications
@@ -239,41 +270,73 @@ if coupling and hasattr(coupling, 'parameters'):
 # Legacy support: coupling params with free=True that weren't in free_parameters
 coupling_optim_params = optim_coupling_params  # Alias for backwards compatibility
 
-# Extract optimizer settings from optimization or stages
-# Priority: FIRST stage with settings > optimization level > schema defaults
-# (Use first stage as defaults since multi-stage execution isn't implemented yet)
-optimizer_name = None
-learning_rate = None
-max_steps = None
-optimizer_hyperparams = {}  # For b1, b2, etc.
-_got_first_stage = False  # Only use first stage's settings
+# =============================================================================
+# Parse ALL optimization stages into structured list
+# =============================================================================
+import ast  # For safely parsing stringified dicts
 
+def parse_free_param(fp):
+    """Parse a free_parameter entry which could be:
+    - str: simple param name like 'w'
+    - str: stringified dict like "{'name': 'w', 'heterogeneous': True}"
+    - dict: actual dict with 'name' key
+    - object: with .name attribute
+    """
+    if isinstance(fp, str):
+        # Check if it looks like a stringified dict
+        stripped = fp.strip()
+        if stripped.startswith('{') and stripped.endswith('}'):
+            try:
+                parsed = ast.literal_eval(stripped)
+                if isinstance(parsed, dict) and 'name' in parsed:
+                    return {
+                        'name': str(parsed['name']),
+                        'heterogeneous': bool(parsed.get('heterogeneous', False)),
+                    }
+            except (ValueError, SyntaxError):
+                pass
+        # Simple string param name
+        return {'name': fp, 'heterogeneous': False}
+    elif hasattr(fp, 'name'):
+        return {
+            'name': str(fp.name),
+            'heterogeneous': bool(getattr(fp, 'heterogeneous', False)),
+        }
+    elif isinstance(fp, dict) and 'name' in fp:
+        return {
+            'name': str(fp['name']),
+            'heterogeneous': bool(fp.get('heterogeneous', False)),
+        }
+    return None
+
+optimization_stages = []
 for opt in optim_list:
-    # Check optimization level first (fallback)
-    if hasattr(opt, 'algorithm') and opt.algorithm and optimizer_name is None:
-        optimizer_name = str(opt.algorithm)
-    if hasattr(opt, 'learning_rate') and opt.learning_rate is not None and learning_rate is None:
-        learning_rate = float(opt.learning_rate)
-    if hasattr(opt, 'max_iterations') and opt.max_iterations is not None and max_steps is None:
-        max_steps = int(opt.max_iterations)
-
-    # Check stages - use FIRST stage with settings as defaults
-    stages = getattr(opt, 'stages', None) or []
-    if hasattr(stages, 'values'):
-        stages = list(stages.values())
-    for stage in stages:
-        if _got_first_stage:
-            break  # Only use first stage
-        if hasattr(stage, 'algorithm') and stage.algorithm:
-            optimizer_name = str(stage.algorithm)
-            _got_first_stage = True
-        if hasattr(stage, 'learning_rate') and stage.learning_rate is not None:
-            learning_rate = float(stage.learning_rate)
-            _got_first_stage = True
-        if hasattr(stage, 'max_iterations') and stage.max_iterations is not None:
-            max_steps = int(stage.max_iterations)
-            _got_first_stage = True
-        # Extract hyperparameters (b1, b2, etc.)
+    stages_raw = getattr(opt, 'stages', None) or []
+    if hasattr(stages_raw, 'values'):
+        stages_raw = list(stages_raw.values())
+    
+    for stage in stages_raw:
+        stage_info = {
+            'name': str(getattr(stage, 'name', f'stage_{len(optimization_stages)}')),
+            'label': str(getattr(stage, 'label', '')),
+            'algorithm': str(getattr(stage, 'algorithm', 'adam')),
+            'learning_rate': float(getattr(stage, 'learning_rate', 0.01) or 0.01),
+            'max_iterations': int(getattr(stage, 'max_iterations', 100) or 100),
+            'warmup_from': str(getattr(stage, 'warmup_from', '')) if getattr(stage, 'warmup_from', None) else None,
+            'free_parameters': [],
+            'hyperparameters': {},
+        }
+        
+        # Parse free_parameters
+        free_params = getattr(stage, 'free_parameters', None) or []
+        if hasattr(free_params, 'values'):
+            free_params = list(free_params.values())
+        for fp in free_params:
+            parsed = parse_free_param(fp)
+            if parsed:
+                stage_info['free_parameters'].append(parsed)
+        
+        # Parse hyperparameters
         hyperparams = getattr(stage, 'hyperparameters', None) or []
         if hasattr(hyperparams, 'values'):
             hyperparams = list(hyperparams.values())
@@ -281,7 +344,15 @@ for opt in optim_list:
             hp_name = getattr(hp, 'name', None)
             hp_value = getattr(hp, 'value', None)
             if hp_name and hp_value is not None:
-                optimizer_hyperparams[str(hp_name)] = float(hp_value)
+                stage_info['hyperparameters'][str(hp_name)] = float(hp_value)
+        
+        optimization_stages.append(stage_info)
+
+# For single-stage or default case, extract settings from first stage
+optimizer_name = optimization_stages[0]['algorithm'] if optimization_stages else 'adam'
+learning_rate = optimization_stages[0]['learning_rate'] if optimization_stages else 0.01
+max_steps = optimization_stages[0]['max_iterations'] if optimization_stages else 100
+optimizer_hyperparams = optimization_stages[0]['hyperparameters'] if optimization_stages else {}
 
 # Schema provides ifabsent defaults, so these should always be populated
 # Only assert if optimization is requested but values somehow missing
@@ -460,6 +531,9 @@ os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count=${n_workers}'
 % endif
 
 import jax
+% if enable_x64:
+jax.config.update("jax_enable_x64", True)  # Required for stable gradient computation
+% endif
 import jax.numpy as jnp
 import jax.scipy.signal
 import numpy as np
@@ -483,7 +557,7 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 import optax
 from tvboptim.types import Parameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback
+from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis
@@ -547,7 +621,13 @@ def create_network(
     coupling = ${coupling_class}(**default_coupling_params)
 
     % if has_noise:
-    noise = AdditiveNoise(sigma=noise_sigma) if noise_sigma > 0 else None
+    % if noise_targets:
+    # Noise applied to states: ${noise_targets}
+    noise = AdditiveNoise(sigma=noise_sigma, apply_to=${noise_targets}, key=jax.random.key(${random_seed})) if noise_sigma > 0 else None
+    % else:
+    # Noise applied to all states (integration-level noise without targets)
+    noise = AdditiveNoise(sigma=noise_sigma, key=jax.random.key(${random_seed})) if noise_sigma > 0 else None
+    % endif
     % else:
     noise = None
     % endif
@@ -815,7 +895,26 @@ for opt in optim_list:
             'agg_type': agg_type,
         })
 %>
-# Loss function wrappers (call observations, then referenced loss function)
+def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = None):
+    """Create a loss function closure for optimization.
+
+    Loss functions are generated from optimization metadata.
+    Each loss MUST specify equation, source_code, or callable.
+
+    IMPORTANT: Observation monitors are created ONCE here with history baked in,
+    then reused in the inner loss function. This matches the exploration pattern
+    and is critical for proper JAX differentiation.
+
+    Args:
+        model_fn: Compiled model function
+        target_data: Target data for fitting (e.g., empirical FC)
+        result_transient: Transient simulation result for HRF/BOLD pipeline warmup
+        loss_type: Which loss function to use (defaults to first available)
+    """
+% if loss_functions:
+    # Available loss functions from metadata: ${', '.join([lf['opt_name'] for lf in loss_functions])}
+    if loss_type is None:
+        loss_type = "${loss_functions[0]['opt_name']}"
 % for loss_fn in loss_functions:
 <%
     func_name = loss_fn['func_name']
@@ -829,69 +928,55 @@ for opt in optim_list:
     # Map reduction type to JAX function
     agg_func = {'mean': 'mean', 'sum': 'sum', 'max': 'max', 'min': 'min'}.get(agg_type, 'mean')
 %>
-def loss_${opt_name}(model_fn, state, target_data: jnp.ndarray = None, result_transient=None):
-    """Loss wrapper calling ${func_name}
-
-    Observations used: ${', '.join(sorted(obs_refs)) or '(none)'}
-% if agg_over:
-    Aggregation: ${agg_type} over ${agg_over} (axis ${agg_axis})
-% endif
-    """
-    # Call required observations (passing result_transient for HRF/BOLD pipeline)
+    ${'if' if loop.first else 'elif'} loss_type == "${opt_name}":
+        # Pre-create observation monitors ONCE (optimized pattern for JAX differentiation)
 % for obs_name in sorted(obs_refs):
-    _${obs_name} = ${obs_name}(model_fn, state, result_transient=result_transient)
+<%
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+%>
+        _${obs_name}_monitor = ${obs_class}(history=result_transient)
 % endfor
 
-    # Prepare loss function arguments
+        def loss_${opt_name}(state):
+            """Loss function calling ${func_name}
+
+            Observations used: ${', '.join(sorted(obs_refs)) or '(none)'}
+% if agg_over:
+            Aggregation: ${agg_type} over ${agg_over} (axis ${agg_axis})
+% endif
+            """
+            # Run simulation
+            result = model_fn(state)
+
+            # Apply pre-created observation monitors
+% for obs_name in sorted(obs_refs):
+            _${obs_name} = _${obs_name}_monitor(result)
+% endfor
+
+            # Prepare loss function arguments
 % for arg in args:
 % if arg['type'] == 'observation':
 % if arg['output_key']:
-    ${arg['name']} = _${arg['obs_name']}.${arg['output_key']}
+            ${arg['name']} = _${arg['obs_name']}.${arg['output_key']}
 % else:
-    ${arg['name']} = _${arg['obs_name']}.data
+            ${arg['name']} = _${arg['obs_name']}.data
 % endif
 % else:
-    ${arg['name']} = target_data
+            ${arg['name']} = target_data
 % endif
 % endfor
 
-    # Compute loss
+            # Compute loss
 % if agg_over and agg_axis is not None:
-    # Apply ${func_name} per-${agg_over} via vmap, then aggregate with ${agg_type}
-    per_element_loss = jax.vmap(${func_name})(${', '.join([a['name'] for a in args])})
-    loss_value = per_element_loss.${agg_func}()
+            # Apply ${func_name} per-${agg_over} via vmap, then aggregate with ${agg_type}
+            per_element_loss = jax.vmap(${func_name})(${', '.join([a['name'] for a in args])})
+            loss_value = per_element_loss.${agg_func}()
 % else:
-    loss_value = ${func_name}(${', '.join([a['name'] for a in args])})
+            loss_value = ${func_name}(${', '.join([a['name'] for a in args])})
 % endif
-% if obs_refs:
-    # Return data array (not ObservationResult) for JAX compatibility
-    _aux_data = _${list(obs_refs)[0]}.data if hasattr(_${list(obs_refs)[0]}, 'data') else _${list(obs_refs)[0]}
-    return loss_value, _aux_data
-% else:
-    return loss_value, None
-% endif
+            return loss_value
 
-% endfor
-
-def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = None):
-    """Create a loss function closure for optimization.
-
-    Loss functions are generated from optimization metadata.
-    Each loss MUST specify equation, source_code, or callable.
-
-    Args:
-        model_fn: Compiled model function
-        target_data: Target data for fitting (e.g., empirical FC)
-        result_transient: Transient simulation result for HRF/BOLD pipeline warmup
-        loss_type: Which loss function to use (defaults to first available)
-    """
-% if loss_functions:
-    # Available loss functions from metadata: ${', '.join([lf['opt_name'] for lf in loss_functions])}
-    if loss_type is None:
-        loss_type = "${loss_functions[0]['opt_name']}"
-% for loss_fn in loss_functions:
-    ${'if' if loop.first else 'elif'} loss_type == "${loss_fn['opt_name']}":
-        return lambda state: loss_${loss_fn['opt_name']}(model_fn, state, target_data, result_transient)
+        return loss_${opt_name}
 % endfor
     else:
         raise ValueError(f"Unknown loss type: {loss_type}. Available: ${', '.join([lf['opt_name'] for lf in loss_functions])}")
@@ -905,36 +990,112 @@ def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = 
 # Optimization
 # =============================================================================
 
-def mark_parameters_optimizable(state, n_nodes: int = ${n_nodes}):
-    """Mark parameters as optimizable and set their shapes."""
-    init_state = copy.deepcopy(state)
-
-    # Dynamics parameters
-    % for param in optim_params:
 <%
-    param_name = param.name
-    # Use _optim_heterogeneous set during extraction, fallback to param attributes
-    is_heterogeneous = getattr(param, '_optim_heterogeneous', False) or getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+# Build a lookup dict for all known parameters (dynamics + coupling)
+all_dynamics_params = {str(p.name): p for p in optim_params}
+all_coupling_params = {str(p.name): p for p in optim_coupling_params}
 %>
-    init_state.dynamics.${param_name} = Parameter(init_state.dynamics.${param_name})
-    % if is_heterogeneous:
-    init_state.dynamics.${param_name}.shape = (n_nodes,)
-    % endif
-    % endfor
 
-    # Coupling parameters (stored under state.coupling[coupling_key].param_name)
-    % for param in optim_coupling_params:
+def unwrap_all_parameters(state):
+    """Convert all Parameter objects to plain values (freeze all)."""
+    import jax.tree_util as jtu
+    def unwrap(x):
+        if isinstance(x, Parameter):
+            return x.value
+        return x
+    return jtu.tree_map(unwrap, state, is_leaf=lambda x: isinstance(x, Parameter))
+
+
+% for stage_idx, stage in enumerate(optimization_stages):
 <%
-    param_name = param.name
-    is_heterogeneous = getattr(param, '_optim_heterogeneous', False) or getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+stage_name = stage['name']
+stage_free_params = stage['free_parameters']
+stage_lr = stage['learning_rate']
+stage_max_iter = stage['max_iterations']
+stage_algorithm = stage['algorithm']
+stage_hyperparams = stage['hyperparameters']
+stage_warmup_from = stage['warmup_from']
 %>
-    init_state.coupling.${target_coupling_term}.${param_name} = Parameter(init_state.coupling.${target_coupling_term}.${param_name})
-    % if is_heterogeneous:
-    init_state.coupling.${target_coupling_term}.${param_name}.shape = (n_nodes,)
-    % endif
-    % endfor
+
+def mark_parameters_${stage_name}(state, n_nodes: int = ${n_nodes}):
+    """Mark parameters as optimizable for stage: ${stage_name}
+    
+    Free parameters: ${', '.join(p['name'] for p in stage_free_params)}
+    """
+    # Start by unwrapping all Parameters to plain values (freeze all)
+    init_state = unwrap_all_parameters(copy.deepcopy(state))
+    
+    # Now mark only this stage's free parameters as optimizable
+% for fp in stage_free_params:
+<%
+fp_name = fp['name']
+fp_hetero = fp['heterogeneous']
+# Check if it's a dynamics or coupling param
+is_coupling = fp_name in all_coupling_params and fp_name not in all_dynamics_params
+# If in both, prefer dynamics
+%>
+% if is_coupling:
+    # ${fp_name} - coupling parameter
+    init_state.coupling.${target_coupling_term}.${fp_name} = Parameter(init_state.coupling.${target_coupling_term}.${fp_name})
+% if fp_hetero:
+    init_state.coupling.${target_coupling_term}.${fp_name}.shape = (n_nodes,)
+% endif
+% else:
+    # ${fp_name} - dynamics parameter
+    init_state.dynamics.${fp_name} = Parameter(init_state.dynamics.${fp_name})
+% if fp_hetero:
+    init_state.dynamics.${fp_name}.shape = (n_nodes,)
+% endif
+% endif
+% endfor
 
     return init_state
+
+
+def run_stage_${stage_name}(
+    init_state,
+    loss_fn,
+    max_steps: int = ${stage_max_iter},
+    learning_rate: float = ${stage_lr},
+    **kwargs,
+):
+    """Run optimization for stage: ${stage_name}
+    
+    Algorithm: ${stage_algorithm}
+    Learning rate: ${stage_lr}
+    Max iterations: ${stage_max_iter}
+% if stage_hyperparams:
+    Hyperparameters: ${stage_hyperparams}
+% endif
+    """
+    # Mark this stage's parameters
+    marked_state = mark_parameters_${stage_name}(init_state)
+    
+    # Build optimizer kwargs
+    opt_kwargs = {**kwargs}
+% for hp_name, hp_value in stage_hyperparams.items():
+    opt_kwargs.setdefault('${hp_name}', ${hp_value})
+% endfor
+    
+    opt = create_optimizer(
+        loss_fn,
+        optimizer="${stage_algorithm}",
+        learning_rate=learning_rate,
+        **opt_kwargs
+    )
+    fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps)
+    return fitted_params, fitting_data
+
+% endfor
+
+# Legacy single-stage function for backwards compatibility
+def mark_parameters_optimizable(state, n_nodes: int = ${n_nodes}):
+    """Mark parameters as optimizable - uses first stage's configuration."""
+% if optimization_stages:
+    return mark_parameters_${optimization_stages[0]['name']}(state, n_nodes)
+% else:
+    return copy.deepcopy(state)
+% endif
 
 
 def create_optimizer(
@@ -942,7 +1103,7 @@ def create_optimizer(
     optimizer: str = "${optimizer_name}",
     learning_rate: float = ${learning_rate},
     print_every: int = 10,
-    has_aux: bool = True,
+    has_aux: bool = False,
     **opt_kwargs,
 ):
     """Create configured optimizer."""
@@ -958,13 +1119,16 @@ def create_optimizer(
     # Build optimizer kwargs (hyperparameters like b1, b2)
     optimizer_kwargs = {**opt_kwargs}
 % if optimizer_hyperparams:
-    # Default hyperparameters from YAML
+    # Default hyperparameters from YAML (first stage)
 % for hp_name, hp_value in optimizer_hyperparams.items():
     optimizer_kwargs.setdefault('${hp_name}', ${hp_value})
 % endfor
 % endif
 
-    callback = MultiCallback([DefaultPrintCallback(every=print_every)])
+    callback = MultiCallback([
+        DefaultPrintCallback(every=print_every),
+        SavingCallback(key="state", save_fun=lambda *args: args[1])  # Save updated state each step
+    ])
     return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=has_aux)
 
 
@@ -1088,6 +1252,8 @@ def run_experiment(
     target_data: jnp.ndarray = None,
     region_labels: list = None,
     mode: str = "all",
+    stage: str = None,
+    state: Bunch = None,
     **kwargs,
 ) -> Dict[str, Any]:
     """Run the complete ${dynamics_class} experiment workflow.
@@ -1105,6 +1271,12 @@ def run_experiment(
         Labels for brain regions
     mode : str
         Workflow mode: 'simulation', 'optimization', 'exploration', or 'all' (default)
+    stage : str, optional
+        Name of specific optimization stage to run. If None, runs all stages.
+        Only used when mode='optimization' and multi-stage optimization is configured.
+    state : Bunch, optional
+        Pre-configured state (e.g., from previous optimization). If provided,
+        uses these parameters for simulation instead of defaults.
 
     Returns
     -------
@@ -1135,10 +1307,55 @@ def run_experiment(
     # Run simulation to get model_fn and state (includes transient settling if configured)
     sim_result = run_simulation(network, t1=T1, dt=DT, t_transient=T_TRANSIENT)
     model_fn = sim_result.model_fn
-    state = sim_result.state
-    result = sim_result.result
+    default_state = sim_result.state
     transient = sim_result.transient
-    observations = sim_result.observations
+
+    # Use custom state if provided (e.g., from previous optimization)
+    if state is not None:
+        # Merge custom state parameters into the default state structure
+        # This preserves internal state (_internal, coupling history, etc.)
+        # while using the custom dynamics/coupling parameters
+        use_state = copy.deepcopy(default_state)
+        
+        # Copy dynamics parameters from custom state
+        if hasattr(state, 'dynamics'):
+            for key in state.dynamics.keys():
+                if not key.startswith('_'):
+                    val = state.dynamics[key]
+                    # Extract value from Parameter if needed
+                    if hasattr(val, 'value'):
+                        val = val.value
+                    use_state.dynamics[key] = val
+        
+        # Copy coupling parameters from custom state
+        if hasattr(state, 'coupling'):
+            for coupling_name in state.coupling.keys():
+                if not coupling_name.startswith('_'):
+                    src_coupling = state.coupling[coupling_name]
+                    dst_coupling = use_state.coupling[coupling_name]
+                    for key in src_coupling.keys():
+                        if not key.startswith('_'):
+                            val = src_coupling[key]
+                            # Extract value from Parameter if needed
+                            if hasattr(val, 'value'):
+                                val = val.value
+                            dst_coupling[key] = val
+        
+        # Re-run simulation with custom parameters
+        result = model_fn(use_state)
+        state = use_state
+    else:
+        state = default_state
+        result = sim_result.result
+
+    # Compute observations using the (potentially custom) result
+    observations = Bunch()
+    obs_kwargs = dict(kwargs)
+    obs_kwargs['result'] = result
+    obs_kwargs['result_transient'] = transient
+% for obs_name in observation_names:
+    observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+% endfor
 
     results = Bunch(
         model_fn=model_fn,
@@ -1150,19 +1367,90 @@ def run_experiment(
     )
 
     % if has_optimization:
-    # Optimization workflow
+    # Optimization workflow - multi-stage support
     if mode in ('optimization', 'all'):
         if target_data is None:
             raise ValueError("target_data is required for optimization mode")
-
-        # Mark parameters as optimizable
-        init_state = mark_parameters_optimizable(state)
 
         # Create loss function with target data and transient (for HRF/BOLD pipeline)
         loss_type = kwargs.get('loss_type', None)
         loss_fn = make_loss_fn(model_fn, target_data, result_transient=transient, loss_type=loss_type)
 
-        # Run optimization
+        # Stage results storage (use Bunch for dot-notation access)
+        stage_results = Bunch()
+        current_state = state  # Start with initial state
+
+% if len(optimization_stages) > 1:
+        # Multi-stage optimization with optional stage filtering
+        all_stage_names = [${', '.join(f"'{s['name']}'" for s in optimization_stages)}]
+        
+        if stage is not None:
+            if stage not in all_stage_names:
+                raise ValueError(f"Unknown stage '{stage}'. Available stages: {all_stage_names}")
+            stages_to_run = [stage]
+            print(f"Running single stage: {stage}")
+        else:
+            stages_to_run = all_stage_names
+            print("=" * 60)
+            print("Multi-stage optimization: ${len(optimization_stages)} stages")
+            print("=" * 60)
+
+% for stage_idx, stage in enumerate(optimization_stages):
+<%
+stage_name = stage['name']
+stage_warmup_from = stage['warmup_from']
+stage_max_iter = stage['max_iterations']
+stage_lr = stage['learning_rate']
+%>
+        # Stage ${stage_idx + 1}: ${stage_name}
+        if '${stage_name}' in stages_to_run:
+            print(f"\n>>> Stage ${stage_idx + 1}/${len(optimization_stages)}: ${stage_name}")
+            print(f"    Free parameters: ${', '.join(p['name'] for p in stage['free_parameters'])}")
+% if stage_warmup_from:
+            print(f"    Warmup from: ${stage_warmup_from}")
+            # Use fitted_params from warmup_from stage (or from kwargs if running single stage)
+            if '${stage_warmup_from}' in stage_results:
+                current_state = stage_results['${stage_warmup_from}'].fitted_params
+            elif 'warmup_state' in kwargs:
+                # Allow passing in state from previous run
+                current_state = kwargs['warmup_state']
+                print(f"    Using warmup_state from kwargs")
+            elif stage is not None:
+                # Running single stage without warmup - use initial state with warning
+                print(f"    WARNING: warmup_from='${stage_warmup_from}' not available, using initial state")
+            else:
+                raise ValueError(f"warmup_from stage '${stage_warmup_from}' not found in completed stages: {list(stage_results.keys())}")
+% endif
+
+            _fitted_${stage_name}, _history_${stage_name} = run_stage_${stage_name}(
+                current_state,
+                loss_fn,
+                max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+                learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
+            )
+            stage_results['${stage_name}'] = Bunch(
+                fitted_params=_fitted_${stage_name},
+                fitting_data=_history_${stage_name},
+            )
+            current_state = _fitted_${stage_name}  # Chain to next stage
+
+% endfor
+        if stage is None:
+            print("\n" + "=" * 60)
+            print("Multi-stage optimization complete")
+            print("=" * 60)
+
+        # Final results: last stage's fitted_params + per-stage access via dot notation
+        results['fitted_params'] = current_state
+        results['fitting_data'] = stage_results  # Bunch of all stage histories
+        # Add each stage directly to results for easy access: results.global_optimization.fitted_params
+        for _stage_name, _stage_result in stage_results.items():
+            results[_stage_name] = _stage_result
+
+% else:
+        # Single-stage optimization
+        init_state = mark_parameters_optimizable(state)
+
         fitted_params, fitting_data = run_optimization(
             init_state,
             loss_fn,
@@ -1173,6 +1461,7 @@ def run_experiment(
 
         results['fitted_params'] = fitted_params
         results['fitting_data'] = fitting_data
+% endif
     % endif
 
     % if has_explorations:

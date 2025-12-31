@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-30T14:45:16
+# Generation date: 2025-12-31T14:29:24
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1770,7 +1770,7 @@ class OptimizationStage(YAMLRoot):
         if self.max_iterations is not None and not isinstance(self.max_iterations, int):
             self.max_iterations = int(self.max_iterations)
 
-        self._normalize_inlined_as_dict(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if not isinstance(self.freeze_parameters, list):
             self.freeze_parameters = [self.freeze_parameters] if self.freeze_parameters is not None else []
@@ -1821,7 +1821,7 @@ class Optimization(YAMLRoot):
         if self.loss is not None and not isinstance(self.loss, FunctionCall):
             self.loss = FunctionCall(**as_dict(self.loss))
 
-        self._normalize_inlined_as_dict(slot_name="stages", slot_type=OptimizationStage, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="stages", slot_type=OptimizationStage, key_name="name", keyed=True)
 
         if not isinstance(self.free_parameters, list):
             self.free_parameters = [self.free_parameters] if self.free_parameters is not None else []
@@ -1836,7 +1836,7 @@ class Optimization(YAMLRoot):
         if self.max_iterations is not None and not isinstance(self.max_iterations, int):
             self.max_iterations = int(self.max_iterations)
 
-        self._normalize_inlined_as_dict(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -2295,6 +2295,7 @@ class ExecutionConfig(YAMLRoot):
     precision: Optional[str] = "float64"
     accelerator: Optional[str] = "cpu"
     batch_size: Optional[int] = None
+    random_seed: Optional[int] = 42
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.n_workers is not None and not isinstance(self.n_workers, int):
@@ -2311,6 +2312,9 @@ class ExecutionConfig(YAMLRoot):
 
         if self.batch_size is not None and not isinstance(self.batch_size, int):
             self.batch_size = int(self.batch_size)
+
+        if self.random_seed is not None and not isinstance(self.random_seed, int):
+            self.random_seed = int(self.random_seed)
 
         super().__post_init__(**kwargs)
 
@@ -4827,6 +4831,9 @@ slots.executionConfig__accelerator = Slot(uri=TVBO.accelerator, name="executionC
 
 slots.executionConfig__batch_size = Slot(uri=TVBO.batch_size, name="executionConfig__batch_size", curie=TVBO.curie('batch_size'),
                    model_uri=TVBO.executionConfig__batch_size, domain=None, range=Optional[int])
+
+slots.executionConfig__random_seed = Slot(uri=TVBO.random_seed, name="executionConfig__random_seed", curie=TVBO.curie('random_seed'),
+                   model_uri=TVBO.executionConfig__random_seed, domain=None, range=Optional[int])
 
 slots.simulationExperiment__id = Slot(uri=TVBO.id, name="simulationExperiment__id", curie=TVBO.curie('id'),
                    model_uri=TVBO.simulationExperiment__id, domain=None, range=URIRef)

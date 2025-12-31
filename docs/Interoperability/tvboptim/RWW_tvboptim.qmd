@@ -17,378 +17,22 @@ The information below mirrors the [RWW.qmd tutorial](https://github.com/virtual-
 
 ```{python}
 import os
-os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count=8'
+
+os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment
 from tvbo import Network
 from tvboptim.data import load_structural_connectivity, load_functional_connectivity
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
+
 import numpy as np
 import jax.numpy as jnp
 
-experiment_yaml = """
-id: 2
-label: "RWW Functional Connectivity Fitting"
-description: >
-    Fitting functional connectivity using the Reduced Wong-Wang model.
-    Two-stage optimization: global parameters first, then regional heterogeneity.
-    Based on tvboptim RWW.qmd tutorial.
-
-local_dynamics:
-    name: ReducedWongWang
-    label: "Reduced Wong-Wang Model"
-    description: >
-        Biophysically-based neural mass model for BOLD FC fitting.
-        Captures slow dynamics relevant for resting-state fMRI.
-    output:
-        - S
-        - H
-
-    parameters:
-        a:
-            label: "Input gain parameter"
-            value: 0.270
-            unit: n/C
-        b:
-            label: Input shift parameter
-            unit: kHz
-            value: 0.108
-        d:
-            label: Parameter for H function
-            value: 154.0
-            unit: ms
-        gamma:
-            label: "Kinetic parameter"
-            value: 0.641
-        tau_s:
-            label: "Synaptic time constant"
-            value: 100.0
-            unit: ms
-        w:
-            label: "Excitatory recurrence"
-            value: 0.5
-        J_N:
-            label: Excitatory recurrence
-            value: 0.2609
-        I_o:
-            label: "External input"
-            value: 0.32
-
-
-    derived_variables:
-        x:
-            label: "Total synaptic input"
-            equation:
-                rhs: "w * J_N * S + I_o + J_N * c_instant + J_N * c_delayed"
-            description: "Sum of local recurrence, external input, and long-range coupling"
-
-        H:
-            label: "Population firing rate"
-            equation:
-                rhs: "(a * x - b) / (1 - exp(-d * (a * x - b)))"
-            description: "Sigmoidal transfer function converting input to firing rate"
-
-    state_variables:
-        S:
-            label: "Synaptic gating"
-            equation:
-                rhs: "-(S / tau_s) + (1 - S) * H * gamma"
-            initial_value: 0.3
-            domain:
-                lo: 0.0
-                hi: 1.0
-            description: "Fraction of open NMDA channels"
-            coupling_variable: true
-
-    coupling_inputs:
-        c_instant:
-            dimension: 1
-
-    coupling_terms:
-        c_instant: {}
-        c_delayed: {}
-
-coupling:
-    name: FastLinearCoupling
-    label: "Fast Linear Coupling"
-    description: "Instantaneous linear coupling (no conduction delays)"
-    delayed: false
-    parameters:
-        G:
-            label: "Global coupling"
-            value: 0.5
-            description: "Global scaling of long-range connections"
-            free: true
-            domain:
-                lo: 0.0
-                hi: 1.0
-    local_states:
-        - S
-    pre_expression:
-        rhs: "local_states"
-        description: "Return local states to trigger vectorized matmul mode"
-    post_expression:
-        rhs: "G * gx"
-
-network:
-    label: "Desikan-Killiany 68 regions"
-    description: "Structural connectivity from dk_average dataset"
-    number_of_regions: 68
-    normalization:
-        rhs: "W / max(W)"
-
-integration:
-    method: Heun
-    step_size: 4.0
-    duration: 120000
-    transient_time: 120000
-    noise:
-        additive: true
-        parameters:
-            sigma:
-                value: 0.00283
-                description: "Noise intensity for S state variable"
-
-functions:
-    temporal_average:
-        description: "Temporal average downsampling"
-        source_code: "jnp.mean(data.reshape(-1, period_samples, *data.shape[1:]), axis=1)"
-        arguments:
-            - name: data
-              description: "Input time series (time, nodes)"
-            - name: period_samples
-              value: 1
-              description: "Samples per averaging window"
-
-    hrf_kernel:
-        description: "Hemodynamic response function kernel (Lotka-Volterra)"
-        time_range:
-            lo: 0
-            hi: duration
-            step: dt
-        equation:
-            rhs: "1/3 * exp(-0.5*(t/1000 / tau_s)) * sin(sqrt(1/tau_f - 1/(4*tau_s**2)) * t/1000) / sqrt(1/tau_f - 1/(4*tau_s**2))"
-            parameters:
-                tau_f:
-                    value: 0.4
-                    unit: s
-                    description: "Feedback time constant"
-                tau_s:
-                    value: 0.8
-                    unit: s
-                    description: "Signal decay time constant"
-        arguments:
-            - name: duration
-              value: 20000
-              description: "HRF kernel duration in ms"
-            - name: dt
-              value: 4.0
-              description: "Time step in ms"
-
-    prepend_history:
-        description: "Prepend transient history to data for convolution"
-        source_code: "jnp.concatenate([history[-kernel_samples:], data], axis=0)"
-        arguments:
-            - name: data
-              description: "Input time series (time, nodes)"
-            - name: history
-              description: "Transient history data"
-            - name: kernel_samples
-              value: 5000
-              description: "Number of samples to prepend from history"
-
-    volterra_transform:
-        name: volterra_transform
-        description: "Volterra nonlinear BOLD transformation"
-        equation:
-            rhs: "k_1 * V_0 * (data - 1.0)"
-            parameters:
-                k_1:
-                    value: 5.6
-                    description: "Intravascular signal contribution"
-                V_0:
-                    value: 0.02
-                    description: "Resting blood volume fraction"
-        arguments:
-            - name: data
-              description: "Input data from previous step"
-
-    subsample_bold:
-        name: subsample_bold
-        description: "Subsample to BOLD TR (final_period / downsample_period)"
-        source_code: "data[::step]"
-        arguments:
-            - name: data
-              description: "Input time series"
-            - name: step
-              value: 250
-              description: "Subsample factor (TR/downsample_period = 1000/4 = 250)"
-
-    rmse:
-        name: rmse
-        description: "Root mean squared error"
-        equation:
-            rhs: "sqrt(mean((x - y)**2))"
-        arguments:
-            - name: x
-              description: "First array (simulated)"
-            - name: y
-              description: "Second array (target)"
-
-    fc_corr:
-        name: fc_corr
-        description: "FC correlation (upper triangle)"
-        callable:
-            name: fc_corr
-            module: tvboptim.observations.observation
-
-observations:
-    bold:
-        label: "Simulated BOLD Signal"
-        description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
-        source: S
-        period: 1000.0  # BOLD TR in ms (for time array computation)
-        pipeline:
-            - function: hrf_kernel
-            - function: prepend_history
-              arguments:
-                - name: data
-                  value: integration.result
-                - name: history
-                  value: integration.transient
-                - name: kernel_samples
-                  value: 5000
-
-            - output: bold_convolve
-              callable:
-                  module: jax.scipy.signal
-                  name: fftconvolve
-              apply_on_dimension: node
-              arguments:
-                - name: in1
-                  value: prepend_history
-                - name: in2
-                  value: hrf_kernel
-                - name: mode
-                  value: valid
-
-            - function: volterra_transform
-              arguments:
-                - name: data
-                  value: bold_convolve
-
-            - function: subsample_bold
-              arguments:
-                - name: data
-                  value: volterra_transform
-
-    fc:
-      label: "Simulated Functional Connectivity"
-      description: "Pearson correlation matrix from BOLD time series"
-      source_observation: bold
-      pipeline:
-        - callable:
-            name: compute_fc
-            module: tvboptim.observations.observation
-          arguments:
-            - name: timeseries
-              value: bold
-            - name: skip_t
-              value: 20
-              description: "Skip first 20 TRs to avoid transient effects"
-
-optimization:
-    - name: fc_fitting
-      label: "FC Fitting"
-      description: >
-          Two-stage optimization to fit empirical FC.
-          Stage 1: Global parameters (w, G) - same for all regions.
-          Stage 2: Regional parameters (w, I_o) - heterogeneous across regions.
-
-      loss:
-          function: rmse
-          arguments:
-            - name: simulated_fc
-              value: observations.fc.data
-              description: "Simulated functional connectivity matrix from fc observation"
-            - name: empirical_fc
-              description: "Empirical functional connectivity matrix (target, passed at runtime)"
-
-      stages:
-          - name: global_optimization
-            label: "Global Parameter Optimization"
-            description: "Optimize global w and G (same value for all regions)"
-            free_parameters:
-                - w
-                - G
-            algorithm: adam
-            learning_rate: 0.01
-            max_iterations: 300
-            hyperparameters:
-                - name: b2
-                  value: 0.9999
-                  description: "Second moment decay for Adam"
-
-          - name: regional_optimization
-            label: "Regional Parameter Optimization"
-            description: "Optimize heterogeneous w and I_o per region"
-            warmup_from: global_optimization
-            free_parameters:
-                - name: w
-                  heterogeneous: true
-                  description: "Region-specific excitatory recurrence"
-                - name: I_o
-                  heterogeneous: true
-                  description: "Region-specific external input"
-            freeze_parameters:
-                - G
-            algorithm: adam
-            learning_rate: 0.004
-            max_iterations: 200
-            hyperparameters:
-                - name: b2
-                  value: 0.999
-                  description: "Second moment decay for Adam"
-
-explorations:
-    - name: parameter_landscape
-      label: "w-G Parameter Landscape"
-      description: >
-          Grid search over excitatory recurrence (w) and global coupling (G)
-          to understand the FC fitting landscape before optimization.
-
-      parameters:
-          - name: w
-            domain:
-                lo: 0.001
-                hi: 0.7
-                n: 32
-          - name: G
-            domain:
-                lo: 0.001
-                hi: 0.7
-                n: 32
-
-      mode: product
-      observable:
-          function: rmse
-          arguments:
-            - name: simulated_fc
-              value: fc.data
-            - name: empirical_fc
-              description: "Target FC (passed at runtime)"
-
-references:
-    - "Wong & Wang (2006) J Neurosci 26:1314-1328 - Reduced Wong-Wang model"
-    - "Deco et al. (2014) J Neurosci 34:7886-7898 - Resting-state FC modeling"
-
-execution:
-    n_workers: 8
-"""
-
 # === LOAD FROM STRING ===
-exp = SimulationExperiment.from_string(experiment_yaml)
+exp = SimulationExperiment.from_file(
+    "/Users/leonmartin_bih/tools/tvbo/database/experiments/RWW_BOLD_FC_Optimization.yaml"
+)
 print(f"Loaded: {exp.label}")
 print(f"Dynamics: {exp.local_dynamics.name}")
 
@@ -418,8 +62,8 @@ sim_results = exp.run("tvboptim", mode="simulation")
 ```
 
 ```{python}
-#| label: fig-timeseries
-#| fig-cap: "**Neural activity and BOLD signal time series.** Left: Raw synaptic gating variable (S) showing fast neural dynamics over 1 second. Right: Simulated BOLD signal showing slow hemodynamic response over 60 seconds. Each line represents one brain region, colored by mean activity level."
+# | label: fig-timeseries
+# | fig-cap: "**Neural activity and BOLD signal time series.** Left: Raw synaptic gating variable (S) showing fast neural dynamics over 1 second. Right: Simulated BOLD signal showing slow hemodynamic response over 60 seconds. Each line represents one brain region, colored by mean activity level."
 from matplotlib.colors import Normalize
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.1, 3.0375))
@@ -439,8 +83,16 @@ for i in range(num_lines):
     color = cmap(norm(mean_values[i]))
     ax1.plot(time_raw, data_raw[:, i], color=color, linewidth=0.5)
 
-ax1.text(0.95, 0.95, "Raw Neural Activity", transform=ax1.transAxes, fontsize=10,
-         ha='right', va='top', bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+ax1.text(
+    0.95,
+    0.95,
+    "Raw Neural Activity",
+    transform=ax1.transAxes,
+    fontsize=10,
+    ha="right",
+    va="top",
+    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+)
 ax1.set_xlabel("Time [ms]")
 ax1.set_ylabel("S [a.u.]")
 
@@ -448,7 +100,7 @@ ax1.set_ylabel("S [a.u.]")
 bold_obs = sim_results.observations.bold
 t_bold_max = 60
 time_bold = bold_obs.time[:t_bold_max]
-data_bold = bold_obs.data[:t_bold_max, :]
+data_bold = bold_obs.data[:t_bold_max, 0, :]
 
 num_lines = data_bold.shape[1]
 mean_values = np.mean(data_bold, axis=0)
@@ -457,8 +109,16 @@ for i in range(num_lines):
     color = cmap(norm(mean_values[i]))
     ax2.plot(time_bold, data_bold[:, i], color=color, linewidth=0.8)
 
-ax2.text(0.95, 0.95, "BOLD Signal", transform=ax2.transAxes, fontsize=10,
-         ha='right', va='top', bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+ax2.text(
+    0.95,
+    0.95,
+    "BOLD Signal",
+    transform=ax2.transAxes,
+    fontsize=10,
+    ha="right",
+    va="top",
+    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+)
 ax2.set_xlabel("Time [s]")
 ax2.set_ylabel("BOLD [a.u.]")
 
@@ -594,8 +254,8 @@ ax.annotate(
 )
 
 # Mark fitted value
-G_fit = opt_results.fitted_params.coupling.instant.G.value
-w_fit = opt_results.fitted_params.dynamics.w.value
+G_fit = opt_results.global_optimization.fitted_params.coupling.instant.G.value
+w_fit = opt_results.global_optimization.fitted_params.dynamics.w.value
 ax.scatter(
     G_fit,
     w_fit,
@@ -619,10 +279,10 @@ ax.annotate(
 
 # Add optimization trajectory
 G_route = np.array(
-    [ds.coupling.instant.G.value for ds in opt_results.fitting_data["state"].save]
+    [ds.coupling.instant.G.value for ds in opt_results.global_optimization.fitting_data["state"].save]
 )
 w_route = np.array(
-    [ds.dynamics.w.value for ds in opt_results.fitting_data["state"].save]
+    [ds.dynamics.w.value for ds in opt_results.global_optimization.fitting_data["state"].save]
 )
 ax.scatter(
     G_route[::2],
@@ -650,6 +310,7 @@ opt_results_het = exp.run(
     mode="optimization",
     stage="regional_optimization",
     warmup_state=opt_results.fitted_params,
+    target_data=fc_target,
 )
 ```
 
@@ -659,11 +320,11 @@ opt_results_het = exp.run(
 #| label: fig-fc-comparison
 #| fig-cap: "**Comparison of functional connectivity matrices.** Left: Empirical target FC from resting-state fMRI. Middle: FC from global parameter optimization. Right: FC from regional parameter optimization. The correlation coefficient (r) quantifies the similarity to the target FC. Regional parameters achieve better fit by accounting for local variations."
 # Rerun simulations with optimized parameters to compute FC
-sim_global = exp.run("tvboptim", mode="simulation", state=opt_results.fitted_params)
-fc_global = np.array(sim_global.observations.simulated_fc["fc"])
+sim_global = exp.run("tvboptim", mode="simulation", state=opt_results.global_optimization.fitted_params)
+fc_global = np.array(sim_global.observations.fc.data)
 
-sim_regional = exp.run("tvboptim", mode="simulation", state=opt_results_het.fitted_params)
-fc_regional = np.array(sim_regional.observations.simulated_fc["fc"])
+sim_regional = exp.run("tvboptim", mode="simulation", state=opt_results_het.regional_optimization.fitted_params)
+fc_regional = np.array(sim_regional.observations.fc.data)
 
 # Create the figure with three subplots
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8.1, 3.54375))
@@ -750,8 +411,8 @@ w_fitted = opt_results_het.fitted_params.dynamics.w.value.flatten()
 I_o_fitted = opt_results_het.fitted_params.dynamics.I_o.value.flatten()
 
 # Get global optimization values for reference
-w_global = opt_results.fitted_params.dynamics.w.value
-I_o_global = opt_results.fitted_params.dynamics.I_o  # Not optimized in global fit, but initial value
+w_global = opt_results.global_optimization.fitted_params.dynamics.w.value
+I_o_global = opt_results.global_optimization.fitted_params.dynamics.I_o  # Not optimized in global fit, but initial value
 
 # Create figure
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.1, 3.24))

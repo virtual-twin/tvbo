@@ -4072,7 +4072,7 @@ class OptimizationStage(ConfiguredBaseModel):
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm'],
          'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'integer(100)'} })
-    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Stage-specific hyperparameters (e.g., b2=0.9999 for adam)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
+    hyperparameters: Optional[list[Parameter]] = Field(default=[], description="""Stage-specific hyperparameters (e.g., b2=0.9999 for adam)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
     freeze_parameters: Optional[list[str]] = Field(default=[], description="""Parameters from previous stages to freeze (keep at optimized value but not update)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
     warmup_from: Optional[str] = Field(default=None, description="""Previous stage to initialize from. Final values from that stage become initial values for this stage.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
 
@@ -4195,13 +4195,13 @@ class Optimization(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
-    stages: Optional[dict[str, OptimizationStage]] = Field(default=None, description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. Example: Stage 1 (global params) -> Stage 2 (regional params).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
+    stages: Optional[list[OptimizationStage]] = Field(default=[], description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. Example: Stage 1 (global params) -> Stage 2 (regional params).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize (single-stage mode, ignored if stages defined)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization']} })
     algorithm: Optional[str] = Field(default="adam", description="""Optimizer (single-stage mode): 'adam', 'adamw', 'sgd', 'lbfgs', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, description="""Learning rate (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm'],
          'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, description="""Max iterations (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'integer(100)'} })
-    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Algorithm-specific hyperparameters (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
+    hyperparameters: Optional[list[Parameter]] = Field(default=[], description="""Algorithm-specific hyperparameters (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'TuningAlgorithm']} })
 
 
 class Exploration(ConfiguredBaseModel):
@@ -4975,6 +4975,7 @@ class ExecutionConfig(ConfiguredBaseModel):
     precision: Optional[str] = Field(default="float64", description="""Floating point precision: 'float32' or 'float64'""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'string(float64)'} })
     accelerator: Optional[str] = Field(default="cpu", description="""Hardware accelerator: 'cpu', 'gpu', 'tpu'""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'string(cpu)'} })
     batch_size: Optional[int] = Field(default=None, description="""Batch size for vectorized operations (None = auto)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig']} })
+    random_seed: Optional[int] = Field(default=42, description="""Base random seed for reproducibility""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'integer(42)'} })
 
 
 class SimulationExperiment(ConfiguredBaseModel):

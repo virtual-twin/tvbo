@@ -1054,6 +1054,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: "Stage-specific hyperparameters (e.g., b2=0.9999 for adam)"
             freeze_parameters:
                 multivalued: true
@@ -1090,6 +1091,7 @@ classes:
                 multivalued: true
                 range: OptimizationStage
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Ordered list of optimization stages. Stages run sequentially.
                     Stage n+1 starts from optimized values of stage n.
@@ -1117,6 +1119,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: "Algorithm-specific hyperparameters (single-stage mode)"
 
     # =============================================================================
@@ -1415,6 +1418,10 @@ classes:
             batch_size:
                 range: integer
                 description: "Batch size for vectorized operations (None = auto)"
+            random_seed:
+                range: integer
+                ifabsent: integer(42)
+                description: "Base random seed for reproducibility"
 
     SimulationExperiment:
         tree_root: true
