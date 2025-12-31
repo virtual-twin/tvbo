@@ -209,10 +209,16 @@ has_optimization = len(optim_list) > 0
 optim_param_info = {}
 
 # 1. optimization.stages.free_parameters (primary source)
+# Support two formats:
+# - Nested: optimization[i].stages[j].free_parameters
+# - Flat: optimization[i].free_parameters (opt itself is a stage)
 for opt in optim_list:
     stages = getattr(opt, 'stages', None) or []
     if hasattr(stages, 'values'):
         stages = list(stages.values())
+    # If no nested stages but opt has free_parameters, treat opt itself as a stage
+    if not stages and getattr(opt, 'free_parameters', None):
+        stages = [opt]
     for stage in stages:
         free_params = getattr(stage, 'free_parameters', None) or []
         if hasattr(free_params, 'values'):
@@ -275,13 +281,58 @@ coupling_optim_params = optim_coupling_params  # Alias for backwards compatibili
 # =============================================================================
 import ast  # For safely parsing stringified dicts
 
+def get_domain_bounds(param_name):
+    """Lookup domain bounds from model.parameters or coupling.parameters.
+    Returns (lo, hi) tuple, where None means unbounded.
+    """
+    lo, hi = None, None
+    # Check dynamics parameters
+    if model and hasattr(model, 'parameters') and param_name in model.parameters:
+        param = model.parameters[param_name]
+        domain = getattr(param, 'domain', None)
+        if domain:
+            lo_val = getattr(domain, 'lo', None)
+            hi_val = getattr(domain, 'hi', None)
+            if lo_val is not None:
+                try:
+                    lo = float(lo_val)
+                except (TypeError, ValueError):
+                    pass
+            if hi_val is not None:
+                try:
+                    hi = float(hi_val)
+                except (TypeError, ValueError):
+                    pass
+    # Check coupling parameters
+    if coupling and hasattr(coupling, 'parameters') and param_name in coupling.parameters:
+        param = coupling.parameters[param_name]
+        domain = getattr(param, 'domain', None)
+        if domain:
+            lo_val = getattr(domain, 'lo', None)
+            hi_val = getattr(domain, 'hi', None)
+            if lo_val is not None:
+                try:
+                    lo = float(lo_val)
+                except (TypeError, ValueError):
+                    pass
+            if hi_val is not None:
+                try:
+                    hi = float(hi_val)
+                except (TypeError, ValueError):
+                    pass
+    return (lo, hi)
+
 def parse_free_param(fp):
     """Parse a free_parameter entry which could be:
     - str: simple param name like 'w'
     - str: stringified dict like "{'name': 'w', 'heterogeneous': True}"
     - dict: actual dict with 'name' key
     - object: with .name attribute
+
+    Also extracts domain bounds from model/coupling parameters.
+    Returns dict with: name, heterogeneous, lower_bound, upper_bound
     """
+    result = None
     if isinstance(fp, str):
         # Check if it looks like a stringified dict
         stripped = fp.strip()
@@ -289,31 +340,84 @@ def parse_free_param(fp):
             try:
                 parsed = ast.literal_eval(stripped)
                 if isinstance(parsed, dict) and 'name' in parsed:
-                    return {
+                    result = {
                         'name': str(parsed['name']),
                         'heterogeneous': bool(parsed.get('heterogeneous', False)),
                     }
             except (ValueError, SyntaxError):
                 pass
-        # Simple string param name
-        return {'name': fp, 'heterogeneous': False}
+        if result is None:
+            # Simple string param name
+            result = {'name': fp, 'heterogeneous': False}
     elif hasattr(fp, 'name'):
-        return {
+        result = {
             'name': str(fp.name),
             'heterogeneous': bool(getattr(fp, 'heterogeneous', False)),
         }
+        # Check if domain is specified directly on the free_parameter object
+        domain = getattr(fp, 'domain', None)
+        if domain:
+            lo_val = getattr(domain, 'lo', None)
+            hi_val = getattr(domain, 'hi', None)
+            if lo_val is not None:
+                try:
+                    result['lower_bound'] = float(lo_val)
+                except (TypeError, ValueError):
+                    pass
+            if hi_val is not None:
+                try:
+                    result['upper_bound'] = float(hi_val)
+                except (TypeError, ValueError):
+                    pass
     elif isinstance(fp, dict) and 'name' in fp:
-        return {
+        result = {
             'name': str(fp['name']),
             'heterogeneous': bool(fp.get('heterogeneous', False)),
         }
-    return None
+        # Check for domain in dict
+        if 'domain' in fp:
+            domain = fp['domain']
+            if isinstance(domain, dict):
+                if 'lo' in domain:
+                    try:
+                        result['lower_bound'] = float(domain['lo'])
+                    except (TypeError, ValueError):
+                        pass
+                if 'hi' in domain:
+                    try:
+                        result['upper_bound'] = float(domain['hi'])
+                    except (TypeError, ValueError):
+                        pass
+
+    if result is None:
+        return None
+
+    # If no bounds from free_parameter, lookup from model/coupling parameters
+    if 'lower_bound' not in result or 'upper_bound' not in result:
+        model_lo, model_hi = get_domain_bounds(result['name'])
+        if 'lower_bound' not in result and model_lo is not None:
+            result['lower_bound'] = model_lo
+        if 'upper_bound' not in result and model_hi is not None:
+            result['upper_bound'] = model_hi
+
+    # Set None for missing bounds (will become +/- inf)
+    result.setdefault('lower_bound', None)
+    result.setdefault('upper_bound', None)
+
+    return result
 
 optimization_stages = []
 for opt in optim_list:
+    # Support two formats:
+    # 1. Nested: optimization[i].stages[j].free_parameters
+    # 2. Flat: optimization[i].free_parameters (opt itself is a stage)
     stages_raw = getattr(opt, 'stages', None) or []
     if hasattr(stages_raw, 'values'):
         stages_raw = list(stages_raw.values())
+
+    # If no nested stages but opt has free_parameters, treat opt itself as a stage
+    if not stages_raw and getattr(opt, 'free_parameters', None):
+        stages_raw = [opt]
 
     for stage in stages_raw:
         stage_info = {
@@ -336,13 +440,17 @@ for opt in optim_list:
             if parsed:
                 stage_info['free_parameters'].append(parsed)
 
-        # Parse hyperparameters
+        # Parse hyperparameters (filter out non-optax params like has_aux)
+        # has_aux is determined automatically by whether loss_fn returns aux data
         hyperparams = getattr(stage, 'hyperparameters', None) or []
         if hasattr(hyperparams, 'values'):
             hyperparams = list(hyperparams.values())
         for hp in hyperparams:
             hp_name = getattr(hp, 'name', None)
             hp_value = getattr(hp, 'value', None)
+            # Skip non-optax hyperparameters
+            if hp_name in ('has_aux',):
+                continue
             if hp_name and hp_value is not None:
                 stage_info['hyperparameters'][str(hp_name)] = float(hp_value)
 
@@ -555,7 +663,7 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
 % if has_optimization:
 import optax
-from tvboptim.types import Parameter
+from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
 from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingCallback
 % endif
@@ -1030,19 +1138,41 @@ def mark_parameters_${stage_name}(state, n_nodes: int = ${n_nodes}):
 <%
 fp_name = fp['name']
 fp_hetero = fp['heterogeneous']
+fp_lo = fp.get('lower_bound', None)
+fp_hi = fp.get('upper_bound', None)
+has_bounds = fp_lo is not None or fp_hi is not None
 # Check if it's a dynamics or coupling param
 is_coupling = fp_name in all_coupling_params and fp_name not in all_dynamics_params
 # If in both, prefer dynamics
+# Format bounds for code generation (None -> jnp.inf)
+lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
+hi_str = f'{fp_hi}' if fp_hi is not None else 'jnp.inf'
 %>
 % if is_coupling:
-    # ${fp_name} - coupling parameter
+    # ${fp_name} - coupling parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
+% if has_bounds:
+    init_state.coupling.${target_coupling_term}.${fp_name} = BoundedParameter(
+        init_state.coupling.${target_coupling_term}.${fp_name},
+        low=${lo_str},
+        high=${hi_str},
+    )
+% else:
     init_state.coupling.${target_coupling_term}.${fp_name} = Parameter(init_state.coupling.${target_coupling_term}.${fp_name})
+% endif
 % if fp_hetero:
     init_state.coupling.${target_coupling_term}.${fp_name}.shape = (n_nodes,)
 % endif
 % else:
-    # ${fp_name} - dynamics parameter
+    # ${fp_name} - dynamics parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
+% if has_bounds:
+    init_state.dynamics.${fp_name} = BoundedParameter(
+        init_state.dynamics.${fp_name},
+        low=${lo_str},
+        high=${hi_str},
+    )
+% else:
     init_state.dynamics.${fp_name} = Parameter(init_state.dynamics.${fp_name})
+% endif
 % if fp_hetero:
     init_state.dynamics.${fp_name}.shape = (n_nodes,)
 % endif
@@ -1103,10 +1233,13 @@ def create_optimizer(
     optimizer: str = "${optimizer_name}",
     learning_rate: float = ${learning_rate},
     print_every: int = 10,
-    has_aux: bool = False,
     **opt_kwargs,
 ):
-    """Create configured optimizer."""
+    """Create configured optimizer.
+
+    Note: has_aux is always False because our generated loss functions
+    return only the loss value, not (loss, aux_data) tuples.
+    """
     optimizers = {
         "adam": optax.adam,
         "adamw": optax.adamw,
@@ -1129,7 +1262,8 @@ def create_optimizer(
         DefaultPrintCallback(every=print_every),
         SavingCallback(key="state", save_fun=lambda *args: args[1])  # Save updated state each step
     ])
-    return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=has_aux)
+    # has_aux=False: our loss functions return only loss value, not (loss, aux) tuples
+    return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=False)
 
 
 def run_optimization(
