@@ -53,7 +53,7 @@ AABBCC
 DDEEFF
 GGHHII
 """
-fig, axes = plt.subplot_mosaic(mosaic, figsize=(20, 12), layout="compressed")
+fig, axes = plt.subplot_mosaic(mosaic)
 cmap = plt.cm.cividis
 
 # A: Neural Activity
@@ -145,8 +145,8 @@ for key, fc, title in [
 # G-H: Scatter Plots
 triu = np.triu_indices_from(fc_target, k=1)
 for key, fc, title in [
-    ("G", fc_global, "G. Global Fit"),
-    ("H", fc_regional, "H. Regional Fit"),
+    ("G", fc_global, "Global Fit"),
+    ("H", fc_regional, "Regional Fit"),
 ]:
     ax = axes[key]
     ax.scatter(fc_target[triu], np.array(fc)[triu], alpha=0.3, s=8, color="royalblue")
@@ -164,6 +164,7 @@ mean_conn = weights.mean(axis=1)
 opt_g, opt_r = results.global_optimization, results.regional_optimization
 
 ax1 = axes["I"]
+
 ax2 = ax1.twinx()
 
 # Left axis: w (blue)
@@ -183,14 +184,16 @@ ax2.axhline(opt_g.fitted_params.dynamics.I_o, color="darkorange", ls="--", lw=2,
 ax2.set_ylabel("I_o", color="darkorange")
 ax2.tick_params(axis="y", labelcolor="darkorange")
 
-ax1.set_title("I. Regional Parameters")
+ax1.set_title("Regional Parameters")
 lines1, labels1 = ax1.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8)
-
+ax1.set_box_aspect(1)
+ax2.set_box_aspect(1)
 plt.suptitle(
     "Reduced Wong-Wang BOLD FC Optimization", fontsize=14, fontweight="bold", y=1.05
 )
-
+fig.tight_layout()
+bsplot.style.format_fig(fig)
 ##
 ```
