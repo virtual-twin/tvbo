@@ -27,6 +27,7 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "jnp.min",
         "abs": "jnp.abs",
         "prod": "jnp.prod",
+        "concatenate": "jnp.concatenate",
     },
     "numpy": {
         "sum": "np.sum",
@@ -37,6 +38,7 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "np.min",
         "abs": "np.abs",
         "prod": "np.prod",
+        "concatenate": "np.concatenate",
     },
     "julia": {
         "sum": "sum",
@@ -47,6 +49,7 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "minimum",
         "abs": "abs",
         "prod": "prod",
+        "concatenate": "vcat",
     },
     "python": {
         "sum": "sum",
@@ -57,6 +60,7 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "min",
         "abs": "abs",
         "prod": "math.prod",
+        "concatenate": "list.__add__",
     },
 }
 
@@ -166,53 +170,226 @@ class JaxPrinter(spn.JaxPrinter):
         super().__init__(settings=settings)
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["jax"])
+        # Context for broadcasting inference
+        self._index_context = None  # Set by top-level print to enable broadcasting
+
+    def _analyze_indices(self, expr):
+        """Analyze all indexed expressions to build index context.
+
+        Returns a dict mapping index symbols to their position (axis),
+        the maximum dimensionality found, and Sum reduction info.
+
+        Example: For expr containing a[i,j], b[i,j], rmse[i]:
+        - index_positions = {i: 0, j: 1}
+        - max_dims = 2
+
+        For Sum(f(a[i,j]), (j, 0, m-1)) - the result has only index i.
+        """
+        from sympy import preorder_traversal, Indexed, Sum
+
+        index_positions = {}  # {index_symbol: axis_position}
+        max_dims = 0
+        sum_reduced_indices = set()  # Indices that are reduced by Sum
+
+        for sub_expr in preorder_traversal(expr):
+            if isinstance(sub_expr, Sum):
+                # Track which indices are being summed over
+                for limit in sub_expr.limits:
+                    sum_reduced_indices.add(limit[0])
+            elif isinstance(sub_expr, Indexed):
+                indices = sub_expr.indices
+                # Only count indices that are NOT reduced by a Sum
+                effective_indices = [idx for idx in indices if idx not in sum_reduced_indices]
+                max_dims = max(max_dims, len(indices))
+                for pos, idx in enumerate(indices):
+                    if idx not in index_positions:
+                        index_positions[idx] = pos
+
+        return {
+            'positions': index_positions,
+            'max_dims': max_dims,
+            'reduced': sum_reduced_indices
+        }
+
+    def _print_with_broadcasting(self, expr):
+        """Print expression with automatic broadcasting inference.
+
+        Analyzes index usage across the entire expression and generates
+        appropriate broadcasting (e.g., [:, None]) for lower-dimensional terms.
+        """
+        # Analyze the full expression to understand index context
+        self._index_context = self._analyze_indices(expr)
+        try:
+            return self._print(expr)
+        finally:
+            self._index_context = None
+
+    def _print_Indexed(self, expr):
+        """Print indexed expression with automatic broadcasting.
+
+        When index context is set:
+        - a[i,j] in a 2D context -> a (no change needed)
+        - rmse[i] in a 2D context -> rmse[:, None] (broadcast over missing j dimension)
+
+        The key insight: if rmse[i] appears alongside a[i,j], then:
+        - i is at axis 0 for both
+        - j is at axis 1, but rmse doesn't have it
+        - So rmse needs [:, None] to broadcast correctly
+        """
+        from sympy import Indexed
+
+        base_name = str(expr.base)
+        indices = expr.indices
+
+        # If no index context, just return the base name (default behavior)
+        if self._index_context is None:
+            return base_name
+
+        max_dims = self._index_context['max_dims']
+        index_positions = self._index_context['positions']
+
+        # If this indexed expr has the same dimensionality as max, no broadcasting needed
+        if len(indices) >= max_dims:
+            return base_name
+
+        # Need to add broadcasting dimensions
+        # Figure out which axes this indexed expr covers
+        covered_axes = set()
+        for idx in indices:
+            if idx in index_positions:
+                covered_axes.add(index_positions[idx])
+
+        # Build slice notation: [:, None, :, None, ...]
+        # where : is for axes we have, None is for axes we're missing
+        slices = []
+        for axis in range(max_dims):
+            if axis in covered_axes:
+                slices.append(':')
+            else:
+                slices.append('None')
+
+        return f"{base_name}[{', '.join(slices)}]"
 
     def _print_Piecewise(self, expr):
         return print_Piecewise(self, expr)
 
+    def _print_Function(self, expr):
+        """Handle special array functions like concatenate."""
+        func_name = expr.func.__name__
+        if func_name == 'concatenate':
+            # concatenate(a, b, axis) -> jnp.concatenate([a, b], axis=axis)
+            args = list(expr.args)
+            if args and args[-1].is_integer:
+                axis = int(args[-1])
+                arrays = args[:-1]
+            else:
+                axis = 0
+                arrays = args
+            array_strs = ', '.join(self._print(a) for a in arrays)
+            return f"jnp.concatenate([{array_strs}], axis={axis})"
+        # Fall back to parent implementation
+        return super()._print_Function(expr)
+
     def _print_Sum(self, expr):
         """Convert SymPy Sum to jnp.sum for array operations.
 
-        Handles patterns like:
+        Handles patterns with single, multi-index, or nested sums:
+
+        Single index (full reduction):
         - Sum(x[i], (i, 0, n-1)) -> jnp.sum(x)
         - Sum(x[i]*y[i], (i, 0, n-1)) -> jnp.sum(x*y)
-        - Sum(f(x[i]), (i, 0, n-1)) -> jnp.sum(f(x))
 
-        The dummy index is removed and the expression is printed as an
-        elementwise operation, then wrapped in jnp.sum().
+        Multi-index (partial reduction - row/column-wise):
+        - Sum(a[i,j], (j, 0, m-1)) -> jnp.sum(a, axis=1)  # sum over j (cols), keep i (rows)
+        - Sum((a[i,j] - b[i,j])**2, (j, 0, m-1)) -> jnp.sum((a - b)**2, axis=1)
+
+        Nested sums (full reduction over multiple indices):
+        - Sum(a[i,j], (i, 0, n-1), (j, 0, m-1)) -> jnp.sum(a)  # full reduction
+
+        The dummy index position determines the axis: for a[i,j], i=axis0, j=axis1.
+        Summing over j means axis=1. The remaining index i yields the output shape.
         """
-        from sympy import Indexed, Symbol
+        from sympy import Indexed, Symbol, preorder_traversal
 
         func = expr.function  # The expression being summed
-        limits = expr.limits  # ((i, lower, upper),)
+        limits = expr.limits  # ((i, lower, upper), (j, lower, upper), ...)
 
         if not limits:
             # No limits - just print the function
             return f"{self._module}.sum({self._print(func)})"
 
-        # Get the dummy variable (index)
-        dummy = limits[0][0]
+        # Collect ALL dummy variables from all limits
+        dummies = [lim[0] for lim in limits]
 
-        # Replace indexed expressions: x[i] -> x, for all bases
-        # This converts the indexed form back to array form
-        def remove_indexing(ex):
-            """Recursively remove indexing by dummy variable."""
-            if isinstance(ex, Indexed):
-                # Check if indexed by our dummy variable
-                if dummy in ex.indices:
-                    return ex.base  # Return just the base (array)
-            return ex
+        # Find all indexed expressions and determine axes from index positions
+        axes = []  # List of axes to reduce over
+        max_indices = 0
+        remaining_indices = set()  # Indices that remain after reduction
 
-        # Use SymPy's replace to handle all Indexed instances
-        from sympy import preorder_traversal, Indexed
+        for sub_expr in preorder_traversal(func):
+            if isinstance(sub_expr, Indexed):
+                indices = sub_expr.indices
+                if len(indices) > max_indices:
+                    max_indices = len(indices)
+                # Find positions of all dummies in this indexed expression
+                for idx, index_sym in enumerate(indices):
+                    if index_sym in dummies:
+                        if idx not in axes:
+                            axes.append(idx)
+                    else:
+                        remaining_indices.add(index_sym)
 
+        # Replace indexed expressions: remove the summed indices
         result = func
         for sub_expr in list(preorder_traversal(func)):
-            if isinstance(sub_expr, Indexed) and dummy in sub_expr.indices:
-                # Replace x[i] with x (the IndexedBase)
-                result = result.subs(sub_expr, sub_expr.base)
+            if isinstance(sub_expr, Indexed):
+                has_dummy = any(d in sub_expr.indices for d in dummies)
+                if has_dummy:
+                    # Replace indexed expr with its base array
+                    result = result.subs(sub_expr, sub_expr.base)
 
-        return f"{self._module}.sum({self._print(result)})"
+        # Generate code with appropriate axis specification
+        n_axes_to_reduce = len(axes)
+        if n_axes_to_reduce == max_indices or n_axes_to_reduce == 0:
+            # Full reduction: summing over ALL indices -> scalar
+            return f"{self._module}.sum({self._print(result)})"
+        elif n_axes_to_reduce == 1:
+            # Partial reduction over single axis
+            axis = axes[0]
+            sum_code = f"{self._module}.sum({self._print(result)}, axis={axis})"
+
+            # Check if we need to add broadcasting dimensions
+            if self._index_context is not None:
+                ctx_max_dims = self._index_context['max_dims']
+                ctx_positions = self._index_context['positions']
+
+                # The Sum result has (max_indices - 1) dimensions
+                result_dims = max_indices - 1
+
+                if result_dims < ctx_max_dims:
+                    # Need to add broadcasting dimensions
+                    # Figure out which axes the remaining indices cover
+                    covered_axes = set()
+                    for idx in remaining_indices:
+                        if idx in ctx_positions:
+                            covered_axes.add(ctx_positions[idx])
+
+                    # Build slice notation
+                    slices = []
+                    for ax in range(ctx_max_dims):
+                        if ax in covered_axes:
+                            slices.append(':')
+                        else:
+                            slices.append('None')
+
+                    sum_code = f"({sum_code})[{', '.join(slices)}]"
+
+            return sum_code
+        else:
+            # Multiple axes but not all: reduce over multiple specific axes
+            # Sort axes in descending order to reduce from back to front
+            axes_tuple = tuple(sorted(axes))
+            return f"{self._module}.sum({self._print(result)}, axis={axes_tuple})"
 
 
 class JuliaPrinter(spj.JuliaCodePrinter):
@@ -322,6 +499,7 @@ def render_expression(
     format="jax",
     user_functions={},
     parameters=None,
+    infer_broadcasting=False,
 ):
     """Render a SymPy expression or string to target format code.
 
@@ -339,6 +517,10 @@ def render_expression(
     parameters : list of str, optional
         Parameter names to define as Symbols. These OVERRIDE SymPy built-in
         functions (e.g., 'gamma' becomes Symbol('gamma'), not the gamma function).
+    infer_broadcasting : bool
+        If True, analyze indexed expressions and automatically add broadcasting
+        dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]).
+        This enables mathematically correct notation to generate correct array code.
     """
     if isinstance(expression, str):
         # Pass user_functions as functions to parse_eq so they're recognized
@@ -347,9 +529,15 @@ def render_expression(
         expression = parse_eq(expression, parameters=parameters, functions=func_names)
 
     printer = get_printer(format)
-    # User functions take precedence over built-in mappings
+    # User functions extend built-in mappings (don't override if already mapped)
     if user_functions:
-        printer.known_functions.update(user_functions)
+        for name, target in user_functions.items():
+            if name not in printer.known_functions:
+                printer.known_functions[name] = target
+
+    # Use broadcasting-aware printing if requested and printer supports it
+    if infer_broadcasting and hasattr(printer, '_print_with_broadcasting'):
+        return printer._print_with_broadcasting(expression)
 
     return printer.doprint(expression)
 

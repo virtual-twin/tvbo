@@ -61,22 +61,32 @@ param_defaults = {p.name: float(p.value) if p.value is not None else 1.0
                   for p in model.parameters.values()}
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
-# Build COUPLING_INPUTS from coupling_inputs (preferred) or coupling_terms (deprecated fallback)
-# coupling_inputs is the source of truth: {name: dimension}
-# coupling_terms is deprecated but still supported for backwards compatibility
+# Build COUPLING_INPUTS from coupling_inputs
+# Pattern: each coupling_input name → its dimension (default 1)
+# If dimension > 1 and keys provided, keys are used as variable names
+#
+# Example 1: instant: {dimension: 1}, delayed: {dimension: 1}
+#    → COUPLING_INPUTS = {'instant': 1, 'delayed': 1}
+#    → c_instant = coupling.instant[0], c_delayed = coupling.delayed[0]
+#
+# Example 2: coupling: {dimension: 2, keys: [lre, ffi]}
+#    → COUPLING_INPUTS = {'coupling': 2}
+#    → lre = coupling.coupling[0], ffi = coupling.coupling[1]
+#
 coupling_inputs_dict = {}
+coupling_keys = {}  # ci_name -> list of key names (for unpacking)
+
 if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
-    # Preferred: use coupling_inputs directly
     for ci_name, ci in model.coupling_inputs.items():
         dim = getattr(ci, 'dimension', 1) or 1
         coupling_inputs_dict[ci_name] = dim
+        keys = getattr(ci, 'keys', None)
+        if keys:
+            coupling_keys[ci_name] = list(keys)
 elif hasattr(model, 'coupling_terms') and model.coupling_terms:
     # Deprecated fallback: use coupling_terms with dimension 1 each
     for ct_name in model.coupling_terms.keys():
         coupling_inputs_dict[ct_name] = 1
-else:
-    # No coupling defined - use empty dict (dynamics without coupling)
-    pass
 
 class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
 %>
@@ -138,7 +148,12 @@ class ${class_name}(AbstractDynamics):
 
         # Unpack coupling inputs
         % for ci_name, ci_dim in coupling_inputs_dict.items():
-        % if ci_dim == 1:
+        % if ci_name in coupling_keys:
+        ## Multi-dimensional with named keys: unpack each key
+        % for idx, key_name in enumerate(coupling_keys[ci_name]):
+        ${key_name} = coupling.${ci_name}[${idx}] if hasattr(coupling, '${ci_name}') else 0.0
+        % endfor
+        % elif ci_dim == 1:
         ${ci_name} = coupling.${ci_name}[0] if hasattr(coupling, '${ci_name}') else 0.0
         % else:
         ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})

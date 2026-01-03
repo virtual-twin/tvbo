@@ -364,7 +364,7 @@ classes:
                 range: Edge
                 inlined_as_list: true
                 description: "List of directed edges with coupling references (optional, for explicit edge definition)"
-            coupling_library:
+            coupling:
                 multivalued: true
                 range: Coupling
                 description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
@@ -482,7 +482,7 @@ classes:
             coupling:
                 range: Coupling
                 required: false
-                description: "Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling."
+                description: "Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling."
                 inlined: false
             directed:
                 range: boolean
@@ -727,6 +727,10 @@ classes:
                 range: integer
                 ifabsent: integer(1)
                 description: "Dimensionality of the coupling input (number of coupled values)"
+            keys:
+                multivalued: true
+                range: string
+                description: "Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names."
 
     Argument:
         class_uri: tvbo:Argument
@@ -799,6 +803,13 @@ classes:
             apply_on_dimension:
                 description: "Which dimension to apply the transformation on"
                 range: DimensionType
+            aggregate:
+                description: >-
+                    How to aggregate the result across dimensions.
+                    E.g., aggregate.over=node computes per-row (per-node) with keepdims.
+                    The type field controls whether to reduce (mean/sum) or keep dimensions (none).
+                range: Aggregation
+                inlined: true
             time_range:
                 description: "Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point."
                 range: Range
@@ -1160,6 +1171,7 @@ classes:
         description: >-
             Defines how a parameter is updated based on observables.
             Represents iterative learning rules like FIC or EIB updates.
+            Functions from experiment.functions are available in the equation.
         slots:
             - name
             - description
@@ -1173,15 +1185,40 @@ classes:
                 range: Equation
                 inlined: true
                 required: true
-                description: Update equation (e.g., 'J_i + eta * delta')
+                description: >-
+                    Update equation (e.g., 'J_i + eta * delta').
+                    Can use functions defined in experiment.functions section.
             bounds:
                 range: Range
                 inlined: true
                 description: Constraints on parameter values after update
+            warmup:
+                range: boolean
+                description: >-
+                    Whether to apply learning rate warmup to this update rule.
+                    When true, the learning rate (eta) is scaled by (i+1)/n_iterations.
             requires:
                 multivalued: true
                 range: Observation
                 description: Observables required by this update rule
+
+    AlgorithmInclude:
+        description: >-
+            Reference to an included algorithm with optional argument overrides.
+            Allows combining algorithms with different hyperparameter values.
+        attributes:
+            algorithm:
+                range: Algorithm
+                inlined: false
+                required: true
+                description: Reference to the algorithm to include
+            arguments:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: >-
+                    Override hyperparameter values for the included algorithm.
+                    Maps parameter names to new values.
 
     TuningObjective:
         description: >-
@@ -1213,7 +1250,7 @@ classes:
     Algorithm:
         description: >-
             A complete specification of an iterative parameter tuning algorithm.
-            Combines update rules, objectives, observables, and hyperparameters.
+            Combines update rules, objectives, observations, and hyperparameters.
         slots:
             - name
             - description
@@ -1221,21 +1258,33 @@ classes:
             type:
                 range: string
                 description: "Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'"
+            includes:
+                multivalued: true
+                range: AlgorithmInclude
+                inlined: true
+                description: >-
+                    Include update rules from other algorithms with optional argument overrides.
+                    Unlike depends_on (sequential), includes means combined execution.
+                    Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]
             objective:
                 range: TuningObjective
                 inlined: true
                 description: What the algorithm optimizes for
-            observables:
+            observations:
                 multivalued: true
                 range: Observation
-                inlined: true
-                description: Quantities computed from simulation for update rules
+                inlined: false
+                description: >-
+                    References to observations defined in the observations section.
+                    Includes both simulated observations and external data (via data_source).
             update_rules:
                 multivalued: true
                 range: UpdateRule
                 inlined: true
-                required: true
-                description: How parameters are updated each iteration
+                required: false
+                description: >-
+                    How parameters are updated each iteration.
+                    When using 'includes', update_rules are inherited from included algorithms.
             hyperparameters:
                 multivalued: true
                 range: Parameter
@@ -1244,6 +1293,12 @@ classes:
             learning_rate:
                 range: float
                 description: Learning rate (eta) for the tuning algorithm
+            learning_rate_warmup:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    Linear warmup of learning rate from 0 to learning_rate over n_iterations.
+                    eta_effective = eta * (i+1) / n_iterations
             n_iterations:
                 range: integer
                 description: Number of iterations to run
@@ -1257,6 +1312,14 @@ classes:
                 range: integer
                 ifabsent: integer(1)
                 description: Apply update every N iterations
+            functions:
+                multivalued: true
+                range: FunctionCall
+                inlined_as_list: true
+                description: >-
+                    Function calls for tracking progress, computing metrics, etc.
+                    Each FunctionCall references a function from the experiment's functions section
+                    and specifies arguments for that specific algorithm context.
             depends_on:
                 multivalued: true
                 range: Algorithm

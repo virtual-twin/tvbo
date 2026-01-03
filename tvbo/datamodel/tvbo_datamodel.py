@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-12-31T18:21:31
+# Generation date: 2026-01-03T17:21:31
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -554,7 +554,7 @@ class Network(YAMLRoot):
     description: Optional[str] = None
     nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
-    coupling_library: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
+    coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
     number_of_regions: Optional[int] = 1
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
@@ -581,7 +581,7 @@ class Network(YAMLRoot):
             self.edges = [self.edges] if self.edges is not None else []
         self.edges = [v if isinstance(v, Edge) else Edge(**as_dict(v)) for v in self.edges]
 
-        self._normalize_inlined_as_dict(slot_name="coupling_library", slot_type=Coupling, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
 
         if self.number_of_regions is not None and not isinstance(self.number_of_regions, int):
             self.number_of_regions = int(self.number_of_regions)
@@ -1174,6 +1174,7 @@ class CouplingInput(YAMLRoot):
     name: Union[str, CouplingInputName] = None
     description: Optional[str] = None
     dimension: Optional[int] = 1
+    keys: Optional[Union[str, list[str]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1186,6 +1187,10 @@ class CouplingInput(YAMLRoot):
 
         if self.dimension is not None and not isinstance(self.dimension, int):
             self.dimension = int(self.dimension)
+
+        if not isinstance(self.keys, list):
+            self.keys = [self.keys] if self.keys is not None else []
+        self.keys = [v if isinstance(v, str) else str(v) for v in self.keys]
 
         super().__post_init__(**kwargs)
 
@@ -1254,6 +1259,7 @@ class Function(YAMLRoot):
     source_code: Optional[str] = None
     callable: Optional[Union[dict, "Callable"]] = None
     apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
+    aggregate: Optional[Union[dict, "Aggregation"]] = None
     time_range: Optional[Union[dict, Range]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1303,6 +1309,9 @@ class Function(YAMLRoot):
 
         if self.apply_on_dimension is not None and not isinstance(self.apply_on_dimension, DimensionType):
             self.apply_on_dimension = DimensionType(self.apply_on_dimension)
+
+        if self.aggregate is not None and not isinstance(self.aggregate, Aggregation):
+            self.aggregate = Aggregation(**as_dict(self.aggregate))
 
         if self.time_range is not None and not isinstance(self.time_range, Range):
             self.time_range = Range(**as_dict(self.time_range))
@@ -1893,7 +1902,7 @@ class Exploration(YAMLRoot):
 class UpdateRule(YAMLRoot):
     """
     Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB
-    updates.
+    updates. Functions from experiment.functions are available in the equation.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1907,6 +1916,7 @@ class UpdateRule(YAMLRoot):
     equation: Union[dict, Equation] = None
     description: Optional[str] = None
     bounds: Optional[Union[dict, Range]] = None
+    warmup: Optional[Union[bool, Bool]] = None
     requires: Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1931,9 +1941,39 @@ class UpdateRule(YAMLRoot):
         if self.bounds is not None and not isinstance(self.bounds, Range):
             self.bounds = Range(**as_dict(self.bounds))
 
+        if self.warmup is not None and not isinstance(self.warmup, Bool):
+            self.warmup = Bool(self.warmup)
+
         if not isinstance(self.requires, list):
             self.requires = [self.requires] if self.requires is not None else []
         self.requires = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.requires]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class AlgorithmInclude(YAMLRoot):
+    """
+    Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different
+    hyperparameter values.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["AlgorithmInclude"]
+    class_class_curie: ClassVar[str] = "tvbo:AlgorithmInclude"
+    class_name: ClassVar[str] = "AlgorithmInclude"
+    class_model_uri: ClassVar[URIRef] = TVBO.AlgorithmInclude
+
+    algorithm: Union[str, AlgorithmName] = None
+    arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.algorithm):
+            self.MissingRequiredField("algorithm")
+        if not isinstance(self.algorithm, AlgorithmName):
+            self.algorithm = AlgorithmName(self.algorithm)
+
+        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -1987,7 +2027,7 @@ class TuningObjective(YAMLRoot):
 class Algorithm(YAMLRoot):
     """
     A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives,
-    observables, and hyperparameters.
+    observations, and hyperparameters.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1997,17 +2037,20 @@ class Algorithm(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Algorithm
 
     name: Union[str, AlgorithmName] = None
-    update_rules: Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]] = empty_dict()
     description: Optional[str] = None
     type: Optional[str] = None
+    includes: Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]] = empty_list()
     objective: Optional[Union[dict, TuningObjective]] = None
-    observables: Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]] = empty_dict()
+    observations: Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]] = empty_list()
+    update_rules: Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]] = empty_dict()
     hyperparameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     learning_rate: Optional[float] = None
+    learning_rate_warmup: Optional[Union[bool, Bool]] = False
     n_iterations: Optional[int] = None
     learning_rate_schedule: Optional[str] = None
     simulation_period: Optional[float] = None
     apply_every: Optional[int] = 1
+    functions: Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]] = empty_list()
     depends_on: Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2016,25 +2059,32 @@ class Algorithm(YAMLRoot):
         if not isinstance(self.name, AlgorithmName):
             self.name = AlgorithmName(self.name)
 
-        if self._is_empty(self.update_rules):
-            self.MissingRequiredField("update_rules")
-        self._normalize_inlined_as_dict(slot_name="update_rules", slot_type=UpdateRule, key_name="name", keyed=True)
-
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
         if self.type is not None and not isinstance(self.type, str):
             self.type = str(self.type)
 
+        if not isinstance(self.includes, list):
+            self.includes = [self.includes] if self.includes is not None else []
+        self.includes = [v if isinstance(v, AlgorithmInclude) else AlgorithmInclude(**as_dict(v)) for v in self.includes]
+
         if self.objective is not None and not isinstance(self.objective, TuningObjective):
             self.objective = TuningObjective(**as_dict(self.objective))
 
-        self._normalize_inlined_as_dict(slot_name="observables", slot_type=Observation, key_name="name", keyed=True)
+        if not isinstance(self.observations, list):
+            self.observations = [self.observations] if self.observations is not None else []
+        self.observations = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.observations]
+
+        self._normalize_inlined_as_dict(slot_name="update_rules", slot_type=UpdateRule, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.learning_rate is not None and not isinstance(self.learning_rate, float):
             self.learning_rate = float(self.learning_rate)
+
+        if self.learning_rate_warmup is not None and not isinstance(self.learning_rate_warmup, Bool):
+            self.learning_rate_warmup = Bool(self.learning_rate_warmup)
 
         if self.n_iterations is not None and not isinstance(self.n_iterations, int):
             self.n_iterations = int(self.n_iterations)
@@ -2047,6 +2097,10 @@ class Algorithm(YAMLRoot):
 
         if self.apply_every is not None and not isinstance(self.apply_every, int):
             self.apply_every = int(self.apply_every)
+
+        if not isinstance(self.functions, list):
+            self.functions = [self.functions] if self.functions is not None else []
+        self.functions = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.functions]
 
         if not isinstance(self.depends_on, list):
             self.depends_on = [self.depends_on] if self.depends_on is not None else []
@@ -4280,8 +4334,8 @@ slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.cu
 slots.network__edges = Slot(uri=TVBO.edges, name="network__edges", curie=TVBO.curie('edges'),
                    model_uri=TVBO.network__edges, domain=None, range=Optional[Union[Union[dict, Edge], list[Union[dict, Edge]]]])
 
-slots.network__coupling_library = Slot(uri=TVBO.coupling_library, name="network__coupling_library", curie=TVBO.curie('coupling_library'),
-                   model_uri=TVBO.network__coupling_library, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])
+slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curie=TVBO.curie('coupling'),
+                   model_uri=TVBO.network__coupling, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])
 
 slots.network__number_of_regions = Slot(uri=TVBO.number_of_regions, name="network__number_of_regions", curie=TVBO.curie('number_of_regions'),
                    model_uri=TVBO.network__number_of_regions, domain=None, range=Optional[int])
@@ -4484,6 +4538,9 @@ slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="paramete
 slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__dimension", curie=TVBO.curie('dimension'),
                    model_uri=TVBO.couplingInput__dimension, domain=None, range=Optional[int])
 
+slots.couplingInput__keys = Slot(uri=TVBO.keys, name="couplingInput__keys", curie=TVBO.curie('keys'),
+                   model_uri=TVBO.couplingInput__keys, domain=None, range=Optional[Union[str, list[str]]])
+
 slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
                    model_uri=TVBO.argument__value, domain=None, range=Optional[str])
 
@@ -4513,6 +4570,9 @@ slots.function__callable = Slot(uri=TVBO.callable, name="function__callable", cu
 
 slots.function__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="function__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
                    model_uri=TVBO.function__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.function__aggregate = Slot(uri=TVBO.aggregate, name="function__aggregate", curie=TVBO.curie('aggregate'),
+                   model_uri=TVBO.function__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
 
 slots.function__time_range = Slot(uri=TVBO.time_range, name="function__time_range", curie=TVBO.curie('time_range'),
                    model_uri=TVBO.function__time_range, domain=None, range=Optional[Union[dict, Range]])
@@ -4682,8 +4742,17 @@ slots.updateRule__equation = Slot(uri=TVBO.equation, name="updateRule__equation"
 slots.updateRule__bounds = Slot(uri=TVBO.bounds, name="updateRule__bounds", curie=TVBO.curie('bounds'),
                    model_uri=TVBO.updateRule__bounds, domain=None, range=Optional[Union[dict, Range]])
 
+slots.updateRule__warmup = Slot(uri=TVBO.warmup, name="updateRule__warmup", curie=TVBO.curie('warmup'),
+                   model_uri=TVBO.updateRule__warmup, domain=None, range=Optional[Union[bool, Bool]])
+
 slots.updateRule__requires = Slot(uri=TVBO.requires, name="updateRule__requires", curie=TVBO.curie('requires'),
                    model_uri=TVBO.updateRule__requires, domain=None, range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]])
+
+slots.algorithmInclude__algorithm = Slot(uri=TVBO.algorithm, name="algorithmInclude__algorithm", curie=TVBO.curie('algorithm'),
+                   model_uri=TVBO.algorithmInclude__algorithm, domain=None, range=Union[str, AlgorithmName])
+
+slots.algorithmInclude__arguments = Slot(uri=TVBO.arguments, name="algorithmInclude__arguments", curie=TVBO.curie('arguments'),
+                   model_uri=TVBO.algorithmInclude__arguments, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.tuningObjective__type = Slot(uri=TVBO.type, name="tuningObjective__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.tuningObjective__type, domain=None, range=Optional[str])
@@ -4703,20 +4772,26 @@ slots.tuningObjective__metric = Slot(uri=TVBO.metric, name="tuningObjective__met
 slots.algorithm__type = Slot(uri=TVBO.type, name="algorithm__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.algorithm__type, domain=None, range=Optional[str])
 
+slots.algorithm__includes = Slot(uri=TVBO.includes, name="algorithm__includes", curie=TVBO.curie('includes'),
+                   model_uri=TVBO.algorithm__includes, domain=None, range=Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]])
+
 slots.algorithm__objective = Slot(uri=TVBO.objective, name="algorithm__objective", curie=TVBO.curie('objective'),
                    model_uri=TVBO.algorithm__objective, domain=None, range=Optional[Union[dict, TuningObjective]])
 
-slots.algorithm__observables = Slot(uri=TVBO.observables, name="algorithm__observables", curie=TVBO.curie('observables'),
-                   model_uri=TVBO.algorithm__observables, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
+slots.algorithm__observations = Slot(uri=TVBO.observations, name="algorithm__observations", curie=TVBO.curie('observations'),
+                   model_uri=TVBO.algorithm__observations, domain=None, range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]])
 
 slots.algorithm__update_rules = Slot(uri=TVBO.update_rules, name="algorithm__update_rules", curie=TVBO.curie('update_rules'),
-                   model_uri=TVBO.algorithm__update_rules, domain=None, range=Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]])
+                   model_uri=TVBO.algorithm__update_rules, domain=None, range=Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]])
 
 slots.algorithm__hyperparameters = Slot(uri=TVBO.hyperparameters, name="algorithm__hyperparameters", curie=TVBO.curie('hyperparameters'),
                    model_uri=TVBO.algorithm__hyperparameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.algorithm__learning_rate = Slot(uri=TVBO.learning_rate, name="algorithm__learning_rate", curie=TVBO.curie('learning_rate'),
                    model_uri=TVBO.algorithm__learning_rate, domain=None, range=Optional[float])
+
+slots.algorithm__learning_rate_warmup = Slot(uri=TVBO.learning_rate_warmup, name="algorithm__learning_rate_warmup", curie=TVBO.curie('learning_rate_warmup'),
+                   model_uri=TVBO.algorithm__learning_rate_warmup, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.algorithm__n_iterations = Slot(uri=TVBO.n_iterations, name="algorithm__n_iterations", curie=TVBO.curie('n_iterations'),
                    model_uri=TVBO.algorithm__n_iterations, domain=None, range=Optional[int])
@@ -4729,6 +4804,9 @@ slots.algorithm__simulation_period = Slot(uri=TVBO.simulation_period, name="algo
 
 slots.algorithm__apply_every = Slot(uri=TVBO.apply_every, name="algorithm__apply_every", curie=TVBO.curie('apply_every'),
                    model_uri=TVBO.algorithm__apply_every, domain=None, range=Optional[int])
+
+slots.algorithm__functions = Slot(uri=TVBO.functions, name="algorithm__functions", curie=TVBO.curie('functions'),
+                   model_uri=TVBO.algorithm__functions, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
 
 slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
                    model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])

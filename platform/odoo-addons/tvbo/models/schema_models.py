@@ -249,7 +249,7 @@ class Network(models.Model):
     description = fields.Text()
     nodes = fields.Many2many(comodel_name='tvbo.node', relation='tvbo_network_nodes_rel', string='List of nodes with individual dynamics (optional, for heterogeneous networks)')
     edges = fields.Many2many(comodel_name='tvbo.edge', relation='tvbo_network_edges_rel', string='List of directed edges with coupling references (optional, for explicit edge definition)')
-    coupling_library = fields.Many2many(comodel_name='tvbo.coupling', relation='tvbo_network_coupling_library_rel', string="Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')")
+    coupling = fields.Many2many(comodel_name='tvbo.coupling', relation='tvbo_network_coupling_library_rel', string="Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')")
     number_of_regions = fields.Integer(string='Number of regions (backward compatibility)', default=1)
     number_of_nodes = fields.Integer(string='Number of nodes in the network', default=1)
     parcellation = fields.Many2one(comodel_name='tvbo.parcellation', string='Brain parcellation/atlas reference')

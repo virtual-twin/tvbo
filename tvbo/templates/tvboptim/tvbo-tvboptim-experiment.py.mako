@@ -25,7 +25,6 @@ import numpy as np
 assert 'experiment' in context.keys(), "experiment required for experiment template"
 
 model = experiment.local_dynamics
-coupling = experiment.coupling
 integration = experiment.integration
 network = experiment.network
 
@@ -47,38 +46,62 @@ else:
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
+# Helper function for safe Python identifiers
+def safe_name(name):
+    """Convert name to valid Python identifier."""
+    return str(name).replace(' ', '_').replace('-', '_').lower()
+
 # Extract key metadata
 state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
-# Build coupling_inputs dict from coupling_inputs (preferred) or coupling_terms (deprecated fallback)
+# Build coupling_inputs dict:
+# Each coupling_input name → its dimension (default 1)
+# If keys provided, those are used as variable names in equations
 coupling_inputs_dict = {}
+coupling_keys = {}  # ci_name -> list of key names
+
 if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
     for ci_name, ci in model.coupling_inputs.items():
         dim = getattr(ci, 'dimension', 1) or 1
         coupling_inputs_dict[ci_name] = dim
+        keys = getattr(ci, 'keys', None)
+        if keys:
+            coupling_keys[ci_name] = list(keys)
 elif hasattr(model, 'coupling_terms') and model.coupling_terms:
     for ct_name in model.coupling_terms.keys():
         coupling_inputs_dict[ct_name] = 1
 
-# Coupling metadata
-has_delay = hasattr(coupling, 'delayed') and coupling.delayed
+# First coupling input key (for parameter access)
+first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dict else 'coupling'
 
-# Select the appropriate coupling term based on delay status
-# Use names exactly as defined in YAML (e.g., c_instant, c_delayed, coupling)
-coupling_input_names = list(coupling_inputs_dict.keys()) if coupling_inputs_dict else ['coupling']
-if has_delay:
-    # Prefer coupling input containing 'delayed', otherwise use first
-    target_coupling_term = next((ci for ci in coupling_input_names if 'delayed' in ci.lower()), coupling_input_names[0])
-else:
-    # Prefer coupling input containing 'instant', otherwise use first
-    target_coupling_term = next((ci for ci in coupling_input_names if 'instant' in ci.lower()), coupling_input_names[0])
-coupling_class = coupling.name.replace(' ', '').replace('-', '')
-coupling_param_names = [p.name for p in coupling.parameters.values()] if hasattr(coupling, 'parameters') and coupling.parameters else []
-coupling_param_defaults = {p.name: float(p.value) for p in coupling.parameters.values() if p.value is not None} if hasattr(coupling, 'parameters') and coupling.parameters else {}
-incoming_states = list(getattr(coupling, 'incoming_states', None) or [])
-local_states = list(getattr(coupling, 'local_states', None) or [])
+# Build all_couplings dict: maps coupling_input name → Coupling object
+# Source: network.coupling (dict keyed by coupling_input name)
+all_couplings = {}
+network_coupling = getattr(network, 'coupling', None)
+if network_coupling and hasattr(network_coupling, 'items'):
+    # network.coupling is a dict: {coupling_input_name: Coupling}
+    all_couplings = dict(network_coupling.items())
+elif network_coupling and hasattr(network_coupling, 'keys'):
+    # Also handle dict-like objects
+    all_couplings = {k: network_coupling[k] for k in network_coupling.keys()}
+
+# Check if any coupling has delays
+has_delay = any(getattr(c, 'delayed', False) for c in all_couplings.values())
+
+# Collect all coupling parameters (for optimization)
+all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
+all_coupling_param_shapes = {}  # (coupling_key, param_name) -> shape_str
+coupling_param_names = set()  # Simple set of param names for quick lookup
+for ck, cobj in all_couplings.items():
+    if hasattr(cobj, 'parameters') and cobj.parameters:
+        for p in cobj.parameters.values():
+            all_coupling_params[(ck, p.name)] = p
+            coupling_param_names.add(p.name)
+            shape_str = getattr(p, 'shape', None)
+            if shape_str and 'n_nodes' in str(shape_str):
+                all_coupling_param_shapes[(ck, p.name)] = str(shape_str)
 
 # Integration metadata - uses schema ifabsent defaults where available
 SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4'}
@@ -176,10 +199,13 @@ def obs_has_all_args(obs):
 _observations = getattr(experiment, 'observations', None) or []
 if hasattr(_observations, 'items'):
     _obs_list = list(_observations.items())
+    observations_dict = dict(_observations.items())
 elif hasattr(_observations, '__iter__'):
     _obs_list = [(getattr(o, 'name', f'obs_{i}'), o) for i, o in enumerate(_observations)]
+    observations_dict = {name: obs for name, obs in _obs_list}
 else:
     _obs_list = []
+    observations_dict = {}
 
 # Include all observations that have all required arguments satisfied
 # Note: We include ALL observations, not just "leaf" ones, because users expect
@@ -273,16 +299,18 @@ for name, param in model.parameters.items():
         param._optim_heterogeneous = optim_param_info[str(name)]['heterogeneous']
         optim_params.append(param)
 
-# Check coupling parameters
-if coupling and hasattr(coupling, 'parameters'):
-    for name, param in coupling.parameters.items():
-        pname = str(name)
-        if pname in optim_param_info or getattr(param, 'free', False):
-            is_hetero = optim_param_info.get(pname, {}).get('heterogeneous', False)
-            if not is_hetero:
-                is_hetero = getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
-            param._optim_heterogeneous = bool(is_hetero)
-            optim_coupling_params.append(param)
+# Check coupling parameters from all_couplings
+for coupling_key, coupling_obj in all_couplings.items():
+    if coupling_obj and hasattr(coupling_obj, 'parameters') and coupling_obj.parameters:
+        for name, param in coupling_obj.parameters.items():
+            pname = str(name)
+            if pname in optim_param_info or getattr(param, 'free', False):
+                is_hetero = optim_param_info.get(pname, {}).get('heterogeneous', False)
+                if not is_hetero:
+                    is_hetero = getattr(param, 'heterogeneous', False) or getattr(param, 'shape', None)
+                param._optim_heterogeneous = bool(is_hetero)
+                param._coupling_key = coupling_key  # Track which coupling it belongs to
+                optim_coupling_params.append(param)
 
 # Legacy support: coupling params with free=True that weren't in free_parameters
 coupling_optim_params = optim_coupling_params  # Alias for backwards compatibility
@@ -314,36 +342,50 @@ def get_domain_bounds(param_name):
                     hi = float(hi_val)
                 except (TypeError, ValueError):
                     pass
-    # Check coupling parameters
-    if coupling and hasattr(coupling, 'parameters') and param_name in coupling.parameters:
-        param = coupling.parameters[param_name]
-        domain = getattr(param, 'domain', None)
-        if domain:
-            lo_val = getattr(domain, 'lo', None)
-            hi_val = getattr(domain, 'hi', None)
-            if lo_val is not None:
-                try:
-                    lo = float(lo_val)
-                except (TypeError, ValueError):
-                    pass
-            if hi_val is not None:
-                try:
-                    hi = float(hi_val)
-                except (TypeError, ValueError):
-                    pass
+    # Check coupling parameters from all_couplings
+    for ck, cobj in all_couplings.items():
+        if hasattr(cobj, 'parameters') and cobj.parameters and param_name in cobj.parameters:
+            param = cobj.parameters[param_name]
+            domain = getattr(param, 'domain', None)
+            if domain:
+                lo_val = getattr(domain, 'lo', None)
+                hi_val = getattr(domain, 'hi', None)
+                if lo_val is not None:
+                    try:
+                        lo = float(lo_val)
+                    except (TypeError, ValueError):
+                        pass
+                if hi_val is not None:
+                    try:
+                        hi = float(hi_val)
+                    except (TypeError, ValueError):
+                        pass
+                break  # Found the param, stop searching
     return (lo, hi)
 
 def parse_free_param(fp):
     """Parse a free_parameter entry which could be:
-    - str: simple param name like 'w'
+    - str: simple param name like 'w' (dynamics param, infers local_dynamics)
+    - str: dotted notation like 'ReducedWongWang.w' (dynamics param, explicit)
+    - str: dotted notation like 'FastLinearCoupling.G' (coupling param)
     - str: stringified dict like "{'name': 'w', 'heterogeneous': True}"
     - dict: actual dict with 'name' key
     - object: with .name attribute
 
-    Also extracts domain bounds from model/coupling parameters.
-    Returns dict with: name, heterogeneous, lower_bound, upper_bound
+    Dotted notation: ClassName.param_name
+    - If ClassName matches a coupling key → coupling param
+    - Otherwise → dynamics param (ClassName is dynamics name)
+
+    Returns dict with: name, heterogeneous, lower_bound, upper_bound,
+                       coupling_key (if coupling), dynamics_key (if explicit dynamics)
     """
+    # Get known coupling keys to distinguish coupling vs dynamics
+    coupling_keys = set(all_couplings.keys())
+
     result = None
+    source_key = None  # Will be set to coupling_key or dynamics_key
+    is_coupling = False
+
     if isinstance(fp, str):
         # Check if it looks like a stringified dict
         stripped = fp.strip()
@@ -351,19 +393,51 @@ def parse_free_param(fp):
             try:
                 parsed = ast.literal_eval(stripped)
                 if isinstance(parsed, dict) and 'name' in parsed:
+                    param_name = str(parsed['name'])
+                    # Check for dotted notation in parsed name
+                    if '.' in param_name:
+                        prefix, param_name = param_name.rsplit('.', 1)
+                        is_coupling = prefix in coupling_keys
+                        source_key = prefix
                     result = {
-                        'name': str(parsed['name']),
+                        'name': param_name,
                         'heterogeneous': bool(parsed.get('heterogeneous', False)),
+                        'coupling_key': source_key if is_coupling else None,
+                        'dynamics_key': source_key if not is_coupling and source_key else None,
                     }
             except (ValueError, SyntaxError):
                 pass
         if result is None:
-            # Simple string param name
-            result = {'name': fp, 'heterogeneous': False}
+            # Check for dotted notation: ClassName.param_name
+            if '.' in stripped:
+                prefix, param_name = stripped.rsplit('.', 1)
+                is_coupling = prefix in coupling_keys
+                source_key = prefix
+                result = {
+                    'name': param_name,
+                    'heterogeneous': False,
+                    'shape': None,
+                    'coupling_key': source_key if is_coupling else None,
+                    'dynamics_key': source_key if not is_coupling else None,
+                }
+            else:
+                # Simple string param name (dynamics, no explicit class)
+                result = {'name': fp, 'heterogeneous': False, 'shape': None, 'coupling_key': None, 'dynamics_key': None}
     elif hasattr(fp, 'name'):
+        param_name = str(fp.name)
+        # Check for dotted notation
+        if '.' in param_name:
+            prefix, param_name = param_name.rsplit('.', 1)
+            is_coupling = prefix in coupling_keys
+            source_key = prefix
+        # Extract shape for heterogeneous parameters (e.g., "(n_nodes,)" or "(n_nodes, n_nodes)")
+        shape_str = getattr(fp, 'shape', None)
         result = {
-            'name': str(fp.name),
+            'name': param_name,
             'heterogeneous': bool(getattr(fp, 'heterogeneous', False)),
+            'shape': str(shape_str) if shape_str else None,
+            'coupling_key': source_key if is_coupling else None,
+            'dynamics_key': source_key if not is_coupling and source_key else None,
         }
         # Check if domain is specified directly on the free_parameter object
         domain = getattr(fp, 'domain', None)
@@ -381,9 +455,21 @@ def parse_free_param(fp):
                 except (TypeError, ValueError):
                     pass
     elif isinstance(fp, dict) and 'name' in fp:
+        param_name = str(fp['name'])
+        source_key = None
+        is_coupling = False
+        # Check for dotted notation
+        if '.' in param_name:
+            prefix, param_name = param_name.rsplit('.', 1)
+            is_coupling = prefix in coupling_keys
+            source_key = prefix
+        shape_str = fp.get('shape', None)
         result = {
-            'name': str(fp['name']),
+            'name': param_name,
             'heterogeneous': bool(fp.get('heterogeneous', False)),
+            'shape': str(shape_str) if shape_str else None,
+            'coupling_key': source_key if is_coupling else None,
+            'dynamics_key': source_key if not is_coupling and source_key else None,
         }
         # Check for domain in dict
         if 'domain' in fp:
@@ -403,6 +489,10 @@ def parse_free_param(fp):
     if result is None:
         return None
 
+    # Ensure all keys exist
+    result.setdefault('coupling_key', None)
+    result.setdefault('dynamics_key', None)
+
     # If no bounds from free_parameter, lookup from model/coupling parameters
     if 'lower_bound' not in result or 'upper_bound' not in result:
         model_lo, model_hi = get_domain_bounds(result['name'])
@@ -414,6 +504,7 @@ def parse_free_param(fp):
     # Set None for missing bounds (will become +/- inf)
     result.setdefault('lower_bound', None)
     result.setdefault('upper_bound', None)
+    result.setdefault('shape', None)
 
     return result
 
@@ -553,16 +644,23 @@ for expl in exploration_list:
         assert domain.lo is not None, f"domain.lo required for {getattr(param, 'name', param)}"
         assert domain.hi is not None, f"domain.hi required for {getattr(param, 'name', param)}"
         assert hasattr(domain, 'n') and domain.n, f"domain.n required for {getattr(param, 'name', param)}"
-        pname = getattr(param, 'name', str(param))
-        # Determine if this is a dynamics or coupling parameter
-        is_coupling_param = pname in coupling_param_names
+        pname = str(getattr(param, 'name', str(param)))
+        # Check for dotted notation: ClassName.param_name
+        # If prefix matches a coupling key → coupling param, else dynamics param
+        source_key = None
+        is_coupling_param = False
+        if '.' in pname:
+            prefix, pname = pname.rsplit('.', 1)
+            is_coupling_param = prefix in all_couplings
+            source_key = prefix
         exp_info['axes'].append({
             'name': pname,
             'lo': float(domain.lo),
             'hi': float(domain.hi),
             'n': int(domain.n),
             'is_coupling': is_coupling_param,
-            'coupling_key': target_coupling_term if is_coupling_param else None,
+            'coupling_key': source_key if is_coupling_param else None,
+            'dynamics_key': source_key if not is_coupling_param and source_key else None,
         })
     observable = getattr(expl, 'observable', None)
     if observable:
@@ -656,16 +754,15 @@ jax.config.update("jax_enable_x64", True)  # Required for stable gradient comput
 import jax.numpy as jnp
 import jax.scipy.signal
 import numpy as np
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any, Optional, Callable, List
 
 from tvboptim.experimental.network_dynamics import Network, prepare, solve
 from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling, DelayedCoupling
 % if has_delay:
-from tvboptim.experimental.network_dynamics.coupling.base import DelayedCoupling
 from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 % else:
-from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling
 from tvboptim.experimental.network_dynamics.graph import DenseGraph
 % endif
 from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
@@ -689,11 +786,6 @@ from tvboptim.execution import ParallelExecution
 # =============================================================================
 
 <%include file="tvbo-tvboptim-dfun.py.mako" />
-
-
-# =============================================================================
-# Coupling Function
-# =============================================================================
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
 
@@ -730,14 +822,38 @@ def create_network(
 
     dynamics = ${dynamics_class}(**(dynamics_params or {}))
 
-    # Note: incoming_states and local_states are hardcoded in the coupling class __init__
-    default_coupling_params = {
-        % for name in coupling_param_names:
-        '${name}': ${coupling_param_defaults.get(name, 1.0)},
+    # Create coupling functions for each entry in network.coupling
+    # Key == class name (cleaned for Python identifier)
+    n_nodes = weights.shape[0]
+    coupling_dict = {}
+
+    % for coupling_key, coupling_obj in all_couplings.items():
+<%
+    # Class name = coupling key (cleaned), same as in cfun template
+    c_class_name = coupling_key.replace(' ', '').replace('-', '')
+    c_params = list(coupling_obj.parameters.values()) if hasattr(coupling_obj, 'parameters') and coupling_obj.parameters else []
+    c_param_names = [p.name for p in c_params]
+    c_param_defaults = {p.name: float(p.value) if p.value is not None else 1.0 for p in c_params}
+    c_param_shapes = {}
+    for p in c_params:
+        shape_str = getattr(p, 'shape', None)
+        if shape_str and 'n_nodes' in str(shape_str):
+            c_param_shapes[p.name] = str(shape_str)
+%>
+    # Coupling '${coupling_key}' -> ${c_class_name}
+    _${coupling_key}_params = {
+        % for name in c_param_names:
+        % if name in c_param_shapes:
+        '${name}': jnp.ones(${c_param_shapes[name].replace('n_nodes', 'n_nodes')}) * ${c_param_defaults.get(name, 1.0)},
+        % else:
+        '${name}': ${c_param_defaults.get(name, 1.0)},
+        % endif
         % endfor
     }
-    default_coupling_params.update(coupling_params or {})
-    coupling = ${coupling_class}(**default_coupling_params)
+    if coupling_params and '${coupling_key}' in coupling_params:
+        _${coupling_key}_params.update(coupling_params['${coupling_key}'])
+    coupling_dict['${coupling_key}'] = ${c_class_name}(**_${coupling_key}_params)
+    % endfor
 
     % if has_noise:
     % if noise_targets:
@@ -753,7 +869,7 @@ def create_network(
 
     return Network(
         dynamics=dynamics,
-        coupling={'${target_coupling_term}': coupling},
+        coupling=coupling_dict,
         graph=graph,
         noise=noise,
     )
@@ -1133,7 +1249,8 @@ def make_loss_fn(model_fn, target_data, result_transient=None, loss_type: str = 
 <%
 # Build a lookup dict for all known parameters (dynamics + coupling)
 all_dynamics_params = {str(p.name): p for p in optim_params}
-all_coupling_params = {str(p.name): p for p in optim_coupling_params}
+# For coupling params, store (param, coupling_key) so we know where to access them
+all_coupling_params = {str(p.name): (p, getattr(p, '_coupling_key', first_coupling_key)) for p in optim_coupling_params}
 %>
 
 def unwrap_all_parameters(state):
@@ -1170,29 +1287,37 @@ def mark_parameters_${stage_name}(state, n_nodes: int = ${n_nodes}):
 <%
 fp_name = fp['name']
 fp_hetero = fp['heterogeneous']
+fp_shape = fp.get('shape', None)
 fp_lo = fp.get('lower_bound', None)
 fp_hi = fp.get('upper_bound', None)
 has_bounds = fp_lo is not None or fp_hi is not None
-# Check if it's a dynamics or coupling param
-is_coupling = fp_name in all_coupling_params and fp_name not in all_dynamics_params
-# If in both, prefer dynamics
+# Coupling key is explicitly set via dotted notation (e.g., FastLinearCoupling.G)
+coupling_key_for_param = fp.get('coupling_key', None)
+is_coupling = coupling_key_for_param is not None
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
 hi_str = f'{fp_hi}' if fp_hi is not None else 'jnp.inf'
+# Convert shape string to Python tuple (e.g., "(n_nodes, n_nodes)" -> (n_nodes, n_nodes))
+# If shape is None, default to (n_nodes,) for heterogeneous params
+if fp_shape:
+    shape_str = fp_shape.strip('()').replace(' ', '')
+    shape_code = '(' + shape_str + (',' if ',' not in shape_str else '') + ')'
+else:
+    shape_code = '(n_nodes,)'
 %>
 % if is_coupling:
-    # ${fp_name} - coupling parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
+    # ${fp_name} - coupling parameter (${coupling_key_for_param})${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
 % if has_bounds:
-    init_state.coupling.${target_coupling_term}.${fp_name} = BoundedParameter(
-        init_state.coupling.${target_coupling_term}.${fp_name},
+    init_state.coupling.${coupling_key_for_param}.${fp_name} = BoundedParameter(
+        init_state.coupling.${coupling_key_for_param}.${fp_name},
         low=${lo_str},
         high=${hi_str},
     )
 % else:
-    init_state.coupling.${target_coupling_term}.${fp_name} = Parameter(init_state.coupling.${target_coupling_term}.${fp_name})
+    init_state.coupling.${coupling_key_for_param}.${fp_name} = Parameter(init_state.coupling.${coupling_key_for_param}.${fp_name})
 % endif
 % if fp_hetero:
-    init_state.coupling.${target_coupling_term}.${fp_name}.shape = (n_nodes,)
+    init_state.coupling.${coupling_key_for_param}.${fp_name}.shape = ${shape_code}
 % endif
 % else:
     # ${fp_name} - dynamics parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
@@ -1206,7 +1331,7 @@ hi_str = f'{fp_hi}' if fp_hi is not None else 'jnp.inf'
     init_state.dynamics.${fp_name} = Parameter(init_state.dynamics.${fp_name})
 % endif
 % if fp_hetero:
-    init_state.dynamics.${fp_name}.shape = (n_nodes,)
+    init_state.dynamics.${fp_name}.shape = ${shape_code}
 % endif
 % endif
 % endfor
@@ -1644,6 +1769,186 @@ stage_lr = stage['learning_rate']
         % endfor
 
         results.explorations = explorations_result
+    % endif
+
+    % if has_algorithms:
+    # Algorithm workflow (FIC, EIB, etc.)
+    # ALL parameters derived from YAML metadata
+    if mode == 'algorithm':
+        algorithm_name = kwargs.get('name', kwargs.get('algorithm_name', None))
+        if algorithm_name is None:
+            available_algorithms = [${', '.join(f"'{safe_name(getattr(algo, 'name', 'algo'))}'" for algo in algorithms_list)}]
+            raise ValueError(f"mode='algorithm' requires 'name' parameter. Available: {available_algorithms}")
+
+        # Random key from execution.random_seed in YAML (can be overridden)
+        algo_seed = kwargs.pop('seed', ${random_seed})
+        algo_key = kwargs.pop('key', jax.random.PRNGKey(algo_seed))
+        algo_verbose = kwargs.pop('verbose', True)  # verbose is a display option, ok to default
+
+        # Run the specified algorithm
+        algo_result = None
+<%
+    # Build algorithms dict for looking up included algorithms
+    algorithms_dict = {safe_name(getattr(a, 'name', 'algo')): a for a in algorithms_list}
+
+    def get_include_info(inc):
+        """Extract algorithm name and argument overrides from AlgorithmInclude."""
+        if hasattr(inc, 'algorithm'):
+            algo_name = str(inc.algorithm.name) if hasattr(inc.algorithm, 'name') else str(inc.algorithm)
+            args = {}
+            inc_args = getattr(inc, 'arguments', None) or []
+            if hasattr(inc_args, 'values'):
+                inc_args = list(inc_args.values())
+            for arg in inc_args:
+                args[str(getattr(arg, 'name', ''))] = getattr(arg, 'value', None)
+            return algo_name, args
+        return str(inc), {}
+
+    def get_all_hyperparams_exp(algo, alg_dict):
+        """Get all hyperparameters including from included algorithms.
+        Returns list of (name, value) tuples.
+        """
+        all_hp = {}
+        # First, add hyperparameters from included algorithms (with argument overrides)
+        for inc in (getattr(algo, 'includes', None) or []):
+            inc_name, arg_overrides = get_include_info(inc)
+            inc_algo = alg_dict.get(inc_name)
+            if inc_algo:
+                inc_hp = getattr(inc_algo, 'hyperparameters', None) or []
+                if hasattr(inc_hp, 'values'):
+                    inc_hp = list(inc_hp.values())
+                for hp in inc_hp:
+                    hp_name = str(getattr(hp, 'name', ''))
+                    # Use override if present, else use original value
+                    if hp_name in arg_overrides:
+                        all_hp[hp_name] = arg_overrides[hp_name]
+                    else:
+                        all_hp[hp_name] = getattr(hp, 'value', None)
+        # Then add this algorithm's own hyperparameters (override included)
+        direct_hp = getattr(algo, 'hyperparameters', None) or []
+        if hasattr(direct_hp, 'values'):
+            direct_hp = list(direct_hp.values())
+        for hp in direct_hp:
+            all_hp[str(getattr(hp, 'name', ''))] = getattr(hp, 'value', None)
+        return all_hp
+%>
+% for algo in algorithms_list:
+<%
+    algo_name = safe_name(getattr(algo, 'name', 'algorithm'))
+
+    # Get ALL hyperparameters including from included algorithms
+    hyperparams_dict = get_all_hyperparams_exp(algo, algorithms_dict)
+    n_iterations = getattr(algo, 'n_iterations', None)
+    if n_iterations is None:
+        raise ValueError(f"Algorithm '{algo_name}' missing required 'n_iterations' in YAML")
+
+    # Get simulation_period from algorithm
+    algo_sim_period = getattr(algo, 'simulation_period', None)
+    if algo_sim_period is None:
+        raise ValueError(f"Algorithm '{algo_name}' requires 'simulation_period' in YAML")
+
+    # Observations - include from this algorithm AND any included algorithms
+    def get_obs_names_with_includes(alg):
+        """Get observation names from algorithm and all its includes."""
+        obs_set = set()
+        # This algorithm's observations
+        obs_raw = getattr(alg, 'observations', None) or []
+        if hasattr(obs_raw, '__iter__') and not isinstance(obs_raw, str):
+            for o in obs_raw:
+                obs_set.add(str(o))
+        elif obs_raw:
+            obs_set.add(str(obs_raw))
+        # Included algorithms' observations
+        for inc in (getattr(alg, 'includes', None) or []):
+            inc_algo_name = str(inc.algorithm.name) if hasattr(inc, 'algorithm') and hasattr(inc.algorithm, 'name') else str(getattr(inc, 'algorithm', inc))
+            inc_algo = algorithms_dict.get(inc_algo_name)
+            if inc_algo:
+                obs_set.update(get_obs_names_with_includes(inc_algo))
+        return obs_set
+
+    obs_names = list(get_obs_names_with_includes(algo))
+
+    # Determine which observations require external data (have data_source)
+    input_names = []
+    for obs_name in obs_names:
+        obs_def = observations_dict.get(obs_name)
+        if obs_def and hasattr(obs_def, 'data_source') and obs_def.data_source is not None:
+            input_names.append(obs_name)
+
+    # Observation reference (deprecated - now use observations list)
+    observation_ref = None
+%>
+        if algorithm_name == '${algo_name}':
+            # Create algorithm-specific model_fn with simulation_period
+            algo_model_fn, algo_state = prepare(network, Heun(), t1=${float(algo_sim_period)}, dt=${dt})
+
+            # Copy PARAMETER VALUES from settled main state (dynamics, coupling params)
+            for key in state.dynamics.keys():
+                if not key.startswith('_'):
+                    algo_state.dynamics[key] = state.dynamics[key]
+            for coupling_name in state.coupling.keys():
+                if not coupling_name.startswith('_'):
+                    for key in state.coupling[coupling_name].keys():
+                        if not key.startswith('_'):
+                            algo_state.coupling[coupling_name][key] = state.coupling[coupling_name][key]
+            algo_state.initial_state.dynamics = state.initial_state.dynamics
+
+% for inp_name in input_names:
+            # Validate required input: ${inp_name}
+            if '${inp_name}' not in kwargs:
+                raise ValueError("Algorithm '${algo_name}' requires '${inp_name}' input (passed via kwargs)")
+% endfor
+<%
+    # Detect if this algorithm uses sliding window and needs buffer inputs
+    # Use hyperparams_dict which already includes hyperparams from included algorithms
+    algo_has_window_size = 'window_size' in hyperparams_dict
+
+    # Find source observations needed (observations with source_observation dependency)
+    algo_source_obs_needed = set()
+    for obs_name in obs_names:
+        obs_def = observations_dict.get(obs_name)
+        if obs_def:
+            src_obs = getattr(obs_def, 'source_observation', None)
+            if src_obs:
+                algo_source_obs_needed.add(str(src_obs))
+    algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
+%>
+
+            algo_result = run_${algo_name}(
+                state=algo_state,
+                model_fn=algo_model_fn,
+                key=algo_key,
+                history=transient,
+                n_iterations=kwargs.pop('n_iterations', ${n_iterations}),
+% for hp_name, hp_val in hyperparams_dict.items():
+<%
+    if hp_val is None:
+        raise ValueError(f"Hyperparameter '{hp_name}' in algorithm '{algo_name}' missing required 'value' in YAML")
+%>
+                ${hp_name}=kwargs.pop('${hp_name}', ${hp_val}),
+% endfor
+% for inp_name in input_names:
+                ${inp_name}=kwargs.pop('${inp_name}'),
+% endfor
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                ${src_obs}_buffer=kwargs.pop('${src_obs}_buffer', None),  # Optional: pass from previous algorithm
+% endfor
+% endif
+% if observation_ref:
+                observation_monitor=observations.${observation_ref},
+% endif
+                verbose=algo_verbose,
+            )
+% endfor
+
+        if algo_result is None:
+            available_algorithms = [${', '.join(f"'{safe_name(getattr(algo, 'name', 'algo'))}'" for algo in algorithms_list)}]
+            raise ValueError(f"Unknown algorithm '{algorithm_name}'. Available: {available_algorithms}")
+
+        # Algorithm results are already a Bunch, expose at top level
+        results.update(algo_result)
+        results['algorithm'] = Bunch(name=algorithm_name)
     % endif
 
     return results

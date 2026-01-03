@@ -24,9 +24,7 @@ exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/RWW_BOLD_FC_Optimization.yaml"
 )
 weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
-exp.network = Network.from_matrix(
-    weights, lengths, region_labels, normalization=exp.network.normalization
-)
+exp.network.load_matrix(weights, lengths, region_labels)
 
 # Load target FC and run complete workflow
 fc_target = load_functional_connectivity(name="dk_average")
@@ -39,14 +37,19 @@ fc_global = exp.run(
 fc_regional = exp.run(
     "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
 ).observations.fc.data
+
+
 ```
 
 ## Results
 
 ```{python}
 # | label: fig-rww-results
+
 # | fig-cap: "**RWW BOLD FC Optimization.** (A) Neural activity. (B) BOLD signal. (C) Parameter landscape with trajectory. (D-F) FC matrices: target, global, regional. (G-H) FC scatter plots. (I-J) Fitted regional parameters."
 # | fig-height: 10
+
+import bsplot
 
 mosaic = """
 AABBCC
@@ -68,7 +71,7 @@ for i in range(data.shape[1]):
         color=cmap(norm(data.mean(0)[i])),
         lw=0.5,
     )
-ax.set(xlabel="Time [ms]", ylabel="S [a.u.]", title="A. Neural Activity")
+ax.set(xlabel="Time [ms]", ylabel="S [a.u.]", title="Neural Activity")
 
 # B: BOLD Signal
 ax = axes["B"]
@@ -77,13 +80,13 @@ data = bold.data[:60, 0, :]
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax.plot(bold.time[:60], data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.8)
-ax.set(xlabel="Time [s]", ylabel="BOLD [a.u.]", title="B. BOLD Signal")
+ax.set(xlabel="Time [s]", ylabel="BOLD [a.u.]", title="BOLD Signal")
 
 # C: Parameter Landscape with Trajectory
 ax = axes["C"]
 expl = results.explorations.parameter_landscape
 pc = expl.grid.collect()
-G_vals, w_vals = pc.coupling.c_instant.G.flatten(), pc.dynamics.w.flatten()
+G_vals, w_vals = pc.coupling.FastLinearCoupling.G.flatten(), pc.dynamics.w.flatten()
 im = ax.imshow(
     jnp.stack(expl.results).reshape(32, 32).T,
     cmap="cividis_r",
@@ -95,10 +98,15 @@ plt.colorbar(im, ax=ax, label="Loss", shrink=0.8)
 
 # Initial & fitted points
 for label, G, w, dy in [
-    ("Initial", results.state.coupling.c_instant.G, results.state.dynamics.w, 0.03),
+    (
+        "Initial",
+        results.state.coupling.FastLinearCoupling.G,
+        results.state.dynamics.w,
+        0.03,
+    ),
     (
         "Optimized",
-        results.global_optimization.fitted_params.coupling.c_instant.G.value,
+        results.global_optimization.fitted_params.coupling.FastLinearCoupling.G.value,
         results.global_optimization.fitted_params.dynamics.w.value,
         -0.05,
     ),
@@ -119,7 +127,7 @@ for label, G, w, dy in [
 # Trajectory
 route = results.global_optimization.fitting_data["state"].save
 ax.scatter(
-    [s.coupling.c_instant.G.value for s in route][::2],
+    [s.coupling.FastLinearCoupling.G.value for s in route][::2],
     [s.dynamics.w.value for s in route][::2],
     color="white",
     s=10,
@@ -128,12 +136,12 @@ ax.scatter(
     linewidths=0.5,
     zorder=4,
 )
-ax.set(xlabel="G", ylabel="w", title="C. Parameter Landscape")
+ax.set(xlabel="G", ylabel="w", title="Parameter Landscape")
 
 # D-F: FC Matrices
 for key, fc, title in [
-    ("D", np.array(fc_global), f"Global (r={fc_corr(fc_global, fc_target):.3f})"),
-    ("E", np.array(fc_regional), f"Regional (r={fc_corr(fc_regional, fc_target):.3f})"),
+    ("D", np.array(fc_global), f"Global"),
+    ("E", np.array(fc_regional), f"Regional"),
     ("F", fc_target, "Target FC"),
 ]:
     ax = axes[key]
@@ -154,7 +162,7 @@ for key, fc, title in [
     ax.set(
         xlabel="Empirical FC",
         ylabel="Simulated FC",
-        title=f"{title} (r={fc_corr(fc, fc_target):.3f})",
+        title=f"r={fc_corr(fc, fc_target):.3f}",
         aspect="equal",
     )
     ax.set_box_aspect(1)
@@ -168,19 +176,45 @@ ax1 = axes["I"]
 ax2 = ax1.twinx()
 
 # Left axis: w (blue)
-ax1.scatter(mean_conn, opt_r.fitted_params.dynamics.w.value.flatten(),
-            alpha=0.7, s=30, color="royalblue", edgecolors="k", lw=0.5, label="w (regional)")
-ax1.axhline(opt_g.fitted_params.dynamics.w.value, color="royalblue", ls="--", lw=2,
-            label=f"w (global): {float(opt_g.fitted_params.dynamics.w.value):.3f}")
+ax1.scatter(
+    mean_conn,
+    opt_r.fitted_params.dynamics.w.value.flatten(),
+    alpha=0.7,
+    s=30,
+    color="royalblue",
+    edgecolors="k",
+    lw=0.5,
+    label="w (regional)",
+)
+ax1.axhline(
+    opt_g.fitted_params.dynamics.w.value,
+    color="royalblue",
+    ls="--",
+    lw=2,
+    label=f"w (global): {float(opt_g.fitted_params.dynamics.w.value):.3f}",
+)
 ax1.set_xlabel("Mean Connectivity")
 ax1.set_ylabel("w", color="royalblue")
 ax1.tick_params(axis="y", labelcolor="royalblue")
 
 # Right axis: I_o (orange)
-ax2.scatter(mean_conn, opt_r.fitted_params.dynamics.I_o.value.flatten(),
-            alpha=0.7, s=30, color="darkorange", edgecolors="k", lw=0.5, label="I_o (regional)")
-ax2.axhline(opt_g.fitted_params.dynamics.I_o, color="darkorange", ls="--", lw=2,
-            label=f"I_o (global): {float(opt_g.fitted_params.dynamics.I_o):.3f}")
+ax2.scatter(
+    mean_conn,
+    opt_r.fitted_params.dynamics.I_o.value.flatten(),
+    alpha=0.7,
+    s=30,
+    color="darkorange",
+    edgecolors="k",
+    lw=0.5,
+    label="I_o (regional)",
+)
+ax2.axhline(
+    opt_g.fitted_params.dynamics.I_o,
+    color="darkorange",
+    ls="--",
+    lw=2,
+    label=f"I_o (global): {float(opt_g.fitted_params.dynamics.I_o):.3f}",
+)
 ax2.set_ylabel("I_o", color="darkorange")
 ax2.tick_params(axis="y", labelcolor="darkorange")
 

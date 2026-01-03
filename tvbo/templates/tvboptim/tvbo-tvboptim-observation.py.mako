@@ -563,7 +563,7 @@ class ObservationResult(SimpleNamespace):
 
 
 # Callable module imports
-% for module in sorted(top_level_modules):
+% for module in sorted(callable_imports.keys()):
 % if module not in ('jax', 'numpy', 'np', 'jnp', 'equinox', 'eqx'):
 import ${module}
 % endif

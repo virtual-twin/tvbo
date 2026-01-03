@@ -72,7 +72,15 @@ from ${jax_module} import ${name} as ${name}
 <%namespace name="jaxfunc" file="jax-function.py.mako"/>
 <%def name="create_observation_pipeline(observation, dt)" filter="trim">
 <%
-    func_name_to_output = {func.name: func.output for func in observation.pipeline}
+    # Helper to get function name from FunctionCall (function ref or callable.name)
+    def get_func_name(func):
+        if hasattr(func, 'function') and func.function:
+            return str(func.function)
+        if hasattr(func, 'callable') and func.callable and hasattr(func.callable, 'name'):
+            return str(func.callable.name)
+        return None
+
+    func_name_to_output = {get_func_name(func): func.output for func in observation.pipeline if get_func_name(func)}
     # Collect imports for this observation
     obs_imports = set()
     for func in observation.pipeline:

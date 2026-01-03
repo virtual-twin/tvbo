@@ -6,9 +6,11 @@ TVB-Optim Coupling (cfun) Template
 Generates coupling classes for tvboptim.experimental.network_dynamics.
 
 Context Variables:
-- experiment: SimulationExperiment instance (optional)
-- coupling: Coupling instance (required if no experiment)
-- model: Dynamics instance (for n_output info)
+- experiment: SimulationExperiment instance (required)
+
+Each entry in network.coupling generates a coupling class.
+The key in network.coupling becomes the key used in Network(coupling={key: instance}).
+The key must also exist in local_dynamics.coupling_inputs for dimension/keys info.
 
 Output:
 - Python class(es) inheriting from InstantaneousCoupling or DelayedCoupling
@@ -16,88 +18,94 @@ Output:
 <%
 from tvbo.export.code import render_expression
 
-# Get coupling and model from context
-if 'experiment' in context.keys():
-    coupling = experiment.coupling
-    model = experiment.local_dynamics
-else:
-    coupling = context['coupling']
-    model = context.get('model', None)
+# Get network and model from experiment
+assert 'experiment' in context.keys(), "experiment required for cfun template"
+network = experiment.network
+model = experiment.local_dynamics
 
-# Determine if coupling is delayed
-has_delay = hasattr(coupling, 'delayed') and coupling.delayed
+# Build coupling_inputs lookup: key -> {dimension, keys}
+coupling_inputs_info = {}
+if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
+    for ci_key, ci in model.coupling_inputs.items():
+        dim = getattr(ci, 'dimension', 1) or 1
+        keys = getattr(ci, 'keys', None)
+        coupling_inputs_info[ci_key] = {'dimension': dim, 'keys': list(keys) if keys else None}
 
-# Get coupling parameters
-coupling_params = list(coupling.parameters.values()) if hasattr(coupling, 'parameters') and coupling.parameters else []
-param_names = [p.name for p in coupling_params]
-param_defaults = {p.name: float(p.value) if p.value is not None else 1.0
-                  for p in coupling_params}
+# Get all couplings from network.coupling
+all_couplings = {}
+if hasattr(network, 'coupling') and network.coupling:
+    if hasattr(network.coupling, 'items'):
+        all_couplings = dict(network.coupling.items())
+    elif hasattr(network.coupling, 'keys'):
+        all_couplings = {k: network.coupling[k] for k in network.coupling.keys()}
 
-# Get incoming/local states
-incoming_states = getattr(coupling, 'incoming_states', None) or []
-if isinstance(incoming_states, str):
-    incoming_states = [incoming_states]
-incoming_states = list(incoming_states) if incoming_states else []
+def parse_list_elements(rhs_str):
+    """Parse a list literal string into elements, respecting nesting."""
+    inner = rhs_str[1:-1]  # Remove [ and ]
+    elements = []
+    depth = 0
+    current = []
+    for c in inner:
+        if c in '([{':
+            depth += 1
+        elif c in ')]}':
+            depth -= 1
+        elif c == ',' and depth == 0:
+            elements.append(''.join(current).strip())
+            current = []
+            continue
+        current.append(c)
+    if current:
+        elements.append(''.join(current).strip())
+    return elements
+%>
+% for coupling_key, coupling in all_couplings.items():
+<%
+    # Get dimension from coupling_inputs (key must match)
+    ci_info = coupling_inputs_info.get(coupling_key, {'dimension': 1, 'keys': None})
+    n_output = ci_info['dimension']
 
-local_states = getattr(coupling, 'local_states', None) or []
-if isinstance(local_states, str):
-    local_states = [local_states]
-local_states = list(local_states) if local_states else []
+    # Coupling metadata
+    has_delay = getattr(coupling, 'delayed', False)
 
-# Get pre and post expressions
-pre_expr = coupling.pre_expression if hasattr(coupling, 'pre_expression') and coupling.pre_expression else None
-post_expr = coupling.post_expression if hasattr(coupling, 'post_expression') and coupling.post_expression else None
+    coupling_params = list(coupling.parameters.values()) if hasattr(coupling, 'parameters') and coupling.parameters else []
+    param_names = [p.name for p in coupling_params]
+    param_defaults = {p.name: float(p.value) if p.value is not None else 1.0 for p in coupling_params}
 
-# Check for vectorized mode - returns local_states from pre() for matmul optimization
-# Explicitly set via 'vectorized: true' or inferred when local_states specified without incoming_states
-vectorized = getattr(coupling, 'vectorized', False)
-if not vectorized and local_states and not incoming_states:
-    # Infer vectorized mode when only local_states specified
-    vectorized = True
+    incoming_states = getattr(coupling, 'incoming_states', None) or []
+    if isinstance(incoming_states, str):
+        incoming_states = [incoming_states]
+    incoming_states = list(incoming_states) if incoming_states else []
 
-# Class name and base class
-class_name = coupling.name.replace(' ', '').replace('-', '') if hasattr(coupling, 'name') and coupling.name else 'GeneratedCoupling'
-base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
+    local_states = getattr(coupling, 'local_states', None) or []
+    if isinstance(local_states, str):
+        local_states = [local_states]
+    local_states = list(local_states) if local_states else []
 
-# Number of output states - infer from:
-# 1. coupling_inputs dimension in local_dynamics (preferred, declarative)
-# 2. pre_expression list length (if it's a Python list literal like "[a, b]")
-# 3. Default to 1
-n_output = 1
-if model and hasattr(model, 'coupling_inputs') and model.coupling_inputs:
-    # Get max dimension from all coupling_inputs
-    for ci_name, ci in model.coupling_inputs.items():
-        dim = getattr(ci, 'dimension', 1)
-        if dim and dim > n_output:
-            n_output = dim
-elif pre_expr and hasattr(pre_expr, 'rhs') and pre_expr.rhs:
-    # Fallback: count list elements if pre_expression is a list literal "[a, b, c]"
-    rhs = str(pre_expr.rhs).strip()
-    if rhs.startswith('[') and rhs.endswith(']'):
-        # Count commas at top level (not inside nested brackets)
-        depth = 0
-        count = 1
-        for c in rhs[1:-1]:
-            if c in '([{':
-                depth += 1
-            elif c in ')]}':
-                depth -= 1
-            elif c == ',' and depth == 0:
-                count += 1
-        n_output = count
+    pre_expr = coupling.pre_expression if hasattr(coupling, 'pre_expression') and coupling.pre_expression else None
+    post_expr = coupling.post_expression if hasattr(coupling, 'post_expression') and coupling.post_expression else None
 
-# All symbol names: params + incoming_states + local_states + common names
-# These must be passed to render_expression so they're parsed as Symbols, not as products
-all_symbol_names = param_names + incoming_states + local_states + ['gx', 'G']
+    # Vectorized mode: returns local_states from pre() for matmul optimization
+    vectorized = getattr(coupling, 'vectorized', False)
+    if not vectorized and local_states and not incoming_states:
+        vectorized = True
 
-# JAX code generation helper - pass all symbols as parameters to prevent implicit multiplication
-jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbol_names)
+    # Class name = coupling key (cleaned for Python identifier)
+    class_name = coupling_key.replace(' ', '').replace('-', '')
+    base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
+
+    # JAX code helper
+    all_symbols = param_names + incoming_states + local_states + ['gx', 'G']
+    jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
+
+    # Description
+    description = coupling.description if hasattr(coupling, 'description') and coupling.description else 'Auto-generated coupling function.'
 %>
 
 class ${class_name}(${base_class}):
     """${class_name} coupling function.
 
-    ${coupling.description if hasattr(coupling, 'description') and coupling.description else 'Auto-generated coupling function.'}
+    ${description}
     """
 
     N_OUTPUT_STATES = ${n_output}
@@ -113,35 +121,18 @@ class ${class_name}(${base_class}):
 
     def __init__(self, **kwargs):
         % if vectorized:
-        # Vectorized mode: only local_states needed for matmul optimization
-        super().__init__(
-            local_states=${local_states},
-            **kwargs
-        )
+        super().__init__(local_states=${local_states}, **kwargs)
         % elif incoming_states:
-        super().__init__(
-            incoming_states=${incoming_states},
-            % if local_states:
-            local_states=${local_states},
-            % endif
-            **kwargs
-        )
+        super().__init__(incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
         % elif local_states:
-        super().__init__(
-            local_states=${local_states},
-            **kwargs
-        )
+        super().__init__(local_states=${local_states}, **kwargs)
         % else:
         super().__init__(**kwargs)
         % endif
 
     % if vectorized:
     def pre(self, incoming_states, local_states, params):
-        """Return local states to trigger vectorized mode.
-
-        By returning [n_local, n_nodes] (2D), we trigger the vectorized
-        path which uses matmul instead of per-edge ops.
-        """
+        """Return local states for vectorized matmul mode."""
         return local_states
     % elif pre_expr:
     def pre(self, incoming_states, local_states, params):
@@ -152,38 +143,17 @@ class ${class_name}(${base_class}):
         ${state_name} = incoming_states[${i}]
         % endfor
 <%
-    # Check if pre_expression is a list literal (e.g., "[a, b, c]")
-    # If so, convert to jnp.stack for proper multi-output coupling
-    pre_rhs = str(pre_expr.rhs).strip()
-    is_list_literal = pre_rhs.startswith('[') and pre_rhs.endswith(']')
-    if is_list_literal and n_output > 1:
-        # Parse list elements and generate jnp.stack
-        inner = pre_rhs[1:-1]  # Remove [ and ]
-        # Split by comma at top level (respecting nested parentheses)
-        elements = []
-        depth = 0
-        current = []
-        for c in inner:
-            if c in '([{':
-                depth += 1
-            elif c in ')]}':
-                depth -= 1
-            elif c == ',' and depth == 0:
-                elements.append(''.join(current).strip())
-                current = []
-                continue
-            current.append(c)
-        if current:
-            elements.append(''.join(current).strip())
-        # Generate jnp.stack expression
-        rendered_elements = [jaxcode(elem) for elem in elements]
-        pre_code = 'jnp.stack([' + ', '.join(rendered_elements) + '], axis=0)'
-    else:
-        pre_code = jaxcode(pre_expr.rhs)
+        pre_rhs = str(pre_expr.rhs).strip()
+        is_list = pre_rhs.startswith('[') and pre_rhs.endswith(']')
+        if is_list and n_output > 1:
+            elements = parse_list_elements(pre_rhs)
+            rendered = [jaxcode(e) for e in elements]
+            pre_code = 'jnp.stack([' + ', '.join(rendered) + '], axis=0)'
+        else:
+            pre_code = jaxcode(pre_expr.rhs)
 %>
         coupling_term = ${pre_code}
         % if has_delay:
-        # Return as [1, n_nodes_target, n_nodes_source] for matrix multiplication
         return coupling_term[jnp.newaxis, :, :]
         % else:
         return coupling_term
@@ -203,3 +173,5 @@ class ${class_name}(${base_class}):
         % else:
         return G * gx
         % endif
+
+% endfor
