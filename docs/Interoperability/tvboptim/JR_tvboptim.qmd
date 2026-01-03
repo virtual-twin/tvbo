@@ -23,7 +23,7 @@ exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
 )
 weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
-exp.network = Network.from_matrix(weights, lengths, region_labels, normalization=exp.network.normalization)
+exp.network.load_matrix(weights, lengths, region_labels)
 
 # Load atlas for brain mapping
 dk_info = pd.read_csv(
@@ -34,8 +34,10 @@ dk = nib.load(
 )
 dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
 region_labels = np.array(region_labels)
+print(exp.render_code('tvboptim'))
+```
 
-# Compute target frequencies from tract lengths (visual cortex = 11 Hz, max distance = 7 Hz)
+```{python}
 idx_l = np.where(region_labels == "L.LOG")[0]
 idx_r = np.where(region_labels == "R.LOG")[0]
 dist_from_vc = np.array(np.squeeze(0.5 * (lengths[idx_l, :] + lengths[idx_r, :])))
@@ -51,7 +53,9 @@ frequencies = np.array(sim_init.observations.simulated_psd.frequencies)
 # Compute target PSDs as Cauchy distributions using actual frequency axis
 gamma = 1.0
 target_psd = np.array([1 / (np.pi * gamma * (1 + ((frequencies - f0) / gamma)**2)) for f0 in target_peak_freqs])
+```
 
+```{python}
 # Run complete workflow with matching target
 results = exp.run("tvboptim", target_data=target_psd)
 

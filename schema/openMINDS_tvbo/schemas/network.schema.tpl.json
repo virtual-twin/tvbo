@@ -26,7 +26,7 @@
       "minItems": 1,
       "uniqueItems": true
     },
-    "coupling_library": {
+    "coupling": {
       "_embeddedTypes": [
         "tvbo:Coupling"
       ],

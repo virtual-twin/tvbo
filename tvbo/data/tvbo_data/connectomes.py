@@ -289,6 +289,50 @@ class Network(tvbo_datamodel.Network):
         instance._cached_lengths = lengths if lengths is not None else None
         return instance
 
+    def load_matrix(
+        self,
+        weights: np.ndarray,
+        lengths: Optional[np.ndarray] = None,
+        labels: Optional[list[str]] = None,
+    ) -> "Network":
+        """Load weight/length matrices into existing network (preserves coupling).
+
+        Use this instead of from_matrix when you need to update connectivity
+        data while keeping the network's coupling definitions intact.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            Connection weight matrix (N x N).
+        lengths : np.ndarray, optional
+            Tract length matrix (N x N).
+        labels : list of str, optional
+            Node labels. Updates nodes if provided.
+
+        Returns
+        -------
+        Network
+            Self (for chaining).
+        """
+        weights = np.asarray(weights)
+        n_nodes = weights.shape[0]
+
+        # Update cached matrices
+        self._cached_weights = weights
+        self._cached_lengths = lengths if lengths is not None else None
+
+        # Update node count
+        self.number_of_nodes = n_nodes
+        self.number_of_regions = n_nodes
+
+        # Update nodes if labels provided
+        if labels is not None:
+            self.nodes = [
+                tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)
+            ]
+
+        return self
+
     @classmethod
     def from_string(cls, yaml_string: str, **kwargs: Any) -> "Network":
         """Create a Network from a YAML string.

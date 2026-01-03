@@ -32,8 +32,10 @@ state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
-# Build coupling_inputs dict from coupling_inputs (preferred) or coupling_terms (deprecated fallback)
+# Build coupling_inputs dict:
+# Each coupling_input name → its dimension (default 1)
 coupling_inputs_dict = {}
+
 if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
     for ci_name, ci in model.coupling_inputs.items():
         dim = getattr(ci, 'dimension', 1) or 1
@@ -41,7 +43,6 @@ if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
 elif hasattr(model, 'coupling_terms') and model.coupling_terms:
     for ct_name in model.coupling_terms.keys():
         coupling_inputs_dict[ct_name] = 1
-coupling_input_names = list(coupling_inputs_dict.keys()) if coupling_inputs_dict else ['coupling']
 
 # Coupling metadata
 has_delay = hasattr(coupling, 'delayed') and coupling.delayed
@@ -171,9 +172,16 @@ def create_network(
     noise = None
     % endif
 
+    # Build coupling dict: each coupling_input name maps to the coupling function
+    coupling_dict = {
+    % for ci_name in coupling_inputs_dict.keys():
+        '${ci_name}': coupling,
+    % endfor
+    }
+
     return Network(
         dynamics=dynamics,
-        coupling={'${coupling_input_names[0]}': coupling},
+        coupling=coupling_dict,
         graph=graph,
         noise=noise,
     )

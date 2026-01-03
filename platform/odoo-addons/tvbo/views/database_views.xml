@@ -127,7 +127,7 @@
                         <field name="parcellation"/>
                         <field name="nodes"/>
                         <field name="edges"/>
-                        <field name="coupling_library"/>
+                        <field name="coupling"/>
                         <field name="weights"/>
                         <field name="lengths"/>
                         <field name="normalization"/>

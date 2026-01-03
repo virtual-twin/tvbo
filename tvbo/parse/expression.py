@@ -63,6 +63,7 @@ ARRAY_FUNCTIONS = {
     "min": Function("min"),
     "abs": Function("abs"),
     "prod": Function("prod"),
+    "concatenate": Function("concatenate"),
 }
 
 

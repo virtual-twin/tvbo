@@ -203,7 +203,7 @@ def generate_database_views(
             "list_fields": ["label", "number_of_regions", "tractogram", "parcellation"],
             "form_fields": [
                 "label", "description", "number_of_regions", "number_of_nodes",
-                "tractogram", "parcellation", "nodes", "edges", "coupling_library",
+                "tractogram", "parcellation", "nodes", "edges", "coupling",
                 "weights", "lengths", "normalization", "node_labels",
                 "global_coupling_strength", "conduction_speed"
             ],

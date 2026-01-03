@@ -3,7 +3,7 @@ label: "Simple 3-Node Network Example"
 description: "Example network with 3 nodes and two different coupling types (excitatory and inhibitory)"
 
 # Reusable coupling configurations
-coupling_library:
+coupling:
   - &excitatory_coupling
     name: "excitatory"
     label: "Excitatory Linear Coupling"

@@ -1691,7 +1691,7 @@ class Network(ConfiguredBaseModel):
                        'PDE']} })
     nodes: Optional[list[Node]] = Field(default=[], description="""List of nodes with individual dynamics (optional, for heterogeneous networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     edges: Optional[list[Edge]] = Field(default=[], description="""List of directed edges with coupling references (optional, for explicit edge definition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    coupling_library: Optional[dict[str, Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    coupling: Optional[dict[str, Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     number_of_regions: Optional[int] = Field(default=1, description="""Number of regions (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
     number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
     parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
@@ -1998,7 +1998,7 @@ class Edge(ConfiguredBaseModel):
     target: int = Field(default=..., description="""Target node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling_library or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
+    coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'False'} })
 
 
@@ -2311,7 +2311,7 @@ class Dynamics(ConfiguredBaseModel):
     derived_from_model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     number_of_modes: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'integer(1)'} })
     local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment', 'PDE']} })
+    functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulus: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     modes: Optional[dict[str, Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
@@ -2780,6 +2780,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dimension: Optional[int] = Field(default=1, description="""Dimensionality of the coupling input (number of coupled values)""", json_schema_extra = { "linkml_meta": {'domain_of': ['CouplingInput'], 'ifabsent': 'integer(1)'} })
+    keys: Optional[list[str]] = Field(default=[], description="""Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CouplingInput']} })
 
 
 class Argument(ConfiguredBaseModel):
@@ -3015,11 +3016,12 @@ class Function(ConfiguredBaseModel):
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
-    arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
+    arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Which dimension to apply the transformation on""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
+    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the result across dimensions. E.g., aggregate.over=node computes per-row (per-node) with keepdims. The type field controls whether to reduce (mean/sum) or keep dimensions (none).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
     time_range: Optional[Range] = Field(default=None, description="""Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
 
 
@@ -3040,7 +3042,7 @@ class LossFunction(Function):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['LossFunction', 'FunctionCall']} })
+    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
@@ -3175,7 +3177,7 @@ class LossFunction(Function):
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
-    arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
+    arguments: Optional[list[Argument]] = Field(default=[], description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
@@ -3194,8 +3196,8 @@ class FunctionCall(ConfiguredBaseModel):
     class_call: Optional[ClassReference] = Field(default=None, description="""Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim.""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this step's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
     apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
-    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the result across dimensions. Example: aggregate.over=node, aggregate.type=mean applies function per node, then averages. Used in loss functions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['LossFunction', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
+    aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the result across dimensions. Example: aggregate.over=node, aggregate.type=mean applies function per node, then averages. Used in loss functions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
+    arguments: Optional[list[Argument]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
 
 
 class Callable(ConfiguredBaseModel):
@@ -4068,7 +4070,8 @@ class OptimizationStage(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'string(adam)'} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'AlgorithmInclude'],
+         'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'Algorithm'],
          'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'integer(100)'} })
@@ -4197,7 +4200,8 @@ class Optimization(ConfiguredBaseModel):
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     stages: Optional[list[OptimizationStage]] = Field(default=[], description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. Example: Stage 1 (global params) -> Stage 2 (regional params).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize (single-stage mode, ignored if stages defined)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer (single-stage mode): 'adam', 'adamw', 'sgd', 'lbfgs', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'string(adam)'} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer (single-stage mode): 'adam', 'adamw', 'sgd', 'lbfgs', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'AlgorithmInclude'],
+         'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, description="""Learning rate (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'Algorithm'],
          'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, description="""Max iterations (single-stage mode)""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization'], 'ifabsent': 'integer(100)'} })
@@ -4342,7 +4346,7 @@ class Exploration(ConfiguredBaseModel):
 
 class UpdateRule(ConfiguredBaseModel):
     """
-    Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates.
+    Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
@@ -4420,7 +4424,7 @@ class UpdateRule(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     target_parameter: Parameter = Field(default=..., description="""The parameter to update (e.g., J_i, wLRE)""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
-    equation: Equation = Field(default=..., description="""Update equation (e.g., 'J_i + eta * delta')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+    equation: Equation = Field(default=..., description="""Update equation (e.g., 'J_i + eta * delta'). Can use functions defined in experiment.functions section.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Observation',
                        'StateVariable',
                        'Distribution',
@@ -4433,7 +4437,18 @@ class UpdateRule(ConfiguredBaseModel):
                        'UpdateRule',
                        'DifferentialOperator']} })
     bounds: Optional[Range] = Field(default=None, description="""Constraints on parameter values after update""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
+    warmup: Optional[bool] = Field(default=None, description="""Whether to apply learning rate warmup to this update rule. When true, the learning rate (eta) is scaled by (i+1)/n_iterations.""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
     requires: Optional[list[str]] = Field(default=[], description="""Observables required by this update rule""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
+
+
+class AlgorithmInclude(ConfiguredBaseModel):
+    """
+    Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different hyperparameter values.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'AlgorithmInclude']} })
+    arguments: Optional[dict[str, Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
 
 
 class TuningObjective(ConfiguredBaseModel):
@@ -4533,7 +4548,7 @@ class TuningObjective(ConfiguredBaseModel):
 
 class Algorithm(ConfiguredBaseModel):
     """
-    A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observables, and hyperparameters.
+    A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observations, and hyperparameters.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
@@ -4611,15 +4626,18 @@ class Algorithm(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'Algorithm']} })
+    includes: Optional[list[AlgorithmInclude]] = Field(default=[], description="""Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
-    observables: Optional[dict[str, Observation]] = Field(default=None, description="""Quantities computed from simulation for update rules""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
-    update_rules: dict[str, UpdateRule] = Field(default=..., description="""How parameters are updated each iteration""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
+    observations: Optional[list[str]] = Field(default=[], description="""References to observations defined in the observations section. Includes both simulated observations and external data (via data_source).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
+    update_rules: Optional[dict[str, UpdateRule]] = Field(default=None, description="""How parameters are updated each iteration. When using 'includes', update_rules are inherited from included algorithms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'Algorithm']} })
     learning_rate: Optional[float] = Field(default=None, description="""Learning rate (eta) for the tuning algorithm""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Optimization', 'Algorithm']} })
+    learning_rate_warmup: Optional[bool] = Field(default=False, description="""Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm'], 'ifabsent': 'boolean(false)'} })
     n_iterations: Optional[int] = Field(default=None, description="""Number of iterations to run""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     learning_rate_schedule: Optional[str] = Field(default=None, description="""Learning rate schedule: 'constant', 'linear', 'exponential'""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     simulation_period: Optional[float] = Field(default=None, description="""Duration of each simulation step (e.g., one BOLD TR)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     apply_every: Optional[int] = Field(default=1, description="""Apply update every N iterations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm'], 'ifabsent': 'integer(1)'} })
+    functions: Optional[list[FunctionCall]] = Field(default=[], description="""Function calls for tracking progress, computing metrics, etc. Each FunctionCall references a function from the experiment's functions section and specifies arguments for that specific algorithm context.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     depends_on: Optional[list[str]] = Field(default=[], description="""Other algorithms that must run first (e.g., EIB depends on FIC)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
 
 
@@ -5073,9 +5091,9 @@ class SimulationExperiment(ConfiguredBaseModel):
     integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'SimulationExperiment']} })
-    observations: Optional[dict[str, Observation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    functions: Optional[dict[str, Function]] = Field(default=None, description="""Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment', 'PDE']} })
+    coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
+    observations: Optional[dict[str, Observation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
+    functions: Optional[dict[str, Function]] = Field(default=None, description="""Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     optimization: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -6597,7 +6615,7 @@ class PDE(ConfiguredBaseModel):
     solver: Optional[PDESolver] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     derived_parameters: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     derived_variables: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    functions: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment', 'PDE']} })
+    functions: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
 
 
 # Model rebuild
@@ -6653,6 +6671,7 @@ OptimizationStage.model_rebuild()
 Optimization.model_rebuild()
 Exploration.model_rebuild()
 UpdateRule.model_rebuild()
+AlgorithmInclude.model_rebuild()
 TuningObjective.model_rebuild()
 Algorithm.model_rebuild()
 Integrator.model_rebuild()

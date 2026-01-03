@@ -52,7 +52,7 @@ local_dynamics:
         x:
             label: "Total synaptic input"
             equation:
-                rhs: "w * J_N * S + I_o + J_N * c_instant + J_N * c_delayed"
+                rhs: "w * J_N * S + I_o + J_N * FastLinearCoupling"
             description: "Sum of local recurrence, external input, and long-range coupling"
 
         H:
@@ -79,33 +79,10 @@ local_dynamics:
                         value: 0.00283
                         description: "Noise intensity for S state variable"
 
+    # Key must match network.coupling key (which becomes class name)
     coupling_inputs:
-        c_instant:
+        FastLinearCoupling:
             dimension: 1
-        c_delayed:
-            dimension: 1
-
-coupling:
-    name: FastLinearCoupling
-    label: "Fast Linear Coupling"
-    description: "Instantaneous linear coupling (no conduction delays)"
-    delayed: false
-    parameters:
-        G:
-            label: "Global coupling"
-            value: 0.5
-            description: "Global scaling of long-range connections"
-            free: true
-            domain:
-                lo: 0.0
-                hi: 1.0
-    local_states:
-        - S
-    pre_expression:
-        rhs: "local_states"
-        description: "Return local states to trigger vectorized matmul mode"
-    post_expression:
-        rhs: "G * gx"
 
 network:
     label: "Desikan-Killiany 68 regions"
@@ -113,6 +90,29 @@ network:
     number_of_regions: 68
     normalization:
         rhs: "W / max(W)"
+
+    # Coupling functions: key == class name == coupling_input key
+    coupling:
+        FastLinearCoupling:
+            label: "Fast Linear Coupling"
+            description: "Instantaneous linear coupling (no conduction delays)"
+            delayed: false
+            parameters:
+                G:
+                    label: "Global coupling"
+                    value: 0.5
+                    description: "Global scaling of long-range connections"
+                    free: true
+                    domain:
+                        lo: 0.0
+                        hi: 1.0
+            local_states:
+                - S
+            pre_expression:
+                rhs: "local_states"
+                description: "Return local states to trigger vectorized matmul mode"
+            post_expression:
+                rhs: "G * gx"
 
 integration:
     method: Heun
@@ -311,8 +311,8 @@ optimization:
               label: "Global Parameter Optimization"
               description: "Optimize global w and G (same value for all regions)"
               free_parameters:
-                  - w
-                  - G
+                  - ReducedWongWang.w
+                  - FastLinearCoupling.G
               algorithm: adam
               learning_rate: 0.01
               max_iterations: 300
@@ -326,14 +326,12 @@ optimization:
               description: "Optimize heterogeneous w and I_o per region"
               warmup_from: global_optimization
               free_parameters:
-                  - name: w
+                  - name: ReducedWongWang.w
                     heterogeneous: true
                     description: "Region-specific excitatory recurrence"
-                  - name: I_o
+                  - name: ReducedWongWang.I_o
                     heterogeneous: true
                     description: "Region-specific external input"
-              freeze_parameters:
-                  - G
               algorithm: adam
               learning_rate: 0.004
               max_iterations: 200
@@ -353,12 +351,12 @@ explorations:
             to understand the FC fitting landscape before optimization.
 
         parameters:
-            - name: w
+            - name: ReducedWongWang.w
               domain:
                   lo: 0.001
                   hi: 0.7
                   n: 32
-            - name: G
+            - name: FastLinearCoupling.G
               domain:
                   lo: 0.001
                   hi: 0.7

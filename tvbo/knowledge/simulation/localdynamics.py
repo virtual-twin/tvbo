@@ -600,6 +600,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
         for ct in getattr(self, "coupling_terms", {}).keys():
             scope[str(ct)] = Symbol(str(ct))
 
+        # Coupling inputs (named inputs from coupling function)
+        for ci in getattr(self, "coupling_inputs", {}).keys():
+            scope[str(ci)] = Symbol(str(ci))
+
         # Derived parameters / variables / output transforms as Symbols
         for name in getattr(self, "derived_parameters", {}).keys():
             scope[str(name)] = Symbol(str(name))
