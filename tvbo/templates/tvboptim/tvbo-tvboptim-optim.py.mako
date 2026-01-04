@@ -23,7 +23,7 @@ Output:
 model = experiment.local_dynamics
 network = experiment.network
 coupling = experiment.coupling
-n_nodes = network.number_of_regions if network else 1
+n_nodes = N_nodes = network.number_of_regions if network else 1
 
 # Get optimization specifications
 optim_raw = getattr(experiment, 'optimization', None) or []

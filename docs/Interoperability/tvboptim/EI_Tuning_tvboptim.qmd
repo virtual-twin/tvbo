@@ -2,533 +2,140 @@
 title: "Excitation-Inhibition Balance Tuning via tvboptim"
 ---
 
-This example shows how to define a **complete EI tuning simulation & optimization experiment** entirely as TVBO metadata using `SimulationExperiment.from_file()`. Everything—equations, parameters, integration, dual-weight coupling, FIC/EIB tuning algorithms, BOLD observation pipeline, and metrics—is specified in a single YAML file.
-
-The information below mirrors the [EI_Tuning.qmd tutorial](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/EI_Tuning.qmd) from tvboptim.
-
-**Key design principles:**
-
-- **Observations**: Simulated data (`source` + `pipeline`) and empirical data (`data_source`)
-- **Functions**: Defined once in `experiment.functions`, usable everywhere (update rules, pipelines, algorithms)
-- **Algorithms**: Specify `update_rules`, `observations`, and which `functions` to track during iterations
-- **No redundancy**: Function definitions in one place, referenced by name everywhere else
-
-**Reference:** Schirner, M., Deco, G., & Ritter, P. (2023). Learning how network structure shapes decision-making for bio-inspired computing. *Nature Communications*, *14*(1), Article 1.
-
-## Full Experiment as TVBO Metadata
+Reproducing the FIC+EIB tuning workflow from [Schirner et al. (2023)](https://doi.org/10.1038/s41467-023-38626-y). Fits local inhibitory weights (J_i) for E-I balance and dual coupling weights (wLRE, wFFI) to match empirical functional connectivity.
 
 ```{python}
-#| output: false
-#| echo: true
+# | output: false
 import os
-import time
 
-# Set up JAX for CPU parallelization
-N = 8
-os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count={N}'
+os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
+from tvbo import SimulationExperiment
+from tvboptim.data import load_structural_connectivity, load_functional_connectivity
+from tvboptim.observations.observation import fc_corr, rmse, compute_fc
+from matplotlib.colors import Normalize
+import matplotlib.pyplot as plt
 import numpy as np
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
-import matplotlib.patheffects as path_effects
-from matplotlib.colors import Normalize
-import copy
 
-# TVBO imports
-from tvbo import SimulationExperiment, Network
-
-# tvboptim imports
-from tvboptim.data import load_structural_connectivity, load_functional_connectivity
-from tvboptim.observations.observation import compute_fc, fc_corr, rmse
-from tvboptim.utils import set_cache_path, cache
-
-# Define color palette from cividis
-cividis_cmap = plt.cm.cividis
-accent_blue = cividis_cmap(0.3)
-accent_gold = cividis_cmap(0.85)
-accent_mid = cividis_cmap(0.6)
-```
-
-```{python}
-#| echo: true
-# === LOAD EXPERIMENT FROM YAML ===
+# Load experiment and network
 exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/EI_Tuning_FIC_EIB_Optimization.yaml"
 )
-weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
-n_nodes = weights.shape[0]
 
-# Load connectivity matrices into existing network (preserves coupling definitions!)
-exp.network.load_matrix(weights, lengths, region_labels)
-print(exp.render_code('tvboptim'))
+results = exp.run("tvboptim", mode="all")
+
 
 ```
 
-## Loading Target FC
+## Results
 
 ```{python}
-# Load empirical functional connectivity as optimization target
-fc_target = load_functional_connectivity(name="dk_average")
+#| label: fig-ei-tuning-results
+#| fig-cap: "**EI Tuning Results.** (A) S_e before FIC. (B) S_e after FIC. (C) FIC convergence. (D) J_i distribution. (E-G) FC matrices: target, post-FIC, post-EIB. (H) EIB convergence. (I) wLRE weights."
+#| fig-height: 12
 
-print(f"Network: {n_nodes} nodes")
-print(f"SC shape: {weights.shape}")
-print(f"FC target shape: {fc_target.shape}")
-```
+cmap = plt.cm.cividis
+accent_blue = cmap(0.3)
+accent_gold = cmap(0.85)
+accent_mid = cmap(0.6)
 
-```{python}
-#| label: fig-data
-#| fig-cap: "**Structural and functional connectivity data.** Left: Normalized structural connection weights. Middle: Fiber transmission delays (ms). Right: Target empirical functional connectivity from resting-state fMRI."
-#| code-fold: true
-#| code-summary: "Visualization code"
+mosaic = """
+AABBCC
+DDEEFF
+GGHHII
+"""
+fig, axes = plt.subplot_mosaic(mosaic, figsize=(12, 10))
 
-# Normalize weights and compute delays
-weights_norm = weights / jnp.max(weights)
-speed = 3.0
-delays = lengths / speed
+# A: S_e Before FIC
+ax = axes["A"]
+data = results.fic.pre_tuning.data[:, 0, :]
+norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
+for i in range(data.shape[1]):
+    ax.plot(data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.5, alpha=0.6)
+ax.axhline(0.25, color=accent_gold, ls='--', lw=2, label='Target')
+ax.set(xlabel="Time step", ylabel="S_e", title="A. Before FIC")
+ax.set_ylim(0, 1)
+ax.legend()
 
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8.1, 4))
+# B: S_e After FIC
+ax = axes["B"]
+data = fic_results.post_tuning.data[:, 0, :]
+norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
+for i in range(data.shape[1]):
+    ax.plot(data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.5, alpha=0.6)
+ax.axhline(0.25, color=accent_gold, ls='--', lw=2, label='Target')
+ax.set(xlabel="Time step", ylabel="S_e", title="B. After FIC")
+ax.set_ylim(0, 1)
+ax.legend()
 
-# Structural weights
-im1 = ax1.imshow(weights_norm, cmap='cividis', vmin=0, vmax=1)
-ax1.set_title('Structural Weights')
-ax1.set_xlabel('Region')
-ax1.set_ylabel('Region')
-plt.colorbar(im1, ax=ax1, fraction=0.046)
+# C: FIC Convergence
+ax = axes["C"]
+ax.plot(fic_results.history.mean_S_e, lw=2, color=accent_blue, label='Mean S_e')
+ax.axhline(0.25, color=accent_gold, ls='--', lw=2, label='Target')
+ax.set(xlabel="FIC iteration", ylabel="Mean S_e", title="C. FIC Convergence")
+ax.legend()
+ax.grid(True, alpha=0.3)
 
-# Delays
-im2 = ax2.imshow(delays, cmap='cividis')
-ax2.set_title('Transmission Delays (ms)')
-ax2.set_xlabel('Region')
-ax2.set_ylabel('Region')
-plt.colorbar(im2, ax=ax2, fraction=0.046, label='ms')
+# D: J_i Distribution
+ax = axes["D"]
+J_i = np.array(fic_results.state.dynamics.J_i).flatten()
+ax.bar(range(len(J_i)), J_i, alpha=0.7, color=accent_mid)
+ax.set(xlabel="Region", ylabel="J_i", title="D. Inhibitory Weights (J_i)")
+ax.grid(True, alpha=0.3, axis='y')
 
-# Target FC
-im3 = ax3.imshow(fc_target, vmin=0, vmax=1.0, cmap='cividis')
-ax3.set_title('Target Functional Connectivity')
-ax3.set_xlabel('Region')
-ax3.set_ylabel('Region')
-plt.colorbar(im3, ax=ax3, label='Correlation', fraction=0.046)
+# E: Target FC
+ax = axes["E"]
+fc_plot = np.copy(fc_target)
+np.fill_diagonal(fc_plot, np.nan)
+im = ax.imshow(fc_plot, cmap='cividis', vmin=0, vmax=0.9)
+ax.set(title="E. Target FC")
+plt.colorbar(im, ax=ax, fraction=0.046)
 
-plt.tight_layout()
-plt.show()
-```
+# F: Post-FIC FC
+ax = axes["F"]
+fc_plot = np.copy(np.array(fc_post_fic))
+np.fill_diagonal(fc_plot, np.nan)
+corr_fic = fc_corr(fc_post_fic, fc_target)
+im = ax.imshow(fc_plot, cmap='cividis', vmin=0, vmax=0.9)
+ax.set(title=f"F. Post-FIC FC (r={corr_fic:.3f})")
+plt.colorbar(im, ax=ax, fraction=0.046)
 
-## The Two-Population Reduced Wong-Wang Model
+# G: Post-EIB FC
+ax = axes["G"]
+fc_plot = np.copy(np.array(fc_post_eib))
+np.fill_diagonal(fc_plot, np.nan)
+corr_eib = fc_corr(fc_post_eib, fc_target)
+im = ax.imshow(fc_plot, cmap='cividis', vmin=0, vmax=0.9)
+ax.set(title=f"G. Post-EIB FC (r={corr_eib:.3f})")
+plt.colorbar(im, ax=ax, fraction=0.046)
 
-The model has explicit excitatory (E) and inhibitory (I) populations with separate state variables (S_e, S_i) and transfer functions. This enables independent control of E-I balance.
+# H: EIB Convergence (FC correlation and RMSE)
+ax = axes["H"]
+ax2 = ax.twinx()
+fc_corrs = np.array(fic_eib_results.history.fc_corr)
+fc_rmses = np.array(fic_eib_results.history.rmse_fc)
+l1, = ax.plot(fc_corrs, lw=2, color=accent_blue, label='FC Corr')
+l2, = ax2.plot(fc_rmses, lw=2, color=accent_gold, label='FC RMSE')
+ax.set(xlabel="EIB iteration", ylabel="FC Correlation", title="H. EIB Convergence")
+ax2.set_ylabel("FC RMSE")
+ax.legend(handles=[l1, l2], loc='center right')
+ax.grid(True, alpha=0.3)
 
-```{python}
-#| echo: true
-# Print model equations from metadata
-from IPython.display import Markdown
-Markdown(exp.local_dynamics.generate_report())
-```
-
-## Step 1: Run Initial Simulation
-
-```{python}
-#| echo: true
-# Run the experiment
-sim_results = exp.run("tvboptim", mode="simulation")
-print(f"Simulation complete!")
-print(f"Result shape: {sim_results.result.data.shape}")
-```
-
-```{python}
-#| label: fig-initial-dynamics
-#| fig-cap: "**Initial network dynamics.** Left: Excitatory activity (S_e) showing the range of activity across regions. Right: Inhibitory activity (S_i) showing corresponding inhibitory dynamics."
-#| code-fold: true
-#| code-summary: "Visualization code"
-
-result = sim_results.result
-t_max_idx = int(1000 / result.dt)
-time_plot = result.time[:t_max_idx]
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.1, 3.0375))
-
-# Plot S_e (excitatory)
-data_Se = result.data[:t_max_idx, 0, :]
-num_lines = data_Se.shape[1]
-mean_values = np.mean(data_Se, axis=0)
-norm = Normalize(vmin=np.min(mean_values), vmax=np.max(mean_values))
-for i in range(num_lines):
-    color = cividis_cmap(norm(mean_values[i]))
-    ax1.plot(time_plot, data_Se[:, i], color=color, linewidth=0.5, alpha=0.7)
-ax1.axhline(0.25, color=accent_gold, linestyle='--', linewidth=2, label='FIC Target')
-ax1.set_xlabel("Time [ms]")
-ax1.set_ylabel("S_e [a.u.]")
-ax1.set_title("Excitatory Activity")
-ax1.legend(loc='upper right')
-
-# Plot S_i (inhibitory)
-data_Si = result.data[:t_max_idx, 1, :]
-mean_values = np.mean(data_Si, axis=0)
-norm = Normalize(vmin=np.min(mean_values), vmax=np.max(mean_values))
-for i in range(num_lines):
-    color = cividis_cmap(norm(mean_values[i]))
-    ax2.plot(time_plot, data_Si[:, i], color=color, linewidth=0.5, alpha=0.7)
-ax2.set_xlabel("Time [ms]")
-ax2.set_ylabel("S_i [a.u.]")
-ax2.set_title("Inhibitory Activity")
+# I: wLRE Weights
+ax = axes["I"]
+wLRE = np.array(fic_eib_results.state.coupling.coupling.wLRE)
+im = ax.imshow(wLRE, cmap='cividis')
+wLRE_corr = np.corrcoef(wLRE.flatten(), fc_target.flatten())[0, 1]
+ax.set(title=f"I. wLRE (r={wLRE_corr:.3f})")
+plt.colorbar(im, ax=ax, fraction=0.046)
 
 plt.tight_layout()
 plt.show()
 
-print(f"Mean S_e: {np.mean(data_Se):.4f}")
-print(f"Mean S_i: {np.mean(data_Si):.4f}")
-```
-
-## Part 1: Feedback Inhibition Control (FIC)
-
-FIC adjusts the local inhibitory weight J_i to maintain excitatory activity at target level (~0.25). The update rule is defined in the YAML specification under `algorithms.fic`.
-
-```{python}
-#| echo: true
-# Print FIC algorithm from metadata
-fic_algo = exp.algorithms['fic']
-print(f"=== {fic_algo.name.upper()} Algorithm ===")
-print(f"Type: {fic_algo.type}")
-print(f"Objective: {fic_algo.objective.type}")
-print(f"Target variable: {fic_algo.objective.target_variable.name if hasattr(fic_algo.objective.target_variable, 'name') else fic_algo.objective.target_variable}")
-print(f"Target value: {fic_algo.objective.target_value}")
-print(f"Iterations: {fic_algo.n_iterations}")
-
-print("\nUpdate rule:")
-for rule_name, rule in fic_algo.update_rules.items():
-    print(f"  {rule_name}: {rule.equation.rhs}")
-```
-
-```{python}
-#| echo: true
-#| output: false
-# Run FIC tuning using the general algorithm mode
-fic_results = exp.run("tvboptim", mode="algorithm", name="fic")
-```
-
-```{python}
-#| label: fig-fic-results
-#| fig-cap: "**FIC algorithm results.** Top row: Excitatory activity (S_e) before and after FIC tuning. Bottom left: Convergence of mean S_e to target. Bottom right: Final J_i distribution across regions."
-#| code-fold: true
-#| code-summary: "Visualization code"
-
-# Extract FIC results
-state_fic = fic_results.state  # Dict with parameter values
-mean_S_e_history = fic_results.history.mean_S_e
-raw_result_pre_fic = fic_results.pre_tuning
-raw_result_post_fic = fic_results.post_tuning
-target_fic = 0.25
-
-fig = plt.figure(figsize=(8.1, 7))
-gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
-
-# Top left: Pre-FIC
-ax1 = fig.add_subplot(gs[0, 0])
-ax1.plot(raw_result_pre_fic.data[:, 0, :], alpha=0.6, linewidth=0.8, color=accent_blue)
-ax1.axhline(target_fic, color=accent_gold, linestyle='--', linewidth=2, label=f'Target ({target_fic})')
-ax1.set_xlabel('Time step')
-ax1.set_ylabel('S_e')
-ax1.set_title('Before FIC')
-ax1.set_ylim(0, 1)
-ax1.legend()
-ax1.grid(True, alpha=0.3)
-
-# Top right: Post-FIC
-ax2 = fig.add_subplot(gs[0, 1])
-ax2.plot(raw_result_post_fic.data[:, 0, :], alpha=0.6, linewidth=0.8, color=accent_blue)
-ax2.axhline(target_fic, color=accent_gold, linestyle='--', linewidth=2, label=f'Target ({target_fic})')
-ax2.set_xlabel('Time step')
-ax2.set_ylabel('S_e')
-ax2.set_title('After FIC')
-ax2.set_ylim(0, 1)
-ax2.legend()
-ax2.grid(True, alpha=0.3)
-
-# Bottom left: Convergence
-ax3 = fig.add_subplot(gs[1, 0])
-ax3.plot(mean_S_e_history, linewidth=2, color=accent_blue, label='Mean S_e')
-ax3.axhline(target_fic, color=accent_gold, linestyle='--', linewidth=2, label=f'Target ({target_fic})')
-ax3.set_xlabel('FIC iteration')
-ax3.set_ylabel('Mean S_e')
-ax3.set_title('FIC Convergence')
-ax3.legend()
-ax3.grid(True, alpha=0.3)
-
-# Bottom right: J_i distribution
-ax4 = fig.add_subplot(gs[1, 1])
-# Access J_i from state (algorithm returns Bunch with dynamics)
-J_i_final = np.array(state_fic.dynamics.J_i).flatten()
-ax4.bar(range(len(J_i_final)), J_i_final, alpha=0.7, color=accent_mid)
-ax4.set_xlabel('Region')
-ax4.set_ylabel('J_i')
-ax4.set_title('Final Inhibitory Weights')
-ax4.grid(True, alpha=0.3, axis='y')
-
-plt.tight_layout()
-plt.show()
-
-print(f"Final mean S_e: {mean_S_e_history[-1]:.4f} (target: {target_fic:.4f})")
-```
-
-## Part 2: Excitation-Inhibition Balance (EIB) Tuning
-
-EIB extends FIC by adjusting the dual coupling weights (wLRE, wFFI) to match empirical FC patterns.
-
-```{python}
-#| echo: true
-# Print EIB algorithm from metadata
-eib_algo = exp.algorithms['fic_eib']
-print(f"=== {eib_algo.name.upper()} Algorithm ===")
-print(f"Type: {eib_algo.type}")
-print(f"Depends on: {eib_algo.depends_on}")
-print(f"Iterations: {eib_algo.n_iterations}")
-
-print("\nUpdate rules:")
-for rule_name, rule in eib_algo.update_rules.items():
-    print(f"  {rule_name}: {rule.equation.rhs}")
-```
-
-```{python}
-#| echo: true
-#| output: false
-# Run EIB tuning (depends on FIC, so uses FIC-tuned state)
-# BOLD monitor is automatically created from YAML metadata
-# Only fc_target (empirical data) needs to be passed
-eib_results = exp.run(
-    "tvboptim",
-    mode="algorithm",
-    name="fic_eib",
-    fc_target=fc_target,  # Only empirical data passed at runtime
-)
-```
-
-```{python}
-#| label: fig-eib-results
-#| fig-cap: "**EIB tuning results.** Top row: FC comparison (target, pre-EIB, post-EIB). Bottom: Convergence trajectories (correlation increasing, RMSE decreasing)."
-#| code-fold: true
-#| code-summary: "Visualization code"
-
-# Extract EIB results
-# Note: The algorithm returns state dict and history with observables
-state_ei = eib_results.state  # Dict with wLRE, wFFI params
-
-# EIB observables: fc_pred, fc_target, rmse_fc
-# For now, check what's available in history
-print("Available history keys:", list(eib_results.history.keys()) if hasattr(eib_results.history, 'keys') else dir(eib_results.history))
-
-# TODO: Compute FC from pre/post simulation results for proper visualization
-# For now, use placeholder values
-fc_pre_eib = np.eye(84)  # Placeholder
-fc_post_eib = np.eye(84)  # Placeholder
-fc_correlations = getattr(eib_results.history, 'fc_corr', [0.0])
-fc_rmse_values = getattr(eib_results.history, 'rmse_fc', [1.0])
-
-fc_corr_pre = fc_corr(fc_pre_eib, fc_target)
-fc_corr_post = fc_corr(fc_post_eib, fc_target)
-fc_rmse_pre = rmse(fc_pre_eib, fc_target)
-fc_rmse_post = rmse(fc_post_eib, fc_target)
-
-fig = plt.figure(figsize=(8.1, 4.63))
-gs = fig.add_gridspec(2, 3, hspace=0.35, wspace=0.4, height_ratios=[1, 0.6])
-
-# Top row: FC matrices
-ax1 = fig.add_subplot(gs[0, 0])
-im1 = ax1.imshow(fc_target, vmin=0, vmax=1.0, cmap='cividis')
-ax1.set_title('Target FC\n(Empirical)')
-ax1.set_xlabel('Region')
-ax1.set_ylabel('Region')
-plt.colorbar(im1, ax=ax1, fraction=0.046)
-
-ax2 = fig.add_subplot(gs[0, 1])
-im2 = ax2.imshow(fc_pre_eib, vmin=0, vmax=1.0, cmap='cividis')
-ax2.set_title(f'Pre-EIB FC\nCorr: {fc_corr_pre:.3f}')
-ax2.set_xlabel('Region')
-plt.colorbar(im2, ax=ax2, fraction=0.046)
-
-ax3 = fig.add_subplot(gs[0, 2])
-im3 = ax3.imshow(fc_post_eib, vmin=0, vmax=1.0, cmap='cividis')
-ax3.set_title(f'Post-EIB FC\nCorr: {fc_corr_post:.3f}')
-ax3.set_xlabel('Region')
-plt.colorbar(im3, ax=ax3, fraction=0.046)
-
-# Bottom: Convergence
-ax4 = fig.add_subplot(gs[1, :])
-ax4_twin = ax4.twinx()
-
-line1 = ax4.plot(fc_correlations, linewidth=2.5, color=accent_blue, label='FC Correlation')
-ax4.set_xlabel('EIB iteration')
-ax4.set_ylabel('FC Correlation', color=accent_blue)
-ax4.tick_params(axis='y', labelcolor=accent_blue)
-ax4.set_xlim(0, len(fc_correlations))
-ax4.grid(True, alpha=0.3)
-
-line2 = ax4_twin.plot(fc_rmse_values, linewidth=2.5, color=accent_gold, label='FC RMSE')
-ax4_twin.set_ylabel('FC RMSE', color=accent_gold)
-ax4_twin.tick_params(axis='y', labelcolor=accent_gold)
-
-lines = line1 + line2
-labels = [l.get_label() for l in lines]
-ax4.legend(lines, labels, loc='center left')
-ax4.set_title('EIB Convergence')
-
-plt.tight_layout()
-plt.show()
-
-print(f"\nFC Quality Metrics:")
-print(f"  Pre-EIB  - Correlation: {fc_corr_pre:.4f}, RMSE: {fc_rmse_pre:.4f}")
-print(f"  Post-EIB - Correlation: {fc_corr_post:.4f}, RMSE: {fc_rmse_post:.4f}")
-```
-
-```{python}
-#| label: fig-weight-matrices
-#| fig-cap: "**Optimized coupling weight matrices.** Left: wLRE (long-range excitation). Middle: wFFI (feedforward inhibition). Right: FC difference (post - target)."
-#| code-fold: true
-#| code-summary: "Visualization code"
-
-wLRE_final = np.array(state_ei.coupling.coupling.wLRE)
-wFFI_final = np.array(state_ei.coupling.coupling.wFFI)
-
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8.1, 4))
-
-im1 = ax1.imshow(wLRE_final, cmap='cividis')
-wLRE_corr = np.corrcoef(wLRE_final.flatten(), fc_target.flatten())[0, 1]
-ax1.set_title(f'wLRE (r={wLRE_corr:.3f})')
-ax1.set_xlabel('Source')
-ax1.set_ylabel('Target')
-plt.colorbar(im1, ax=ax1, fraction=0.046)
-
-im2 = ax2.imshow(wFFI_final, cmap='cividis')
-wFFI_corr = np.corrcoef(wFFI_final.flatten(), fc_target.flatten())[0, 1]
-ax2.set_title(f'wFFI (r={wFFI_corr:.3f})')
-ax2.set_xlabel('Source')
-ax2.set_ylabel('Target')
-plt.colorbar(im2, ax=ax2, fraction=0.046)
-
-fc_diff = fc_post_eib - fc_target
-im3 = ax3.imshow(fc_diff, vmin=-0.5, vmax=0.5, cmap='RdBu_r')
-ax3.set_title('FC Difference (Post - Target)')
-ax3.set_xlabel('Source')
-ax3.set_ylabel('Target')
-plt.colorbar(im3, ax=ax3, fraction=0.046)
-
-plt.tight_layout()
-plt.show()
-```
-
-## Part 3: Gradient-Based Optimization Alternative
-
-Rather than manually designing update rules, we can reformulate EI tuning as a differentiable optimization problem using the loss function defined in the YAML.
-
-```{python}
-#| echo: true
-# Print optimization configuration from metadata
-opt_config = exp.optimization[0]
-print(f"=== {opt_config.label} ===")
-print(f"Algorithm: {opt_config.algorithm}")
-print(f"Learning rate: {opt_config.learning_rate}")
-print(f"Max iterations: {opt_config.max_iterations}")
-
-print("\nFree parameters:")
-for p in opt_config.free_parameters:
-    print(f"  {p.name}: heterogeneous={p.heterogeneous}")
-```
-
-```{python}
-#| echo: true
-#| output: false
-# Run gradient-based optimization
-opt_results = exp.run("tvboptim", mode="optimization", fc_target=fc_target)
-```
-
-```{python}
-#| label: fig-gradient-results
-#| fig-cap: "**Gradient-based optimization results.** Top left: Loss convergence. Top middle/right: Optimized coupling weights. Bottom: FC comparison."
-#| code-fold: true
-#| code-summary: "Visualization code"
-
-# Extract optimization results
-optimized_state = opt_results.state
-loss_values = opt_results.history.loss
-fc_opt = opt_results.fc_post
-
-fc_corr_opt = fc_corr(fc_opt, fc_target)
-fc_rmse_opt = rmse(fc_opt, fc_target)
-
-n_steps = len(loss_values)
-
-fig = plt.figure(figsize=(8.1, 6))
-gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.4)
-
-# Top left: Loss trajectory
-ax1 = fig.add_subplot(gs[0, 0])
-ax1.plot(loss_values, linewidth=2, color="k", alpha=0.9)
-ax1.scatter(0, loss_values[0], s=80, color=accent_blue, zorder=5)
-ax1.scatter(n_steps-1, loss_values[-1], s=80, color=accent_gold, zorder=5)
-ax1.set_xlabel('Optimization Step')
-ax1.set_ylabel('Combined Loss')
-ax1.set_title('Loss Convergence')
-ax1.grid(True, alpha=0.3)
-
-# Top middle: wFFI matrix
-ax2 = fig.add_subplot(gs[0, 1])
-im2 = ax2.imshow(optimized_state.coupling.coupling.wFFI, vmin=0, vmax=2, cmap='cividis')
-ax2.set_title('Optimized wFFI')
-ax2.set_xlabel('Source')
-ax2.set_ylabel('Target')
-plt.colorbar(im2, ax=ax2, fraction=0.046)
-
-# Top right: wLRE matrix
-ax3 = fig.add_subplot(gs[0, 2])
-im3 = ax3.imshow(optimized_state.coupling.coupling.wLRE, vmin=0, vmax=2, cmap='cividis')
-ax3.set_title('Optimized wLRE')
-ax3.set_xlabel('Source')
-ax3.set_ylabel('Target')
-plt.colorbar(im3, ax=ax3, fraction=0.046)
-
-# Bottom row: FC comparison
-ax4 = fig.add_subplot(gs[1, 0])
-im4 = ax4.imshow(fc_target, vmin=0, vmax=1.0, cmap='cividis')
-ax4.set_title('Target FC')
-plt.colorbar(im4, ax=ax4, fraction=0.046)
-
-ax5 = fig.add_subplot(gs[1, 1])
-im5 = ax5.imshow(fc_pre_eib, vmin=0, vmax=1.0, cmap='cividis')
-ax5.set_title(f'Pre-Opt FC\nCorr: {fc_corr_pre:.3f}')
-plt.colorbar(im5, ax=ax5, fraction=0.046)
-
-ax6 = fig.add_subplot(gs[1, 2])
-im6 = ax6.imshow(fc_opt, vmin=0, vmax=1.0, cmap='cividis')
-ax6.set_title(f'Post-Opt FC\nCorr: {fc_corr_opt:.3f}')
-plt.colorbar(im6, ax=ax6, fraction=0.046)
-
-plt.tight_layout()
-plt.show()
-
-print(f"\nOptimization Results:")
-print(f"  Pre-Optimization  - Correlation: {fc_corr_pre:.4f}")
-print(f"  Post-Optimization - Correlation: {fc_corr_opt:.4f}")
-print(f"  Improvement: Δcorr = {fc_corr_opt - fc_corr_pre:+.4f}")
-```
-
-## Summary
-
-This tutorial demonstrates how the complete EI tuning workflow can be specified declaratively in YAML:
-
-1. **Two-population dynamics** with explicit E-I balance (S_e, S_i)
-2. **Dual-weight coupling** (wLRE, wFFI) for independent E/I pathway control
-3. **FIC algorithm** for local E-I balance maintenance
-4. **EIB algorithm** for global FC matching
-5. **Gradient optimization** as an alternative approach
-
-All algorithm logic, update rules, and hyperparameters are defined in the metadata—no hardcoded implementations required.
-
-```{python}
-#| echo: true
-# Final comparison: all three approaches
-print("=== Final FC Correlation Comparison ===")
-print(f"  Initial (no tuning):     {fc_corr_pre:.4f}")
-print(f"  After FIC+EIB:           {fc_corr_post:.4f}")
-print(f"  After Gradient Opt:      {fc_corr_opt:.4f}")
+print(f"\n=== EI Tuning Summary ===")
+print(f"FIC: Mean S_e = {fic_results.history.mean_S_e[-1]:.4f} (target: 0.25)")
+print(f"Post-FIC FC correlation: {corr_fic:.4f}")
+print(f"Post-EIB FC correlation: {corr_eib:.4f}")
+print(f"Improvement: Δr = {corr_eib - corr_fic:+.4f}")
 ```

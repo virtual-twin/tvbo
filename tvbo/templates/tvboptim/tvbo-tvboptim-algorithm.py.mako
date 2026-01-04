@@ -232,8 +232,24 @@ if network and network.coupling:
     hyperparam_dict = get_all_hyperparams(algo, algorithms_dict)
     description = algo.description
 
-    # Check for learning rate warmup
-    has_warmup = getattr(algo, 'learning_rate_warmup', False)
+    # Check for learning rate warmup - examine ALL update rules (including included)
+    # to see if any have warmup: true AND an eta parameter
+    def _check_warmup_needed(all_rules, algos_dict):
+        """Check if any update rule requires learning rate warmup."""
+        for rule, rule_source, arg_overrides in all_rules:
+            if not getattr(rule, 'warmup', False):
+                continue
+            # Rule has warmup: true, check if it has an eta parameter
+            rule_rhs = rule.equation.rhs if hasattr(rule, 'equation') and rule.equation else ''
+            source_algo = algos_dict.get(rule_source)
+            source_hp = get_hyperparam_dict(source_algo) if source_algo else {}
+            effective_hp = {**source_hp, **arg_overrides}
+            for pname in effective_hp.keys():
+                if pname.lower() in ['eta', 'learning_rate', 'lr'] and pname in rule_rhs:
+                    return True
+        return False
+
+    has_warmup = _check_warmup_needed(all_update_rules_with_source, algorithms_dict)
 
     # Check for included algorithms
     included_algos = as_list(algo.includes)

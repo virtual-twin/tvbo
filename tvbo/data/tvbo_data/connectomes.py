@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jax.numpy as jnp
@@ -288,6 +289,270 @@ class Network(tvbo_datamodel.Network):
         instance._cached_weights = weights
         instance._cached_lengths = lengths if lengths is not None else None
         return instance
+
+    @classmethod
+    def from_bids(
+        cls,
+        bids_dir: Union[str, Path],
+        atlas: Optional[str] = None,
+        structural_measures: Optional[List[str]] = None,
+        observational_measures: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> "Network":
+        """Create a Network from BEP017-compliant BIDS connectivity data.
+
+        Loads structural connectivity (weights, lengths) and optionally
+        observational targets (FC) from a BIDS derivatives directory using
+        the BEP017 relationship matrix format.
+
+        Parameters
+        ----------
+        bids_dir : str or Path
+            Path to BEP017-compliant BIDS directory containing _relmat files.
+        atlas : str, optional
+            Atlas name to filter files (e.g., "DesikanKilliany").
+            If None, uses the first atlas found.
+        structural_measures : list of str, optional
+            Measures to use for structural network (default: ["streamlineCount", "tractLength"]).
+            First is used as weights, second (if present) as lengths.
+        observational_measures : list of str, optional
+            Measures to load as observational targets for optimization
+            (e.g., ["correlation"] for FC). Stored in network._observations.
+        **kwargs : Any
+            Additional keyword arguments passed to Network constructor.
+
+        Returns
+        -------
+        Network
+            Network with matrices loaded from BEP017 files.
+            Observational data accessible via network.observations dict.
+
+        Examples
+        --------
+        ```python
+        from tvbo import Network
+
+        # Load network from BEP017 directory
+        network = Network.from_bids(
+            "database/networks/bids/dk_average",
+            structural_measures=["streamlineCount", "tractLength"],
+            observational_measures=["correlation"],
+        )
+
+        # Access structural connectivity
+        print(network.weights_matrix.shape)  # (84, 84)
+
+        # Access observational target (FC)
+        fc_target = network.observations["correlation"]
+        ```
+        """
+        from pathlib import Path
+        bids_dir = Path(bids_dir)
+
+        if structural_measures is None:
+            structural_measures = ["streamlineCount", "tractLength"]
+        if observational_measures is None:
+            observational_measures = []
+
+        # Find relmat files
+        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + \
+                       list(bids_dir.glob("*_relmat.tsv"))
+
+        if not relmat_files:
+            raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
+
+        # Parse atlas from filenames if not specified
+        if atlas is None:
+            for f in relmat_files:
+                if "atlas-" in f.name:
+                    atlas = f.name.split("atlas-")[1].split("_")[0]
+                    break
+
+        # Load nodeindices file for labels
+        nodeindices_files = list(bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv"))
+        labels = None
+        if nodeindices_files:
+            df = pd.read_csv(nodeindices_files[0], sep="\t")
+            if "label" in df.columns:
+                labels = df["label"].tolist()
+
+        # Helper to load a measure
+        def load_measure(measure: str) -> Optional[np.ndarray]:
+            pattern = f"*meas-{measure}_relmat*.tsv"
+            matches = list(bids_dir.glob(pattern))
+            if not matches:
+                return None
+            # Load TSV (dense format - no header, tab-separated)
+            return np.loadtxt(matches[0], delimiter="\t")
+
+        # Load structural measures
+        weights = None
+        lengths = None
+        for i, measure in enumerate(structural_measures):
+            data = load_measure(measure)
+            if data is not None:
+                if i == 0:
+                    weights = data
+                elif i == 1:
+                    lengths = data
+
+        if weights is None:
+            raise ValueError(
+                f"Could not load structural weights from {bids_dir}. "
+                f"Looked for measures: {structural_measures}"
+            )
+
+        n_nodes = weights.shape[0]
+
+        # Load observational measures
+        observations = {}
+        for measure in observational_measures:
+            data = load_measure(measure)
+            if data is not None:
+                observations[measure] = data
+
+        # Build labels if not from nodeindices
+        if labels is None:
+            labels = [f"node_{i}" for i in range(n_nodes)]
+
+        # Create nodes
+        nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
+
+        # Build network
+        instance = cls(
+            nodes=nodes,
+            edges=[],
+            number_of_nodes=n_nodes,
+            number_of_regions=n_nodes,
+            label=atlas or bids_dir.name,
+            **kwargs,
+        )
+
+        # Store matrices using object.__setattr__ to bypass LinkML
+        object.__setattr__(instance, "_cached_weights", weights)
+        object.__setattr__(instance, "_cached_lengths", lengths)
+        object.__setattr__(instance, "_bids_dir", str(bids_dir))
+        object.__setattr__(instance, "_bids_observations", observations)
+
+        return instance
+
+    @property
+    def observations(self) -> Dict[str, np.ndarray]:
+        """Observational data loaded from BIDS (e.g., FC for optimization targets)."""
+        # Use object.__getattribute__ to bypass LinkML and get plain Python dict
+        try:
+            return object.__getattribute__(self, "__dict__").get("_bids_observations", {})
+        except (AttributeError, KeyError):
+            return {}
+
+    def load_from_bids(
+        self,
+        bids_dir: Union[str, Path],
+        structural_measures: Optional[List[str]] = None,
+        observational_measures: Optional[List[str]] = None,
+        atlas: Optional[str] = None,
+    ) -> "Network":
+        """Load BEP017 data into existing network.
+
+        Allows loading structural connectivity and/or observational targets
+        independently into an already-configured network (preserves coupling).
+
+        Parameters
+        ----------
+        bids_dir : str or Path
+            Path to BEP017-compliant BIDS directory.
+        structural_measures : list of str, optional
+            Measures for structural connectivity (e.g., ["streamlineCount", "tractLength"]).
+            If None, does not load structural data.
+        observational_measures : list of str, optional
+            Measures for observational targets (e.g., ["BoldCorrelation"]).
+            If None, does not load observational data.
+        atlas : str, optional
+            Atlas name to filter files. Auto-detected if not provided.
+
+        Returns
+        -------
+        Network
+            Self (for method chaining).
+
+        Example
+        -------
+        >>> network = Network()
+        >>> network.load_from_bids(
+        ...     "database/networks/bids/dk_average",
+        ...     structural_measures=["streamlineCount", "tractLength"],
+        ... )
+        >>> network.load_from_bids(
+        ...     "database/networks/bids/dk_average",
+        ...     observational_measures=["BoldCorrelation"],
+        ... )
+        """
+        bids_dir = Path(bids_dir)
+
+        # Find relmat files
+        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + \
+                       list(bids_dir.glob("*_relmat.tsv"))
+
+        if not relmat_files:
+            raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
+
+        # Parse atlas from filenames if not specified
+        if atlas is None:
+            for f in relmat_files:
+                if "atlas-" in f.name:
+                    atlas = f.name.split("atlas-")[1].split("_")[0]
+                    break
+
+        # Helper to load a measure
+        def load_measure(measure: str) -> Optional[np.ndarray]:
+            pattern = f"*meas-{measure}_relmat*.tsv"
+            matches = list(bids_dir.glob(pattern))
+            if not matches:
+                return None
+            return np.loadtxt(matches[0], delimiter="\t")
+
+        # Load structural measures if requested
+        if structural_measures:
+            weights = None
+            lengths = None
+            for i, measure in enumerate(structural_measures):
+                data = load_measure(measure)
+                if data is not None:
+                    if i == 0:
+                        weights = data
+                    elif i == 1:
+                        lengths = data
+
+            if weights is not None:
+                n_nodes = weights.shape[0]
+                self._cached_weights = weights
+                self._cached_lengths = lengths
+                self.number_of_nodes = n_nodes
+                self.number_of_regions = n_nodes
+
+                # Load labels from nodeindices file
+                nodeindices_files = list(bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv"))
+                if nodeindices_files:
+                    df = pd.read_csv(nodeindices_files[0], sep="\t")
+                    if "label" in df.columns:
+                        labels = df["label"].tolist()
+                        self.nodes = [
+                            tvbo_datamodel.Node(id=i, label=labels[i])
+                            for i in range(n_nodes)
+                        ]
+
+        # Load observational measures if requested
+        if observational_measures:
+            # Use object.__setattr__ to store as plain Python dict, bypassing LinkML
+            obs = object.__getattribute__(self, "__dict__").get("_bids_observations", {})
+            for measure in observational_measures:
+                data = load_measure(measure)
+                if data is not None:
+                    obs[measure] = data
+            object.__setattr__(self, "_bids_observations", obs)
+
+        object.__setattr__(self, "_bids_dir", str(bids_dir))
+        return self
 
     def load_matrix(
         self,

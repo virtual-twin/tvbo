@@ -73,7 +73,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 ########## Variables Of Interest ##########
     <%
-    output_keys = model.output if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
+    output_keys = tuple(model.output) if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
     choices = tuple(model.state_variables.keys()) + output_keys
 
     variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + output_keys

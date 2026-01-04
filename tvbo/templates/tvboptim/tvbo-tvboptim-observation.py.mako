@@ -58,6 +58,7 @@ def parse_reference(val, step_names=None, current_obs_name=None):
     - 'input'       : pipeline local (_outputs[key])
     - 'integration' : simulation result (transient/result)
     - 'observation' : another observation's output
+    - 'network'     : network property (e.g., network.observations.BoldCorrelation)
     - 'source_data' : data from source_observation (used when value matches source_observation name)
     - 'literal'     : direct value
     """
@@ -72,6 +73,9 @@ def parse_reference(val, step_names=None, current_obs_name=None):
             return ('input', key)
         if prefix == 'integration':
             return ('integration', key)
+        if prefix == 'network':
+            # network.observations.BoldCorrelation → ('network', 'observations.BoldCorrelation')
+            return ('network', key)
         # Self-referential: bold.hrf_kernel within bold observation
         if current_obs_name and prefix == current_obs_name:
             return ('step', key)
@@ -102,6 +106,14 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
     if ref_type == 'source_data':
         # Reference to source observation data (already in _outputs['data'] or _outputs)
         return "_outputs.get('data', _outputs)"
+    if ref_type == 'network':
+        # network.observations.BoldCorrelation → _network_observations['BoldCorrelation']
+        # ref_val is 'observations.BoldCorrelation'
+        if ref_val.startswith('observations.'):
+            obs_key = ref_val.split('.', 1)[1]
+            return f"_network_observations['{obs_key}']"
+        # For other network properties, use kwargs
+        return f"kwargs.get('{ref_val}')"
     if ref_type == 'integration':
         if ref_val == 'transient':
             if state_idx is not None:
@@ -587,10 +599,26 @@ from ${module} import ${class_name} as _Ext${class_name}
     class_ref = obs.get('class_reference')
     class_name = ''.join(word.capitalize() for word in obs_name.split('_'))
 
-    # Determine state index from source
+    # Check if source is from network.observations (static data from BIDS)
+    is_network_observation = obs_source and str(obs_source).startswith('network.observations.')
+    network_obs_key = str(obs_source).split('network.observations.')[1] if is_network_observation else None
+
+    # Determine state index from source (only for state variable sources)
     state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
 %>
-% if class_ref:
+% if is_network_observation:
+## =============================================================================
+## Static Network Observation (data from BIDS, no simulation needed)
+## =============================================================================
+
+def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
+    """${obs['label'] or obs_name} - static data from network observations.
+
+    Returns the '${network_obs_key}' matrix loaded from BIDS.
+    """
+    return _NETWORK_OBSERVATIONS.get('${network_obs_key}')
+
+% elif class_ref:
 ## =============================================================================
 ## Class Reference Observation (direct external class usage)
 ## =============================================================================

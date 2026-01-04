@@ -28,7 +28,7 @@ exp.network.load_matrix(weights, lengths, region_labels)
 
 # Load target FC and run complete workflow
 fc_target = load_functional_connectivity(name="dk_average")
-results = exp.run("tvboptim", target_data=fc_target)
+results = exp.run("tvboptim", empirical_fc=fc_target)
 
 # Re-run with fitted params to get FC matrices
 fc_global = exp.run(
@@ -37,8 +37,6 @@ fc_global = exp.run(
 fc_regional = exp.run(
     "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
 ).observations.fc.data
-
-
 ```
 
 ## Results

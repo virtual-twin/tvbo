@@ -61,7 +61,7 @@ has_noise = integration.noise is not None
 noise_sigma = np.asarray(experiment.noise_sigma_array).flatten().tolist() if hasattr(experiment, 'noise_sigma_array') else [0.1]
 
 # Network metadata
-n_nodes = network.number_of_regions
+n_nodes = N_nodes = network.number_of_regions
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs else 3.0
 

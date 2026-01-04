@@ -191,6 +191,13 @@ local_dynamics:
 network:
     label: "Desikan-Killiany"
     description: "Structural connectivity from dk_average dataset"
+    bids_dir: "database/networks/bids/dk_average"
+    structural_measures: [streamlineCount, tractLength]
+    observational_measures: [BoldCorrelation]
+    conduction_speed:
+        name: conduction_speed
+        value: 10.0
+        unit: mm/ms
     normalization:
         rhs: "W / max(W)"
 
@@ -352,30 +359,26 @@ functions:
             Correlation between two FC matrices (flattened).
             Measures similarity between predicted and target functional connectivity.
         equation:
-            rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, n-1), (j, 0, n-1)) / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, n-1), (j, 0, n-1))) * sqrt(Sum((B[i,j] - mean(B))**2, (i, 0, n-1), (j, 0, n-1))))
+            rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))) * sqrt(Sum((B[i,j] - mean(B))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))))
             description: "ρ(A, B) = correlation between flattened matrices"
         arguments:
             - name: A
-              description: "First FC matrix (n x n)"
+              description: "First FC matrix (N_nodes x N_nodes)"
             - name: B
-              description: "Second FC matrix (n x n)"
-            - name: n
-              description: "Number of nodes"
+              description: "Second FC matrix (N_nodes x N_nodes)"
 
     fc_rmse:
         description: |
             Root mean squared error between two FC matrices.
             Measures discrepancy between predicted and target functional connectivity.
         equation:
-            rhs: sqrt(Sum((A[i,j] - B[i,j])**2, (i, 0, n-1), (j, 0, n-1)) / (n*n))
+            rhs: sqrt(Sum((A[i,j] - B[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (N_nodes*N_nodes))
             description: "RMSE(A, B) = sqrt(mean((A - B)^2))"
         arguments:
             - name: A
-              description: "First FC matrix (n x n)"
+              description: "First FC matrix (N_nodes x N_nodes)"
             - name: B
-              description: "Second FC matrix (n x n)"
-            - name: n
-              description: "Number of nodes"
+              description: "Second FC matrix (N_nodes x N_nodes)"
 
     compute_fc:
         description: |
@@ -437,20 +440,18 @@ functions:
             EIB update for long-range excitation (wLRE).
             Increases coupling where FC is below target, scaled by node-wise RMSE.
         equation:
-            rhs: wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, n-1)) / n)
+            rhs: wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
             description: "wLRE[i,k] += η * (T[i,k] - P[i,k]) * RMSE_i"
         arguments:
             - name: wLRE
-              description: "Current LRE weights matrix (n x n)"
+              description: "Current LRE weights matrix (N_nodes x N_nodes)"
             - name: fc_target
-              description: "Target FC matrix (n x n)"
+              description: "Target FC matrix (N_nodes x N_nodes)"
             - name: fc
-              description: "Predicted FC matrix (n x n)"
+              description: "Predicted FC matrix (N_nodes x N_nodes)"
             - name: eta
               value: 0.005
               description: "EIB learning rate"
-            - name: n
-              description: "Number of nodes"
 
     EIB_update_wFFI:
         name: EIB_update_wFFI
@@ -458,20 +459,18 @@ functions:
             EIB update for feedforward inhibition (wFFI).
             Decreases inhibition where FC is below target, scaled by node-wise RMSE.
         equation:
-            rhs: wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, n-1)) / n)
+            rhs: wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
             description: "wFFI[i,k] -= η * (T[i,k] - P[i,k]) * RMSE_i"
         arguments:
             - name: wFFI
-              description: "Current FFI weights matrix (n x n)"
+              description: "Current FFI weights matrix (N_nodes x N_nodes)"
             - name: fc_target
-              description: "Target FC matrix (n x n)"
+              description: "Target FC matrix (N_nodes x N_nodes)"
             - name: fc
-              description: "Predicted FC matrix (n x n)"
+              description: "Predicted FC matrix (N_nodes x N_nodes)"
             - name: eta
               value: 0.005
               description: "EIB learning rate"
-            - name: n
-              description: "Number of nodes"
 
     combined_loss:
         name: combined_loss
@@ -479,15 +478,15 @@ functions:
             Combined loss for gradient-based EI tuning.
             L = RMSE(FC_pred, FC_target) + alpha * MSE(activity, target_activity)
         equation:
-            rhs: sqrt(Sum((fc_pred[i,j] - fc_target[i,j])**2, (i, 0, n-1), (j, 0, n-1)) / (n*n)) + alpha * Sum((mean_activity[k] - target_activity)**2, (k, 0, n-1)) / n
+            rhs: sqrt(Sum((fc_pred[i,j] - fc_target[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (N_nodes*N_nodes)) + alpha * Sum((mean_activity[k] - target_activity)**2, (k, 0, N_nodes-1)) / N_nodes
             description: "L = RMSE(FC) + alpha * MSE(activity deviation)"
         arguments:
             - name: fc_pred
-              description: "Predicted FC matrix (n x n)"
+              description: "Predicted FC matrix (N_nodes x N_nodes)"
             - name: fc_target
-              description: "Target empirical FC matrix (n x n)"
+              description: "Target empirical FC matrix (N_nodes x N_nodes)"
             - name: mean_activity
-              description: "Mean excitatory activity per region (n,)"
+              description: "Mean excitatory activity per region (N_nodes,)"
             - name: target_activity
               value: 0.25
               description: "Target excitatory activity for FIC"
@@ -591,10 +590,8 @@ observations:
 
     fc_target:
         label: "Empirical Functional Connectivity"
-        description: "Target FC matrix from empirical data (provided at runtime)"
-        data_source:
-            name: fc_target
-            description: "FC matrix passed as argument to algorithm"
+        description: "Target FC matrix from network observations (loaded from BIDS)"
+        source: network.observations.BoldCorrelation
 
 # =============================================================================
 # ALGORITHMS: Iterative Parameter Tuning (FIC)
@@ -657,7 +654,7 @@ algorithms:
             target_parameter:
                 name: wLRE
             equation:
-                rhs: "wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, n-1)) / n)"
+                rhs: "wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)"
             bounds:
                 lo: 0.0
             warmup: true
@@ -665,7 +662,7 @@ algorithms:
             target_parameter:
                 name: wFFI
             equation:
-                rhs: "wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, n-1)) / n)"
+                rhs: "wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)"
             bounds:
                 lo: 0.0
             warmup: true
@@ -676,21 +673,15 @@ algorithms:
                   value: fc
                 - name: B
                   value: fc_target
-                - name: n
-                  value: 84
           - function: fc_rmse
             arguments:
                 - name: A
                   value: fc
                 - name: B
                   value: fc_target
-                - name: n
-                  value: 84
       hyperparameters:
           - name: eta
             value: 0.005
-          - name: n
-            value: 84.0
           - name: window_size
             value: 150
       n_iterations: 2000
@@ -715,8 +706,6 @@ algorithms:
             arguments:
                 - name: eta
                   value: 0.005
-                - name: n
-                  value: 84.0
       n_iterations: 2000
       simulation_period: 720.0
 

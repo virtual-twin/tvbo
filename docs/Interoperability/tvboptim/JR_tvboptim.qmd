@@ -57,7 +57,7 @@ target_psd = np.array([1 / (np.pi * gamma * (1 + ((frequencies - f0) / gamma)**2
 
 ```{python}
 # Run complete workflow with matching target
-results = exp.run("tvboptim", target_data=target_psd)
+results = exp.run("tvboptim", target=target_psd)
 
 # Get spectra before/after optimization
 obs_init = ns.simulated_psd(results.model_fn, results.state)
