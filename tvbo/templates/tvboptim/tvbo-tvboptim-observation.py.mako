@@ -446,6 +446,8 @@ for obs_name, obs in observations.items():
         'pipeline': [],
         'class_reference': None,  # New: direct class reference
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
+        'tail_samples': get_attr(obs, 'tail_samples'),  # Last N samples before aggregation
+        'aggregation': get_attr(obs, 'aggregation'),  # Aggregation type (mean, last, first, etc.)
     }
 
     # Check for class_reference first (takes precedence over pipeline)
@@ -544,6 +546,37 @@ for obs in obs_list:
                 'call': get_precompute_call(step),
                 'const_name': f'_PRECOMPUTED_{step_name.upper()}',
             }
+
+# =============================================================================
+# Check for Network Observations (loaded from BIDS)
+# =============================================================================
+# Identify observations that reference network.observations.* and extract the keys
+network_obs_keys = set()
+for obs in obs_list:
+    src = obs.get('source')
+    if src and str(src).startswith('network.observations.'):
+        key = str(src).split('network.observations.')[1]
+        network_obs_keys.add(key)
+
+# Get BIDS directory from experiment network (resolve to absolute path)
+bids_dir = None
+if network_obs_keys:
+    network = get_attr(experiment, 'network', None)
+    if network:
+        _bids_dir_raw = get_attr(network, 'bids_dir', None)
+        if _bids_dir_raw:
+            from pathlib import Path
+            _bids_path = Path(_bids_dir_raw)
+            if not _bids_path.is_absolute():
+                # Resolve relative to YAML spec file's parent directory
+                # e.g., YAML at database/experiments/foo.yaml with bids_dir: ../networks/bids/dk
+                _source_file = get_attr(experiment, '_source_file', None)
+                if _source_file:
+                    _bids_path = (Path(_source_file).parent / _bids_dir_raw).resolve()
+                else:
+                    # Fallback: resolve relative to cwd
+                    _bids_path = (Path.cwd() / _bids_dir_raw).resolve()
+            bids_dir = str(_bids_path)
 %>
 """Observation classes (equinox.Module) for tvboptim."""
 
@@ -554,6 +587,15 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 from types import SimpleNamespace
 from tvboptim.experimental.network_dynamics.result import NativeSolution
+
+% if network_obs_keys and bids_dir:
+# -----------------------------------------------------------------------------
+# Load Network Observations from BIDS
+# -----------------------------------------------------------------------------
+from tvbo.data.tvbo_data.connectomes import Network as _TvboNetwork
+
+_bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
+% endif
 
 
 class ObservationResult(SimpleNamespace):
@@ -608,15 +650,10 @@ from ${module} import ${class_name} as _Ext${class_name}
 %>
 % if is_network_observation:
 ## =============================================================================
-## Static Network Observation (data from BIDS, no simulation needed)
+## Static Network Observation (data from BIDS - module-level constant)
 ## =============================================================================
-
-def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
-    """${obs['label'] or obs_name} - static data from network observations.
-
-    Returns the '${network_obs_key}' matrix loaded from BIDS.
-    """
-    return _NETWORK_OBSERVATIONS.get('${network_obs_key}')
+# ${obs['label'] or obs_name} - static data loaded from BIDS
+${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
 
 % elif class_ref:
 ## =============================================================================
@@ -716,6 +753,10 @@ def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kw
 
     # Determine state index from source
     state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
+
+    # Declarative observation attributes (language-independent)
+    tail_samples = obs.get('tail_samples')  # Last N samples before aggregation
+    aggregation = obs.get('aggregation')  # Aggregation type (mean, last, first, etc.)
 
     # Identify precomputable steps (kernels) and history steps
     static_steps = []  # Kernel generators - computed in __init__, stored as static
@@ -1046,6 +1087,36 @@ class ${class_name}(eqx.Module):
         ${prefixed_output} = ${input_var}
 % endif
 % endfor
+
+% if tail_samples or aggregation:
+## =============================================================================
+## Declarative Processing (tail_samples, aggregation)
+## =============================================================================
+<%
+    # Determine input variable for declarative processing
+    if pipeline:
+        last_step = pipeline[-1]
+        last_output = last_step.get('output') or last_step['name']
+        final_parts = [o.strip() for o in last_output.split(',')]
+        decl_input = f"_{final_parts[-1]}"
+    else:
+        decl_input = '_data'
+%>
+% if tail_samples:
+        # Declarative: take last ${tail_samples} samples (tail_samples: ${tail_samples})
+        ${decl_input} = ${decl_input}[-${tail_samples}:]
+% endif
+% if aggregation == 'mean':
+        # Declarative: mean over time axis (aggregation: mean)
+        ${decl_input} = jnp.mean(${decl_input}, axis=0)
+% elif aggregation == 'last':
+        # Declarative: last value (aggregation: last)
+        ${decl_input} = ${decl_input}[-1]
+% elif aggregation == 'first':
+        # Declarative: first value (aggregation: first)
+        ${decl_input} = ${decl_input}[0]
+% endif
+% endif
 
         # Return result with all named pipeline outputs
 <%

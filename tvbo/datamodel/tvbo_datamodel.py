@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-01-04T01:38:58
+# Generation date: 2026-01-04T03:28:43
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -807,6 +807,7 @@ class Observation(YAMLRoot):
     warmup_source: Optional[str] = None
     data_source: Optional[Union[dict, "DataSource"]] = None
     skip_t: Optional[int] = None
+    tail_samples: Optional[int] = None
     aggregation: Optional[Union[str, "AggregationType"]] = None
     window_size: Optional[int] = None
     pipeline: Optional[Union[Union[dict, "FunctionCall"], list[Union[dict, "FunctionCall"]]]] = empty_list()
@@ -864,6 +865,9 @@ class Observation(YAMLRoot):
 
         if self.skip_t is not None and not isinstance(self.skip_t, int):
             self.skip_t = int(self.skip_t)
+
+        if self.tail_samples is not None and not isinstance(self.tail_samples, int):
+            self.tail_samples = int(self.tail_samples)
 
         if self.aggregation is not None and not isinstance(self.aggregation, AggregationType):
             self.aggregation = AggregationType(self.aggregation)
@@ -4434,6 +4438,9 @@ slots.observation__data_source = Slot(uri=TVBO.data_source, name="observation__d
 
 slots.observation__skip_t = Slot(uri=TVBO.skip_t, name="observation__skip_t", curie=TVBO.curie('skip_t'),
                    model_uri=TVBO.observation__skip_t, domain=None, range=Optional[int])
+
+slots.observation__tail_samples = Slot(uri=TVBO.tail_samples, name="observation__tail_samples", curie=TVBO.curie('tail_samples'),
+                   model_uri=TVBO.observation__tail_samples, domain=None, range=Optional[int])
 
 slots.observation__aggregation = Slot(uri=TVBO.aggregation, name="observation__aggregation", curie=TVBO.curie('aggregation'),
                    model_uri=TVBO.observation__aggregation, domain=None, range=Optional[Union[str, "AggregationType"]])

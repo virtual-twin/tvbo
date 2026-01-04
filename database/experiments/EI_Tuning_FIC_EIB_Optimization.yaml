@@ -191,7 +191,7 @@ local_dynamics:
 network:
     label: "Desikan-Killiany"
     description: "Structural connectivity from dk_average dataset"
-    bids_dir: "database/networks/bids/dk_average"
+    bids_dir: "../networks/bids/dk_average"
     structural_measures: [streamlineCount, tractLength]
     observational_measures: [BoldCorrelation]
     conduction_speed:
@@ -476,10 +476,11 @@ functions:
         name: combined_loss
         description: |
             Combined loss for gradient-based EI tuning.
-            L = RMSE(FC_pred, FC_target) + alpha * MSE(activity, target_activity)
+            L = RMSE(FC_pred, FC_target) + MSE(activity, target_activity)
+            Note: No alpha scaling - both terms contribute equally as in original.
         equation:
-            rhs: sqrt(Sum((fc_pred[i,j] - fc_target[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (N_nodes*N_nodes)) + alpha * Sum((mean_activity[k] - target_activity)**2, (k, 0, N_nodes-1)) / N_nodes
-            description: "L = RMSE(FC) + alpha * MSE(activity deviation)"
+            rhs: sqrt(Sum((fc_pred[i,j] - fc_target[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (N_nodes*N_nodes)) + Sum((mean_activity[k] - target_activity)**2, (k, 0, N_nodes-1)) / N_nodes
+            description: "L = RMSE(FC) + MSE(activity deviation)"
         arguments:
             - name: fc_pred
               description: "Predicted FC matrix (N_nodes x N_nodes)"
@@ -490,9 +491,6 @@ functions:
             - name: target_activity
               value: 0.25
               description: "Target excitatory activity for FIC"
-            - name: alpha
-              value: 0.1
-              description: "Weight for FIC regularization term"
 
 # =============================================================================
 # OBSERVATIONS: Derived from simulation data
@@ -545,7 +543,7 @@ observations:
 
     fc:
         label: "Simulated Functional Connectivity"
-        description: "Pearson correlation matrix from BOLD time series"
+        description: "Pearson correlation matrix from BOLD time series (skip_t=20 for EIB algorithms)"
         source_observation: bold
         pipeline:
             - callable:
@@ -558,35 +556,39 @@ observations:
                     value: 20
                     description: "Skip first 20 TRs for transient removal"
 
-    mean_S_e:
-        label: "Mean Excitatory Activity"
-        description: "Mean S_e over simulation window (for FIC)"
-        source: S_e
-        aggregation: mean
+    fc_gradient:
+        label: "Simulated FC for Gradient Optimization"
+        description: "FC computation for gradient optimization (skip_t=30 as in original)"
+        source_observation: bold
         pipeline:
             - callable:
-                  module: jax.numpy
-                  name: mean
+                  name: compute_fc
+                  module: tvboptim.observations.observation
               arguments:
-                  - name: a
-                    value: integration.result
-                  - name: axis
-                    value: 0
+                  - name: timeseries
+                    value: bold
+                  - name: skip_t
+                    value: 30
+                    description: "Skip first 30 TRs as in original gradient optimization"
+
+    mean_S_e:
+        label: "Mean Excitatory Activity"
+        description: "Mean S_e over simulation window (for FIC algorithms)"
+        source: S_e
+        aggregation: mean
+
+    mean_S_e_final:
+        label: "Mean Excitatory Activity (Final 500 Timesteps)"
+        description: "Mean S_e over final 500 timesteps (for gradient optimization loss)"
+        source: S_e
+        aggregation: mean
+        tail_samples: 500
 
     mean_S_i:
         label: "Mean Inhibitory Activity"
         description: "Mean S_i over simulation window (for FIC)"
         source: S_i
         aggregation: mean
-        pipeline:
-            - callable:
-                  module: jax.numpy
-                  name: mean
-              arguments:
-                  - name: a
-                    value: integration.result
-                  - name: axis
-                    value: 0
 
     fc_target:
         label: "Empirical Functional Connectivity"
@@ -700,8 +702,6 @@ algorithms:
             arguments:
                 - name: eta
                   value: 0.1
-                - name: target
-                  value: 0.25
           - algorithm: eib
             arguments:
                 - name: eta
@@ -724,13 +724,14 @@ optimization:
           function: combined_loss
           arguments:
               - name: fc_pred
-                value: observations.fc.data
-                description: "Predicted functional connectivity from simulation"
+                value: observations.fc_gradient.data
+                description: "Predicted functional connectivity from simulation (skip_t=30)"
               - name: fc_target
-                description: "Empirical functional connectivity matrix (target, passed at runtime)"
+                value: observations.fc_target.data
+                description: "Empirical functional connectivity matrix from network observations"
               - name: mean_activity
-                value: observations.mean_S_e.data
-                description: "Mean excitatory activity across nodes"
+                value: observations.mean_S_e_final.data
+                description: "Mean excitatory activity over final 500 timesteps"
               - name: target_activity
                 value: 0.25
                 description: "Target excitatory activity for FIC"

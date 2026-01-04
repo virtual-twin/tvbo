@@ -34,11 +34,4 @@ NOT constants (these are experiment parameters):
 # Network size (invariant for a given connectome)
 n_nodes = N_nodes = N_NODES = ${n_nodes}
 
-# Network observations loaded from BIDS (e.g., FC target)
-# Used by observations with source: network.observations.*
-_NETWORK_OBSERVATIONS = {
-% for key, arr in bids_obs.items():
-    '${key}': jnp.array(${arr.tolist()}),
-% endfor
-}
 </%def>

@@ -129,6 +129,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if not getattr(self, "network", None):
             self.network = Network()
 
+        # Get source file path if loading from file (set by from_file classmethod)
+        self._source_file = getattr(self.__class__, '_pending_source_file', None)
+
         # Load network from BIDS if bids_dir is specified
         if hasattr(self.network, "bids_dir") and self.network.bids_dir:
             self._load_network_from_bids()
@@ -147,15 +150,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Uses network.bids_dir, network.structural_measures, and
         network.observational_measures to load connectivity data.
+        Relative paths are resolved relative to the YAML source file.
         """
         from pathlib import Path
 
         bids_dir = Path(self.network.bids_dir)
         if not bids_dir.is_absolute():
-            # Resolve relative to package root
-            import tvbo
-            pkg_root = Path(tvbo.__file__).parent.parent
-            bids_dir = pkg_root / bids_dir
+            # Resolve relative to YAML source file location
+            source_file = getattr(self, '_source_file', None)
+            if source_file:
+                bids_dir = (Path(source_file).parent / bids_dir).resolve()
+            else:
+                # Fallback: resolve relative to cwd
+                bids_dir = (Path.cwd() / bids_dir).resolve()
 
         # Get measures from network attributes
         structural = getattr(self.network, "structural_measures", None) or [
@@ -247,8 +254,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     @classmethod
     def from_file(cls, filepath: str):
         from linkml_runtime.loaders import yaml_loader
+        from pathlib import Path
 
-        return yaml_loader.load(filepath, target_class=cls)
+        # Store source file path BEFORE loading so __init__ can use it
+        cls._pending_source_file = str(Path(filepath).resolve())
+        try:
+            exp = yaml_loader.load(filepath, target_class=cls)
+            exp._source_file = cls._pending_source_file
+        finally:
+            cls._pending_source_file = None
+        return exp
 
     @classmethod
     def from_string(cls, yaml_string: str) -> "SimulationExperiment":
