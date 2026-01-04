@@ -130,15 +130,28 @@ def get_all_update_rules(algo, algorithms_dict):
         all_rules.append((rule, str(algo.name), {}))
     return all_rules
 
+def _is_external_observation(obs_def):
+    """Check if observation is external (has data_source or source pointing to network.observations)."""
+    if not obs_def:
+        return False
+    # Explicit data_source
+    if getattr(obs_def, 'data_source', None):
+        return True
+    # Source pointing to network.observations.* (e.g., network.observations.BoldCorrelation)
+    source = getattr(obs_def, 'source', None)
+    if source and str(source).startswith('network.observations'):
+        return True
+    return False
+
 def get_external_inputs(algo, obs_dict, algorithms_dict=None):
-    """Get observations that have external data_source."""
+    """Get observations that have external data_source or network.observations source."""
     obs_names = get_all_observations(algo, algorithms_dict or {}) if algorithms_dict else get_obs_names(algo)
-    return [o for o in obs_names if obs_dict.get(o) and obs_dict[o].data_source]
+    return [o for o in obs_names if _is_external_observation(obs_dict.get(o))]
 
 def get_simulated_observations(algo, obs_dict, algorithms_dict=None):
-    """Get observations that are simulated (no data_source)."""
+    """Get observations that are simulated (not external)."""
     obs_names = get_all_observations(algo, algorithms_dict or {}) if algorithms_dict else get_obs_names(algo)
-    return [o for o in obs_names if not (obs_dict.get(o) and obs_dict[o].data_source)]
+    return [o for o in obs_names if not _is_external_observation(obs_dict.get(o))]
 
 def get_hyperparam_dict(algo):
     """Build {name: value} dict from hyperparameters (THIS algorithm only)."""

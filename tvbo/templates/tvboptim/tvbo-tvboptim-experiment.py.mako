@@ -160,9 +160,21 @@ def obs_has_all_args(obs):
                 return False  # Argument without value = requires runtime input
     return True
 
+def is_network_observation(obs):
+    """Check if observation is a network observation (static data from BIDS)."""
+    if not obs:
+        return False
+    source = getattr(obs, 'source', None)
+    if source and str(source).startswith('network.observations'):
+        return True
+    return False
+
 # Build observations dict from experiment.observations
 observations_dict = dict(experiment.observations.items()) if experiment.observations else {}
 _obs_list = list(observations_dict.items())
+
+# Identify network observations (static data, not simulation-derived)
+network_observation_names = set(name for name, obs in _obs_list if is_network_observation(obs))
 
 # Include all observations that have all required arguments satisfied
 observation_names = [name for name, obs in _obs_list if obs_has_all_args(obs)]
@@ -811,12 +823,17 @@ def run_simulation(
     # Pass result and result_transient for observations to use
     # - result: pre-computed simulation (avoids re-running)
     # - result_transient: HRF warmup history for BOLD observations
+    # Network observations are module-level constants (already loaded from BIDS)
     observations = Bunch()
     obs_kwargs = dict(kwargs)
     obs_kwargs['result'] = result
     obs_kwargs['result_transient'] = result_transient
 % for obs_name in observation_names:
+% if obs_name in network_observation_names:
+    observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+% else:
     observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+% endif
 % endfor
 
     return Bunch(model_fn=model_fn, state=state, result=result, transient=result_transient, observations=observations)
@@ -1069,11 +1086,15 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
 %>
     ${'if' if loop.first else 'elif'} loss_type == "${opt_name}":
         # Pre-create observation monitors ONCE (optimized pattern for JAX differentiation)
+        # Network observations are module-level constants (no monitor needed)
 % for obs_name in sorted(obs_refs):
 <%
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+    is_network_obs = obs_name in network_observation_names
 %>
+% if not is_network_obs:
         _${obs_name}_monitor = ${obs_class}(history=result_transient)
+% endif
 % endfor
 
         def loss_${opt_name}(state):
@@ -1087,15 +1108,30 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
             # Run simulation
             result = model_fn(state)
 
-            # Apply pre-created observation monitors
+            # Apply observation monitors (simulation-derived observations only)
 % for obs_name in sorted(obs_refs):
+<%
+    is_network_obs = obs_name in network_observation_names
+%>
+% if not is_network_obs:
             _${obs_name} = _${obs_name}_monitor(result)
+% endif
 % endfor
 
             # Prepare loss function arguments
 % for arg in args:
 % if arg['type'] == 'observation':
-% if arg['output_key']:
+<%
+    arg_obs_is_network = arg['obs_name'] in network_observation_names
+%>
+% if arg_obs_is_network:
+% if arg['name'] != arg['obs_name']:
+            # Network observation (module-level constant) with different arg name
+            ${arg['name']} = ${arg['obs_name']}
+% else:
+            # Network observation: ${arg['obs_name']} (use module-level constant directly)
+% endif
+% elif arg['output_key']:
             ${arg['name']} = _${arg['obs_name']}.${arg['output_key']}
 % else:
             ${arg['name']} = _${arg['obs_name']}.data
@@ -1470,6 +1506,13 @@ def run_experiment(
     weights = jnp.array(weights)
 
     # Setup network
+    # -------------------------------------------------------------------------
+    # STEP 1: Simulation (always runs first)
+    # -------------------------------------------------------------------------
+    print("\n" + "=" * 60)
+    print("STEP 1: Running simulation...")
+    print("=" * 60)
+
     % if has_delay:
     delays = jnp.array(distances) / ${conduction_speed} if distances is not None else jnp.zeros_like(weights)
     network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma[0]})
@@ -1482,6 +1525,8 @@ def run_experiment(
     model_fn = sim_result.model_fn
     default_state = sim_result.state
     transient = sim_result.transient
+    print(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
+    print(f"  Transient period: ${transient_time} ms")
 
     # Use custom state if provided (e.g., from previous optimization)
     if state is not None:
@@ -1522,12 +1567,17 @@ def run_experiment(
         result = sim_result.result
 
     # Compute observations using the (potentially custom) result
+    # Network observations are module-level constants (already loaded from BIDS)
     observations = Bunch()
     obs_kwargs = dict(kwargs)
     obs_kwargs['result'] = result
     obs_kwargs['result_transient'] = transient
 % for obs_name in observation_names:
+% if obs_name in network_observation_names:
+    observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+% else:
     observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+% endif
 % endfor
 
     results = Bunch(
@@ -1538,122 +1588,20 @@ def run_experiment(
         network=network,
         observations=observations,
     )
-
-    % if has_optimization:
-    # Optimization workflow - multi-stage support
-    # Runtime inputs for loss function are passed via kwargs (e.g., fc_target)
-    if mode in ('optimization', 'all'):
-        # Check if all required runtime inputs are provided
-        _missing_inputs = []
-% for kwarg_name in sorted(runtime_kwargs_needed) if runtime_kwargs_needed else []:
-        if '${kwarg_name}' not in kwargs:
-            _missing_inputs.append('${kwarg_name}')
-% endfor
-        if _missing_inputs:
-            if mode == 'optimization':
-                raise ValueError(f"Optimization requires these inputs via kwargs: {_missing_inputs}")
-            else:
-                # mode='all' - skip optimization if missing inputs, run algorithms instead
-                print(f"Skipping optimization (missing: {_missing_inputs})")
-        else:
-            # Create loss function with runtime inputs from kwargs
-            loss_type = kwargs.get('loss_type', None)
-            loss_fn = make_loss_fn(model_fn, result_transient=transient, loss_type=loss_type, **kwargs)
-
-            # Stage results storage (use Bunch for dot-notation access)
-            stage_results = Bunch()
-            current_state = state  # Start with initial state
-
-% if len(optimization_stages) > 1:
-            # Multi-stage optimization with optional stage filtering
-            all_stage_names = [${', '.join(f"'{s['name']}'" for s in optimization_stages)}]
-
-            if stage is not None:
-                if stage not in all_stage_names:
-                    raise ValueError(f"Unknown stage '{stage}'. Available stages: {all_stage_names}")
-                stages_to_run = [stage]
-                print(f"Running single stage: {stage}")
-            else:
-                stages_to_run = all_stage_names
-                print("=" * 60)
-                print("Multi-stage optimization: ${len(optimization_stages)} stages")
-                print("=" * 60)
-
-% for stage_idx, stage in enumerate(optimization_stages):
-<%
-stage_name = stage['name']
-stage_warmup_from = stage['warmup_from']
-stage_max_iter = stage['max_iterations']
-stage_lr = stage['learning_rate']
-%>
-        # Stage ${stage_idx + 1}: ${stage_name}
-        if '${stage_name}' in stages_to_run:
-            print(f"\n>>> Stage ${stage_idx + 1}/${len(optimization_stages)}: ${stage_name}")
-            print(f"    Free parameters: ${', '.join(p['name'] for p in stage['free_parameters'])}")
-% if stage_warmup_from:
-            print(f"    Warmup from: ${stage_warmup_from}")
-            # Use fitted_params from warmup_from stage (or from kwargs if running single stage)
-            if '${stage_warmup_from}' in stage_results:
-                current_state = stage_results['${stage_warmup_from}'].fitted_params
-            elif 'warmup_state' in kwargs:
-                # Allow passing in state from previous run
-                current_state = kwargs['warmup_state']
-                print(f"    Using warmup_state from kwargs")
-            elif stage is not None:
-                # Running single stage without warmup - use initial state with warning
-                print(f"    WARNING: warmup_from='${stage_warmup_from}' not available, using initial state")
-            else:
-                raise ValueError(f"warmup_from stage '${stage_warmup_from}' not found in completed stages: {list(stage_results.keys())}")
-% endif
-
-            _fitted_${stage_name}, _history_${stage_name} = run_stage_${stage_name}(
-                current_state,
-                loss_fn,
-                max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
-                learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
-            )
-            stage_results['${stage_name}'] = Bunch(
-                fitted_params=_fitted_${stage_name},
-                fitting_data=_history_${stage_name},
-            )
-            current_state = _fitted_${stage_name}  # Chain to next stage
-
-% endfor
-        if stage is None:
-            print("\n" + "=" * 60)
-            print("Multi-stage optimization complete")
-            print("=" * 60)
-
-        # Final results: last stage's fitted_params + per-stage access via dot notation
-        results['fitted_params'] = current_state
-        results['fitting_data'] = stage_results  # Bunch of all stage histories
-        # Add each stage directly to results for easy access: results.global_optimization.fitted_params
-        for _stage_name, _stage_result in stage_results.items():
-            results[_stage_name] = _stage_result
-
-% else:
-            # Single-stage optimization
-            init_state = mark_parameters_optimizable(state)
-
-            fitted_params, fitting_data = run_optimization(
-                init_state,
-                loss_fn,
-                max_steps=kwargs.get('max_steps', ${max_steps}),
-                learning_rate=kwargs.get('learning_rate', ${learning_rate}),
-                optimizer=kwargs.get('optimizer', '${optimizer_name}'),
-            )
-
-            results['fitted_params'] = fitted_params
-            results['fitting_data'] = fitting_data
-% endif
-    % endif
+    print("  Simulation complete.")
 
     % if has_explorations:
-    # Exploration workflow
+    # -------------------------------------------------------------------------
+    # STEP 2: Explorations (parameter sweeps)
+    # -------------------------------------------------------------------------
     if mode in ('exploration', 'all'):
+        print("\n" + "=" * 60)
+        print("STEP 2: Running explorations...")
+        print("=" * 60)
         explorations_result = Bunch()
 
         % for expl in explorations:
+        print(f"  > ${expl['name']}")
         explorations_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             result_transient=transient,
@@ -1662,16 +1610,22 @@ stage_lr = stage['learning_rate']
         % endfor
 
         results.explorations = explorations_result
+        print("  Explorations complete.")
     % endif
 
     % if has_algorithms:
-    # Algorithm workflow (FIC, EIB, etc.)
+    # -------------------------------------------------------------------------
+    # STEP 3: Algorithms (FIC, EIB, etc.)
+    # -------------------------------------------------------------------------
     # ALL parameters derived from YAML metadata
     #
     # Modes:
     #   - mode='algorithm': Run a single algorithm by name
     #   - mode='algorithms' or mode='all': Run ALL algorithms in dependency order
     if mode in ('algorithm', 'algorithms', 'all'):
+        print("\n" + "=" * 60)
+        print("STEP 3: Running algorithms...")
+        print("=" * 60)
         # Determine if running all algorithms or just one
         algorithm_name = kwargs.get('name', kwargs.get('algorithm_name', None))
         run_all_algorithms = (mode in ('algorithms', 'all')) or (algorithm_name is None and mode == 'algorithm')
@@ -1704,11 +1658,29 @@ stage_lr = stage['learning_rate']
             deps = [deps]
         algorithms_deps[aname] = list(deps)
 
+    # Find algorithms that are included in other algorithms
+    # These should NOT be run standalone when mode='all'
+    included_algorithms = set()
+    for a in algorithms_list:
+        includes = getattr(a, 'includes', None) or []
+        for inc in includes:
+            if hasattr(inc, 'algorithm'):
+                inc_name = safe_name(str(getattr(inc, 'algorithm', '')))
+            else:
+                inc_name = safe_name(str(inc))
+            if inc_name:
+                included_algorithms.add(inc_name)
+
     # Get algorithms in dependency order (topological sort)
+    # Exclude algorithms that are included in other algorithms
     def get_sorted_algorithms():
-        """Return algorithm names in dependency order."""
+        """Return algorithm names in dependency order, excluding included algorithms."""
+        # Start with algorithms that are NOT included in others
+        all_algos = set(algorithms_deps.keys())
+        top_level_algos = all_algos - included_algorithms
+
         sorted_names = []
-        remaining = set(algorithms_deps.keys())
+        remaining = set(top_level_algos)
         while remaining:
             # Find algorithms with all dependencies satisfied
             ready = [n for n in remaining if all(d in sorted_names or d not in remaining for d in algorithms_deps[n])]
@@ -1766,9 +1738,7 @@ stage_lr = stage['learning_rate']
         # Define which algorithms to run
         if run_all_algorithms:
             algorithms_to_run = [${', '.join(f"'{n}'" for n in sorted_algo_names)}]
-            print("=" * 60)
-            print(f"Running all algorithms: {algorithms_to_run}")
-            print("=" * 60)
+            print(f"  Algorithms to run: {algorithms_to_run}")
         else:
             algorithms_to_run = [algorithm_name]
 
@@ -1815,12 +1785,20 @@ stage_lr = stage['learning_rate']
 
     obs_names = list(get_obs_names_with_includes(algo))
 
-    # Determine which observations require external data (have data_source)
+    # Determine which observations require external data:
+    # 1. Observations with data_source (external file)
+    # 2. Network observations (source starts with 'network.observations.')
     input_names = []
+    network_obs_inputs = []  # Network observations that are module-level constants
     for obs_name in obs_names:
         obs_def = observations_dict.get(obs_name)
-        if obs_def and hasattr(obs_def, 'data_source') and obs_def.data_source is not None:
-            input_names.append(obs_name)
+        if obs_def:
+            # Check for data_source (external file)
+            if hasattr(obs_def, 'data_source') and obs_def.data_source is not None:
+                input_names.append(obs_name)
+            # Check for network observation (from BIDS)
+            elif hasattr(obs_def, 'source') and obs_def.source and str(obs_def.source).startswith('network.observations.'):
+                network_obs_inputs.append(obs_name)
 
     # Observation reference (deprecated - now use observations list)
     observation_ref = None
@@ -1877,6 +1855,9 @@ stage_lr = stage['learning_rate']
 % for inp_name in input_names:
                     ${inp_name}=kwargs.get('${inp_name}'),
 % endfor
+% for net_obs_name in network_obs_inputs:
+                    ${net_obs_name}=${net_obs_name},  # Module-level constant from BIDS
+% endfor
 % if algo_needs_buffers:
 % for src_obs in algo_source_obs_needed:
                     ${src_obs}_buffer=kwargs.get('${src_obs}_buffer', None),  # Optional: pass from previous algorithm
@@ -1918,7 +1899,7 @@ stage_lr = stage['learning_rate']
             if last_algo_name in algorithms_results:
                 results.update(algorithms_results[last_algo_name])
             print("\n" + "=" * 60)
-            print(f"All algorithms complete. Results available: {list(algorithms_results.keys())}")
+            print(f"  Algorithms complete. Results: {list(algorithms_results.keys())}")
             print("=" * 60)
         else:
             # Running single: expose result at top level
@@ -1926,63 +1907,162 @@ stage_lr = stage['learning_rate']
             results['algorithm'] = Bunch(name=algorithm_name)
     % endif
 
+    % if has_optimization:
+    # -------------------------------------------------------------------------
+    # STEP 4: Optimization (gradient-based parameter fitting)
+    # -------------------------------------------------------------------------
+    # Runtime inputs for loss function are passed via kwargs (e.g., fc_target)
+    if mode in ('optimization', 'all'):
+        print("\n" + "=" * 60)
+        print("STEP 4: Running optimization...")
+        print("=" * 60)
+        # Check if all required runtime inputs are provided
+        _missing_inputs = []
+% for kwarg_name in sorted(runtime_kwargs_needed) if runtime_kwargs_needed else []:
+        if '${kwarg_name}' not in kwargs:
+            _missing_inputs.append('${kwarg_name}')
+% endfor
+        if _missing_inputs:
+            if mode == 'optimization':
+                raise ValueError(f"Optimization requires these inputs via kwargs: {_missing_inputs}")
+            else:
+                # mode='all' - skip optimization if missing inputs
+                print(f"  Skipping optimization (missing: {_missing_inputs})")
+        else:
+            # Create loss function with runtime inputs from kwargs
+            loss_type = kwargs.get('loss_type', None)
+            loss_fn = make_loss_fn(model_fn, result_transient=transient, loss_type=loss_type, **kwargs)
+
+            # Stage results storage (use Bunch for dot-notation access)
+            stage_results = Bunch()
+            current_state = state  # Start with current state (may be updated by algorithms)
+
+% if len(optimization_stages) > 1:
+            # Multi-stage optimization with optional stage filtering
+            all_stage_names = [${', '.join(f"'{s['name']}'" for s in optimization_stages)}]
+
+            if stage is not None:
+                if stage not in all_stage_names:
+                    raise ValueError(f"Unknown stage '{stage}'. Available stages: {all_stage_names}")
+                stages_to_run = [stage]
+                print(f"  Running single stage: {stage}")
+            else:
+                stages_to_run = all_stage_names
+                print(f"  Multi-stage optimization: ${len(optimization_stages)} stages")
+
+% for stage_idx, stage in enumerate(optimization_stages):
+<%
+stage_name = stage['name']
+stage_warmup_from = stage['warmup_from']
+stage_max_iter = stage['max_iterations']
+stage_lr = stage['learning_rate']
+%>
+        # Stage ${stage_idx + 1}: ${stage_name}
+        if '${stage_name}' in stages_to_run:
+            print(f"\n>>> Stage ${stage_idx + 1}/${len(optimization_stages)}: ${stage_name}")
+            print(f"    Free parameters: ${', '.join(p['name'] for p in stage['free_parameters'])}")
+% if stage_warmup_from:
+            print(f"    Warmup from: ${stage_warmup_from}")
+            # Use fitted_params from warmup_from stage (or from kwargs if running single stage)
+            if '${stage_warmup_from}' in stage_results:
+                current_state = stage_results['${stage_warmup_from}'].fitted_params
+            elif 'warmup_state' in kwargs:
+                # Allow passing in state from previous run
+                current_state = kwargs['warmup_state']
+                print(f"    Using warmup_state from kwargs")
+            elif stage is not None:
+                # Running single stage without warmup - use initial state with warning
+                print(f"    WARNING: warmup_from='${stage_warmup_from}' not available, using initial state")
+            else:
+                raise ValueError(f"warmup_from stage '${stage_warmup_from}' not found in completed stages: {list(stage_results.keys())}")
+% endif
+
+            _fitted_${stage_name}, _history_${stage_name} = run_stage_${stage_name}(
+                current_state,
+                loss_fn,
+                max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+                learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
+            )
+            stage_results['${stage_name}'] = Bunch(
+                fitted_params=_fitted_${stage_name},
+                fitting_data=_history_${stage_name},
+            )
+            current_state = _fitted_${stage_name}  # Chain to next stage
+
+% endfor
+        if stage is None:
+            print("\n" + "=" * 60)
+            print("  Multi-stage optimization complete")
+            print("=" * 60)
+
+        # Final results: last stage's fitted_params + per-stage access via dot notation
+        results['fitted_params'] = current_state
+        results['fitting_data'] = stage_results  # Bunch of all stage histories
+        # Add each stage directly to results for easy access: results.global_optimization.fitted_params
+        for _stage_name, _stage_result in stage_results.items():
+            results[_stage_name] = _stage_result
+
+% else:
+            # Single-stage optimization
+            init_state = mark_parameters_optimizable(state)
+
+            fitted_params, fitting_data = run_optimization(
+                init_state,
+                loss_fn,
+                max_steps=kwargs.get('max_steps', ${max_steps}),
+                learning_rate=kwargs.get('learning_rate', ${learning_rate}),
+                optimizer=kwargs.get('optimizer', '${optimizer_name}'),
+            )
+
+            results['fitted_params'] = fitted_params
+            results['fitting_data'] = fitting_data
+            print("  Optimization complete.")
+% endif
+    % endif
+
+    print("\n" + "=" * 60)
+    print("Experiment complete.")
+    print("=" * 60)
+
     return results
 
 
 # =============================================================================
 # Standalone Execution
 # =============================================================================
-<%
-# Check for data sources in network and observations
-network_data_source = getattr(network, 'data_source', None)
-has_network_source = network_data_source is not None and hasattr(network_data_source, 'name') and network_data_source.name
-
-# Check observations for data sources
-obs_dict = experiment.observations or {}
-obs_data_sources = {k: v.data_source for k, v in obs_dict.items() if hasattr(v, 'data_source') and v.data_source}
-%>
-% if has_network_source or obs_data_sources:
 
 if __name__ == "__main__":
-    from tvbo import SimulationExperiment
+    import pickle
+    from pathlib import Path
 
-    # Load experiment from YAML
-    exp = SimulationExperiment.from_file(__file__.replace('.py', '.yaml'))
+    print("=" * 60)
+    print("${dynamics_class} Experiment - Standalone Execution")
+    print("=" * 60)
 
-% for obs_name, obs_src in obs_data_sources.items():
-
-    # Load ${obs_name} from: ${obs_src.name if hasattr(obs_src, 'name') else obs_src}
-    ${obs_name} = load_functional_connectivity(name="${obs_src.name if hasattr(obs_src, 'name') else obs_src}")
-% endfor
-
-    # Run experiment
-% if has_optimization and has_algorithms:
-    results = exp.run(
-        "tvboptim",
+    # Run the experiment
+    # Order: 1) Simulation → 2) Explorations → 3) Algorithms → 4) Optimization
+    results = run_experiment(
+        weights,  # Uses module-level weights from network loading
+        distances=distances if 'distances' in dir() else None,
+        region_labels=region_labels if 'region_labels' in dir() else None,
         mode="all",
-% for obs_name in obs_data_sources.keys():
-        ${obs_name}=${obs_name},
-% endfor
     )
-% elif has_optimization:
-    results = exp.run(
-        "tvboptim",
-        mode="optimization",
-% for obs_name in obs_data_sources.keys():
-        ${obs_name}=${obs_name},
-% endfor
-    )
-% elif has_algorithms:
-    results = exp.run(
-        "tvboptim",
-        mode="all",
-% for obs_name in obs_data_sources.keys():
-        ${obs_name}=${obs_name},
-% endfor
-    )
-% else:
-    results = exp.run("tvboptim")
-% endif
 
-    print(f"\nExperiment complete. Results: {list(results.keys())}")
-% endif
+    # Save results
+    output_path = Path(__file__).parent / "${safe_name(experiment.label or 'experiment')}_results.pkl"
+    with open(output_path, 'wb') as f:
+        pickle.dump(results, f)
+    print(f"\nResults saved to: {output_path}")
+
+    # Summary
+    print("\n" + "=" * 60)
+    print("Results Summary")
+    print("=" * 60)
+    print(f"  Keys: {list(results.keys())}")
+    if hasattr(results, 'observations'):
+        print(f"  Observations: {list(results.observations.keys())}")
+    if hasattr(results, 'algorithms'):
+        print(f"  Algorithms: {list(results.algorithms.keys())}")
+    if hasattr(results, 'fitted_params'):
+        print(f"  Optimization: Complete")
+
