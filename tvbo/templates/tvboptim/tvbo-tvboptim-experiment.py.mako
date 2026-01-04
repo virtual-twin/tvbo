@@ -20,6 +20,11 @@ Output:
 <%namespace name="const" file="/base/constants.mako"/>
 <%
 from tvbo.export.code import render_expression
+from tvbo.templates.tvboptim.utils import (
+    safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
+    get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
+    parse_exploration
+)
 import numpy as np
 
 # Must have experiment
@@ -41,11 +46,6 @@ else:
 # JAX code generation helpers
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
-
-# Helper function for safe Python identifiers
-def safe_name(name):
-    """Convert name to valid Python identifier."""
-    return str(name).replace(' ', '_').replace('-', '_').lower()
 
 # Extract key metadata from model
 state_names = list(model.state_variables.keys())
@@ -143,41 +143,11 @@ accelerator = str(exec_config.accelerator) if exec_config and exec_config.accele
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 
-# Observation names (for computing all observations in run_simulation)
-def obs_has_all_args(obs):
-    """Check if observation has all required arguments satisfied."""
-    pipeline = obs.pipeline or []
-    has_source = obs.source or obs.source_observation
-
-    for step_idx, func in enumerate(pipeline):
-        is_first_step = step_idx == 0
-        args = func.arguments or []
-        for arg in args:
-            if arg.name and arg.value is None:
-                # First step's data-like args are satisfied by source
-                if is_first_step and has_source and arg.name in ('data', 'X', 'x', 'input', 'timeseries', 'a'):
-                    continue  # Implicitly satisfied
-                return False  # Argument without value = requires runtime input
-    return True
-
-def is_network_observation(obs):
-    """Check if observation is a network observation (static data from BIDS)."""
-    if not obs:
-        return False
-    source = getattr(obs, 'source', None)
-    if source and str(source).startswith('network.observations'):
-        return True
-    return False
-
 # Build observations dict from experiment.observations
 observations_dict = dict(experiment.observations.items()) if experiment.observations else {}
-_obs_list = list(observations_dict.items())
 
-# Identify network observations (static data, not simulation-derived)
-network_observation_names = set(name for name, obs in _obs_list if is_network_observation(obs))
-
-# Include all observations that have all required arguments satisfied
-observation_names = [name for name, obs in _obs_list if obs_has_all_args(obs)]
+# Categorize observations using utils
+network_observation_names, observation_names = get_observation_refs(observations_dict)
 
 # Class name from model
 dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else 'GeneratedDynamics'
@@ -247,193 +217,11 @@ coupling_optim_params = optim_coupling_params  # Alias for backwards compatibili
 # =============================================================================
 # Parse ALL optimization stages into structured list
 # =============================================================================
-import ast  # For safely parsing stringified dicts
+# Coupling keys for parse_free_param
+coupling_keys = set(all_couplings.keys())
 
-def get_domain_bounds(param_name):
-    """Lookup domain bounds from model.parameters or coupling.parameters.
-    Returns (lo, hi) tuple, where None means unbounded.
-    """
-    lo, hi = None, None
-
-    def extract_bounds(param):
-        """Extract (lo, hi) from param.domain if defined."""
-        if param.domain:
-            lo_val = param.domain.lo if param.domain.lo is not None else None
-            hi_val = param.domain.hi if param.domain.hi is not None else None
-            try:
-                return (float(lo_val) if lo_val is not None else None,
-                        float(hi_val) if hi_val is not None else None)
-            except (TypeError, ValueError):
-                pass
-        return (None, None)
-
-    # Check dynamics parameters
-    if model.parameters and param_name in model.parameters:
-        lo, hi = extract_bounds(model.parameters[param_name])
-
-    # Check coupling parameters from all_couplings
-    if lo is None and hi is None:
-        for ck, cobj in all_couplings.items():
-            if cobj.parameters and param_name in cobj.parameters:
-                lo, hi = extract_bounds(cobj.parameters[param_name])
-                break
-
-    return (lo, hi)
-
-def parse_free_param(fp):
-    """Parse a free_parameter entry which could be:
-    - str: simple param name like 'w' (dynamics param, infers local_dynamics)
-    - str: dotted notation like 'ReducedWongWang.w' (dynamics param, explicit)
-    - str: dotted notation like 'FastLinearCoupling.G' (coupling param)
-    - str: stringified dict like "{'name': 'w', 'heterogeneous': True}"
-    - dict: actual dict with 'name' key
-    - object: with .name attribute
-
-    Dotted notation: ClassName.param_name
-    - If ClassName matches a coupling key → coupling param
-    - Otherwise → dynamics param (ClassName is dynamics name)
-
-    Returns dict with: name, heterogeneous, lower_bound, upper_bound,
-                       coupling_key (if coupling), dynamics_key (if explicit dynamics)
-    """
-    # Get known coupling keys to distinguish coupling vs dynamics
-    coupling_keys = set(all_couplings.keys())
-
-    result = None
-    source_key = None  # Will be set to coupling_key or dynamics_key
-    is_coupling = False
-
-    if isinstance(fp, str):
-        # Check if it looks like a stringified dict
-        stripped = fp.strip()
-        if stripped.startswith('{') and stripped.endswith('}'):
-            try:
-                parsed = ast.literal_eval(stripped)
-                if isinstance(parsed, dict) and 'name' in parsed:
-                    param_name = str(parsed['name'])
-                    # Check for dotted notation in parsed name
-                    if '.' in param_name:
-                        prefix, param_name = param_name.rsplit('.', 1)
-                        is_coupling = prefix in coupling_keys
-                        source_key = prefix
-                    result = {
-                        'name': param_name,
-                        'heterogeneous': bool(parsed.get('heterogeneous', False)),
-                        'shape': parsed.get('shape', None),
-                        'coupling_key': source_key if is_coupling else None,
-                        'dynamics_key': source_key if not is_coupling and source_key else None,
-                    }
-            except (ValueError, SyntaxError):
-                pass
-        if result is None:
-            # Check for dotted notation: ClassName.param_name
-            if '.' in stripped:
-                prefix, param_name = stripped.rsplit('.', 1)
-                is_coupling = prefix in coupling_keys
-                source_key = prefix
-                result = {
-                    'name': param_name,
-                    'heterogeneous': False,
-                    'shape': None,
-                    'coupling_key': source_key if is_coupling else None,
-                    'dynamics_key': source_key if not is_coupling else None,
-                }
-            else:
-                # Simple string param name (dynamics, no explicit class)
-                result = {'name': fp, 'heterogeneous': False, 'shape': None, 'coupling_key': None, 'dynamics_key': None}
-    elif not isinstance(fp, (str, dict)):
-        # Parameter object (most common case from LinkML)
-        param_name = str(fp.name)
-        # Check for dotted notation
-        if '.' in param_name:
-            prefix, param_name = param_name.rsplit('.', 1)
-            is_coupling = prefix in coupling_keys
-            source_key = prefix
-        result = {
-            'name': param_name,
-            'heterogeneous': bool(fp.heterogeneous),
-            'shape': str(fp.shape) if fp.shape else None,
-            'coupling_key': source_key if is_coupling else None,
-            'dynamics_key': source_key if not is_coupling and source_key else None,
-        }
-        # Check if domain is specified directly on the free_parameter object
-        if fp.domain:
-            if fp.domain.lo is not None:
-                try:
-                    result['lower_bound'] = float(fp.domain.lo)
-                except (TypeError, ValueError):
-                    pass
-            if fp.domain.hi is not None:
-                try:
-                    result['upper_bound'] = float(fp.domain.hi)
-                except (TypeError, ValueError):
-                    pass
-    elif isinstance(fp, dict) and 'name' in fp:
-        param_name = str(fp['name'])
-        source_key = None
-        is_coupling = False
-        # Check for dotted notation
-        if '.' in param_name:
-            prefix, param_name = param_name.rsplit('.', 1)
-            is_coupling = prefix in coupling_keys
-            source_key = prefix
-        shape_str = fp.get('shape', None)
-        result = {
-            'name': param_name,
-            'heterogeneous': bool(fp.get('heterogeneous', False)),
-            'shape': str(shape_str) if shape_str else None,
-            'coupling_key': source_key if is_coupling else None,
-            'dynamics_key': source_key if not is_coupling and source_key else None,
-        }
-        # Check for domain in dict
-        if 'domain' in fp:
-            domain = fp['domain']
-            if isinstance(domain, dict):
-                if 'lo' in domain:
-                    try:
-                        result['lower_bound'] = float(domain['lo'])
-                    except (TypeError, ValueError):
-                        pass
-                if 'hi' in domain:
-                    try:
-                        result['upper_bound'] = float(domain['hi'])
-                    except (TypeError, ValueError):
-                        pass
-
-    if result is None:
-        return None
-
-    # Ensure all keys exist
-    result.setdefault('coupling_key', None)
-    result.setdefault('dynamics_key', None)
-
-    # If no bounds from free_parameter, lookup from model/coupling parameters
-    if 'lower_bound' not in result or 'upper_bound' not in result:
-        model_lo, model_hi = get_domain_bounds(result['name'])
-        if 'lower_bound' not in result and model_lo is not None:
-            result['lower_bound'] = model_lo
-        if 'upper_bound' not in result and model_hi is not None:
-            result['upper_bound'] = model_hi
-
-    # Set None for missing bounds (will become +/- inf)
-    result.setdefault('lower_bound', None)
-    result.setdefault('upper_bound', None)
-    result.setdefault('shape', None)
-
-    # AUTO-DETECT coupling parameters if not explicitly specified
-    # Check if parameter exists in any coupling's parameters but not in dynamics
-    if result.get('coupling_key') is None:
-        param_name = result['name']
-        # Check if it's NOT a dynamics parameter
-        is_dynamics = model and hasattr(model, 'parameters') and param_name in model.parameters
-        if not is_dynamics:
-            # Check all couplings for this parameter
-            for ck, cobj in all_couplings.items():
-                if hasattr(cobj, 'parameters') and cobj.parameters and param_name in cobj.parameters:
-                    result['coupling_key'] = ck
-                    break
-
-    return result
+# Wrapper for parse_free_param that passes model context
+_parse_free_param = lambda fp: parse_free_param(fp, coupling_keys, model, all_couplings)
 
 optimization_stages = []
 for opt in optim_list:
@@ -459,7 +247,7 @@ for opt in optim_list:
 
         # Schema: free_parameters and hyperparameters are lists (inlined_as_list: true)
         for fp in (stage.free_parameters or []):
-            parsed = parse_free_param(fp)
+            parsed = _parse_free_param(fp)
             if parsed:
                 stage_info['free_parameters'].append(parsed)
 
@@ -928,117 +716,16 @@ if '_init_precomputed' in dir():
 # Loss Functions (Generated from Metadata)
 # =============================================================================
 <%
-# Extract loss functions from optimization metadata
-# Loss is now a FunctionCall - it references a function, not defines one
-# Argument value patterns:
-#   - observations.simulated_psd.psd  -> call simulated_psd(), get ['psd']
-#   - observations.simulated_psd      -> call simulated_psd(), get primary output
-#   - (no value)                      -> runtime input (target_data)
-# Aggregate patterns:
-#   - aggregate.over=node, aggregate.type=mean -> vmap over axis 0, then .mean()
-loss_functions = []
-for opt in optim_list:
-    loss_call = opt.loss
-    if loss_call:
-        # FunctionCall has 'function' (reference) or 'callable' (inline)
-        func_ref = loss_call.function
-        callable_ref = loss_call.callable
+# Parse loss functions from optimization metadata using utility
+loss_functions = [parse_loss_function(opt) for opt in optim_list]
+loss_functions = [lf for lf in loss_functions if lf]  # Filter out None
 
-        # Determine the function name to call
-        if func_ref:
-            func_name = str(func_ref) if isinstance(func_ref, str) else (func_ref.name if hasattr(func_ref, 'name') else str(func_ref))
-        elif callable_ref:
-            func_name = callable_ref.name or callable_ref.qualname or 'loss'
-        else:
-            func_name = 'loss'
-
-        # Parse aggregate specification
-        aggregate = loss_call.aggregate
-        agg_over = None
-        agg_type = None
-        if aggregate:
-            # Handle enum values (e.g., DimensionType.node -> 'node')
-            agg_over = str(aggregate.over).split('.')[-1] if aggregate.over else None
-            agg_type = str(aggregate.type).split('.')[-1] if aggregate.type else 'mean'
-
-        # Parse arguments: value = observation reference, no value = runtime input
-        loss_args = loss_call.arguments or []
-        parsed_args = []
-        obs_refs = set()  # Track which observations we need to call
-        for arg in loss_args:
-            arg_name = arg.name
-            arg_value = arg.value
-            if arg_name:
-                if arg_value is not None:
-                    val_str = str(arg_value)
-                    # Check if it's a scalar constant (numeric)
-                    try:
-                        float_val = float(arg_value)
-                        # It's a numeric constant
-                        parsed_args.append({
-                            'name': arg_name,
-                            'type': 'constant',
-                            'value': arg_value,
-                        })
-                        continue
-                    except (ValueError, TypeError):
-                        pass
-                    # Parse: observations.obs_name.output_key or observations.obs_name
-                    if val_str.startswith('observations.'):
-                        parts = val_str.split('.', 2)  # ['observations', 'obs_name', 'output_key']
-                        obs_name = parts[1] if len(parts) > 1 else None
-                        output_key = parts[2] if len(parts) > 2 else None
-                        if obs_name:
-                            obs_refs.add(obs_name)
-                            parsed_args.append({
-                                'name': arg_name,
-                                'type': 'observation',
-                                'obs_name': obs_name,
-                                'output_key': output_key,
-                            })
-                    else:
-                        # Fallback: treat as literal or old-style obs_name.key
-                        if '.' in val_str:
-                            obs_name, output_key = val_str.split('.', 1)
-                            obs_refs.add(obs_name)
-                            parsed_args.append({
-                                'name': arg_name,
-                                'type': 'observation',
-                                'obs_name': obs_name,
-                                'output_key': output_key,
-                            })
-                        else:
-                            # Just observation name - use primary output
-                            obs_refs.add(val_str)
-                            parsed_args.append({
-                                'name': arg_name,
-                                'type': 'observation',
-                                'obs_name': val_str,
-                                'output_key': None,
-                            })
-                else:
-                    # No value = runtime input (passed via kwargs with same name)
-                    parsed_args.append({
-                        'name': arg_name,
-                        'type': 'runtime',
-                        'kwarg_name': arg_name,  # Use arg name as kwarg key
-                    })
-
-        loss_functions.append({
-            'opt_name': opt.name or 'loss',
-            'func_name': func_name,
-            'args': parsed_args,
-            'obs_refs': obs_refs,
-            'agg_over': agg_over,
-            'agg_type': agg_type,
-        })
-
-    # Collect all runtime kwargs needed for loss functions
-    runtime_kwargs_needed = set()
-    for lf in loss_functions:
-        for arg in lf['args']:
-            if arg['type'] == 'runtime':
-                runtime_kwargs_needed.add(arg['kwarg_name'])
+# Collect all runtime kwargs needed for loss functions
+runtime_kwargs_needed = set()
+for lf in loss_functions:
+    for arg in lf['args']:
+        if arg['type'] == 'runtime':
+            runtime_kwargs_needed.add(arg['kwarg_name'])
 %>
 def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwargs):
     """Create a loss function closure for optimization.
@@ -1641,7 +1328,10 @@ def run_experiment(
 
         # Storage for algorithm results when running all
         algorithms_results = Bunch()
-        current_state = state  # Track state through algorithm chain
+
+        # Save initial state for independent algorithms
+        # (algorithms without depends_on should always start from initial state)
+        initial_state = copy.deepcopy(state)
 
         # Run the specified algorithm(s)
         algo_result = None
@@ -1658,35 +1348,20 @@ def run_experiment(
             deps = [deps]
         algorithms_deps[aname] = list(deps)
 
-    # Find algorithms that are included in other algorithms
-    # These should NOT be run standalone when mode='all'
-    included_algorithms = set()
-    for a in algorithms_list:
-        includes = getattr(a, 'includes', None) or []
-        for inc in includes:
-            if hasattr(inc, 'algorithm'):
-                inc_name = safe_name(str(getattr(inc, 'algorithm', '')))
-            else:
-                inc_name = safe_name(str(inc))
-            if inc_name:
-                included_algorithms.add(inc_name)
-
     # Get algorithms in dependency order (topological sort)
-    # Exclude algorithms that are included in other algorithms
+    # ALL algorithms run - order determined by depends_on declarations
     def get_sorted_algorithms():
-        """Return algorithm names in dependency order, excluding included algorithms."""
-        # Start with algorithms that are NOT included in others
-        all_algos = set(algorithms_deps.keys())
-        top_level_algos = all_algos - included_algorithms
-
+        """Return ALL algorithm names in dependency order."""
         sorted_names = []
-        remaining = set(top_level_algos)
+        remaining = set(algorithms_deps.keys())
         while remaining:
             # Find algorithms with all dependencies satisfied
             ready = [n for n in remaining if all(d in sorted_names or d not in remaining for d in algorithms_deps[n])]
             if not ready:
                 # Circular dependency or missing dep - just add remaining
                 ready = list(remaining)
+            # Sort ready algorithms alphabetically for deterministic order among equals
+            ready = sorted(ready)
             for n in ready:
                 sorted_names.append(n)
                 remaining.discard(n)
@@ -1737,8 +1412,9 @@ def run_experiment(
 %>
         # Define which algorithms to run
         if run_all_algorithms:
+            # All algorithms run in dependency order (topological sort)
             algorithms_to_run = [${', '.join(f"'{n}'" for n in sorted_algo_names)}]
-            print(f"  Algorithms to run: {algorithms_to_run}")
+            print(f"  Algorithms to run (dependency order): {algorithms_to_run}")
         else:
             algorithms_to_run = [algorithm_name]
 
@@ -1802,21 +1478,43 @@ def run_experiment(
 
     # Observation reference (deprecated - now use observations list)
     observation_ref = None
+
+    # Get dependencies for this algorithm
+    algo_deps = algorithms_deps.get(algo_name, [])
+    has_deps = len(algo_deps) > 0
 %>
             if algorithm_name == '${algo_name}':
                 # Create algorithm-specific model_fn with simulation_period
                 algo_model_fn, algo_state = prepare(network, Heun(), t1=${float(algo_sim_period)}, dt=${dt})
 
-                # Copy PARAMETER VALUES from settled main state (dynamics, coupling params)
-                for key in state.dynamics.keys():
+                # Determine source state: depends_on result or initial_state
+% if has_deps:
+                # This algorithm depends on: ${algo_deps}
+                # Copy from last dependency's result state (or initial if not yet run)
+                _dep_name = '${algo_deps[-1]}'  # Use last dependency
+                if _dep_name in algorithms_results and hasattr(algorithms_results[_dep_name], 'state'):
+                    _source_state = algorithms_results[_dep_name].state
+                    if algo_verbose:
+                        print(f"    (using state from dependency: {_dep_name})")
+                else:
+                    _source_state = initial_state
+                    if algo_verbose:
+                        print(f"    (dependency {_dep_name} not yet run, using initial state)")
+% else:
+                # No dependencies - use initial state
+                _source_state = initial_state
+% endif
+
+                # Copy PARAMETER VALUES from source state (dynamics, coupling params)
+                for key in _source_state.dynamics.keys():
                     if not key.startswith('_'):
-                        algo_state.dynamics[key] = state.dynamics[key]
-                for coupling_name in state.coupling.keys():
+                        algo_state.dynamics[key] = _source_state.dynamics[key]
+                for coupling_name in _source_state.coupling.keys():
                     if not coupling_name.startswith('_'):
-                        for key in state.coupling[coupling_name].keys():
+                        for key in _source_state.coupling[coupling_name].keys():
                             if not key.startswith('_'):
-                                algo_state.coupling[coupling_name][key] = state.coupling[coupling_name][key]
-                algo_state.initial_state.dynamics = state.initial_state.dynamics
+                                algo_state.coupling[coupling_name][key] = _source_state.coupling[coupling_name][key]
+                algo_state.initial_state.dynamics = _source_state.initial_state.dynamics
 
 % for inp_name in input_names:
                 # Validate required input: ${inp_name}
@@ -1860,7 +1558,12 @@ def run_experiment(
 % endfor
 % if algo_needs_buffers:
 % for src_obs in algo_source_obs_needed:
+% if has_deps:
+                    # Pass buffer from dependency if available
+                    ${src_obs}_buffer=(algorithms_results.get('${algo_deps[-1]}', Bunch()).get('${src_obs}_buffer', None) if '${algo_deps[-1]}' in algorithms_results else kwargs.get('${src_obs}_buffer', None)),
+% else:
                     ${src_obs}_buffer=kwargs.get('${src_obs}_buffer', None),  # Optional: pass from previous algorithm
+% endif
 % endfor
 % endif
 % if observation_ref:
@@ -1874,11 +1577,7 @@ def run_experiment(
             if algo_result is not None:
                 # Store result for this algorithm
                 algorithms_results[algorithm_name] = algo_result
-                # Update state for next algorithm in chain (if it depends on this one)
-                if hasattr(algo_result, 'state'):
-                    current_state = algo_result.state
-                    # Also update state.dynamics/coupling for next algo_state creation
-                    state = current_state
+                # Results are stored; dependent algorithms will look them up via algorithms_results
 
         # End of algorithms_to_run loop
 

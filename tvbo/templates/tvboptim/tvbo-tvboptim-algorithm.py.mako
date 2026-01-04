@@ -12,6 +12,10 @@ Context: experiment (SimulationExperiment instance)
 </%doc>
 <%
 from tvbo.export.code import render_expression
+from tvbo.templates.tvboptim.utils import (
+    safe_name, as_list, get_attr, is_network_observation, is_external_observation,
+    get_include_info, get_all_observations_from_algo, get_all_hyperparams
+)
 
 # Define jaxcode locally
 _exp_functions = experiment.functions or {}
@@ -41,18 +45,6 @@ algorithms_dict = {}
 for _algo in algorithms_list:
     algorithms_dict[str(_algo.name)] = _algo
 
-def safe_name(name):
-    """Convert name to valid Python identifier."""
-    return str(name).replace(' ', '_').replace('-', '_').lower()
-
-def as_list(obj):
-    """Convert dict or list to list of values."""
-    if obj is None:
-        return []
-    if hasattr(obj, 'values'):
-        return list(obj.values())
-    return list(obj)
-
 def get_func_name(func_call):
     """Get function name from FunctionCall."""
     return str(func_call.function) if func_call.function else None
@@ -68,47 +60,15 @@ def get_target_name(rule):
     tp = rule.target_parameter
     return str(tp.name) if hasattr(tp, 'name') else str(tp)
 
-def get_include_info(inc):
-    """Extract algorithm name and argument overrides from AlgorithmInclude.
-
-    Returns (algo_name, {param_name: value}) tuple.
-    """
-    # Handle AlgorithmInclude object
-    if hasattr(inc, 'algorithm'):
-        algo_name = str(inc.algorithm.name) if hasattr(inc.algorithm, 'name') else str(inc.algorithm)
-        args = {}
-        for arg in as_list(inc.arguments):
-            args[str(arg.name)] = arg.value
-        return algo_name, args
-    # Fallback for simple string reference
-    return str(inc), {}
+# Note: get_include_info is imported from utils
 
 def get_obs_names(algo):
     """Get observation names as strings."""
-    return [str(o) for o in as_list(algo.observations)]
+    return [str(o) for o in as_list(getattr(algo, 'observations', None))]
 
 def get_all_observations(algo, algorithms_dict):
-    """Get all observation names including from included algorithms.
-
-    Preserves order: included algorithm observations first, then this algorithm's.
-    """
-    obs = []
-    seen = set()
-    # First from included algorithms
-    for inc in as_list(algo.includes):
-        inc_name, _ = get_include_info(inc)
-        inc_algo = algorithms_dict.get(inc_name)
-        if inc_algo:
-            for o in get_obs_names(inc_algo):
-                if o not in seen:
-                    obs.append(o)
-                    seen.add(o)
-    # Then this algorithm's observations
-    for o in get_obs_names(algo):
-        if o not in seen:
-            obs.append(o)
-            seen.add(o)
-    return obs
+    """Get all observation names including from included algorithms."""
+    return get_all_observations_from_algo(algo, algorithms_dict)
 
 def get_all_update_rules(algo, algorithms_dict):
     """Get all update rules including from included algorithms.
@@ -119,69 +79,30 @@ def get_all_update_rules(algo, algorithms_dict):
     """
     all_rules = []
     # First, add rules from included algorithms with their argument overrides
-    for inc in as_list(algo.includes):
+    for inc in as_list(getattr(algo, 'includes', None)):
         inc_name, arg_overrides = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
         if inc_algo:
-            for rule in as_list(inc_algo.update_rules):
+            for rule in as_list(getattr(inc_algo, 'update_rules', None)):
                 all_rules.append((rule, inc_name, arg_overrides))
     # Then add this algorithm's own rules (no overrides needed)
-    for rule in as_list(algo.update_rules):
+    for rule in as_list(getattr(algo, 'update_rules', None)):
         all_rules.append((rule, str(algo.name), {}))
     return all_rules
-
-def _is_external_observation(obs_def):
-    """Check if observation is external (has data_source or source pointing to network.observations)."""
-    if not obs_def:
-        return False
-    # Explicit data_source
-    if getattr(obs_def, 'data_source', None):
-        return True
-    # Source pointing to network.observations.* (e.g., network.observations.BoldCorrelation)
-    source = getattr(obs_def, 'source', None)
-    if source and str(source).startswith('network.observations'):
-        return True
-    return False
 
 def get_external_inputs(algo, obs_dict, algorithms_dict=None):
     """Get observations that have external data_source or network.observations source."""
     obs_names = get_all_observations(algo, algorithms_dict or {}) if algorithms_dict else get_obs_names(algo)
-    return [o for o in obs_names if _is_external_observation(obs_dict.get(o))]
+    return [o for o in obs_names if is_external_observation(obs_dict.get(o))]
 
 def get_simulated_observations(algo, obs_dict, algorithms_dict=None):
     """Get observations that are simulated (not external)."""
     obs_names = get_all_observations(algo, algorithms_dict or {}) if algorithms_dict else get_obs_names(algo)
-    return [o for o in obs_names if not _is_external_observation(obs_dict.get(o))]
+    return [o for o in obs_names if not is_external_observation(obs_dict.get(o))]
 
 def get_hyperparam_dict(algo):
     """Build {name: value} dict from hyperparameters (THIS algorithm only)."""
-    return {str(hp.name): hp.value for hp in as_list(algo.hyperparameters)}
-
-def get_all_hyperparams(algo, algorithms_dict):
-    """Get all hyperparameters including from included algorithms.
-
-    Returns dict {name: value}. Included algorithm hyperparameters come first,
-    then this algorithm's hyperparameters override. Argument overrides from
-    includes are applied.
-    """
-    all_hp = {}
-    # First, add hyperparameters from included algorithms (with argument overrides)
-    for inc in as_list(algo.includes):
-        inc_name, arg_overrides = get_include_info(inc)
-        inc_algo = algorithms_dict.get(inc_name)
-        if inc_algo:
-            # Get base hyperparameters from included algorithm
-            for hp in as_list(inc_algo.hyperparameters):
-                hp_name = str(hp.name)
-                # Use override if present, else use original value
-                if hp_name in arg_overrides:
-                    all_hp[hp_name] = arg_overrides[hp_name]
-                else:
-                    all_hp[hp_name] = hp.value
-    # Then add this algorithm's own hyperparameters (override included)
-    for hp in as_list(algo.hyperparameters):
-        all_hp[str(hp.name)] = hp.value
-    return all_hp
+    return {str(hp.name): hp.value for hp in as_list(getattr(algo, 'hyperparameters', None))}
 
 def get_all_functions(algo, algorithms_dict):
     """Get all functions including from included algorithms.
@@ -190,13 +111,13 @@ def get_all_functions(algo, algorithms_dict):
     """
     all_funcs = []
     # First, add functions from included algorithms
-    for inc in as_list(algo.includes):
+    for inc in as_list(getattr(algo, 'includes', None)):
         inc_name, _ = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
         if inc_algo:
-            all_funcs.extend(as_list(inc_algo.functions))
+            all_funcs.extend(as_list(getattr(inc_algo, 'functions', None)))
     # Then add this algorithm's own functions
-    all_funcs.extend(as_list(algo.functions))
+    all_funcs.extend(as_list(getattr(algo, 'functions', None)))
     return all_funcs
 
 # Extract observations dict for reference
