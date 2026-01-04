@@ -757,7 +757,7 @@ optimization:
 execution:
     n_workers: 8
     precision: float64
-    random_seed: 0
+    random_seed: 43
 
 # =============================================================================
 # REFERENCES

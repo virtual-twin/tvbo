@@ -17,6 +17,7 @@ Context: experiment (SimulationExperiment instance)
 </%doc>
 <%
 from tvbo.export.code import render_expression
+from tvbo.templates.tvboptim.utils import get_attr, to_numeric
 
 # =============================================================================
 # Configuration
@@ -28,21 +29,6 @@ dt = experiment.integration.step_size if experiment.integration else 0.1
 # =============================================================================
 # Helper Functions
 # =============================================================================
-def to_numeric(val):
-    """Convert string to numeric if possible."""
-    if isinstance(val, (int, float)):
-        return val
-    if isinstance(val, str):
-        try:
-            return int(val) if '.' not in val else float(val)
-        except ValueError:
-            return val
-    return val
-
-def get_attr(obj, name, default=None):
-    """Safe attribute access."""
-    return getattr(obj, name, default) if obj else default
-
 def is_numeric_string(s):
     """Check if string represents a number."""
     return s.replace('.', '').replace('-', '').replace('_', '').isdigit()
