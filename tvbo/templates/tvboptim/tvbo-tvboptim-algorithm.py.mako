@@ -70,7 +70,7 @@ def get_target_name(rule):
 
 def get_include_info(inc):
     """Extract algorithm name and argument overrides from AlgorithmInclude.
-    
+
     Returns (algo_name, {param_name: value}) tuple.
     """
     # Handle AlgorithmInclude object
@@ -89,7 +89,7 @@ def get_obs_names(algo):
 
 def get_all_observations(algo, algorithms_dict):
     """Get all observation names including from included algorithms.
-    
+
     Preserves order: included algorithm observations first, then this algorithm's.
     """
     obs = []
@@ -112,7 +112,7 @@ def get_all_observations(algo, algorithms_dict):
 
 def get_all_update_rules(algo, algorithms_dict):
     """Get all update rules including from included algorithms.
-    
+
     Returns list of (rule, source_algo_name, arg_overrides) tuples.
     arg_overrides is a dict of {param_name: value} for hyperparameter overrides.
     Included algorithm rules come first, then this algorithm's rules.
@@ -146,7 +146,7 @@ def get_hyperparam_dict(algo):
 
 def get_all_hyperparams(algo, algorithms_dict):
     """Get all hyperparameters including from included algorithms.
-    
+
     Returns dict {name: value}. Included algorithm hyperparameters come first,
     then this algorithm's hyperparameters override. Argument overrides from
     includes are applied.
@@ -172,7 +172,7 @@ def get_all_hyperparams(algo, algorithms_dict):
 
 def get_all_functions(algo, algorithms_dict):
     """Get all functions including from included algorithms.
-    
+
     Returns list of FunctionCall objects. Included algorithm functions come first.
     """
     all_funcs = []
@@ -831,7 +831,7 @@ def run_${algo_name}(
             fname = get_func_name(fc)
             if fname:
                 progress_items.append(fname)
-    
+
     # Then add all simulated observations
     for obs in simulated_observations:
         if obs not in progress_items:
