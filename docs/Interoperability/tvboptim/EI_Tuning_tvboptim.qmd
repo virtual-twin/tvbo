@@ -11,131 +11,209 @@ import os
 os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment
-from tvboptim.data import load_structural_connectivity, load_functional_connectivity
-from tvboptim.observations.observation import fc_corr, rmse, compute_fc
 from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import numpy as np
-import jax.numpy as jnp
 
-# Load experiment and network
+# Load experiment (network + target FC loaded from BIDS automatically)
 exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/EI_Tuning_FIC_EIB_Optimization.yaml"
 )
 
+# Run all algorithms: fic, fic_eib, eib
 results = exp.run("tvboptim", mode="all")
+```
 
+```{python}
+# Extract individual algorithm results
+fic = results.fic
+fic_eib = results.fic_eib
+eib = results.eib
 
+# Get target FC from network observations (loaded from BIDS)
+fc_target = np.array(exp.network.observations['BoldCorrelation'])
 ```
 
 ## Results
 
 ```{python}
 #| label: fig-ei-tuning-results
-#| fig-cap: "**EI Tuning Results.** (A) S_e before FIC. (B) S_e after FIC. (C) FIC convergence. (D) J_i distribution. (E-G) FC matrices: target, post-FIC, post-EIB. (H) EIB convergence. (I) wLRE weights."
-#| fig-height: 12
+#| fig-cap: "**EI Tuning Results.** Row 1: FIC algorithm (local E-I balance). Row 2: Combined FIC+EIB algorithm. Row 3: EIB standalone (post-FIC refinement)."
+#| fig-height: 14
 
 cmap = plt.cm.cividis
 accent_blue = cmap(0.3)
 accent_gold = cmap(0.85)
 accent_mid = cmap(0.6)
 
+# 3 rows x 4 columns layout
 mosaic = """
-AABBCC
-DDEEFF
-GGHHII
+AABBCCDD
+EEFFGGHH
+IIJJKKLL
 """
-fig, axes = plt.subplot_mosaic(mosaic, figsize=(12, 10))
+fig, axes = plt.subplot_mosaic(mosaic, figsize=(16, 12))
+
+# =============================================================================
+# ROW 1: FIC Algorithm Results (Local E-I Balance Tuning)
+# =============================================================================
 
 # A: S_e Before FIC
 ax = axes["A"]
-data = results.fic.pre_tuning.data[:, 0, :]
+data = np.array(fic.pre_tuning.data[:, 0, :])
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax.plot(data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.5, alpha=0.6)
 ax.axhline(0.25, color=accent_gold, ls='--', lw=2, label='Target')
-ax.set(xlabel="Time step", ylabel="S_e", title="A. Before FIC")
+ax.set(xlabel="Time step", ylabel="S_e", title="A. FIC: Before Tuning")
 ax.set_ylim(0, 1)
-ax.legend()
+ax.legend(loc='upper right')
 
 # B: S_e After FIC
 ax = axes["B"]
-data = fic_results.post_tuning.data[:, 0, :]
+data = np.array(fic.post_tuning.data[:, 0, :])
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax.plot(data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.5, alpha=0.6)
 ax.axhline(0.25, color=accent_gold, ls='--', lw=2, label='Target')
-ax.set(xlabel="Time step", ylabel="S_e", title="B. After FIC")
+ax.set(xlabel="Time step", ylabel="S_e", title="B. FIC: After Tuning")
 ax.set_ylim(0, 1)
-ax.legend()
+ax.legend(loc='upper right')
 
-# C: FIC Convergence
+# C: FIC Convergence (Mean S_e over iterations)
 ax = axes["C"]
-ax.plot(fic_results.history.mean_S_e, lw=2, color=accent_blue, label='Mean S_e')
+mean_Se = np.array(fic.history.mean_S_e)
+ax.plot(mean_Se, lw=2, color=accent_blue, label='Mean S_e')
 ax.axhline(0.25, color=accent_gold, ls='--', lw=2, label='Target')
-ax.set(xlabel="FIC iteration", ylabel="Mean S_e", title="C. FIC Convergence")
-ax.legend()
+ax.set(xlabel="FIC iteration", ylabel="Mean S_e", title="C. FIC: Convergence")
+ax.legend(loc='upper right')
 ax.grid(True, alpha=0.3)
 
-# D: J_i Distribution
+# D: J_i Distribution (fitted inhibitory weights)
 ax = axes["D"]
-J_i = np.array(fic_results.state.dynamics.J_i).flatten()
+J_i = np.array(fic.state.dynamics.J_i).flatten()
 ax.bar(range(len(J_i)), J_i, alpha=0.7, color=accent_mid)
-ax.set(xlabel="Region", ylabel="J_i", title="D. Inhibitory Weights (J_i)")
+ax.set(xlabel="Region", ylabel="J_i", title="D. FIC: Inhibitory Weights")
 ax.grid(True, alpha=0.3, axis='y')
 
-# E: Target FC
+# =============================================================================
+# ROW 2: FIC+EIB Combined Algorithm Results
+# =============================================================================
+
+# E: FC Target (empirical)
 ax = axes["E"]
 fc_plot = np.copy(fc_target)
 np.fill_diagonal(fc_plot, np.nan)
-im = ax.imshow(fc_plot, cmap='cividis', vmin=0, vmax=0.9)
-ax.set(title="E. Target FC")
+im = ax.imshow(fc_plot, cmap='cividis', vmin=-0.2, vmax=0.9)
+ax.set(title="E. Target FC (Empirical)")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
-# F: Post-FIC FC
+# F: FC after FIC+EIB
 ax = axes["F"]
-fc_plot = np.copy(np.array(fc_post_fic))
-np.fill_diagonal(fc_plot, np.nan)
-corr_fic = fc_corr(fc_post_fic, fc_target)
-im = ax.imshow(fc_plot, cmap='cividis', vmin=0, vmax=0.9)
-ax.set(title=f"F. Post-FIC FC (r={corr_fic:.3f})")
-plt.colorbar(im, ax=ax, fraction=0.046)
+# Get final FC from fic_eib fc_buffer (not history)
+fc_fic_eib = np.array(fic_eib.fc_buffer) if hasattr(fic_eib, 'fc_buffer') else None
+if fc_fic_eib is not None and fc_fic_eib.ndim >= 2:
+    # fc_buffer may be (n_regions, n_regions) or (iterations, n_regions, n_regions)
+    if fc_fic_eib.ndim == 3:
+        fc_fic_eib = fc_fic_eib[-1]  # Take last iteration
+    fc_plot = np.copy(fc_fic_eib)
+    np.fill_diagonal(fc_plot, np.nan)
+    corr_fic_eib = float(fic_eib.history.fc_corr[-1]) if hasattr(fic_eib.history, 'fc_corr') else 0
+    im = ax.imshow(fc_plot, cmap='cividis', vmin=-0.2, vmax=0.9)
+    ax.set(title=f"F. FIC+EIB FC (r={corr_fic_eib:.3f})")
+    plt.colorbar(im, ax=ax, fraction=0.046)
+else:
+    ax.text(0.5, 0.5, "N/A", ha='center', va='center', transform=ax.transAxes)
+    ax.set(title="F. FIC+EIB FC")
 
-# G: Post-EIB FC
+# G: FIC+EIB Convergence (FC correlation)
 ax = axes["G"]
-fc_plot = np.copy(np.array(fc_post_eib))
-np.fill_diagonal(fc_plot, np.nan)
-corr_eib = fc_corr(fc_post_eib, fc_target)
-im = ax.imshow(fc_plot, cmap='cividis', vmin=0, vmax=0.9)
-ax.set(title=f"G. Post-EIB FC (r={corr_eib:.3f})")
-plt.colorbar(im, ax=ax, fraction=0.046)
-
-# H: EIB Convergence (FC correlation and RMSE)
-ax = axes["H"]
 ax2 = ax.twinx()
-fc_corrs = np.array(fic_eib_results.history.fc_corr)
-fc_rmses = np.array(fic_eib_results.history.rmse_fc)
+fc_corrs = np.array(fic_eib.history.fc_corr)
+fc_rmses = np.array(fic_eib.history.fc_rmse)
 l1, = ax.plot(fc_corrs, lw=2, color=accent_blue, label='FC Corr')
 l2, = ax2.plot(fc_rmses, lw=2, color=accent_gold, label='FC RMSE')
-ax.set(xlabel="EIB iteration", ylabel="FC Correlation", title="H. EIB Convergence")
+ax.set(xlabel="FIC+EIB iteration", ylabel="FC Correlation", title="G. FIC+EIB: Convergence")
 ax2.set_ylabel("FC RMSE")
 ax.legend(handles=[l1, l2], loc='center right')
 ax.grid(True, alpha=0.3)
 
-# I: wLRE Weights
-ax = axes["I"]
-wLRE = np.array(fic_eib_results.state.coupling.coupling.wLRE)
+# H: wLRE Weights after FIC+EIB
+ax = axes["H"]
+wLRE = np.array(fic_eib.state.coupling.EIBLinearCoupling.wLRE)
 im = ax.imshow(wLRE, cmap='cividis')
 wLRE_corr = np.corrcoef(wLRE.flatten(), fc_target.flatten())[0, 1]
-ax.set(title=f"I. wLRE (r={wLRE_corr:.3f})")
+ax.set(title=f"H. FIC+EIB: wLRE (r={wLRE_corr:.3f})")
+plt.colorbar(im, ax=ax, fraction=0.046)
+
+# =============================================================================
+# ROW 3: EIB Standalone (Post-FIC Refinement)
+# =============================================================================
+
+# I: FC after EIB (starting from FIC state)
+ax = axes["I"]
+# Get final FC from eib fc_buffer
+fc_eib_final = np.array(eib.fc_buffer) if hasattr(eib, 'fc_buffer') else None
+if fc_eib_final is not None and fc_eib_final.ndim >= 2:
+    if fc_eib_final.ndim == 3:
+        fc_eib_final = fc_eib_final[-1]
+    fc_plot = np.copy(fc_eib_final)
+    np.fill_diagonal(fc_plot, np.nan)
+    corr_eib = float(eib.history.fc_corr[-1]) if hasattr(eib.history, 'fc_corr') else 0
+    im = ax.imshow(fc_plot, cmap='cividis', vmin=-0.2, vmax=0.9)
+    ax.set(title=f"I. EIB FC (r={corr_eib:.3f})")
+    plt.colorbar(im, ax=ax, fraction=0.046)
+else:
+    ax.text(0.5, 0.5, "N/A", ha='center', va='center', transform=ax.transAxes)
+    ax.set(title="I. EIB FC")
+
+# J: EIB Convergence
+ax = axes["J"]
+ax2 = ax.twinx()
+fc_corrs_eib = np.array(eib.history.fc_corr)
+fc_rmses_eib = np.array(eib.history.fc_rmse)
+l1, = ax.plot(fc_corrs_eib, lw=2, color=accent_blue, label='FC Corr')
+l2, = ax2.plot(fc_rmses_eib, lw=2, color=accent_gold, label='FC RMSE')
+ax.set(xlabel="EIB iteration", ylabel="FC Correlation", title="J. EIB: Convergence")
+ax2.set_ylabel("FC RMSE")
+ax.legend(handles=[l1, l2], loc='center right')
+ax.grid(True, alpha=0.3)
+
+# K: wLRE after EIB
+ax = axes["K"]
+wLRE_eib = np.array(eib.state.coupling.EIBLinearCoupling.wLRE)
+im = ax.imshow(wLRE_eib, cmap='cividis')
+wLRE_eib_corr = np.corrcoef(wLRE_eib.flatten(), fc_target.flatten())[0, 1]
+ax.set(title=f"K. EIB: wLRE (r={wLRE_eib_corr:.3f})")
+plt.colorbar(im, ax=ax, fraction=0.046)
+
+# L: wFFI after EIB
+ax = axes["L"]
+wFFI_eib = np.array(eib.state.coupling.EIBLinearCoupling.wFFI)
+im = ax.imshow(wFFI_eib, cmap='cividis')
+ax.set(title="L. EIB: wFFI")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
 plt.tight_layout()
 plt.show()
 
-print(f"\n=== EI Tuning Summary ===")
-print(f"FIC: Mean S_e = {fic_results.history.mean_S_e[-1]:.4f} (target: 0.25)")
-print(f"Post-FIC FC correlation: {corr_fic:.4f}")
-print(f"Post-EIB FC correlation: {corr_eib:.4f}")
-print(f"Improvement: Δr = {corr_eib - corr_fic:+.4f}")
+# =============================================================================
+# Summary Statistics
+# =============================================================================
+print("\n" + "="*60)
+print("EI TUNING SUMMARY")
+print("="*60)
+
+print(f"\nFIC (Local E-I Balance):")
+print(f"  Final Mean S_e: {fic.history.mean_S_e[-1]:.4f} (target: 0.25)")
+print(f"  J_i range: [{J_i.min():.3f}, {J_i.max():.3f}]")
+
+print(f"\nFIC+EIB (Combined):")
+print(f"  Final FC correlation: {fic_eib.history.fc_corr[-1]:.4f}")
+print(f"  Final FC RMSE: {fic_eib.history.fc_rmse[-1]:.4f}")
+
+print(f"\nEIB (Post-FIC Refinement):")
+print(f"  Final FC correlation: {eib.history.fc_corr[-1]:.4f}")
+print(f"  Final FC RMSE: {eib.history.fc_rmse[-1]:.4f}")
+print(f"  Improvement over FIC+EIB: Δr = {eib.history.fc_corr[-1] - fic_eib.history.fc_corr[-1]:+.4f}")
 ```
