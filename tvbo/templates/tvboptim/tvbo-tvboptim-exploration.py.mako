@@ -15,7 +15,7 @@ Output:
 # Get experiment info
 model = experiment.local_dynamics
 network = experiment.network
-n_nodes = network.number_of_regions if network else 1
+n_nodes = N_nodes = network.number_of_regions if network else 1
 
 # Get exploration specifications
 exploration_dict = getattr(experiment, 'explorations', None) or {}

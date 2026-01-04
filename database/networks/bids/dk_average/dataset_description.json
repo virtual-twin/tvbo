@@ -1,0 +1,19 @@
+{
+  "Name": "dk_average connectivity dataset",
+  "BIDSVersion": "1.10.0",
+  "DatasetType": "derivative",
+  "GeneratedBy": [
+    {
+      "Name": "tvboptim",
+      "Version": "0.1.0",
+      "CodeURL": "https://github.com/virtual-twin/tvboptim"
+    }
+  ],
+  "SourceDatasets": [
+    {
+      "DOI": "10.1038/s41467-023-38626-y",
+      "URL": "https://doi.org/10.1038/s41467-023-38626-y"
+    }
+  ],
+  "License": "CC-BY-4.0"
+}

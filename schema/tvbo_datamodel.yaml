@@ -400,6 +400,20 @@ classes:
                 range: Parameter
                 description: "Conduction speed for computing delays from distances"
                 inlined: true
+
+            # BIDS integration (BEP017)
+            bids_dir:
+                range: string
+                description: "Path to BEP017-compliant BIDS directory for loading connectivity matrices"
+            structural_measures:
+                range: string
+                multivalued: true
+                description: "BEP017 measure names for structural connectivity (e.g., streamlineCount, tractLength)"
+            observational_measures:
+                range: string
+                multivalued: true
+                description: "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
+
             distance_unit:
                 range: string
                 description: "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
@@ -1078,14 +1092,12 @@ classes:
                 description: "Previous stage to initialize from. Final values from that stage become initial values for this stage."
 
     Optimization:
+        is_a: OptimizationStage
         description: >-
             Configuration for parameter optimization.
+            Inherits single-stage fields from OptimizationStage.
+            For multi-stage workflows, use 'stages' (ignores inherited single-stage fields).
             Loss equation references observations directly by name.
-            Both simulated and empirical data are observations (use data_source for empirical).
-        slots:
-            - name
-            - label
-            - description
         attributes:
             # Loss specification - FunctionCall that references or inlines the loss function
             loss:
@@ -1106,32 +1118,7 @@ classes:
                 description: >-
                     Ordered list of optimization stages. Stages run sequentially.
                     Stage n+1 starts from optimized values of stage n.
-                    Example: Stage 1 (global params) -> Stage 2 (regional params).
-
-            # Single-stage optimization (backward compatible, simple cases)
-            free_parameters:
-                multivalued: true
-                range: Parameter
-                inlined: false
-                description: "Parameters to optimize (single-stage mode, ignored if stages defined)"
-            algorithm:
-                range: string
-                ifabsent: string(adam)
-                description: "Optimizer (single-stage mode): 'adam', 'adamw', 'sgd', 'lbfgs', etc."
-            learning_rate:
-                range: float
-                ifabsent: float(0.001)
-                description: "Learning rate (single-stage mode)"
-            max_iterations:
-                range: integer
-                ifabsent: integer(100)
-                description: "Max iterations (single-stage mode)"
-            hyperparameters:
-                multivalued: true
-                range: Parameter
-                inlined: true
-                inlined_as_list: true
-                description: "Algorithm-specific hyperparameters (single-stage mode)"
+                    When defined, inherited single-stage fields are ignored.
 
     # =============================================================================
     # Parameter Exploration

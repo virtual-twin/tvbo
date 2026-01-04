@@ -129,6 +129,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if not getattr(self, "network", None):
             self.network = Network()
 
+        # Load network from BIDS if bids_dir is specified
+        if hasattr(self.network, "bids_dir") and self.network.bids_dir:
+            self._load_network_from_bids()
+
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
 
@@ -137,6 +141,34 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if self.local_dynamics and not self.dynamics:
             self.dynamics[self.local_dynamics.name] = self.local_dyanmics
+
+    def _load_network_from_bids(self):
+        """Load network matrices from BEP017 BIDS directory.
+
+        Uses network.bids_dir, network.structural_measures, and
+        network.observational_measures to load connectivity data.
+        """
+        from pathlib import Path
+
+        bids_dir = Path(self.network.bids_dir)
+        if not bids_dir.is_absolute():
+            # Resolve relative to package root
+            import tvbo
+            pkg_root = Path(tvbo.__file__).parent.parent
+            bids_dir = pkg_root / bids_dir
+
+        # Get measures from network attributes
+        structural = getattr(self.network, "structural_measures", None) or [
+            "streamlineCount", "tractLength"
+        ]
+        observational = getattr(self.network, "observational_measures", None) or []
+
+        # Use Network.load_from_bids to load data into self.network
+        self.network.load_from_bids(
+            bids_dir,
+            structural_measures=structural,
+            observational_measures=observational,
+        )
 
     @classmethod
     def from_datamodel(
