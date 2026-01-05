@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-01-04T03:28:43
+# Generation date: 2026-01-05T11:45:58
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -85,6 +85,10 @@ class FileName(extended_str):
 
 
 class ObservationName(extended_str):
+    pass
+
+
+class DerivedObservationName(ObservationName):
     pass
 
 
@@ -799,7 +803,6 @@ class Observation(YAMLRoot):
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     time_scale: Optional[str] = "ms"
     source: Optional[Union[str, StateVariableName]] = None
-    source_observation: Optional[Union[str, ObservationName]] = None
     period: Optional[float] = None
     downsample_period: Optional[float] = None
     voi: Optional[int] = None
@@ -842,9 +845,6 @@ class Observation(YAMLRoot):
         if self.source is not None and not isinstance(self.source, StateVariableName):
             self.source = StateVariableName(self.source)
 
-        if self.source_observation is not None and not isinstance(self.source_observation, ObservationName):
-            self.source_observation = ObservationName(self.source_observation)
-
         if self.period is not None and not isinstance(self.period, float):
             self.period = float(self.period)
 
@@ -881,6 +881,38 @@ class Observation(YAMLRoot):
 
         if self.class_reference is not None and not isinstance(self.class_reference, ClassReference):
             self.class_reference = ClassReference(**as_dict(self.class_reference))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class DerivedObservation(Observation):
+    """
+    Observation derived from one or more other observations. Examples: - fc (from bold) - single source transformation
+    - fc_corr (from fc and fc_target) - multi-source comparison Unlike regular Observations, these don't generate
+    monitor classes but are computed from existing observation values.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["DerivedObservation"]
+    class_class_curie: ClassVar[str] = "tvbo:DerivedObservation"
+    class_name: ClassVar[str] = "DerivedObservation"
+    class_model_uri: ClassVar[URIRef] = TVBO.DerivedObservation
+
+    name: Union[str, DerivedObservationName] = None
+    source_observations: Union[Union[str, ObservationName], list[Union[str, ObservationName]]] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, DerivedObservationName):
+            self.name = DerivedObservationName(self.name)
+
+        if self._is_empty(self.source_observations):
+            self.MissingRequiredField("source_observations")
+        if not isinstance(self.source_observations, list):
+            self.source_observations = [self.source_observations] if self.source_observations is not None else []
+        self.source_observations = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.source_observations]
 
         super().__post_init__(**kwargs)
 
@@ -2385,6 +2417,7 @@ class SimulationExperiment(YAMLRoot):
     network: Optional[Union[dict, Network]] = None
     coupling: Optional[Union[dict, Coupling]] = None
     observations: Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]] = empty_dict()
+    derived_observations: Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]] = empty_dict()
     functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]] = empty_dict()
     stimulation: Optional[Union[dict, Stimulus]] = None
     field_dynamics: Optional[Union[dict, "PDE"]] = None
@@ -2433,6 +2466,8 @@ class SimulationExperiment(YAMLRoot):
             self.coupling = Coupling(**as_dict(self.coupling))
 
         self._normalize_inlined_as_dict(slot_name="observations", slot_type=Observation, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="derived_observations", slot_type=DerivedObservation, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=True)
 
@@ -4415,9 +4450,6 @@ slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO
 slots.observation__source = Slot(uri=TVBO.source, name="observation__source", curie=TVBO.curie('source'),
                    model_uri=TVBO.observation__source, domain=None, range=Optional[Union[str, StateVariableName]])
 
-slots.observation__source_observation = Slot(uri=TVBO.source_observation, name="observation__source_observation", curie=TVBO.curie('source_observation'),
-                   model_uri=TVBO.observation__source_observation, domain=None, range=Optional[Union[str, ObservationName]])
-
 slots.observation__period = Slot(uri=TVBO.period, name="observation__period", curie=TVBO.curie('period'),
                    model_uri=TVBO.observation__period, domain=None, range=Optional[float])
 
@@ -4453,6 +4485,9 @@ slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipelin
 
 slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
                    model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
+
+slots.derivedObservation__source_observations = Slot(uri=TVBO.source_observations, name="derivedObservation__source_observations", curie=TVBO.curie('source_observations'),
+                   model_uri=TVBO.derivedObservation__source_observations, domain=None, range=Union[Union[str, ObservationName], list[Union[str, ObservationName]]])
 
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
                    model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
@@ -4933,6 +4968,9 @@ slots.simulationExperiment__coupling = Slot(uri=TVBO.coupling, name="simulationE
 
 slots.simulationExperiment__observations = Slot(uri=TVBO.observations, name="simulationExperiment__observations", curie=TVBO.curie('observations'),
                    model_uri=TVBO.simulationExperiment__observations, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
+
+slots.simulationExperiment__derived_observations = Slot(uri=TVBO.derived_observations, name="simulationExperiment__derived_observations", curie=TVBO.curie('derived_observations'),
+                   model_uri=TVBO.simulationExperiment__derived_observations, domain=None, range=Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]])
 
 slots.simulationExperiment__functions = Slot(uri=TVBO.functions, name="simulationExperiment__functions", curie=TVBO.curie('functions'),
                    model_uri=TVBO.simulationExperiment__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])

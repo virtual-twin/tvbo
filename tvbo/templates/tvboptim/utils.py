@@ -66,7 +66,7 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
 
 def is_network_observation(obs: Any) -> bool:
     """Check if observation is a network observation (static data from BIDS).
-    
+
     Network observations have source starting with 'network.observations'.
     """
     if not obs:
@@ -90,13 +90,13 @@ def is_external_observation(obs: Any) -> bool:
 
 def obs_has_all_args(obs: Any) -> bool:
     """Check if observation has all required arguments satisfied.
-    
+
     Returns True if all pipeline step arguments either have values
     or are implicitly satisfied by source.
     """
     pipeline = getattr(obs, 'pipeline', None) or []
     has_source = getattr(obs, 'source', None) or getattr(obs, 'source_observation', None)
-    
+
     for step_idx, func in enumerate(pipeline):
         is_first_step = step_idx == 0
         args = getattr(func, 'arguments', None) or []
@@ -111,19 +111,19 @@ def obs_has_all_args(obs: Any) -> bool:
 
 def get_observation_refs(observations_dict: Dict[str, Any]) -> Tuple[Set[str], List[str]]:
     """Categorize observations into network vs simulation-derived.
-    
+
     Returns:
         (network_observation_names, observation_names_with_all_args)
     """
     network_obs = set()
     valid_obs = []
-    
+
     for name, obs in observations_dict.items():
         if is_network_observation(obs):
             network_obs.add(name)
         if obs_has_all_args(obs):
             valid_obs.append(name)
-    
+
     return network_obs, valid_obs
 
 
@@ -133,7 +133,7 @@ def get_observation_refs(observations_dict: Dict[str, Any]) -> Tuple[Set[str], L
 
 def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
     """Parse loss function call arguments.
-    
+
     Returns:
         (parsed_args, obs_refs) where:
         - parsed_args: list of dicts with 'name', 'type', and type-specific keys
@@ -142,17 +142,17 @@ def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
     loss_args = getattr(loss_call, 'arguments', None) or []
     parsed_args = []
     obs_refs = set()
-    
+
     for arg in loss_args:
         arg_name = getattr(arg, 'name', None)
         arg_value = getattr(arg, 'value', None)
-        
+
         if not arg_name:
             continue
-            
+
         if arg_value is not None:
             val_str = str(arg_value)
-            
+
             # Check if numeric constant
             try:
                 float(arg_value)
@@ -164,7 +164,7 @@ def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
                 continue
             except (ValueError, TypeError):
                 pass
-            
+
             # Parse observation references
             if val_str.startswith('observations.'):
                 parts = val_str.split('.', 2)
@@ -204,24 +204,24 @@ def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
                 'type': 'runtime',
                 'kwarg_name': arg_name,
             })
-    
+
     return parsed_args, obs_refs
 
 
 def parse_loss_function(opt: Any) -> Optional[Dict]:
     """Parse optimization loss function specification.
-    
+
     Returns dict with: opt_name, func_name, args, obs_refs, agg_over, agg_type
     or None if no loss defined.
     """
     loss_call = getattr(opt, 'loss', None)
     if not loss_call:
         return None
-    
+
     # Determine function name
     func_ref = getattr(loss_call, 'function', None)
     callable_ref = getattr(loss_call, 'callable', None)
-    
+
     if func_ref:
         func_name = str(func_ref) if isinstance(func_ref, str) else (
             getattr(func_ref, 'name', None) or str(func_ref)
@@ -230,7 +230,7 @@ def parse_loss_function(opt: Any) -> Optional[Dict]:
         func_name = getattr(callable_ref, 'name', None) or getattr(callable_ref, 'qualname', None) or 'loss'
     else:
         func_name = 'loss'
-    
+
     # Parse aggregate specification
     aggregate = getattr(loss_call, 'aggregate', None)
     agg_over = None
@@ -238,10 +238,10 @@ def parse_loss_function(opt: Any) -> Optional[Dict]:
     if aggregate:
         agg_over = str(getattr(aggregate, 'over', '')).split('.')[-1] or None
         agg_type = str(getattr(aggregate, 'type', 'mean')).split('.')[-1]
-    
+
     # Parse arguments
     parsed_args, obs_refs = parse_loss_arguments(loss_call)
-    
+
     return {
         'opt_name': getattr(opt, 'name', None) or 'loss',
         'func_name': func_name,
@@ -258,7 +258,7 @@ def parse_loss_function(opt: Any) -> Optional[Dict]:
 
 def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple[Optional[float], Optional[float]]:
     """Lookup domain bounds from model.parameters or coupling.parameters.
-    
+
     Returns (lo, hi) tuple, where None means unbounded.
     """
     def extract_bounds(param):
@@ -272,26 +272,26 @@ def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple
             except (TypeError, ValueError):
                 pass
         return (None, None)
-    
+
     # Check dynamics parameters
     if model and hasattr(model, 'parameters') and param_name in model.parameters:
         lo, hi = extract_bounds(model.parameters[param_name])
         if lo is not None or hi is not None:
             return (lo, hi)
-    
+
     # Check coupling parameters
     for cobj in all_couplings.values():
         if hasattr(cobj, 'parameters') and cobj.parameters and param_name in cobj.parameters:
             return extract_bounds(cobj.parameters[param_name])
-    
+
     return (None, None)
 
 
 def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_couplings: Dict = None) -> Optional[Dict]:
     """Parse a free_parameter entry.
-    
+
     Handles: str, dotted notation, stringified dict, dict, and Parameter objects.
-    
+
     Returns dict with: name, heterogeneous, shape, coupling_key, dynamics_key,
                        lower_bound, upper_bound
     """
@@ -299,10 +299,10 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
     result = None
     source_key = None
     is_coupling = False
-    
+
     if isinstance(fp, str):
         stripped = fp.strip()
-        
+
         # Check for stringified dict
         if stripped.startswith('{') and stripped.endswith('}'):
             try:
@@ -322,7 +322,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                     }
             except (ValueError, SyntaxError):
                 pass
-        
+
         if result is None:
             # Check for dotted notation
             if '.' in stripped:
@@ -344,7 +344,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                     'coupling_key': None,
                     'dynamics_key': None,
                 }
-    
+
     elif isinstance(fp, dict) and 'name' in fp:
         param_name = str(fp['name'])
         if '.' in param_name:
@@ -371,7 +371,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                     result['upper_bound'] = float(domain['hi'])
                 except (TypeError, ValueError):
                     pass
-    
+
     elif not isinstance(fp, (str, dict)):
         # Parameter object
         param_name = str(getattr(fp, 'name', ''))
@@ -401,14 +401,14 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                     result['upper_bound'] = float(hi)
                 except (TypeError, ValueError):
                     pass
-    
+
     if result is None:
         return None
-    
+
     # Set defaults
     result.setdefault('coupling_key', None)
     result.setdefault('dynamics_key', None)
-    
+
     # Lookup bounds from model if not specified
     if 'lower_bound' not in result or 'upper_bound' not in result:
         if model or all_couplings:
@@ -417,11 +417,11 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                 result['lower_bound'] = model_lo
             if 'upper_bound' not in result and model_hi is not None:
                 result['upper_bound'] = model_hi
-    
+
     result.setdefault('lower_bound', None)
     result.setdefault('upper_bound', None)
     result.setdefault('shape', None)
-    
+
     # Auto-detect coupling parameters
     if result.get('coupling_key') is None and model and all_couplings:
         param_name = result['name']
@@ -431,7 +431,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                 if hasattr(cobj, 'parameters') and cobj.parameters and param_name in cobj.parameters:
                     result['coupling_key'] = ck
                     break
-    
+
     return result
 
 
@@ -441,7 +441,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
 
 def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn=None) -> Dict:
     """Parse exploration specification from YAML.
-    
+
     Returns dict with: name, label, mode, n_parallel, axes, observable_*
     """
     exp_info = {
@@ -451,26 +451,26 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         'n_parallel': int(getattr(expl, 'n_parallel', 1) or 1),
         'axes': [],
     }
-    
+
     # Parse parameters
     params = getattr(expl, 'parameters', {})
     if hasattr(params, 'values'):
         params = params.values()
-    
+
     for param in params:
         domain = getattr(param, 'domain', None)
         if not domain:
             continue
-        
+
         pname = str(getattr(param, 'name', ''))
         source_key = None
         is_coupling_param = False
-        
+
         if '.' in pname:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = prefix in all_couplings
             source_key = prefix
-        
+
         exp_info['axes'].append({
             'name': pname,
             'lo': float(getattr(domain, 'lo', 0)),
@@ -480,14 +480,14 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
             'coupling_key': source_key if is_coupling_param else None,
             'dynamics_key': source_key if not is_coupling_param and source_key else None,
         })
-    
+
     # Parse observable
     observable = getattr(expl, 'observable', None)
     if observable:
         func = getattr(observable, 'function', None)
         func_name = getattr(func, 'name', None) if hasattr(func, 'name') else str(func) if func else None
         args = getattr(observable, 'arguments', None) or []
-        
+
         if args:
             exp_info['observable_type'] = 'function_call'
             exp_info['observable_func'] = func_name
@@ -511,7 +511,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
                 exp_info['output_key'] = get_pipeline_output_key_fn(func_name)
             else:
                 exp_info['output_key'] = None
-    
+
     return exp_info
 
 
@@ -521,7 +521,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
 
 def get_include_info(inc: Any) -> Tuple[str, Dict]:
     """Extract algorithm name and argument overrides from AlgorithmInclude.
-    
+
     Returns (algo_name, {param_name: value}) tuple.
     """
     if hasattr(inc, 'algorithm'):
@@ -540,7 +540,7 @@ def get_all_observations_from_algo(algo: Any, algorithms_dict: Dict) -> List[str
     """Get all observation names including from included algorithms."""
     obs = []
     seen = set()
-    
+
     # From included algorithms
     for inc in as_list(getattr(algo, 'includes', None)):
         inc_name, _ = get_include_info(inc)
@@ -551,21 +551,21 @@ def get_all_observations_from_algo(algo: Any, algorithms_dict: Dict) -> List[str
                 if o_str not in seen:
                     obs.append(o_str)
                     seen.add(o_str)
-    
+
     # This algorithm's observations
     for o in as_list(getattr(algo, 'observations', None)):
         o_str = str(o)
         if o_str not in seen:
             obs.append(o_str)
             seen.add(o_str)
-    
+
     return obs
 
 
 def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
     """Get all hyperparameters including from included algorithms."""
     all_hp = {}
-    
+
     for inc in as_list(getattr(algo, 'includes', None)):
         inc_name, arg_overrides = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
@@ -576,8 +576,8 @@ def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
                     all_hp[hp_name] = arg_overrides[hp_name]
                 else:
                     all_hp[hp_name] = getattr(hp, 'value', None)
-    
+
     for hp in as_list(getattr(algo, 'hyperparameters', None)):
         all_hp[str(getattr(hp, 'name', ''))] = getattr(hp, 'value', None)
-    
+
     return all_hp

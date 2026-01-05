@@ -519,14 +519,12 @@ classes:
             - environment
             - time_scale
         attributes:
-            # Source specification - what state variable(s) to observe
+            # Source specification - what state variable to observe
             source:
                 range: StateVariable
-                description: "State variable to observe (e.g., S_e for excitatory activity)"
-                inlined: false
-            source_observation:
-                range: Observation
-                description: "Derive from another observation (e.g., FC derived from Bold)"
+                description: >-
+                    State variable to observe (e.g., S_e for excitatory activity).
+                    For observations derived from other observations, use DerivedObservation.
                 inlined: false
 
             # Monitor attributes (for BOLD, EEG, etc.)
@@ -589,6 +587,29 @@ classes:
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input → process → output flow directly
+
+    DerivedObservation:
+        description: >-
+            Observation derived from one or more other observations.
+            Examples:
+            - fc (from bold) - single source transformation
+            - fc_corr (from fc and fc_target) - multi-source comparison
+            Unlike regular Observations, these don't generate monitor classes
+            but are computed from existing observation values.
+        is_a: Observation
+        class_uri: tvbo:DerivedObservation
+        attributes:
+            source_observations:
+                range: Observation
+                multivalued: true
+                inlined: false
+                required: true
+                minimum_cardinality: 1
+                description: >-
+                    One or more observations to derive from. For transformations
+                    (e.g., fc from bold), use single source. For comparisons
+                    (e.g., fc_corr from fc and fc_target), use multiple sources.
+                    Order may matter for asymmetric operations.
 
     Dynamics:
         class_uri: tvbo:Dynamics
@@ -1518,6 +1539,14 @@ classes:
                 multivalued: true
                 range: Observation
                 inlined: true
+            derived_observations:
+                multivalued: true
+                range: DerivedObservation
+                inlined: true
+                description: >-
+                    Observations derived from combining other observations.
+                    Computed after all regular observations are available.
+                    Examples: fc_corr (from fc, fc_target), rmse, etc.
             functions:
                 multivalued: true
                 range: Function

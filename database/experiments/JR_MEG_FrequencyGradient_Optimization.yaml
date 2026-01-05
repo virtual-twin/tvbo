@@ -122,9 +122,10 @@ local_dynamics:
 # NETWORK
 # --------------------------------------------------------
 network:
-    label: "Desikan-Killiany 84 regions"
+    label: "Desikan-Killiany"
     description: "Structural connectivity from dk_average dataset"
-    number_of_regions: 84
+    bids_dir: "../networks/bids/dk_average"
+    structural_measures: [streamlineCount, tractLength]
     conduction_speed:
         name: conduction_speed
         value: 3.0
@@ -295,12 +296,17 @@ observations:
                     value: 256
                     description: "Segment length for Welch"
 
+# =============================================================================
+# DERIVED OBSERVATIONS: Computed from other observations
+# =============================================================================
+derived_observations:
     # Derived: Average spectrum across regions
     avg_spectrum:
         name: avg_spectrum
         label: "Average Spectrum"
         description: "Mean power spectrum across all regions"
-        source_observation: simulated_psd
+        source_observations:
+            - simulated_psd
         pipeline:
             - callable:
                   module: jax.numpy
@@ -318,7 +324,9 @@ observations:
     peak_frequency:
         label: "Peak Frequency"
         description: "Extract peak frequency from average spectrum"
-        source_observation: avg_spectrum
+        source_observations:
+            - avg_spectrum
+            - simulated_psd
         pipeline:
             - callable:
                   module: jax.numpy
@@ -326,8 +334,8 @@ observations:
               output: peak_idx
               arguments:
                   - name: a
-                    value: avg_spectrum.avg_psd
-                    description: "Average power spectrum"
+                    value: avg_spectrum
+                    description: "Average power spectrum (output of jnp.mean)"
             - function: index_at
               arguments:
                   - name: arr
