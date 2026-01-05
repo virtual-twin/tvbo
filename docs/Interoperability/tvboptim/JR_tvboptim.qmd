@@ -22,8 +22,11 @@ import pandas as pd
 exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
 )
+print(exp.render_code('tvboptim'))
+```
+
+```{python}
 weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
-exp.network.load_matrix(weights, lengths, region_labels)
 
 # Load atlas for brain mapping
 dk_info = pd.read_csv(
@@ -34,10 +37,7 @@ dk = nib.load(
 )
 dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
 region_labels = np.array(region_labels)
-print(exp.render_code('tvboptim'))
-```
 
-```{python}
 idx_l = np.where(region_labels == "L.LOG")[0]
 idx_r = np.where(region_labels == "R.LOG")[0]
 dist_from_vc = np.array(np.squeeze(0.5 * (lengths[idx_l, :] + lengths[idx_r, :])))
@@ -46,13 +46,17 @@ delta_f = (f_max - f_min) / (dist_from_vc.max() - dist_from_vc.min())
 target_peak_freqs = f_max - delta_f * (dist_from_vc - dist_from_vc.min())
 
 # Run initial simulation to get frequency axis from actual PSD computation
-ns = exp.execute('tvboptim')
+ns = exp.execute("tvboptim")
 sim_init = exp.run("tvboptim", mode="simulation")
 frequencies = np.array(sim_init.observations.simulated_psd.frequencies)
 
 # Compute target PSDs as Cauchy distributions using actual frequency axis
 gamma = 1.0
-target_psd = np.array([1 / (np.pi * gamma * (1 + ((frequencies - f0) / gamma)**2)) for f0 in target_peak_freqs])
+target_psd = np.array(
+    [
+        1 / (np.pi * gamma * (1 + ((frequencies - f0) / gamma) ** 2))
+        for f0 in target_peak_freqs
+    ]
 ```
 
 ```{python}

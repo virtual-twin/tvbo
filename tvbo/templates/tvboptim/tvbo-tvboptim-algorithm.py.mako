@@ -124,6 +124,10 @@ def get_all_functions(algo, algorithms_dict):
 _obs_raw = experiment.observations or {}
 observations_dict = dict(_obs_raw.items()) if hasattr(_obs_raw, 'items') else {}
 
+# Extract derived_observations dict for reference
+_dobs_raw = experiment.derived_observations or {}
+derived_observations_dict = dict(_dobs_raw.items()) if hasattr(_dobs_raw, 'items') else {}
+
 # State variable names from model
 model = experiment.local_dynamics
 state_var_names = list(model.state_variables.keys()) if model and model.state_variables else []
@@ -267,25 +271,31 @@ def update_${algo_name}_${rule_name}(
 <%
     # Detect sliding window pattern:
     # 1. Check for window_size hyperparameter
-    # 2. Find observations with source_observation (depend on another observation)
+    # 2. Find observations that are DerivedObservations (from derived_observations_dict)
     has_window_size = 'window_size' in hyperparam_dict
     window_size_val = int(hyperparam_dict.get('window_size', 150)) if has_window_size else 0
 
-    # Find observations that have source_observation (dependent observations)
-    # These need their source accumulated in a buffer
-    dependent_observations = {}  # {obs_name: source_obs_name}
+    # Find derived observations and their sources
+    # For each algorithm observation, check if it's derived and track source dependencies
+    dependent_observations = {}  # {derived_obs_name: [source_obs_names]}
     source_observations_needed = set()  # Source observations that need buffers
 
     for obs in simulated_observations:
-        obs_def = observations_dict.get(obs)
-        if obs_def:
-            src_obs = obs_def.source_observation
-            if src_obs:
-                dependent_observations[obs] = str(src_obs)
-                source_observations_needed.add(str(src_obs))
+        derived_obs_def = derived_observations_dict.get(obs)
+        if derived_obs_def:
+            # This is a derived observation - get its source_observations
+            src_obs_list = derived_obs_def.source_observations or []
+            src_names = [
+                (s.name if hasattr(s, 'name') else str(s)) for s in src_obs_list
+            ]
+            dependent_observations[obs] = src_names
+            # Only add to buffers if the source is a regular observation (not another derived)
+            for src_name in src_names:
+                if src_name in observations_dict:
+                    source_observations_needed.add(src_name)
 
-    # Use sliding window if we have window_size AND dependent observations
-    use_sliding_window = has_window_size and len(dependent_observations) > 0
+    # Use sliding window if we have window_size AND derived observations with regular obs sources
+    use_sliding_window = has_window_size and len(source_observations_needed) > 0
 %>
 def run_${algo_name}(
     state: Any,
@@ -402,14 +412,8 @@ def run_${algo_name}(
             src_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
             source_monitors.append((src_obs, src_class))
 
-    # For dependent observations (those with source_observation), we also need monitors
-    dependent_monitors = []
-    for obs, src_obs in dependent_observations.items():
-        obs_def = observations_dict.get(obs)
-        if obs_def and hasattr(obs_def, 'pipeline') and obs_def.pipeline:
-            obs_class = ''.join(w.capitalize() for w in obs.replace('_', ' ').split())
-            if (obs, obs_class) not in pipeline_observations:
-                dependent_monitors.append((obs, obs_class))
+    # Note: Derived observations don't have monitor classes - they're computed from other observations
+    # So we don't need dependent_monitors anymore
 %>
 % for obs, obs_class in pipeline_observations:
     _${obs}_monitor = ${obs_class}(history=history)
@@ -418,9 +422,6 @@ def run_${algo_name}(
 % if src_obs not in [o[0] for o in pipeline_observations]:
     _${src_obs}_monitor = ${src_class}(history=history)
 % endif
-% endfor
-% for obs, obs_class in dependent_monitors:
-    _${obs}_monitor = ${obs_class}(history=history)
 % endfor
     # History accessor for updating monitor state (hemodynamic continuity)
     # Uses _history because generated Bold class stores history with underscore prefix
@@ -541,10 +542,19 @@ def run_${algo_name}(
         # 2. Compute dependent observations from buffer (only after warmup)
 % for obs in simulated_observations:
 <%
+    # Check both regular and derived observations
     obs_def = observations_dict.get(obs)
-    src_obs_for_this = dependent_observations.get(obs)
-    has_pipeline = obs_def and obs_def.pipeline
-    obs_source = obs_def.source if obs_def else None
+    derived_obs_def = derived_observations_dict.get(obs)
+
+    # dependent_observations maps obs_name -> [source_obs_names] (list)
+    src_obs_list_for_this = dependent_observations.get(obs)  # Returns list or None
+    # For derived observations, use the first source observation for buffer computation
+    src_obs_for_this = src_obs_list_for_this[0] if src_obs_list_for_this else None
+
+    # Use derived_obs_def for derived observations
+    effective_obs_def = derived_obs_def if derived_obs_def else obs_def
+    has_pipeline = effective_obs_def and effective_obs_def.pipeline
+    obs_source = obs_def.source if obs_def else None  # Only regular obs have source
     obs_aggregation = obs_def.aggregation if obs_def else None
     agg_str = str(obs_aggregation) if obs_aggregation else None
 
@@ -560,7 +570,7 @@ def run_${algo_name}(
     # to call directly on buffer (e.g., compute_fc for fc observation)
     direct_call = None
     if src_obs_for_this and has_pipeline:
-        pipeline = obs_def.pipeline
+        pipeline = effective_obs_def.pipeline
         if pipeline and len(pipeline) > 0:
             first_step = pipeline[0]
             step_callable = first_step.callable
@@ -570,13 +580,13 @@ def run_${algo_name}(
                 if callable_name and callable_module:
                     direct_call = f"{callable_module}.{callable_name}"
                 elif callable_name:
-                    raise ValueError(f"Observation '{obs}' pipeline callable '{callable_name}' missing module - must specify full path")
+                    raise ValueError(f"Derived observation '{obs}' pipeline callable '{callable_name}' missing module - must specify full path")
                 else:
-                    raise ValueError(f"Observation '{obs}' pipeline has callable without name attribute")
+                    raise ValueError(f"Derived observation '{obs}' pipeline has callable without name attribute")
             else:
-                raise ValueError(f"Observation '{obs}' has source_observation but pipeline step lacks callable")
+                raise ValueError(f"Derived observation '{obs}' has source_observations but pipeline step lacks callable")
         else:
-            raise ValueError(f"Observation '{obs}' has source_observation '{src_obs_for_this}' but no pipeline defined")
+            raise ValueError(f"Derived observation '{obs}' has source_observations '{src_obs_for_this}' but no pipeline defined")
 %>
 % if src_obs_for_this:
         # ${obs} depends on ${src_obs_for_this} - compute directly from accumulated buffer
@@ -784,6 +794,10 @@ def run_${algo_name}(
     # Run post-tuning simulation
     post_tuning = model_fn(state)
 
+    # Compute ALL observations from post-tuning simulation (in dependency order)
+    # This uses the experiment-level compute_all_observations function
+    post_tuning_observations = compute_all_observations(post_tuning, state)
+
     # Convert result_history lists to arrays
     for k in list(result_history.keys()):
         v = result_history[k]
@@ -810,6 +824,7 @@ def run_${algo_name}(
         history=result_history,
         pre_tuning=pre_tuning,
         post_tuning=post_tuning,
+        post_tuning_observations=post_tuning_observations,
 % for obs in collectible_observations:
         ${obs}_buffer=_${obs}_buffer_out,  # Raw samples for passing to next algorithm
 % endfor

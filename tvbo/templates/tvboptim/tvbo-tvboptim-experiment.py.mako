@@ -280,6 +280,10 @@ if has_optimization:
 # Schema: experiment.observations is multivalued dict
 observations = dict(experiment.observations) if experiment.observations else {}
 
+# Derived observations from schema (explicit, separate slot) - define early for use in get_pipeline_output_key
+derived_observations_dict = dict(experiment.derived_observations) if experiment.derived_observations else {}
+derived_observation_names = set(derived_observations_dict.keys())
+
 def get_obs(name):
     """Look up observation by name from observations dict."""
     return observations.get(name)
@@ -287,9 +291,13 @@ def get_obs(name):
 def get_pipeline_output_key(obs_name):
     """Extract the last pipeline step's output key for an observation.
 
-    Defaults to observation name if last step has no explicit output.
+    Returns None if no explicit output is defined (caller should use .data or the value directly).
     """
+    # Check regular observations first
     obs_obj = get_obs(obs_name)
+    # Also check derived observations
+    if not obs_obj:
+        obs_obj = derived_observations_dict.get(obs_name)
     if obs_obj and obs_obj.pipeline:
         # Schema: pipeline is always a list (inlined_as_list: true)
         last_step = obs_obj.pipeline[-1]
@@ -297,8 +305,8 @@ def get_pipeline_output_key(obs_name):
             # Handle multi-output (comma-separated) - take the last one as the "main" output
             outputs = [o.strip() for o in str(last_step.output).split(',')]
             return outputs[-1]
-        return obs_name
-    return obs_name
+    # No explicit output - return None so callers use .data or direct value
+    return None
 
 # === Exploration metadata ===
 # Schema: experiment.explorations is multivalued dict
@@ -380,7 +388,7 @@ for expl in exploration_list:
 
 has_observations = len(observations) > 0
 
-# Parse observations
+# Parse observations - these only have source (state variable), no derived observations
 obs_list = []
 for obs_name, obs in observations.items():
     obs_info = {
@@ -388,10 +396,20 @@ for obs_name, obs in observations.items():
         'label': obs.label or '',
         'description': obs.description or '',
         'source': obs.source.name if obs.source and hasattr(obs.source, 'name') else str(obs.source) if obs.source else None,
-        'source_observation': obs.source_observation.name if obs.source_observation and hasattr(obs.source_observation, 'name') else str(obs.source_observation) if obs.source_observation else None,
         'equation': obs.equation.rhs if obs.equation else None,
     }
     obs_list.append(obs_info)
+
+# Collect modules to import from derived observation pipelines
+derived_obs_modules = set()
+for dobs_name, dobs in derived_observations_dict.items():
+    if dobs.pipeline:
+        for stage in dobs.pipeline:
+            c = getattr(stage, 'callable', None)
+            if c:
+                call_module = getattr(c, 'module', None)
+                if call_module:
+                    derived_obs_modules.add(call_module)
 
 # First coupling name for docstring
 first_coupling_name = list(all_couplings.keys())[0] if all_couplings else 'None'
@@ -423,10 +441,6 @@ Workflows:
 import os
 import copy
 
-%if accelerator == 'cpu':
-os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count=${n_workers}'
-% endif
-
 import jax
 % if enable_x64:
 jax.config.update("jax_enable_x64", True)  # Required for stable gradient computation
@@ -453,12 +467,15 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingCallback
+from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingCallback, SavingLossCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis
 from tvboptim.execution import ParallelExecution
 % endif
+% for mod in derived_obs_modules:
+import ${mod}
+% endfor
 
 
 # =============================================================================
@@ -612,6 +629,7 @@ def run_simulation(
     # - result: pre-computed simulation (avoids re-running)
     # - result_transient: HRF warmup history for BOLD observations
     # Network observations are module-level constants (already loaded from BIDS)
+    # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
     observations = Bunch()
     obs_kwargs = dict(kwargs)
     obs_kwargs['result'] = result
@@ -619,9 +637,17 @@ def run_simulation(
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
     observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+% elif obs_name in derived_observation_names:
+    # ${obs_name}: derived observation - computed below via compute_all_observations
 % else:
     observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
 % endif
+% endfor
+
+    # Compute derived observations (those depending on multiple source observations)
+    _all_obs = compute_all_observations(result, state, result_transient)
+% for obs_name in derived_observation_names:
+    observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
     return Bunch(model_fn=model_fn, state=state, result=result, transient=result_transient, observations=observations)
@@ -774,14 +800,59 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
     ${'if' if loop.first else 'elif'} loss_type == "${opt_name}":
         # Pre-create observation monitors ONCE (optimized pattern for JAX differentiation)
         # Network observations are module-level constants (no monitor needed)
-% for obs_name in sorted(obs_refs):
+        # Derived observations are computed inline from their source observations
+<%
+    # Categorize observations for this loss function
+    simulated_obs_refs = [o for o in obs_refs if o in observation_names and o not in network_observation_names and o not in derived_observation_names]
+    derived_obs_refs = [o for o in obs_refs if o in derived_observation_names]
+    network_obs_refs = [o for o in obs_refs if o in network_observation_names]
+
+    # For derived observations, we need their source observations too
+    # Collect all source observations needed for derived obs
+    source_obs_for_derived = set()
+    derived_obs_info = {}  # {derived_name: {'sources': [...], 'callable': ..., 'args': [...]}}
+    for dobs_name in derived_obs_refs:
+        dobs_def = derived_observations_dict.get(dobs_name)
+        if dobs_def:
+            sources = []
+            for src in (dobs_def.source_observations or []):
+                src_name = str(src) if not hasattr(src, 'name') else str(src.name)
+                sources.append(src_name)
+                # Only add to source_obs_for_derived if it's a simulated observation (has monitor)
+                if src_name in observation_names and src_name not in network_observation_names and src_name not in derived_observation_names:
+                    source_obs_for_derived.add(src_name)
+            # Get pipeline callable and args
+            pipeline_call = None
+            pipeline_args = []
+            if dobs_def.pipeline:
+                first_stage = dobs_def.pipeline[0]
+                c = getattr(first_stage, 'callable', None)
+                if c:
+                    call_module = getattr(c, 'module', None)
+                    call_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
+                    if call_module and call_name:
+                        pipeline_call = f"{call_module}.{call_name}"
+                # Get arguments
+                if hasattr(first_stage, 'arguments') and first_stage.arguments:
+                    for arg in first_stage.arguments:
+                        arg_name = getattr(arg, 'name', None)
+                        arg_value = getattr(arg, 'value', None)
+                        if arg_name and arg_value is not None:
+                            pipeline_args.append((arg_name, arg_value))
+            derived_obs_info[dobs_name] = {
+                'sources': sources,
+                'callable': pipeline_call,
+                'args': pipeline_args
+            }
+
+    # Merge simulated_obs_refs with source observations needed for derived
+    all_simulated_obs = sorted(set(simulated_obs_refs) | source_obs_for_derived)
+%>
+% for obs_name in all_simulated_obs:
 <%
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
-    is_network_obs = obs_name in network_observation_names
 %>
-% if not is_network_obs:
         _${obs_name}_monitor = ${obs_class}(history=result_transient)
-% endif
 % endfor
 
         def loss_${opt_name}(state):
@@ -796,48 +867,60 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
             result = model_fn(state)
 
             # Apply observation monitors (simulation-derived observations only)
-% for obs_name in sorted(obs_refs):
-<%
-    is_network_obs = obs_name in network_observation_names
-%>
-% if not is_network_obs:
+% for obs_name in all_simulated_obs:
             _${obs_name} = _${obs_name}_monitor(result)
-% endif
 % endfor
 
-            # Prepare loss function arguments
-% for arg in args:
-% if arg['type'] == 'observation':
+            # Compute derived observations inline
+% for dobs_name in derived_obs_refs:
 <%
-    arg_obs_is_network = arg['obs_name'] in network_observation_names
+    dinfo = derived_obs_info.get(dobs_name, {})
+    dcall = dinfo.get('callable')
+    dargs = dinfo.get('args', [])
+    dsources = dinfo.get('sources', [])
+    # Build argument list: source observations as positional, others as keyword
+    positional = [f"__{s}" for s in dsources]
+    keywords = [f"{name}={val}" for name, val in dargs if str(val) not in dsources]
 %>
-% if arg_obs_is_network:
-% if arg['name'] != arg['obs_name']:
-            # Network observation (module-level constant) with different arg name
-            ${arg['name']} = ${arg['obs_name']}
-% else:
-            # Network observation: ${arg['obs_name']} (use module-level constant directly)
-% endif
-% elif arg['output_key']:
-            ${arg['name']} = _${arg['obs_name']}.${arg['output_key']}
-% else:
-            ${arg['name']} = _${arg['obs_name']}.data
-% endif
-% elif arg['type'] == 'constant':
-            ${arg['name']} = ${arg['value']}
-% elif arg['type'] == 'runtime':
-            # Runtime input from kwargs: ${arg['kwarg_name']}
-            # (already validated and extracted at top of make_loss_fn)
+% if dcall:
+            # ${dobs_name}: derived from ${', '.join(dsources)}
+% for src in dsources:
+            __${src} = _${src}.data if hasattr(_${src}, 'data') else _${src}
+% endfor
+            _${dobs_name} = ${dcall}(${', '.join(positional + keywords)})
 % endif
 % endfor
 
-            # Compute loss
+            # Prepare loss function arguments and compute loss
+<%
+    # Build list of expressions for the loss function call
+    loss_arg_exprs = []
+    for a in args:
+        if a['type'] == 'observation':
+            obs_name_arg = a['obs_name']
+            if obs_name_arg in network_observation_names:
+                # Network obs: use kwargs.get with module-level fallback
+                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {obs_name_arg})")
+            elif obs_name_arg in derived_observation_names:
+                # Derived obs: computed inline above
+                loss_arg_exprs.append(f"__{obs_name_arg}" if f"__{obs_name_arg}" in ''.join([f"__{s}" for d in derived_obs_info.values() for s in d.get('sources', [])]) else f"_{obs_name_arg}")
+            else:
+                # Simulated obs: from monitor
+                if a.get('output_key'):
+                    loss_arg_exprs.append(f"_{obs_name_arg}.{a['output_key']}")
+                else:
+                    loss_arg_exprs.append(f"_{obs_name_arg}.data")
+        elif a['type'] == 'constant':
+            loss_arg_exprs.append(str(a['value']))
+        elif a['type'] == 'runtime':
+            loss_arg_exprs.append(a['kwarg_name'])
+%>
 % if agg_over and agg_axis is not None:
             # Apply ${func_name} per-${agg_over} via vmap, then aggregate with ${agg_type}
-            per_element_loss = jax.vmap(${func_name})(${', '.join([a['name'] for a in args])})
+            per_element_loss = jax.vmap(${func_name})(${', '.join(loss_arg_exprs)})
             loss_value = per_element_loss.${agg_func}()
 % else:
-            loss_value = ${func_name}(${', '.join([a['name'] for a in args])})
+            loss_value = ${func_name}(${', '.join(loss_arg_exprs)})
 % endif
             return loss_value
 
@@ -848,6 +931,177 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
 % else:
     raise ValueError("No loss functions defined in optimization metadata. Each optimization must specify a loss with equation, source_code, or callable.")
 % endif
+
+
+# =============================================================================
+# Compute All Observations (for post-tuning/post-optimization)
+# =============================================================================
+<%
+# Build dependency-sorted observation order
+# Network observations (external data) come first, then simulated observations in dependency order
+def get_observation_dependencies(obs_name, derived_obs_dict):
+    """Get all dependencies for a derived observation."""
+    deps = set()
+    dobs_def = derived_obs_dict.get(obs_name)
+    if dobs_def:
+        # Derived observations have source_observations (list of observation names they depend on)
+        for src in (dobs_def.source_observations or []):
+            src_name = str(src) if not hasattr(src, 'name') else str(src.name)
+            deps.add(src_name)
+    return deps
+
+def toposort_observations(obs_names, derived_obs_dict):
+    """Topologically sort observations by dependencies.
+
+    Regular observations have no observation dependencies (they derive from state).
+    Derived observations depend on other observations via source_observations.
+    """
+    sorted_obs = []
+    visited = set()
+
+    def visit(name):
+        if name in visited:
+            return
+        visited.add(name)
+        deps = get_observation_dependencies(name, derived_obs_dict)
+        for dep in deps:
+            if dep in obs_names:
+                visit(dep)
+        sorted_obs.append(name)
+
+    for name in obs_names:
+        visit(name)
+    return sorted_obs
+
+# Regular observations don't have dependencies - they derive from simulation state
+sorted_observation_names = list(observation_names)
+# Derived observations need toposort based on source_observations
+sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict)
+%>
+
+def compute_all_observations(result, state, result_transient=None):
+    """Compute all observations from a simulation result.
+
+    This is used for post-tuning and post-optimization simulations to get
+    all metrics in a single call. Observations are computed in dependency order,
+    followed by derived observations.
+
+    Args:
+        result: Simulation result from model_fn(state)
+        state: Current state (for creating monitors)
+        result_transient: Optional transient result for BOLD warmup
+
+    Returns:
+        Bunch with all observations (regular + derived)
+    """
+    obs = Bunch()
+
+    # Network observations (static data from BIDS)
+% for obs_name in network_observation_names:
+    obs.${obs_name} = ${obs_name}  # Module-level constant
+% endfor
+
+    # Simulated observations (computed from result) - these derive from simulation state
+% for obs_name in sorted_observation_names:
+<%
+    if obs_name in network_observation_names:
+        continue  # Skip network observations, already handled above
+
+    obs_def = observations_dict.get(obs_name)
+    has_pipeline = obs_def and obs_def.pipeline if obs_def else False
+
+    # Regular observations derive from simulation state (via source attribute)
+    # They do NOT have source_observation - that's only for DerivedObservation
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+
+    # Get pipeline info
+    pipeline_call = None
+    if has_pipeline:
+        first_stage = obs_def.pipeline[0] if obs_def.pipeline else None
+        if first_stage:
+            c = getattr(first_stage, 'callable', None)
+            if c:
+                call_module = getattr(c, 'module', None)
+                call_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
+                if call_module and call_name:
+                    pipeline_call = f"{call_module}.{call_name}"
+            else:
+                fname = getattr(first_stage, 'function', None) or getattr(first_stage, 'name', None)
+                pipeline_call = str(fname) if fname else None
+%>
+% if obs_name not in network_observation_names:
+% if has_pipeline:
+    # ${obs_name}: pipeline-based observation
+    _${obs_name}_monitor = ${obs_class}(history=result_transient)
+    _${obs_name}_result = _${obs_name}_monitor(result)
+    # Keep full result to preserve named outputs (e.g., .psd, .frequencies)
+    obs.${obs_name} = _${obs_name}_result
+% endif
+% endif
+% endfor
+
+    # Derived observations (from derived_observations in schema)
+% for dobs_name, dobs in derived_observations_dict.items():
+<%
+    # Get source_observations (multivalued, required)
+    src_obs_list = []
+    for so in (dobs.source_observations or []):
+        src_obs_list.append(str(so) if not hasattr(so, 'name') else str(so.name))
+
+    # Get pipeline callable
+    pipeline_call = None
+    pipeline_args = []
+    positional_args = []  # Track positional args from source_observations
+    if dobs.pipeline:
+        first_stage = dobs.pipeline[0]
+        c = getattr(first_stage, 'callable', None)
+        if c:
+            call_module = getattr(c, 'module', None)
+            call_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
+            if call_module and call_name:
+                pipeline_call = f"{call_module}.{call_name}"
+        # Extract arguments from pipeline stage
+        # Handle explicit argument values with proper observation reference resolution
+        if hasattr(first_stage, 'arguments') and first_stage.arguments:
+            for arg in first_stage.arguments:
+                arg_name = getattr(arg, 'name', None)
+                arg_value = getattr(arg, 'value', None)
+                # Only include arguments that have explicit values (not just names/descriptions)
+                if arg_name and arg_value is not None:
+                    val_str = str(arg_value)
+                    # Check if value is an observation reference vs a literal
+                    if val_str in src_obs_list or val_str in observation_names or val_str in derived_observation_names:
+                        # Simple observation reference - add as positional
+                        positional_args.append(f"obs.{val_str}")
+                    elif val_str.replace('.', '').replace('-', '').isdigit():
+                        # Numeric literal - use as keyword arg
+                        pipeline_args.append(f"{arg_name}={val_str}")
+                    elif '.' in val_str:
+                        prefix = val_str.split('.')[0]
+                        if prefix in (src_obs_list + list(observation_names) + list(derived_observation_names)):
+                            # Dotted observation reference (e.g., avg_spectrum.avg_psd) - add as keyword
+                            pipeline_args.append(f"{arg_name}=obs.{val_str}")
+                        else:
+                            # Unknown dotted reference - pass as string
+                            pipeline_args.append(f"{arg_name}='{val_str}'")
+                    else:
+                        # String literal or other - use as keyword arg
+                        pipeline_args.append(f"{arg_name}='{val_str}'" if isinstance(arg_value, str) else f"{arg_name}={val_str}")
+        # If no explicit args were parsed, use source_observations positionally
+        if not positional_args and not pipeline_args:
+            positional_args = [f"obs.{s}" for s in src_obs_list]
+
+    # Build final args: positional first, then keyword
+    all_args = positional_args + pipeline_args
+%>
+% if pipeline_call and src_obs_list:
+    # ${dobs_name}: derived from ${', '.join(src_obs_list)}
+    if all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
+        obs.${dobs_name} = ${pipeline_call}(${', '.join(all_args)})
+% endif
+% endfor
+
+    return obs
 
 
 # =============================================================================
@@ -1033,7 +1287,8 @@ def create_optimizer(
 
     callback = MultiCallback([
         DefaultPrintCallback(every=print_every),
-        SavingCallback(key="state", save_fun=lambda *args: args[1])  # Save updated state each step
+        SavingCallback(key="state", save_fun=lambda *args: args[1]),  # Save updated state each step
+        SavingLossCallback(),  # Save loss values each step
     ])
     # has_aux=False: our loss functions return only loss value, not (loss, aux) tuples
     return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=False)
@@ -1094,10 +1349,19 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     # Create observation monitors ONCE with history baked in (optimized pattern)
 % if obs_type == 'function_call':
 <%
-    # Collect unique observations used
+    # Collect unique observations used - categorize by type
     obs_used = set(a['obs'] for a in obs_args if a.get('obs'))
+    # Simulated observations: in observation_names but NOT network or derived
+    simulated_obs = [o for o in obs_used if o in observation_names and o not in network_observation_names and o not in derived_observation_names]
+    # Network observations: external data (use module-level constant or kwargs)
+    network_obs = [o for o in obs_used if o in network_observation_names]
+    # Derived observations: computed from other observations
+    derived_obs = [o for o in obs_used if o in derived_observation_names]
+    # Runtime inputs: not defined as observations at all (passed via kwargs)
+    runtime_obs = [o for o in obs_used if o not in observation_names and o not in derived_observation_names]
+    needs_all_obs = len(derived_obs) > 0
 %>
-% for obs in sorted(obs_used):
+% for obs in sorted(simulated_obs):
 <%
     obs_class = ''.join(word.capitalize() for word in obs.split('_'))
 %>
@@ -1107,14 +1371,60 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     @jax.jit
     def observable_fn(s):
         result = model_fn(s)
-% for obs in sorted(obs_used):
+% for obs in sorted(simulated_obs):
         _${obs} = _${obs}_monitor(result)
 % endfor
-        return ${obs_func}(${', '.join([('_' + a['obs'] + '.data') if a['obs'] else "kwargs['" + a['name'] + "']" for a in obs_args])})
+% if needs_all_obs:
+        # Compute all observations to get derived observations
+        _all_obs = compute_all_observations(result, s, result_transient)
+% endif
+<%
+    # Build args list by observation type
+    args_list = []
+    for a in obs_args:
+        if a.get('obs'):
+            obs_name = a['obs']
+            if obs_name in derived_observation_names:
+                # Derived observation: from compute_all_observations
+                args_list.append(f"getattr(_all_obs, '{obs_name}').data if hasattr(getattr(_all_obs, '{obs_name}', None), 'data') else getattr(_all_obs, '{obs_name}')")
+            elif obs_name in network_observation_names:
+                # Network observation: kwargs override, else module-level constant (from BIDS)
+                args_list.append(f"kwargs.get('{obs_name}', {obs_name})")
+            elif obs_name in observation_names:
+                # Simulated observation: from monitor
+                args_list.append(f"_{obs_name}.data")
+            else:
+                # Runtime input not defined as observation (must be in kwargs)
+                args_list.append(f"kwargs['{obs_name}']")
+        else:
+            args_list.append(f"kwargs['{a['name']}']")
+%>
+        return ${obs_func}(${', '.join(args_list)})
 % else:
 <%
+    # Check if this is a derived observation (no class exists - computed from other obs)
+    is_derived_obs = obs_name in derived_observation_names
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
 %>
+% if is_derived_obs:
+    # ${obs_name} is a derived observation - use compute_all_observations
+    @jax.jit
+    def observable_fn(s):
+        result = model_fn(s)
+        all_obs = compute_all_observations(result, s, result_transient)
+% if output_key:
+        obs_result = getattr(all_obs, '${obs_name}', None)
+        if hasattr(obs_result, '${output_key}'):
+            return obs_result.${output_key}
+        elif isinstance(obs_result, dict):
+            return obs_result['${output_key}']
+        else:
+            return obs_result
+% else:
+        obs_result = getattr(all_obs, '${obs_name}', None)
+        return obs_result.data if hasattr(obs_result, 'data') else obs_result
+% endif
+% else:
     _${obs_name}_monitor = ${obs_class}(history=result_transient)
 
     @jax.jit
@@ -1125,6 +1435,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result.data
 % else:
         return obs_result.data
+% endif
 % endif
 % endif
 
@@ -1255,6 +1566,7 @@ def run_experiment(
 
     # Compute observations using the (potentially custom) result
     # Network observations are module-level constants (already loaded from BIDS)
+    # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
     observations = Bunch()
     obs_kwargs = dict(kwargs)
     obs_kwargs['result'] = result
@@ -1262,9 +1574,17 @@ def run_experiment(
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
     observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+% elif obs_name in derived_observation_names:
+    # ${obs_name}: derived observation - computed below via compute_all_observations
 % else:
     observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
 % endif
+% endfor
+
+    # Compute derived observations (those depending on multiple source observations)
+    _all_obs = compute_all_observations(result, state, transient)
+% for obs_name in derived_observation_names:
+    observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
     results = Bunch(
@@ -1526,14 +1846,16 @@ def run_experiment(
     # Use hyperparams_dict which already includes hyperparams from included algorithms
     algo_has_window_size = 'window_size' in hyperparams_dict
 
-    # Find source observations needed (observations with source_observation dependency)
+    # Find source observations needed (derived observations depend on source observations)
+    # With DerivedObservation, look in derived_observations_dict for source_observations
     algo_source_obs_needed = set()
     for obs_name in obs_names:
-        obs_def = observations_dict.get(obs_name)
-        if obs_def:
-            src_obs = getattr(obs_def, 'source_observation', None)
-            if src_obs:
-                algo_source_obs_needed.add(str(src_obs))
+        # Check if this is a derived observation
+        dobs_def = derived_observations_dict.get(obs_name)
+        if dobs_def and dobs_def.source_observations:
+            for src_obs in dobs_def.source_observations:
+                src_name = src_obs.name if hasattr(src_obs, 'name') else str(src_obs)
+                algo_source_obs_needed.add(src_name)
     algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
 %>
 
@@ -1713,6 +2035,21 @@ stage_lr = stage['learning_rate']
                 optimizer=kwargs.get('optimizer', '${optimizer_name}'),
             )
 
+            # Run final simulation with fitted parameters
+            post_optimization = model_fn(fitted_params)
+
+            # Compute ALL observations from post-optimization simulation
+            post_optimization_observations = compute_all_observations(post_optimization, fitted_params)
+
+            # Store optimization result under its name for consistent access
+            _opt_name = '${loss_functions[0]["opt_name"] if loss_functions else "optimization"}'
+            results[_opt_name] = Bunch(
+                state=fitted_params,
+                history=fitting_data,
+                post_optimization=post_optimization,
+                post_optimization_observations=post_optimization_observations,
+            )
+            # Also expose at top level for convenience
             results['fitted_params'] = fitted_params
             results['fitting_data'] = fitting_data
             print("  Optimization complete.")
@@ -1725,6 +2062,26 @@ stage_lr = stage['learning_rate']
 
     return results
 
+<%
+from pathlib import Path as _Path
+
+# Check if network has BIDS configuration
+has_bids = network.bids_dir is not None
+if has_bids:
+    # Resolve relative path using experiment's source file location
+    _bids_path = _Path(network.bids_dir)
+    if not _bids_path.is_absolute():
+        _source_file = getattr(experiment, '_source_file', None)
+        if _source_file:
+            _bids_path = (_Path(_source_file).parent / _bids_path).resolve()
+        else:
+            _bids_path = _bids_path.resolve()
+    bids_dir = str(_bids_path)
+else:
+    bids_dir = None
+structural_measures = list(network.structural_measures) if network.structural_measures else None
+observational_measures = list(network.observational_measures) if network.observational_measures else None
+%>
 
 # =============================================================================
 # Standalone Execution
@@ -1738,12 +2095,44 @@ if __name__ == "__main__":
     print("${dynamics_class} Experiment - Standalone Execution")
     print("=" * 60)
 
+% if has_bids:
+    # Load network from BIDS (BEP017)
+    from tvbo import Network as TVBONetwork
+    print("Loading network from BIDS: ${bids_dir}")
+    _network = TVBONetwork.from_bids(
+        "${bids_dir}",
+% if structural_measures:
+        structural_measures=${structural_measures},
+% endif
+% if observational_measures:
+        observational_measures=${observational_measures},
+% endif
+    )
+    weights = _network.weights_matrix
+    distances = _network.lengths_matrix
+    # Get region labels safely (may not be available in all BIDS datasets)
+    try:
+        region_labels = list(_network.labels.keys()) if _network.labels else None
+    except (AttributeError, TypeError):
+        region_labels = None
+    print(f"  Loaded network with {weights.shape[0]} nodes")
+% else:
+    # No BIDS directory configured - check if weights available
+    if 'weights' not in dir() or weights is None:
+        print("ERROR: Network weights not defined.")
+        print("Either configure network.bids_dir in YAML or call run_experiment() with weights.")
+        import sys
+        sys.exit(1)
+    distances = distances if 'distances' in dir() else None
+    region_labels = region_labels if 'region_labels' in dir() else None
+% endif
+
     # Run the experiment
     # Order: 1) Simulation → 2) Explorations → 3) Algorithms → 4) Optimization
     results = run_experiment(
-        weights,  # Uses module-level weights from network loading
-        distances=distances if 'distances' in dir() else None,
-        region_labels=region_labels if 'region_labels' in dir() else None,
+        weights,
+        distances=distances,
+        region_labels=region_labels,
         mode="all",
     )
 

@@ -428,7 +428,8 @@ for obs_name, obs in observations.items():
         'label': get_attr(obs, 'label', ''),
         'description': get_attr(obs, 'description', ''),
         'source': None,
-        'source_observation': None,
+        # Regular observations derive from simulation state, not other observations
+        # DerivedObservation uses source_observations (plural) - handled separately
         'pipeline': [],
         'class_reference': None,  # New: direct class reference
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
@@ -444,15 +445,10 @@ for obs_name, obs in observations.items():
         if info['class_reference']['module']:
             class_ref_imports[info['class_reference']['module']] = info['class_reference']['name']
 
-    # Source state variable
+    # Source state variable (what this observation monitors from simulation)
     src = get_attr(obs, 'source')
     if src:
         info['source'] = get_attr(src, 'name', str(src)) if hasattr(src, 'name') else str(src)
-
-    # Source observation
-    src_obs = get_attr(obs, 'source_observation')
-    if src_obs:
-        info['source_observation'] = get_attr(src_obs, 'name', str(src_obs)) if hasattr(src_obs, 'name') else str(src_obs)
 
     # Parse pipeline - handle FunctionCall objects
     for func_call in (get_attr(obs, 'pipeline') or []):
@@ -564,7 +560,7 @@ if network_obs_keys:
                     _bids_path = (Path.cwd() / _bids_dir_raw).resolve()
             bids_dir = str(_bids_path)
 %>
-"""Observation classes (equinox.Module) for tvboptim."""
+"""Observation classes derived from AbstractMonitor for tvboptim."""
 
 import math
 import equinox as eqx
@@ -573,6 +569,7 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 from types import SimpleNamespace
 from tvboptim.experimental.network_dynamics.result import NativeSolution
+from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor
 
 % if network_obs_keys and bids_dir:
 # -----------------------------------------------------------------------------
@@ -622,7 +619,7 @@ from ${module} import ${class_name} as _Ext${class_name}
 <%
     obs_name = obs['name']
     obs_source = obs['source']
-    obs_src_obs = obs['source_observation']
+    # Regular observations don't have source_observation - that's only for DerivedObservation
     pipeline = obs['pipeline']
     class_ref = obs.get('class_reference')
     class_name = ''.join(word.capitalize() for word in obs_name.split('_'))
@@ -785,20 +782,20 @@ def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kw
                 named_outputs.append(out_name)
 
     # Collect all observation references in pipeline (for cross-observation access)
-    # e.g., simulated_psd.frequencies when source_observation is avg_spectrum
+    # e.g., when a pipeline step needs another observation's output
     referenced_observations = set()
     for s in pipeline:
         for arg_val in s.get('arguments', {}).values():
             if isinstance(arg_val, str) and '.' in arg_val:
                 prefix = arg_val.split('.')[0]
-                if prefix in observations and prefix != obs_src_obs:
+                if prefix in observations:
                     referenced_observations.add(prefix)
 
     # Check if pipeline has explicit prepend_history step (avoids redundant auto-generation)
     has_prepend_history_step = any(s['name'] == 'prepend_history' for s in pipeline)
 %>
 
-class ${class_name}(eqx.Module):
+class ${class_name}(AbstractMonitor):
     """${obs['label'] or obs_name} observation.
 
     ${obs['description'] or 'Auto-generated observation class.'}
@@ -806,9 +803,8 @@ class ${class_name}(eqx.Module):
     Pipeline: ${' -> '.join([s['name'] for s in pipeline])}
 % endif
     """
-    # Configuration
-    voi: int = ${state_idx}  # Variable of interest (state index)
-    dt: float = ${dt}
+    # AbstractMonitor fields (voi and period are inherited)
+    dt: float = eqx.field(static=True, default=${dt})
 
 % for step in static_steps:
     # Precomputed: ${step['name']} (kernel)
@@ -818,24 +814,23 @@ class ${class_name}(eqx.Module):
     # History buffer (preprocessed from transient)
     _history: jax.Array = None
 % endif
-% if obs_src_obs:
-    # Source observation monitor
-    _source_monitor: eqx.Module = None
-% endif
 % for ref_obs in referenced_observations:
     # Referenced observation monitor: ${ref_obs}
     _${ref_obs}_monitor: eqx.Module = None
 % endfor
 
-    def __init__(self, history=None, voi: int = ${state_idx}, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}):
+    def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}):
         """Initialize observation.
 
         Args:
             history: NativeSolution from transient simulation (optional)
             voi: Variable of interest index (default: ${state_idx})
+            period: Sampling period in ms (default: dt)
             dt: Time step (default: ${dt})
         """
-        self.voi = voi
+        # Use AbstractMonitor's voi normalization for dimension preservation
+        self.voi = self._normalize_voi(voi)
+        self.period = period if period is not None else dt
         self.dt = dt
 
 % for step in static_steps:
@@ -866,7 +861,8 @@ class ${class_name}(eqx.Module):
 % endif
 % if obs_source:
                 # Slice history to source state variable → 3D: (time, 1, nodes)
-                self._history = history.data[-n_samples:, voi:voi+1, :]
+                # Uses AbstractMonitor's normalized voi (slice object)
+                self._history = history.data[-n_samples:, self.voi, :]
 % else:
                 # Keep full 3D shape (time, states, nodes)
                 self._history = history.data[-n_samples:, :, :]
@@ -875,10 +871,6 @@ class ${class_name}(eqx.Module):
                 self._history = history
 % endif
 
-% if obs_src_obs:
-        # Initialize source observation monitor
-        self._source_monitor = ${obs_src_obs.replace('_', ' ').title().replace(' ', '')}(history=history, voi=voi, dt=dt)
-% endif
 % for ref_obs in referenced_observations:
         # Initialize referenced observation monitor: ${ref_obs}
         self._${ref_obs}_monitor = ${ref_obs.replace('_', ' ').title().replace(' ', '')}(history=history, voi=voi, dt=dt)
@@ -893,21 +885,14 @@ class ${class_name}(eqx.Module):
         Returns:
             NativeSolution with observation data
         """
-% if obs_src_obs:
-        # Get source observation
-        _source = self._source_monitor(result)
-        # Create named reference for cross-observation access (e.g., simulated_psd.psd)
-        _${obs_src_obs}_result = _source
-        _data = _source.data if hasattr(_source, 'data') else _source
-        _time = _source.time if hasattr(_source, 'time') else None
 % for ref_obs in referenced_observations:
         # Get referenced observation: ${ref_obs}
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
 % endfor
-% elif obs_source:
+% if obs_source:
         # Slice to source state variable (${obs_source}) → 3D: (time, 1, nodes)
-        # Keeps state dimension for consistent vmap handling
-        _data = result.data[:, self.voi:self.voi+1, :]
+        # Uses AbstractMonitor's normalized voi (slice object for dimension preservation)
+        _data = result.data[:, self.voi, :]
         _time = result.time
 % else:
         # All states → 3D: (time, states, nodes)
@@ -970,13 +955,13 @@ class ${class_name}(eqx.Module):
             elif arg_val.startswith('integration.'):
                 # Reference to simulation data
                 call_parts.append(f"{arg_name}=_data")
-            elif arg_val in observations or arg_val == obs_src_obs:
-                # Reference to source observation data
+            elif arg_val in observations:
+                # Reference to another observation's data
                 call_parts.append(f"{arg_name}=_data")
             elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').isdigit():
                 # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
                 prefix, attr = arg_val.split('.', 1)
-                if prefix == obs_src_obs or prefix in referenced_observations:
+                if prefix in referenced_observations:
                     # Reference to observation's named output (e.g., simulated_psd.frequencies)
                     # Observation result is stored in _<prefix>_result
                     call_parts.append(f"{arg_name}=_{prefix}_result.{attr}")
@@ -1039,13 +1024,13 @@ class ${class_name}(eqx.Module):
             elif arg_val == 'data':
                 # Generic data reference - use input_var (previous step output)
                 call_parts.append(f"{arg_name}={input_var}")
-            elif arg_val in observations or arg_val == obs_src_obs:
-                # Reference to source observation data
+            elif arg_val in observations:
+                # Reference to another observation's data
                 call_parts.append(f"{arg_name}=_data")
             elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').replace('_', '').isdigit():
                 # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
                 prefix, attr = arg_val.split('.', 1)
-                if prefix == obs_src_obs or prefix in referenced_observations:
+                if prefix in referenced_observations:
                     # Reference to observation's named output (e.g., simulated_psd.frequencies)
                     call_parts.append(f"{arg_name}=_{prefix}_result.{attr}")
                 elif prefix in observations:

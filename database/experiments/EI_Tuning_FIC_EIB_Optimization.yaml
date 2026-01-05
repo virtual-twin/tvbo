@@ -541,36 +541,6 @@ observations:
                   - name: data
                     value: volterra_transform
 
-    fc:
-        label: "Simulated Functional Connectivity"
-        description: "Pearson correlation matrix from BOLD time series (skip_t=20 for EIB algorithms)"
-        source_observation: bold
-        pipeline:
-            - callable:
-                  name: compute_fc
-                  module: tvboptim.observations.observation
-              arguments:
-                  - name: timeseries
-                    value: bold
-                  - name: skip_t
-                    value: 20
-                    description: "Skip first 20 TRs for transient removal"
-
-    fc_gradient:
-        label: "Simulated FC for Gradient Optimization"
-        description: "FC computation for gradient optimization (skip_t=30 as in original)"
-        source_observation: bold
-        pipeline:
-            - callable:
-                  name: compute_fc
-                  module: tvboptim.observations.observation
-              arguments:
-                  - name: timeseries
-                    value: bold
-                  - name: skip_t
-                    value: 30
-                    description: "Skip first 30 TRs as in original gradient optimization"
-
     mean_S_e:
         label: "Mean Excitatory Activity"
         description: "Mean S_e over simulation window (for FIC algorithms)"
@@ -594,6 +564,74 @@ observations:
         label: "Empirical Functional Connectivity"
         description: "Target FC matrix from network observations (loaded from BIDS)"
         source: network.observations.BoldCorrelation
+
+# =============================================================================
+# DERIVED OBSERVATIONS: Computed from other observations
+# =============================================================================
+derived_observations:
+    fc:
+        label: "Simulated Functional Connectivity"
+        description: "Pearson correlation matrix from BOLD time series (skip_t=20 for EIB algorithms)"
+        source_observations:
+            - bold
+        pipeline:
+            - callable:
+                  name: compute_fc
+                  module: tvboptim.observations.observation
+              arguments:
+                  - name: timeseries
+                    value: bold
+                  - name: skip_t
+                    value: 20
+                    description: "Skip first 20 TRs for transient removal"
+
+    fc_gradient:
+        label: "Simulated FC for Gradient Optimization"
+        description: "FC computation for gradient optimization (skip_t=30 as in original)"
+        source_observations:
+            - bold
+        pipeline:
+            - callable:
+                  name: compute_fc
+                  module: tvboptim.observations.observation
+              arguments:
+                  - name: timeseries
+                    value: bold
+                  - name: skip_t
+                    value: 30
+                    description: "Skip first 30 TRs as in original gradient optimization"
+
+    fc_corr:
+        label: "FC Correlation with Target"
+        description: "Pearson correlation between simulated FC and empirical FC target"
+        source_observations:
+            - fc
+            - fc_target
+        pipeline:
+            - callable:
+                  name: fc_corr
+                  module: tvboptim.observations.observation
+              arguments:
+                  - name: A
+                    value: fc
+                  - name: B
+                    value: fc_target
+
+    fc_rmse:
+        label: "FC RMSE with Target"
+        description: "Root mean squared error between simulated FC and empirical FC target"
+        source_observations:
+            - fc
+            - fc_target
+        pipeline:
+            - callable:
+                  name: rmse
+                  module: tvboptim.observations.observation
+              arguments:
+                  - name: A
+                    value: fc
+                  - name: B
+                    value: fc_target
 
 # =============================================================================
 # ALGORITHMS: Iterative Parameter Tuning (FIC)

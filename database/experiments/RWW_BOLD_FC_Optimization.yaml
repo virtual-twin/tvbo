@@ -85,9 +85,11 @@ local_dynamics:
             dimension: 1
 
 network:
-    label: "Desikan-Killiany 68 regions"
+    label: "Desikan-Killiany"
     description: "Structural connectivity from dk_average dataset"
-    number_of_regions: 68
+    bids_dir: "../networks/bids/dk_average"
+    structural_measures: [streamlineCount, tractLength]
+    observational_measures: [BoldCorrelation]
     normalization:
         rhs: "W / max(W)"
 
@@ -214,6 +216,11 @@ functions:
 # OBSERVATIONS: Derived from simulation data (keyed by name)
 # =============================================================================
 observations:
+    empirical_fc:
+        label: "Empirical Functional Connectivity"
+        description: "Target FC matrix from network observations (loaded from BIDS)"
+        source: network.observations.BoldCorrelation
+
     bold:
         label: "Simulated BOLD Signal"
         description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
@@ -270,10 +277,15 @@ observations:
                   - name: data
                     value: volterra_transform
 
+# =============================================================================
+# DERIVED OBSERVATIONS: Computed from other observations
+# =============================================================================
+derived_observations:
     fc:
         label: "Simulated Functional Connectivity"
         description: "Pearson correlation matrix from BOLD time series"
-        source_observation: bold
+        source_observations:
+            - bold
         pipeline:
             - callable:
                   name: compute_fc
@@ -303,6 +315,7 @@ optimization:
                   value: observations.fc.data
                   description: "Simulated functional connectivity matrix from fc observation"
                 - name: empirical_fc
+                  value: observations.empirical_fc.data
                   description: "Empirical functional connectivity matrix (target, passed at runtime)"
 
         # Multi-stage optimization (list for sequential order)
@@ -369,6 +382,7 @@ explorations:
                 - name: simulated_fc
                   value: fc.data
                 - name: empirical_fc
+                  value: empirical_fc.data
                   description: "Target FC (passed at runtime)"
 
 # =============================================================================

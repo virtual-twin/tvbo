@@ -6,12 +6,7 @@ Complete BOLD functional connectivity simulation & optimization: simulation, exp
 
 ```{python}
 # | output: false
-import os
-
-os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
-
 from tvbo import SimulationExperiment, Network
-from tvboptim.data import load_structural_connectivity, load_functional_connectivity
 from tvboptim.observations.observation import fc_corr
 from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
@@ -23,20 +18,16 @@ import jax.numpy as jnp
 exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/RWW_BOLD_FC_Optimization.yaml"
 )
-weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
-exp.network.load_matrix(weights, lengths, region_labels)
-
-# Load target FC and run complete workflow
-fc_target = load_functional_connectivity(name="dk_average")
-results = exp.run("tvboptim", empirical_fc=fc_target)
+results = exp.run("tvboptim")
 
 # Re-run with fitted params to get FC matrices
 fc_global = exp.run(
     "tvboptim", mode="simulation", state=results.global_optimization.fitted_params
-).observations.fc.data
+).observations.fc
 fc_regional = exp.run(
     "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
-).observations.fc.data
+).observations.fc
+fc_target = results.observations.empirical_fc
 ```
 
 ## Results
@@ -134,7 +125,7 @@ ax.scatter(
     linewidths=0.5,
     zorder=4,
 )
-ax.set(xlabel="G", ylabel="w", title="Parameter Landscape")
+ax.set(xlabel="G", ylabel="w", title="Exploration")
 
 # D-F: FC Matrices
 for key, fc, title in [
@@ -178,7 +169,7 @@ ax1.scatter(
     mean_conn,
     opt_r.fitted_params.dynamics.w.value.flatten(),
     alpha=0.7,
-    s=30,
+    s=5,
     color="royalblue",
     edgecolors="k",
     lw=0.5,
@@ -200,7 +191,7 @@ ax2.scatter(
     mean_conn,
     opt_r.fitted_params.dynamics.I_o.value.flatten(),
     alpha=0.7,
-    s=30,
+    s=5,
     color="darkorange",
     edgecolors="k",
     lw=0.5,
@@ -217,9 +208,9 @@ ax2.set_ylabel("I_o", color="darkorange")
 ax2.tick_params(axis="y", labelcolor="darkorange")
 
 ax1.set_title("Regional Parameters")
-lines1, labels1 = ax1.get_legend_handles_labels()
-lines2, labels2 = ax2.get_legend_handles_labels()
-ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8)
+# lines1, labels1 = ax1.get_legend_handles_labels()
+# lines2, labels2 = ax2.get_legend_handles_labels()
+# ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8)
 ax1.set_box_aspect(1)
 ax2.set_box_aspect(1)
 plt.suptitle(
