@@ -1077,13 +1077,13 @@ class ${class_name}(AbstractMonitor):
         # Declarative: take last ${tail_samples} samples (tail_samples: ${tail_samples})
         ${decl_input} = ${decl_input}[-${tail_samples}:]
 % endif
-% if aggregation == 'mean':
+% if str(aggregation) == 'mean':
         # Declarative: mean over time axis (aggregation: mean)
         ${decl_input} = jnp.mean(${decl_input}, axis=0)
-% elif aggregation == 'last':
+% elif str(aggregation) == 'last':
         # Declarative: last value (aggregation: last)
         ${decl_input} = ${decl_input}[-1]
-% elif aggregation == 'first':
+% elif str(aggregation) == 'first':
         # Declarative: first value (aggregation: first)
         ${decl_input} = ${decl_input}[0]
 % endif

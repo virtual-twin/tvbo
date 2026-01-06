@@ -308,6 +308,8 @@ def run_${algo_name}(
 % for inp_name in external_inputs:
     ${inp_name}: jnp.ndarray,
 % endfor
+    post_model_fn: Callable = None,
+    post_state: Any = None,
     history: Any = None,
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
@@ -335,6 +337,8 @@ def run_${algo_name}(
 % for inp_name in external_inputs:
         ${inp_name}: External data (from observations section with data_source)
 % endfor
+        post_model_fn: Optional model_fn for post-tuning run (full integration duration)
+        post_state: Optional state template for post-tuning run (full integration duration)
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
         ${src_obs}_buffer: Optional buffer from previous algorithm (skips warmup if provided)
@@ -435,17 +439,63 @@ def run_${algo_name}(
 % for src_obs in source_observations_needed:
     # Check if buffer was passed from previous algorithm
     if ${src_obs}_buffer is not None:
-        # Use buffer directly from previous algorithm (e.g., from FIC)
-        # Reshape to match expected shape (window_size, 1, n_nodes)
-        if ${src_obs}_buffer.ndim == 2:
-            _${src_obs}_buffer = ${src_obs}_buffer[-int(window_size):].reshape((int(window_size), 1, n_nodes))
-        elif ${src_obs}_buffer.ndim == 3:
-            _${src_obs}_buffer = ${src_obs}_buffer[-int(window_size):]
+        # Use buffer from previous algorithm
+        # Handle case where passed buffer is smaller than window_size
+        _passed_buffer = ${src_obs}_buffer
+        _passed_len = _passed_buffer.shape[0]
+
+        if _passed_len >= int(window_size):
+            # Buffer is large enough, slice to window_size
+            if _passed_buffer.ndim == 2:
+                _${src_obs}_buffer = _passed_buffer[-int(window_size):].reshape((int(window_size), 1, n_nodes))
+            elif _passed_buffer.ndim == 3:
+                _${src_obs}_buffer = _passed_buffer[-int(window_size):]
+            else:
+                _${src_obs}_buffer = _passed_buffer[-int(window_size):].reshape((int(window_size), 1, n_nodes))
+            _buffer_idx = int(window_size)
+            if verbose:
+                print(f"  Using passed ${src_obs} buffer ({_passed_len} samples, using last {int(window_size)})")
         else:
-            _${src_obs}_buffer = ${src_obs}_buffer[-int(window_size):].reshape((int(window_size), 1, n_nodes))
-        _buffer_idx = int(window_size)  # Buffer is already full
-        if verbose:
-            print(f"  Using passed ${src_obs} buffer ({_${src_obs}_buffer.shape[0]} samples)")
+            # Buffer is smaller than window_size - pad with zeros and note we need warmup
+            _${src_obs}_buffer = jnp.zeros((int(window_size), 1, n_nodes))
+            # Copy passed samples to end of buffer
+            if _passed_buffer.ndim == 2:
+                # Shape (n_samples, n_nodes) -> copy to last rows
+                for _pi in range(_passed_len):
+                    _${src_obs}_buffer = _${src_obs}_buffer.at[int(window_size) - _passed_len + _pi, 0, :].set(_passed_buffer[_pi, :])
+            elif _passed_buffer.ndim == 3:
+                _${src_obs}_buffer = _${src_obs}_buffer.at[-_passed_len:, :, :].set(_passed_buffer)
+            else:
+                for _pi in range(_passed_len):
+                    _${src_obs}_buffer = _${src_obs}_buffer.at[int(window_size) - _passed_len + _pi, 0, :].set(_passed_buffer[_pi])
+            _buffer_idx = _passed_len
+            if verbose:
+                print(f"  Passed ${src_obs} buffer too small ({_passed_len} < {int(window_size)}), running warmup for remaining {int(window_size) - _passed_len} samples...")
+
+            # Run warmup to fill the rest of the buffer
+            for _warmup_i in range(int(window_size) - _passed_len):
+                key, subkey = jax.random.split(key)
+                _warmup_result = model_fn(state)
+                state.initial_state.dynamics = _warmup_result.data[-1]
+                if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+                    state._internal.noise_samples = jax.random.normal(
+                        key=subkey, shape=state._internal.noise_samples.shape
+                    )
+                _warmup_${src_obs} = _${src_obs}_monitor(_warmup_result)
+                _warmup_${src_obs}_data = _warmup_${src_obs}.data if hasattr(_warmup_${src_obs}, 'data') else _warmup_${src_obs}
+                _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
+                if _warmup_${src_obs}_data.ndim == 2:
+                    _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data[0, :])
+                elif _warmup_${src_obs}_data.ndim == 3:
+                    _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_warmup_${src_obs}_data[0, :, :])
+                else:
+                    _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
+                _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
+                _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
+                _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+            _buffer_idx = int(window_size)
+            if verbose:
+                print(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
     else:
         # No buffer passed - run warmup phase
         _${src_obs}_buffer = jnp.zeros((int(window_size), 1, n_nodes))
@@ -791,12 +841,21 @@ def run_${algo_name}(
             raise ValueError("Algorithm must have functions or simulated_observations for progress display")
 % endif
 
-    # Run post-tuning simulation
-    post_tuning = model_fn(state)
+    # Run post-tuning simulation (use full integration setup if provided)
+    if post_model_fn is not None and post_state is not None:
+        import copy
+        _post_state = copy.deepcopy(post_state)
+        _post_state.initial_state.dynamics = state.initial_state.dynamics
+        _post_state.dynamics = state.dynamics
+        _post_state.coupling = state.coupling
+        post_tuning = post_model_fn(_post_state)
+    else:
+        post_tuning = model_fn(state)
 
     # Compute ALL observations from post-tuning simulation (in dependency order)
     # This uses the experiment-level compute_all_observations function
-    post_tuning_observations = compute_all_observations(post_tuning, state)
+    # Pass history as result_transient for BOLD pipeline continuity
+    post_tuning_observations = compute_all_observations(post_tuning, state, history)
 
     # Convert result_history lists to arrays
     for k in list(result_history.keys()):

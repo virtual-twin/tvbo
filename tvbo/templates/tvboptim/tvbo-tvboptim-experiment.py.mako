@@ -1807,6 +1807,9 @@ def run_experiment(
                 # Create algorithm-specific model_fn with simulation_period
                 algo_model_fn, algo_state = prepare(network, Heun(), t1=${float(algo_sim_period)}, dt=${dt})
 
+                # Create post-tuning model_fn/state using experiment-level integration metadata
+                post_model_fn, post_state = prepare(network, Heun(), t1=${t1_default}, dt=${dt})
+
                 # Determine source state: depends_on result or initial_state
 % if has_deps:
                 # This algorithm depends on: ${algo_deps}
@@ -1863,7 +1866,6 @@ def run_experiment(
                     state=algo_state,
                     model_fn=algo_model_fn,
                     key=algo_key,
-                    history=transient,
                     n_iterations=kwargs.get('n_iterations', ${n_iterations}),
 % for hp_name, hp_val in hyperparams_dict.items():
 <%
@@ -1878,6 +1880,9 @@ def run_experiment(
 % for net_obs_name in network_obs_inputs:
                     ${net_obs_name}=${net_obs_name},  # Module-level constant from BIDS
 % endfor
+                    post_model_fn=post_model_fn,
+                    post_state=post_state,
+                    history=transient,
 % if algo_needs_buffers:
 % for src_obs in algo_source_obs_needed:
 % if has_deps:
@@ -2039,7 +2044,7 @@ stage_lr = stage['learning_rate']
             post_optimization = model_fn(fitted_params)
 
             # Compute ALL observations from post-optimization simulation
-            post_optimization_observations = compute_all_observations(post_optimization, fitted_params)
+            post_optimization_observations = compute_all_observations(post_optimization, fitted_params, transient)
 
             # Store optimization result under its name for consistent access
             _opt_name = '${loss_functions[0]["opt_name"] if loss_functions else "optimization"}'
