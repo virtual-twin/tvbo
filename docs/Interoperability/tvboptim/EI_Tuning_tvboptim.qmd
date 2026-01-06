@@ -22,7 +22,7 @@ print(exp.render_code('tvboptim'))
 ```
 
 ```{python}
-results = exp.run("tvboptim", mode="all")
+results = exp.run("tvboptim")
 ```
 
 
