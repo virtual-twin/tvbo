@@ -316,6 +316,7 @@ def run_${algo_name}(
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
 % endfor
 % endif
+    monitors: dict = None,  # Optional: monitors from previous algorithm (for hemodynamic continuity)
     verbose: bool = True,
     print_every: int = None,
 ) -> Bunch:
@@ -419,12 +420,15 @@ def run_${algo_name}(
     # Note: Derived observations don't have monitor classes - they're computed from other observations
     # So we don't need dependent_monitors anymore
 %>
+    # Initialize monitors dict if not passed
+    if monitors is None:
+        monitors = {}
 % for obs, obs_class in pipeline_observations:
-    _${obs}_monitor = ${obs_class}(history=history)
+    _${obs}_monitor = monitors.get('${obs}') if monitors.get('${obs}') is not None else ${obs_class}(history=history)
 % endfor
 % for src_obs, src_class in source_monitors:
 % if src_obs not in [o[0] for o in pipeline_observations]:
-    _${src_obs}_monitor = ${src_class}(history=history)
+    _${src_obs}_monitor = monitors.get('${src_obs}') if monitors.get('${src_obs}') is not None else ${src_class}(history=history)
 % endif
 % endfor
     # History accessor for updating monitor state (hemodynamic continuity)
@@ -619,6 +623,7 @@ def run_${algo_name}(
     # For dependent observations, extract the primary pipeline function
     # to call directly on buffer (e.g., compute_fc for fc observation)
     direct_call = None
+    direct_call_args = []  # Additional keyword args from pipeline
     if src_obs_for_this and has_pipeline:
         pipeline = effective_obs_def.pipeline
         if pipeline and len(pipeline) > 0:
@@ -629,6 +634,20 @@ def run_${algo_name}(
                 callable_module = step_callable.module
                 if callable_name and callable_module:
                     direct_call = f"{callable_module}.{callable_name}"
+                    # Extract additional arguments from pipeline (e.g., skip_t=20)
+                    if hasattr(first_step, 'arguments') and first_step.arguments:
+                        for arg in first_step.arguments:
+                            arg_name = getattr(arg, 'name', None)
+                            arg_value = getattr(arg, 'value', None)
+                            # Skip the source observation argument (that's passed as the buffer)
+                            if arg_name and arg_value is not None:
+                                val_str = str(arg_value)
+                                # Skip observation references (those are handled by buffer)
+                                if val_str == src_obs_for_this:
+                                    continue
+                                # Include numeric arguments as keyword args
+                                if val_str.replace('.', '').replace('-', '').isdigit():
+                                    direct_call_args.append(f"{arg_name}={val_str}")
                 elif callable_name:
                     raise ValueError(f"Derived observation '{obs}' pipeline callable '{callable_name}' missing module - must specify full path")
                 else:
@@ -637,11 +656,14 @@ def run_${algo_name}(
                 raise ValueError(f"Derived observation '{obs}' has source_observations but pipeline step lacks callable")
         else:
             raise ValueError(f"Derived observation '{obs}' has source_observations '{src_obs_for_this}' but no pipeline defined")
+
+    # Build argument string (buffer is first positional, then keyword args from pipeline)
+    direct_call_kwargs = ", ".join(direct_call_args) if direct_call_args else ""
 %>
 % if src_obs_for_this:
         # ${obs} depends on ${src_obs_for_this} - compute directly from accumulated buffer
-        # Call pipeline function directly: ${direct_call}
-        ${obs} = ${direct_call}(_${src_obs_for_this}_buffer)
+        # Call: ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
+        ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
 % elif obs_def and obs_source and state_idx is not None:
         ${obs} = jnp.mean(result.data[:, ${state_idx}], axis=0)  # Mean over time, per node
 % elif has_pipeline and obs not in source_observations_needed:
@@ -720,37 +742,64 @@ def run_${algo_name}(
         eta_scale = (i + 1) / n_iterations
 % endif
 
-        # Apply update rules
+        # Record history BEFORE applying updates (to match original pattern)
+        # Original: mean_S_e_history.append(mean_S_e) BEFORE J_i update
+        # Original: J_i_history records J_i BEFORE update (J_i_history[0] = 1.0)
+
+        # Record simulated observations (mean value for scalars)
+% for obs in simulated_observations:
+        result_history.${obs}.append(jnp.mean(${obs}))
+% endfor
+
+        # Record parameter values BEFORE update (captures pre-update values on first iter)
+        # Broadcast scalar to n_nodes array for consistent shape (handles scalar -> array transitions)
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<%
+    target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
+    rec_coupling_key = coupling_param_to_key.get(target_name, None)
+    is_rec_coupling_param = rec_coupling_key is not None
+%>
+% if is_rec_coupling_param:
+        result_history.${target_name}.append(jnp.broadcast_to(state.coupling.${rec_coupling_key}.${target_name}, (n_nodes,)))
+% else:
+        result_history.${target_name}.append(jnp.broadcast_to(state.dynamics.${target_name}, (n_nodes,)))
+% endif
+% endfor
+
+        # Compute and record algorithm functions (metrics, derived quantities)
+% for func_call in algo_functions:
+<%
+    func_name = get_func_name(func_call)
+    arg_values = get_func_args(func_call)
+    call_args = ', '.join([f"{k}={v}" for k, v in arg_values.items()])
+    func_call_str = f"{func_name}({call_args})"
+%>
+        _${func_name}_val = ${func_call_str}
+        result_history.${func_name}.append(_${func_name}_val)
+% endfor
+
+        # NOW compute and apply update rules (after recording)
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
 <%
     rule_name = safe_name(rule.name)
     target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
     rule_rhs = rule.equation.rhs
 
-    # Check if this rule comes from an included algorithm
     is_from_included = rule_source != str(algo.name)
-
-    # Get hyperparameters from the source algorithm
     source_algo = algorithms_dict.get(rule_source)
     source_hyperparam_dict = get_hyperparam_dict(source_algo) if source_algo else {}
-
-    # Apply argument overrides from includes (these take priority)
     effective_hyperparams = {**source_hyperparam_dict, **arg_overrides}
 
-    # Build rule_params_dict from effective hyperparameters
     rule_params_dict = {}
     for pname, pval in effective_hyperparams.items():
         if pname in rule_rhs:
             rule_params_dict[pname] = pval
 
-    # Check if this rule has an eta parameter that needs warmup
     eta_param_names = [p for p in rule_params_dict.keys() if p.lower() in ['eta', 'learning_rate', 'lr']]
     has_eta_param = len(eta_param_names) > 0
-    # Use per-rule warmup setting (matches function definition)
     rule_has_warmup = getattr(rule, 'warmup', False)
     needs_warmup = rule_has_warmup and has_eta_param
 
-    # Determine where to update the parameter (dynamics or coupling)
     coupling_key = coupling_param_to_key.get(target_name, None)
     is_coupling_param = coupling_key is not None
 %>
@@ -775,42 +824,6 @@ def run_${algo_name}(
         state.coupling.${coupling_key}.${target_name} = new_${target_name}
 % else:
         state.dynamics.${target_name} = new_${target_name}
-% endif
-% endfor
-
-        # Record result history (defer conversion to end)
-        # Record simulated observations (mean value for scalars)
-% for obs in simulated_observations:
-        result_history.${obs}.append(jnp.mean(${obs}))
-% endfor
-
-        # Compute and record algorithm functions (metrics, derived quantities)
-% for func_call in algo_functions:
-<%
-    # FunctionCall has function (name reference) and arguments
-    func_name = get_func_name(func_call)
-    arg_values = get_func_args(func_call)
-
-    # Generate function call
-    call_args = ', '.join([f"{k}={v}" for k, v in arg_values.items()])
-    func_call_str = f"{func_name}({call_args})"
-%>
-        _${func_name}_val = ${func_call_str}
-        result_history.${func_name}.append(_${func_name}_val)
-% endfor
-
-        # Record parameter updates
-% for rule, rule_source, arg_overrides in all_update_rules_with_source:
-<%
-    target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
-    # Use coupling_param_to_key lookup
-    rec_coupling_key = coupling_param_to_key.get(target_name, None)
-    is_coupling_param = rec_coupling_key is not None
-%>
-% if is_coupling_param:
-        result_history.${target_name}.append(state.coupling.${rec_coupling_key}.${target_name})
-% else:
-        result_history.${target_name}.append(state.dynamics.${target_name})
 % endif
 % endfor
 
@@ -875,6 +888,17 @@ def run_${algo_name}(
     _${obs}_buffer_out = jnp.array(_${obs}_samples) if _${obs}_samples else None
 % endfor
 
+    # Collect monitors for passing to next algorithm (hemodynamic continuity)
+    _monitors_out = {}
+% for obs, obs_class in pipeline_observations:
+    _monitors_out['${obs}'] = _${obs}_monitor
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+    _monitors_out['${src_obs}'] = _${src_obs}_monitor
+% endif
+% endfor
+
     if verbose:
         print(f"${algo_name} complete!")
 
@@ -884,6 +908,7 @@ def run_${algo_name}(
         pre_tuning=pre_tuning,
         post_tuning=post_tuning,
         post_tuning_observations=post_tuning_observations,
+        monitors=_monitors_out,  # For passing to next algorithm
 % for obs in collectible_observations:
         ${obs}_buffer=_${obs}_buffer_out,  # Raw samples for passing to next algorithm
 % endfor

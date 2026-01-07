@@ -7,6 +7,28 @@
 3. **MVP First:** No fallbacks, no try-except blocks. Code should work as expected; if it breaks, we debug.
 4. **Readable:** Clear variable names, simple control flow, no unnecessary abstractions.
 
+## Template & Code Generation Principles
+
+**100% Generalizability is mandatory.** TVBO templates must work for ANY simulation, algorithm, exploration, or optimization:
+
+1. **No Hardcoded Names:** Never mention specific parameter names (e.g., `J_i`, `S_e`), variable names, or model-specific logic in templates. All names must come from YAML metadata via template variables.
+2. **No Special Cases:** No `if parameter_name == 'J_i'` or similar conditionals. Logic must be generic and driven by schema attributes (e.g., `is_coupling_param`, `has_pipeline`).
+3. **Schema-Driven:** All behavior differences must be expressible through YAML schema attributes, not hardcoded in templates.
+4. **Consistent Data Structures:** Ensure arrays/scalars are handled uniformly. If a parameter can be per-node, initialize it as an array from the start.
+5. **Template Variables Only:** Use `${parameter_name}`, `${obs_name}`, etc. Never write literal parameter/variable names in generated code patterns.
+
+Example - WRONG:
+```mako
+# Don't do this - hardcoded parameter name
+result_history.J_i.append(state.dynamics.J_i)
+```
+
+Example - CORRECT:
+```mako
+# Do this - uses template variable
+result_history.${target_name}.append(state.dynamics.${target_name})
+```
+
 ## Symbolic Mathematics Principles
 
 TVBO aims for a complete symbolic representation of SimulationExperiment using SymPy:

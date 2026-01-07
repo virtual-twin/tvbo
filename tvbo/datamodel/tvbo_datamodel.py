@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-01-05T11:45:58
+# Generation date: 2026-01-06T19:29:30
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1856,6 +1856,7 @@ class Optimization(OptimizationStage):
     class_model_uri: ClassVar[URIRef] = TVBO.Optimization
 
     name: Union[str, OptimizationName] = None
+    execution: Optional[Union[dict, "ExecutionConfig"]] = None
     loss: Optional[Union[dict, FunctionCall]] = None
     stages: Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]] = empty_dict()
 
@@ -1864,6 +1865,9 @@ class Optimization(OptimizationStage):
             self.MissingRequiredField("name")
         if not isinstance(self.name, OptimizationName):
             self.name = OptimizationName(self.name)
+
+        if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
+            self.execution = ExecutionConfig(**as_dict(self.execution))
 
         if self.loss is not None and not isinstance(self.loss, FunctionCall):
             self.loss = FunctionCall(**as_dict(self.loss))
@@ -1889,6 +1893,7 @@ class Exploration(YAMLRoot):
     parameters: Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]] = empty_dict()
     label: Optional[str] = None
     description: Optional[str] = None
+    execution: Optional[Union[dict, "ExecutionConfig"]] = None
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
@@ -1908,6 +1913,9 @@ class Exploration(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
+            self.execution = ExecutionConfig(**as_dict(self.execution))
 
         if self.mode is not None and not isinstance(self.mode, str):
             self.mode = str(self.mode)
@@ -2061,6 +2069,7 @@ class Algorithm(YAMLRoot):
 
     name: Union[str, AlgorithmName] = None
     description: Optional[str] = None
+    execution: Optional[Union[dict, "ExecutionConfig"]] = None
     type: Optional[str] = None
     includes: Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]] = empty_list()
     objective: Optional[Union[dict, TuningObjective]] = None
@@ -2084,6 +2093,9 @@ class Algorithm(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
+            self.execution = ExecutionConfig(**as_dict(self.execution))
 
         if self.type is not None and not isinstance(self.type, str):
             self.type = str(self.type)
@@ -4738,11 +4750,17 @@ slots.optimizationStage__freeze_parameters = Slot(uri=TVBO.freeze_parameters, na
 slots.optimizationStage__warmup_from = Slot(uri=TVBO.warmup_from, name="optimizationStage__warmup_from", curie=TVBO.curie('warmup_from'),
                    model_uri=TVBO.optimizationStage__warmup_from, domain=None, range=Optional[Union[str, OptimizationStageName]])
 
+slots.optimization__execution = Slot(uri=TVBO.execution, name="optimization__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.optimization__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
 slots.optimization__loss = Slot(uri=TVBO.loss, name="optimization__loss", curie=TVBO.curie('loss'),
                    model_uri=TVBO.optimization__loss, domain=None, range=Optional[Union[dict, FunctionCall]])
 
 slots.optimization__stages = Slot(uri=TVBO.stages, name="optimization__stages", curie=TVBO.curie('stages'),
                    model_uri=TVBO.optimization__stages, domain=None, range=Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]])
+
+slots.exploration__execution = Slot(uri=TVBO.execution, name="exploration__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.exploration__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
 
 slots.exploration__parameters = Slot(uri=TVBO.parameters, name="exploration__parameters", curie=TVBO.curie('parameters'),
                    model_uri=TVBO.exploration__parameters, domain=None, range=Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]])
@@ -4791,6 +4809,9 @@ slots.tuningObjective__target_data = Slot(uri=TVBO.target_data, name="tuningObje
 
 slots.tuningObjective__metric = Slot(uri=TVBO.metric, name="tuningObjective__metric", curie=TVBO.curie('metric'),
                    model_uri=TVBO.tuningObjective__metric, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.algorithm__execution = Slot(uri=TVBO.execution, name="algorithm__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.algorithm__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
 
 slots.algorithm__type = Slot(uri=TVBO.type, name="algorithm__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.algorithm__type, domain=None, range=Optional[str])
