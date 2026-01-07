@@ -752,7 +752,7 @@ def run_${algo_name}(
 % endfor
 
         # Record parameter values BEFORE update (captures pre-update values on first iter)
-        # Broadcast scalar to n_nodes array for consistent shape (handles scalar -> array transitions)
+        # Store values directly - no implicit transformations
 % for rule, rule_source, arg_overrides in all_update_rules_with_source:
 <%
     target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
@@ -760,9 +760,9 @@ def run_${algo_name}(
     is_rec_coupling_param = rec_coupling_key is not None
 %>
 % if is_rec_coupling_param:
-        result_history.${target_name}.append(jnp.broadcast_to(state.coupling.${rec_coupling_key}.${target_name}, (n_nodes,)))
+        result_history.${target_name}.append(state.coupling.${rec_coupling_key}.${target_name})
 % else:
-        result_history.${target_name}.append(jnp.broadcast_to(state.dynamics.${target_name}, (n_nodes,)))
+        result_history.${target_name}.append(state.dynamics.${target_name})
 % endif
 % endfor
 
@@ -902,19 +902,30 @@ def run_${algo_name}(
     if verbose:
         print(f"${algo_name} complete!")
 
-    return Bunch(
+    # Build hyperparameters Bunch for AlgorithmResult
+    _hyperparams = Bunch(
+% for pname, pval in hyperparam_dict.items():
+        ${pname}=${pval},
+% endfor
+    )
+
+    return AlgorithmResult(
+        name='${algo_name}',
         state=state,
         history=result_history,
         pre_tuning=pre_tuning,
         post_tuning=post_tuning,
         post_tuning_observations=post_tuning_observations,
-        monitors=_monitors_out,  # For passing to next algorithm
+        n_iterations=n_iterations,
+        hyperparameters=_hyperparams,
+        # Additional fields for algorithm chaining
+        monitors=_monitors_out,
 % for obs in collectible_observations:
-        ${obs}_buffer=_${obs}_buffer_out,  # Raw samples for passing to next algorithm
+        ${obs}_buffer=_${obs}_buffer_out,
 % endfor
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
-        ${src_obs}_buffer=_${src_obs}_buffer,  # Current sliding window buffer
+        ${src_obs}_buffer=_${src_obs}_buffer,
 % endfor
 % endif
     )

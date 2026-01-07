@@ -48,6 +48,38 @@ def get_attr(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default) if obj else default
 
 
+def get_param_info(parameters) -> Tuple[List[str], Dict[str, float], Dict[str, str]]:
+    """Extract parameter names, defaults, and shapes from a parameters collection.
+
+    Works for both model.parameters and coupling.parameters.
+
+    Args:
+        parameters: dict-like of Parameter objects
+
+    Returns:
+        tuple: (param_names, param_defaults, param_shapes)
+            - param_names: list of parameter names
+            - param_defaults: dict of name -> scalar value (for DEFAULT_PARAMS)
+            - param_shapes: dict of name -> shape string (only for params with shape attribute)
+    """
+    if not parameters:
+        return [], {}, {}
+
+    params = list(parameters.values()) if hasattr(parameters, 'values') else list(parameters)
+    param_names = [p.name for p in params]
+    param_defaults = {}
+    param_shapes = {}
+
+    for p in params:
+        val = float(p.value) if p.value is not None else 1.0
+        param_defaults[p.name] = val
+        shape = getattr(p, 'shape', None)
+        if shape:
+            param_shapes[p.name] = str(shape)
+
+    return param_names, param_defaults, param_shapes
+
+
 def to_numeric(val: Any) -> Union[int, float, Any]:
     """Convert string to numeric if possible."""
     if isinstance(val, (int, float)):

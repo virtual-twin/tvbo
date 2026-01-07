@@ -1150,6 +1150,15 @@ classes:
                     Stage n+1 starts from optimized values of stage n.
                     When defined, inherited single-stage fields are ignored.
 
+            # Dependency on algorithm (use algorithm's result state as starting point)
+            depends_on:
+                range: Algorithm
+                inlined: false
+                description: >-
+                    Algorithm to use as starting point for optimization.
+                    If specified, optimization starts from algorithm's result state.
+                    If not specified, optimization starts from initial simulation state.
+
     # =============================================================================
     # Parameter Exploration
     # =============================================================================

@@ -17,3 +17,11 @@ from .tvbo_data import *
 
 from .tvbo_data.connectomes import Network
 from .tvbo_data.atlases import Atlas
+
+# Result classes for simulation experiments
+from .types import (
+    SimulationResult,
+    AlgorithmResult,
+    OptimizationResult,
+    ExplorationResult,
+)

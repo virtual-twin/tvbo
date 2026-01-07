@@ -23,7 +23,7 @@ from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
-    parse_exploration
+    parse_exploration, get_param_info
 )
 import numpy as np
 
@@ -166,6 +166,9 @@ network_observation_names, observation_names = get_observation_refs(observations
 
 # Class name from model
 dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else 'GeneratedDynamics'
+
+# Dynamics parameter info (shared utility)
+dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
 
 # === Optimization metadata ===
 # Schema: experiment.optimization is multivalued dict, opt.stages is inlined_as_list
@@ -474,11 +477,7 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 % else:
 from tvboptim.experimental.network_dynamics.graph import DenseGraph
 % endif
-% if has_state_bounds:
 from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, BoundedSolver
-% else:
-from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
-% endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
@@ -495,6 +494,38 @@ from tvboptim.execution import ParallelExecution
 % for mod in derived_obs_modules:
 import ${mod}
 % endfor
+
+# Result classes from tvbo
+from tvbo.data.types import SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult
+
+
+# =============================================================================
+# Solver Configuration
+# =============================================================================
+
+def get_solver():
+    """Get configured solver instance.
+
+    Returns the solver specified in integration metadata (${solver_class}).
+% if has_state_bounds:
+    Wrapped in BoundedSolver to enforce state variable domain constraints:
+    % for sv_name, lo, hi in zip(state_names, state_bounds_lo, state_bounds_hi):
+    - ${sv_name}: [${lo}, ${hi}]
+    % endfor
+% endif
+    """
+    base_solver = ${solver_class}()
+% if has_state_bounds:
+    # Wrap solver with BoundedSolver to enforce state variable domain constraints
+    # Shape (n_states, 1) broadcasts with state array (n_states, n_nodes)
+    return BoundedSolver(
+        base_solver,
+        low=jnp.array(${state_bounds_lo})[:, None],
+        high=jnp.array(${state_bounds_hi})[:, None]
+    )
+% else:
+    return base_solver
+% endif
 
 
 # =============================================================================
@@ -536,31 +567,37 @@ def create_network(
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif
 
-    dynamics = ${dynamics_class}(**(dynamics_params or {}))
+    n_nodes = weights.shape[0]
+
+    # Initialize dynamics params (broadcast to array shapes where specified)
+    # Override with dynamics_params if provided (e.g., from external data source)
+    _dynamics_params = {
+        % for name in dyn_param_names:
+        % if name in dyn_param_shapes:
+        '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
+        % else:
+        '${name}': ${dyn_param_defaults.get(name, 1.0)},
+        % endif
+        % endfor
+    }
+    if dynamics_params:
+        _dynamics_params.update(dynamics_params)
+    dynamics = ${dynamics_class}(**_dynamics_params)
 
     # Create coupling functions for each entry in network.coupling
-    # Key == class name (cleaned for Python identifier)
-    n_nodes = weights.shape[0]
     coupling_dict = {}
 
     % for coupling_key, coupling_obj in all_couplings.items():
 <%
     # Class name = coupling key (cleaned), same as in cfun template
     c_class_name = coupling_key.replace(' ', '').replace('-', '')
-    c_params = list(coupling_obj.parameters.values()) if hasattr(coupling_obj, 'parameters') and coupling_obj.parameters else []
-    c_param_names = [p.name for p in c_params]
-    c_param_defaults = {p.name: float(p.value) if p.value is not None else 1.0 for p in c_params}
-    c_param_shapes = {}
-    for p in c_params:
-        shape_str = getattr(p, 'shape', None)
-        if shape_str and 'n_nodes' in str(shape_str):
-            c_param_shapes[p.name] = str(shape_str)
+    c_param_names, c_param_defaults, c_param_shapes = get_param_info(coupling_obj.parameters if hasattr(coupling_obj, 'parameters') else None)
 %>
     # Coupling '${coupling_key}' -> ${c_class_name}
     _${coupling_key}_params = {
         % for name in c_param_names:
         % if name in c_param_shapes:
-        '${name}': jnp.ones(${c_param_shapes[name].replace('n_nodes', 'n_nodes')}) * ${c_param_defaults.get(name, 1.0)},
+        '${name}': jnp.full(${c_param_shapes[name]}, ${c_param_defaults.get(name, 1.0)}),
         % else:
         '${name}': ${c_param_defaults.get(name, 1.0)},
         % endif
@@ -630,18 +667,7 @@ def run_simulation(
     Bunch
         Contains model_fn, state, result, and optionally result_transient
     """
-% if has_state_bounds:
-    # Wrap solver with BoundedSolver to enforce state variable domain constraints
-    # Bounds per state: ${list(zip(state_names, state_bounds_lo, state_bounds_hi))}
-    # Shape (n_states, 1) broadcasts with state array (n_states, n_nodes)
-    solver = BoundedSolver(
-        ${solver_class}(),
-        low=jnp.array(${state_bounds_lo})[:, None],
-        high=jnp.array(${state_bounds_hi})[:, None]
-    )
-% else:
-    solver = ${solver_class}()
-% endif
+    solver = get_solver()
     result_transient = None
 
     % if has_transient:
@@ -689,7 +715,14 @@ def run_simulation(
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
-    return Bunch(model_fn=model_fn, state=state, result=result, transient=result_transient, observations=observations)
+    # Return raw results - only final run_experiment return wraps in result classes
+    return Bunch(
+        model_fn=model_fn,
+        state=state,
+        result=result,  # Raw tvboptim result (for monitors/observations)
+        result_transient=result_transient,  # Raw transient result (for HRF warmup)
+        observations=observations,  # Computed observations
+    )
 
 
 # =============================================================================
@@ -1480,7 +1513,31 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     results = exec_runner.run()
-    return Bunch(grid=grid, results=jnp.stack(results))
+
+    # Build axes info for ExplorationResult
+    _axes_info = [
+% for ax in expl['axes']:
+        Bunch(
+            name='${ax['name']}',
+            lo=${ax['lo']},
+            hi=${ax['hi']},
+            n=${ax['n']},
+            values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
+% if ax.get('is_coupling'):
+            is_coupling=True,
+            coupling_key='${ax['coupling_key']}',
+% endif
+        ),
+% endfor
+    ]
+
+    return ExplorationResult(
+        name='${expl['name']}',
+        grid=grid,
+        results=jnp.stack(results),
+        axes=_axes_info,
+        observable='${obs_name if obs_name else obs_func}',
+    )
 
 
 % endfor
@@ -1565,7 +1622,8 @@ def run_experiment(
     sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main)
     model_fn = sim_result.model_fn
     default_state = sim_result.state
-    transient = sim_result.transient
+    # Raw transient result for observation monitors (HRF warmup)
+    transient = sim_result.result_transient
     print(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
     print(f"  Transient period: ${transient_time} ms")
 
@@ -1608,7 +1666,8 @@ def run_experiment(
         state = use_state
     else:
         state = default_state
-        result = sim_result.result  # Will be None if run_main=False
+        # Use raw result directly (run_simulation now returns raw results)
+        result = sim_result.result
 
     # Compute observations only if main simulation was run
     if run_main and result is not None:
@@ -1637,12 +1696,36 @@ def run_experiment(
     else:
         observations = None
 
+    # Save initial state from simulation (before any algorithms/optimization modify it)
+    # This is the starting point for optimization unless depends_on is specified
+    initial_state = copy.deepcopy(state)
+
+    # Build results structure mirroring YAML metadata
+    # - results.integration.{transient, main} - each with .observations
+    # - results.algorithms.{fic, eib, ...} - if algorithms mode
+    # - results.optimization.{name, ...} - if optimization mode
+    # - results.exploration.{name, ...} - if exploration mode
+    # - results.state, results.model_fn, results.network - always available
+
+    # Wrap simulation results with observations attached
+    main_result = SimulationResult(result=result, observations=observations) if result is not None else None
+    transient_result = SimulationResult(result=transient) if transient is not None else None
+
     results = Bunch(
+        # Core simulation infrastructure (always present)
         model_fn=model_fn,
         state=state,
+        network=network,
+
+        # Integration results (mirrors integration section in YAML)
+        integration=Bunch(
+            main=main_result,
+            transient=transient_result,
+        ),
+
+        # Legacy aliases for backward compatibility
         result=result,
         transient=transient,
-        network=network,
         observations=observations,
     )
     print("  Simulation complete.")
@@ -1655,18 +1738,19 @@ def run_experiment(
         print("\n" + "=" * 60)
         print("STEP 2: Running explorations...")
         print("=" * 60)
-        explorations_result = Bunch()
+        exploration_result = Bunch()
 
         % for expl in explorations:
         print(f"  > ${expl['name']}")
-        explorations_result.${expl['name']} = ${expl['name']}(
+        exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             result_transient=transient,
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
         % endfor
 
-        results.explorations = explorations_result
+        results.exploration = exploration_result  # Singular, mirrors YAML section name
+        results.explorations = exploration_result  # Legacy alias
         print("  Explorations complete.")
     % endif
 
@@ -1709,10 +1793,6 @@ def run_experiment(
 
         # Storage for algorithm results when running all
         algorithms_results = Bunch()
-
-        # Save initial state for independent algorithms
-        # (algorithms without depends_on should always start from initial state)
-        initial_state = copy.deepcopy(state)
 
         # Run the specified algorithm(s)
         algo_result = None
@@ -1806,7 +1886,7 @@ def run_experiment(
             _algo_seed = algo_seed_overrides.get(algorithm_name, None)
             if _algo_seed is None:
                 _algo_seed = default_algo_seed
-            algo_key = jax.random.PRNGKey(_algo_seed)
+            algo_key = jax.random.key(_algo_seed)  # Use newer key() API for consistency
             if algo_verbose:
                 print(f"\\n>>> Running algorithm: {algorithm_name} (seed={_algo_seed})")
             algo_result = None
@@ -1871,11 +1951,12 @@ def run_experiment(
 %>
             if algorithm_name == '${algo_name}':
                 # Create algorithm-specific model_fn with simulation_period
-                algo_model_fn, algo_state = prepare(network, Heun(), t1=${float(algo_sim_period)}, dt=${dt})
+                # Use get_solver() to ensure consistent solver config (with BoundedSolver if needed)
+                algo_model_fn, algo_state = prepare(network, get_solver(), t1=${float(algo_sim_period)}, dt=${dt})
 
                 # Create post-tuning model_fn/state using experiment-level integration duration
                 # (needed for full-length BOLD simulation for FC computation)
-                post_model_fn, post_state = prepare(network, Heun(), t1=${t1_default}, dt=${dt})
+                post_model_fn, post_state = prepare(network, get_solver(), t1=${t1_default}, dt=${dt})
 
                 # Determine source state: depends_on result or initial_state
 % if has_deps:
@@ -2037,7 +2118,8 @@ def run_experiment(
 
             # Stage results storage (use Bunch for dot-notation access)
             stage_results = Bunch()
-            current_state = state  # Start with current state (may be updated by algorithms)
+            # Use initial_state (from simulation) unless depends_on specifies an algorithm
+            current_state = initial_state
 
 % if len(optimization_stages) > 1:
             # Multi-stage optimization with optional stage filtering
@@ -2085,7 +2167,18 @@ stage_lr = stage['learning_rate']
                 max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
                 learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
             )
-            stage_results['${stage_name}'] = Bunch(
+            # Use OptimizationResult for each stage
+            _stage_hyperparams = Bunch(
+                learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
+                max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+            )
+            stage_results['${stage_name}'] = OptimizationResult(
+                name='${stage_name}',
+                state=_fitted_${stage_name},
+                history=_history_${stage_name},
+                n_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+                hyperparameters=_stage_hyperparams,
+                # Legacy aliases
                 fitted_params=_fitted_${stage_name},
                 fitting_data=_history_${stage_name},
             )
@@ -2100,6 +2193,8 @@ stage_lr = stage['learning_rate']
         # Final results: last stage's fitted_params + per-stage access via dot notation
         results['fitted_params'] = current_state
         results['fitting_data'] = stage_results  # Bunch of all stage histories
+        # Store under results.optimization for consistent access
+        results['optimization'] = stage_results
         # Add each stage directly to results for easy access: results.global_optimization.fitted_params
         for _stage_name, _stage_result in stage_results.items():
             results[_stage_name] = _stage_result
@@ -2122,15 +2217,30 @@ stage_lr = stage['learning_rate']
             # Compute ALL observations from post-optimization simulation
             post_optimization_observations = compute_all_observations(post_optimization, fitted_params, transient)
 
-            # Store optimization result under its name for consistent access
+            # Store optimization result using OptimizationResult class
             _opt_name = '${loss_functions[0]["opt_name"] if loss_functions else "optimization"}'
-            results[_opt_name] = Bunch(
+            _opt_hyperparams = Bunch(
+                learning_rate=kwargs.get('learning_rate', ${learning_rate}),
+                optimizer=kwargs.get('optimizer', '${optimizer_name}'),
+                max_steps=kwargs.get('max_steps', ${max_steps}),
+            )
+            _opt_result = OptimizationResult(
+                name=_opt_name,
                 state=fitted_params,
                 history=fitting_data,
+                simulation=SimulationResult(result=post_optimization, observations=post_optimization_observations),
+                n_steps=kwargs.get('max_steps', ${max_steps}),
+                hyperparameters=_opt_hyperparams,
+                # Legacy fields preserved in OptimizationResult
                 post_optimization=post_optimization,
                 post_optimization_observations=post_optimization_observations,
             )
-            # Also expose at top level for convenience
+
+            # Store under results.optimization.{name} for consistent structure
+            results['optimization'] = Bunch(**{_opt_name: _opt_result})
+            results[_opt_name] = _opt_result  # Also at top level for convenience
+
+            # Legacy aliases at top level
             results['fitted_params'] = fitted_params
             results['fitting_data'] = fitting_data
             print("  Optimization complete.")

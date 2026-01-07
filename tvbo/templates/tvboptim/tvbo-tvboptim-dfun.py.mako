@@ -15,6 +15,7 @@ Output:
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 from tvbo.export.code import render_expression
+from tvbo.templates.tvboptim.utils import get_param_info
 
 # Get model from context
 if 'experiment' in context.keys():
@@ -56,9 +57,9 @@ if output_vars:
 else:
     # Default: all derived variables become auxiliaries
     aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
-param_names = [p.name for p in model.parameters.values()]
-param_defaults = {p.name: float(p.value) if p.value is not None else 1.0
-                  for p in model.parameters.values()}
+
+# Extract parameter info using shared utility
+param_names, param_defaults, param_shapes = get_param_info(model.parameters)
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
 # Build COUPLING_INPUTS from coupling_inputs

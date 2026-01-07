@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-01-06T19:29:30
+# Generation date: 2026-01-07T16:36:38
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1859,6 +1859,7 @@ class Optimization(OptimizationStage):
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
     loss: Optional[Union[dict, FunctionCall]] = None
     stages: Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]] = empty_dict()
+    depends_on: Optional[Union[str, AlgorithmName]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1873,6 +1874,9 @@ class Optimization(OptimizationStage):
             self.loss = FunctionCall(**as_dict(self.loss))
 
         self._normalize_inlined_as_list(slot_name="stages", slot_type=OptimizationStage, key_name="name", keyed=True)
+
+        if self.depends_on is not None and not isinstance(self.depends_on, AlgorithmName):
+            self.depends_on = AlgorithmName(self.depends_on)
 
         super().__post_init__(**kwargs)
 
@@ -4758,6 +4762,9 @@ slots.optimization__loss = Slot(uri=TVBO.loss, name="optimization__loss", curie=
 
 slots.optimization__stages = Slot(uri=TVBO.stages, name="optimization__stages", curie=TVBO.curie('stages'),
                    model_uri=TVBO.optimization__stages, domain=None, range=Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]])
+
+slots.optimization__depends_on = Slot(uri=TVBO.depends_on, name="optimization__depends_on", curie=TVBO.curie('depends_on'),
+                   model_uri=TVBO.optimization__depends_on, domain=None, range=Optional[Union[str, AlgorithmName]])
 
 slots.exploration__execution = Slot(uri=TVBO.execution, name="exploration__execution", curie=TVBO.curie('execution'),
                    model_uri=TVBO.exploration__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
