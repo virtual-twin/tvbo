@@ -22,7 +22,7 @@ print(exp.render_code('tvboptim'))
 ```
 
 ```{python}
-results = exp.run("tvboptim", mode='algorithm', name='fic', n_iterations=10)
+results = exp.run("tvboptim")
 pickleable = {
     'fic': {
         'mean_S_e': np.array(results.fic.history.mean_S_e),
@@ -59,17 +59,16 @@ accent_blue = cmap(0.3)
 accent_gold = cmap(0.85)
 accent_mid = cmap(0.6)
 
-# Get FC matrices directly from stored observations (no post-hoc computation!)
+# Get FC matrices from result structure (observations attached to simulation results)
 fc_target = np.array(results.observations.fc_target)
-fc_post_fic = np.array(results.fic.post_tuning_observations.fc)
-fc_post_fic_eib = np.array(results.fic_eib.post_tuning_observations.fc)
-fc_gradient = np.array(results.gradient_eib.post_optimization_observations.fc)
+fc_post_fic = np.array(results.fic.post_tuning.observations.fc)
+fc_post_fic_eib = np.array(results.fic_eib.post_tuning.observations.fc)
+fc_gradient = np.array(results.gradient_eib.simulation.observations.fc)
 
-# FC correlations from post-tuning observations (computed from fresh simulation, not last iteration)
-# This matches original which runs eval_fc() after tuning for final metrics
-corr_post_fic = float(results.fic.post_tuning_observations.fc_corr)
-corr_fic_eib = float(results.fic_eib.post_tuning_observations.fc_corr)
-corr_gradient = float(results.gradient_eib.post_optimization_observations.fc_corr)
+# FC correlations from post-tuning observations
+corr_post_fic = float(results.fic.post_tuning.observations.fc_corr)
+corr_fic_eib = float(results.fic_eib.post_tuning.observations.fc_corr)
+corr_gradient = float(results.gradient_eib.simulation.observations.fc_corr)
 
 # 3 rows x 4 columns layout
 mosaic = "AABBCCDD\nEEFFGGHH\nIIJJKKLL"
@@ -168,6 +167,7 @@ plt.colorbar(im, ax=ax, fraction=0.046)
 
 # J: Gradient Loss Convergence
 ax = axes["J"]
+# Access history directly - tvboptim optimizer stores loss in history['loss'].save
 loss_values = np.array(results.gradient_eib.history['loss'].save.tolist())
 ax.plot(loss_values, lw=2, color="k", alpha=0.9)
 ax.scatter(0, loss_values[0], s=80, color=accent_blue, zorder=5)

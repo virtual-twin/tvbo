@@ -1,11 +1,80 @@
 # Copilot Coding Agent Instructions for TVBO
 
+## Code Organization Principles
+
+### Where to Put Code
+
+1. **General Python Classes/Functions:** Add to `tvbo/` source code (e.g., `tvbo/data/types.py`, `tvbo/utils.py`)
+   - Result classes (`SimulationResult`, `AlgorithmResult`, etc.) → `tvbo/data/types.py`
+   - Utility functions used across modules → `tvbo/utils.py`
+   - Data loading and processing → `tvbo/data/`
+
+2. **Template Utilities (metadata processing):**
+   - Language-agnostic utilities → `tvbo/templates/` (shared across backends)
+   - Backend-specific utilities → `tvbo/templates/<subfolder>/utils.py` (e.g., `tvbo/templates/tvboptim/utils.py`)
+
+3. **Templates (code generation):**
+   - Templates generate code by combining YAML metadata with Mako syntax
+   - Templates should import reusable classes from tvbo source, not define them inline
+   - Use `<%namespace>` for shared template macros
+
+### Template vs Source Code Decision Tree
+
+```
+Is this code specific to generated output syntax?
+├── YES → Put in template (.py.mako)
+└── NO → Is this utility for processing YAML metadata?
+    ├── YES → Is it backend-specific?
+    │   ├── YES → tvbo/templates/<backend>/utils.py
+    │   └── NO → tvbo/templates/utils.py
+    └── NO → tvbo/ source code (appropriate module)
+```
+
+### Examples
+
+| Code Type | Location |
+|-----------|----------|
+| `SimulationResult` class | `tvbo/data/types.py` |
+| `safe_name()` for template variable escaping | `tvbo/templates/tvboptim/utils.py` |
+| JAX code printer | `tvbo/export/code.py` |
+| Dynamics model template | `tvbo/templates/tvboptim/tvbo-tvboptim-dfun.py.mako` |
+| Bunch utility class | `tvbo/utils.py` |
+
 ## Code Style Principles
 
 1. **Minimal & Clean:** Write the shortest code that solves the problem. No boilerplate.
 2. **No Redundancy:** Always check if logic already exists before defining new functions. Reuse existing code.
 3. **MVP First:** No fallbacks, no try-except blocks. Code should work as expected; if it breaks, we debug.
 4. **Readable:** Clear variable names, simple control flow, no unnecessary abstractions.
+
+## Declarative Data Access Principles
+
+**Data access should mirror YAML schema structure.** Users access results using the same path as the YAML definition:
+
+1. **Schema-Aligned Access:** Result structure mirrors YAML sections. E.g., `results.integration.main`, `results.algorithms.fic`, `results.optimization.loss_fc`.
+2. **No Implementation Details:** Never expose internal mechanisms via underscore prefixes (e.g., `._raw`). Users access `.data`, `.observations`, not internal representations.
+3. **Wrap at Boundaries:** Internal functions use raw data types; only final user-facing returns wrap in result classes (`SimulationResult`, `AlgorithmResult`, etc.).
+4. **Consistent Nesting:** `results.integration.main.observations.bold` - observations attached to the simulation that produced them.
+5. **Convenience Aliases:** For common access patterns, provide both nested and flat access: `results.algorithms.fic` and `results.fic`.
+
+Example - YAML to Python access:
+```yaml
+# YAML
+integration:
+  main:
+    duration: 600000
+algorithms:
+  fic:
+    n_iterations: 100
+```
+
+```python
+# Python - mirrors YAML structure
+results.integration.main.data        # Simulation data
+results.integration.main.observations.bold  # BOLD from main simulation
+results.algorithms.fic.state         # FIC tuned state
+results.algorithms.fic.history       # Per-iteration tracking
+```
 
 ## Template & Code Generation Principles
 
@@ -27,6 +96,39 @@ Example - CORRECT:
 ```mako
 # Do this - uses template variable
 result_history.${target_name}.append(state.dynamics.${target_name})
+```
+
+## Mako Template Best Practices
+
+**Minimal processing inside templates.** Templates should be clean and redundancy-free:
+
+1. **Metadata Objects First:** Information is already well-structured in LinkML metadata objects (`model.parameters`, `coupling.parameters`, etc.). Access attributes directly rather than transforming.
+
+2. **Shared Utilities in `utils.py`:** Common extraction patterns belong in `tvbo/templates/tvboptim/utils.py`. Import and call these functions in template `<%` blocks.
+
+3. **No Duplicate Logic:** If dfun, cfun, and experiment templates all need the same data (e.g., param names/defaults/shapes), use ONE shared function like `get_param_info()`.
+
+4. **Minimal Unpacking:** Don't unpack metadata into intermediate dicts/lists unless necessary. Prefer direct attribute access: `p.name`, `p.value`, `p.shape`.
+
+5. **Shape Attribute = Array:** If a parameter has a `shape` attribute, it needs array initialization. No need to also check `heterogeneous` - shape is sufficient.
+
+Example - shared utility:
+```python
+# tvbo/templates/tvboptim/utils.py
+def get_param_info(parameters):
+    """Extract param names, defaults, and shapes from parameters collection."""
+    param_names = [p.name for p in parameters.values()]
+    param_defaults = {p.name: float(p.value) if p.value else 1.0 for p in parameters.values()}
+    param_shapes = {p.name: str(p.shape) for p in parameters.values() if p.shape}
+    return param_names, param_defaults, param_shapes
+```
+
+Example - template usage:
+```mako
+<%
+from tvbo.templates.tvboptim.utils import get_param_info
+param_names, param_defaults, param_shapes = get_param_info(model.parameters)
+%>
 ```
 
 ## Symbolic Mathematics Principles

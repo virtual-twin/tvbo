@@ -52,9 +52,23 @@ coupling_param_defaults = {p.name: float(p.value) if p.value is not None else 1.
 incoming_states = list(getattr(coupling, 'incoming_states', None) or [])
 local_states = list(getattr(coupling, 'local_states', None) or [])
 
+# Extract state variable bounds (for BoundedSolver)
+state_bounds_lo = []
+state_bounds_hi = []
+for sv_name, sv in model.state_variables.items():
+    lo, hi = None, None
+    if hasattr(sv, 'domain') and sv.domain:
+        lo = getattr(sv.domain, 'lo', None)
+        hi = getattr(sv.domain, 'hi', None)
+    state_bounds_lo.append(float(lo) if lo is not None else float('-inf'))
+    state_bounds_hi.append(float(hi) if hi is not None else float('inf'))
+
+# Check if any state has finite bounds (needs BoundedSolver)
+has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
+
 # Integration metadata
 SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4'}
-method = integration.method.lower() if hasattr(integration, 'method') and integration.method else 'euler'
+method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method, 'Euler')
 dt = float(integration.step_size) if integration.step_size else 0.1
 has_noise = integration.noise is not None
@@ -104,13 +118,19 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling
 from tvboptim.experimental.network_dynamics.graph import DenseGraph
 % endif
-from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
 
 # Module-level model function (set in run_simulation)
 model = None
+
+
+# =============================================================================
+# Solver Configuration
+# =============================================================================
+
+<%include file="tvbo-tvboptim-solver.py.mako" />
 
 
 # =============================================================================
@@ -198,8 +218,7 @@ def run_simulation(
     t0: float = 0.0,
 ) -> tuple:
     """Run network simulation."""
-    solver = ${solver_class}()
-    model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    model_fn, state = prepare(network, get_solver(), t0=t0, t1=t1, dt=dt)
     result = model_fn(state)
     return model_fn, state, result
 

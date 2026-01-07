@@ -16,6 +16,264 @@ from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
 
+# =============================================================================
+# Result Classes for Simulation Experiments
+# =============================================================================
+
+class SimulationResult(Bunch):
+    """Wrapper for simulation result with attached observations.
+
+    Mirrors the YAML structure by attaching observations to the simulation
+    they derive from. This provides consistent access regardless of mode.
+
+    Attributes
+    ----------
+    data : jnp.ndarray
+        Raw simulation data (time, state, nodes)
+    time : jnp.ndarray
+        Time vector
+    observations : Bunch
+        Computed observations from this simulation (bold, fc, etc.)
+    """
+
+    def __init__(self, result=None, observations=None, **kwargs):
+        super().__init__(**kwargs)
+        if result is not None:
+            self.data = result.data if hasattr(result, 'data') else result
+            self.time = result.ts if hasattr(result, 'ts') else None
+        self.observations = observations or Bunch()
+
+    def __repr__(self):
+        obs_keys = list(self.observations.keys()) if self.observations else []
+        shape = getattr(self, 'data', None)
+        shape_str = f"shape={tuple(shape.shape)}" if shape is not None else "empty"
+        return f"SimulationResult({shape_str}, observations={obs_keys})"
+
+
+class AlgorithmResult(Bunch):
+    """Result of an iterative algorithm (FIC, EIB, etc.).
+
+    Provides structured access to algorithm outputs with consistent naming
+    regardless of which algorithm was run.
+
+    Attributes
+    ----------
+    name : str
+        Algorithm name
+    state : Bunch
+        Final state with tuned parameters
+    history : Bunch
+        Per-iteration tracking: parameters, observations, metrics
+        Access pattern: history.{param_name}[i], history.{obs_name}[i]
+    pre_tuning : SimulationResult
+        Simulation BEFORE algorithm (for comparison)
+    post_tuning : SimulationResult
+        Simulation AFTER algorithm with attached observations
+    n_iterations : int
+        Number of iterations run
+    hyperparameters : Bunch
+        Algorithm hyperparameters used (eta, window_size, etc.)
+    convergence : Bunch
+        Convergence metrics (final values, deltas, etc.)
+    """
+
+    def __init__(self, name: str = None, state=None, history=None,
+                 pre_tuning=None, post_tuning=None, post_tuning_observations=None,
+                 n_iterations: int = None, hyperparameters=None, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.state = state
+        self.history = history or Bunch()
+
+        # Wrap simulations in SimulationResult for consistent access
+        if pre_tuning is not None and not isinstance(pre_tuning, SimulationResult):
+            self.pre_tuning = SimulationResult(result=pre_tuning)
+        else:
+            self.pre_tuning = pre_tuning
+
+        if post_tuning is not None and not isinstance(post_tuning, SimulationResult):
+            self.post_tuning = SimulationResult(
+                result=post_tuning,
+                observations=post_tuning_observations or Bunch()
+            )
+        else:
+            self.post_tuning = post_tuning
+
+        self.n_iterations = n_iterations
+        self.hyperparameters = hyperparameters or Bunch()
+
+        # Compute convergence metrics from history
+        self.convergence = self._compute_convergence()
+
+    def _compute_convergence(self):
+        """Compute convergence metrics from history."""
+        conv = Bunch()
+        if self.history:
+            for key, vals in self.history.items():
+                if hasattr(vals, '__len__') and len(vals) > 0:
+                    # Store final value
+                    conv[f'{key}_final'] = vals[-1] if hasattr(vals, '__getitem__') else vals
+                    # Store delta (change from first to last)
+                    if len(vals) > 1:
+                        conv[f'{key}_delta'] = vals[-1] - vals[0]
+        return conv
+
+    def __repr__(self):
+        n_iter = self.n_iterations or (len(next(iter(self.history.values()))) if self.history else 0)
+        return f"AlgorithmResult(name='{self.name}', n_iterations={n_iter})"
+
+
+class OptimizationResult(Bunch):
+    """Result of gradient-based optimization.
+
+    Provides structured access to optimization outputs including loss trajectory,
+    parameter evolution, and final simulation.
+
+    Attributes
+    ----------
+    name : str
+        Optimization/loss function name
+    state : Bunch
+        Final optimized state (alias: fitted_params)
+    history : Bunch
+        Per-step tracking: loss values, states, gradients
+        Access: history.loss[i], history.state[i]
+    simulation : SimulationResult
+        Post-optimization simulation with attached observations
+    loss_trajectory : jnp.ndarray
+        Loss values at each step (convenience accessor)
+    n_steps : int
+        Number of optimization steps
+    final_loss : float
+        Final loss value
+    hyperparameters : Bunch
+        Optimizer settings (learning_rate, algorithm, etc.)
+    """
+
+    def __init__(self, name: str = None, state=None, history=None,
+                 simulation=None, n_steps: int = None,
+                 hyperparameters=None, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.state = state
+        self.fitted_params = state  # Legacy alias
+        self.history = history or Bunch()
+        self.fitting_data = history  # Legacy alias
+
+        # Wrap simulation in SimulationResult if needed
+        if simulation is not None and not isinstance(simulation, SimulationResult):
+            self.simulation = SimulationResult(result=simulation)
+        else:
+            self.simulation = simulation
+
+        self.n_steps = n_steps
+        self.hyperparameters = hyperparameters or Bunch()
+
+        # Extract loss trajectory from history
+        self._extract_metrics()
+
+    def _extract_metrics(self):
+        """Extract convenience metrics from history."""
+        # Loss trajectory
+        if self.history and hasattr(self.history, 'loss'):
+            loss_data = self.history.loss
+            if hasattr(loss_data, 'save'):
+                self.loss_trajectory = loss_data.save
+            elif hasattr(loss_data, 'array'):
+                self.loss_trajectory = loss_data.array
+            else:
+                self.loss_trajectory = loss_data
+
+            if self.loss_trajectory is not None and len(self.loss_trajectory) > 0:
+                self.final_loss = float(self.loss_trajectory[-1])
+                self.initial_loss = float(self.loss_trajectory[0])
+                self.loss_improvement = self.initial_loss - self.final_loss
+        else:
+            self.loss_trajectory = None
+            self.final_loss = None
+
+    def __repr__(self):
+        loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
+        return f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
+
+
+class ExplorationResult(Bunch):
+    """Result of parameter exploration (grid search).
+
+    Provides structured access to exploration outputs with utilities
+    for finding optimal points and extracting parameter slices.
+
+    Attributes
+    ----------
+    name : str
+        Exploration name
+    grid : Space
+        Parameter grid specification
+    results : jnp.ndarray
+        Observable values at each grid point
+    axes : list
+        List of axis info dicts (name, values, n)
+    observable : str
+        Name of observable computed
+    optimal : Bunch
+        Best point found (parameters, value, index)
+    shape : tuple
+        Grid shape (n_axis1, n_axis2, ...)
+    """
+
+    def __init__(self, name: str = None, grid=None, results=None,
+                 axes=None, observable: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.grid = grid
+        self.results = results
+        self.axes = axes or []
+        self.observable = observable
+
+        # Compute derived attributes
+        self.shape = tuple(results.shape) if results is not None else ()
+        self._find_optimal()
+
+    def _find_optimal(self):
+        """Find optimal point in the grid."""
+        self.optimal = Bunch()
+        if self.results is not None and self.results.size > 0:
+            # Find argmax (assumes higher is better - could parameterize)
+            flat_idx = int(jnp.argmax(self.results))
+            self.optimal.index = jnp.unravel_index(flat_idx, self.results.shape)
+            self.optimal.value = float(self.results.flatten()[flat_idx])
+
+            # Extract parameter values at optimal point
+            self.optimal.parameters = Bunch()
+            for i, ax in enumerate(self.axes):
+                if 'values' in ax:
+                    self.optimal.parameters[ax['name']] = ax['values'][self.optimal.index[i]]
+
+    def slice(self, **fixed_params):
+        """Get a slice of results with some parameters fixed.
+
+        Example: result.slice(G=0.5) returns 1D slice at G=0.5
+        """
+        # Find indices for fixed parameters
+        indices = [slice(None)] * len(self.axes)
+        for param_name, param_value in fixed_params.items():
+            for i, ax in enumerate(self.axes):
+                if ax['name'] == param_name and 'values' in ax:
+                    # Find closest index
+                    idx = int(jnp.argmin(jnp.abs(ax['values'] - param_value)))
+                    indices[i] = idx
+        return self.results[tuple(indices)]
+
+    def __repr__(self):
+        shape_str = 'x'.join(str(s) for s in self.shape) if self.shape else 'empty'
+        opt_str = f", optimal={self.optimal.value:.4f}" if hasattr(self.optimal, 'value') else ""
+        return f"ExplorationResult(name='{self.name}', shape={shape_str}{opt_str})"
+
+
+# =============================================================================
+# Time Series Classes
+# =============================================================================
+
 @register_pytree_node_class
 class BaseTimeSeries:
     """
@@ -1431,7 +1689,8 @@ class TimeSeries(BaseTimeSeries):
 #         return ani
 
 
-class SimulationResult(Bunch):
+class LegacySimulationResult(Bunch):
+    """Legacy simulation result class. Use SimulationResult instead."""
     def __init__(self):
         self.monitors = []
 

@@ -17,6 +17,7 @@ Output:
 </%doc>
 <%
 from tvbo.export.code import render_expression
+from tvbo.templates.tvboptim.utils import get_param_info
 
 # Get network and model from experiment
 assert 'experiment' in context.keys(), "experiment required for cfun template"
@@ -68,9 +69,8 @@ def parse_list_elements(rhs_str):
     # Coupling metadata
     has_delay = getattr(coupling, 'delayed', False)
 
-    coupling_params = list(coupling.parameters.values()) if hasattr(coupling, 'parameters') and coupling.parameters else []
-    param_names = [p.name for p in coupling_params]
-    param_defaults = {p.name: float(p.value) if p.value is not None else 1.0 for p in coupling_params}
+    # Extract parameter info using shared utility
+    param_names, param_defaults, param_shapes = get_param_info(coupling.parameters if hasattr(coupling, 'parameters') else None)
 
     incoming_states = getattr(coupling, 'incoming_states', None) or []
     if isinstance(incoming_states, str):
