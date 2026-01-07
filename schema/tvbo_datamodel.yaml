@@ -1123,6 +1123,12 @@ classes:
             For multi-stage workflows, use 'stages' (ignores inherited single-stage fields).
             Loss equation references observations directly by name.
         attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Per-optimization execution configuration (overrides experiment-level defaults).
+                    Useful for setting random_seed, precision, or hardware for optimization phase.
             # Loss specification - FunctionCall that references or inlines the loss function
             loss:
                 range: FunctionCall
@@ -1155,6 +1161,12 @@ classes:
             - label
             - description
         attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Per-exploration execution configuration (overrides experiment-level defaults).
+                    Useful for setting random_seed, n_workers for parallel grid search.
             parameters:
                 multivalued: true
                 range: Parameter
@@ -1266,6 +1278,12 @@ classes:
             - name
             - description
         attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Per-algorithm execution configuration (overrides experiment-level defaults).
+                    Useful for setting random_seed per algorithm to ensure reproducibility.
             type:
                 range: string
                 description: "Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'"

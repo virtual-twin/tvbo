@@ -22,15 +22,37 @@ print(exp.render_code('tvboptim'))
 ```
 
 ```{python}
-results = exp.run("tvboptim")
+results = exp.run("tvboptim", mode='algorithm', name='fic', n_iterations=10)
+pickleable = {
+    'fic': {
+        'mean_S_e': np.array(results.fic.history.mean_S_e),
+        'mean_S_i': np.array(results.fic.history.mean_S_i),
+        'bold': np.array(results.fic.history.bold),
+        'J_i': np.array(results.fic.state.dynamics.J_i),
+    },
+    'fic_eib': {
+        'fc_corr': np.array(results.fic_eib.history.fc_corr),
+        'fc_rmse': np.array(results.fic_eib.history.fc_rmse),
+        'mean_S_e': np.array(results.fic_eib.history.mean_S_e),
+        'mean_S_i': np.array(results.fic_eib.history.mean_S_i),
+        'bold': np.array(results.fic_eib.history.bold),
+        'wFFEI': np.array(results.fic_eib.state.coupling.EIBLinearCoupling.wFFI),
+'wLRE': np.array(results.fic_eib.state.coupling.EIBLinearCoupling.wLRE),
+
+
+    }
+}
+import pickle
+with open('/Users/leonmartin_bih/tools/tvbo/docs/Interoperability/tvboptim/generated_results_200_2000.pkl', 'wb') as f:
+    pickle.dump(pickleable, f)
 ```
 
 
 ## Results
 ```{python}
 # | label: fig-ei-tuning-results
-# | fig-cap: "**EI Tuning Results.** Row 1: FIC algorithm. Row 2: FIC+EIB combined. Row 3: EIB post-FIC. Row 4: Gradient-based optimization."
-# | fig-height: 16
+# | fig-cap: "**EI Tuning Results.** Row 1: FIC algorithm. Row 2: FIC+EIB combined. Row 3: Gradient-based optimization."
+# | fig-height: 12
 
 cmap = plt.cm.cividis
 accent_blue = cmap(0.3)
@@ -41,41 +63,42 @@ accent_mid = cmap(0.6)
 fc_target = np.array(results.observations.fc_target)
 fc_post_fic = np.array(results.fic.post_tuning_observations.fc)
 fc_post_fic_eib = np.array(results.fic_eib.post_tuning_observations.fc)
-fc_post_eib = np.array(results.eib.post_tuning_observations.fc)
 fc_gradient = np.array(results.gradient_eib.post_optimization_observations.fc)
 
 # FC correlations from post-tuning observations (computed from fresh simulation, not last iteration)
 # This matches original which runs eval_fc() after tuning for final metrics
 corr_post_fic = float(results.fic.post_tuning_observations.fc_corr)
 corr_fic_eib = float(results.fic_eib.post_tuning_observations.fc_corr)
-corr_eib = float(results.eib.post_tuning_observations.fc_corr)
 corr_gradient = float(results.gradient_eib.post_optimization_observations.fc_corr)
 
-# 4 rows x 4 columns layout
-mosaic = "AABBCCDD\nEEFFGGHH\nIIJJKKLL\nMMNNOOPP"
-fig, axes = plt.subplot_mosaic(mosaic, figsize=(16, 14))
+# 3 rows x 4 columns layout
+mosaic = "AABBCCDD\nEEFFGGHH\nIIJJKKLL"
+fig, axes = plt.subplot_mosaic(mosaic, figsize=(16, 10.5))
 
 # =============================================================================
 # ROW 1: FIC Algorithm Results (Local E-I Balance Tuning)
 # =============================================================================
 
+# Number of time steps to show (720ms / 4ms dt = 180, matching original)
+n_display = 180
+
 # A: S_e Before FIC
 ax = axes["A"]
-data = np.array(results.fic.pre_tuning.data[:, 0, :])
+data = np.array(results.fic.pre_tuning.data[:n_display, 0, :])
 for i in range(data.shape[1]):
     ax.plot(data[:, i], color=cmap(i / data.shape[1]), lw=0.5, alpha=0.6)
 ax.axhline(0.25, color=accent_gold, ls="--", lw=2, label="Target")
-ax.set(xlabel="Time step", ylabel="S_e", title="A. FIC: Before Tuning")
+ax.set(xlabel="Time step", ylabel="S_e", title="FIC: Before Tuning")
 ax.set_ylim(0, 1)
 ax.legend(loc="upper right")
 
 # B: S_e After FIC
 ax = axes["B"]
-data = np.array(results.fic.post_tuning.data[:, 0, :])
+data = np.array(results.fic.post_tuning.data[:n_display, 0, :])
 for i in range(data.shape[1]):
     ax.plot(data[:, i], color=cmap(i / data.shape[1]), lw=0.5, alpha=0.6)
 ax.axhline(0.25, color=accent_gold, ls="--", lw=2, label="Target")
-ax.set(xlabel="Time step", ylabel="S_e", title="B. FIC: After Tuning")
+ax.set(xlabel="Time step", ylabel="S_e", title="FIC: After Tuning")
 ax.set_ylim(0, 1)
 ax.legend(loc="upper right")
 
@@ -83,125 +106,87 @@ ax.legend(loc="upper right")
 ax = axes["C"]
 ax.plot(np.array(results.fic.history.mean_S_e), lw=2, color=accent_blue, label="Mean S_e")
 ax.axhline(0.25, color=accent_gold, ls="--", lw=2, label="Target")
-ax.set(xlabel="FIC iteration", ylabel="Mean S_e", title="C. FIC: Convergence")
+ax.set(xlabel="FIC iteration", ylabel="Mean S_e", title="FIC: Convergence")
 ax.legend(loc="upper right")
 ax.grid(True, alpha=0.3)
 
-# D: J_i Distribution (fitted inhibitory weights)
+# D: FC Target (empirical)
 ax = axes["D"]
-J_i = np.array(results.fic.state.dynamics.J_i).flatten()
-ax.bar(range(len(J_i)), J_i, alpha=0.7, color=accent_mid)
-ax.set(xlabel="Region", ylabel="J_i", title="D. FIC: Fitted J_i")
-ax.grid(True, alpha=0.3, axis="y")
+fc_plot = np.copy(fc_target)
+np.fill_diagonal(fc_plot, np.nan)
+im = ax.imshow(fc_plot, cmap="cividis")
+ax.set(title="Target FC (Empirical)")
+plt.colorbar(im, ax=ax, fraction=0.046)
 
 # =============================================================================
 # ROW 2: FIC+EIB Combined Algorithm Results
 # =============================================================================
 
-# E: FC Target (empirical)
+# E: FC after FIC+EIB
 ax = axes["E"]
-fc_plot = np.copy(fc_target)
-np.fill_diagonal(fc_plot, np.nan)
-im = ax.imshow(fc_plot, cmap="cividis")
-ax.set(title="E. Target FC (Empirical)")
-plt.colorbar(im, ax=ax, fraction=0.046)
-
-# F: FC after FIC+EIB
-ax = axes["F"]
 fc_plot = np.copy(fc_post_fic_eib)
 np.fill_diagonal(fc_plot, np.nan)
 im = ax.imshow(fc_plot, cmap="cividis")
-ax.set(title=f"F. FIC+EIB FC (r={corr_fic_eib:.3f})")
+ax.set(title=f"FIC+EIB FC (r={corr_fic_eib:.3f})")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
-# G: FIC+EIB Convergence (FC correlation)
-ax = axes["G"]
+# F: FIC+EIB Convergence (FC correlation)
+ax = axes["F"]
 ax2 = ax.twinx()
 (l1,) = ax.plot(np.array(results.fic_eib.history.fc_corr), lw=2, color=accent_blue, label="FC Corr")
 (l2,) = ax2.plot(np.array(results.fic_eib.history.fc_rmse), lw=2, color=accent_gold, label="FC RMSE")
-ax.set(xlabel="FIC+EIB iteration", ylabel="FC Correlation", title="G. FIC+EIB: Convergence")
+ax.set(xlabel="FIC+EIB iteration", ylabel="FC Correlation", title="FIC+EIB: Convergence")
 ax2.set_ylabel("FC RMSE")
 ax.legend(handles=[l1, l2], loc="center right")
 ax.grid(True, alpha=0.3)
 
-# H: FIC+EIB wLRE
-ax = axes["H"]
+# G: FIC+EIB wLRE
+ax = axes["G"]
 wLRE = np.array(results.fic_eib.state.coupling.EIBLinearCoupling.wLRE)
 im = ax.imshow(wLRE, cmap="cividis")
-ax.set(title="H. FIC+EIB: wLRE")
+ax.set(title="FIC+EIB: wLRE")
+plt.colorbar(im, ax=ax, fraction=0.046)
+
+# H: FIC+EIB wFFI
+ax = axes["H"]
+wFFI = np.array(results.fic_eib.state.coupling.EIBLinearCoupling.wFFI)
+im = ax.imshow(wFFI, cmap="cividis")
+ax.set(title="FIC+EIB: wFFI")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
 # =============================================================================
-# ROW 3: EIB Post-FIC Algorithm Results
+# ROW 3: Gradient-Based Optimization Results
 # =============================================================================
 
-# I: FC after FIC only (before EIB refinement)
+# I: FC after Gradient Optimization
 ax = axes["I"]
-fc_plot = np.copy(fc_post_fic)
-np.fill_diagonal(fc_plot, np.nan)
-im = ax.imshow(fc_plot, cmap="cividis")
-ax.set(title=f"I. Post-FIC FC (r={corr_post_fic:.3f})")
-plt.colorbar(im, ax=ax, fraction=0.046)
-
-# J: FC after EIB-post-FIC
-ax = axes["J"]
-fc_plot = np.copy(fc_post_eib)
-np.fill_diagonal(fc_plot, np.nan)
-im = ax.imshow(fc_plot, cmap="cividis")
-ax.set(title=f"J. EIB-post-FIC FC (r={corr_eib:.3f})")
-plt.colorbar(im, ax=ax, fraction=0.046)
-
-# K: EIB Convergence (FC correlation)
-ax = axes["K"]
-ax2 = ax.twinx()
-(l1,) = ax.plot(np.array(results.eib.history.fc_corr), lw=2, color=accent_blue, label="FC Corr")
-(l2,) = ax2.plot(np.array(results.eib.history.fc_rmse), lw=2, color=accent_gold, label="FC RMSE")
-ax.set(xlabel="EIB iteration", ylabel="FC Correlation", title="K. EIB: Convergence")
-ax2.set_ylabel("FC RMSE")
-ax.legend(handles=[l1, l2], loc="center right")
-ax.grid(True, alpha=0.3)
-
-# L: EIB wLRE
-ax = axes["L"]
-wLRE = np.array(results.eib.state.coupling.EIBLinearCoupling.wLRE)
-im = ax.imshow(wLRE, cmap="cividis")
-ax.set(title="L. EIB: wLRE")
-plt.colorbar(im, ax=ax, fraction=0.046)
-
-# =============================================================================
-# ROW 4: Gradient-Based Optimization Results
-# =============================================================================
-
-# M: FC after Gradient Optimization
-ax = axes["M"]
 fc_plot = np.copy(fc_gradient)
 np.fill_diagonal(fc_plot, np.nan)
 im = ax.imshow(fc_plot, cmap="cividis")
-ax.set(title=f"M. Gradient FC (r={corr_gradient:.3f})")
+ax.set(title=f"Gradient FC (r={corr_gradient:.3f})")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
-# N: Gradient Loss Convergence
-ax = axes["N"]
+# J: Gradient Loss Convergence
+ax = axes["J"]
 loss_values = np.array(results.gradient_eib.history['loss'].save.tolist())
 ax.plot(loss_values, lw=2, color="k", alpha=0.9)
 ax.scatter(0, loss_values[0], s=80, color=accent_blue, zorder=5)
 ax.scatter(len(loss_values) - 1, loss_values[-1], s=80, color=accent_gold, zorder=5)
-ax.set(xlabel="Optimization Step", ylabel="Combined Loss", title="N. Gradient: Loss Convergence")
+ax.set(xlabel="Optimization Step", ylabel="Combined Loss", title="Gradient: Loss Convergence")
 ax.grid(True, alpha=0.3)
 
-# O: wLRE after Gradient
-ax = axes["O"]
+# K: wLRE after Gradient
+ax = axes["K"]
 wLRE_grad = np.array(results.gradient_eib.state.coupling.EIBLinearCoupling.wLRE)
 im = ax.imshow(wLRE_grad, cmap="cividis")
-wLRE_grad_corr = np.corrcoef(wLRE_grad.flatten(), fc_target.flatten())[0, 1]
-ax.set(title=f"O. Gradient: wLRE (r={wLRE_grad_corr:.3f})")
+ax.set(title="Gradient: wLRE")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
-# P: wFFI after Gradient
-ax = axes["P"]
+# L: wFFI after Gradient
+ax = axes["L"]
 wFFI_grad = np.array(results.gradient_eib.state.coupling.EIBLinearCoupling.wFFI)
 im = ax.imshow(wFFI_grad, cmap="cividis")
-ax.set(title="P. Gradient: wFFI")
+ax.set(title="Gradient: wFFI")
 plt.colorbar(im, ax=ax, fraction=0.046)
 
 plt.tight_layout()
@@ -216,16 +201,11 @@ print("=" * 60)
 
 print(f"\nFIC (Local E-I Balance):")
 print(f"  Final Mean S_e: {results.fic.history.mean_S_e[-1]:.4f} (target: 0.25)")
-print(f"  J_i range: [{J_i.min():.3f}, {J_i.max():.3f}]")
 print(f"  FC correlation: {corr_post_fic:.4f}")
 
 print(f"\nFIC+EIB (Combined Algorithm):")
 print(f"  Final FC correlation: {corr_fic_eib:.4f}")
 print(f"  Final FC RMSE: {results.fic_eib.history.fc_rmse[-1]:.4f}")
-
-print(f"\nEIB (Post-FIC Refinement):")
-print(f"  Final FC correlation: {corr_eib:.4f}")
-print(f"  Final FC RMSE: {results.eib.history.fc_rmse[-1]:.4f}")
 
 print(f"\nGradient-Based Optimization:")
 print(f"  Final FC correlation: {corr_gradient:.4f}")

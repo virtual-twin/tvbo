@@ -4176,6 +4176,10 @@ class Optimization(OptimizationStage):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-optimization execution configuration (overrides experiment-level defaults). Useful for setting random_seed, precision, or hardware for optimization phase.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
+                       'Exploration',
+                       'Algorithm',
+                       'SimulationExperiment']} })
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     stages: Optional[list[OptimizationStage]] = Field(default=[], description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. When defined, inherited single-stage fields are ignored.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
@@ -4410,6 +4414,10 @@ class Exploration(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-exploration execution configuration (overrides experiment-level defaults). Useful for setting random_seed, n_workers for parallel grid search.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
+                       'Exploration',
+                       'Algorithm',
+                       'SimulationExperiment']} })
     parameters: dict[str, Parameter] = Field(default=..., description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'TemporalApplicableEquation',
@@ -4704,6 +4712,10 @@ class Algorithm(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-algorithm execution configuration (overrides experiment-level defaults). Useful for setting random_seed per algorithm to ensure reproducibility.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
+                       'Exploration',
+                       'Algorithm',
+                       'SimulationExperiment']} })
     type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'Algorithm']} })
     includes: Optional[list[AlgorithmInclude]] = Field(default=[], description="""Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
@@ -5172,7 +5184,10 @@ class SimulationExperiment(ConfiguredBaseModel):
     explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     algorithms: Optional[dict[str, Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
-    execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
+                       'Exploration',
+                       'Algorithm',
+                       'SimulationExperiment']} })
     software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
     references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
 

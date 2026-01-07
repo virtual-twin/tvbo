@@ -52,6 +52,21 @@ state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
+# Extract state variable bounds (for BoundedSolver)
+# Collect lo/hi from state_variable.domain if present
+state_bounds_lo = []
+state_bounds_hi = []
+for sv_name, sv in model.state_variables.items():
+    lo, hi = None, None
+    if hasattr(sv, 'domain') and sv.domain:
+        lo = getattr(sv.domain, 'lo', None)
+        hi = getattr(sv.domain, 'hi', None)
+    state_bounds_lo.append(float(lo) if lo is not None else float('-inf'))
+    state_bounds_hi.append(float(hi) if hi is not None else float('inf'))
+
+# Check if any state has finite bounds (needs BoundedSolver)
+has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
+
 # Build coupling_inputs dict from model.coupling_inputs
 coupling_inputs_dict = {}
 coupling_keys = {}  # ci_name -> list of key names
@@ -459,7 +474,11 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 % else:
 from tvboptim.experimental.network_dynamics.graph import DenseGraph
 % endif
+% if has_state_bounds:
+from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, BoundedSolver
+% else:
 from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
+% endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
@@ -582,6 +601,7 @@ def run_simulation(
     dt: float = ${dt},
     t0: float = 0.0,
     t_transient: float = ${transient_time},
+    run_main: bool = True,
     **kwargs,
 ) -> Bunch:
     """Run network simulation with optional transient settling.
@@ -601,13 +621,27 @@ def run_simulation(
         Start time
     t_transient : float
         Transient settling duration in ms (0 = no transient)
+    run_main : bool
+        If True, run main simulation after transient. If False, just prepare state.
+        Set False for algorithms mode where algorithms handle their own simulations.
 
     Returns
     -------
     Bunch
         Contains model_fn, state, result, and optionally result_transient
     """
+% if has_state_bounds:
+    # Wrap solver with BoundedSolver to enforce state variable domain constraints
+    # Bounds per state: ${list(zip(state_names, state_bounds_lo, state_bounds_hi))}
+    # Shape (n_states, 1) broadcasts with state array (n_states, n_nodes)
+    solver = BoundedSolver(
+        ${solver_class}(),
+        low=jnp.array(${state_bounds_lo})[:, None],
+        high=jnp.array(${state_bounds_hi})[:, None]
+    )
+% else:
     solver = ${solver_class}()
+% endif
     result_transient = None
 
     % if has_transient:
@@ -620,34 +654,39 @@ def run_simulation(
         network.update_history(result_transient)
     % endif
 
-    # Main simulation
+    # Prepare state for main simulation (always needed for model_fn and state)
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
-    result = model_fn(state)
 
-    # Compute all observations
-    # Pass result and result_transient for observations to use
-    # - result: pre-computed simulation (avoids re-running)
-    # - result_transient: HRF warmup history for BOLD observations
-    # Network observations are module-level constants (already loaded from BIDS)
-    # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
-    observations = Bunch()
-    obs_kwargs = dict(kwargs)
-    obs_kwargs['result'] = result
-    obs_kwargs['result_transient'] = result_transient
+    # Main simulation (skip if run_main=False, e.g., for algorithms mode)
+    result = None
+    observations = None
+    if run_main:
+        result = model_fn(state)
+
+        # Compute all observations
+        # Pass result and result_transient for observations to use
+        # - result: pre-computed simulation (avoids re-running)
+        # - result_transient: HRF warmup history for BOLD observations
+        # Network observations are module-level constants (already loaded from BIDS)
+        # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
+        observations = Bunch()
+        obs_kwargs = dict(kwargs)
+        obs_kwargs['result'] = result
+        obs_kwargs['result_transient'] = result_transient
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
-    observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+        observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
 % elif obs_name in derived_observation_names:
-    # ${obs_name}: derived observation - computed below via compute_all_observations
+        # ${obs_name}: derived observation - computed below via compute_all_observations
 % else:
-    observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+        observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
 % endif
 % endfor
 
-    # Compute derived observations (those depending on multiple source observations)
-    _all_obs = compute_all_observations(result, state, result_transient)
+        # Compute derived observations (those depending on multiple source observations)
+        _all_obs = compute_all_observations(result, state, result_transient)
 % for obs_name in derived_observation_names:
-    observations.${obs_name} = _all_obs.${obs_name}
+        observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
     return Bunch(model_fn=model_fn, state=state, result=result, transient=result_transient, observations=observations)
@@ -1518,8 +1557,12 @@ def run_experiment(
     network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma[0]})
     % endif
 
+    # Determine if we need to run main simulation or just transient
+    # For algorithm/optimization/exploration modes, we only need transient - main simulation runs after
+    run_main = mode in ('simulation', 'all', None)
+
     # Run simulation to get model_fn and state (includes transient settling if configured)
-    sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time})
+    sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main)
     model_fn = sim_result.model_fn
     default_state = sim_result.state
     transient = sim_result.transient
@@ -1557,35 +1600,42 @@ def run_experiment(
                                 val = val.value
                             dst_coupling[key] = val
 
-        # Re-run simulation with custom parameters
-        result = model_fn(use_state)
+        # Re-run simulation with custom parameters (only if main simulation was requested)
+        if run_main:
+            result = model_fn(use_state)
+        else:
+            result = None
         state = use_state
     else:
         state = default_state
-        result = sim_result.result
+        result = sim_result.result  # Will be None if run_main=False
 
-    # Compute observations using the (potentially custom) result
-    # Network observations are module-level constants (already loaded from BIDS)
-    # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
-    observations = Bunch()
-    obs_kwargs = dict(kwargs)
-    obs_kwargs['result'] = result
-    obs_kwargs['result_transient'] = transient
+    # Compute observations only if main simulation was run
+    if run_main and result is not None:
+        # Compute observations using the (potentially custom) result
+        # Network observations are module-level constants (already loaded from BIDS)
+        # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
+        observations = Bunch()
+        obs_kwargs = dict(kwargs)
+        obs_kwargs['result'] = result
+        obs_kwargs['result_transient'] = transient
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
-    observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+        observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
 % elif obs_name in derived_observation_names:
-    # ${obs_name}: derived observation - computed below via compute_all_observations
+        # ${obs_name}: derived observation - computed below via compute_all_observations
 % else:
-    observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+        observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
 % endif
 % endfor
 
-    # Compute derived observations (those depending on multiple source observations)
-    _all_obs = compute_all_observations(result, state, transient)
+        # Compute derived observations (those depending on multiple source observations)
+        _all_obs = compute_all_observations(result, state, transient)
 % for obs_name in derived_observation_names:
-    observations.${obs_name} = _all_obs.${obs_name}
+        observations.${obs_name} = _all_obs.${obs_name}
 % endfor
+    else:
+        observations = None
 
     results = Bunch(
         model_fn=model_fn,
@@ -1641,10 +1691,21 @@ def run_experiment(
             available_algorithms = [${', '.join(f"'{safe_name(getattr(algo, 'name', 'algo'))}'" for algo in algorithms_list)}]
             raise ValueError(f"mode='algorithm' requires 'name' parameter. Available: {available_algorithms}")
 
-        # Random key from execution.random_seed in YAML (can be overridden)
-        algo_seed = kwargs.pop('seed', ${random_seed})
-        algo_key = kwargs.pop('key', jax.random.PRNGKey(algo_seed))
+        # Default random key from experiment-level execution.random_seed (can be overridden)
+        default_algo_seed = kwargs.pop('seed', ${random_seed})
         algo_verbose = kwargs.pop('verbose', True)  # verbose is a display option, ok to default
+        # Per-algorithm seeds (from algorithm.execution.random_seed if specified)
+<%
+    algo_seeds = {}
+    for a in algorithms_list:
+        aname = safe_name(getattr(a, 'name', 'algo'))
+        algo_exec = getattr(a, 'execution', None)
+        if algo_exec and hasattr(algo_exec, 'random_seed') and algo_exec.random_seed is not None:
+            algo_seeds[aname] = int(algo_exec.random_seed)
+        else:
+            algo_seeds[aname] = None  # Use default
+%>
+        algo_seed_overrides = {${', '.join(f"'{k}': {v}" for k, v in algo_seeds.items())}}
 
         # Storage for algorithm results when running all
         algorithms_results = Bunch()
@@ -1741,8 +1802,13 @@ def run_experiment(
         # Run algorithms in order
         for _algo_name_to_run in algorithms_to_run:
             algorithm_name = _algo_name_to_run
+            # Reset random key for each algorithm (using per-algo seed if specified, else default)
+            _algo_seed = algo_seed_overrides.get(algorithm_name, None)
+            if _algo_seed is None:
+                _algo_seed = default_algo_seed
+            algo_key = jax.random.PRNGKey(_algo_seed)
             if algo_verbose:
-                print(f"\\n>>> Running algorithm: {algorithm_name}")
+                print(f"\\n>>> Running algorithm: {algorithm_name} (seed={_algo_seed})")
             algo_result = None
 
 % for algo in algorithms_list:
@@ -1807,7 +1873,8 @@ def run_experiment(
                 # Create algorithm-specific model_fn with simulation_period
                 algo_model_fn, algo_state = prepare(network, Heun(), t1=${float(algo_sim_period)}, dt=${dt})
 
-                # Create post-tuning model_fn/state using experiment-level integration metadata
+                # Create post-tuning model_fn/state using experiment-level integration duration
+                # (needed for full-length BOLD simulation for FC computation)
                 post_model_fn, post_state = prepare(network, Heun(), t1=${t1_default}, dt=${dt})
 
                 # Determine source state: depends_on result or initial_state
@@ -1839,6 +1906,9 @@ def run_experiment(
                                 algo_state.coupling[coupling_name][key] = _source_state.coupling[coupling_name][key]
                 algo_state.initial_state.dynamics = _source_state.initial_state.dynamics
 
+                # NOTE: Do NOT copy noise_samples - let prepare() create fresh noise.
+                # The algorithm loop will update noise with key=jax.random.key(seed) anyway.
+
 % for inp_name in input_names:
                 # Validate required input: ${inp_name}
                 if '${inp_name}' not in kwargs:
@@ -1866,13 +1936,13 @@ def run_experiment(
                     state=algo_state,
                     model_fn=algo_model_fn,
                     key=algo_key,
-                    n_iterations=kwargs.get('n_iterations', ${n_iterations}),
+                    n_iterations=kwargs.get('${algo_name}_n_iterations', kwargs.get('n_iterations', ${n_iterations})),
 % for hp_name, hp_val in hyperparams_dict.items():
 <%
     if hp_val is None:
         raise ValueError(f"Hyperparameter '{hp_name}' in algorithm '{algo_name}' missing required 'value' in YAML")
 %>
-                    ${hp_name}=kwargs.get('${hp_name}', ${hp_val}),
+                    ${hp_name}=kwargs.get('${algo_name}_${hp_name}', kwargs.get('${hp_name}', ${hp_val})),
 % endfor
 % for inp_name in input_names:
                     ${inp_name}=kwargs.get('${inp_name}'),
@@ -1892,6 +1962,12 @@ def run_experiment(
                     ${src_obs}_buffer=kwargs.get('${src_obs}_buffer', None),  # Optional: pass from previous algorithm
 % endif
 % endfor
+% endif
+% if has_deps:
+                    # Pass monitors from dependency for hemodynamic continuity
+                    monitors=(algorithms_results.get('${algo_deps[-1]}', Bunch()).get('monitors', None) if '${algo_deps[-1]}' in algorithms_results else kwargs.get('monitors', None)),
+% else:
+                    monitors=kwargs.get('monitors', None),  # Optional: pass from previous algorithm
 % endif
 % if observation_ref:
                     observation_monitor=observations.${observation_ref},

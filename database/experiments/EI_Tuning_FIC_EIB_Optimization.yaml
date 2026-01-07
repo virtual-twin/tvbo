@@ -194,7 +194,7 @@ network:
     observational_measures: [BoldCorrelation]
     conduction_speed:
         name: conduction_speed
-        value: 10.0
+        value: 3.0
         unit: mm/ms
     normalization:
         rhs: "W / max(W)"
@@ -259,8 +259,8 @@ functions:
             hi: duration
             n: 5000
         equation:
-            rhs: "(1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))"
-            description: "h(t) = (1/3) * exp(-t/(2τ_s)) * sin(ωt), where ω = sqrt(1/τ_f - 1/(4τ_s²))"
+            rhs: "(1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f - 1/(4*tau_s**2))"
+            description: "h(t) = (1/3) * exp(-t/(2τ_s)) * sin(ωt)/ω, where ω = sqrt(1/τ_f - 1/(4τ_s²))"
             parameters:
                 tau_s:
                     value: 0.8
@@ -564,8 +564,8 @@ observations:
 # =============================================================================
 derived_observations:
     fc:
-        label: "Simulated Functional Connectivity"
-        description: "Pearson correlation matrix from BOLD time series (skip_t=20 for EIB algorithms)"
+        label: "Simulated Functional Connectivity (Post-Tuning)"
+        description: "Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning evaluation)"
         source_observations:
             - bold
         pipeline:
@@ -577,7 +577,23 @@ derived_observations:
                     value: bold
                   - name: skip_t
                     value: 20
-                    description: "Skip first 20 TRs for transient removal"
+                    description: "Skip first 20 TRs for transient removal in post-tuning"
+
+    fc_inloop:
+        label: "Simulated Functional Connectivity (In-Loop)"
+        description: "FC computed on sliding window without transient skip (for algorithm in-loop)"
+        source_observations:
+            - bold
+        pipeline:
+            - callable:
+                  name: compute_fc
+                  module: tvboptim.observations.observation
+              arguments:
+                  - name: timeseries
+                    value: bold
+                  - name: skip_t
+                    value: 0
+                    description: "No skip for in-loop FC (sliding window already handles transient)"
 
     fc_gradient:
         label: "Simulated FC for Gradient Optimization"
@@ -639,6 +655,8 @@ algorithms:
           Feedback Inhibition Control adjusts local inhibitory weight (J_i)
           to maintain excitatory activity at target level. When S_e > target,
           J_i increases; when S_e < target, J_i decreases.
+      execution:
+          random_seed: 0  # Reset seed at algorithm start (matches original)
       objective:
           type: activity_target
           target_variable: S_e
@@ -666,29 +684,37 @@ algorithms:
       simulation_period: 720.0
 
     # =========================================================================
-    # EIB: Excitation-Inhibition Balance tuning (standalone)
+    # FIC+EIB: Combined FIC and EIB tuning
     # =========================================================================
-    - name: eib
+    - name: fic_eib
       description: >
-          Excitation-Inhibition Balance tuning adjusts coupling weights (wLRE, wFFI)
-          to match predicted FC to empirical FC target. Increases wLRE and decreases
-          wFFI where FC is below target, scaled by per-node RMSE.
-      depends_on:
-          - fic
+          Combined FIC+EIB tuning loop. Applies both Feedback Inhibition Control
+          (J_i adjustment) and Excitation-Inhibition Balance tuning (wLRE, wFFI)
+          in each iteration. Matches Schirner et al. 2023 implementation.
+      execution:
+          random_seed: 0  # Reset seed at algorithm start (matches original)
+      depends_on: fic
       objective:
           type: fc_matching
-          target_variable: fc
-          description: "Match predicted FC to empirical FC target"
+          target_variable: fc_inloop
+          description: "Match predicted FC to empirical FC target while maintaining E-I balance"
       observations:
-          - fc
-          - fc_target
+          - mean_S_e
+          - mean_S_i
           - bold
+          - fc_inloop
+          - fc_target
+      includes:
+          - algorithm: fic
+            arguments:
+                - name: eta
+                  value: 0.1
       update_rules:
           - name: wLRE_update
             target_parameter:
                 name: wLRE
             equation:
-                rhs: "wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)"
+                rhs: "wLRE[i,k] + eta * (fc_target[i,k] - fc_inloop[i,k]) * sqrt(Sum((fc_target[i,j] - fc_inloop[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)"
             bounds:
                 lo: 0.0
             warmup: true
@@ -696,7 +722,7 @@ algorithms:
             target_parameter:
                 name: wFFI
             equation:
-                rhs: "wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)"
+                rhs: "wFFI[i,k] - eta * (fc_target[i,k] - fc_inloop[i,k]) * sqrt(Sum((fc_target[i,j] - fc_inloop[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)"
             bounds:
                 lo: 0.0
             warmup: true
@@ -704,13 +730,13 @@ algorithms:
           - function: fc_corr
             arguments:
                 - name: A
-                  value: fc
+                  value: fc_inloop
                 - name: B
                   value: fc_target
           - function: fc_rmse
             arguments:
                 - name: A
-                  value: fc
+                  value: fc_inloop
                 - name: B
                   value: fc_target
       hyperparameters:
@@ -718,26 +744,6 @@ algorithms:
             value: 0.005
           - name: window_size
             value: 150
-      n_iterations: 2000
-      simulation_period: 720.0
-
-    # =========================================================================
-    # FIC+EIB: Combined algorithm (includes both with argument overrides)
-    # =========================================================================
-    - name: fic_eib
-      description: >
-          Combined FIC+EIB tuning loop. Applies both Feedback Inhibition Control
-          (J_i adjustment) and Excitation-Inhibition Balance tuning (wLRE, wFFI)
-          in each iteration. Matches Schirner et al. 2023 implementation.
-      includes:
-          - algorithm: fic
-            arguments:
-                - name: eta
-                  value: 0.1
-          - algorithm: eib
-            arguments:
-                - name: eta
-                  value: 0.005
       n_iterations: 2000
       simulation_period: 720.0
 
