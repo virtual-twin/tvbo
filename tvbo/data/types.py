@@ -193,6 +193,21 @@ class OptimizationResult(Bunch):
             self.loss_trajectory = None
             self.final_loss = None
 
+        # State trajectory (from SavingParametersCallback)
+        if self.history and 'parameters' in self.history:
+            params_data = self.history['parameters']
+            if hasattr(params_data, 'save'):
+                traj = params_data.save
+                # Convert pandas Series to list if needed
+                if hasattr(traj, 'tolist'):
+                    self.state_trajectory = traj.tolist()
+                else:
+                    self.state_trajectory = list(traj) if hasattr(traj, '__iter__') else traj
+            else:
+                self.state_trajectory = params_data
+        else:
+            self.state_trajectory = None
+
     def __repr__(self):
         loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
         return f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"

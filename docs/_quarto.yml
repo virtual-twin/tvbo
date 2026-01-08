@@ -64,12 +64,38 @@ website:
                 #     href: Usage/AnalyzeResults.qmd
             - text: "Interoperability"
               menu:
+                  - text: "---"
+                  - text: "tvboptim"
                   - text: "tvboptim Backend"
                     href: Interoperability/tvboptim/index.qmd
                   - text: "JR Workflow"
                     href: Interoperability/tvboptim/JR_tvboptim.qmd
                   - text: "RWW Workflow"
                     href: Interoperability/tvboptim/RWW_tvboptim.qmd
+                  - text: "EI Tuning"
+                    href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
+                  - text: "---"
+                  - text: "PyRates"
+                  - text: "PyRates Overview"
+                    href: Interoperability/Pyrates/index.qmd
+                  - text: "PyRates Analysis"
+                    href: Interoperability/Pyrates/PyRates_Analysis.qmd
+                  - text: "PyRates Bifurcation"
+                    href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
+                  - text: "Heterogeneous Networks"
+                    href: Interoperability/Pyrates/PyRates_Heterogenous_Network.qmd
+                  - text: "---"
+                  - text: "BIDS"
+                  - text: "BIDS Overview"
+                    href: Interoperability/BIDS/index.qmd
+                  - text: "BIDS Export"
+                    href: Interoperability/BIDS/BIDS_Export.qmd
+                  - text: "BIDS Computational Modelling"
+                    href: Interoperability/BIDS/BIDS_comp_modelling.md
+                  - text: "---"
+                  - text: "OpenMINDS"
+                  - text: "OpenMINDS Interoperability"
+                    href: Interoperability/OpenMINDS.qmd
 
         tools:
             - icon: github
@@ -109,14 +135,42 @@ website:
           title: "Interoperability"
           collapse-level: 2
           contents:
-              - text: "tvboptim Backend"
-                href: Interoperability/tvboptim/index.qmd
-              - section: "Workflow Examples"
+              - text: "Overview"
+                href: Interoperability/index.qmd
+              - section: "tvboptim Backend"
                 contents:
+                  - text: "Overview"
+                    href: Interoperability/tvboptim/index.qmd
                   - text: "Jansen-Rit"
                     href: Interoperability/tvboptim/JR_tvboptim.qmd
                   - text: "Reduced Wong-Wang"
                     href: Interoperability/tvboptim/RWW_tvboptim.qmd
+                  - text: "EI Tuning"
+                    href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
+              - section: "PyRates"
+                contents:
+                  - text: "Overview"
+                    href: Interoperability/Pyrates/index.qmd
+                  - text: "Round-Trip Demo"
+                    href: Interoperability/Pyrates/PyRates.qmd
+                  - text: "Analysis"
+                    href: Interoperability/Pyrates/PyRates_Analysis.qmd
+                  - text: "Bifurcation"
+                    href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
+                  - text: "Heterogeneous Networks"
+                    href: Interoperability/Pyrates/PyRates_Heterogenous_Network.qmd
+              - section: "BIDS"
+                contents:
+                  - text: "Overview"
+                    href: Interoperability/BIDS/index.qmd
+                  - text: "BIDS Export"
+                    href: Interoperability/BIDS/BIDS_Export.qmd
+                  - text: "Computational Modelling"
+                    href: Interoperability/BIDS/BIDS_comp_modelling.md
+              - section: "OpenMINDS"
+                contents:
+                  - text: "OpenMINDS Interoperability"
+                    href: Interoperability/OpenMINDS.qmd
 
     page-footer:
         center: |

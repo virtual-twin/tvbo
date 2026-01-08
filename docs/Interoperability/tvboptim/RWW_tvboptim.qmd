@@ -20,12 +20,6 @@ results = exp.run("tvboptim")
 
 ```{python}
 # # Re-run with fitted params to get FC matrices
-# fc_global = exp.run(
-#     "tvboptim", mode="simulation", state=results.global_optimization.fitted_params
-# ).observations.fc
-# fc_regional = exp.run(
-#     "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
-# ).observations.fc
 fc_target = results.integration.main.observations.empirical_fc
 ```
 
@@ -41,6 +35,7 @@ import bsplot
 from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
+import jax.numpy as jnp
 
 mosaic = """
 AABBCC
@@ -52,12 +47,12 @@ cmap = plt.cm.cividis
 
 # A: Neural Activity
 ax = axes["A"]
-t_max = int(1000 / results.result.dt)
-data = results.result.data[:t_max, 0, :]
+t_max = int(1000 / exp.integration.step_size)
+data = results.integration.main.data[:t_max, 0, :]
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax.plot(
-        results.result.time[:t_max],
+        results.integration.main.time[:t_max],
         data[:, i],
         color=cmap(norm(data.mean(0)[i])),
         lw=0.5,
@@ -66,7 +61,7 @@ ax.set(xlabel="Time [ms]", ylabel="S [a.u.]", title="Neural Activity")
 
 # B: BOLD Signal
 ax = axes["B"]
-bold = results.observations.bold
+bold = results.integration.main.observations.bold
 data = bold.data[:60, 0, :]
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
@@ -75,7 +70,7 @@ ax.set(xlabel="Time [s]", ylabel="BOLD [a.u.]", title="BOLD Signal")
 
 # C: Parameter Landscape with Trajectory
 ax = axes["C"]
-expl = results.explorations.parameter_landscape
+expl = results.exploration.parameter_landscape
 pc = expl.grid.collect()
 G_vals, w_vals = pc.coupling.FastLinearCoupling.G.flatten(), pc.dynamics.w.flatten()
 im = ax.imshow(
@@ -116,10 +111,10 @@ for label, G, w, dy in [
     )
 
 # Trajectory
-route = results.global_optimization.fitting_data["state"].save
+route = results.optimization.global_optimization.state_trajectory
 ax.scatter(
-    [s.coupling.FastLinearCoupling.G.value for s in route][::2],
-    [s.dynamics.w.value for s in route][::2],
+    [s.coupling.FastLinearCoupling.G.value for s in route],
+    [s.dynamics.w.value for s in route],
     color="white",
     s=10,
     marker="o",
@@ -131,8 +126,8 @@ ax.set(xlabel="G", ylabel="w", title="Exploration")
 
 # D-F: FC Matrices
 for key, fc, title in [
-    ("D", np.array(fc_global), f"Global"),
-    ("E", np.array(fc_regional), f"Regional"),
+    ("D", np.array(results.optimization.global_optimization.simulation.observations.fc), f"Global"),
+    ("E", np.array(results.optimization.regional_optimization.simulation.observations.fc), f"Regional"),
     ("F", fc_target, "Target FC"),
 ]:
     ax = axes[key]
@@ -144,8 +139,8 @@ for key, fc, title in [
 # G-H: Scatter Plots
 triu = np.triu_indices_from(fc_target, k=1)
 for key, fc, title in [
-    ("G", fc_global, "Global Fit"),
-    ("H", fc_regional, "Regional Fit"),
+    ("G", results.optimization.global_optimization.simulation.observations.fc, "Global Fit"),
+    ("H", results.optimization.regional_optimization.simulation.observations.fc, "Regional Fit"),
 ]:
     ax = axes[key]
     ax.scatter(fc_target[triu], np.array(fc)[triu], alpha=0.3, s=8, color="royalblue")

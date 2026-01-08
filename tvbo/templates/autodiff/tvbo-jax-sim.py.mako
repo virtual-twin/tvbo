@@ -90,6 +90,7 @@
 
 import jax
 from tvbo.data.types import TimeSeries
+from tvbo.utils import Bunch
 ## Usefull shorthands
 import jax.numpy as jnp
 
@@ -117,7 +118,9 @@ ${obs.create_all_observations(experiment)}
 
 ## Transformation for derived parameters
 def transform_parameters(_p):
+% if experiment.local_dynamics.parameters:
     ${", ".join([p.name for p in experiment.local_dynamics.parameters.values()])} = _p.${", _p.".join([p.name for p in experiment.local_dynamics.parameters.values()])}
+% endif
     \
 ## % for par in [p.name for p in experiment.local_dynamics.parameters.values()]:
 ## ${par}, \
@@ -188,7 +191,11 @@ def kernel(state):
 
     ## initial conditions go through the carry of scan
 
+% if experiment.local_dynamics.parameters or experiment.local_dynamics.derived_parameters:
     p = transform_parameters(state.parameters.local_dynamics)
+% else:
+    p = Bunch()  # No parameters for this model
+% endif
     params_integrate = (p, state.parameters.coupling, state.stimulus)
 
     op = lambda ics, external_input: integrate(ics, weights, dt, params_integrate, delay_indices, external_input)

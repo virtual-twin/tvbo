@@ -1,0 +1,88 @@
+---
+title: "Interoperability"
+subtitle: "TVBO integrations with external tools and standards"
+---
+
+TVBO provides seamless interoperability with various neuroimaging tools, optimization frameworks, and metadata standards. This enables researchers to leverage specialized capabilities from different ecosystems while maintaining a unified model representation.
+
+## Integration Overview
+
+```{mermaid}
+%%| fig-width: 8
+flowchart LR
+    subgraph TVBO["TVBO Core"]
+        D[Dynamics]
+        S[SimulationExperiment]
+        N[Network]
+    end
+    
+    subgraph Optimization["Optimization"]
+        O[tvboptim]
+    end
+    
+    subgraph Analysis["Analysis"]
+        P[PyRates]
+    end
+    
+    subgraph Standards["Standards"]
+        B[BIDS]
+        M[OpenMINDS]
+    end
+    
+    TVBO <--> O
+    TVBO <--> P
+    TVBO --> B
+    TVBO --> M
+```
+
+## Available Integrations
+
+| Integration | Direction | Description |
+|-------------|-----------|-------------|
+| [tvboptim](tvboptim/index.qmd) | Bidirectional | JAX-based optimization and parameter fitting |
+| [PyRates](Pyrates/index.qmd) | Bidirectional | Dynamical systems analysis and bifurcation |
+| [BIDS](BIDS/index.qmd) | Export | Brain Imaging Data Structure (BEP034) |
+| [OpenMINDS](OpenMINDS.qmd) | Export | EBRAINS Knowledge Graph metadata |
+
+## Quick Start
+
+### Optimization with tvboptim
+
+```python
+from tvbo import SimulationExperiment
+
+# Load experiment and run optimization
+exp = SimulationExperiment.from_file("experiment.yaml")
+results = exp.run()
+
+# Access optimization results
+print(results.optimization.fic.history)
+```
+
+### Analysis with PyRates
+
+```python
+from tvbo import Dynamics
+
+# Export TVBO model to PyRates
+model = Dynamics.from_file("JansenRit.yaml")
+model.to_yaml(format="pyrates")
+```
+
+### Export to BIDS
+
+```python
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_file("experiment.yaml")
+exp.to_bids("output/bids")
+```
+
+### Export to OpenMINDS
+
+```python
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_file("experiment.yaml")
+exp.to_openminds("output/openminds.jsonld")
+```
