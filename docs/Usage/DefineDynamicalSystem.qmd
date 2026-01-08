@@ -58,7 +58,7 @@ state_variables:
         initial_value: 0.0
         equation:
             rhs: -c*omega - omega0**2 * sin(theta)
-output:
+derived_variables:
     x:
         description: X coordinate of the pendulum bob
         unit: m
@@ -69,6 +69,9 @@ output:
         unit: m
         equation:
             rhs: -L * cos(theta)
+output: 
+    - x
+    - y
 """
 
 pendulum = SimulationExperiment(

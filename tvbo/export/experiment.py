@@ -1356,9 +1356,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Build PyRates outputs dict from dynamics state variables.
 
         Note: PyRates only tracks state variables (differential equations) in its
-        state vector. Algebraic outputs like 'v_pyr = y1 - y2' are computed inline
+        state vector. Algebraic outputs like 'r_eff = r_in*x' are computed inline
         but not stored for recording. We only request state variables here, and
-        compute outputs post-hoc in _run_pyrates using _compute_pyrates_outputs.
+        compute outputs post-hoc in _compute_pyrates_outputs.
         """
         outputs = {}
 
@@ -1374,10 +1374,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             """Add state variables for a dynamics model."""
             if not dyn:
                 return
+            node_id = prefix.rstrip("_") or "node_0"
+
             # Add state variables only (PyRates can only record these)
             for sv_name in (dyn.state_variables or {}).keys():
                 key = f"{prefix}{sv_name}" if prefix else sv_name
-                outputs[key] = f"{prefix.rstrip('_') or 'node_0'}/{op_name}/{sv_name}"
+                outputs[key] = f"{node_id}/{op_name}/{sv_name}"
 
         # Get network nodes if available
         network = getattr(self, "network", None)
@@ -1410,7 +1412,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Compute algebraic output variables from PyRates simulation results.
 
         PyRates only records state variables. This method evaluates output
-        equations (like 'v_pyr = y1 - y2') using the recorded state values.
+        equations (like 'r_eff = r_in*x') using the recorded state values
+        and parameter constants.
         """
         import sympy as sp
 
@@ -1425,8 +1428,48 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Get default dynamics
         default_dyn = next(iter(dynamics.values()))
 
-        # Compute outputs for each dynamics model
+        # Build node label -> node info mapping from network
         network = getattr(self, "network", None)
+        node_map = {}  # node_label -> node object
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                node_map[safe_label] = node
+                node_map[node.id] = node  # Also map by id
+
+        # Build edge map: target_node_label -> {coupling_term: source_col}
+        # This traces coupling inputs back to source node state variables
+        edge_map = {}
+        if network is not None and hasattr(network, "edges") and network.edges:
+            for edge in network.edges:
+                # edge.source and edge.target are ints (node IDs)
+                src_id = edge.source
+                tgt_id = edge.target
+
+                # Get node labels from IDs
+                src_node = node_map.get(src_id)
+                tgt_node = node_map.get(tgt_id)
+                if src_node is None or tgt_node is None:
+                    continue
+
+                src_label = getattr(src_node, "label", None) or f"node_{src_id}"
+                tgt_label = getattr(tgt_node, "label", None) or f"node_{tgt_id}"
+                src_safe = str(src_label).replace(" ", "_").replace("-", "_")
+                tgt_safe = str(tgt_label).replace(" ", "_").replace("-", "_")
+
+                # Get source and target variable names from edge
+                src_var = getattr(edge, "source_var", None) or getattr(edge, "source_variable", None) or "r"
+                tgt_var = getattr(edge, "target_var", None) or getattr(edge, "target_variable", None) or "r_in"
+
+                if tgt_safe not in edge_map:
+                    edge_map[tgt_safe] = {}
+                # Map target coupling term to source column name
+                edge_map[tgt_safe][tgt_var] = f"{src_safe}_{src_var}"
+
+        n_time = len(result)
+
+        # Compute outputs for each node
         if network is not None and hasattr(network, "nodes") and network.nodes:
             for node in network.nodes:
                 node_label = getattr(node, "label", None) or f"node_{node.id}"
@@ -1442,38 +1485,73 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
 
                 if dyn and dyn.output:
-                    for out_name, out_var in dyn.output.items():
+                    for out_name in dyn.output:
+                        out_var = dyn.derived_variables.get(out_name)
+                        if out_var is None:
+                            continue
                         eq = out_var.equation
-                        if eq and eq.rhs:
-                            # Parse and evaluate the equation
-                            expr = sp.sympify(eq.rhs)
-                            # Substitute state variable values
-                            subs = {}
-                            for sym in expr.free_symbols:
-                                col_name = f"{prefix}{sym.name}"
-                                if col_name in result.columns:
-                                    subs[sym] = result[col_name].values
-                            if subs:
-                                # Add output with same prefix as state variables
-                                out_col = f"{prefix}{out_name}"
-                                # Vectorized evaluation using lambdify
-                                func = sp.lambdify(list(subs.keys()), expr, "numpy")
-                                result[out_col] = func(*subs.values())
+                        if not (eq and eq.rhs):
+                            continue
+
+                        # Parse the equation
+                        expr = sp.sympify(eq.rhs)
+
+                        # Build substitutions for all free symbols
+                        subs = {}
+                        for sym in expr.free_symbols:
+                            sym_name = sym.name
+                            col_name = f"{prefix}{sym_name}"
+
+                            # Try state variable from this node
+                            if col_name in result.columns:
+                                subs[sym] = result[col_name].values
+                            # Try parameter from dynamics
+                            elif dyn.parameters and sym_name in dyn.parameters:
+                                param = dyn.parameters[sym_name]
+                                if param.value is not None:
+                                    subs[sym] = float(param.value)
+                            # Try coupling term via edge map
+                            elif safe_label in edge_map and sym_name in edge_map[safe_label]:
+                                src_col = edge_map[safe_label][sym_name]
+                                if src_col in result.columns:
+                                    subs[sym] = result[src_col].values
+                                else:
+                                    # Source not recorded, default to zeros
+                                    subs[sym] = np.zeros(n_time)
+                            else:
+                                # Unknown symbol, default to zeros
+                                subs[sym] = np.zeros(n_time)
+
+                        # Evaluate if we have all symbols
+                        if len(subs) == len(expr.free_symbols):
+                            out_col = f"{prefix}{out_name}"
+                            func = sp.lambdify(list(subs.keys()), expr, "numpy")
+                            result[out_col] = func(*subs.values())
         else:
             # Single dynamics case (no network/nodes)
             dyn = default_dyn
             if dyn and dyn.output:
-                for out_name, out_var in dyn.output.items():
+                for out_name in dyn.output:
+                    out_var = dyn.derived_variables.get(out_name)
+                    if out_var is None:
+                        continue
                     eq = out_var.equation
-                    if eq and eq.rhs:
-                        expr = sp.sympify(eq.rhs)
-                        subs = {}
-                        for sym in expr.free_symbols:
-                            if sym.name in result.columns:
-                                subs[sym] = result[sym.name].values
-                        if subs:
-                            func = sp.lambdify(list(subs.keys()), expr, "numpy")
-                            result[out_name] = func(*subs.values())
+                    if not (eq and eq.rhs):
+                        continue
+
+                    expr = sp.sympify(eq.rhs)
+                    subs = {}
+                    for sym in expr.free_symbols:
+                        if sym.name in result.columns:
+                            subs[sym] = result[sym.name].values
+                        elif dyn.parameters and sym.name in dyn.parameters:
+                            param = dyn.parameters[sym.name]
+                            if param.value is not None:
+                                subs[sym] = float(param.value)
+
+                    if len(subs) == len(expr.free_symbols):
+                        func = sp.lambdify(list(subs.keys()), expr, "numpy")
+                        result[out_name] = func(*subs.values())
 
         return result
 
