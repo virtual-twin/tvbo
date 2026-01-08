@@ -19,7 +19,7 @@ def test_experiment_runs(experiment_name):
     """Test that experiment runs with minimal iterations."""
     exp = SimulationExperiment.from_file(f"database/experiments/{experiment_name}.yaml")
     results = exp.run(mode="all", n_iterations=2, max_steps=2, format="tvboptim")
-    
+
     assert results is not None
     assert "integration" in results
     assert results.integration is not None

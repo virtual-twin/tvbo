@@ -23,13 +23,13 @@ exp = SimulationExperiment.from_file(
 )
 results = exp.run("tvboptim")
 
-# Re-run with fitted params to get FC matrices
-fc_global = exp.run(
-    "tvboptim", mode="simulation", state=results.global_optimization.fitted_params
-).observations.fc
-fc_regional = exp.run(
-    "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
-).observations.fc
+# # Re-run with fitted params to get FC matrices
+# fc_global = exp.run(
+#     "tvboptim", mode="simulation", state=results.global_optimization.fitted_params
+# ).observations.fc
+# fc_regional = exp.run(
+#     "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
+# ).observations.fc
 fc_target = results.observations.empirical_fc
 ```
 

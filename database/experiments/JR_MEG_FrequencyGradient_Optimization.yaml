@@ -320,7 +320,42 @@ derived_observations:
                     value: 0
                     description: "Average over regions dimension"
 
-    # Derived: Peak frequency from average spectrum
+    # Derived: Peak frequency per region
+    peak_frequencies:
+        label: "Peak Frequencies per Region"
+        description: "Peak frequency for each brain region from its PSD"
+        source_observations:
+            - simulated_psd
+        pipeline:
+            - callable:
+                  module: jax.numpy
+                  name: argmax
+              output: peak_indices
+              arguments:
+                  - name: a
+                    value: simulated_psd.psd
+                    description: "PSD array (regions, 1, frequencies)"
+                  - name: axis
+                    value: -1
+                    description: "Find max along frequency axis"
+            - callable:
+                  module: jax.numpy
+                  name: squeeze
+              output: peak_indices_squeezed
+              arguments:
+                  - name: a
+                    value: peak_indices
+            - function: index_at
+              output: peak_frequencies
+              arguments:
+                  - name: arr
+                    value: simulated_psd.frequencies
+                    description: "Frequency array from PSD"
+                  - name: idx
+                    value: peak_indices_squeezed
+                    description: "Indices of peak frequencies per region"
+
+    # Derived: Peak frequency from average spectrum (scalar)
     peak_frequency:
         label: "Peak Frequency"
         description: "Extract peak frequency from average spectrum"

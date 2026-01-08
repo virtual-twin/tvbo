@@ -223,12 +223,21 @@ def run_${algo_name}(
     monitors: dict = None,
     verbose: bool = True,
     print_every: int = None,
+    save_every: int = None,
 ) -> Bunch:
     import copy
     import equinox as eqx
 
+    def _smart_interval(n):
+        """Compute smart interval: 1 for 0-10, 10 for 10-100, 100 for 100-1000, etc."""
+        if n <= 10:
+            return 1
+        return 10 ** (len(str(n)) - 2)
+
     if print_every is None:
-        print_every = max(1, n_iterations // 10)
+        print_every = _smart_interval(n_iterations)
+    if save_every is None:
+        save_every = _smart_interval(n_iterations)
     state = copy.deepcopy(state)
 
     # Update rule functions
@@ -613,17 +622,14 @@ def run_${algo_name}(
         eta_scale = (i + 1) / n_iterations
 % endif
 
-        # Record history BEFORE applying updates (to match original pattern)
-        # Original: mean_S_e_history.append(mean_S_e) BEFORE J_i update
-        # Original: J_i_history records J_i BEFORE update (J_i_history[0] = 1.0)
-
-        # Record simulated observations (mean value for scalars)
+        # Record history at save_every intervals
+        if (i + 1) % save_every == 0 or i == 0:
+            # Record simulated observations (mean value for scalars)
 % for obs in simulated_observations:
-        result_history.${obs}.append(jnp.mean(${obs}))
+            result_history.${obs}.append(jnp.mean(${obs}))
 % endfor
 
-        # Record parameter values BEFORE update (captures pre-update values on first iter)
-        # Store values directly - no implicit transformations
+            # Record parameter values (captures current values)
 % for rule, rule_source, arg_overrides in all_update_rules_with_source:
 <%
     target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
@@ -631,13 +637,13 @@ def run_${algo_name}(
     is_rec_coupling_param = rec_coupling_key is not None
 %>
 % if is_rec_coupling_param:
-        result_history.${target_name}.append(state.coupling.${rec_coupling_key}.${target_name})
+            result_history.${target_name}.append(state.coupling.${rec_coupling_key}.${target_name})
 % else:
-        result_history.${target_name}.append(state.dynamics.${target_name})
+            result_history.${target_name}.append(state.dynamics.${target_name})
 % endif
 % endfor
 
-        # Compute and record algorithm functions (metrics, derived quantities)
+            # Compute and record algorithm functions (metrics, derived quantities)
 % for func_call in algo_functions:
 <%
     func_name = get_func_name(func_call)
@@ -645,8 +651,8 @@ def run_${algo_name}(
     call_args = ', '.join([f"{k}={v}" for k, v in arg_values.items()])
     func_call_str = f"{func_name}({call_args})"
 %>
-        _${func_name}_val = ${func_call_str}
-        result_history.${func_name}.append(_${func_name}_val)
+            _${func_name}_val = ${func_call_str}
+            result_history.${func_name}.append(_${func_name}_val)
 % endfor
 
         # NOW compute and apply update rules (after recording)
