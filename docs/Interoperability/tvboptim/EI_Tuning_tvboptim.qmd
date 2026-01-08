@@ -22,29 +22,7 @@ print(exp.render_code('tvboptim'))
 ```
 
 ```{python}
-results = exp.run("tvboptim", mode='optimization')
-pickleable = {
-    'fic': {
-        'mean_S_e': np.array(results.fic.history.mean_S_e),
-        'mean_S_i': np.array(results.fic.history.mean_S_i),
-        'bold': np.array(results.fic.history.bold),
-        'J_i': np.array(results.fic.state.dynamics.J_i),
-    },
-    'fic_eib': {
-        'fc_corr': np.array(results.fic_eib.history.fc_corr),
-        'fc_rmse': np.array(results.fic_eib.history.fc_rmse),
-        'mean_S_e': np.array(results.fic_eib.history.mean_S_e),
-        'mean_S_i': np.array(results.fic_eib.history.mean_S_i),
-        'bold': np.array(results.fic_eib.history.bold),
-        'wFFEI': np.array(results.fic_eib.state.coupling.EIBLinearCoupling.wFFI),
-'wLRE': np.array(results.fic_eib.state.coupling.EIBLinearCoupling.wLRE),
-
-
-    }
-}
-import pickle
-with open('/Users/leonmartin_bih/tools/tvbo/docs/Interoperability/tvboptim/generated_results_200_2000.pkl', 'wb') as f:
-    pickle.dump(pickleable, f)
+results = exp.run("tvboptim")
 ```
 
 

@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
-<%doc>
-TVB-Optim Algorithm Template
-============================
-
-Generates iterative parameter tuning algorithms from Algorithm definitions.
-
-IMPORTANT: This template is FULLY GENERIC. ALL values come from YAML metadata.
-No hardcoded defaults, no special cases for specific algorithms.
-
-Context: experiment (SimulationExperiment instance)
-</%doc>
+<%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment).</%doc>
 <%
 from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import (
@@ -32,10 +22,6 @@ jaxcode = lambda expr, params=None: render_expression(
     parameters=params, infer_broadcasting=True
 )
 
-# =============================================================================
-# Extract Algorithms from experiment
-# =============================================================================
-# algorithms can be dict (keyed by name) or list - get values if dict
 _algos_raw = experiment.algorithms or {}
 algorithms_list = list(_algos_raw.values()) if hasattr(_algos_raw, 'values') else list(_algos_raw)
 has_algorithms = len(algorithms_list) > 0
@@ -143,10 +129,6 @@ if network and network.coupling:
 %>
 % if has_algorithms:
 
-# =============================================================================
-# ITERATIVE ALGORITHMS
-# =============================================================================
-
 % for algo in algorithms_list:
 <%
     algo_name = safe_name(algo.name)
@@ -193,9 +175,6 @@ if network and network.coupling:
     included_algos = as_list(algo.includes)
     has_includes = len(included_algos) > 0
 %>
-# -----------------------------------------------------------------------------
-# Algorithm: ${algo_name}
-# -----------------------------------------------------------------------------
 
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
 <%
@@ -255,9 +234,7 @@ def update_${algo_name}_${rule_name}(
     eta_scale: float = 1.0,
 % endif
 ) -> jnp.ndarray:
-    """Update rule: ${rule_name} for ${target_name}${' (with learning rate warmup)' if needs_warmup else ''}."""
 % if needs_warmup:
-    # Apply learning rate warmup: scale eta by eta_scale (i+1)/n_iterations
     ${eta_param_name} = ${eta_param_name} * eta_scale
 % endif
     updated = ${jaxcode(rule_rhs, all_known_symbols)}
@@ -316,61 +293,27 @@ def run_${algo_name}(
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
 % endfor
 % endif
-    monitors: dict = None,  # Optional: monitors from previous algorithm (for hemodynamic continuity)
+    monitors: dict = None,
     verbose: bool = True,
     print_every: int = None,
 ) -> Bunch:
-    """
-    Run ${algo_name} algorithm for n_iterations.
-% if description:
-
-    ${description}
-% endif
-
-    Args:
-        state: Simulation state (Bunch with dynamics, coupling, etc.)
-        model_fn: Compiled model function from run_simulation
-        key: Random key for noise generation (REQUIRED)
-        n_iterations: Number of algorithm iterations
-% for pname in hyperparam_dict.keys():
-        ${pname}: Algorithm hyperparameter (from YAML)
-% endfor
-% for inp_name in external_inputs:
-        ${inp_name}: External data (from observations section with data_source)
-% endfor
-        post_model_fn: Optional model_fn for post-tuning run (full integration duration)
-        post_state: Optional state template for post-tuning run (full integration duration)
-% if use_sliding_window:
-% for src_obs in source_observations_needed:
-        ${src_obs}_buffer: Optional buffer from previous algorithm (skips warmup if provided)
-% endfor
-% endif
-        verbose: Print progress messages
-        print_every: Print frequency (defaults to n_iterations // 10)
-
-    Returns:
-        Bunch with: state, history, pre_tuning, post_tuning, ${', '.join([f'{obs}_buffer' for obs in source_observations_needed]) if use_sliding_window else ''}
-    """
     import copy
     import equinox as eqx
 
     if print_every is None:
         print_every = max(1, n_iterations // 10)
-
-    # Deep copy state to avoid modifying original
     state = copy.deepcopy(state)
 
 <%
     # Extract function names from FunctionCall objects
     algo_func_names = [get_func_name(fc) for fc in algo_functions]
 %>
-    # History tracking for algorithm results
     result_history = Bunch(
 % for obs in simulated_observations:
         ${obs}=[],
 % endfor
 % for func_name in algo_func_names:
-        ${func_name}=[],  # Tracked from algorithm function
+        ${func_name}=[],
 % endfor
 % for rule, rule_source, arg_overrides in all_update_rules_with_source:
 <%
@@ -391,12 +334,10 @@ def run_${algo_name}(
             if obs not in source_observations_needed:
                 collectible_observations.append(obs)
 %>
-    # Buffer lists for collecting raw observation samples (passed to next algorithm)
 % for obs in collectible_observations:
-    _${obs}_samples = []  # Will hold raw samples for each iteration
+    _${obs}_samples = []
 % endfor
 
-    # Run pre-tuning simulation for comparison
     pre_tuning = model_fn(state)
 
     # Create observation monitors for pipeline-based observations (created once, reused in loop)
@@ -420,7 +361,6 @@ def run_${algo_name}(
     # Note: Derived observations don't have monitor classes - they're computed from other observations
     # So we don't need dependent_monitors anymore
 %>
-    # Initialize monitors dict if not passed
     if monitors is None:
         monitors = {}
 % for obs, obs_class in pipeline_observations:
@@ -431,25 +371,17 @@ def run_${algo_name}(
     _${src_obs}_monitor = monitors.get('${src_obs}') if monitors.get('${src_obs}') is not None else ${src_class}(history=history)
 % endif
 % endfor
-    # History accessor for updating monitor state (hemodynamic continuity)
-    # Uses _history because generated Bold class stores history with underscore prefix
     history_accessor = lambda tree: tree._history
 
 % if use_sliding_window:
-    # Initialize sliding window buffers for source observations
-    # Shape: (window_size, 1, n_nodes) - accumulated over iterations
     n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else 68
 
 % for src_obs in source_observations_needed:
-    # Check if buffer was passed from previous algorithm
     if ${src_obs}_buffer is not None:
-        # Use buffer from previous algorithm
-        # Handle case where passed buffer is smaller than window_size
         _passed_buffer = ${src_obs}_buffer
         _passed_len = _passed_buffer.shape[0]
 
         if _passed_len >= int(window_size):
-            # Buffer is large enough, slice to window_size
             if _passed_buffer.ndim == 2:
                 _${src_obs}_buffer = _passed_buffer[-int(window_size):].reshape((int(window_size), 1, n_nodes))
             elif _passed_buffer.ndim == 3:
@@ -460,11 +392,8 @@ def run_${algo_name}(
             if verbose:
                 print(f"  Using passed ${src_obs} buffer ({_passed_len} samples, using last {int(window_size)})")
         else:
-            # Buffer is smaller than window_size - pad with zeros and note we need warmup
             _${src_obs}_buffer = jnp.zeros((int(window_size), 1, n_nodes))
-            # Copy passed samples to end of buffer
             if _passed_buffer.ndim == 2:
-                # Shape (n_samples, n_nodes) -> copy to last rows
                 for _pi in range(_passed_len):
                     _${src_obs}_buffer = _${src_obs}_buffer.at[int(window_size) - _passed_len + _pi, 0, :].set(_passed_buffer[_pi, :])
             elif _passed_buffer.ndim == 3:
@@ -475,8 +404,6 @@ def run_${algo_name}(
             _buffer_idx = _passed_len
             if verbose:
                 print(f"  Passed ${src_obs} buffer too small ({_passed_len} < {int(window_size)}), running warmup for remaining {int(window_size) - _passed_len} samples...")
-
-            # Run warmup to fill the rest of the buffer
             for _warmup_i in range(int(window_size) - _passed_len):
                 key, subkey = jax.random.split(key)
                 _warmup_result = model_fn(state)
@@ -510,22 +437,15 @@ def run_${algo_name}(
 
         for _warmup_i in range(int(window_size)):
             key, subkey = jax.random.split(key)
-
-            # Run simulation for one period
             _warmup_result = model_fn(state)
-
-            # Update state for next iteration
             state.initial_state.dynamics = _warmup_result.data[-1]
             if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
                 state._internal.noise_samples = jax.random.normal(
                     key=subkey, shape=state._internal.noise_samples.shape
                 )
 
-            # Compute ${src_obs} and add to buffer
             _warmup_${src_obs} = _${src_obs}_monitor(_warmup_result)
             _warmup_${src_obs}_data = _warmup_${src_obs}.data if hasattr(_warmup_${src_obs}, 'data') else _warmup_${src_obs}
-
-            # Roll buffer and add new sample
             _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
             if _warmup_${src_obs}_data.ndim == 2:
                 _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data[0, :])
@@ -534,13 +454,11 @@ def run_${algo_name}(
             else:
                 _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
 
-            # === CRITICAL: Update ${src_obs.upper()} monitor history for hemodynamic state continuity ===
-            # This matches the original: new_history = jnp.roll(...); bold_monitor = eqx.tree_at(...)
             _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
             _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
             _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 
-        _buffer_idx = int(window_size)  # Buffer is now full
+        _buffer_idx = int(window_size)
         if verbose:
             print(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
 % endfor
@@ -550,50 +468,34 @@ def run_${algo_name}(
         print(f"Running ${algo_name} algorithm for {n_iterations} iterations...")
 
     for i in range(n_iterations):
-        # Split key for this iteration
         key, subkey = jax.random.split(key)
-
-        # Run simulation for one period
         result = model_fn(state)
-
-        # Update state for next iteration
         state.initial_state.dynamics = result.data[-1]
         if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
             state._internal.noise_samples = jax.random.normal(
                 key=subkey, shape=state._internal.noise_samples.shape
             )
 
-        # Compute observations from simulation result
-        # Simulated observations are computed here; external inputs are passed as arguments
 % if use_sliding_window:
-        # === SLIDING WINDOW PATTERN ===
-        # 1. Compute source observations and add to buffer
 % for src_obs in source_observations_needed:
 <%
     src_obs_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
 %>
         _${src_obs}_sample = _${src_obs}_monitor(result)
         _${src_obs}_sample_data = _${src_obs}_sample.data if hasattr(_${src_obs}_sample, 'data') else _${src_obs}_sample
-        # Roll buffer and add new sample at end (shape: [1, 1, n_nodes] or [1, n_nodes])
         _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
         if _${src_obs}_sample_data.ndim == 2:
-            # Shape [1, n_nodes] -> expand to [1, 1, n_nodes]
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data[0, :])
         elif _${src_obs}_sample_data.ndim == 3:
-            # Shape [1, 1, n_nodes]
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_${src_obs}_sample_data[0, :, :])
         else:
-            # Shape [n_nodes]
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data)
-
-        # Update ${src_obs} monitor history for hemodynamic state continuity
         _new_history = jnp.roll(_${src_obs}_monitor._history, -result.data.shape[0], axis=0)
         _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
         _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 % endfor
         _buffer_idx = min(_buffer_idx + 1, int(window_size))
 
-        # 2. Compute dependent observations from buffer (only after warmup)
 % for obs in simulated_observations:
 <%
     # Check both regular and derived observations
@@ -680,7 +582,6 @@ def run_${algo_name}(
 % endif
 % endfor
 % else:
-        # === STANDARD PATTERN (no sliding window) ===
 % for obs in simulated_observations:
 <%
     # Check if observable is defined in observations section

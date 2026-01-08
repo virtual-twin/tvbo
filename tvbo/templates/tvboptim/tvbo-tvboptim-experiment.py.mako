@@ -1,21 +1,5 @@
 # -*- coding: utf-8 -*-
-<%doc>
-TVB-Optim Complete Experiment Template
-======================================
-
-Generates a complete tvboptim experiment workflow including:
-- Dynamics and Coupling classes (via includes)
-- Network setup and simulation
-- Observations and target generation
-- Parameter exploration (grid search)
-- Optimization pipeline
-
-Context Variables:
-- experiment: SimulationExperiment instance (required)
-
-Output:
-- Complete Python module for running the full experiment
-</%doc>
+<%doc>TVB-Optim Experiment Template. Context: experiment (SimulationExperiment).</%doc>
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%namespace name="const" file="/base/constants.mako"/>
 <%
@@ -452,30 +436,7 @@ for dobs_name, dobs in derived_observations_dict.items():
 # First coupling name for docstring
 first_coupling_name = list(all_couplings.keys())[0] if all_couplings else 'None'
 %>
-"""
-${dynamics_class} tvboptim Experiment
-${'=' * (len(dynamics_class) + 20)}
-
-Auto-generated from TVBO SimulationExperiment specification.
-
-Experiment: ${experiment.label or 'Generated'}
-Model: ${model.name or 'Generated'}
-Coupling: ${first_coupling_name}
-Nodes: ${n_nodes}
-Integration: ${solver_class} (dt=${dt}ms)
-Stochastic: ${has_noise}
-Delayed: ${has_delay}
-
-Workflows:
-- Simulation: run_simulation()
-- Observations: ${len(obs_list)} defined
-- Explorations: ${len(explorations)} defined
-- Optimization: ${'enabled' if has_optimization else 'disabled'}
-"""
-
-# =============================================================================
-# Imports
-# =============================================================================
+"""${dynamics_class} tvboptim Experiment."""
 import os
 import copy
 
@@ -519,25 +480,9 @@ import ${mod}
 from tvbo.data.types import SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult
 
 
-# =============================================================================
-# Solver Configuration
-# =============================================================================
-
 def get_solver():
-    """Get configured solver instance.
-
-    Returns the solver specified in integration metadata (${solver_class}).
-% if has_state_bounds:
-    Wrapped in BoundedSolver to enforce state variable domain constraints:
-    % for sv_name, lo, hi in zip(state_names, state_bounds_lo, state_bounds_hi):
-    - ${sv_name}: [${lo}, ${hi}]
-    % endfor
-% endif
-    """
     base_solver = ${solver_class}()
 % if has_state_bounds:
-    # Wrap solver with BoundedSolver to enforce state variable domain constraints
-    # Shape (n_states, 1) broadcasts with state array (n_states, n_nodes)
     return BoundedSolver(
         base_solver,
         low=jnp.array(${state_bounds_lo})[:, None],
@@ -547,19 +492,9 @@ def get_solver():
     return base_solver
 % endif
 
-
-# =============================================================================
-# Dynamics Model
-# =============================================================================
-
 <%include file="tvbo-tvboptim-dfun.py.mako" />
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
-
-
-# =============================================================================
-# Network Setup
-# =============================================================================
 
 def create_network(
     weights: jnp.ndarray,
@@ -571,7 +506,6 @@ def create_network(
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma[0]},
 ) -> Network:
-    """Create configured Network instance."""
 % if has_normalization:
     # Normalization: ${_norm.rhs}
     W = weights
@@ -589,8 +523,6 @@ def create_network(
 
     n_nodes = weights.shape[0]
 
-    # Initialize dynamics params (broadcast to array shapes where specified)
-    # Override with dynamics_params if provided (e.g., from external data source)
     _dynamics_params = {
         % for name in dyn_param_names:
         % if name in dyn_param_shapes:
@@ -604,7 +536,6 @@ def create_network(
         _dynamics_params.update(dynamics_params)
     dynamics = ${dynamics_class}(**_dynamics_params)
 
-    # Create coupling functions for each entry in network.coupling
     coupling_dict = {}
 
     % for coupling_key, coupling_obj in all_couplings.items():
@@ -613,7 +544,6 @@ def create_network(
     c_class_name = coupling_key.replace(' ', '').replace('-', '')
     c_param_names, c_param_defaults, c_param_shapes = get_param_info(coupling_obj.parameters if hasattr(coupling_obj, 'parameters') else None)
 %>
-    # Coupling '${coupling_key}' -> ${c_class_name}
     _${coupling_key}_params = {
         % for name in c_param_names:
         % if name in c_param_shapes:
@@ -630,10 +560,8 @@ def create_network(
 
     % if has_noise:
     % if noise_targets:
-    # Noise applied to states: ${noise_targets}
     noise = AdditiveNoise(sigma=noise_sigma, apply_to=${noise_targets}, key=jax.random.key(${random_seed})) if noise_sigma > 0 else None
     % else:
-    # Noise applied to all states (integration-level noise without targets)
     noise = AdditiveNoise(sigma=noise_sigma, key=jax.random.key(${random_seed})) if noise_sigma > 0 else None
     % endif
     % else:
@@ -647,11 +575,6 @@ def create_network(
         noise=noise,
     )
 
-
-# =============================================================================
-# Simulation
-# =============================================================================
-
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -661,32 +584,6 @@ def run_simulation(
     run_main: bool = True,
     **kwargs,
 ) -> Bunch:
-    """Run network simulation with optional transient settling.
-
-    If t_transient > 0, runs a transient simulation first to settle the network,
-    then updates the network's initial conditions before the main simulation.
-
-    Parameters
-    ----------
-    network : Network
-        Configured network instance
-    t1 : float
-        Main simulation duration in ms
-    dt : float
-        Integration timestep in ms
-    t0 : float
-        Start time
-    t_transient : float
-        Transient settling duration in ms (0 = no transient)
-    run_main : bool
-        If True, run main simulation after transient. If False, just prepare state.
-        Set False for algorithms mode where algorithms handle their own simulations.
-
-    Returns
-    -------
-    Bunch
-        Contains model_fn, state, result, and optionally result_transient
-    """
     solver = get_solver()
     result_transient = None
 
@@ -695,26 +592,15 @@ def run_simulation(
     if t_transient > 0:
         model_fn_init, state_init = prepare(network, solver, t0=t0, t1=t_transient, dt=dt)
         result_transient = model_fn_init(state_init)
-
-        # Update network with final state as new initial conditions
         network.update_history(result_transient)
     % endif
 
-    # Prepare state for main simulation (always needed for model_fn and state)
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
 
-    # Main simulation (skip if run_main=False, e.g., for algorithms mode)
     result = None
     observations = None
     if run_main:
         result = model_fn(state)
-
-        # Compute all observations
-        # Pass result and result_transient for observations to use
-        # - result: pre-computed simulation (avoids re-running)
-        # - result_transient: HRF warmup history for BOLD observations
-        # Network observations are module-level constants (already loaded from BIDS)
-        # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
         observations = Bunch()
         obs_kwargs = dict(kwargs)
         obs_kwargs['result'] = result
@@ -729,32 +615,22 @@ def run_simulation(
 % endif
 % endfor
 
-        # Compute derived observations (those depending on multiple source observations)
+        # Compute derived observations
         _all_obs = compute_all_observations(result, state, result_transient)
 % for obs_name in derived_observation_names:
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
-    # Return raw results - only final run_experiment return wraps in result classes
     return Bunch(
         model_fn=model_fn,
         state=state,
-        result=result,  # Raw tvboptim result (for monitors/observations)
-        result_transient=result_transient,  # Raw transient result (for HRF warmup)
-        observations=observations,  # Computed observations
+        result=result,
+        result_transient=result_transient,
+        observations=observations,
     )
-
-
-# =============================================================================
-# Observable Functions (Generated from Pipeline Metadata)
-# =============================================================================
 
 <%include file="tvbo-tvboptim-observation.py.mako" />
 
-
-# =============================================================================
-# User-Defined Functions (from experiment.functions)
-# =============================================================================
 <%
 from tvbo.export.code import render_expression
 
@@ -829,16 +705,10 @@ ${fn.function_def(fdef, format='jax', user_functions=all_func_names)}
 if '_init_precomputed' in dir():
     _init_precomputed()
 
-
-# =============================================================================
-# Loss Functions (Generated from Metadata)
-# =============================================================================
 <%
-# Parse loss functions from optimization metadata using utility
 loss_functions = [parse_loss_function(opt) for opt in optim_list]
-loss_functions = [lf for lf in loss_functions if lf]  # Filter out None
+loss_functions = [lf for lf in loss_functions if lf]
 
-# Collect all runtime kwargs needed for loss functions
 runtime_kwargs_needed = set()
 for lf in loss_functions:
     for arg in lf['args']:
@@ -846,24 +716,6 @@ for lf in loss_functions:
             runtime_kwargs_needed.add(arg['kwarg_name'])
 %>
 def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwargs):
-    """Create a loss function closure for optimization.
-
-    Loss functions are generated from optimization metadata.
-    Each loss MUST specify equation, source_code, or callable.
-
-    Runtime inputs (observations with data_source) are passed via kwargs.
-    Required kwargs: ${', '.join(sorted(runtime_kwargs_needed)) if runtime_kwargs_needed else '(none)'}
-
-    IMPORTANT: Observation monitors are created ONCE here with history baked in,
-    then reused in the inner loss function. This matches the exploration pattern
-    and is critical for proper JAX differentiation.
-
-    Args:
-        model_fn: Compiled model function
-        result_transient: Transient simulation result for HRF/BOLD pipeline warmup
-        loss_type: Which loss function to use (defaults to first available)
-        **kwargs: Runtime inputs (e.g., fc_target=empirical_fc_matrix)
-    """
 % if runtime_kwargs_needed:
     # Validate required runtime inputs
 % for kwarg_name in sorted(runtime_kwargs_needed):
@@ -948,14 +800,6 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
 % endfor
 
         def loss_${opt_name}(state):
-            """Loss function calling ${func_name}
-
-            Observations used: ${', '.join(sorted(obs_refs)) or '(none)'}
-% if agg_over:
-            Aggregation: ${agg_type} over ${agg_over} (axis ${agg_axis})
-% endif
-            """
-            # Run simulation
             result = model_fn(state)
 
             # Apply observation monitors (simulation-derived observations only)
@@ -1024,33 +868,19 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
     raise ValueError("No loss functions defined in optimization metadata. Each optimization must specify a loss with equation, source_code, or callable.")
 % endif
 
-
-# =============================================================================
-# Compute All Observations (for post-tuning/post-optimization)
-# =============================================================================
 <%
-# Build dependency-sorted observation order
-# Network observations (external data) come first, then simulated observations in dependency order
 def get_observation_dependencies(obs_name, derived_obs_dict):
-    """Get all dependencies for a derived observation."""
     deps = set()
     dobs_def = derived_obs_dict.get(obs_name)
     if dobs_def:
-        # Derived observations have source_observations (list of observation names they depend on)
         for src in (dobs_def.source_observations or []):
             src_name = str(src) if not hasattr(src, 'name') else str(src.name)
             deps.add(src_name)
     return deps
 
 def toposort_observations(obs_names, derived_obs_dict):
-    """Topologically sort observations by dependencies.
-
-    Regular observations have no observation dependencies (they derive from state).
-    Derived observations depend on other observations via source_observations.
-    """
     sorted_obs = []
     visited = set()
-
     def visit(name):
         if name in visited:
             return
@@ -1060,32 +890,15 @@ def toposort_observations(obs_names, derived_obs_dict):
             if dep in obs_names:
                 visit(dep)
         sorted_obs.append(name)
-
     for name in obs_names:
         visit(name)
     return sorted_obs
 
-# Regular observations don't have dependencies - they derive from simulation state
 sorted_observation_names = list(observation_names)
-# Derived observations need toposort based on source_observations
 sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict)
 %>
 
 def compute_all_observations(result, state, result_transient=None):
-    """Compute all observations from a simulation result.
-
-    This is used for post-tuning and post-optimization simulations to get
-    all metrics in a single call. Observations are computed in dependency order,
-    followed by derived observations.
-
-    Args:
-        result: Simulation result from model_fn(state)
-        state: Current state (for creating monitors)
-        result_transient: Optional transient result for BOLD warmup
-
-    Returns:
-        Bunch with all observations (regular + derived)
-    """
     obs = Bunch()
 
     # Network observations (static data from BIDS)
@@ -1196,18 +1009,10 @@ def compute_all_observations(result, state, result_transient=None):
     return obs
 
 
-# =============================================================================
-# Iterative Algorithms (FIC, etc.)
-# =============================================================================
-
 <%include file="tvbo-tvboptim-algorithm.py.mako" />
 
 
 % if has_optimization:
-# =============================================================================
-# Optimization
-# =============================================================================
-
 <%
 # Build a lookup dict for all known parameters (dynamics + coupling)
 all_dynamics_params = {str(p.name): p for p in optim_params}
@@ -1237,14 +1042,8 @@ stage_warmup_from = stage['warmup_from']
 %>
 
 def mark_parameters_${stage_name}(state, n_nodes: int = ${n_nodes}):
-    """Mark parameters as optimizable for stage: ${stage_name}
-
-    Free parameters: ${', '.join(p['name'] for p in stage_free_params)}
-    """
-    # Start by unwrapping all Parameters to plain values (freeze all)
+    """Mark free parameters: ${', '.join(p['name'] for p in stage_free_params)}."""
     init_state = unwrap_all_parameters(copy.deepcopy(state))
-
-    # Now mark only this stage's free parameters as optimizable
 % for fp in stage_free_params:
 <%
 fp_name = fp['name']
@@ -1308,19 +1107,8 @@ def run_stage_${stage_name}(
     learning_rate: float = ${stage_lr},
     **kwargs,
 ):
-    """Run optimization for stage: ${stage_name}
-
-    Algorithm: ${stage_algorithm}
-    Learning rate: ${stage_lr}
-    Max iterations: ${stage_max_iter}
-% if stage_hyperparams:
-    Hyperparameters: ${stage_hyperparams}
-% endif
-    """
-    # Mark this stage's parameters
+    """Run optimization stage: ${stage_name} (${stage_algorithm}, lr=${stage_lr})."""
     marked_state = mark_parameters_${stage_name}(init_state)
-
-    # Build optimizer kwargs
     opt_kwargs = {**kwargs}
 % for hp_name, hp_value in stage_hyperparams.items():
     opt_kwargs.setdefault('${hp_name}', ${hp_value})
@@ -1344,15 +1132,7 @@ def create_optimizer(
     callback = None,
     **opt_kwargs,
 ):
-    """Create configured optimizer.
-
-    Args:
-        loss_fn: Loss function to optimize
-        optimizer: Optimizer name (adam, adamw, adamax, adamaxw, sgd)
-        learning_rate: Learning rate
-        callback: Optional callback override. Default: MultiCallback([DefaultPrintCallback(), SavingLossCallback()])
-        **opt_kwargs: Additional optimizer hyperparameters (b1, b2, etc.)
-    """
+    """Create configured optax optimizer."""
     optimizers = {
         "adam": optax.adam,
         "adamw": optax.adamw,
@@ -1394,9 +1174,6 @@ def run_optimization(
 
 
 % if has_explorations:
-# =============================================================================
-# Parameter Exploration
-# =============================================================================
 
 % for expl in explorations:
 <%
@@ -1408,18 +1185,10 @@ def run_optimization(
     obs_args = expl.get('observable_args', [])
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
+    grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']])
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
-    """${expl['label']} - Parameter exploration.
-
-    Grid: ${' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']])} = ${total_points} points
-    N_PMAP: Auto-detected from available devices (default: ${n_workers})
-% if obs_type == 'function_call':
-    Observable: ${obs_func}(${', '.join([a['name'] for a in obs_args])})
-% else:
-    Observable: ${obs_name}${"['" + output_key + "']" if output_key else ""}
-% endif
-    """
+    """${expl['label']} - Grid: ${grid_desc} = ${total_points} points."""
     grid_state = copy.deepcopy(state)
     % for ax in expl['axes']:
     % if ax.get('is_coupling'):
@@ -1559,10 +1328,6 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 ${const.all_constants(experiment)}
 
 
-# =============================================================================
-# Main Entry Point
-# =============================================================================
-
 def run_experiment(
     weights: jnp.ndarray,
     distances: jnp.ndarray = None,
@@ -1572,49 +1337,10 @@ def run_experiment(
     state: Bunch = None,
     **kwargs,
 ) -> Dict[str, Any]:
-    """Run the complete ${dynamics_class} experiment workflow.
-
-    Parameters
-    ----------
-    weights : jnp.ndarray
-        Connectivity weight matrix (n_nodes x n_nodes)
-    distances : jnp.ndarray, optional
-        Tract length matrix for delay computation (n_nodes x n_nodes)
-    region_labels : list, optional
-        Labels for brain regions
-    mode : str
-        Workflow mode: 'simulation', 'optimization', 'exploration', 'algorithms', or 'all' (default)
-    stage : str, optional
-        Name of specific optimization stage to run. If None, runs all stages.
-        Only used when mode='optimization' and multi-stage optimization is configured.
-    state : Bunch, optional
-        Pre-configured state (e.g., from previous optimization). If provided,
-        uses these parameters for simulation instead of defaults.
-    **kwargs
-        Runtime inputs for algorithms/optimization (e.g., fc_target for FC-based loss)
-
-    Returns
-    -------
-    Bunch
-        Results Bunch containing:
-        - model_fn: Compiled model function
-        - state: Initial state
-        - result: Simulation result
-        - transient: Transient simulation result (if t_transient > 0)
-        - network: Network instance
-        - observations: Computed observations (Bunch)
-        - fitted_params: Optimized parameters (if mode='optimization')
-        - fitting_data: Optimization history (if mode='optimization')
-        - explorations: Grid search results as Bunch (if mode='exploration')
-        - algorithms: Algorithm results (if mode='algorithms' or 'all')
-    """
+    """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all."""
 
     weights = jnp.array(weights)
 
-    # Setup network
-    # -------------------------------------------------------------------------
-    # STEP 1: Simulation (always runs first)
-    # -------------------------------------------------------------------------
     print("\n" + "=" * 60)
     print("STEP 1: Running simulation...")
     print("=" * 60)
@@ -1712,14 +1438,6 @@ def run_experiment(
     # This is the starting point for optimization unless depends_on is specified
     initial_state = copy.deepcopy(state)
 
-    # Build results structure mirroring YAML metadata
-    # - results.integration.{transient, main} - each with .observations
-    # - results.algorithms.{fic, eib, ...} - if algorithms mode
-    # - results.optimization.{name, ...} - if optimization mode
-    # - results.exploration.{name, ...} - if exploration mode
-    # - results.state, results.model_fn, results.network - always available
-
-    # Wrap simulation results with observations attached
     main_result = SimulationResult(result=result, observations=observations) if result is not None else None
     transient_result = SimulationResult(result=transient) if transient is not None else None
 
@@ -1739,9 +1457,6 @@ def run_experiment(
     print("  Simulation complete.")
 
     % if has_explorations:
-    # -------------------------------------------------------------------------
-    # STEP 2: Explorations (parameter sweeps)
-    # -------------------------------------------------------------------------
     if mode in ('exploration', 'all'):
         print("\n" + "=" * 60)
         print("STEP 2: Running explorations...")
@@ -1762,14 +1477,6 @@ def run_experiment(
     % endif
 
     % if has_algorithms:
-    # -------------------------------------------------------------------------
-    # STEP 3: Algorithms (FIC, EIB, etc.)
-    # -------------------------------------------------------------------------
-    # ALL parameters derived from YAML metadata
-    #
-    # Modes:
-    #   - mode='algorithm': Run a single algorithm by name
-    #   - mode='algorithms' or mode='all': Run ALL algorithms in dependency order
     if mode in ('algorithm', 'algorithms', 'all'):
         print("\n" + "=" * 60)
         print("STEP 3: Running algorithms...")
@@ -2095,15 +1802,10 @@ def run_experiment(
     % endif
 
     % if has_optimization:
-    # -------------------------------------------------------------------------
-    # STEP 4: Optimization (gradient-based parameter fitting)
-    # -------------------------------------------------------------------------
-    # Runtime inputs for loss function are passed via kwargs (e.g., fc_target)
     if mode in ('optimization', 'all'):
         print("\n" + "=" * 60)
         print("STEP 4: Running optimization...")
         print("=" * 60)
-        # Check if all required runtime inputs are provided
         _missing_inputs = []
 % for kwarg_name in sorted(runtime_kwargs_needed) if runtime_kwargs_needed else []:
         if '${kwarg_name}' not in kwargs:
@@ -2311,10 +2013,6 @@ else:
 structural_measures = list(network.structural_measures) if network.structural_measures else None
 observational_measures = list(network.observational_measures) if network.observational_measures else None
 %>
-
-# =============================================================================
-# Standalone Execution
-# =============================================================================
 
 if __name__ == "__main__":
     import pickle
