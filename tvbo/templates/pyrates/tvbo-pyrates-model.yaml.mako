@@ -69,14 +69,14 @@
         iv = sv.initial_value
         variables[k] = f"variable({iv})"
 
-    # Add output transforms (algebraic equations)
-    # Note: PyRates tracks only state variables (DEs) in the state vector.
-    # Algebraic outputs are computed inline but not stored for recording.
-    # We define them as 'variable' so they're computed, and post-process results
-    # to derive output values from recorded state variables.
-    for k, ot in (m.output or {}).items():
-        equations.append(f"{k} = {m.render_equation(ot, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
-        variables[k] = "variable"
+    ## # Add output transforms (algebraic equations)
+    ## # Note: PyRates tracks only state variables (DEs) in the state vector.
+    ## # Algebraic outputs are computed inline but not stored for recording.
+    ## # We define them as 'variable' so they're computed, and post-process results
+    ## # to derive output values from recorded state variables.
+    ## for k, ot in (m.output or {}).items():
+    ##     equations.append(f"{k} = {m.render_equation(ot, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
+    ##     variables[k] = "variable"
 
     # Add parameters as constants
     for param_name, param in (m.parameters or {}).items():

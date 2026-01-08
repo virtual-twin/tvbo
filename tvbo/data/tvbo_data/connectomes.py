@@ -1577,16 +1577,20 @@ class Network(tvbo_datamodel.Network):
                 for edge in edges:
                     source = getattr(edge, "source", None)
                     target = getattr(edge, "target", None)
-                    weight = getattr(edge, "weight", 1.0) or 1.0
+
 
                     if source is None or target is None:
                         continue
-                    if abs(weight) < weight_threshold:
+
+                    weight = self._get_edge_param(edge, "weight") or 0.0
+                    if weight <= weight_threshold:
                         continue
 
                     edge_attrs = {
                         "weight": weight,
-                        "delay": getattr(edge, "delay", 0.0) or 0.0,
+                        "delay": self._get_edge_param(edge, "delay") or 0.0,
+                        "distance": self._get_edge_param(edge, "distance") or 0.0,
+                        "directed": getattr(edge, "directed", True),
                         "source_var": getattr(edge, "source_var", None),
                         "target_var": getattr(edge, "target_var", None),
                     }
