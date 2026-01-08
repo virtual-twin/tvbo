@@ -22,7 +22,7 @@ print(exp.render_code('tvboptim'))
 ```
 
 ```{python}
-results = exp.run("tvboptim")
+results = exp.run("tvboptim", mode='optimization')
 pickleable = {
     'fic': {
         'mean_S_e': np.array(results.fic.history.mean_S_e),

@@ -6,6 +6,9 @@ Complete BOLD functional connectivity simulation & optimization: simulation, exp
 
 ```{python}
 # | output: false
+import os
+os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
+
 from tvbo import SimulationExperiment, Network
 from tvboptim.observations.observation import fc_corr
 from matplotlib.colors import Normalize

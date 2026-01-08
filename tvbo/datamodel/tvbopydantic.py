@@ -4180,6 +4180,7 @@ class Optimization(OptimizationStage):
                        'Exploration',
                        'Algorithm',
                        'SimulationExperiment']} })
+    integration: Optional[Integrator] = Field(default=None, description="""Integration settings for optimization simulations (overrides experiment defaults). If specified, creates a fresh model_fn and state with prepare() before optimization. Can specify different duration, step_size, method than the experiment. If not specified, uses experiment-level integration settings.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     stages: Optional[list[OptimizationStage]] = Field(default=[], description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. When defined, inherited single-stage fields are ignored.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     depends_on: Optional[str] = Field(default=None, description="""Algorithm to use as starting point for optimization. If specified, optimization starts from algorithm's result state. If not specified, optimization starts from initial simulation state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
@@ -5172,7 +5173,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'PDE']} })
     local_dynamics: Optional[Dynamics] = Field(default=None, description="""Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
-    integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
