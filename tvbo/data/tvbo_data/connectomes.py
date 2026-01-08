@@ -1637,17 +1637,46 @@ class Network(tvbo_datamodel.Network):
         labels = []
         ids = []
         centers = []
-        for region, entity in self.get_atlas().metadata.terminology.entities.items():
+        entities = self.get_atlas().metadata.terminology.entities
+        # Handle both dict and list formats
+        if hasattr(entities, 'items'):
+            entity_items = entities.items()
+        elif isinstance(entities, list):
+            entity_items = enumerate(entities)
+        else:
+            # Empty or unknown format - return default
+            return {0: (0, 0, 0)}
+
+        for region, entity in entity_items:
+            # Handle entity being a dict or object
+            if isinstance(entity, dict):
+                lookup_label = entity.get('lookupLabel', region)
+                center = entity.get('center', {})
+                coord = (center.get('x', 0), center.get('y', 0), center.get('z', 0))
+            else:
+                lookup_label = getattr(entity, 'lookupLabel', region)
+                center = getattr(entity, 'center', None)
+                if center:
+                    coord = (center.x, center.y, center.z)
+                else:
+                    coord = (0, 0, 0)
             labels.append(region)
-            ids.append(entity.lookupLabel)
-            center = entity.center
-            coord = (center.x, center.y, center.z)
+            ids.append(lookup_label if isinstance(lookup_label, int) else region)
             centers.append(coord)
 
+        if not centers:
+            return {0: (0, 0, 0)}
+
         centers = np.array(centers)
-        centers = centers[np.argsort(ids)]
-        labels = np.array(labels)[np.argsort(ids)]
-        center_mapping = {i - 1: center for i, center in zip(ids, centers)}
+        # Only sort if ids are numeric
+        if all(isinstance(i, (int, float)) for i in ids):
+            sort_idx = np.argsort(ids)
+            centers = centers[sort_idx]
+            labels = np.array(labels)[sort_idx]
+            center_mapping = {int(i) - 1: tuple(center) for i, center in zip(sorted(ids), centers)}
+        else:
+            center_mapping = {i: tuple(center) for i, center in enumerate(centers)}
+
         if center_mapping == {}:
             return {0: (0, 0, 0)}
         return center_mapping

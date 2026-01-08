@@ -19,7 +19,9 @@ from collections import namedtuple
 
 ## Derivatives of state variables
 def dfun(current_state, cX, _p, t, local_coupling=0):
+% if parameters:
     ${', '.join(parameters)} = _p.${', _p.'.join(parameters)}
+% endif
 
     # unpack coupling terms and states as in dfun
     % for i, cterm in enumerate(metadata.coupling_terms):

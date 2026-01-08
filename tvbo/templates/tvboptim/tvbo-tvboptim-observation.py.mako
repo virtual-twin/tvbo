@@ -579,7 +579,7 @@ from ${module} import ${class_name} as _Ext${class_name}
     # Determine state index from source (only for state variable sources)
     state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
 %>
-% if is_network_observation:
+% if is_network_observation and bids_dir:
 ## =============================================================================
 ## Static Network Observation (data from BIDS - module-level constant)
 ## =============================================================================

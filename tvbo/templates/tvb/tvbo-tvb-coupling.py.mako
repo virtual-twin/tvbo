@@ -1,8 +1,10 @@
 <%!
     import numpy as np
     from tvbo.export.code import render_expression
-    pycode = lambda expr: render_expression(expr, format='python')
     from tvbo.knowledge.simulation.equations import _clash1
+
+    # Generic pycode - pass parameters on each call
+    pycode = lambda expr, parameters=None: render_expression(expr, format='python', parameters=parameters)
 %>
 <%
 if 'experiment' in context.keys():
@@ -10,19 +12,22 @@ if 'experiment' in context.keys():
 else:
     coupling = context['coupling'].metadata
 
+# Collect coupling parameter names for use in expressions
+coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
+
 if coupling.sparse:
     base_class = 'SparseCoupling'
 else:
     base_class = 'Coupling'
 
-pre_expr = pycode(coupling.pre_expression.rhs)
+pre_expr = pycode(coupling.pre_expression.rhs, parameters=coupling_param_names)
 if '[0]' in pre_expr:
     pre_expr = pre_expr.replace('[', '[:, ')
     return_new_axis = "[:, np.newaxis]"
 else:
     return_new_axis = ""
 
-post_expr = pycode(coupling.post_expression.rhs)
+post_expr = pycode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)
 %>
 ##
 class ${coupling.name}(${base_class}):

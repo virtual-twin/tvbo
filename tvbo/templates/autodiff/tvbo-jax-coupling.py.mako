@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 <%
 from tvbo.export.code import render_expression
-jaxcode = lambda expr: render_expression(expr, format='jax')
+
+# Generic jaxcode - pass parameters on each call
+jaxcode = lambda expr, parameters=None: render_expression(expr, format='jax', parameters=parameters)
 
 if 'coupling' not in context.keys():
     coupling = experiment.coupling
@@ -9,6 +11,10 @@ if 'coupling' not in context.keys():
 else:
     coupling = context['coupling']
     model = context.get('model', None)
+
+# Collect coupling parameter names for use in expressions
+coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
+
 has_delay = coupling.delayed and (experiment.horizon > 1)
 
 # Get incoming_states names for variable assignment
@@ -82,9 +88,9 @@ def cfun(weights, history, current_state, p, delay_indices, t):
 % endif
 
 % if is_list_expr:
-    pre = jnp.stack(${jaxcode(pre_rhs)}, axis=0)
+    pre = jnp.stack(${jaxcode(pre_rhs, parameters=coupling_param_names + incoming_states_names)}, axis=0)
 % else:
-    pre = ${jaxcode(pre_rhs)}
+    pre = ${jaxcode(pre_rhs, parameters=coupling_param_names + incoming_states_names)}
 % endif
     % if not scalar_pre:
     pre = pre.reshape(-1, n_node ,n_node)
@@ -113,7 +119,7 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     outputs.append(gx_${i})
     % endfor
     gx = jnp.stack(outputs, axis=0)
-    return ${jaxcode(coupling.post_expression.rhs)}
+    return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
 % else:
     % if not scalar_pre:
     def op(x): return jnp.sum(weights * x, axis=-1)
@@ -122,6 +128,6 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     def op(x): return weights @ x
     gx = jax.vmap(op, in_axes=0)(pre)
     % endif
-    return ${jaxcode(coupling.post_expression.rhs)}
+    return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
 % endif
 

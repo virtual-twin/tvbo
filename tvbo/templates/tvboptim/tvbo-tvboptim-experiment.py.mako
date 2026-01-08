@@ -466,7 +466,7 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback
+from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback, SavingParametersCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis
@@ -1067,11 +1067,12 @@ def create_optimizer(
     if save_every is None:
         save_every = _smart_interval(max_steps)
 
-    # Default callback: print + save at smart intervals
+    # Default callback: print + save loss + save state at smart intervals
     if callback is None:
         callback = MultiCallback([
             DefaultPrintCallback(every=print_every),
-            SavingLossCallback(every=save_every)
+            SavingLossCallback(every=save_every),
+            SavingParametersCallback(every=save_every),
         ])
 
     return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=False)

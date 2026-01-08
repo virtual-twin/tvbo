@@ -46,16 +46,26 @@
     equations = []
     variables = {}
 
+    # Build list of terms to remove - only remove local_coupling if not explicitly defined
+    # as a coupling input or coupling term
+    coupling_input_names = list((m.coupling_inputs or {}).keys()) if hasattr(m, 'coupling_inputs') else []
+    coupling_term_names = list((m.coupling_terms or {}).keys())
+    defined_coupling_names = coupling_input_names + coupling_term_names
+
+    remove_terms = []
+    if 'local_coupling' not in defined_coupling_names:
+        remove_terms.append('local_coupling')
+
     # Add derived variables (algebraic equations)
     for k, dv in m.derived_variables.items():
         # Use sympy format (bare function names) and inline any custom functions
-        equations.append(f"{k} = {m.render_equation(dv, format='sympy', inline_functions=True, replace=repl)}")
+        equations.append(f"{k} = {m.render_equation(dv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
         variables[k] = "variable"
 
     # Add state variable equations (differential equations)
     for k, sv in (m.state_variables or {}).items():
         # Use sympy format and inline any custom functions
-        equations.append(f"{k}' = {m.render_equation(sv, format='sympy', inline_functions=True, replace=repl)}")
+        equations.append(f"{k}' = {m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
         iv = sv.initial_value
         variables[k] = f"variable({iv})"
 
@@ -65,7 +75,7 @@
     # We define them as 'variable' so they're computed, and post-process results
     # to derive output values from recorded state variables.
     for k, ot in (m.output or {}).items():
-        equations.append(f"{k} = {m.render_equation(ot, format='sympy', inline_functions=True, replace=repl)}")
+        equations.append(f"{k} = {m.render_equation(ot, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
         variables[k] = "variable"
 
     # Add parameters as constants
@@ -78,7 +88,7 @@
 
     # Add derived parameters as equations
     for dp_name, dp in (m.derived_parameters or {}).items():
-        eq_str = m.render_equation(dp, format='sympy', inline_functions=True, replace=repl)
+        eq_str = m.render_equation(dp, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
         equations.append(f"{dp_name} = {eq_str}")
         variables[dp_name] = "variable"
 
