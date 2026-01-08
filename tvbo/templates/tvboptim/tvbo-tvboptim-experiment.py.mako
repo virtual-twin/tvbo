@@ -1650,6 +1650,8 @@ def run_experiment(
                     model_fn=algo_model_fn,
                     key=algo_key,
                     n_iterations=kwargs.get('${algo_name}_n_iterations', kwargs.get('n_iterations', ${n_iterations})),
+                    print_every=kwargs.get('${algo_name}_print_every', kwargs.get('print_every', None)),
+                    save_every=kwargs.get('${algo_name}_save_every', kwargs.get('save_every', None)),
 % for hp_name, hp_val in hyperparams_dict.items():
 <%
     if hp_val is None:
@@ -1891,19 +1893,25 @@ stage_lr = stage['learning_rate']
             _fitted_${stage_name}, _history_${stage_name} = run_stage_${stage_name}(
                 current_state,
                 loss_fn,
-                max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+                max_steps=kwargs.get('max_steps_${stage_name}', kwargs.get('max_steps', ${stage_max_iter})),
                 learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
             )
+
+            # Run simulation with fitted parameters from this stage
+            _post_${stage_name} = model_fn(_fitted_${stage_name})
+            _post_${stage_name}_obs = compute_all_observations(_post_${stage_name}, _fitted_${stage_name}, transient)
+
             # Use OptimizationResult for each stage
             _stage_hyperparams = Bunch(
                 learning_rate=kwargs.get('learning_rate_${stage_name}', ${stage_lr}),
-                max_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+                max_steps=kwargs.get('max_steps_${stage_name}', kwargs.get('max_steps', ${stage_max_iter})),
             )
             stage_results['${stage_name}'] = OptimizationResult(
                 name='${stage_name}',
                 state=_fitted_${stage_name},
                 history=_history_${stage_name},
-                n_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
+                simulation=SimulationResult(result=_post_${stage_name}, observations=_post_${stage_name}_obs),
+                n_steps=kwargs.get('max_steps_${stage_name}', kwargs.get('max_steps', ${stage_max_iter})),
                 hyperparameters=_stage_hyperparams,
             )
             current_state = _fitted_${stage_name}  # Chain to next stage

@@ -10,19 +10,15 @@ import os
 os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment, Network
-from tvboptim.observations.observation import fc_corr
-from matplotlib.colors import Normalize
-import matplotlib.pyplot as plt
-import matplotlib.patheffects as path_effects
-import numpy as np
-import jax.numpy as jnp
 
 # Load experiment and network
 exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/RWW_BOLD_FC_Optimization.yaml"
 )
 results = exp.run("tvboptim")
+```
 
+```{python}
 # # Re-run with fitted params to get FC matrices
 # fc_global = exp.run(
 #     "tvboptim", mode="simulation", state=results.global_optimization.fitted_params
@@ -30,7 +26,7 @@ results = exp.run("tvboptim")
 # fc_regional = exp.run(
 #     "tvboptim", mode="simulation", state=results.regional_optimization.fitted_params
 # ).observations.fc
-fc_target = results.observations.empirical_fc
+fc_target = results.integration.main.observations.empirical_fc
 ```
 
 ## Results
@@ -42,6 +38,9 @@ fc_target = results.observations.empirical_fc
 # | fig-height: 10
 
 import bsplot
+from matplotlib.colors import Normalize
+import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 
 mosaic = """
 AABBCC
