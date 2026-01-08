@@ -602,16 +602,15 @@ def run_simulation(
     if run_main:
         result = model_fn(state)
         observations = Bunch()
-        obs_kwargs = dict(kwargs)
-        obs_kwargs['result'] = result
-        obs_kwargs['result_transient'] = result_transient
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
-        observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+        observations.${obs_name} = ${obs_name}
 % elif obs_name in derived_observation_names:
-        # ${obs_name}: derived observation - computed below via compute_all_observations
 % else:
-        observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+<%
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+%>
+        observations.${obs_name} = ${obs_class}(history=result_transient)(result)
 % endif
 % endfor
 
@@ -1409,24 +1408,19 @@ def run_experiment(
 
     # Compute observations only if main simulation was run
     if run_main and result is not None:
-        # Compute observations using the (potentially custom) result
-        # Network observations are module-level constants (already loaded from BIDS)
-        # Derived observations (multi-source like fc_corr) are computed via compute_all_observations
         observations = Bunch()
-        obs_kwargs = dict(kwargs)
-        obs_kwargs['result'] = result
-        obs_kwargs['result_transient'] = transient
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
-        observations.${obs_name} = ${obs_name}  # Static data from BIDS (module-level constant)
+        observations.${obs_name} = ${obs_name}
 % elif obs_name in derived_observation_names:
-        # ${obs_name}: derived observation - computed below via compute_all_observations
 % else:
-        observations.${obs_name} = ${obs_name}(model_fn, state, **obs_kwargs)
+<%
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+%>
+        observations.${obs_name} = ${obs_class}(history=transient)(result)
 % endif
 % endfor
 
-        # Compute derived observations (those depending on multiple source observations)
         _all_obs = compute_all_observations(result, state, transient)
 % for obs_name in derived_observation_names:
         observations.${obs_name} = _all_obs.${obs_name}
