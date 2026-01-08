@@ -14,7 +14,7 @@ from lems.base.util import validate_lems
 
 from tvbo import templates
 from tvbo.data.tvbo_data.connectomes import Network
-from tvbo.data.types import SimulationState, TimeSeries
+from tvbo.data.types import SimulationState, TimeSeries, ExperimentResult
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.export import templater
 from tvbo.export.templater import format_code
@@ -962,16 +962,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 jax.block_until_ready(results.result.data if hasattr(results, 'result') else results)
                 timings.total = time.perf_counter() - t0
 
-                # Add timings to results
+                # Add timings to results and wrap in ExperimentResult
                 results.timings = timings
-                return results
+                return ExperimentResult(results, experiment_name=self.label)
             else:
-                return ns.run_experiment(
+                raw_results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
                     mode=mode,
                     **kwargs,
                 )
+                return ExperimentResult(raw_results, experiment_name=self.label)
 
         elif format.lower() in ["autodiff", "jax"]:
             state = self.collect_state(initial_conditions=initial_conditions)

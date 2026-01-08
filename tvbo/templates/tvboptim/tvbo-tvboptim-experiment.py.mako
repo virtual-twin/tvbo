@@ -1026,11 +1026,20 @@ def run_stage_${stage_name}(
 
 % endfor
 
+def _smart_interval(n):
+    """Compute smart interval: 1 for 0-10, 10 for 10-100, 100 for 100-1000, etc."""
+    if n <= 10:
+        return 1
+    return 10 ** (len(str(n)) - 2)
+
 def create_optimizer(
     loss_fn,
     optimizer: str = "${optimizer_name}",
     learning_rate: float = ${learning_rate},
+    max_steps: int = ${max_steps},
     callback = None,
+    print_every: int = None,
+    save_every: int = None,
     **opt_kwargs,
 ):
     """Create configured optax optimizer."""
@@ -1052,9 +1061,18 @@ def create_optimizer(
 % endfor
 % endif
 
-    # Default callback: print every step + save state and loss
+    # Smart defaults for callback intervals based on max_steps
+    if print_every is None:
+        print_every = _smart_interval(max_steps)
+    if save_every is None:
+        save_every = _smart_interval(max_steps)
+
+    # Default callback: print + save at smart intervals
     if callback is None:
-        callback = MultiCallback([DefaultPrintCallback(), SavingLossCallback()])
+        callback = MultiCallback([
+            DefaultPrintCallback(every=print_every),
+            SavingLossCallback(every=save_every)
+        ])
 
     return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=False)
 
@@ -1065,10 +1083,17 @@ def run_optimization(
     max_steps: int = ${max_steps},
     learning_rate: float = ${learning_rate},
     optimizer: str = "${optimizer_name}",
+    callback = None,
+    print_every: int = None,
+    save_every: int = None,
     **kwargs,
 ):
     """Run gradient-based optimization."""
-    opt = create_optimizer(loss_fn, optimizer=optimizer, learning_rate=learning_rate, **kwargs)
+    opt = create_optimizer(
+        loss_fn, optimizer=optimizer, learning_rate=learning_rate,
+        max_steps=max_steps, callback=callback, print_every=print_every,
+        save_every=save_every, **kwargs
+    )
     fitted_params, fitting_data = opt.run(init_state, max_steps=max_steps)
     return fitted_params, fitting_data
 % endif

@@ -44,10 +44,11 @@ class SimulationResult(Bunch):
         self.observations = observations or Bunch()
 
     def __repr__(self):
-        obs_keys = list(self.observations.keys()) if self.observations else []
+        n_obs = len(self.observations.keys()) if self.observations else 0
         shape = getattr(self, 'data', None)
-        shape_str = f"shape={tuple(shape.shape)}" if shape is not None else "empty"
-        return f"SimulationResult({shape_str}, observations={obs_keys})"
+        shape_str = f"{tuple(shape.shape)}" if shape is not None else "empty"
+        obs_str = f", {n_obs} observations" if n_obs > 0 else ""
+        return f"SimulationResult{shape_str}{obs_str}"
 
 
 class AlgorithmResult(Bunch):
@@ -342,6 +343,95 @@ class ObservationResult(Bunch):
     def time(self):
         """Time array (alias for ts)."""
         return getattr(self, 'ts', None)
+
+
+class ExperimentResult(Bunch):
+    """Result from a complete experiment run.
+
+    Wraps the raw results from code execution and provides:
+    - Tree-structured view showing outputs with their contents
+    - Schema-aligned access (results.integration.main, results.algorithms.fic, etc.)
+    """
+
+    # Keys that represent actual outputs (not inputs/metadata)
+    _output_sections = {'integration', 'algorithms', 'optimization', 'exploration'}
+
+    def __init__(self, results=None, experiment_name=None, **kwargs):
+        super().__init__(**kwargs)
+        self._experiment_name = experiment_name
+        if results is not None:
+            for key in results.keys() if hasattr(results, 'keys') else []:
+                self[key] = results[key]
+
+    def __repr__(self):
+        name = self._experiment_name or "Experiment"
+        lines = [name]
+
+        output_keys = [k for k in self.keys() if k in self._output_sections]
+
+        for i, section in enumerate(output_keys):
+            is_last_section = (i == len(output_keys) - 1)
+            sec_conn = '└── ' if is_last_section else '├── '
+            sec_ext = '    ' if is_last_section else '│   '
+
+            val = self[section]
+            lines.append(f"{sec_conn}{section}")
+
+            if hasattr(val, 'keys'):
+                child_keys = [k for k in val.keys() if not str(k).startswith('_')]
+                for j, child_key in enumerate(child_keys):
+                    is_last_child = (j == len(child_keys) - 1)
+                    child_conn = '└── ' if is_last_child else '├── '
+                    child_ext = '    ' if is_last_child else '│   '
+                    child_val = val[child_key]
+
+                    # Format based on result type
+                    lines.append(f"{sec_ext}{child_conn}{child_key}")
+                    detail_lines = self._format_details(child_val, sec_ext + child_ext)
+                    lines.extend(detail_lines)
+
+        return '\n'.join(lines)
+
+    def _format_details(self, val, prefix):
+        """Format details of a result object."""
+        details = []
+
+        if isinstance(val, SimulationResult):
+            shape = tuple(val.data.shape) if hasattr(val, 'data') and val.data is not None else None
+            if shape:
+                details.append(f"{prefix}data: {shape}")
+            if val.observations:
+                obs_keys = list(val.observations.keys())
+                details.append(f"{prefix}observations: {obs_keys}")
+
+        elif isinstance(val, AlgorithmResult):
+            details.append(f"{prefix}n_iterations: {val.n_iterations}")
+            if val.history:
+                hist_keys = [k for k in val.history.keys() if not str(k).startswith('_')]
+                details.append(f"{prefix}history: {hist_keys}")
+
+        elif isinstance(val, OptimizationResult):
+            details.append(f"{prefix}n_steps: {val.n_steps}")
+            if val.final_loss is not None:
+                details.append(f"{prefix}final_loss: {val.final_loss:.4f}")
+            if val.history:
+                hist_keys = [k for k in val.history.keys() if not str(k).startswith('_')]
+                details.append(f"{prefix}history: {hist_keys}")
+
+        elif isinstance(val, ExplorationResult):
+            if val.axes:
+                axis_names = [ax.get('name', ax.name) if hasattr(ax, 'get') else getattr(ax, 'name', '?') for ax in val.axes]
+                details.append(f"{prefix}axes: {axis_names}")
+            if val.shape:
+                details.append(f"{prefix}shape: {val.shape}")
+            if val.observable:
+                details.append(f"{prefix}observable: {val.observable}")
+
+        return details
+
+    def _repr_markdown_(self):
+        """Rich display for Jupyter notebooks."""
+        return f"```\n{self.__repr__()}\n```"
 
 
 # =============================================================================
