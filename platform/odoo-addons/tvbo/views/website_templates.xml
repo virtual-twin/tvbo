@@ -114,7 +114,7 @@
                             <ul
                                 style="list-style: none; padding: 0; font-size: 0.9rem; line-height: 2;">
                                 <li>
-                                    <a href="https://tvbo-docs.charite.de" target="_blank"
+                                    <a href="https://virtual-twin.github.io/tvbo/" target="_blank"
                                         style="color: rgba(255,255,255,0.7); text-decoration: none;">
                                         Documentation</a>
                                 </li>
@@ -181,7 +181,7 @@
                                             <a href="/web" class="btn btn-light btn-lg me-3"
                                                 style="color: #3498DB; font-weight: 600; padding: 0.75rem 2rem;">Explore
                                                 Database</a>
-                                            <a href="https://tvbo-docs.charite.de"
+                                            <a href="https://virtual-twin.github.io/tvbo/"
                                                 class="btn btn-outline-light btn-lg"
                                                 style="font-weight: 600; padding: 0.75rem 2rem;">
                                                 Documentation</a>

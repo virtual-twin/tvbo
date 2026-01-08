@@ -48,7 +48,7 @@ def get_attr(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default) if obj else default
 
 
-def get_param_info(parameters) -> Tuple[List[str], Dict[str, float], Dict[str, str]]:
+def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[str, str]]:
     """Extract parameter names, defaults, and shapes from a parameters collection.
 
     Works for both model.parameters and coupling.parameters.

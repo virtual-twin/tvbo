@@ -23,10 +23,6 @@ state_variables:
     initial_value: 0.0
 coupling_terms:
   c_in: {}
-output:
-  x_out:
-    equation:
-      rhs: "x"
 """)
 
 # FitzHugh-Nagumo in EXCITABLE regime
@@ -53,10 +49,6 @@ state_variables:
     initial_value: -0.5
 coupling_terms:
   c_in: {}
-output:
-  v_out:
-    equation:
-      rhs: "v"
 """)
 
 # Van der Pol as relaxation oscillator
@@ -77,10 +69,6 @@ state_variables:
     initial_value: 0.0
 coupling_terms:
   c_in: {}
-output:
-  x_out:
-    equation:
-      rhs: "x"
 """)
 ```
 
@@ -109,27 +97,32 @@ nodes:
     label: Relaxation
     dynamics: Relaxation
 edges:
-  # Driver excites the Excitable node (positive weight)
   - source: 0
     target: 1
-    weight: 0.8
+    parameters:
+      weight:
+        value: 0.8
     source_var: x_out
     target_var: c_in
-  # Driver inhibits the Relaxation node (negative weight)
   - source: 0
     target: 2
-    weight: -0.6
+    parameters:
+      weight:
+        value: -0.6
     source_var: x_out
     target_var: c_in
-  # Weak mutual coupling between nodes 1 and 2
   - source: 1
     target: 2
-    weight: 0.1
+    parameters:
+      weight:
+        value: 0.1
     source_var: v_out
     target_var: c_in
   - source: 2
     target: 1
-    weight: 0.1
+    parameters:
+      weight:
+        value: 0.1
     source_var: x_out
     target_var: c_in
 """
