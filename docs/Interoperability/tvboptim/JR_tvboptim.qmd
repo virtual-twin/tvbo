@@ -63,12 +63,21 @@ target_psd = np.array(
 ```{python}
 # Run complete workflow with matching target
 results = exp.run("tvboptim", target=target_psd)
+```
 
+```{python}
 # Get spectra before/after optimization
-obs_init = ns.simulated_psd(results.model_fn, results.state)
-obs_fit = ns.simulated_psd(results.model_fn, results.optimization.spectral_gradient_fit.fitted_params)
-peak_freqs_init = np.array([obs_init.frequencies[np.argmax(p)] for p in obs_init.psd.squeeze()])
-peak_freqs_fitted = np.array([obs_fit.frequencies[np.argmax(p)] for p in obs_fit.psd.squeeze()])
+obs_init = ns.SimulatedPsd()(results.model_fn, results.state)
+obs_fit = ns.SimulatedPsd()(
+    results.model_fn, results.optimization.spectral_gradient_fit.fitted_params
+)
+peak_freqs_init = np.array(
+    [obs_init.frequencies[np.argmax(p)] for p in obs_init.psd.squeeze()]
+)
+peak_freqs_fitted = np.array(
+    [obs_fit.frequencies[np.argmax(p)] for p in obs_fit.psd.squeeze()]
+)
+
 ```
 
 ## Results

@@ -545,28 +545,13 @@ import jax.scipy as jsp
 from types import SimpleNamespace
 from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor
+from tvbo.data.types import ObservationResult
 
 % if network_obs_keys and bids_dir:
 from tvbo.data.tvbo_data.connectomes import Network as _TvboNetwork
 
 _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
 % endif
-class ObservationResult(SimpleNamespace):
-    """Result from an observation pipeline with named outputs.
-
-    Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies)
-    while maintaining NativeSolution-like interface (.data, .time, .dt).
-    """
-
-    @property
-    def data(self):
-        """Primary data output (alias for ys)."""
-        return getattr(self, 'ys', None)
-
-    @property
-    def time(self):
-        """Time array (alias for ts)."""
-        return getattr(self, 'ts', None)
 
 % for module in sorted(callable_imports.keys()):
 % if module not in ('jax', 'numpy', 'np', 'jnp', 'equinox', 'eqx'):

@@ -783,6 +783,7 @@ class Network(tvbo_datamodel.Network):
                 "_cached_weights",
                 "_cached_lengths",
                 "_bids_dir",
+                "_bids_observations",
             )
         }
         meta_json = _json.dumps(
