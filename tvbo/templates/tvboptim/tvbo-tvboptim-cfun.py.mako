@@ -103,10 +103,7 @@ def parse_list_elements(rhs_str):
 %>
 
 class ${class_name}(${base_class}):
-    """${class_name} coupling function.
-
-    ${description}
-    """
+    """${class_name} coupling function."""
 
     N_OUTPUT_STATES = ${n_output}
 
@@ -132,7 +129,6 @@ class ${class_name}(${base_class}):
 
     % if vectorized:
     def pre(self, incoming_states, local_states, params):
-        """Return local states for vectorized matmul mode."""
         return local_states
     % elif pre_expr:
     def pre(self, incoming_states, local_states, params):

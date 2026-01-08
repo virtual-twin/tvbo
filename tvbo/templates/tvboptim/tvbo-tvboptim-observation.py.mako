@@ -1,40 +1,19 @@
 # -*- coding: utf-8 -*-
-<%doc>
-TVB-Optim Observation Template
-==============================
-
-Generates observation functions from pipeline-based Observation definitions.
-
-Reference Syntax (declarative):
-- step_name        → pipeline step output (_outputs['step_name'])
-- obs.step_name    → self-referential observation.step (_outputs['step_name'])
-- input.key        → pipeline local output (_outputs['key'])
-- integration.transient → transient simulation data
-- integration.result    → main simulation result
-- observation.key  → another observation's output
-
-Context: experiment (SimulationExperiment instance)
-</%doc>
+<%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment).</%doc>
 <%
 from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import get_attr, to_numeric
 
-# =============================================================================
-# Configuration
-# =============================================================================
 model = experiment.local_dynamics
 state_names = list(model.state_variables.keys()) if model else ['x']
 dt = experiment.integration.step_size if experiment.integration else 0.1
 
-# =============================================================================
-# Helper Functions
-# =============================================================================
 def is_numeric_string(s):
     """Check if string represents a number."""
     return s.replace('.', '').replace('-', '').replace('_', '').isdigit()
 
 # =============================================================================
-# Reference Parser
+
 # =============================================================================
 def parse_reference(val, step_names=None, current_obs_name=None):
     """Parse argument value into (ref_type, ref_value).
@@ -118,7 +97,7 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
     return repr(ref_val)
 
 # =============================================================================
-# Data Collection
+
 # =============================================================================
 
 # Build function lookup from experiment.functions
@@ -131,8 +110,6 @@ else:
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
-
-# Get observations dict
 _obs_raw = get_attr(experiment, 'observations', {})
 if hasattr(_obs_raw, 'items'):
     observations = dict(_obs_raw.items())
@@ -142,7 +119,7 @@ else:
     observations = {}
 
 # =============================================================================
-# Parse Pipeline Step
+
 # =============================================================================
 def parse_step(func, step_name):
     """Parse a pipeline step into a clean dict structure."""
@@ -229,7 +206,7 @@ def parse_step(func, step_name):
     return step
 
 # =============================================================================
-# Analyze Pipeline
+
 # =============================================================================
 def analyze_pipeline(pipeline):
     """Analyze pipeline to determine data requirements."""
@@ -335,7 +312,7 @@ def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx)
     return f"jax.vmap(lambda y: {inner_vmap}(y), in_axes=1, out_axes=1)({data_code})"
 
 # =============================================================================
-# Build Step Call
+
 # =============================================================================
 def build_step_call(step, step_input, step_names=None, current_obs_name=None, state_idx=None, is_first_step=False):
     """Build the function call for a pipeline step.
@@ -384,7 +361,7 @@ def build_step_call(step, step_input, step_names=None, current_obs_name=None, st
     return call_args, obs_deps
 
 # =============================================================================
-# Parse ClassReference
+
 # =============================================================================
 def parse_class_reference(class_ref, obs):
     """Parse a ClassReference into a clean dict structure."""
@@ -416,7 +393,7 @@ def parse_class_reference(class_ref, obs):
     return result
 
 # =============================================================================
-# Parse All Observations
+
 # =============================================================================
 obs_list = []
 callable_imports = {}  # {module: set(qualnames)}
@@ -499,8 +476,6 @@ for obs_name, obs in observations.items():
             callable_imports.setdefault(c['module'], set())
 
     obs_list.append(info)
-
-# Also collect imports from functions section
 for fname, fdef in functions_by_name.items():
     c = get_attr(fdef, 'callable')
     if c:
@@ -514,10 +489,10 @@ for module in callable_imports.keys():
     top_level_modules.add(module.split('.')[0])
 
 # =============================================================================
-# Collect Precomputable Steps
+
 # =============================================================================
 # Identify pipeline steps that can be precomputed (no data dependency)
-# These will be computed once at module level instead of inside each function call
+
 precomputable_steps = {}  # {step_name: {'call': 'fn(...)', 'const_name': '_PRECOMPUTED_...'}}
 
 for obs in obs_list:
@@ -572,15 +547,10 @@ from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor
 
 % if network_obs_keys and bids_dir:
-# -----------------------------------------------------------------------------
-# Load Network Observations from BIDS
-# -----------------------------------------------------------------------------
 from tvbo.data.tvbo_data.connectomes import Network as _TvboNetwork
 
 _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
 % endif
-
-
 class ObservationResult(SimpleNamespace):
     """Result from an observation pipeline with named outputs.
 
@@ -598,23 +568,16 @@ class ObservationResult(SimpleNamespace):
         """Time array (alias for ts)."""
         return getattr(self, 'ts', None)
 
-
-# Callable module imports
 % for module in sorted(callable_imports.keys()):
 % if module not in ('jax', 'numpy', 'np', 'jnp', 'equinox', 'eqx'):
 import ${module}
 % endif
 % endfor
 
-# Class reference imports (external library classes)
-# Aliased with _Ext prefix to avoid name collision with wrapper classes
 % for module, class_name in class_ref_imports.items():
 from ${module} import ${class_name} as _Ext${class_name}
 % endfor
 
-# =============================================================================
-# Observation Classes (equinox.Module pattern)
-# =============================================================================
 % for obs in obs_list:
 <%
     obs_name = obs['name']
@@ -706,8 +669,6 @@ class ${class_name}(eqx.Module):
             NativeSolution with observation data
         """
         return self._monitor(result)
-
-
 # Convenience function (wraps external class directly)
 def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
     """${obs['label'] or obs_name} - convenience wrapper for ${ext_class_name}.
@@ -820,15 +781,6 @@ class ${class_name}(AbstractMonitor):
 % endfor
 
     def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}):
-        """Initialize observation.
-
-        Args:
-            history: NativeSolution from transient simulation (optional)
-            voi: Variable of interest index (default: ${state_idx})
-            period: Sampling period in ms (default: dt)
-            dt: Time step (default: ${dt})
-        """
-        # Use AbstractMonitor's voi normalization for dimension preservation
         self.voi = self._normalize_voi(voi)
         self.period = period if period is not None else dt
         self.dt = dt
@@ -845,26 +797,20 @@ class ${class_name}(AbstractMonitor):
         if arg_name and arg_val is not None:
             default_args.append(f"{arg_name}={to_numeric(arg_val)}")
 %>
-        # Precompute ${step_name} kernel
         self._${step_name} = ${step_name}(${', '.join(default_args)})
 % endfor
 
 % if needs_transient:
-        # Preprocess history from transient
         if history is not None:
             if hasattr(history, 'data'):
-                # NativeSolution - extract and downsample
 % if static_steps:
                 n_samples = int(math.ceil(self._${static_steps[0]['name']}.shape[0]))
 % else:
                 n_samples = 5000  # Default history length
 % endif
 % if obs_source:
-                # Slice history to source state variable → 3D: (time, 1, nodes)
-                # Uses AbstractMonitor's normalized voi (slice object)
                 self._history = history.data[-n_samples:, self.voi, :]
 % else:
-                # Keep full 3D shape (time, states, nodes)
                 self._history = history.data[-n_samples:, :, :]
 % endif
             else:
@@ -872,36 +818,22 @@ class ${class_name}(AbstractMonitor):
 % endif
 
 % for ref_obs in referenced_observations:
-        # Initialize referenced observation monitor: ${ref_obs}
         self._${ref_obs}_monitor = ${ref_obs.replace('_', ' ').title().replace(' ', '')}(history=history, voi=voi, dt=dt)
 % endfor
 
     def __call__(self, result):
-        """Process simulation result.
-
-        Args:
-            result: NativeSolution from simulation
-
-        Returns:
-            NativeSolution with observation data
-        """
 % for ref_obs in referenced_observations:
-        # Get referenced observation: ${ref_obs}
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
 % endfor
 % if obs_source:
-        # Slice to source state variable (${obs_source}) → 3D: (time, 1, nodes)
-        # Uses AbstractMonitor's normalized voi (slice object for dimension preservation)
         _data = result.data[:, self.voi, :]
         _time = result.time
 % else:
-        # All states → 3D: (time, states, nodes)
         _data = result.data
         _time = result.time
 % endif
 
 % if needs_transient and not has_prepend_history_step:
-        # Prepend history for warmup (auto-generated, no explicit prepend_history step)
         _data_with_history = jnp.concatenate([self._history, _data], axis=0)
 % endif
 
@@ -933,7 +865,6 @@ class ${class_name}(AbstractMonitor):
         input_var = f"_{prev_parts[-1]}"
 %>
 % if is_static:
-        # ${step_name}: use precomputed kernel
         ${prefixed_output} = self._${step_name}
 % elif step_callable and step_callable.get('full_call'):
 <%
@@ -1054,15 +985,11 @@ class ${class_name}(AbstractMonitor):
 % elif step.get('source_code'):
         ${prefixed_output} = ${step['source_code'].replace('_input', input_var)}
 % else:
-        # ${step_name}: passthrough
         ${prefixed_output} = ${input_var}
 % endif
 % endfor
 
 % if tail_samples or aggregation:
-## =============================================================================
-## Declarative Processing (tail_samples, aggregation)
-## =============================================================================
 <%
     # Determine input variable for declarative processing
     if pipeline:
@@ -1074,22 +1001,18 @@ class ${class_name}(AbstractMonitor):
         decl_input = '_data'
 %>
 % if tail_samples:
-        # Declarative: take last ${tail_samples} samples (tail_samples: ${tail_samples})
         ${decl_input} = ${decl_input}[-${tail_samples}:]
 % endif
 % if str(aggregation) == 'mean':
         # Declarative: mean over time axis (aggregation: mean)
         ${decl_input} = jnp.mean(${decl_input}, axis=0)
 % elif str(aggregation) == 'last':
-        # Declarative: last value (aggregation: last)
         ${decl_input} = ${decl_input}[-1]
 % elif str(aggregation) == 'first':
-        # Declarative: first value (aggregation: first)
         ${decl_input} = ${decl_input}[0]
 % endif
 % endif
 
-        # Return result with all named pipeline outputs
 <%
     # Determine primary data - last output name or 'data'
     final_outputs = [o.strip() for o in final_key.split(',')]
@@ -1099,7 +1022,6 @@ class ${class_name}(AbstractMonitor):
         if isinstance(_final, NativeSolution):
             return _final
 
-        # Handle scalar vs array results for time axis
         _is_scalar = _final.ndim == 0 if hasattr(_final, 'ndim') else True
         if _is_scalar:
             _ts = None  # Scalar result has no time dimension
@@ -1108,7 +1030,6 @@ class ${class_name}(AbstractMonitor):
         else:
             _ts = jnp.arange(len(_final)) * self.dt
 % if named_outputs:
-        # Return ObservationResult with named outputs accessible as attributes
         return ObservationResult(
             ts=_ts,
             ys=_final,
@@ -1120,21 +1041,11 @@ class ${class_name}(AbstractMonitor):
 % else:
         return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=self.dt)
 % endif
-
-
 # Convenience function (wraps class)
 def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
-    """${obs['label'] or obs_name} - convenience wrapper.
-
-    Can be used as:
-    - Class instantiation: ${obs_name}(history=result_transient)
-    - Direct call: ${obs_name}(model_fn, state, result_transient=...)
-    """
+    """${obs['label'] or obs_name} convenience wrapper."""
     if model_fn is None:
-        # Return monitor instance for later use
         return ${class_name}(history=history, dt=dt)
-
-    # Direct call mode - create monitor and apply
     _history = kwargs.get('result_transient', history)
     monitor = ${class_name}(history=_history, dt=dt)
     result = kwargs.get('result') or model_fn(state)

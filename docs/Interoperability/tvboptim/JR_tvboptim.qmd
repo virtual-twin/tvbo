@@ -48,7 +48,7 @@ target_peak_freqs = f_max - delta_f * (dist_from_vc - dist_from_vc.min())
 # Run initial simulation to get frequency axis from actual PSD computation
 ns = exp.execute("tvboptim")
 sim_init = exp.run("tvboptim", mode="simulation")
-frequencies = np.array(sim_init.observations.simulated_psd.frequencies)
+frequencies = np.array(sim_init.integration.main.observations.simulated_psd.frequencies)
 
 # Compute target PSDs as Cauchy distributions using actual frequency axis
 gamma = 1.0
@@ -56,7 +56,8 @@ target_psd = np.array(
     [
         1 / (np.pi * gamma * (1 + ((frequencies - f0) / gamma) ** 2))
         for f0 in target_peak_freqs
-    ]
+    ])
+
 ```
 
 ```{python}
@@ -65,7 +66,7 @@ results = exp.run("tvboptim", target=target_psd)
 
 # Get spectra before/after optimization
 obs_init = ns.simulated_psd(results.model_fn, results.state)
-obs_fit = ns.simulated_psd(results.model_fn, results.fitted_params)
+obs_fit = ns.simulated_psd(results.model_fn, results.optimization.spectral_gradient_fit.fitted_params)
 peak_freqs_init = np.array([obs_init.frequencies[np.argmax(p)] for p in obs_init.psd.squeeze()])
 peak_freqs_fitted = np.array([obs_fit.frequencies[np.argmax(p)] for p in obs_fit.psd.squeeze()])
 ```
@@ -134,8 +135,8 @@ im = ax.imshow(expl.results.reshape(n1, n2).T, cmap='cividis',
                extent=[pc.dynamics.a.min(), pc.dynamics.a.max(), pc.dynamics.b.min(), pc.dynamics.b.max()],
                origin='lower', aspect='auto')
 plt.colorbar(im, ax=ax, label='Peak Frequency [Hz]', shrink=0.8)
-a_fit = results.fitted_params.dynamics.a
-b_fit = results.fitted_params.dynamics.b
+a_fit = results.optimization.spectral_gradient_fit.fitted_params.dynamics.a
+b_fit = results.optimization.spectral_gradient_fit.fitted_params.dynamics.b
 a_vals = a_fit.value if hasattr(a_fit, 'value') else a_fit
 b_vals = b_fit.value if hasattr(b_fit, 'value') else b_fit
 ax.scatter(a_vals, b_vals, color='white', s=20, edgecolors='black', lw=0.5, zorder=5, alpha=0.7)

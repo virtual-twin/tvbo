@@ -93,13 +93,7 @@ class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'nam
 %>
 
 class ${class_name}(AbstractDynamics):
-    """${class_name} neural mass model.
-
-    ${model.description if hasattr(model, 'description') and model.description else 'Auto-generated dynamics model.'}
-
-    State variables: ${state_names}
-    Parameters: ${param_names}
-    """
+    """${class_name} neural mass model."""
 
     STATE_NAMES = ${tuple(state_names)}
     INITIAL_STATE = ${tuple(initial_state)}
@@ -129,25 +123,20 @@ class ${class_name}(AbstractDynamics):
         coupling: Bunch,
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        """Compute ${class_name} dynamics."""
-        # Unpack parameters
         % for name in param_names:
         ${name} = params.${name}
         % endfor
 
         % if derived_param_names:
-        # Derived parameters
         % for dp in model.derived_parameters.values():
         ${dp.name} = ${jaxcode_obj(dp)}
         % endfor
         % endif
 
-        # Unpack state variables
         % for i, svar in enumerate(state_names):
         ${svar} = state[${i}]
         % endfor
 
-        # Unpack coupling inputs
         % for ci_name, ci_dim in coupling_inputs_dict.items():
         % if ci_name in coupling_keys:
         ## Multi-dimensional with named keys: unpack each key
@@ -162,20 +151,17 @@ class ${class_name}(AbstractDynamics):
         % endfor
 
         % if model.functions:
-        # Helper functions
         % for f in model.functions.values():
         ${fn.function_def(f, format='jax', render_func=jaxcode_obj) | trim,n}
         % endfor
         % endif
 
         % if model.derived_variables:
-        # Derived variables
         % for dv in model.derived_variables.values():
         ${dv.name} = ${jaxcode_obj(dv)}
         % endfor
         % endif
 
-        # State derivatives
         % for sv in model.state_variables.values():
         d${sv.name}_dt = ${jaxcode_obj(sv)}
         % endfor
