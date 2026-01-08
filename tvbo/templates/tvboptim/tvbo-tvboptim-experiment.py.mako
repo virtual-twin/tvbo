@@ -201,12 +201,6 @@ for opt in optim_list:
                 is_hetero = fp.heterogeneous or (fp.shape and 'n_nodes' in str(fp.shape))
                 optim_param_info[pname] = {'heterogeneous': bool(is_hetero)}
 
-# Fallback: param.free=True on model parameters (legacy)
-for name, param in model.parameters.items():
-    if param.free and str(name) not in optim_param_info:
-        is_hetero = param.heterogeneous or param.shape
-        optim_param_info[str(name)] = {'heterogeneous': bool(is_hetero)}
-
 # Collect param objects with heterogeneous info
 # Separate dynamics vs coupling parameters
 optim_params = []  # Dynamics parameters
@@ -511,7 +505,7 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingCallback, SavingLossCallback
+from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis
@@ -1343,27 +1337,21 @@ def run_stage_${stage_name}(
 
 % endfor
 
-# Legacy single-stage function for backwards compatibility
-def mark_parameters_optimizable(state, n_nodes: int = ${n_nodes}):
-    """Mark parameters as optimizable - uses first stage's configuration."""
-% if optimization_stages:
-    return mark_parameters_${optimization_stages[0]['name']}(state, n_nodes)
-% else:
-    return copy.deepcopy(state)
-% endif
-
-
 def create_optimizer(
     loss_fn,
     optimizer: str = "${optimizer_name}",
     learning_rate: float = ${learning_rate},
-    print_every: int = 10,
+    callback = None,
     **opt_kwargs,
 ):
     """Create configured optimizer.
 
-    Note: has_aux is always False because our generated loss functions
-    return only the loss value, not (loss, aux_data) tuples.
+    Args:
+        loss_fn: Loss function to optimize
+        optimizer: Optimizer name (adam, adamw, adamax, adamaxw, sgd)
+        learning_rate: Learning rate
+        callback: Optional callback override. Default: MultiCallback([DefaultPrintCallback(), SavingLossCallback()])
+        **opt_kwargs: Additional optimizer hyperparameters (b1, b2, etc.)
     """
     optimizers = {
         "adam": optax.adam,
@@ -1377,18 +1365,16 @@ def create_optimizer(
     # Build optimizer kwargs (hyperparameters like b1, b2)
     optimizer_kwargs = {**opt_kwargs}
 % if optimizer_hyperparams:
-    # Default hyperparameters from YAML (first stage)
+    # Default hyperparameters from YAML
 % for hp_name, hp_value in optimizer_hyperparams.items():
     optimizer_kwargs.setdefault('${hp_name}', ${hp_value})
 % endfor
 % endif
 
-    callback = MultiCallback([
-        DefaultPrintCallback(every=print_every),
-        SavingCallback(key="state", save_fun=lambda *args: args[1]),  # Save updated state each step
-        SavingLossCallback(),  # Save loss values each step
-    ])
-    # has_aux=False: our loss functions return only loss value, not (loss, aux) tuples
+    # Default callback: print every step + save state and loss
+    if callback is None:
+        callback = MultiCallback([DefaultPrintCallback(), SavingLossCallback()])
+
     return OptaxOptimizer(loss_fn, opt_fn(learning_rate, **optimizer_kwargs), callback=callback, has_aux=False)
 
 
@@ -1749,10 +1735,6 @@ def run_experiment(
             transient=transient_result,
         ),
 
-        # Legacy aliases for backward compatibility
-        result=result,
-        transient=transient,
-        observations=observations,
     )
     print("  Simulation complete.")
 
@@ -1775,8 +1757,7 @@ def run_experiment(
         )
         % endfor
 
-        results.exploration = exploration_result  # Singular, mirrors YAML section name
-        results.explorations = exploration_result  # Legacy alias
+        results.exploration = exploration_result
         print("  Explorations complete.")
     % endif
 
@@ -1968,9 +1949,6 @@ def run_experiment(
             elif hasattr(obs_def, 'source') and obs_def.source and str(obs_def.source).startswith('network.observations.'):
                 network_obs_inputs.append(obs_name)
 
-    # Observation reference (deprecated - now use observations list)
-    observation_ref = None
-
     # Get dependencies for this algorithm
     algo_deps = algorithms_deps.get(algo_name, [])
     has_deps = len(algo_deps) > 0
@@ -2145,13 +2123,14 @@ def run_experiment(
             # Prepare fresh model_fn and state for optimization
             # Optimization has custom integration settings: ${opt_solver_class} dt=${opt_dt} t1=${opt_t1}
             print(f"  Preparing optimization model (t1=${opt_t1}ms, dt=${opt_dt}ms, solver=${opt_solver_class})")
-            opt_model_fn, opt_state = prepare(network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
-            # Use opt_model_fn for loss function
-            _opt_model_fn = opt_model_fn
-            current_state = copy.deepcopy(opt_state)
 % if opt_depends_on:
+            # Use existing network (with history updated from algorithms)
+            opt_model_fn, opt_state = prepare(network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
+            # Use existing transient for BOLD history
+            opt_transient = transient
             # Copy parameter values from initial_state (result of algorithms or simulation)
             # optimization.depends_on: ${opt_depends_on}
+            current_state = copy.deepcopy(opt_state)
             for key in initial_state.dynamics.keys():
                 if not key.startswith('_'):
                     current_state.dynamics[key] = initial_state.dynamics[key]
@@ -2161,19 +2140,30 @@ def run_experiment(
                         if not key.startswith('_'):
                             current_state.coupling[coupling_name][key] = initial_state.coupling[coupling_name][key]
 % else:
-            # No depends_on: start from FRESH network defaults (not algorithm results)
-            # wLRE/wFFI stay as ones from prepare(), J_i from network defaults
+            # No depends_on: start from FRESH network (not modified by algorithms)
+            # Create fresh network and run fresh transient for BOLD history
+            opt_network = create_network(weights, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_model_init, opt_state_init = prepare(opt_network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
+            opt_transient = opt_model_init(opt_state_init)  # Fresh BOLD history
+            # Prepare optimization state from fresh network
+            opt_model_fn, opt_state = prepare(opt_network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
+            current_state = copy.deepcopy(opt_state)
 % endif
+            # Use opt_model_fn for loss function
+            _opt_model_fn = opt_model_fn
+            # Use opt_transient for BOLD history (fresh or from algorithms depending on depends_on)
+            _opt_transient = opt_transient
 % else:
             # Use experiment-level model_fn and state for optimization
             _opt_model_fn = model_fn
             current_state = initial_state
+            _opt_transient = transient
 % endif
 
             # Create loss function with runtime inputs from kwargs
             # Uses _opt_model_fn (either opt-specific or experiment-level model_fn)
             loss_type = kwargs.get('loss_type', None)
-            loss_fn = make_loss_fn(_opt_model_fn, result_transient=transient, loss_type=loss_type, **kwargs)
+            loss_fn = make_loss_fn(_opt_model_fn, result_transient=_opt_transient, loss_type=loss_type, **kwargs)
 
 % if len(optimization_stages) > 1:
             # Multi-stage optimization with optional stage filtering
@@ -2232,9 +2222,6 @@ stage_lr = stage['learning_rate']
                 history=_history_${stage_name},
                 n_steps=kwargs.get('max_steps_${stage_name}', ${stage_max_iter}),
                 hyperparameters=_stage_hyperparams,
-                # Legacy aliases
-                fitted_params=_fitted_${stage_name},
-                fitting_data=_history_${stage_name},
             )
             current_state = _fitted_${stage_name}  # Chain to next stage
 
@@ -2255,7 +2242,11 @@ stage_lr = stage['learning_rate']
 
 % else:
             # Single-stage optimization
-            init_state = mark_parameters_optimizable(current_state)
+% if optimization_stages:
+            init_state = mark_parameters_${optimization_stages[0]['name']}(current_state)
+% else:
+            init_state = copy.deepcopy(current_state)
+% endif
 
             fitted_params, fitting_data = run_optimization(
                 init_state,
@@ -2285,18 +2276,11 @@ stage_lr = stage['learning_rate']
                 simulation=SimulationResult(result=post_optimization, observations=post_optimization_observations),
                 n_steps=kwargs.get('max_steps', ${max_steps}),
                 hyperparameters=_opt_hyperparams,
-                # Legacy fields preserved in OptimizationResult
-                post_optimization=post_optimization,
-                post_optimization_observations=post_optimization_observations,
             )
 
             # Store under results.optimization.{name} for consistent structure
             results['optimization'] = Bunch(**{_opt_name: _opt_result})
             results[_opt_name] = _opt_result  # Also at top level for convenience
-
-            # Legacy aliases at top level
-            results['fitted_params'] = fitted_params
-            results['fitting_data'] = fitting_data
             print("  Optimization complete.")
 % endif
     % endif
