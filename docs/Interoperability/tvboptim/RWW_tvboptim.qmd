@@ -160,7 +160,7 @@ for key, fc, title in [
     ax.set_box_aspect(1)
 
 # I: Fitted Regional Parameters (dual y-axis)
-mean_conn = weights.mean(axis=1)
+mean_conn = exp.network.weights.mean(axis=1)
 opt_g, opt_r = results.global_optimization, results.regional_optimization
 
 ax1 = axes["I"]
