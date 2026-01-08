@@ -660,32 +660,8 @@ class ${class_name}(eqx.Module):
         self._monitor = _Ext${ext_class_name}(**_init_kwargs)
 
     def __call__(self, result):
-        """Process simulation result using external class.
-
-        Args:
-            result: NativeSolution from simulation
-
-        Returns:
-            NativeSolution with observation data
-        """
+        """Process simulation result using external class."""
         return self._monitor(result)
-# Convenience function (wraps external class directly)
-def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
-    """${obs['label'] or obs_name} - convenience wrapper for ${ext_class_name}.
-
-    Can be used as:
-    - Class instantiation: ${obs_name}(history=result_transient)
-    - Direct call: ${obs_name}(model_fn, state, result_transient=...)
-    """
-    if model_fn is None:
-        # Return monitor instance for later use
-        return ${class_name}(history=history, dt=dt, **kwargs)
-
-    # Direct call mode - create monitor and apply
-    _history = kwargs.pop('result_transient', history)
-    result = kwargs.pop('result', None) or model_fn(state)
-    monitor = ${class_name}(history=_history, dt=dt, **kwargs)
-    return monitor(result)
 
 % else:
 ## =============================================================================
@@ -1041,15 +1017,6 @@ class ${class_name}(AbstractMonitor):
 % else:
         return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=self.dt)
 % endif
-# Convenience function (wraps class)
-def ${obs_name}(model_fn=None, state=None, history=None, dt: float = ${dt}, **kwargs):
-    """${obs['label'] or obs_name} convenience wrapper."""
-    if model_fn is None:
-        return ${class_name}(history=history, dt=dt)
-    _history = kwargs.get('result_transient', history)
-    monitor = ${class_name}(history=_history, dt=dt)
-    result = kwargs.get('result') or model_fn(state)
-    return monitor(result)
 
 % endif
 % endfor
