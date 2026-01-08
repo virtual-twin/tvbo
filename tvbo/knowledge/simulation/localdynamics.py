@@ -408,10 +408,41 @@ def sort_equations(model, variable_type):
     model[variable_type].update(sorted_variables_metadata)
 
 
+def _validate_dynamics_kwargs(kwargs: dict) -> None:
+    """Validate Dynamics kwargs and provide helpful error messages for schema mistakes.
+    
+    Common mistakes:
+    - Using 'output' as a dict of derived variables (should be 'derived_variables')
+    - Using raw dicts instead of LinkML loader (should use Dynamics.from_string())
+    """
+    # Check if 'output' is misused as derived variables
+    output = kwargs.get("output")
+    if output is not None and isinstance(output, dict):
+        # Check if it looks like derived variable definitions
+        first_val = next(iter(output.values()), None)
+        if isinstance(first_val, dict) and ("equation" in first_val or "rhs" in first_val):
+            raise ValueError(
+                f"'output' should be a list of variable names, not variable definitions. "
+                f"Did you mean 'derived_variables'?\n\n"
+                f"Change:\n"
+                f"  output:\n"
+                f"    x:\n"
+                f"      equation: ...\n\n"
+                f"To:\n"
+                f"  derived_variables:\n"
+                f"    x:\n"
+                f"      equation: ...\n"
+                f"  output: [x]  # optional: list of outputs to include"
+            )
+
+
 class Dynamics(tvbo_datamodel.Dynamics):
     def __init__(self, name="Dynamics", _skip_ontology: bool = False, **kwargs):
         if name is not None:
             kwargs["name"] = str(name)
+
+        # Validate common schema mistakes before LinkML processing
+        _validate_dynamics_kwargs(kwargs)
 
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
