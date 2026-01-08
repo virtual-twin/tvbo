@@ -417,6 +417,9 @@ class ExperimentResult(Bunch):
             if val.history:
                 hist_keys = [k for k in val.history.keys() if not str(k).startswith('_')]
                 details.append(f"{prefix}history: {hist_keys}")
+            if val.simulation and val.simulation.observations:
+                obs_keys = list(val.simulation.observations.keys())
+                details.append(f"{prefix}simulation.observations: {obs_keys}")
 
         elif isinstance(val, ExplorationResult):
             if val.axes:
