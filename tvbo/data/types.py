@@ -326,6 +326,24 @@ class ExplorationResult(Bunch):
         return f"ExplorationResult(name='{self.name}', shape={shape_str}{opt_str})"
 
 
+class ObservationResult(Bunch):
+    """Result from an observation pipeline with named outputs.
+
+    Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies)
+    while maintaining NativeSolution-like interface (.data, .time, .dt).
+    """
+
+    @property
+    def data(self):
+        """Primary data output (alias for ys)."""
+        return getattr(self, 'ys', None)
+
+    @property
+    def time(self):
+        """Time array (alias for ts)."""
+        return getattr(self, 'ts', None)
+
+
 # =============================================================================
 # Time Series Classes
 # =============================================================================

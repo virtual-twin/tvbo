@@ -699,12 +699,8 @@ from ${module} import ${cname} as ${local_name}
 ${fn.function_def(fdef, format='jax', user_functions=all_func_names)}
 % endfor
 
-# Initialize precomputed constants (kernel generators, etc.)
-# These are computed once at module load, not on every observation call
-if '_init_precomputed' in dir():
-    _init_precomputed()
-
 <%
+# Pre-compute loss function info for inline generation
 loss_functions = [parse_loss_function(opt) for opt in optim_list]
 loss_functions = [lf for lf in loss_functions if lf]
 
@@ -713,58 +709,32 @@ for lf in loss_functions:
     for arg in lf['args']:
         if arg['type'] == 'runtime':
             runtime_kwargs_needed.add(arg['kwarg_name'])
-%>
-def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwargs):
-% if runtime_kwargs_needed:
-    # Validate required runtime inputs
-% for kwarg_name in sorted(runtime_kwargs_needed):
-    if '${kwarg_name}' not in kwargs:
-        raise ValueError("Optimization loss requires '${kwarg_name}' input (passed via kwargs)")
-    ${kwarg_name} = kwargs['${kwarg_name}']
-% endfor
-% endif
-% if loss_functions:
-    # Available loss functions from metadata: ${', '.join([lf['opt_name'] for lf in loss_functions])}
-    if loss_type is None:
-        loss_type = "${loss_functions[0]['opt_name']}"
-% for loss_fn in loss_functions:
-<%
-    func_name = loss_fn['func_name']
-    opt_name = loss_fn['opt_name']
-    args = loss_fn['args']
-    obs_refs = loss_fn['obs_refs']
-    agg_over = loss_fn['agg_over']
-    agg_type = loss_fn['agg_type']
-    # Map dimension name to axis (node=0 for arrays shaped (n_nodes, ...))
-    agg_axis = 0 if agg_over == 'node' else (1 if agg_over == 'time' else None)
-    # Map reduction type to JAX function
-    agg_func = {'mean': 'mean', 'sum': 'sum', 'max': 'max', 'min': 'min'}.get(agg_type, 'mean')
-%>
-    ${'if' if loop.first else 'elif'} loss_type == "${opt_name}":
-        # Pre-create observation monitors ONCE (optimized pattern for JAX differentiation)
-        # Network observations are module-level constants (no monitor needed)
-        # Derived observations are computed inline from their source observations
-<%
-    # Categorize observations for this loss function
-    simulated_obs_refs = [o for o in obs_refs if o in observation_names and o not in network_observation_names and o not in derived_observation_names]
-    derived_obs_refs = [o for o in obs_refs if o in derived_observation_names]
-    network_obs_refs = [o for o in obs_refs if o in network_observation_names]
 
-    # For derived observations, we need their source observations too
-    # Collect all source observations needed for derived obs
-    source_obs_for_derived = set()
-    derived_obs_info = {}  # {derived_name: {'sources': [...], 'callable': ..., 'args': [...]}}
-    for dobs_name in derived_obs_refs:
+# Pre-compute observation categorization for loss function
+if loss_functions:
+    _lf = loss_functions[0]
+    _lf_func_name = _lf['func_name']
+    _lf_args = _lf['args']
+    _lf_obs_refs = _lf['obs_refs']
+    _lf_agg_over = _lf['agg_over']
+    _lf_agg_type = _lf['agg_type']
+    _lf_agg_axis = 0 if _lf_agg_over == 'node' else (1 if _lf_agg_over == 'time' else None)
+    _lf_agg_func = {'mean': 'mean', 'sum': 'sum', 'max': 'max', 'min': 'min'}.get(_lf_agg_type, 'mean')
+
+    _lf_simulated_obs = [o for o in _lf_obs_refs if o in observation_names and o not in network_observation_names and o not in derived_observation_names]
+    _lf_derived_obs = [o for o in _lf_obs_refs if o in derived_observation_names]
+
+    _lf_source_obs_for_derived = set()
+    _lf_derived_info = {}
+    for dobs_name in _lf_derived_obs:
         dobs_def = derived_observations_dict.get(dobs_name)
         if dobs_def:
             sources = []
             for src in (dobs_def.source_observations or []):
                 src_name = str(src) if not hasattr(src, 'name') else str(src.name)
                 sources.append(src_name)
-                # Only add to source_obs_for_derived if it's a simulated observation (has monitor)
                 if src_name in observation_names and src_name not in network_observation_names and src_name not in derived_observation_names:
-                    source_obs_for_derived.add(src_name)
-            # Get pipeline callable and args
+                    _lf_source_obs_for_derived.add(src_name)
             pipeline_call = None
             pipeline_args = []
             if dobs_def.pipeline:
@@ -775,97 +745,29 @@ def make_loss_fn(model_fn, result_transient=None, loss_type: str = None, **kwarg
                     call_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
                     if call_module and call_name:
                         pipeline_call = f"{call_module}.{call_name}"
-                # Get arguments
                 if hasattr(first_stage, 'arguments') and first_stage.arguments:
                     for arg in first_stage.arguments:
                         arg_name = getattr(arg, 'name', None)
                         arg_value = getattr(arg, 'value', None)
                         if arg_name and arg_value is not None:
                             pipeline_args.append((arg_name, arg_value))
-            derived_obs_info[dobs_name] = {
+            _lf_derived_info[dobs_name] = {
                 'sources': sources,
                 'callable': pipeline_call,
                 'args': pipeline_args
             }
 
-    # Merge simulated_obs_refs with source observations needed for derived
-    all_simulated_obs = sorted(set(simulated_obs_refs) | source_obs_for_derived)
+    _lf_all_simulated = sorted(set(_lf_simulated_obs) | _lf_source_obs_for_derived)
+else:
+    _lf_all_simulated = []
+    _lf_derived_obs = []
+    _lf_derived_info = {}
+    _lf_func_name = None
+    _lf_args = []
+    _lf_agg_over = None
+    _lf_agg_axis = None
+    _lf_agg_func = 'mean'
 %>
-% for obs_name in all_simulated_obs:
-<%
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
-%>
-        _${obs_name}_monitor = ${obs_class}(history=result_transient)
-% endfor
-
-        def loss_${opt_name}(state):
-            result = model_fn(state)
-
-            # Apply observation monitors (simulation-derived observations only)
-% for obs_name in all_simulated_obs:
-            _${obs_name} = _${obs_name}_monitor(result)
-% endfor
-
-            # Compute derived observations inline
-% for dobs_name in derived_obs_refs:
-<%
-    dinfo = derived_obs_info.get(dobs_name, {})
-    dcall = dinfo.get('callable')
-    dargs = dinfo.get('args', [])
-    dsources = dinfo.get('sources', [])
-    # Build argument list: source observations as positional, others as keyword
-    positional = [f"__{s}" for s in dsources]
-    keywords = [f"{name}={val}" for name, val in dargs if str(val) not in dsources]
-%>
-% if dcall:
-            # ${dobs_name}: derived from ${', '.join(dsources)}
-% for src in dsources:
-            __${src} = _${src}.data if hasattr(_${src}, 'data') else _${src}
-% endfor
-            _${dobs_name} = ${dcall}(${', '.join(positional + keywords)})
-% endif
-% endfor
-
-            # Prepare loss function arguments and compute loss
-<%
-    # Build list of expressions for the loss function call
-    loss_arg_exprs = []
-    for a in args:
-        if a['type'] == 'observation':
-            obs_name_arg = a['obs_name']
-            if obs_name_arg in network_observation_names:
-                # Network obs: use kwargs.get with module-level fallback
-                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {obs_name_arg})")
-            elif obs_name_arg in derived_observation_names:
-                # Derived obs: computed inline above
-                loss_arg_exprs.append(f"__{obs_name_arg}" if f"__{obs_name_arg}" in ''.join([f"__{s}" for d in derived_obs_info.values() for s in d.get('sources', [])]) else f"_{obs_name_arg}")
-            else:
-                # Simulated obs: from monitor
-                if a.get('output_key'):
-                    loss_arg_exprs.append(f"_{obs_name_arg}.{a['output_key']}")
-                else:
-                    loss_arg_exprs.append(f"_{obs_name_arg}.data")
-        elif a['type'] == 'constant':
-            loss_arg_exprs.append(str(a['value']))
-        elif a['type'] == 'runtime':
-            loss_arg_exprs.append(a['kwarg_name'])
-%>
-% if agg_over and agg_axis is not None:
-            # Apply ${func_name} per-${agg_over} via vmap, then aggregate with ${agg_type}
-            per_element_loss = jax.vmap(${func_name})(${', '.join(loss_arg_exprs)})
-            loss_value = per_element_loss.${agg_func}()
-% else:
-            loss_value = ${func_name}(${', '.join(loss_arg_exprs)})
-% endif
-            return loss_value
-
-        return loss_${opt_name}
-% endfor
-    else:
-        raise ValueError(f"Unknown loss type: {loss_type}. Available: ${', '.join([lf['opt_name'] for lf in loss_functions])}")
-% else:
-    raise ValueError("No loss functions defined in optimization metadata. Each optimization must specify a loss with equation, source_code, or callable.")
-% endif
 
 <%
 def get_observation_dependencies(obs_name, derived_obs_dict):
@@ -1191,9 +1093,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     grid_state = copy.deepcopy(state)
     % for ax in expl['axes']:
     % if ax.get('is_coupling'):
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=${ax['n']})
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % else:
-    grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=${ax['n']})
+    grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
@@ -1845,21 +1747,81 @@ def run_experiment(
             opt_model_fn, opt_state = prepare(opt_network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
             current_state = copy.deepcopy(opt_state)
 % endif
-            # Use opt_model_fn for loss function
             _opt_model_fn = opt_model_fn
-            # Use opt_transient for BOLD history (fresh or from algorithms depending on depends_on)
             _opt_transient = opt_transient
 % else:
-            # Use experiment-level model_fn and state for optimization
             _opt_model_fn = model_fn
             current_state = initial_state
             _opt_transient = transient
 % endif
 
-            # Create loss function with runtime inputs from kwargs
-            # Uses _opt_model_fn (either opt-specific or experiment-level model_fn)
-            loss_type = kwargs.get('loss_type', None)
-            loss_fn = make_loss_fn(_opt_model_fn, result_transient=_opt_transient, loss_type=loss_type, **kwargs)
+% if runtime_kwargs_needed:
+% for kwarg_name in sorted(runtime_kwargs_needed):
+            if '${kwarg_name}' not in kwargs:
+                raise ValueError("Optimization loss requires '${kwarg_name}' input (passed via kwargs)")
+            ${kwarg_name} = kwargs['${kwarg_name}']
+% endfor
+% endif
+
+% if loss_functions:
+            # Loss function with observation monitors
+% for obs_name in _lf_all_simulated:
+<%
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+%>
+            _${obs_name}_monitor = ${obs_class}(history=_opt_transient)
+% endfor
+
+            def loss_fn(state):
+                result = _opt_model_fn(state)
+% for obs_name in _lf_all_simulated:
+                _${obs_name} = _${obs_name}_monitor(result)
+% endfor
+% for dobs_name in _lf_derived_obs:
+<%
+    dinfo = _lf_derived_info.get(dobs_name, {})
+    dcall = dinfo.get('callable')
+    dargs = dinfo.get('args', [])
+    dsources = dinfo.get('sources', [])
+    positional = [f"__{s}" for s in dsources]
+    keywords = [f"{name}={val}" for name, val in dargs if str(val) not in dsources]
+%>
+% if dcall:
+% for src in dsources:
+                __${src} = _${src}.data if hasattr(_${src}, 'data') else _${src}
+% endfor
+                _${dobs_name} = ${dcall}(${', '.join(positional + keywords)})
+% endif
+% endfor
+<%
+    loss_arg_exprs = []
+    for a in _lf_args:
+        if a['type'] == 'observation':
+            obs_name_arg = a['obs_name']
+            if obs_name_arg in network_observation_names:
+                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {obs_name_arg})")
+            elif obs_name_arg in derived_observation_names:
+                loss_arg_exprs.append(f"__{obs_name_arg}" if f"__{obs_name_arg}" in ''.join([f"__{s}" for d in _lf_derived_info.values() for s in d.get('sources', [])]) else f"_{obs_name_arg}")
+            else:
+                if a.get('output_key'):
+                    loss_arg_exprs.append(f"_{obs_name_arg}.{a['output_key']}")
+                else:
+                    loss_arg_exprs.append(f"_{obs_name_arg}.data")
+        elif a['type'] == 'constant':
+            loss_arg_exprs.append(str(a['value']))
+        elif a['type'] == 'runtime':
+            loss_arg_exprs.append(a['kwarg_name'])
+%>
+% if _lf_agg_over and _lf_agg_axis is not None:
+                per_element_loss = jax.vmap(${_lf_func_name})(${', '.join(loss_arg_exprs)})
+                return per_element_loss.${_lf_agg_func}()
+% else:
+                return ${_lf_func_name}(${', '.join(loss_arg_exprs)})
+% endif
+% else:
+            def loss_fn(state):
+                raise ValueError("No loss functions defined in optimization metadata.")
+% endif
 
 % if len(optimization_stages) > 1:
             # Multi-stage optimization with optional stage filtering

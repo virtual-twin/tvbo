@@ -176,75 +176,6 @@ if network and network.coupling:
     has_includes = len(included_algos) > 0
 %>
 
-% for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
-<%
-    rule_name = safe_name(rule.name)
-    target_name = str(rule.target_parameter.name if hasattr(rule.target_parameter, 'name') else rule.target_parameter)
-    rule_rhs = rule.equation.rhs
-
-    # Check if this rule comes from an included algorithm
-    is_from_included = rule_source != str(algo.name)
-
-    # Get hyperparameters from the source algorithm
-    source_algo = algorithms_dict.get(rule_source)
-    source_hyperparam_dict = get_hyperparam_dict(source_algo) if source_algo else {}
-
-    # Apply argument overrides from includes (these take priority)
-    effective_hyperparams = {**source_hyperparam_dict, **arg_overrides}
-
-    # Parse equation RHS to extract parameter names (symbols that aren't observations or target)
-    # We'll just use any hyperparameters that exist in effective_hyperparams
-    rule_params_dict = {}
-    for pname, pval in effective_hyperparams.items():
-        # Only include parameters that appear in the equation RHS
-        if pname in rule_rhs:
-            rule_params_dict[pname] = pval
-
-    # Find learning rate parameter
-    eta_param_names = [p for p in rule_params_dict.keys() if p.lower() in ['eta', 'learning_rate', 'lr']]
-    has_eta_param = len(eta_param_names) > 0
-    eta_param_name = eta_param_names[0] if has_eta_param else None
-
-    # Bounds
-    bounds = rule.bounds
-    has_bounds = bounds is not None
-    lo_bound = bounds.lo if has_bounds else None
-    hi_bound = bounds.hi if has_bounds else None
-
-    # All known symbols - add eta_scale if warmup applies
-    all_known_symbols = [target_name] + list(observations) + list(rule_params_dict.keys())
-
-    # Check if warmup should apply to THIS rule
-    # Warmup applies if: rule has warmup=True AND this rule has an eta parameter
-    # Note: we use per-rule warmup, not algorithm-level, for fine-grained control
-    rule_has_warmup = getattr(rule, 'warmup', False)
-    needs_warmup = rule_has_warmup and has_eta_param
-    if needs_warmup:
-        all_known_symbols.append('eta_scale')
-%>
-def update_${algo_name}_${rule_name}(
-    ${target_name}: jnp.ndarray,
-% for obs in observations:
-    ${obs}: jnp.ndarray,
-% endfor
-% for pname in rule_params_dict.keys():
-    ${pname}: float,
-% endfor
-% if needs_warmup:
-    eta_scale: float = 1.0,
-% endif
-) -> jnp.ndarray:
-% if needs_warmup:
-    ${eta_param_name} = ${eta_param_name} * eta_scale
-% endif
-    updated = ${jaxcode(rule_rhs, all_known_symbols)}
-% if has_bounds and (lo_bound is not None or hi_bound is not None):
-    updated = jnp.clip(updated, ${lo_bound if lo_bound is not None else 'None'}, ${hi_bound if hi_bound is not None else 'None'})
-% endif
-    return updated
-
-% endfor
-
 <%
     # Detect sliding window pattern:
     # 1. Check for window_size hyperparameter
@@ -253,25 +184,21 @@ def update_${algo_name}_${rule_name}(
     window_size_val = int(hyperparam_dict.get('window_size', 150)) if has_window_size else 0
 
     # Find derived observations and their sources
-    # For each algorithm observation, check if it's derived and track source dependencies
-    dependent_observations = {}  # {derived_obs_name: [source_obs_names]}
-    source_observations_needed = set()  # Source observations that need buffers
+    dependent_observations = {}
+    source_observations_needed = set()
 
     for obs in simulated_observations:
         derived_obs_def = derived_observations_dict.get(obs)
         if derived_obs_def:
-            # This is a derived observation - get its source_observations
             src_obs_list = derived_obs_def.source_observations or []
             src_names = [
                 (s.name if hasattr(s, 'name') else str(s)) for s in src_obs_list
             ]
             dependent_observations[obs] = src_names
-            # Only add to buffers if the source is a regular observation (not another derived)
             for src_name in src_names:
                 if src_name in observations_dict:
                     source_observations_needed.add(src_name)
 
-    # Use sliding window if we have window_size AND derived observations with regular obs sources
     use_sliding_window = has_window_size and len(source_observations_needed) > 0
 %>
 def run_${algo_name}(
@@ -304,8 +231,51 @@ def run_${algo_name}(
         print_every = max(1, n_iterations // 10)
     state = copy.deepcopy(state)
 
+    # Update rule functions
+% for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
 <%
-    # Extract function names from FunctionCall objects
+    rule_name = safe_name(rule.name)
+    target_name = str(rule.target_parameter.name if hasattr(rule.target_parameter, 'name') else rule.target_parameter)
+    rule_rhs = rule.equation.rhs
+    is_from_included = rule_source != str(algo.name)
+    source_algo = algorithms_dict.get(rule_source)
+    source_hyperparam_dict = get_hyperparam_dict(source_algo) if source_algo else {}
+    effective_hyperparams = {**source_hyperparam_dict, **arg_overrides}
+    rule_params_dict = {}
+    for pname, pval in effective_hyperparams.items():
+        if pname in rule_rhs:
+            rule_params_dict[pname] = pval
+    eta_param_names = [p for p in rule_params_dict.keys() if p.lower() in ['eta', 'learning_rate', 'lr']]
+    has_eta_param = len(eta_param_names) > 0
+    eta_param_name = eta_param_names[0] if has_eta_param else None
+    bounds = rule.bounds
+    has_bounds = bounds is not None
+    lo_bound = bounds.lo if has_bounds else None
+    hi_bound = bounds.hi if has_bounds else None
+    all_known_symbols = [target_name] + list(observations) + list(rule_params_dict.keys())
+    rule_has_warmup = getattr(rule, 'warmup', False)
+    needs_warmup = rule_has_warmup and has_eta_param
+    if needs_warmup:
+        all_known_symbols.append('eta_scale')
+%>
+    def ${rule_name}(${target_name}, ${', '.join(observations)}${', ' + ', '.join(rule_params_dict.keys()) if rule_params_dict else ''}${',' if needs_warmup else ''} ${'eta_scale=1.0' if needs_warmup else ''}):
+% if needs_warmup:
+        _eta = ${eta_param_name} * eta_scale
+% for pn in rule_params_dict.keys():
+% if pn == eta_param_name:
+        ${pn} = _eta
+% endif
+% endfor
+% endif
+        updated = ${jaxcode(rule_rhs, all_known_symbols)}
+% if has_bounds and (lo_bound is not None or hi_bound is not None):
+        return jnp.clip(updated, ${lo_bound if lo_bound is not None else 'None'}, ${hi_bound if hi_bound is not None else 'None'})
+% else:
+        return updated
+% endif
+% endfor
+
+<%
     algo_func_names = [get_func_name(fc) for fc in algo_functions]
 %>
     result_history = Bunch(
@@ -704,8 +674,7 @@ def run_${algo_name}(
     coupling_key = coupling_param_to_key.get(target_name, None)
     is_coupling_param = coupling_key is not None
 %>
-        # Update ${target_name}${' (from included: ' + rule_source + ')' if is_from_included else ''}
-        new_${target_name} = update_${algo_name}_${rule_name}(
+        new_${target_name} = ${rule_name}(
 % if is_coupling_param:
             state.coupling.${coupling_key}.${target_name},
 % else:
@@ -715,10 +684,10 @@ def run_${algo_name}(
             ${obs},
 % endfor
 % for pname, pval in rule_params_dict.items():
-            ${pname}=${pval},
+            ${pval},
 % endfor
 % if needs_warmup:
-            eta_scale=eta_scale,
+            eta_scale,
 % endif
         )
 % if is_coupling_param:
