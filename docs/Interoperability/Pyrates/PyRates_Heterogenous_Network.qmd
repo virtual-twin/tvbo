@@ -141,7 +141,6 @@ edges:
         value: 0.1
     source_var: x_out
     target_var: c_in
-
 """
 
 # Parse network from YAML

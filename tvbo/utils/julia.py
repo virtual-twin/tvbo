@@ -71,7 +71,7 @@ def get_julia(compiled_modules=False):
 
     return _julia_instance, _julia_main
 
-def install_julia_package(package_name, Main=None, update=False):
+def install_julia_package(package_name: str, Main=None, update: bool = False):
     """Install a Julia package if not already installed.
 
     Args:
