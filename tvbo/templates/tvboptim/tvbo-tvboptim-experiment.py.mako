@@ -287,6 +287,32 @@ learning_rate = optimization_stages[0]['learning_rate'] if optimization_stages e
 max_steps = optimization_stages[0]['max_iterations'] if optimization_stages else 100
 optimizer_hyperparams = optimization_stages[0]['hyperparameters'] if optimization_stages else {}
 
+# Optimization integration settings (overrides experiment defaults if specified)
+# If optimization has its own integration, we need fresh prepare() before optimization
+opt_integration = None
+opt_has_custom_integration = False
+opt_solver_class = solver_class  # Default to experiment-level
+opt_dt = dt
+opt_t1 = t1_default
+opt_has_state_bounds = has_state_bounds
+opt_state_bounds_lo = state_bounds_lo
+opt_state_bounds_hi = state_bounds_hi
+
+if optim_list and optim_list[0].integration:
+    opt_integration = optim_list[0].integration
+    opt_has_custom_integration = True
+    # Override integration settings from optimization.integration
+    opt_method = (opt_integration.method or method).lower()
+    opt_solver_class = SOLVER_MAP.get(opt_method, solver_class)
+    opt_dt = float(opt_integration.step_size) if opt_integration.step_size else dt
+    opt_t1 = float(opt_integration.duration) if opt_integration.duration else t1_default
+
+# Check if optimization depends on an algorithm (copy that algorithm's result state)
+# If no depends_on, optimization starts from FRESH network defaults (not algorithm results)
+opt_depends_on = None
+if optim_list:
+    opt_depends_on = getattr(optim_list[0], 'depends_on', None)
+
 # Schema provides ifabsent defaults, so these should always be populated
 # Only assert if optimization is requested but values somehow missing
 if has_optimization:
@@ -2112,14 +2138,42 @@ def run_experiment(
                 # mode='all' - skip optimization if missing inputs
                 print(f"  Skipping optimization (missing: {_missing_inputs})")
         else:
-            # Create loss function with runtime inputs from kwargs
-            loss_type = kwargs.get('loss_type', None)
-            loss_fn = make_loss_fn(model_fn, result_transient=transient, loss_type=loss_type, **kwargs)
-
             # Stage results storage (use Bunch for dot-notation access)
             stage_results = Bunch()
-            # Use initial_state (from simulation) unless depends_on specifies an algorithm
+
+% if opt_has_custom_integration:
+            # Prepare fresh model_fn and state for optimization
+            # Optimization has custom integration settings: ${opt_solver_class} dt=${opt_dt} t1=${opt_t1}
+            print(f"  Preparing optimization model (t1=${opt_t1}ms, dt=${opt_dt}ms, solver=${opt_solver_class})")
+            opt_model_fn, opt_state = prepare(network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
+            # Use opt_model_fn for loss function
+            _opt_model_fn = opt_model_fn
+            current_state = copy.deepcopy(opt_state)
+% if opt_depends_on:
+            # Copy parameter values from initial_state (result of algorithms or simulation)
+            # optimization.depends_on: ${opt_depends_on}
+            for key in initial_state.dynamics.keys():
+                if not key.startswith('_'):
+                    current_state.dynamics[key] = initial_state.dynamics[key]
+            for coupling_name in initial_state.coupling.keys():
+                if not coupling_name.startswith('_'):
+                    for key in initial_state.coupling[coupling_name].keys():
+                        if not key.startswith('_'):
+                            current_state.coupling[coupling_name][key] = initial_state.coupling[coupling_name][key]
+% else:
+            # No depends_on: start from FRESH network defaults (not algorithm results)
+            # wLRE/wFFI stay as ones from prepare(), J_i from network defaults
+% endif
+% else:
+            # Use experiment-level model_fn and state for optimization
+            _opt_model_fn = model_fn
             current_state = initial_state
+% endif
+
+            # Create loss function with runtime inputs from kwargs
+            # Uses _opt_model_fn (either opt-specific or experiment-level model_fn)
+            loss_type = kwargs.get('loss_type', None)
+            loss_fn = make_loss_fn(_opt_model_fn, result_transient=transient, loss_type=loss_type, **kwargs)
 
 % if len(optimization_stages) > 1:
             # Multi-stage optimization with optional stage filtering
@@ -2201,7 +2255,7 @@ stage_lr = stage['learning_rate']
 
 % else:
             # Single-stage optimization
-            init_state = mark_parameters_optimizable(state)
+            init_state = mark_parameters_optimizable(current_state)
 
             fitted_params, fitting_data = run_optimization(
                 init_state,

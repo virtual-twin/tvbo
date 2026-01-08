@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-01-07T16:36:38
+# Generation date: 2026-01-08T10:41:51
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1857,6 +1857,7 @@ class Optimization(OptimizationStage):
 
     name: Union[str, OptimizationName] = None
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
+    integration: Optional[Union[dict, "Integrator"]] = None
     loss: Optional[Union[dict, FunctionCall]] = None
     stages: Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]] = empty_dict()
     depends_on: Optional[Union[str, AlgorithmName]] = None
@@ -1869,6 +1870,9 @@ class Optimization(OptimizationStage):
 
         if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
             self.execution = ExecutionConfig(**as_dict(self.execution))
+
+        if self.integration is not None and not isinstance(self.integration, Integrator):
+            self.integration = Integrator(**as_dict(self.integration))
 
         if self.loss is not None and not isinstance(self.loss, FunctionCall):
             self.loss = FunctionCall(**as_dict(self.loss))
@@ -4756,6 +4760,9 @@ slots.optimizationStage__warmup_from = Slot(uri=TVBO.warmup_from, name="optimiza
 
 slots.optimization__execution = Slot(uri=TVBO.execution, name="optimization__execution", curie=TVBO.curie('execution'),
                    model_uri=TVBO.optimization__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.optimization__integration = Slot(uri=TVBO.integration, name="optimization__integration", curie=TVBO.curie('integration'),
+                   model_uri=TVBO.optimization__integration, domain=None, range=Optional[Union[dict, Integrator]])
 
 slots.optimization__loss = Slot(uri=TVBO.loss, name="optimization__loss", curie=TVBO.curie('loss'),
                    model_uri=TVBO.optimization__loss, domain=None, range=Optional[Union[dict, FunctionCall]])

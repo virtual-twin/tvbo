@@ -1129,6 +1129,15 @@ classes:
                 description: >-
                     Per-optimization execution configuration (overrides experiment-level defaults).
                     Useful for setting random_seed, precision, or hardware for optimization phase.
+            # Integration settings for optimization (overrides experiment-level defaults)
+            integration:
+                range: Integrator
+                inlined: true
+                description: >-
+                    Integration settings for optimization simulations (overrides experiment defaults).
+                    If specified, creates a fresh model_fn and state with prepare() before optimization.
+                    Can specify different duration, step_size, method than the experiment.
+                    If not specified, uses experiment-level integration settings.
             # Loss specification - FunctionCall that references or inlines the loss function
             loss:
                 range: FunctionCall

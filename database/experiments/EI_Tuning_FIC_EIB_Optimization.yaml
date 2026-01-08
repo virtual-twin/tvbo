@@ -758,6 +758,13 @@ optimization:
           automatic differentiation with modern optimizers. Loss combines
           FC error and activity deviation from FIC target.
 
+      # Integration settings for optimization (creates fresh model_fn with prepare())
+      # Original notebook uses: t1_opt = 5 * 60_000, dt_opt = 4.0
+      integration:
+          method: heun
+          step_size: 4.0
+          duration: 300000.0  # 5 minutes
+
       loss:
           function: combined_loss
           arguments:

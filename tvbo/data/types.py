@@ -200,25 +200,30 @@ class OptimizationResult(Bunch):
 class ExplorationResult(Bunch):
     """Result of parameter exploration (grid search).
 
-    Provides structured access to exploration outputs with utilities
-    for finding optimal points and extracting parameter slices.
+    A thin wrapper around tvboptim exploration outputs that provides:
+    - Access to raw results (flat or grid-shaped)
+    - Axis information for parameter values
+    - Utility methods for finding optimal points and slicing
+
+    Designed to work with tvboptim's Space and ParallelResult directly,
+    while also supporting other exploration backends.
 
     Attributes
     ----------
     name : str
         Exploration name
     grid : Space
-        Parameter grid specification
+        Parameter grid specification (tvboptim Space object)
     results : jnp.ndarray
-        Observable values at each grid point
+        Observable values at each grid point (flat or grid-shaped)
     axes : list
-        List of axis info dicts (name, values, n)
+        List of axis info (Bunch with name, lo, hi, n, values)
     observable : str
         Name of observable computed
     optimal : Bunch
         Best point found (parameters, value, index)
     shape : tuple
-        Grid shape (n_axis1, n_axis2, ...)
+        Grid shape derived from axes
     """
 
     def __init__(self, name: str = None, grid=None, results=None,
@@ -226,43 +231,94 @@ class ExplorationResult(Bunch):
         super().__init__(**kwargs)
         self.name = name
         self.grid = grid
-        self.results = results
         self.axes = axes or []
         self.observable = observable
 
-        # Compute derived attributes
-        self.shape = tuple(results.shape) if results is not None else ()
+        # Compute expected grid shape from axes
+        self._grid_shape = tuple(
+            ax.get('n', getattr(ax, 'n', None))
+            for ax in self.axes
+            if (isinstance(ax, dict) and 'n' in ax) or hasattr(ax, 'n')
+        )
+
+        # Store results as-is (don't reshape automatically)
+        # User can call .as_grid() to get grid-shaped array
+        if results is not None:
+            self.results = jnp.asarray(results).flatten()  # Always store flat
+        else:
+            self.results = None
+
+        # Shape is the expected grid shape from axes
+        self.shape = self._grid_shape
         self._find_optimal()
+
+    def as_grid(self) -> jnp.ndarray:
+        """Reshape flat results to grid shape.
+
+        Returns
+        -------
+        jnp.ndarray
+            Results reshaped to (n_axis1, n_axis2, ...) matching axes order
+        """
+        if self.results is None:
+            return None
+        if not self._grid_shape:
+            return self.results
+        expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
+        if self.results.size == expected_size:
+            return self.results.reshape(self._grid_shape)
+        # Can't reshape - return as-is
+        return self.results
 
     def _find_optimal(self):
         """Find optimal point in the grid."""
         self.optimal = Bunch()
         if self.results is not None and self.results.size > 0:
-            # Find argmax (assumes higher is better - could parameterize)
-            flat_idx = int(jnp.argmax(self.results))
-            self.optimal.index = jnp.unravel_index(flat_idx, self.results.shape)
-            self.optimal.value = float(self.results.flatten()[flat_idx])
+            # Find argmin in flat results (assumes lower is better for loss functions)
+            flat_idx = int(jnp.argmin(self.results))
+            self.optimal.flat_index = flat_idx
+            self.optimal.value = float(self.results[flat_idx])
+
+            # Compute grid index if we have valid grid shape
+            if self._grid_shape and len(self._grid_shape) > 0:
+                expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
+                if self.results.size == expected_size:
+                    self.optimal.index = tuple(int(i) for i in jnp.unravel_index(flat_idx, self._grid_shape))
+                else:
+                    self.optimal.index = (flat_idx,)  # Fallback to flat index
+            else:
+                self.optimal.index = (flat_idx,)
 
             # Extract parameter values at optimal point
             self.optimal.parameters = Bunch()
             for i, ax in enumerate(self.axes):
-                if 'values' in ax:
-                    self.optimal.parameters[ax['name']] = ax['values'][self.optimal.index[i]]
+                ax_name = ax.get('name', getattr(ax, 'name', None)) if isinstance(ax, dict) else getattr(ax, 'name', None)
+                ax_values = ax.get('values', getattr(ax, 'values', None)) if isinstance(ax, dict) else getattr(ax, 'values', None)
+                if ax_name and ax_values is not None and i < len(self.optimal.index):
+                    idx = self.optimal.index[i]
+                    if idx < len(ax_values):
+                        self.optimal.parameters[ax_name] = float(ax_values[idx])
 
     def slice(self, **fixed_params):
         """Get a slice of results with some parameters fixed.
 
         Example: result.slice(G=0.5) returns 1D slice at G=0.5
         """
+        grid_results = self.as_grid()
+        if grid_results is None:
+            return None
+
         # Find indices for fixed parameters
         indices = [slice(None)] * len(self.axes)
         for param_name, param_value in fixed_params.items():
             for i, ax in enumerate(self.axes):
-                if ax['name'] == param_name and 'values' in ax:
+                ax_name = ax.get('name', getattr(ax, 'name', None)) if isinstance(ax, dict) else getattr(ax, 'name', None)
+                ax_values = ax.get('values', getattr(ax, 'values', None)) if isinstance(ax, dict) else getattr(ax, 'values', None)
+                if ax_name == param_name and ax_values is not None:
                     # Find closest index
-                    idx = int(jnp.argmin(jnp.abs(ax['values'] - param_value)))
+                    idx = int(jnp.argmin(jnp.abs(jnp.array(ax_values) - param_value)))
                     indices[i] = idx
-        return self.results[tuple(indices)]
+        return grid_results[tuple(indices)]
 
     def __repr__(self):
         shape_str = 'x'.join(str(s) for s in self.shape) if self.shape else 'empty'
