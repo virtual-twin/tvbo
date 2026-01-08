@@ -1,0 +1,636 @@
+# -*- coding: utf-8 -*-
+"""PyRates backend adapter for SimulationExperiment.
+
+This module handles all PyRates-specific logic for running simulations,
+converting between TVBO and PyRates data formats, and computing outputs.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import sys
+import tempfile
+import uuid
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from tvbo.data.types import TimeSeries
+    from tvbo.export.experiment import SimulationExperiment
+
+
+# PyRates supported solvers and TVBO-to-PyRates mapping
+PYRATES_SOLVERS = {"euler", "heun", "scipy"}
+TVBO_TO_PYRATES_SOLVER = {
+    "EulerDeterministic": "euler",
+    "Euler": "euler",
+    "HeunDeterministic": "heun",
+    "Heun": "heun",
+    "RungeKutta4thOrder": "scipy",
+    "RungeKutta4": "scipy",
+    "RK4": "scipy",
+}
+
+
+class PyRatesAdapter:
+    """Adapter for running SimulationExperiment via PyRates backend."""
+
+    def __init__(self, experiment: "SimulationExperiment"):
+        """Initialize adapter with experiment reference.
+
+        Parameters
+        ----------
+        experiment : SimulationExperiment
+            The experiment to run.
+        """
+        self.experiment = experiment
+
+    def run(
+        self,
+        solver: str | None = None,
+        inputs: dict | None = None,
+        outputs: list[str] | None = None,
+        matrix_edge_threshold: int = 100,
+        **kwargs,
+    ) -> "TimeSeries":
+        """Run simulation using PyRates backend.
+
+        Parameters
+        ----------
+        solver : str, optional
+            ODE solver: "euler", "heun", "scipy". Defaults to mapped integration.method.
+        inputs : dict, optional
+            External inputs as {node/op/var: array} or will be auto-generated.
+        outputs : list[str], optional
+            Variables to monitor. If None, monitors all state variables.
+        matrix_edge_threshold : int, optional
+            For networks with N > threshold nodes, use add_edges_from_matrix instead
+            of YAML edges for efficiency. Default is 100.
+        **kwargs
+            Additional kwargs passed to circuit.run().
+
+        Returns
+        -------
+        TimeSeries
+            TVBO TimeSeries with simulation results.
+        """
+        from pyrates import clear
+        from pyrates.frontend import CircuitTemplate
+
+        exp = self.experiment
+        integration = getattr(exp, "integration", None)
+
+        # Resolve solver
+        solver = self._resolve_solver(solver, integration)
+
+        # Check network size for matrix-based edges
+        network = getattr(exp, "network", None)
+        n_nodes = self._get_node_count(network)
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(
+            network, "weights_matrix"
+        )
+
+        # Build circuit from YAML
+        circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(
+            include_edges=not use_matrix_edges
+        )
+
+        try:
+            # For large networks, add edges via matrix
+            if use_matrix_edges:
+                self._add_edges_from_matrix(circuit, network)
+
+            # Build outputs/inputs if not provided
+            if outputs is None:
+                outputs = self._build_outputs()
+            if inputs is None:
+                inputs = self._build_inputs()
+
+            # Run simulation
+            result = circuit.run(
+                step_size=exp.integration.step_size,
+                simulation_time=exp.integration.duration,
+                inputs=inputs,
+                outputs=outputs,
+                solver=solver,
+                **kwargs,
+            )
+            clear(circuit)
+
+        except Exception:
+            clear(circuit)
+            raise
+        finally:
+            self._cleanup(tmpdir, pkg_name)
+
+        # Compute algebraic output variables post-hoc
+        result = self._compute_outputs(result)
+
+        return self._result_to_timeseries(result)
+
+    def _resolve_solver(self, solver: str | None, integration) -> str:
+        """Resolve solver from input or integration method."""
+        if solver is None:
+            method = getattr(integration, "method", None)
+            if method in TVBO_TO_PYRATES_SOLVER:
+                solver = TVBO_TO_PYRATES_SOLVER[method]
+            elif method in PYRATES_SOLVERS:
+                solver = method
+            elif method:
+                raise ValueError(
+                    f"Unsupported integration method '{method}' for PyRates. "
+                    f"Supported: {list(TVBO_TO_PYRATES_SOLVER.keys())}"
+                )
+            else:
+                solver = "heun"
+        elif solver not in PYRATES_SOLVERS:
+            raise ValueError(
+                f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}"
+            )
+        return solver
+
+    def _get_node_count(self, network) -> int:
+        """Get number of nodes in network."""
+        if network is None:
+            return 0
+        return getattr(network, "number_of_nodes", 0) or (
+            len(network.nodes) if hasattr(network, "nodes") and network.nodes else 0
+        )
+
+    def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
+        """Load PyRates circuit from YAML template.
+
+        Returns
+        -------
+        tuple
+            (circuit, tmpdir, pkg_name) for cleanup
+        """
+        from pyrates.frontend import CircuitTemplate
+
+        exp = self.experiment
+
+        # Export to PyRates YAML
+        yaml_content = exp.to_yaml(format="pyrates")
+
+        # For large networks, strip edges from YAML
+        if not include_edges:
+            yaml_content = self._strip_edges_from_yaml(yaml_content)
+
+        # Create temporary package
+        tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_")
+        pkg_name = f"_tvbo_pyrates_{uuid.uuid4().hex[:8]}"
+        pkg_path = os.path.join(tmpdir, pkg_name)
+        os.makedirs(pkg_path, exist_ok=True)
+        open(os.path.join(pkg_path, "__init__.py"), "w").close()
+
+        yaml_path = os.path.join(pkg_path, "model.yaml")
+        with open(yaml_path, "w") as f:
+            f.write(yaml_content)
+
+        sys.path.insert(0, tmpdir)
+
+        # Get circuit name
+        network = getattr(exp, "network", None)
+        dynamics = getattr(exp, "local_dynamics", None) or getattr(exp, "dynamics", None)
+
+        if network is not None:
+            circuit_name = (
+                getattr(network, "label", None)
+                or getattr(network, "name", None)
+                or "tvbo_circuit"
+            )
+        elif dynamics is not None:
+            model_name = getattr(dynamics, "name", None) or "tvbo_model"
+            circuit_name = f"{model_name}_circuit"
+        else:
+            circuit_name = "tvbo_circuit"
+
+        circuit = CircuitTemplate.from_yaml(f"{pkg_name}.model.{circuit_name}")
+        return circuit, tmpdir, pkg_name
+
+    def _strip_edges_from_yaml(self, yaml_content: str) -> str:
+        """Remove edges section from YAML for large networks."""
+        pattern = r"(  edges:\n(?:    - \[.*\]\n)*)"
+        return re.sub(pattern, "", yaml_content)
+
+    def _cleanup(self, tmpdir: str, pkg_name: str) -> None:
+        """Clean up temporary files and modules."""
+        if tmpdir in sys.path:
+            sys.path.remove(tmpdir)
+        modules_to_remove = [k for k in sys.modules if k.startswith(pkg_name)]
+        for mod in modules_to_remove:
+            del sys.modules[mod]
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def _add_edges_from_matrix(self, circuit, network) -> None:
+        """Add edges to circuit using weight matrix (efficient for large networks)."""
+        exp = self.experiment
+        dynamics_dict = exp.dynamics
+        if not isinstance(dynamics_dict, dict):
+            dynamics_dict = {d.name: d for d in (dynamics_dict or [])}
+
+        # Get node labels
+        node_labels = []
+        if hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                label = getattr(node, "label", None) or f"node_{node.id}"
+                node_labels.append(str(label).replace(" ", "_").replace("-", "_"))
+        else:
+            n_nodes = network.weights_matrix.shape[0]
+            node_labels = [f"node_{i}" for i in range(n_nodes)]
+
+        # Get source/target variables from dynamics
+        first_dyn = next(iter(dynamics_dict.values()))
+        dyn_name = first_dyn.name
+
+        # Source: prefer output, fallback to first state variable
+        if first_dyn.output:
+            src_var = f"{dyn_name}_op/{list(first_dyn.output.keys())[0]}"
+        elif first_dyn.state_variables:
+            src_var = f"{dyn_name}_op/{list(first_dyn.state_variables.keys())[0]}"
+        else:
+            src_var = f"{dyn_name}_op/x"
+
+        # Target: coupling term
+        if first_dyn.coupling_terms:
+            tgt_var = f"{dyn_name}_op/{list(first_dyn.coupling_terms.keys())[0]}"
+        else:
+            tgt_var = src_var
+
+        # Add edges using matrix
+        weights = network.weights_matrix
+        if weights is not None and weights.size > 0:
+            delays = self._get_delays(network)
+            edge_attr = {"delay": delays} if delays is not None else None
+
+            circuit.add_edges_from_matrix(
+                source_var=src_var,
+                target_var=tgt_var,
+                source_nodes=node_labels,
+                weight=weights,
+                edge_attr=edge_attr,
+                min_weight=1e-12,
+            )
+
+    def _get_delays(self, network):
+        """Get delay matrix from network."""
+        delays = None
+
+        # Check for explicit delays from edges
+        if hasattr(network, "_delays_from_edges"):
+            delays = network._delays_from_edges()
+
+        # If no explicit delays, compute from lengths/distances
+        if delays is None:
+            lengths = getattr(network, "lengths_matrix", None)
+            if lengths is not None and np.any(lengths > 0):
+                delays = network.calculate_delays()
+
+        return delays
+
+    def _build_outputs(self) -> dict:
+        """Build PyRates outputs dict from dynamics state variables.
+
+        Note: PyRates only tracks state variables (DEs) in its state vector.
+        Algebraic outputs are computed post-hoc in _compute_outputs.
+        """
+        exp = self.experiment
+        outputs = {}
+
+        dynamics = exp.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        default_dyn = next(iter(dynamics.values())) if dynamics else None
+
+        def add_outputs_for_dynamics(dyn, op_name: str, prefix: str = ""):
+            if not dyn:
+                return
+            node_id = prefix.rstrip("_") or "node_0"
+            for sv_name in (dyn.state_variables or {}).keys():
+                key = f"{prefix}{sv_name}" if prefix else sv_name
+                outputs[key] = f"{node_id}/{op_name}/{sv_name}"
+
+        network = getattr(exp, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
+
+                if dyn:
+                    op_name = f"{dyn.name}_op"
+                    add_outputs_for_dynamics(dyn, op_name, prefix=f"{safe_label}_")
+        else:
+            if dynamics:
+                dyn = next(iter(dynamics.values()))
+                op_name = f"{dyn.name}_op"
+                add_outputs_for_dynamics(dyn, op_name)
+
+        return outputs
+
+    def _compute_outputs(self, result: "pd.DataFrame") -> "pd.DataFrame":
+        """Compute algebraic output variables from PyRates simulation results.
+
+        PyRates only records state variables. This method evaluates output
+        equations (like 'r_eff = r_in*x') using recorded state values and parameters.
+        """
+        import sympy as sp
+
+        exp = self.experiment
+        dynamics = exp.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        if not dynamics:
+            return result
+
+        default_dyn = next(iter(dynamics.values()))
+        network = getattr(exp, "network", None)
+
+        # Build node mapping
+        node_map = {}
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                node_map[safe_label] = node
+                node_map[node.id] = node
+
+        # Build edge map: target_node -> {coupling_term: source_col}
+        edge_map = self._build_edge_map(network, node_map)
+        n_time = len(result)
+
+        # Compute outputs for each node
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                prefix = f"{safe_label}_"
+
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
+
+                if dyn and dyn.output:
+                    self._compute_node_outputs(
+                        result, dyn, prefix, safe_label, edge_map, n_time
+                    )
+        else:
+            # Single dynamics case
+            dyn = default_dyn
+            if dyn and dyn.output:
+                self._compute_single_outputs(result, dyn)
+
+        return result
+
+    def _build_edge_map(self, network, node_map: dict) -> dict:
+        """Build edge map: target_node_label -> {coupling_term: source_col}."""
+        edge_map = {}
+        if network is None or not hasattr(network, "edges") or not network.edges:
+            return edge_map
+
+        for edge in network.edges:
+            src_id = edge.source
+            tgt_id = edge.target
+
+            src_node = node_map.get(src_id)
+            tgt_node = node_map.get(tgt_id)
+            if src_node is None or tgt_node is None:
+                continue
+
+            src_label = getattr(src_node, "label", None) or f"node_{src_id}"
+            tgt_label = getattr(tgt_node, "label", None) or f"node_{tgt_id}"
+            src_safe = str(src_label).replace(" ", "_").replace("-", "_")
+            tgt_safe = str(tgt_label).replace(" ", "_").replace("-", "_")
+
+            src_var = (
+                getattr(edge, "source_var", None)
+                or getattr(edge, "source_variable", None)
+                or "r"
+            )
+            tgt_var = (
+                getattr(edge, "target_var", None)
+                or getattr(edge, "target_variable", None)
+                or "r_in"
+            )
+
+            if tgt_safe not in edge_map:
+                edge_map[tgt_safe] = {}
+            edge_map[tgt_safe][tgt_var] = f"{src_safe}_{src_var}"
+
+        return edge_map
+
+    def _compute_node_outputs(
+        self,
+        result: "pd.DataFrame",
+        dyn,
+        prefix: str,
+        safe_label: str,
+        edge_map: dict,
+        n_time: int,
+    ) -> None:
+        """Compute algebraic outputs for a single node."""
+        import sympy as sp
+
+        for out_name in dyn.output:
+            out_var = dyn.derived_variables.get(out_name)
+            if out_var is None:
+                continue
+            eq = out_var.equation
+            if not (eq and eq.rhs):
+                continue
+
+            expr = sp.sympify(eq.rhs)
+            subs = {}
+
+            for sym in expr.free_symbols:
+                sym_name = sym.name
+                col_name = f"{prefix}{sym_name}"
+
+                if col_name in result.columns:
+                    subs[sym] = result[col_name].values
+                elif dyn.parameters and sym_name in dyn.parameters:
+                    param = dyn.parameters[sym_name]
+                    if param.value is not None:
+                        subs[sym] = float(param.value)
+                elif safe_label in edge_map and sym_name in edge_map[safe_label]:
+                    src_col = edge_map[safe_label][sym_name]
+                    if src_col in result.columns:
+                        subs[sym] = result[src_col].values
+                    else:
+                        subs[sym] = np.zeros(n_time)
+                else:
+                    subs[sym] = np.zeros(n_time)
+
+            if len(subs) == len(expr.free_symbols):
+                out_col = f"{prefix}{out_name}"
+                func = sp.lambdify(list(subs.keys()), expr, "numpy")
+                result[out_col] = func(*subs.values())
+
+    def _compute_single_outputs(self, result: "pd.DataFrame", dyn) -> None:
+        """Compute algebraic outputs for single dynamics case."""
+        import sympy as sp
+
+        for out_name in dyn.output:
+            out_var = dyn.derived_variables.get(out_name)
+            if out_var is None:
+                continue
+            eq = out_var.equation
+            if not (eq and eq.rhs):
+                continue
+
+            expr = sp.sympify(eq.rhs)
+            subs = {}
+
+            for sym in expr.free_symbols:
+                if sym.name in result.columns:
+                    subs[sym] = result[sym.name].values
+                elif dyn.parameters and sym.name in dyn.parameters:
+                    param = dyn.parameters[sym.name]
+                    if param.value is not None:
+                        subs[sym] = float(param.value)
+
+            if len(subs) == len(expr.free_symbols):
+                func = sp.lambdify(list(subs.keys()), expr, "numpy")
+                result[out_name] = func(*subs.values())
+
+    def _build_inputs(self) -> dict:
+        """Build PyRates inputs dict from experiment stimulation."""
+        exp = self.experiment
+        inputs = {}
+
+        stimulation = getattr(exp, "stimulation", None)
+        if stimulation is None:
+            return inputs
+
+        duration = exp.integration.duration
+        step_size = exp.integration.step_size
+        time = np.arange(0, duration, step_size)
+
+        try:
+            stim_func = stimulation.execute(format="python")
+        except Exception:
+            stim_func = None
+
+        if stim_func is None:
+            return inputs
+
+        stim_values = stim_func(time)
+        target_var = getattr(stimulation, "target_variable", None) or "I_ext"
+        regions = getattr(stimulation, "regions", None) or []
+        weighting = getattr(stimulation, "weighting", None) or []
+
+        network = getattr(exp, "network", None)
+        dynamics = exp.dynamics
+        if not isinstance(dynamics, dict):
+            dynamics = {d.name: d for d in (dynamics or [])}
+
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            nodes = list(network.nodes)
+            if not regions:
+                regions = [0]
+
+            for i, region_idx in enumerate(regions):
+                if region_idx >= len(nodes):
+                    continue
+
+                node = nodes[region_idx]
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                )
+
+                if dyn_name:
+                    op_name = f"{dyn_name}_op"
+                    key = f"{safe_label}/{op_name}/{target_var}"
+                    weight = weighting[i] if i < len(weighting) else 1.0
+                    inputs[key] = stim_values * weight
+
+        return inputs
+
+    def _result_to_timeseries(self, result: "pd.DataFrame") -> "TimeSeries":
+        """Convert PyRates pandas DataFrame result to TVBO TimeSeries."""
+        from tvbo.data.types import TimeSeries
+
+        exp = self.experiment
+        time = np.array(result.index)
+        columns = list(result.columns)
+
+        # Get known node labels
+        known_node_labels = []
+        network = getattr(exp, "network", None)
+        if network is not None and hasattr(network, "nodes") and network.nodes:
+            for node in network.nodes:
+                node_label = getattr(node, "label", None) or f"node_{node.id}"
+                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
+                known_node_labels.append(safe_label)
+
+        # Parse columns
+        node_names = []
+        sv_names = []
+        node_sv_pairs = []
+
+        for col in columns:
+            node_name = None
+            sv_name = None
+
+            for node_label in known_node_labels:
+                prefix = f"{node_label}_"
+                if col.startswith(prefix):
+                    node_name = node_label
+                    sv_name = col[len(prefix):]
+                    break
+
+            if node_name is None:
+                parts = col.rsplit("_", 1)
+                if len(parts) == 2:
+                    node_name, sv_name = parts
+                else:
+                    node_name, sv_name = col, col
+
+            node_sv_pairs.append((node_name, sv_name))
+            if node_name not in node_names:
+                node_names.append(node_name)
+            if sv_name not in sv_names:
+                sv_names.append(sv_name)
+
+        n_time = len(time)
+        n_nodes = len(node_names)
+        n_svs = len(sv_names)
+
+        data = np.zeros((n_time, n_svs, n_nodes, 1), dtype=np.float32)
+
+        for col_idx, (node_name, sv_name) in enumerate(node_sv_pairs):
+            node_idx = node_names.index(node_name)
+            sv_idx = sv_names.index(sv_name)
+            data[:, sv_idx, node_idx, 0] = result.iloc[:, col_idx].values
+
+        labels_dimensions = {
+            "State Variable": sv_names,
+            "Region": node_names,
+        }
+
+        return TimeSeries(
+            time=time,
+            data=data,
+            labels_dimensions=labels_dimensions,
+            sample_period=float(time[1] - time[0]) if len(time) > 1 else 1.0,
+        )

@@ -158,7 +158,7 @@ for i, mu in enumerate(mu_values):
     ax.set_title(f'μ = {mu}')
     ax.set_xlabel('x')
     ax.set_ylabel('z')
-    ax.set_aspect('equal', adjustable='box')
+    ax.set_box_aspect(1)
 
 plt.tight_layout()
 plt.suptitle('Van der Pol Phase Portraits', y=1.02)

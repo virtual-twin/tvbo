@@ -38,10 +38,6 @@ state_variables:
     initial_value: 0.0
 coupling_terms:
   c_in: {}
-output:
-  x_out:
-    equation:
-      rhs: "x"
 """)
 
 # FitzHugh-Nagumo in EXCITABLE regime
@@ -68,10 +64,6 @@ state_variables:
     initial_value: -0.5
 coupling_terms:
   c_in: {}
-output:
-  v_out:
-    equation:
-      rhs: "v"
 """)
 
 # Van der Pol as relaxation oscillator
@@ -92,10 +84,6 @@ state_variables:
     initial_value: 0.0
 coupling_terms:
   c_in: {}
-output:
-  x_out:
-    equation:
-      rhs: "x"
 """)
 ```
 
@@ -104,7 +92,7 @@ output:
 ```{python}
 import yaml
 from tvbo import SimulationExperiment
-from tvbo.datamodel.tvbopydantic import Network
+from tvbo import Network
 
 # Network topology:
 # - Driver (node 0) sends POSITIVE coupling to Excitable (node 1)
@@ -125,29 +113,35 @@ nodes:
     label: Relaxation
     dynamics: Relaxation
 edges:
-  # Driver excites the Excitable node (positive weight)
   - source: 0
     target: 1
-    weight: 0.8
+    parameters:
+      weight:
+        value: 0.8
     source_var: x_out
     target_var: c_in
-  # Driver inhibits the Relaxation node (negative weight)
   - source: 0
     target: 2
-    weight: -0.6
+    parameters:
+      weight:
+        value: -0.6
     source_var: x_out
     target_var: c_in
-  # Weak mutual coupling between nodes 1 and 2
   - source: 1
     target: 2
-    weight: 0.1
+    parameters:
+      weight:
+        value: 0.1
     source_var: v_out
     target_var: c_in
   - source: 2
     target: 1
-    weight: 0.1
+    parameters:
+      weight:
+        value: 0.1
     source_var: x_out
     target_var: c_in
+
 """
 
 # Parse network from YAML
@@ -176,7 +170,9 @@ for e in network.edges:
 The streamlined API exports directly via `SimulationExperiment.to_yaml(format="pyrates")`:
 
 ```{python}
-# Export to PyRates YAML format
+# Provide minimal integration settings required by the schema
+exp.integration.duration = 200.0
+exp.integration.step_size = 0.01
 yaml_content = exp.to_yaml(format="pyrates")
 
 print("=== Generated PyRates YAML ===")
@@ -480,7 +476,7 @@ print(f"Created plasticity models: {tsodyks.name}, {depression.name}, {facilitat
 ```{python}
 import yaml
 from tvbo import SimulationExperiment
-from tvbo.datamodel.tvbopydantic import Network
+from tvbo import Network
 
 # Network: Pre-synaptic neuron → three parallel synaptic pathways → Post-synaptic neuron
 # This allows direct comparison of how different plasticity affects the SAME post-synaptic target
@@ -508,33 +504,45 @@ edges:
   # Pre-synaptic drives all three synaptic relays
   - source: 0
     target: 1
-    weight: 1.0
+    parameters:
+        - weight:
+            value: 1.0
     source_var: r_out
     target_var: r_in
   - source: 0
     target: 2
-    weight: 1.0
+    parameters:
+        - weight:
+            value: 1.0
     source_var: r_out
     target_var: r_in
   - source: 0
     target: 3
-    weight: 1.0
+    parameters:
+        - weight:
+            value: 1.0
     source_var: r_out
     target_var: r_in
   # All synapses converge onto the post-synaptic neuron
   - source: 1
     target: 4
-    weight: 0.33
+    parameters:
+        - weight:
+            value: 0.33
     source_var: r_eff
     target_var: r_in
   - source: 2
     target: 4
-    weight: 0.33
+    parameters:
+        - weight:
+            value: 0.33
     source_var: r_eff
     target_var: r_in
   - source: 3
     target: 4
-    weight: 0.33
+    parameters:
+        - weight:
+            value: 0.33
     source_var: r_eff
     target_var: r_in
 """
@@ -557,8 +565,8 @@ print("Nodes:")
 for n in network_plasticity.nodes:
     print(f"  {n.id}: {n.label} ({n.dynamics})")
 print("Edges:")
-for e in network_plasticity.edges:
-    print(f"  {e.source} → {e.target} (w={e.weight})")
+for source, target, data in network_plasticity.graph.edges(data=True):
+    print(f"  {source} → {target} (w={data['weight']})")
 ```
 
 ## Export and Run
