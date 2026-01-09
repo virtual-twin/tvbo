@@ -247,7 +247,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
     state_variables = {}
     parameters = {}
     derived_variables = {}
-    output = {}
+    output = []  # List of variable names (references to state_variables or derived_variables)
     operator_name = None  # Name from OperatorTemplate (preferred)
     node_name = None  # Name from NodeTemplate (fallback)
     description = None
@@ -324,16 +324,14 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
                     rhs = _pyrates_to_python_expr(match.group(2))
 
                     var_spec = variables.get(var_name)
+                    # All non-differential equations go to derived_variables
+                    derived_variables[var_name] = {
+                        "name": var_name,
+                        "equation": {"lhs": var_name, "rhs": rhs},
+                    }
+                    # If marked as output, add name to output list
                     if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
-                        output[var_name] = {
-                            "name": var_name,
-                            "equation": {"lhs": var_name, "rhs": rhs},
-                        }
-                    else:
-                        derived_variables[var_name] = {
-                            "name": var_name,
-                            "equation": {"lhs": var_name, "rhs": rhs},
-                        }
+                        output.append(var_name)
 
         for var_name, var_spec in variables.items():
             if var_name in state_variables or var_name in derived_variables or var_name in output:
@@ -372,7 +370,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
     state_variables = {}
     parameters = {}
     derived_variables = {}
-    output = {}
+    output = []  # List of variable names (references to state_variables or derived_variables)
 
     # Extract name from OperatorTemplate, removing _op suffix
     name = template_name
@@ -428,16 +426,14 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
                 rhs = _pyrates_to_python_expr(match.group(2))
 
                 var_spec = variables.get(var_name)
+                # All non-differential equations go to derived_variables
+                derived_variables[var_name] = {
+                    "name": var_name,
+                    "equation": {"lhs": var_name, "rhs": rhs},
+                }
+                # If marked as output, add name to output list
                 if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
-                    output[var_name] = {
-                        "name": var_name,
-                        "equation": {"lhs": var_name, "rhs": rhs},
-                    }
-                else:
-                    derived_variables[var_name] = {
-                        "name": var_name,
-                        "equation": {"lhs": var_name, "rhs": rhs},
-                    }
+                    output.append(var_name)
 
     # Parse variables that are not state/derived/output
     for var_name, var_spec in variables.items():

@@ -1093,7 +1093,8 @@ def read_cifti_ptseries(path: Path) -> tuple[np.ndarray, list[str], float, str]:
     region_labels = []
     for ax in axes:
         if isinstance(ax, cifti2.ParcelsAxis):
-            region_labels = [name for name, _, _ in ax.iter_structures()]
+            # Iterate over parcels using get_element(i) -> (name, voxels, vertices)
+            region_labels = [ax.get_element(i)[0] for i in range(ax.size)]
             break
 
     return data, region_labels, sample_period, sample_period_unit

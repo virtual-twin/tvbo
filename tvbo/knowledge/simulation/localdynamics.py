@@ -1683,7 +1683,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.utils.julia import eval_with_auto_install, get_julia
+            from tvbo.adapters.julia import eval_with_auto_install, get_julia
 
             jl, Main = get_julia(compiled_modules=False)
             eval_with_auto_install(code)

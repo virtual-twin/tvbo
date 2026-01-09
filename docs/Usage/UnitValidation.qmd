@@ -164,7 +164,7 @@ print(f"Number of edges: {len(net_explicit.edges)}")
 # Access edge parameters
 for edge in net_explicit.edges:
     print(f"  Edge {edge.source}→{edge.target}:")
-    for p in edge.parameters:
+    for p in edge.parameters.values():
         unit_str = f" {p.unit}" if p.unit else ""
         print(f"    {p.name}: {p.value}{unit_str}")
 ```

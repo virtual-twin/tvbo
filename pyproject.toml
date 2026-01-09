@@ -130,3 +130,8 @@ include = ["tvbo/**", "README.md"]
 
 [tool.hatch.version]
 path = "tvbo/__init__.py"
+
+[tool.pytest.ini_options]
+markers = [
+    "docs: mark test as documentation test (tests that execute .qmd notebooks)",
+]

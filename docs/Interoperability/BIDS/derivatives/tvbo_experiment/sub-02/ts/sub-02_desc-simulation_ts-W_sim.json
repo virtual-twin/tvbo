@@ -1,0 +1,19 @@
+{
+  "Description": "Simulated parcellated time series - state variable W",
+  "StateVariable": "W",
+  "SamplingFrequency": 10000.0,
+  "SamplingPeriod": 0.1,
+  "SamplingPeriodUnits": "ms",
+  "StartTime": 0.0,
+  "NumberOfTimepoints": 1000,
+  "NumberOfNodes": 3,
+  "Units": "a.u.",
+  "GeneratedAt": "2026-01-09T14:07:32.098653",
+  "Provenance": {
+    "Model": "Generic2dOscillator - 12 parameters and 2 state variables",
+    "Integrator": "Integrator({\n  'time_scale': 'ms',\n  'duration': 100.0,\n  'method': 'Euler',\n  'step_size': 0.1,\n  'transient_time': 0.0,\n  'scipy_ode_base': False,\n  'number_of_stages': 1,\n  'update_expression': DerivedVariable({\n      'name': 'dX',\n      'equation': Equation({'lhs': 'X_{t+1}', 'rhs': 'dX0 * dt', 'latex': False}),\n      'conditional': False\n    }),\n  'delayed': False\n})",
+    "StepSize": 0.1,
+    "GeneratedAt": "2026-01-09T14:07:32.096601",
+    "Software": "tvbo"
+  }
+}

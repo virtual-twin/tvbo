@@ -87,7 +87,7 @@ local_dynamics:
 
 # 3-node network with connectivity
 network:
-  number_of_regions: 3
+  number_of_nodes: 3
   nodes:
     - id: 0
       label: Region_A
@@ -132,12 +132,6 @@ integration:
 coupling:
   name: Linear
   label: Linear Diffusive Coupling
-
-# Output monitors
-monitors:
-  Raw:
-    name: Raw
-    period: 1.0
 """
 
 # Step 1: Create experiment from YAML string
