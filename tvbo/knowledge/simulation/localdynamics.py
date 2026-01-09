@@ -128,12 +128,28 @@ def class2metadata(ontoclass, metadata):
                 setattr(state_var, attr, value)
 
     # Collect all free symbols from state variable equations
-    from sympy import sympify
+    # Build a local_dict to avoid sympy interpreting 'I' as imaginary unit, etc.
+    from sympy import Symbol, sympify
+
+    # First pass: collect all known symbol names to build local_dict
+    known_names = (
+        set(metadata.parameters.keys())
+        | set(metadata.state_variables.keys())
+        | set(metadata.derived_variables.keys())
+        | set(metadata.derived_parameters.keys())
+        | set(functions.keys())
+    )
+    # Add coupling terms from ontology
+    onto_coupling_terms = ontology.get_model_coupling_terms(ontoclass, only_global=False)
+    known_names |= set(onto_coupling_terms.keys())
+
+    local_dict = {name: Symbol(name) for name in known_names}
+
     required_symbols = set()
     for sv in metadata.state_variables.values():
         if sv.equation and sv.equation.rhs:
             try:
-                eq = sympify(sv.equation.rhs)
+                eq = sympify(sv.equation.rhs, locals=local_dict)
                 required_symbols.update(str(s) for s in eq.free_symbols)
             except Exception:
                 pass
@@ -194,7 +210,8 @@ def class2metadata(ontoclass, metadata):
             )
 
     # Only add ontology coupling terms if they are required in state equations
-    for k, v in ontology.get_model_coupling_terms(ontoclass, only_global=False).items():
+    # (onto_coupling_terms was fetched earlier for building local_dict)
+    for k, v in onto_coupling_terms.items():
         if k in required_symbols and k not in metadata.coupling_terms:
             metadata.coupling_terms.update(
                 {
