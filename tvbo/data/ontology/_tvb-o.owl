@@ -26723,9 +26723,9 @@ This coefficient scales the configurable quadratic W_G2D-nullcline in the phase-
     <!-- http://www.thevirtualbrain.org/tvb-o/c_glob -->
 
     <owl:Class rdf:about="http://www.thevirtualbrain.org/tvb-o/c_glob">
-        <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/CouplingInput"/>
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/CouplingTerm"/>
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/Generic2dOscillator"/>
+        <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/GlobalConnectivity"/>
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/ReducedWongWangExcInh"/>
         <rdfs:label>c_glob</rdfs:label>
         <skos:definition rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Global Coupling Input</skos:definition>
