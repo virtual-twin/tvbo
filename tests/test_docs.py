@@ -78,7 +78,7 @@ def test_doc_executes(qmd_path, doc_name):
         env["MPLBACKEND"] = "Agg"  # Non-interactive matplotlib backend
 
         result = subprocess.run(
-            ["jupyter", "execute", str(ipynb_path), "--allow-errors"],
+            ["jupyter", "execute", str(ipynb_path)],
             capture_output=True,
             text=True,
             cwd=str(REPO_ROOT),  # Run from repo root for correct imports

@@ -3,8 +3,10 @@
 
 This module contains adapters for different simulation backends:
 - pyrates: PyRates backend adapter
+- julia: Julia language integration
 """
 
 from tvbo.adapters.pyrates import PyRatesAdapter
+from tvbo.adapters import julia
 
-__all__ = ["PyRatesAdapter"]
+__all__ = ["PyRatesAdapter", "julia"]

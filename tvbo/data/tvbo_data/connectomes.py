@@ -161,13 +161,18 @@ class Network(tvbo_datamodel.Network):
                     kwargs["number_of_regions"] = n_nodes
                     kwargs["number_of_nodes"] = n_nodes
 
-        # Infer n_nodes from nodes if present
+        # Infer n_nodes from nodes if present (authoritative source)
         if "nodes" in kwargs and kwargs["nodes"]:
             n_nodes = len(kwargs["nodes"])
-            if "number_of_nodes" not in kwargs:
-                kwargs["number_of_nodes"] = n_nodes
-            if "number_of_regions" not in kwargs:
-                kwargs["number_of_regions"] = n_nodes
+            declared = kwargs.get("number_of_nodes") or kwargs.get("number_of_regions")
+            if declared and declared != n_nodes:
+                import warnings
+                warnings.warn(
+                    f"number_of_nodes={declared} doesn't match len(nodes)={n_nodes}. "
+                    f"Using {n_nodes} from nodes list."
+                )
+            kwargs["number_of_nodes"] = n_nodes
+            kwargs["number_of_regions"] = n_nodes
         # Create default nodes if number_of_nodes is set but nodes list is empty
         elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
             n_nodes = kwargs["number_of_nodes"]
@@ -177,9 +182,14 @@ class Network(tvbo_datamodel.Network):
 
         super().__init__(**kwargs)
 
-        # After parent init, create default nodes if still empty but number_of_nodes is set
-        # (handles case where number_of_nodes comes from datamodel default)
-        if self.number_of_nodes and not self.nodes:
+        # Sync number_of_nodes from nodes list (authoritative after init)
+        if self.nodes:
+            n_nodes = len(self.nodes)
+            if self.number_of_nodes != n_nodes:
+                self.number_of_nodes = n_nodes
+                self.number_of_regions = n_nodes
+        # Create default nodes if number_of_nodes is set but nodes list is empty
+        elif self.number_of_nodes and not self.nodes:
             self.nodes = [
                 tvbo_datamodel.Node(id=i, label=f"node_{i}")
                 for i in range(self.number_of_nodes)

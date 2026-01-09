@@ -1521,7 +1521,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             session=session,
             description=description,
             run=run,
-            ts_label=ts_label,
+            suffix=ts_label,
             experiment=self,
         )
 
