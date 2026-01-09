@@ -138,6 +138,7 @@ from tvbo import Coupling
 from tvboptim.types import GridAxis, Space
 from tvboptim.execution import ParallelExecution
 import jax
+import bsplot
 
 c = Coupling.from_ontology("HyperbolicTangent")
 
@@ -147,7 +148,7 @@ sc = Network(
 )
 
 exp = SimulationExperiment(
-    local_dynamics=Dynamics("Generic2dOscillator"),
+    local_dynamics=Dynamics.from_ontology("Generic2dOscillator"),
     network=sc,
     coupling={"name": "Linear", "parameters": {"a": {"value": 1}}},
     integration={
@@ -161,9 +162,11 @@ model = exp.execute("jax")
 
 state = exp.collect_state()
 
-n = 5
-state.parameters.local_dynamics.a = GridAxis(-10, 10, n)
-state.parameters.coupling.a = GridAxis(0, 0.1, n)
+n = 8
+# Explore a (controls Hopf bifurcation) and d (time scale separation)
+# a ~ 0 is the bifurcation point; d controls fast/slow dynamics
+state.parameters.local_dynamics.a = GridAxis(-2, 1.5, n)
+state.parameters.local_dynamics.d = GridAxis(0.01, 0.1, n)
 grid = Space(state, mode="product")
 
 n_devices = jax.device_count()
@@ -178,10 +181,37 @@ exploration_results = explore()
 
 print(exploration_results.results.shape)
 
-fig, axs = plt.subplots(n, n, figsize=(15, 15))
-for i, d in enumerate(exploration_results.results.data.squeeze()):
-    ax = axs.flatten()[i]
-    im = ax.plot(d[1000:, 0], linewidth=1)
-    ax.axis("off")
+# Reshape: (n_pmap, n_vmap, time, state_vars, nodes, modes) -> (n_combinations, time, state_vars, nodes)
+data = exploration_results.results.data.squeeze()  # remove modes dim
+# Flatten n_pmap and n_vmap dimensions
+data = data.reshape(-1, *data.shape[2:])  # (n_pmap*n_vmap, time, state_vars, nodes)
+
+# Get parameter values directly from the grid (no redundant linspace!)
+axis_vals = grid._generate_axis_values()
+a_vals = axis_vals.parameters.local_dynamics.a
+d_vals = axis_vals.parameters.local_dynamics.d
+
+fig, axs = plt.subplots(n, n, figsize=(12, 12))
+for i in range(min(n * n, data.shape[0])):
+    row, col = i // n, i % n
+    ax = axs[row, col]
+    # data[i] has shape (time, state_vars, nodes) - plot first state variable, first node
+    ax.plot(data[i, 1000:, 0, 0], linewidth=0.5)
+
+    # Labels: rows = a (first axis), cols = d (second axis)
+    if row == 0:
+        ax.set_title(f"d={d_vals[col]:.3f}", fontsize=10)
+    if col == 0:
+        ax.set_ylabel(f"a={a_vals[row]:.2f}", fontsize=10)
+
+bsplot.style.format_fig(fig)
+
+for ax in fig.axes:
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
+
 ```
+
 ::::
