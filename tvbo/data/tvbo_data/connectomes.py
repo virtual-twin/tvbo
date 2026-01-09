@@ -727,6 +727,8 @@ class Network(tvbo_datamodel.Network):
 
         import numpy as _np
 
+        from linkml_runtime.utils.yamlutils import YAMLRoot
+
         def _jsonable(o):
             try:
                 import jax
@@ -744,6 +746,12 @@ class Network(tvbo_datamodel.Network):
             # tuples -> lists for JSON
             if isinstance(o, tuple):
                 return list(o)
+            # LinkML dataclasses -> dict via as_dict
+            if isinstance(o, YAMLRoot):
+                return as_dict(o)
+            # dataclasses with __dict__
+            if hasattr(o, "__dict__"):
+                return {k: v for k, v in o.__dict__.items() if not k.startswith("_")}
             # last resort: stringify
             return str(o)
 
@@ -778,8 +786,10 @@ class Network(tvbo_datamodel.Network):
         # as_dict can return various dict-like structures
         if not isinstance(meta_dict, dict):
             meta_dict = dict(meta_dict) if hasattr(meta_dict, "__iter__") else {}
-        # Remove weights, lengths, parcellation, and cache attributes from metadata
+        # Remove weights, lengths, parcellation, edges, and cache attributes from metadata
         # Parcellation is excluded to prevent reloading data during unflatten
+        # Edges are excluded because they contain Parameter objects with non-deterministic
+        # string serialization, and the weight/length info is already in the children arrays
         # Also exclude private cached arrays set by from_matrix()
         meta_dict_without_arrays = {
             k: v
@@ -789,6 +799,7 @@ class Network(tvbo_datamodel.Network):
                 "weights",
                 "lengths",
                 "parcellation",
+                "edges",
                 "_pytree_data",
                 "_cached_weights",
                 "_cached_lengths",
@@ -2186,5 +2197,6 @@ class Network(tvbo_datamodel.Network):
         )
 
 
+@register_pytree_node_class
 class Connectome(Network):
     pass

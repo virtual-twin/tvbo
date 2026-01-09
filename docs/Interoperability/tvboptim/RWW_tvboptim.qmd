@@ -5,13 +5,12 @@ title: "Reduced Wong-Wang BOLD FC Optimization via tvboptim"
 Complete BOLD functional connectivity simulation & optimization: simulation, exploration, global and regional parameter fitting.
 
 ```{python}
-# | output: false
 import os
+
 os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment, Network
 
-# Load experiment and network
 exp = SimulationExperiment.from_file(
     "/Users/leonmartin_bih/tools/tvbo/database/experiments/RWW_BOLD_FC_Optimization.yaml"
 )
@@ -19,8 +18,7 @@ results = exp.run("tvboptim")
 ```
 
 ```{python}
-# # Re-run with fitted params to get FC matrices
-fc_target = results.integration.main.observations.empirical_fc
+
 ```
 
 ## Results
@@ -29,21 +27,24 @@ fc_target = results.integration.main.observations.empirical_fc
 # | label: fig-rww-results
 
 # | fig-cap: "**RWW BOLD FC Optimization.** (A) Neural activity. (B) BOLD signal. (C) Parameter landscape with trajectory. (D-F) FC matrices: target, global, regional. (G-H) FC scatter plots. (I-J) Fitted regional parameters."
-# | fig-height: 10
 
 import bsplot
 from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
 import jax.numpy as jnp
+import numpy as np
+from tvboptim.observations.observation import fc_corr
 
 mosaic = """
 AABBCC
 DDEEFF
 GGHHII
 """
-fig, axes = plt.subplot_mosaic(mosaic)
+fig, axes = plt.subplot_mosaic(mosaic, layout='tight', figsize=(8, 6))
 cmap = plt.cm.cividis
+
+fc_target = results.integration.main.observations.empirical_fc
 
 # A: Neural Activity
 ax = axes["A"]
@@ -151,7 +152,6 @@ for key, fc, title in [
         title=f"r={fc_corr(fc, fc_target):.3f}",
         aspect="equal",
     )
-    ax.set_box_aspect(1)
 
 # I: Fitted Regional Parameters (dual y-axis)
 mean_conn = exp.network.weights.mean(axis=1)
@@ -208,12 +208,10 @@ ax1.set_title("Regional Parameters")
 # lines1, labels1 = ax1.get_legend_handles_labels()
 # lines2, labels2 = ax2.get_legend_handles_labels()
 # ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8)
-ax1.set_box_aspect(1)
-ax2.set_box_aspect(1)
+
 plt.suptitle(
-    "Reduced Wong-Wang BOLD FC Optimization", fontsize=14, fontweight="bold", y=1.05
+    "Reduced Wong-Wang BOLD FC Optimization", fontsize=14, fontweight="bold", y=1
 )
-fig.tight_layout()
 bsplot.style.format_fig(fig)
 ##
 ```
