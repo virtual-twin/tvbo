@@ -116,8 +116,8 @@ edges:
   - source: 0
     target: 1
     parameters:
-      weight:
-        value: 0.8
+      - weight:
+          value: 0.8
     source_var: x_out
     target_var: c_in
   - source: 0
@@ -130,21 +130,21 @@ edges:
   - source: 1
     target: 2
     parameters:
-      weight:
-        value: 0.1
+      - weight:
+          value: 0.1
     source_var: v_out
     target_var: c_in
   - source: 2
     target: 1
     parameters:
-      weight:
-        value: 0.1
+      - weight:
+          value: 0.1
     source_var: x_out
     target_var: c_in
 """
 
 # Parse network from YAML
-network = Network(**yaml.safe_load(network_yaml))
+network = Network.from_string(network_yaml)
 
 # Create experiment with dynamics library and network
 exp = SimulationExperiment(
@@ -159,9 +159,8 @@ exp = SimulationExperiment(
 print(f"Network: {network.label}")
 print(f"  Nodes: {[(n.id, n.label, n.dynamics) for n in network.nodes]}")
 print(f"  Edges:")
-for e in network.edges:
-    sign = "+" if e.weight > 0 else ""
-    print(f"    {e.source} → {e.target}: {sign}{e.weight}")
+for source, target, data in network.graph.edges(data=True):
+    print(f"    {source} → {target}: {data['weight']}")
 ```
 
 ## Export to PyRates YAML
@@ -362,17 +361,20 @@ name: TsodyksMarkram
 description: "Short-term synaptic plasticity with depression and facilitation"
 parameters:
   tau_x:
-    value: 100.0
+    value: 200.0
     description: "Recovery time constant for depression (ms)"
   tau_u:
-    value: 200.0
+    value: 50.0
     description: "Recovery time constant for facilitation (ms)"
   U0:
-    value: 0.6
+    value: 0.2
     description: "Baseline release probability"
   k:
-    value: 0.1
+    value: 0.5
     description: "Depression rate"
+  k_fac:
+    value: 0.05
+    description: "Facilitation rate"
 state_variables:
   x:
     equation:
@@ -381,16 +383,18 @@ state_variables:
     description: "Available synaptic resources (depression variable)"
   u:
     equation:
-      rhs: "(U0 - u)/tau_u + U0*(1 - u)*r_in"
-    initial_value: 0.6
+      rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
+    initial_value: 0.2
     description: "Release probability (facilitation variable)"
 coupling_terms:
   r_in: {}
-output:
+derived_variables:
   r_eff:
     equation:
       rhs: "r_in*x*u"
     description: "Effective synaptic transmission"
+output:
+    - r_eff
 """)
 
 # Pure synaptic depression model
@@ -399,10 +403,10 @@ name: Depression
 description: "Short-term synaptic depression only"
 parameters:
   tau_x:
-    value: 100.0
+    value: 300.0
     description: "Recovery time constant (ms)"
   k:
-    value: 1.0
+    value: 0.3
     description: "Depression rate"
 state_variables:
   x:
@@ -412,11 +416,13 @@ state_variables:
     description: "Available synaptic resources"
 coupling_terms:
   r_in: {}
-output:
+derived_variables:
   r_eff:
     equation:
       rhs: "r_in*x"
     description: "Effective transmission with depression"
+output:
+    - r_eff
 """)
 
 # Pure synaptic facilitation model
@@ -430,22 +436,27 @@ parameters:
   U0:
     value: 0.2
     description: "Baseline release probability"
+  k_fac:
+    value: 0.01
+    description: "Facilitation rate"
 state_variables:
   u:
     equation:
-      rhs: "(U0 - u)/tau_u + U0*(1 - u)*r_in"
+      rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability"
 coupling_terms:
   r_in: {}
-output:
+derived_variables:
   r_eff:
     equation:
       rhs: "r_in*u"
     description: "Effective transmission with facilitation"
+output:
+ - r_eff
 """)
 
-# Simple rate neuron to drive the synapses
+# Simple rate neuron (I_ext=0.0, will receive external stimulus)
 rate_neuron = Dynamics.from_string("""
 name: RateNeuron
 description: "Simple rate-based neuron with external input"
@@ -461,10 +472,6 @@ state_variables:
     initial_value: 0.0
 coupling_terms:
   r_in: {}
-output:
-  r_out:
-    equation:
-      rhs: "r"
 """)
 
 print(f"Created plasticity models: {tsodyks.name}, {depression.name}, {facilitation.name}")
