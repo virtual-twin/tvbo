@@ -104,7 +104,7 @@ code = SimulationExperiment(local_dynamics=lorenz).render_code('jax')
 ```
 
 **output**:
-```{pythony}
+```{python}
 Markdown("```python" + code + "```")
 ```
 
@@ -132,7 +132,7 @@ SimulationExperiment(local_dynamics=lorenz).run(duration=1000).plot()
 ### Explore network dynamics with `tvboptim`
 ```{python}
 import matplotlib.pyplot as plt
-from tvbo.data.tvbo_data.connectomes import Connectome
+from tvbo import Network
 from tvbo import SimulationExperiment, Dynamics
 from tvbo import Coupling
 from tvboptim.types import GridAxis, Space
@@ -141,13 +141,13 @@ import jax
 
 c = Coupling.from_ontology("HyperbolicTangent")
 
-sc = Connectome(
+sc = Network(
     parcellation={"atlas": {"name": "DesikanKilliany"}},
     normalization={"rhs": "(W - W_min) / (W_max - W_min)"},
 )
 
 exp = SimulationExperiment(
-    model=Dynamics("Generic2dOscillator"),
+    local_dynamics=Dynamics("Generic2dOscillator"),
     network=sc,
     coupling={"name": "Linear", "parameters": {"a": {"value": 1}}},
     integration={
