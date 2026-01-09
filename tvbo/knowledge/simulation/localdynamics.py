@@ -410,7 +410,7 @@ def sort_equations(model, variable_type):
 
 def _validate_dynamics_kwargs(kwargs: dict) -> None:
     """Validate Dynamics kwargs and provide helpful error messages for schema mistakes.
-    
+
     Common mistakes:
     - Using 'output' as a dict of derived variables (should be 'derived_variables')
     - Using raw dicts instead of LinkML loader (should use Dynamics.from_string())
