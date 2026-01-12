@@ -30,20 +30,20 @@ from tvbo.knowledge.simulation.equations import sympify as tvbo_sympify
 
 class CUDACodePrinter(spc.C99CodePrinter):
     """CUDA code printer extending SymPy's C99 printer.
-    
+
     Handles:
     - powf instead of pow for floats
     - CUDA math functions (expf, sinf, etc.)
     - PI/INF macros
     """
-    
+
     printmethod = "_cuda_code"
-    
+
     _default_settings = {
         **spc.C99CodePrinter._default_settings,
         'precision': None,  # Use powf, expf, etc.
     }
-    
+
     # CUDA single-precision math functions
     _cuda_functions = {
         'exp': 'expf',
@@ -60,16 +60,16 @@ class CUDACodePrinter(spc.C99CodePrinter):
         'sinh': 'sinhf',
         'cosh': 'coshf',
     }
-    
+
     def __init__(self, settings=None):
         super().__init__(settings or {})
         self.known_functions.update(self._cuda_functions)
-    
+
     def _print_Pow(self, expr):
         """Use powf for float exponentiation."""
         base = self._print(expr.base)
         exp = self._print(expr.exp)
-        
+
         # Special cases
         if expr.exp == -1:
             return f"(1.0f / {base})"
@@ -77,9 +77,9 @@ class CUDACodePrinter(spc.C99CodePrinter):
             return f"sqrtf({base})"
         if expr.exp == 2:
             return f"({base} * {base})"
-        
+
         return f"powf({base}, {exp})"
-    
+
     def _print_Float(self, expr):
         """Ensure floats have 'f' suffix for CUDA."""
         val = super()._print_Float(expr)
@@ -87,11 +87,11 @@ class CUDACodePrinter(spc.C99CodePrinter):
             if not val.endswith('f'):
                 val = val + 'f'
         return val
-    
+
     def _print_Integer(self, expr):
         """Keep integers as floats for consistency in CUDA."""
         return f"{int(expr)}.0f"
-    
+
     def _print_Symbol(self, expr):
         """Handle special symbols."""
         name = super()._print_Symbol(expr)
@@ -101,7 +101,7 @@ class CUDACodePrinter(spc.C99CodePrinter):
         if name.lower() == 'inf':
             return 'INF'
         return name
-    
+
     def _print_Piecewise(self, expr):
         """Convert Piecewise to ternary operators."""
         args = expr.args
@@ -111,7 +111,7 @@ class CUDACodePrinter(spc.C99CodePrinter):
             val_true = self._print(args[0][0])
             val_false = self._print(args[1][0])
             return f"(({cond}) ? ({val_true}) : ({val_false}))"
-        
+
         # Nested ternary for multiple conditions
         result = self._print(args[-1][0])  # Default (else)
         for val, cond in reversed(args[:-1]):
@@ -127,10 +127,10 @@ class CUDACodePrinter(spc.C99CodePrinter):
 
 class NumbaPrinter(PythonCodePrinter):
     """Python printer compatible with Numba's nopython mode.
-    
+
     Uses numpy functions but avoids constructs Numba doesn't support.
     """
-    
+
     def _print_Piecewise(self, expr):
         """Numba-compatible piecewise using if/else."""
         # For numba gufuncs, we need simple if/else, not np.where
@@ -140,7 +140,7 @@ class NumbaPrinter(PythonCodePrinter):
             val_true = self._print(args[0][0])
             val_false = self._print(args[1][0])
             return f"({val_true} if {cond} else {val_false})"
-        
+
         # Nested for multiple conditions
         result = self._print(args[-1][0])
         for val, cond in reversed(args[:-1]):
@@ -160,21 +160,21 @@ _numba_printer = NumbaPrinter()
 
 def cuda_code(expr, local_dict: Optional[Dict[str, Any]] = None) -> str:
     """Convert expression to CUDA code string.
-    
+
     Args:
         expr: SymPy expression, Equation object, or string
         local_dict: Optional dict of symbols for parsing strings
-    
+
     Returns:
         CUDA code string
     """
     if expr is None:
         return ""
-    
+
     # Handle Equation objects
     if hasattr(expr, 'rhs'):
         expr = expr.rhs
-    
+
     # Parse string expressions
     if isinstance(expr, str):
         try:
@@ -182,55 +182,55 @@ def cuda_code(expr, local_dict: Optional[Dict[str, Any]] = None) -> str:
         except Exception:
             # Fallback: just do basic string replacements
             return _string_to_cuda(expr)
-    
+
     return _cuda_printer.doprint(expr)
 
 
 def python_code(expr, local_dict: Optional[Dict[str, Any]] = None) -> str:
     """Convert expression to Python/Numba code string.
-    
+
     Args:
         expr: SymPy expression, Equation object, or string
         local_dict: Optional dict of symbols for parsing strings
-    
+
     Returns:
         Python code string
     """
     if expr is None:
         return ""
-    
+
     # Handle Equation objects
     if hasattr(expr, 'rhs'):
         expr = expr.rhs
-    
+
     # Parse string expressions
     if isinstance(expr, str):
         try:
             expr = tvbo_sympify(expr, local_dict=local_dict)
         except Exception:
             return expr  # Return as-is if parsing fails
-    
+
     return _numba_printer.doprint(expr)
 
 
 def _string_to_cuda(expr_str: str) -> str:
     """Simple string-based conversion to CUDA for expressions that fail parsing."""
     result = str(expr_str)
-    
+
     # Power syntax: ** -> powf
     # Match x**y patterns
     power_pattern = r'(\w+|\([^)]+\))\s*\*\*\s*(\w+|\([^)]+\))'
     while re.search(power_pattern, result):
         result = re.sub(power_pattern, r'powf(\1, \2)', result)
-    
+
     # pi -> PI, inf -> INF
     result = re.sub(r'\bpi\b', 'PI', result)
     result = re.sub(r'\binf\b', 'INF', result)
-    
+
     # Common functions to float versions
     for fn in ['exp', 'log', 'sin', 'cos', 'tan', 'sqrt', 'tanh']:
         result = re.sub(rf'\b{fn}\s*\(', f'{fn}f(', result)
-    
+
     return result
 
 
