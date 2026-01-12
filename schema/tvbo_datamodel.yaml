@@ -1387,6 +1387,8 @@ classes:
             step_size:
                 range: float
                 ifabsent: float(0.01220703125)
+                aliases:
+                    - dt
             steps:
                 range: integer
             noise:
