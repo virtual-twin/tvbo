@@ -552,14 +552,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     # Internal helpers
     def _populate_from_ontology_if_available(self):
+        """Populate from ontology ONLY if already set. No automatic import."""
         oc = self.ontology
         if oc is not None:
             self._populate_from_ontology(oc)
-        else:
-            # YAML-based import hook (let errors surface instead of swallowing)
-            oc = metadata.import_yaml_model(self)
-            if oc is not None:
-                self._populate_from_ontology(oc)
+        # Skip automatic YAML->ontology import. Use from_ontology() explicitly if needed.
 
     def _populate_from_ontology(self, oc, **kwargs):
         # Fill schema fields from ontology, without persisting runtime-only state

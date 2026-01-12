@@ -44,3 +44,9 @@ from tvbo.export.functions import (
     # Convenience alias
     generate,
 )
+
+from tvbo.export.cuda import (
+    run_cuda,
+    compile_cuda,
+    save_cuda,
+)

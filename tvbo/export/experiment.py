@@ -998,6 +998,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             return ts
 
+        elif format.lower() == "cuda":
+            from tvbo.export.cuda import run_cuda
+            return run_cuda(self, **kwargs)
+
         elif format.lower() == "python":
             bnm = _Network(Network(self.network))
             bnm.add_local_model(self.local_dynamics)
@@ -1343,9 +1347,42 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 use_black=False,
             )
 
+        elif format.lower() in ["rateml", "rateml-python"]:
+            # RateML-style TVB Python model with Numba gufunc
+            template = templates.lookup.get_template(
+                "rateml/tvbo-rateml-python.py.mako"
+            )
+            rendered_code = format_code(
+                template.render(model=self.local_dynamics, experiment=self, **kwargs),
+                use_black=False,
+            )
+
+        elif format.lower() in ["rateml-cuda", "cuda"]:
+            # RateML-style CUDA kernel
+            template = templates.lookup.get_template(
+                "rateml/tvbo-rateml-cuda.c.mako"
+            )
+            rendered_code = template.render(
+                model=self.local_dynamics,
+                experiment=self,
+                coupling=self.coupling,
+                **kwargs
+            )
+
+        elif format.lower() == "rateml-driver":
+            # PyCUDA driver for RateML CUDA kernel
+            template = templates.lookup.get_template(
+                "rateml/tvbo-rateml-driver.py.mako"
+            )
+            rendered_code = format_code(
+                template.render(model=self.local_dynamics, experiment=self, **kwargs),
+                use_black=False,
+            )
+
         else:
             raise ValueError(
-                f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim"
+                f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
+                "rateml, rateml-python, rateml-cuda, cuda, rateml-driver"
             )
 
         return rendered_code
