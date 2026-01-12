@@ -123,7 +123,7 @@ class Network(tvbo_datamodel.Network):
                         else None
                     )
                     n_nodes = w_arr.shape[0]
-                    
+
                     # Handle mismatched weight/length matrix sizes
                     if l_arr is not None and l_arr.shape[0] != n_nodes:
                         import warnings
