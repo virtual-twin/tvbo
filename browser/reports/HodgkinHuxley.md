@@ -1,9 +1,11 @@
 
 
-# HodgkinHuxley
-HodgkinHuxley
-
-## Equations
+## HodgkinHuxley
+Canonical conductance-based neuron model capturing the biophysical basis of the
+action potential via voltage-gated sodium and potassium currents and a passive leak.
+Fast activation/inactivation (m,h) of sodium and slower potassium activation (n)
+shape spike initiation, refractory period, and repetitive firing under sustained
+current injection.
 
 ### Derived Variables
 $$
@@ -49,7 +51,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

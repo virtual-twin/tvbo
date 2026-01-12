@@ -1,9 +1,8 @@
 
 
-# SprottDissipativeConservative
-SprottDissipativeConservative
-
-## Equations
+## SprottDissipativeConservative
+Mixed dissipative/conservative three-dimensional system where initial condition
+choice yields either quasi-periodic torus motion or chaotic attractor behavior.
 
 
 ### State Equations
@@ -18,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

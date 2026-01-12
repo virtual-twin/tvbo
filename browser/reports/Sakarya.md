@@ -1,9 +1,8 @@
 
 
-# Sakarya
-Sakarya
-
-## Equations
+## Sakarya
+Four-wing strange attractor born via merging of bistable attractors; exhibits
+robust chaos and symmetry-related lobe structure transitions under parameter variation.
 
 
 ### State Equations
@@ -18,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

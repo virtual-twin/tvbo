@@ -1,20 +1,18 @@
 
 
-# LarterBreakspear
+## LarterBreakspear
 The Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.
 
 The Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.
 
-The membrane potential of the pyramidal cells is the focus of the model and is governed by sodium,
-potassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail.
+The membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, 
+potassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. 
 
-The excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors.
+The excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. 
 
 Note:
-- Equations and default parameters are taken from (Breakspear et al., 2003b),
+- Equations and default parameters are taken from (Breakspear et al., 2003b), 
 - All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.
-
-## Equations
 
 ### Derived Variables
 $$
@@ -48,7 +46,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
@@ -90,6 +88,6 @@ $$
 ## References
 Breakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.
 
-Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.
-
 Breakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.
+
+Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.

@@ -1,9 +1,9 @@
 
 
-# MagneticPendulum
-MagneticPendulum
-
-## Equations
+## MagneticPendulum
+Damped planar magnetic pendulum over N fixed magnets forming a symmetric multistable
+potential. Exhibits fractal basin boundaries and sensitive dependence in final magnet
+attraction region selection.
 
 ### Derived Variables
 $$
@@ -28,7 +28,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

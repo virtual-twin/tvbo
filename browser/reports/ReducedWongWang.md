@@ -1,11 +1,9 @@
 
 
-# ReducedWongWang
+## ReducedWongWang
 Reduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).
 
 RWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.
-
-## Equations
 
 ### Derived Variables
 $$
@@ -21,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
@@ -37,6 +35,6 @@ $$
 
 
 ## References
-Citation key 'WongWang2006' not found.
-
 Citation key 'Deco2013' not found.
+
+Citation key 'WongWang2006' not found.

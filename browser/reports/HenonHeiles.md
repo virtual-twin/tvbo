@@ -1,9 +1,9 @@
 
 
-# HenonHeiles
-HenonHeiles
-
-## Equations
+## HenonHeiles
+The Hénon–Heiles system is a conservative 2 DoF Hamiltonian model introduced to
+study stellar motion near a galactic center and the search for a third integral
+of motion. The default initial condition is a typical chaotic orbit.
 
 ### Derived Variables
 $$
@@ -25,7 +25,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

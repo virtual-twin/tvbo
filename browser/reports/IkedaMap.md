@@ -1,9 +1,8 @@
 
 
-# IkedaMap
-IkedaMap
-
-## Equations
+## IkedaMap
+Ikeda map modeling light propagation in a ring cavity with nonlinear phase; exhibits
+rich strange attractors.
 
 ### Derived Variables
 $$
@@ -19,7 +18,7 @@ y = b*\left(x*\sin{\left(\theta \right)} + y*\cos{\left(\theta \right)}\right)
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

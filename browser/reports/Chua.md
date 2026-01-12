@@ -1,13 +1,19 @@
 
 
-# Chua
-Chua
+## Chua
+This is a 3D continuous system that exhibits chaos.
 
-## Equations
+Chua designed an electronic circuit with the expressed goal of exhibiting
+chaotic motion, and this system is obtained by rescaling the circuit units
+to simplify the form of the equation. [^Chua1992]
+
+The parameters are a, b, m0, and m1. Setting a = 15.6, m0 = -8/7 and m1 = -5/7, and
+varying the parameter b from b = 25 to b = 51, one observes a classic period-doubling
+bifurcation route to chaos. [^Chua2007]
 
 ### Derived Variables
 $$
-h_{x} = m_{1}*x + \left(- \left|{-1 + x}\right| + \left|{1 + x}\right|\right)*\left(0.5*m_{0} - 0.5*m_{1}\right)
+h_{x} = m_{1}*x + \left(- \operatorname{abs}{\left(-1 + x \right)} + \operatorname{abs}{\left(1 + x \right)}\right)*\left(0.5*m_{0} - 0.5*m_{1}\right)
 $$
 
 ### State Equations
@@ -22,7 +28,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,9 @@
 
 
-# FitzHughNagumo
-FitzHughNagumo
-
-## Equations
+## FitzHughNagumo
+Famous excitable system which emulates the firing of a neuron, reducing the biophysical
+Hodgkin-Huxley description to two variables while preserving excitability and recovery
+dynamics. Captures threshold behavior, refractoriness and sustained spiking under drive.
 
 
 ### State Equations
@@ -15,7 +15,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

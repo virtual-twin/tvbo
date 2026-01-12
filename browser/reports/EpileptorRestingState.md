@@ -1,11 +1,9 @@
 
 
-# EpileptorRestingState
+## EpileptorRestingState
 Epileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.
-
+        
 This model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).
-
-## Equations
 
 ### Derived Variables
 $$
@@ -51,7 +49,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
@@ -87,6 +85,6 @@ $$
 
 
 ## References
-Jirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.
-
 Citation key 'Courtiol2020' not found.
+
+Jirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.

@@ -1,9 +1,9 @@
 
 
-# VanDerPolForced
-VanDerPolForced
-
-## Equations
+## VanDerPolForced
+The forced van der Pol oscillator features nonlinear (amplitude dependent) damping and
+sinusoidal forcing. The unforced system has a unique attracting relaxation cycle; with
+forcing it displays entrainment, quasi-periodicity or chaos depending on parameters.
 
 
 ### State Equations
@@ -15,7 +15,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

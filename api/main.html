@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -126,6 +161,69 @@ ul.task-list li input[type="checkbox"] {
   </li>  
     </ul>
   </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Interoperability</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">tvboptim</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/index.html">
+ <span class="dropdown-text">tvboptim Backend</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/JR_tvboptim.html">
+ <span class="dropdown-text">JR Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/RWW_tvboptim.html">
+ <span class="dropdown-text">RWW Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
+ <span class="dropdown-text">EI Tuning</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">PyRates</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/index.html">
+ <span class="dropdown-text">PyRates Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Analysis.html">
+ <span class="dropdown-text">PyRates Analysis</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Bifurcation.html">
+ <span class="dropdown-text">PyRates Bifurcation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
+ <span class="dropdown-text">Heterogeneous Networks</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">BIDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/index.html">
+ <span class="dropdown-text">BIDS Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_Export.html">
+ <span class="dropdown-text">BIDS Export</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_comp_modelling.md">
+ <span class="dropdown-text">BIDS Computational Modelling</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">OpenMINDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
+ <span class="dropdown-text">OpenMINDS Interoperability</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -143,7 +241,18 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#tvbo.api.main" id="toc-tvbo.api.main" class="nav-link active" data-scroll-target="#tvbo.api.main">main</a></li>
+  <li><a href="#tvbo.api.main" id="toc-tvbo.api.main" class="nav-link active" data-scroll-target="#tvbo.api.main">main</a>
+  <ul class="collapse">
+  <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
+  <ul class="collapse">
+  <li><a href="#tvbo.api.main.RunExperimentRequest" id="toc-tvbo.api.main.RunExperimentRequest" class="nav-link" data-scroll-target="#tvbo.api.main.RunExperimentRequest">RunExperimentRequest</a></li>
+  <li><a href="#tvbo.api.main.RunExperimentResponse" id="toc-tvbo.api.main.RunExperimentResponse" class="nav-link" data-scroll-target="#tvbo.api.main.RunExperimentResponse">RunExperimentResponse</a></li>
+  </ul></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
+  <ul class="collapse">
+  <li><a href="#tvbo.api.main.run_experiment" id="toc-tvbo.api.main.run_experiment" class="nav-link" data-scroll-target="#tvbo.api.main.run_experiment">run_experiment</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/api/main.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -156,8 +265,62 @@ ul.task-list li input[type="checkbox"] {
 <section id="tvbo.api.main" class="level1">
 <h1>main</h1>
 <p><code>api.main</code></p>
+<section id="classes" class="level2">
+<h2 class="anchored" data-anchor-id="classes">Classes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.api.main.RunExperimentRequest">RunExperimentRequest</a></td>
+<td>Request payload for running a simulation.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.api.main.RunExperimentResponse">RunExperimentResponse</a></td>
+<td>Response payload with simulation results.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.api.main.RunExperimentRequest" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.api.main.RunExperimentRequest">RunExperimentRequest</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>api.main.RunExperimentRequest()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Request payload for running a simulation.</p>
+</section>
+<section id="tvbo.api.main.RunExperimentResponse" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.api.main.RunExperimentResponse">RunExperimentResponse</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>api.main.RunExperimentResponse()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Response payload with simulation results.</p>
+</section>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.api.main.run_experiment">run_experiment</a></td>
+<td>Run a simulation experiment and return the results.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.api.main.run_experiment" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.api.main.run_experiment">run_experiment</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>api.main.run_experiment(request<span class="op">=</span>Body(...))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Run a simulation experiment and return the results.</p>
+<p>The experiment dict should match the YAML schema and is passed directly to SimulationExperiment for initialization.</p>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->

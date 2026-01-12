@@ -1,9 +1,9 @@
 
 
-# Labyrinth
-Labyrinth
-
-## Equations
+## Labyrinth
+Labyrinth attractor: b = 0 limiting case of Thomas' cyclically symmetric system,
+producing conservative-like intricate winding trajectories through a trigonometric
+vector field.
 
 
 ### State Equations
@@ -18,7 +18,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,7 @@
 
 
-# RulkovMap
-RulkovMap
-
-## Equations
+## RulkovMap
+Two-dimensional phenomenological neuron map capable of spiking and bursting regimes.
 
 
 ### State Equations
@@ -15,7 +13,7 @@ y = y - \beta - \sigma*x
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,7 @@
 
 
-# ModelJansen1995
-ModelJansen1995
-
-## Equations
+## ModelJansen1995
+JR model with canonical parameters; long-range input is injected via a coupling term. Output is pyramidal potential difference.
 
 ### Derived Parameters
 $$
@@ -52,7 +50,7 @@ $$
 v_{pyr} = y_{1} - y_{2}
 $$
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

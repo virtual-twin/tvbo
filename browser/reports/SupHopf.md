@@ -1,11 +1,9 @@
 
 
-# SupHopf
-Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017).
+## SupHopf
+Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017). 
 
 This normal form has a supercritical bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a < 0', the local dynamics has a stable fixed point and the system corresponds to a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in a stable limit cycle and the system switches to an oscillatory state.
-
-## Equations
 
 ### Derived Variables
 $$
@@ -21,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,10 @@
 
 
-# DoublePendulum
-DoublePendulum
-
-## Equations
+## DoublePendulum
+Famous chaotic double pendulum (planar) with two point masses connected by
+massless rods. The ordering of variables is [θ₁, ω₁, θ₂, ω₂]. Shows sensitive
+dependence and rich energy-dependent phase space structure. The auxiliary
+variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equations.
 
 ### Derived Variables
 $$
@@ -28,7 +29,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

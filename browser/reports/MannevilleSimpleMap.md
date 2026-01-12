@@ -1,9 +1,8 @@
 
 
-# MannevilleSimpleMap
-MannevilleSimpleMap
-
-## Equations
+## MannevilleSimpleMap
+Simple intermittency map x_{n+1} = [(1+ε)x_n + (1-ε)x_n^2] mod 1, used to illustrate
+bursts separated by quiescent phases.
 
 
 ### State Equations
@@ -12,7 +11,7 @@ x = \left(x*\left(1 + \epsilon\right) + x^{2}*\left(1 - \epsilon\right)\right) \
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

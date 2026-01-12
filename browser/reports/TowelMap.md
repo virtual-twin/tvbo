@@ -1,9 +1,8 @@
 
 
-# TowelMap
-TowelMap
-
-## Equations
+## TowelMap
+Folded-towel hyperchaotic map with two positive Lyapunov exponents, introduced by
+Rössler. Named for the towel-like appearance of its attractor projections.
 
 
 ### State Equations
@@ -18,7 +17,7 @@ z = b*y + 3.78*z*\left(1 - z\right)
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

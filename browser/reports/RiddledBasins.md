@@ -1,9 +1,9 @@
 
 
-# RiddledBasins
-RiddledBasins
-
-## Equations
+## RiddledBasins
+Time-periodically forced four-dimensional system exhibiting riddled basins of
+attraction: arbitrarily small neighborhoods contain points converging to
+distinct attractors, illustrating extreme sensitivity in basin structure.
 
 
 ### State Equations
@@ -21,7 +21,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

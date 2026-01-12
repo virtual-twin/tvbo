@@ -1,9 +1,10 @@
 
 
-# Halvorsen
-Halvorsen
-
-## Equations
+## Halvorsen
+Smooth three-dimensional chaotic flow with rotational symmetry and robust strange
+attractor arising from quadratic cross-couplings and constant drive. Exhibits
+intertwined scroll-like structure and sensitive dependence useful for benchmarking
+nonlinear state estimation and control strategies.
 
 
 ### State Equations
@@ -18,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

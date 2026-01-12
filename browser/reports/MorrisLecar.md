@@ -1,9 +1,9 @@
 
 
-# MorrisLecar
-MorrisLecar
-
-## Equations
+## MorrisLecar
+Two-variable conductance-based neuron model capturing excitability via fast
+calcium and slower potassium dynamics; a simplification of Hodgkin-Huxley
+retaining rich bifurcation structure.
 
 ### Derived Variables
 $$
@@ -22,7 +22,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

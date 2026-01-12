@@ -1,9 +1,8 @@
 
 
-# PomeauMannevilleMap
-PomeauMannevilleMap
-
-## Equations
+## PomeauMannevilleMap
+Intermittent map with laminar phases and chaotic bursts; here given in the symmetric
+piecewise form commonly used in the literature.
 
 
 ### State Equations
@@ -12,7 +11,7 @@ x = \begin{cases} 3 - 4*x & \text{for}\: x > 0.5 \\-3 - 4*x & \text{for}\: x < -
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

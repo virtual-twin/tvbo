@@ -161,6 +161,69 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Interoperability</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">tvboptim</li>
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/tvboptim/index.html">
+ <span class="dropdown-text">tvboptim Backend</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/tvboptim/JR_tvboptim.html">
+ <span class="dropdown-text">JR Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/tvboptim/RWW_tvboptim.html">
+ <span class="dropdown-text">RWW Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
+ <span class="dropdown-text">EI Tuning</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">PyRates</li>
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/Pyrates/index.html">
+ <span class="dropdown-text">PyRates Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Analysis.html">
+ <span class="dropdown-text">PyRates Analysis</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">
+ <span class="dropdown-text">PyRates Bifurcation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
+ <span class="dropdown-text">Heterogeneous Networks</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">BIDS</li>
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/BIDS/index.html">
+ <span class="dropdown-text">BIDS Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_Export.html">
+ <span class="dropdown-text">BIDS Export</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_comp_modelling.md">
+ <span class="dropdown-text">BIDS Computational Modelling</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">OpenMINDS</li>
+        <li>
+    <a class="dropdown-item" href="../../Interoperability/OpenMINDS.html">
+ <span class="dropdown-text">OpenMINDS Interoperability</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -200,7 +263,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="slot-pipeline" class="level1">
 <h1>Slot: pipeline</h1>
-<p><em>Ordered sequence of processing functions</em></p>
+<p><em>Ordered sequence of Functions. Each Function transforms input → output.</em></p>
 <p>URI: <a href="http://www.thevirtualbrain.org/tvb-o/slot/pipeline">tvbo:slot/pipeline</a> Alias: pipeline</p>
 <!-- no inheritance hierarchy -->
 <section id="applicable-classes" class="level2">
@@ -215,18 +278,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Monitor.html">Monitor</a></td>
-<td>Observation model for monitoring simulation output with optional processing p…</td>
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/DownsamplingModel.html">DownsamplingModel</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/ObservationModel.html">ObservationModel</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
+<td>Unified class for all observation/measurement specifications</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -235,7 +293,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="properties" class="level2">
 <h2 class="anchored" data-anchor-id="properties">Properties</h2>
 <ul>
-<li><p>Range: <a href="../../datamodel/classes/ProcessingStep.html">ProcessingStep</a></p></li>
+<li><p>Range: <a href="../../datamodel/classes/FunctionCall.html">FunctionCall</a></p></li>
 <li><p>Multivalued: True</p></li>
 </ul>
 </section>
@@ -273,14 +331,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="linkml-source">LinkML Source</h2>
 <details>
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> pipeline</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> Ordered sequence of processing functions</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> Ordered sequence of Functions. Each Function transforms input → output.</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">alias</span><span class="kw">:</span><span class="at"> pipeline</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">owner</span><span class="kw">:</span><span class="at"> ObservationModel</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">owner</span><span class="kw">:</span><span class="at"> Observation</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> ObservationModel</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> ProcessingStep</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Observation</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> FunctionCall</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">multivalued</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">inlined_as_list</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

@@ -1,9 +1,9 @@
 
 
-# Ueda
-Ueda
-
-## Equations
+## Ueda
+Classic forced nonlinear oscillator (Ueda system) producing a broken-egg stroboscopic
+attractor under periodic sampling. Among early documented examples of deterministic
+chaos in driven oscillatory systems.
 
 
 ### State Equations
@@ -15,7 +15,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

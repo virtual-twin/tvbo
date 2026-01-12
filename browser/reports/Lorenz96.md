@@ -1,9 +1,10 @@
 
 
-# Lorenz96
-Lorenz96
-
-## Equations
+## Lorenz96
+Ten-dimensional explicit expansion of the Lorenz-96 system: dx_i/dt = (x_{i+1} - x_{i-2}) x_{i-1} - x_i + F
+with cyclic indices modulo N (here N=10 unrolled to avoid symbolic indexing that the
+current parser cannot interpret). Initial conditions follow the Julia reference
+default u0 = range(0; length=N, step=0.1) i.e. x_i(0) = 0.1*i.
 
 
 ### State Equations
@@ -39,7 +40,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

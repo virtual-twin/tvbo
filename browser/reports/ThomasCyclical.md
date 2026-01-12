@@ -1,9 +1,9 @@
 
 
-# ThomasCyclical
-ThomasCyclical
-
-## Equations
+## ThomasCyclical
+Thomas' cyclically symmetric attractor: a smooth three-dimensional system with
+rotational symmetry across cyclic permutations (x,y,z). Reduces to the labyrinth
+system when b = 0. Displays a strange attractor with intertwined scroll-like lobes.
 
 
 ### State Equations
@@ -18,7 +18,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

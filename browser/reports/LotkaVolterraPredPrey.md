@@ -1,9 +1,11 @@
 
 
-# LotkaVolterraPredPrey
-LotkaVolterraPredPrey
-
-## Equations
+## LotkaVolterraPredPrey
+The famous Lotka-Volterra model is a simple ecological model describing the interaction
+between a predator and a prey species (or also parasite and host species). It has been
+used independently in epidemics, ecology, and economics. The prey (x) grows
+exponentially in absence of predators; predation converts prey into predator growth;
+predator (y) declines without prey. Default parameters produce sustained oscillations.
 
 
 ### State Equations
@@ -15,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

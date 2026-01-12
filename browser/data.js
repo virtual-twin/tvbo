@@ -531,12 +531,6 @@ window.searchData = [
       "range": "integer",
       "slot_uri": "atom:atlas/lookupLabel"
     },
-    "slots.name": {
-      "description": "Enter the name of this entity.",
-      "range": "string",
-      "required": true,
-      "slot_uri": "atom:atlas/hasName"
-    },
     "slots.ontologyIdentifier": {
       "description": "Enter the internationalized resource identifier (IRI) to the related ontological terms.",
       "range": "string",
@@ -557,7 +551,7 @@ window.searchData = [
     },
     "type": "schema",
     "file": "schema/SANDS.yaml",
-    "n_slots": 13,
+    "n_slots": 12,
     "n_classes": 5
   },
   {
@@ -576,6 +570,10 @@ window.searchData = [
     ],
     "default_prefix": "tvbo",
     "default_range": "string",
+    "slots.name": {
+      "range": "string",
+      "key": true
+    },
     "slots.time_scale": {
       "range": "string",
       "ifabsent": "ms"
@@ -637,11 +635,12 @@ window.searchData = [
     "slots.parameters": {
       "range": "Parameter",
       "multivalued": true,
-      "inlined": false
+      "inlined": true
     },
     "slots.equation": {
       "slot_uri": "tvbo:Equation",
-      "range": "Equation"
+      "range": "Equation",
+      "inlined": true
     },
     "slots.unit": {
       "range": "string"
@@ -667,18 +666,6 @@ window.searchData = [
         "IEEG": {
           "description": "Intracranial Electroencephalography."
         }
-      }
-    },
-    "enums.OperationType": {
-      "permissible_values": {
-        "select": {},
-        "temporal_average": {},
-        "subsample": {},
-        "projection": {},
-        "reference_subtract": {},
-        "convolution": {},
-        "node_coupling": {},
-        "custom_transform": {}
       }
     },
     "enums.SystemType": {
@@ -737,6 +724,26 @@ window.searchData = [
         "pink": null
       }
     },
+    "enums.AggregationType": {
+      "description": "How to aggregate time series data",
+      "permissible_values": {
+        "mean": {
+          "description": "Average over time"
+        },
+        "last": {
+          "description": "Last value in window"
+        },
+        "first": {
+          "description": "First value in window"
+        },
+        "window": {
+          "description": "Sliding window aggregation"
+        },
+        "none": {
+          "description": "No aggregation"
+        }
+      }
+    },
     "enums.RequirementRole": {
       "permissible_values": {
         "engine": {
@@ -758,24 +765,82 @@ window.searchData = [
     },
     "enums.EnvironmentType": {
       "permissible_values": {
-        "conda": {},
-        "venv": {},
-        "docker": {},
-        "singularity": {},
-        "system": {},
-        "other": {}
+        "conda": {}
+      }
+    },
+    "enums.DimensionType": {
+      "description": "Dimensions along which operations can be applied",
+      "permissible_values": {
+        "time": {
+          "description": "Temporal dimension"
+        },
+        "state": {
+          "description": "State variable dimension"
+        },
+        "node": {
+          "description": "Network node dimension (general graph term)"
+        },
+        "region": {
+          "description": "Spatial/regional dimension (alias for node in brain networks)"
+        },
+        "mode": {
+          "description": "Mode dimension (e.g., coupling modes)"
+        },
+        "sample": {
+          "description": "Sample/trial/realization dimension"
+        },
+        "batch": {
+          "description": "Batch dimension (for parallel processing)"
+        },
+        "frequency": {
+          "description": "Frequency dimension (spectral analysis)"
+        }
+      }
+    },
+    "enums.ReductionType": {
+      "description": "Operations for reducing/aggregating values across dimensions",
+      "permissible_values": {
+        "mean": {
+          "description": "Arithmetic mean"
+        },
+        "sum": {
+          "description": "Sum of values"
+        },
+        "max": {
+          "description": "Maximum value"
+        },
+        "min": {
+          "description": "Minimum value"
+        },
+        "none": {
+          "description": "No reduction (return per-element values)"
+        }
       }
     },
     "classes.Range": {
+      "description": "Specifies a range for array generation, parameter bounds, or grid exploration.",
       "attributes": {
         "lo": {
-          "range": "float"
+          "range": "string",
+          "description": "Lower bound or starting value. Can be a number or argument name.",
+          "ifabsent": "string(0)"
         },
         "hi": {
-          "range": "float"
+          "range": "string",
+          "description": "Upper bound or stopping value. Can be a number or argument name."
         },
         "step": {
-          "range": "float"
+          "range": "string",
+          "description": "Step size. Can be: number, argument name, or expression."
+        },
+        "n": {
+          "range": "integer",
+          "description": "Number of points (alternative to step for grid exploration)."
+        },
+        "log_scale": {
+          "range": "boolean",
+          "ifabsent": false,
+          "description": "Whether to use logarithmic spacing."
         }
       }
     },
@@ -783,7 +848,8 @@ window.searchData = [
       "slots": [
         "label",
         "definition",
-        "parameters"
+        "parameters",
+        "description"
       ],
       "attributes": {
         "lefthandside": {
@@ -797,11 +863,13 @@ window.searchData = [
         "conditionals": {
           "description": "Conditional logic for piecewise equations.",
           "range": "ConditionalBlock",
-          "multivalued": true
+          "multivalued": true,
+          "inlined": true
         },
         "engine": {
           "range": "SoftwareRequirement",
-          "description": "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software')."
+          "description": "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software').",
+          "inlined": true
         },
         "pycode": {
           "range": "string",
@@ -879,7 +947,39 @@ window.searchData = [
         },
         "atlas": {
           "required": true,
-          "range": "BrainAtlas"
+          "range": "BrainAtlas",
+          "inlined": true
+        }
+      }
+    },
+    "classes.Tractogram": {
+      "class_uri": "tvbo:Tractogram",
+      "description": "Reference to tractography/diffusion MRI data used to derive structural connectivity",
+      "slots": [
+        "name",
+        "label",
+        "description"
+      ],
+      "attributes": {
+        "data_source": {
+          "range": "string",
+          "description": "Path or URI to the tractography data file"
+        },
+        "number_of_subjects": {
+          "range": "integer",
+          "description": "Number of subjects in the tractography dataset"
+        },
+        "acquisition": {
+          "range": "string",
+          "description": "Acquisition protocol or scanner information"
+        },
+        "processing_pipeline": {
+          "range": "string",
+          "description": "Processing pipeline used to generate the tractography"
+        },
+        "reference": {
+          "range": "string",
+          "description": "Publication or DOI reference for this tractography dataset"
         }
       }
     },
@@ -912,210 +1012,283 @@ window.searchData = [
         }
       }
     },
-    "classes.Connectome": {
-      "class_uri": "tvbo:Connectivity",
-      "aliases": [
-        "Graph"
-      ],
-      "attributes": {
-        "number_of_regions": {
-          "range": "integer",
-          "ifabsent": "integer(1)"
-        },
-        "number_of_nodes": {
-          "range": "integer",
-          "ifabsent": "integer(1)"
-        },
-        "parcellation": {
-          "range": "Parcellation"
-        },
-        "tractogram": {
-          "range": "string"
-        },
-        "weights": {
-          "range": "Matrix"
-        },
-        "lengths": {
-          "range": "Matrix"
-        },
-        "normalization": {
-          "range": "Equation"
-        },
-        "conduction_speed": {
-          "range": "Parameter"
-        },
-        "node_labels": {
-          "multivalued": true,
-          "range": "string"
-        }
-      }
-    },
     "classes.Network": {
-      "description": "Complete network specification combining dynamics, graph topology, and coupling configurations",
+      "class_uri": "tvbo:Network",
+      "aliases": [
+        "Connectome",
+        "Graph",
+        "Connectivity"
+      ],
+      "description": "Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility).",
       "slots": [
         "label",
         "description"
       ],
       "attributes": {
-        "dynamics": {
-          "range": "Dynamics",
-          "description": "Homogeneous dynamics: single Dynamics model applied to all nodes"
-        },
-        "node_dynamics": {
+        "nodes": {
           "multivalued": true,
-          "range": "Dynamics",
-          "description": "Heterogeneous dynamics: list of Dynamics models, one per node or mapped by node_dynamics_mapping"
+          "range": "Node",
+          "inlined_as_list": true,
+          "description": "List of nodes with individual dynamics (optional, for heterogeneous networks)"
         },
-        "node_dynamics_mapping": {
+        "edges": {
           "multivalued": true,
-          "range": "integer",
-          "description": "Maps each node to a Dynamics model index in node_dynamics list (if heterogeneous)"
+          "range": "Edge",
+          "inlined_as_list": true,
+          "description": "List of directed edges with coupling references (optional, for explicit edge definition)"
         },
-        "graph": {
-          "range": "Connectome",
-          "required": true,
-          "description": "Network topology with weights, delays, and connectivity structure"
-        },
-        "couplings": {
+        "coupling": {
           "multivalued": true,
           "range": "Coupling",
-          "description": "Named coupling configurations matching dynamics.coupling_inputs (e.g., instant, delayed)"
+          "description": "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')",
+          "inlined": true
+        },
+        "number_of_regions": {
+          "range": "integer",
+          "ifabsent": "integer(1)",
+          "description": "Number of regions (derived from nodes if not set)"
+        },
+        "number_of_nodes": {
+          "range": "integer",
+          "ifabsent": "integer(1)",
+          "description": "Number of nodes in the network (derived from nodes if not set)"
+        },
+        "parcellation": {
+          "range": "Parcellation",
+          "description": "Brain parcellation/atlas reference",
+          "inlined": true
+        },
+        "tractogram": {
+          "range": "string",
+          "description": "Reference to tractography data"
+        },
+        "normalization": {
+          "range": "Equation",
+          "description": "Normalization equation for connectivity weights",
+          "inlined": true
+        },
+        "global_coupling_strength": {
+          "range": "Parameter",
+          "description": "Global scaling factor for all coupling weights",
+          "inlined": true
+        },
+        "conduction_speed": {
+          "range": "Parameter",
+          "description": "Conduction speed for computing delays from distances",
+          "inlined": true
+        },
+        "bids_dir": {
+          "range": "string",
+          "description": "Path to BEP017-compliant BIDS directory for loading connectivity matrices"
+        },
+        "structural_measures": {
+          "range": "string",
+          "multivalued": true,
+          "description": "BEP017 measure names for structural connectivity (e.g., streamlineCount, tractLength)"
+        },
+        "observational_measures": {
+          "range": "string",
+          "multivalued": true,
+          "description": "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
+        },
+        "distance_unit": {
+          "range": "string",
+          "description": "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')",
+          "ifabsent": "string(mm)"
+        },
+        "time_unit": {
+          "range": "string",
+          "description": "Default time unit for the network (e.g., 'ms', 's')",
+          "ifabsent": "string(ms)"
+        },
+        "edge_matrix_files": {
+          "range": "File",
+          "multivalued": true
         }
       }
     },
-    "classes.ObservationModel": {
-      "class_uri": "tvbo:ObservationModel",
+    "classes.File": {
+      "slots": [
+        "name",
+        "description"
+      ],
+      "attributes": {
+        "type": {
+          "range": "string"
+        },
+        "path": {
+          "range": "string"
+        },
+        "extension": {
+          "range": "string"
+        }
+      }
+    },
+    "classes.Node": {
+      "class_uri": "tvbo:Node",
+      "description": "A node in a network with its own dynamics and properties",
+      "slots": [
+        "label",
+        "description"
+      ],
+      "attributes": {
+        "id": {
+          "range": "integer",
+          "required": true,
+          "description": "Unique node identifier"
+        },
+        "dynamics": {
+          "range": "Dynamics",
+          "required": false,
+          "description": "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.",
+          "inlined": false
+        },
+        "position": {
+          "range": "Coordinate",
+          "description": "Spatial coordinates (x, y, z) of the node",
+          "inlined": true
+        },
+        "region": {
+          "range": "string",
+          "description": "Brain region or anatomical label"
+        },
+        "parameters": {
+          "multivalued": true,
+          "range": "Parameter",
+          "description": "Node-specific parameter overrides"
+        },
+        "initial_state": {
+          "multivalued": true,
+          "range": "float",
+          "description": "Initial values for state variables"
+        }
+      }
+    },
+    "classes.Edge": {
+      "class_uri": "tvbo:Edge",
+      "description": "A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.",
+      "slots": [
+        "label",
+        "description",
+        "parameters"
+      ],
+      "attributes": {
+        "source": {
+          "range": "integer",
+          "required": true,
+          "description": "Source node ID"
+        },
+        "target": {
+          "range": "integer",
+          "required": true,
+          "description": "Target node ID"
+        },
+        "source_var": {
+          "range": "string",
+          "description": "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+        },
+        "target_var": {
+          "range": "string",
+          "description": "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
+        },
+        "coupling": {
+          "range": "Coupling",
+          "required": false,
+          "description": "Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.",
+          "inlined": false
+        },
+        "directed": {
+          "range": "boolean",
+          "ifabsent": false,
+          "description": "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+        }
+      }
+    },
+    "classes.Observation": {
+      "description": "Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input → output flow.",
+      "class_uri": "tvbo:Observation",
       "slots": [
         "name",
         "acronym",
+        "label",
         "description",
         "equation",
         "parameters",
-        "environment"
+        "environment",
+        "time_scale"
       ],
       "attributes": {
-        "transformation": {
-          "range": "Function"
-        },
-        "pipeline": {
-          "description": "Ordered sequence of processing functions",
-          "multivalued": true,
-          "inlined_as_list": true,
-          "range": "ProcessingStep"
-        },
-        "data_injections": {
-          "description": "External data added to the pipeline (e.g., timepoints, kernels)",
-          "multivalued": true,
-          "range": "DataInjection"
-        },
-        "argument_mappings": {
-          "description": "How inputs/outputs connect between pipeline steps",
-          "multivalued": true,
-          "range": "ArgumentMapping"
-        },
-        "derivatives": {
-          "description": "Side computations (e.g., functional connectivity)",
-          "multivalued": true,
-          "range": "DerivedVariable"
-        }
-      }
-    },
-    "classes.ProcessingStep": {
-      "description": "A single processing step in an observation model pipeline or standalone operation",
-      "attributes": {
-        "order": {
-          "range": "integer",
-          "description": "Execution order in the pipeline (optional for standalone operations)"
-        },
-        "function": {
-          "range": "Function",
-          "required": true,
-          "description": "Function or transformation to apply",
-          "alias": "transformation"
-        },
-        "operation_type": {
-          "description": "Kind of operation to perform (e.g., subsample, projection, convolution).",
-          "range": "OperationType",
-          "alias": "type"
-        },
-        "input_mapping": {
-          "description": "Maps function arguments to pipeline data/outputs",
-          "multivalued": true,
-          "range": "ArgumentMapping"
-        },
-        "output_alias": {
-          "description": "Optional name for this step's output (default: function name)",
-          "range": "string"
-        },
-        "apply_on_dimension": {
-          "description": "Which dimension to apply function on (e.g., 'time', 'space')",
-          "range": "string"
-        },
-        "ensure_shape": {
-          "description": "Ensure output has specific dimensionality (e.g., '4d')",
-          "range": "string"
-        },
-        "variables_of_interest": {
-          "description": "Optional per-step variable selection",
-          "multivalued": true,
-          "range": "StateVariable"
-        }
-      }
-    },
-    "classes.DataInjection": {
-      "description": "External data injected into the observation pipeline",
-      "attributes": {
-        "name": {
-          "range": "string",
-          "required": true
-        },
-        "data_source": {
-          "description": "Source of the data (file, array, generated)",
-          "range": "string"
-        },
-        "values": {
-          "description": "Actual data values (for small arrays)",
-          "multivalued": true,
-          "range": "float",
-          "array": {}
-        },
-        "shape": {
-          "description": "Shape of the injected data",
-          "multivalued": true,
-          "range": "integer"
-        },
-        "generation_function": {
-          "description": "Function to generate the data (e.g., np.arange)",
-          "range": "Function"
-        }
-      }
-    },
-    "classes.ArgumentMapping": {
-      "description": "Maps function arguments to pipeline inputs/outputs",
-      "attributes": {
-        "function_argument": {
-          "range": "string",
-          "required": true,
-          "description": "Name of the function parameter"
-        },
         "source": {
-          "range": "string",
-          "required": true,
-          "description": "Where the data comes from (e.g., 'Input', 'subsample', 'HRF')"
+          "range": "StateVariable",
+          "description": "State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.",
+          "inlined": false
         },
-        "constant_value": {
-          "description": "Use a constant value instead of pipeline data",
-          "range": "string"
-        }
-      }
-    },
-    "classes.DownsamplingModel": {
-      "is_a": "ObservationModel",
-      "class_uri": "tvbo:DownsamplingModel",
-      "attributes": {
         "period": {
           "range": "float",
-          "ifabsent": "float(0.9765625)"
+          "description": "Sampling period for monitors (ms). For BOLD: TR in ms."
+        },
+        "downsample_period": {
+          "range": "float",
+          "description": "Intermediate downsampling period (ms). For BOLD: typically matches dt."
+        },
+        "voi": {
+          "range": "integer",
+          "description": "Variable of interest index (which state variable to monitor). Default: 0."
+        },
+        "imaging_modality": {
+          "range": "ImagingModality",
+          "description": "Type of imaging modality (BOLD, EEG, MEG, etc.)"
+        },
+        "warmup_source": {
+          "range": "string",
+          "description": "Reference to transient simulation result for history initialization (e.g., 'result_init')."
+        },
+        "data_source": {
+          "range": "DataSource",
+          "inlined": true,
+          "description": "Load data from external source (file, database, API). When specified, this observation represents empirical/external data rather than simulated data. Enables unified treatment of all data."
+        },
+        "skip_t": {
+          "range": "integer",
+          "description": "Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs."
+        },
+        "tail_samples": {
+          "range": "integer",
+          "description": "Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:]."
+        },
+        "aggregation": {
+          "range": "AggregationType",
+          "description": "How to aggregate over time"
+        },
+        "window_size": {
+          "range": "integer",
+          "description": "Number of samples for windowed aggregation"
+        },
+        "pipeline": {
+          "description": "Ordered sequence of Functions. Each Function transforms input → output.",
+          "multivalued": true,
+          "inlined_as_list": true,
+          "range": "FunctionCall"
+        },
+        "class_reference": {
+          "description": "Direct class reference (alternative to pipeline). Use for external library classes like tvboptim.Bold, custom monitors, or any callable class. The class is instantiated with constructor_args and called with call_args. Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period, value: 1000.0}]}",
+          "range": "ClassReference",
+          "inlined": true
+        }
+      }
+    },
+    "classes.DerivedObservation": {
+      "description": "Observation derived from one or more other observations. Examples: - fc (from bold) - single source transformation - fc_corr (from fc and fc_target) - multi-source comparison Unlike regular Observations, these don't generate monitor classes but are computed from existing observation values.",
+      "is_a": "Observation",
+      "class_uri": "tvbo:DerivedObservation",
+      "attributes": {
+        "source_observations": {
+          "range": "Observation",
+          "multivalued": true,
+          "inlined": false,
+          "required": true,
+          "minimum_cardinality": 1,
+          "description": "One or more observations to derive from. For transformations (e.g., fc from bold), use single source. For comparisons (e.g., fc_corr from fc and fc_target), use multiple sources. Order may matter for asymmetric operations."
         }
       }
     },
@@ -1148,33 +1321,39 @@ window.searchData = [
       "attributes": {
         "derived_parameters": {
           "multivalued": true,
-          "range": "DerivedParameter"
+          "range": "DerivedParameter",
+          "inlined": true
         },
         "derived_variables": {
           "multivalued": true,
-          "range": "DerivedVariable"
+          "range": "DerivedVariable",
+          "inlined": true
         },
         "coupling_terms": {
           "multivalued": true,
-          "range": "Parameter"
+          "range": "Parameter",
+          "inlined": true
         },
         "coupling_inputs": {
           "multivalued": true,
-          "range": "CouplingInput"
+          "range": "CouplingInput",
+          "inlined": true
         },
         "state_variables": {
           "multivalued": true,
-          "range": "StateVariable"
+          "range": "StateVariable",
+          "inlined": true
         },
         "modified": {
           "range": "boolean"
         },
-        "output_transforms": {
+        "output": {
           "multivalued": true,
-          "range": "DerivedVariable"
+          "range": "string",
+          "description": "Output variable names to include in simulation results. References to state_variables or derived_variables by name."
         },
         "derived_from_model": {
-          "range": "NeuralMassModel"
+          "range": "Dynamics"
         },
         "number_of_modes": {
           "range": "integer",
@@ -1185,29 +1364,22 @@ window.searchData = [
         },
         "functions": {
           "multivalued": true,
-          "range": "Function"
+          "range": "Function",
+          "inlined": true
         },
         "stimulus": {
-          "range": "Stimulus"
+          "range": "Stimulus",
+          "inlined": true
         },
         "modes": {
           "multivalued": true,
-          "range": "NeuralMassModel"
+          "range": "Dynamics",
+          "inlined": true
         },
         "system_type": {
           "range": "SystemType"
         }
       }
-    },
-    "classes.NeuralMassModel": {
-      "is_a": "Dynamics",
-      "class_uri": "tvbo:NeuralMassModel",
-      "comments": [
-        "Deprecated in favor of Dynamics."
-      ],
-      "aliases": [
-        "NeuralMassModel"
-      ]
     },
     "classes.StateVariable": {
       "class_uri": "tvbo:StateVariable",
@@ -1231,20 +1403,23 @@ window.searchData = [
           "ifabsent": false
         },
         "noise": {
-          "range": "Noise"
+          "range": "Noise",
+          "inlined": true
         },
         "stimulation_variable": {
           "range": "boolean"
         },
         "boundaries": {
-          "range": "Range"
+          "range": "Range",
+          "inlined": true
         },
         "initial_value": {
           "range": "float",
           "ifabsent": "float(0.1)"
         },
         "history": {
-          "range": "TimeSeries"
+          "range": "TimeSeries",
+          "inlined": true
         }
       }
     },
@@ -1257,10 +1432,12 @@ window.searchData = [
       "attributes": {
         "dependencies": {
           "multivalued": true,
-          "range": "Parameter"
+          "range": "Parameter",
+          "inlined": true
         },
         "correlation": {
-          "range": "Matrix"
+          "range": "Matrix",
+          "inlined": true
         }
       }
     },
@@ -1310,11 +1487,44 @@ window.searchData = [
           "range": "integer",
           "ifabsent": "integer(1)",
           "description": "Dimensionality of the coupling input (number of coupled values)"
+        },
+        "keys": {
+          "multivalued": true,
+          "range": "string",
+          "description": "Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names."
+        }
+      }
+    },
+    "classes.Argument": {
+      "class_uri": "tvbo:Argument",
+      "description": "A function argument with explicit value specification. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).",
+      "slots": [
+        "name",
+        "description"
+      ],
+      "attributes": {
+        "value": {
+          "description": "Argument value. Can be: - Literal: 1.0, \"string\", etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)",
+          "any_of": [
+            {
+              "range": "float"
+            },
+            {
+              "range": "integer"
+            },
+            {
+              "range": "string"
+            }
+          ]
+        },
+        "unit": {
+          "range": "string"
         }
       }
     },
     "classes.Function": {
       "class_uri": "tvbo:Function",
+      "description": "A function with explicit input → transformation → output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.",
       "slots": [
         "name",
         "acronym",
@@ -1325,24 +1535,113 @@ window.searchData = [
         "requirements"
       ],
       "attributes": {
+        "input": {
+          "description": "Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.",
+          "range": "Function",
+          "inlined": false
+        },
+        "output": {
+          "description": "Name for this function's output (referenced by subsequent functions)",
+          "range": "string"
+        },
         "iri": {
           "range": "string"
         },
-        "definition": {
-          "range": "string"
-        },
         "arguments": {
+          "description": "Parameters/arguments for the function",
           "multivalued": true,
-          "range": "Parameter"
+          "range": "Argument",
+          "inlined_as_list": true
         },
-        "output": {
-          "range": "Equation"
+        "output_equation": {
+          "description": "Output transformation equation (if equation-based)",
+          "range": "Equation",
+          "inlined": true
         },
         "source_code": {
           "range": "string"
         },
         "callable": {
-          "range": "Callable"
+          "description": "Software implementation reference (if software-based)",
+          "range": "Callable",
+          "inlined": true
+        },
+        "apply_on_dimension": {
+          "description": "Which dimension to apply the transformation on",
+          "range": "DimensionType"
+        },
+        "aggregate": {
+          "description": "How to aggregate the result across dimensions. E.g., aggregate.over=node computes per-row (per-node) with keepdims. The type field controls whether to reduce (mean/sum) or keep dimensions (none).",
+          "range": "Aggregation",
+          "inlined": true
+        },
+        "time_range": {
+          "description": "Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point.",
+          "range": "Range",
+          "inlined": true
+        }
+      }
+    },
+    "classes.Aggregation": {
+      "description": "Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with reduction.",
+      "attributes": {
+        "over": {
+          "description": "Dimension to aggregate over (e.g., node, time, state)",
+          "range": "DimensionType"
+        },
+        "type": {
+          "description": "Aggregation operation (mean, sum, max, min, none)",
+          "range": "ReductionType",
+          "ifabsent": "string(mean)"
+        }
+      }
+    },
+    "classes.LossFunction": {
+      "is_a": "Function",
+      "description": "A loss function for optimization with optional aggregation. Extends Function with aggregation specification for per-element losses.",
+      "attributes": {
+        "aggregate": {
+          "description": "How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.",
+          "range": "Aggregation",
+          "inlined": true
+        }
+      }
+    },
+    "classes.FunctionCall": {
+      "description": "Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions. OR inline a class_call for classes that need instantiation then calling. Use arguments to specify inputs by name (referencing previous outputs or values).",
+      "attributes": {
+        "function": {
+          "description": "Reference to a defined Function (by name)",
+          "range": "Function",
+          "inlined": false
+        },
+        "callable": {
+          "description": "Direct callable specification (alternative to function reference)",
+          "range": "Callable",
+          "inlined": true
+        },
+        "class_call": {
+          "description": "Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim.",
+          "range": "ClassReference",
+          "inlined": true
+        },
+        "output": {
+          "description": "Name for this step's output (referenced by subsequent functions)",
+          "range": "string"
+        },
+        "apply_on_dimension": {
+          "description": "Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node.",
+          "range": "DimensionType"
+        },
+        "aggregate": {
+          "description": "How to aggregate the result across dimensions. Example: aggregate.over=node, aggregate.type=mean applies function per node, then averages. Used in loss functions.",
+          "range": "Aggregation",
+          "inlined": true
+        },
+        "arguments": {
+          "range": "Argument",
+          "multivalued": true,
+          "inlined_as_list": true
         }
       }
     },
@@ -1355,11 +1654,31 @@ window.searchData = [
         "module": {
           "range": "string"
         },
-        "qualname": {
-          "range": "string"
-        },
         "software": {
-          "range": "SoftwareRequirement"
+          "range": "SoftwareRequirement",
+          "inlined": true
+        }
+      }
+    },
+    "classes.ClassReference": {
+      "description": "Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold, custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable pattern: works for tvboptim, TVB, or any Python class.",
+      "is_a": "Callable",
+      "attributes": {
+        "constructor_args": {
+          "description": "Arguments passed to __init__ when instantiating the class. Example: period=1000.0, downsample_period=4.0 for Bold monitor.",
+          "multivalued": true,
+          "range": "Argument",
+          "inlined_as_list": true
+        },
+        "call_args": {
+          "description": "Arguments passed when calling the instance (__call__). Usually the input data from simulation result. Example: result (simulation output array).",
+          "multivalued": true,
+          "range": "Argument",
+          "inlined_as_list": true
+        },
+        "warmup_source": {
+          "description": "Reference to transient simulation result for history initialization. Some monitors (e.g., Bold) require history from warmup simulation. Value should reference a simulation result name (e.g., 'result_init').",
+          "range": "string"
         }
       }
     },
@@ -1369,7 +1688,8 @@ window.searchData = [
           "range": "string"
         },
         "equation": {
-          "range": "Equation"
+          "range": "Equation",
+          "inlined": true
         }
       }
     },
@@ -1393,11 +1713,13 @@ window.searchData = [
         },
         "cases": {
           "multivalued": true,
-          "range": "Case"
+          "range": "Case",
+          "inlined": true
         }
       },
       "slots": [
         "name",
+        "label",
         "symbol",
         "description",
         "equation",
@@ -1434,15 +1756,18 @@ window.searchData = [
           "ifabsent": "integer(42)"
         },
         "random_state": {
-          "range": "RandomStream"
+          "range": "RandomStream",
+          "inlined": true
         },
         "intensity": {
           "description": "Optional scalar or vector intensity parameter for noise.",
-          "range": "Parameter"
+          "range": "Parameter",
+          "inlined": true
         },
         "function": {
           "description": "Optional functional form of the noise (callable specification).",
-          "range": "Function"
+          "range": "Function",
+          "inlined": true
         },
         "pycode": {
           "description": "Inline Python code representation of the noise process.",
@@ -1451,7 +1776,8 @@ window.searchData = [
         "targets": {
           "description": "State variables this noise applies to; if omitted, applies globally.",
           "multivalued": true,
-          "range": "StateVariable"
+          "range": "StateVariable",
+          "inlined": true
         }
       }
     },
@@ -1463,34 +1789,321 @@ window.searchData = [
         "dataLocation"
       ]
     },
-    "classes.CostFunction": {
+    "classes.DataSource": {
+      "description": "Specification for loading external/empirical data.",
       "slots": [
+        "name",
         "label",
-        "equation",
-        "parameters"
-      ]
+        "description"
+      ],
+      "attributes": {
+        "path": {
+          "range": "string",
+          "description": "File path or URI to the data"
+        },
+        "loader": {
+          "range": "Callable",
+          "inlined": true,
+          "description": "Callable that loads the data (e.g., load_functional_connectivity)"
+        },
+        "format": {
+          "range": "string",
+          "description": "Data format: 'npy', 'mat', 'csv', 'nifti', etc."
+        },
+        "key": {
+          "range": "string",
+          "description": "Key/variable name within the file (for .mat, .npz, etc.)"
+        },
+        "preprocessing": {
+          "range": "Function",
+          "inlined": true,
+          "description": "Optional preprocessing to apply after loading"
+        }
+      }
     },
-    "classes.FittingTarget": {
+    "classes.OptimizationStage": {
+      "description": "A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms.",
       "slots": [
+        "name",
         "label",
-        "equation",
-        "symbol",
-        "definition",
-        "parameters"
-      ]
+        "description"
+      ],
+      "attributes": {
+        "free_parameters": {
+          "multivalued": true,
+          "range": "Parameter",
+          "inlined": false,
+          "description": "Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous."
+        },
+        "algorithm": {
+          "range": "string",
+          "ifabsent": "string(adam)",
+          "description": "Optimizer for this stage: 'adam', 'adamw', 'sgd', etc."
+        },
+        "learning_rate": {
+          "range": "float",
+          "ifabsent": "float(0.001)"
+        },
+        "max_iterations": {
+          "range": "integer",
+          "ifabsent": "integer(100)"
+        },
+        "hyperparameters": {
+          "multivalued": true,
+          "range": "Parameter",
+          "inlined": true,
+          "inlined_as_list": true,
+          "description": "Stage-specific hyperparameters (e.g., b2=0.9999 for adam)"
+        },
+        "freeze_parameters": {
+          "multivalued": true,
+          "range": "Parameter",
+          "inlined": false,
+          "description": "Parameters from previous stages to freeze (keep at optimized value but not update)"
+        },
+        "warmup_from": {
+          "range": "OptimizationStage",
+          "inlined": false,
+          "description": "Previous stage to initialize from. Final values from that stage become initial values for this stage."
+        }
+      }
     },
-    "classes.ModelFitting": {
+    "classes.Optimization": {
+      "is_a": "OptimizationStage",
+      "description": "Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage workflows, use 'stages' (ignores inherited single-stage fields). Loss equation references observations directly by name.",
+      "attributes": {
+        "execution": {
+          "range": "ExecutionConfig",
+          "inlined": true,
+          "description": "Per-optimization execution configuration (overrides experiment-level defaults). Useful for setting random_seed, precision, or hardware for optimization phase."
+        },
+        "integration": {
+          "range": "Integrator",
+          "inlined": true,
+          "description": "Integration settings for optimization simulations (overrides experiment defaults). If specified, creates a fresh model_fn and state with prepare() before optimization. Can specify different duration, step_size, method than the experiment. If not specified, uses experiment-level integration settings."
+        },
+        "loss": {
+          "range": "FunctionCall",
+          "inlined": true,
+          "description": "Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)"
+        },
+        "stages": {
+          "multivalued": true,
+          "range": "OptimizationStage",
+          "inlined": true,
+          "inlined_as_list": true,
+          "description": "Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. When defined, inherited single-stage fields are ignored."
+        },
+        "depends_on": {
+          "range": "Algorithm",
+          "inlined": false,
+          "description": "Algorithm to use as starting point for optimization. If specified, optimization starts from algorithm's result state. If not specified, optimization starts from initial simulation state."
+        }
+      }
+    },
+    "classes.Exploration": {
+      "description": "Parameter space exploration (grid search, sweep).",
+      "slots": [
+        "name",
+        "label",
+        "description"
+      ],
+      "attributes": {
+        "execution": {
+          "range": "ExecutionConfig",
+          "inlined": true,
+          "description": "Per-exploration execution configuration (overrides experiment-level defaults). Useful for setting random_seed, n_workers for parallel grid search."
+        },
+        "parameters": {
+          "multivalued": true,
+          "range": "Parameter",
+          "inlined": true,
+          "required": true,
+          "description": "Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)"
+        },
+        "mode": {
+          "range": "string",
+          "ifabsent": "string(product)",
+          "description": "Combination mode: 'product' (full grid), 'zip' (paired)"
+        },
+        "observable": {
+          "range": "FunctionCall",
+          "inlined": true,
+          "description": "Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall."
+        },
+        "n_parallel": {
+          "range": "integer",
+          "ifabsent": "integer(1)",
+          "description": "Parallel evaluations"
+        }
+      }
+    },
+    "classes.UpdateRule": {
+      "description": "Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.",
+      "slots": [
+        "name",
+        "description"
+      ],
+      "attributes": {
+        "target_parameter": {
+          "range": "Parameter",
+          "inlined": true,
+          "required": true,
+          "description": "The parameter to update (e.g., J_i, wLRE)"
+        },
+        "equation": {
+          "range": "Equation",
+          "inlined": true,
+          "required": true,
+          "description": "Update equation (e.g., 'J_i + eta * delta'). Can use functions defined in experiment.functions section."
+        },
+        "bounds": {
+          "range": "Range",
+          "inlined": true,
+          "description": "Constraints on parameter values after update"
+        },
+        "warmup": {
+          "range": "boolean",
+          "description": "Whether to apply learning rate warmup to this update rule. When true, the learning rate (eta) is scaled by (i+1)/n_iterations."
+        },
+        "requires": {
+          "multivalued": true,
+          "range": "Observation",
+          "description": "Observables required by this update rule"
+        }
+      }
+    },
+    "classes.AlgorithmInclude": {
+      "description": "Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different hyperparameter values.",
+      "attributes": {
+        "algorithm": {
+          "range": "Algorithm",
+          "inlined": false,
+          "required": true,
+          "description": "Reference to the algorithm to include"
+        },
+        "arguments": {
+          "multivalued": true,
+          "range": "Parameter",
+          "inlined": true,
+          "description": "Override hyperparameter values for the included algorithm. Maps parameter names to new values."
+        }
+      }
+    },
+    "classes.TuningObjective": {
+      "description": "Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).",
       "slots": [
         "label",
         "description"
       ],
       "attributes": {
-        "targets": {
-          "multivalued": true,
-          "range": "FittingTarget"
+        "type": {
+          "range": "string",
+          "description": "Type of objective: 'activity_target', 'fc_matching', 'custom'"
         },
-        "cost_function": {
-          "range": "CostFunction"
+        "target_variable": {
+          "range": "StateVariable",
+          "inlined": false,
+          "description": "State variable for activity targets (e.g., S_e)"
+        },
+        "target_value": {
+          "range": "float",
+          "description": "Target value for activity objectives"
+        },
+        "target_data": {
+          "range": "Observation",
+          "inlined": false,
+          "description": "Reference to empirical data observation for matching objectives"
+        },
+        "metric": {
+          "range": "Equation",
+          "inlined": true,
+          "description": "Metric equation for matching (e.g., correlation, rmse)"
+        }
+      }
+    },
+    "classes.Algorithm": {
+      "description": "A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observations, and hyperparameters.",
+      "slots": [
+        "name",
+        "description"
+      ],
+      "attributes": {
+        "execution": {
+          "range": "ExecutionConfig",
+          "inlined": true,
+          "description": "Per-algorithm execution configuration (overrides experiment-level defaults). Useful for setting random_seed per algorithm to ensure reproducibility."
+        },
+        "type": {
+          "range": "string",
+          "description": "Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'"
+        },
+        "includes": {
+          "multivalued": true,
+          "range": "AlgorithmInclude",
+          "inlined": true,
+          "description": "Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]"
+        },
+        "objective": {
+          "range": "TuningObjective",
+          "inlined": true,
+          "description": "What the algorithm optimizes for"
+        },
+        "observations": {
+          "multivalued": true,
+          "range": "Observation",
+          "inlined": false,
+          "description": "References to observations defined in the observations section. Includes both simulated observations and external data (via data_source)."
+        },
+        "update_rules": {
+          "multivalued": true,
+          "range": "UpdateRule",
+          "inlined": true,
+          "required": false,
+          "description": "How parameters are updated each iteration. When using 'includes', update_rules are inherited from included algorithms."
+        },
+        "hyperparameters": {
+          "multivalued": true,
+          "range": "Parameter",
+          "inlined": true,
+          "description": "Additional algorithm-specific parameters"
+        },
+        "learning_rate": {
+          "range": "float",
+          "description": "Learning rate (eta) for the tuning algorithm"
+        },
+        "learning_rate_warmup": {
+          "range": "boolean",
+          "ifabsent": "boolean(false)",
+          "description": "Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations"
+        },
+        "n_iterations": {
+          "range": "integer",
+          "description": "Number of iterations to run"
+        },
+        "learning_rate_schedule": {
+          "range": "string",
+          "description": "Learning rate schedule: 'constant', 'linear', 'exponential'"
+        },
+        "simulation_period": {
+          "range": "float",
+          "description": "Duration of each simulation step (e.g., one BOLD TR)"
+        },
+        "apply_every": {
+          "range": "integer",
+          "ifabsent": "integer(1)",
+          "description": "Apply update every N iterations"
+        },
+        "functions": {
+          "multivalued": true,
+          "range": "FunctionCall",
+          "inlined_as_list": true,
+          "description": "Function calls for tracking progress, computing metrics, etc. Each FunctionCall references a function from the experiment's functions section and specifies arguments for that specific algorithm context."
+        },
+        "depends_on": {
+          "multivalued": true,
+          "range": "Algorithm",
+          "description": "Other algorithms that must run first (e.g., EIB depends on FIC)"
         }
       }
     },
@@ -1499,11 +2112,14 @@ window.searchData = [
         "time_scale",
         "unit",
         "parameters",
-        "duration"
+        "duration",
+        "description"
       ],
       "attributes": {
         "method": {
-          "range": "string"
+          "range": "string",
+          "ifabsent": "string(euler)",
+          "description": "Integration method (euler, heun, rk4, etc.)"
         },
         "step_size": {
           "range": "float",
@@ -1513,7 +2129,8 @@ window.searchData = [
           "range": "integer"
         },
         "noise": {
-          "range": "Noise"
+          "range": "Noise",
+          "inlined": true
         },
         "state_wise_sigma": {
           "range": "float",
@@ -1533,39 +2150,16 @@ window.searchData = [
         },
         "intermediate_expressions": {
           "multivalued": true,
-          "range": "DerivedVariable"
+          "range": "DerivedVariable",
+          "inlined": true
         },
         "update_expression": {
-          "range": "DerivedVariable"
+          "range": "DerivedVariable",
+          "inlined": true
         },
         "delayed": {
           "range": "boolean",
           "ifabsent": true
-        }
-      }
-    },
-    "classes.Monitor": {
-      "is_a": "ObservationModel",
-      "class_uri": "tvbo:Monitor",
-      "description": "Observation model for monitoring simulation output with optional processing pipeline",
-      "slots": [
-        "time_scale",
-        "name",
-        "label",
-        "parameters",
-        "acronym",
-        "description",
-        "equation",
-        "environment"
-      ],
-      "attributes": {
-        "period": {
-          "range": "float",
-          "description": "Sampling period for the monitor"
-        },
-        "imaging_modality": {
-          "range": "ImagingModality",
-          "description": "Type of imaging modality (BOLD, EEG, MEG, etc.)"
         }
       }
     },
@@ -1574,7 +2168,8 @@ window.searchData = [
       "slots": [
         "name",
         "label",
-        "parameters"
+        "parameters",
+        "description"
       ],
       "slot_usage": {
         "name": {
@@ -1584,7 +2179,8 @@ window.searchData = [
       "attributes": {
         "coupling_function": {
           "range": "Equation",
-          "description": "Mathematical function defining the coupling"
+          "description": "Mathematical function defining the coupling",
+          "inlined": true
         },
         "sparse": {
           "range": "boolean",
@@ -1593,19 +2189,23 @@ window.searchData = [
         },
         "pre_expression": {
           "range": "Equation",
-          "description": "Pre-processing expression applied before coupling"
+          "description": "Pre-processing expression applied before coupling",
+          "inlined": true
         },
         "post_expression": {
           "range": "Equation",
-          "description": "Post-processing expression applied after coupling"
+          "description": "Post-processing expression applied after coupling",
+          "inlined": true
         },
         "incoming_states": {
           "range": "StateVariable",
-          "description": "State variables from connected nodes (source)"
+          "multivalued": true,
+          "description": "References to state variables from connected nodes (source)"
         },
         "local_states": {
           "range": "StateVariable",
-          "description": "State variables from local node (target)"
+          "multivalued": true,
+          "description": "References to state variables from local node (target)"
         },
         "delayed": {
           "range": "boolean",
@@ -1614,15 +2214,18 @@ window.searchData = [
         },
         "inner_coupling": {
           "range": "Coupling",
-          "description": "For hierarchical coupling: inner coupling applied at regional level"
+          "description": "For hierarchical coupling: inner coupling applied at regional level",
+          "inlined": true
         },
         "region_mapping": {
           "range": "RegionMapping",
-          "description": "For hierarchical coupling: vertex-to-region mapping for aggregation"
+          "description": "For hierarchical coupling: vertex-to-region mapping for aggregation",
+          "inlined": true
         },
         "regional_connectivity": {
-          "range": "Connectome",
-          "description": "For hierarchical coupling: region-to-region connectivity with weights and delays"
+          "range": "Network",
+          "description": "For hierarchical coupling: region-to-region connectivity with weights and delays",
+          "inlined": true
         },
         "aggregation": {
           "any_of": [
@@ -1682,6 +2285,40 @@ window.searchData = [
         }
       }
     },
+    "classes.ExecutionConfig": {
+      "description": "Configuration for computational execution (parallelization, precision, hardware).",
+      "attributes": {
+        "n_workers": {
+          "range": "integer",
+          "ifabsent": "integer(1)",
+          "description": "Number of parallel workers (maps to pmap devices in JAX, processes in multiprocessing)"
+        },
+        "n_threads": {
+          "range": "integer",
+          "ifabsent": "integer(-1)",
+          "description": "Number of CPU threads per worker (-1 = auto-detect)"
+        },
+        "precision": {
+          "range": "string",
+          "ifabsent": "string(float64)",
+          "description": "Floating point precision: 'float32' or 'float64'"
+        },
+        "accelerator": {
+          "range": "string",
+          "ifabsent": "string(cpu)",
+          "description": "Hardware accelerator: 'cpu', 'gpu', 'tpu'"
+        },
+        "batch_size": {
+          "range": "integer",
+          "description": "Batch size for vectorized operations (None = auto)"
+        },
+        "random_seed": {
+          "range": "integer",
+          "ifabsent": "integer(42)",
+          "description": "Base random seed for reproducibility"
+        }
+      }
+    },
     "classes.SimulationExperiment": {
       "tree_root": true,
       "class_uri": "tvbo:Simulation",
@@ -1704,45 +2341,90 @@ window.searchData = [
           "range": "string"
         },
         "local_dynamics": {
-          "range": "Dynamics"
+          "range": "Dynamics",
+          "inlined": true,
+          "description": "Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)"
         },
         "dynamics": {
           "multivalued": true,
-          "range": "string"
+          "range": "Dynamics",
+          "inlined": true,
+          "inlined_as_list": false,
+          "description": "Dictionary of dynamics models keyed by name. Nodes reference these by name."
         },
         "integration": {
-          "range": "Integrator"
+          "range": "Integrator",
+          "inlined": true
         },
         "connectivity": {
-          "range": "Connectome"
+          "range": "Network",
+          "inlined": true
         },
         "network": {
-          "range": "Connectome"
+          "range": "Network",
+          "inlined": true
         },
         "coupling": {
-          "range": "Coupling"
+          "range": "Coupling",
+          "inlined": true
         },
-        "monitors": {
+        "observations": {
           "multivalued": true,
-          "range": "Monitor"
+          "range": "Observation",
+          "inlined": true
+        },
+        "derived_observations": {
+          "multivalued": true,
+          "range": "DerivedObservation",
+          "inlined": true,
+          "description": "Observations derived from combining other observations. Computed after all regular observations are available. Examples: fc_corr (from fc, fc_target), rmse, etc."
+        },
+        "functions": {
+          "multivalued": true,
+          "range": "Function",
+          "inlined": true,
+          "description": "Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths."
         },
         "stimulation": {
-          "range": "Stimulus"
+          "range": "Stimulus",
+          "inlined": true
         },
         "field_dynamics": {
-          "range": "PDE"
+          "range": "PDE",
+          "inlined": true
         },
-        "modelfitting": {
+        "optimization": {
           "multivalued": true,
-          "range": "ModelFitting"
+          "range": "Optimization",
+          "inlined": true,
+          "description": "Parameter optimization configurations"
+        },
+        "explorations": {
+          "multivalued": true,
+          "range": "Exploration",
+          "inlined": true,
+          "description": "Parameter exploration/grid search specifications"
+        },
+        "algorithms": {
+          "multivalued": true,
+          "range": "Algorithm",
+          "inlined": true,
+          "description": "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
         },
         "environment": {
           "range": "SoftwareEnvironment",
-          "description": "Execution environment (collection of requirements)."
+          "description": "Execution environment (collection of requirements).",
+          "inlined": true
+        },
+        "execution": {
+          "range": "ExecutionConfig",
+          "inlined": true,
+          "description": "Computational execution configuration (parallelization, devices)."
         },
         "software": {
           "range": "SoftwareRequirement",
-          "description": "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
+          "description": "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.",
+          "inlined": true
         },
         "references": {
           "multivalued": true,
@@ -1781,6 +2463,8 @@ window.searchData = [
       }
     },
     "classes.TimeSeries": {
+      "class_uri": "tvbo:TimeSeries",
+      "description": "Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034).",
       "slots": [
         "label",
         "description",
@@ -1794,12 +2478,80 @@ window.searchData = [
           "range": "Matrix"
         },
         "sampling_rate": {
-          "range": "float"
+          "range": "float",
+          "description": "Sampling rate in Hz."
+        },
+        "sampling_period": {
+          "range": "float",
+          "description": "Time between samples (inverse of sampling_rate)."
+        },
+        "sampling_period_unit": {
+          "range": "string",
+          "ifabsent": "ms",
+          "description": "Unit of the sampling period (e.g., 'ms', 's')."
         },
         "unit": {
-          "range": "string"
+          "range": "string",
+          "description": "Physical unit of the time series values."
+        },
+        "labels_ordering": {
+          "range": "string",
+          "multivalued": true,
+          "description": "Ordering of dimensions: Time, State Variable, Space, Mode."
+        },
+        "labels_dimensions": {
+          "range": "string",
+          "description": "Mapping of dimension names to their labels (JSON-encoded dict)."
+        },
+        "source_experiment": {
+          "range": "SimulationExperiment",
+          "description": "Reference to the SimulationExperiment that generated this TimeSeries."
+        },
+        "generated_at": {
+          "range": "datetime",
+          "description": "Timestamp when this TimeSeries was generated."
+        },
+        "software_environment": {
+          "range": "SoftwareEnvironment",
+          "description": "Software environment used to generate this data."
+        },
+        "task_name": {
+          "range": "string",
+          "description": "BIDS task name for the simulation (e.g., 'rest', 'simulation')."
+        },
+        "subject_id": {
+          "range": "string",
+          "description": "BIDS subject identifier."
+        },
+        "session_id": {
+          "range": "string",
+          "description": "BIDS session identifier."
+        },
+        "run_id": {
+          "range": "integer",
+          "description": "BIDS run number."
+        },
+        "modality": {
+          "range": "ImagingModality",
+          "description": "Imaging modality or simulation output type."
+        },
+        "model_equation_ref": {
+          "range": "string",
+          "description": "BIDS ModelEq reference: path to _eq.xml LEMS file."
+        },
+        "model_param_ref": {
+          "range": "string",
+          "description": "BIDS ModelParam reference: path to _param.xml LEMS file."
+        },
+        "connectivity_ref": {
+          "range": "string",
+          "description": "Reference to connectivity data (_conndata-network_connectivity.tsv)."
         }
-      }
+      },
+      "comments": [
+        "Supports BIDS BEP034 computational modeling extension.",
+        "Use to_bids() method in Python class to export as BIDS dataset."
+      ]
     },
     "classes.SoftwareEnvironment": {
       "slots": [
@@ -1836,7 +2588,7 @@ window.searchData = [
           "description": "Constituent software/module requirements that define this environment.",
           "multivalued": true,
           "range": "SoftwareRequirement",
-          "inlined": false
+          "inlined": true
         }
       },
       "comments": [
@@ -1855,7 +2607,6 @@ window.searchData = [
       "attributes": {
         "package": {
           "range": "SoftwarePackage",
-          "required": true,
           "description": "Reference to the software package identity."
         },
         "version_spec": {
@@ -2174,8 +2925,8 @@ window.searchData = [
     },
     "type": "schema",
     "file": "schema/tvbo_datamodel.yaml",
-    "n_slots": 23,
-    "n_classes": 51
+    "n_slots": 24,
+    "n_classes": 60
   },
   {
     "name": "CoombesByrne2D",
@@ -2269,7 +3020,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/CoombesByrne2D.yaml",
-    "report_md": "\n\n# CoombesByrne2D\n\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = c_{global} + \\eta + V^{2} - \\pi^{2}*r^{2} + \\pi*k*r*\\left(v_{syn} - V\\right)\n$$\n$$\n\\frac{d}{d t} r = \\frac{\\Delta}{\\pi} + 2*V*r - \\pi*k*r^{2}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 1.0 | N/A | Half-width of heterogeneous noise distribution |\n| $\\eta$ | 2.0 | N/A | Constant parameter to scale the rate of feedback from the             firing rate variable to itself |\n| $k$ | 1.0 | N/A | Local coupling strength |\n| $v_{syn}$ | -4.0 | N/A | QIF membrane reversal potential |\n\n\n\n## References\nCitation key 'Byrne2020' not found.\n",
+    "report_md": "\n\n## CoombesByrne2D\n\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = c_{global} + \\eta + V^{2} - \\pi^{2}*r^{2} + \\pi*k*r*\\left(v_{syn} - V\\right)\n$$\n$$\n\\frac{d}{d t} r = \\frac{\\Delta}{\\pi} + 2*V*r - \\pi*k*r^{2}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 1.0 | N/A | Half-width of heterogeneous noise distribution |\n| $\\eta$ | 2.0 | N/A | Constant parameter to scale the rate of feedback from the             firing rate variable to itself |\n| $k$ | 1.0 | N/A | Local coupling strength |\n| $v_{syn}$ | -4.0 | N/A | QIF membrane reversal potential |\n\n\n\n## References\nCitation key 'Byrne2020' not found.\n",
     "thumbnail": "browser/imgs/models/CoombesByrne2D.png",
     "parameter_names": [
       "Delta",
@@ -2420,7 +3171,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/GenericLinear.yaml",
-    "report_md": "\n\n# GenericLinear\nThe Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e., one state-variable ('x')) neural mass model (Galán, 2008).\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = c_{global} + \\gamma*x + c_{local}*x\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\gamma$ | -10.0 | N/A | Slope parameter of the state-variable 'x_GL', representing the inverse of the relaxation time |\n\n\n\n## References\nCitation key 'Galan2008' not found.\n",
+    "report_md": "\n\n## GenericLinear\nThe Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e., one state-variable ('x')) neural mass model (Galán, 2008).\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = c_{global} + \\gamma*x + c_{local}*x\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\gamma$ | -10.0 | N/A | Slope parameter of the state-variable 'x_GL', representing the inverse of the relaxation time |\n\n\n\n## References\nCitation key 'Galan2008' not found.\n",
     "thumbnail": "browser/imgs/models/GenericLinear.png",
     "parameter_names": [
       "gamma"
@@ -2760,6 +3511,9 @@ window.searchData = [
     "coupling_terms.c_glob": {
       "name": "c_glob"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.S_e": {
       "name": "S_e",
       "domain": {
@@ -2803,7 +3557,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/ReducedWongWangExcInh.yaml",
-    "report_md": "\n\n# ReducedWongWangExcInh\nReduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.\n\n## Equations\n\n### Derived Variables\n$$\nJ_{N S e} = J_{N}*S_{e}\n$$\n$$\ncoupling = G*J_{N}*\\left(c_{glob} + S_{e}*c_{local}\\right)\n$$\n$$\nx_{e} = - b_{e} + a_{e}*\\left(I_{ext} + coupling + I_{o}*W_{e} + J_{N S e}*w_{p} - J_{i}*S_{i}\\right)\n$$\n$$\nx_{i} = - b_{i} + a_{i}*\\left(J_{N S e} - S_{i} + I_{o}*W_{i} + coupling*\\lambda\\right)\n$$\n$$\nH_{e} = \\frac{x_{e}}{1 - e^{- d_{e}*x_{e}}}\n$$\n$$\nH_{i} = \\frac{x_{i}}{1 - e^{- d_{i}*x_{i}}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} S_{e} = - \\frac{S_{e}}{\\tau_{e}} + H_{e}*\\gamma_{e}*\\left(1 - S_{e}\\right)\n$$\n$$\n\\frac{d}{d t} S_{i} = H_{i}*\\gamma_{i} - \\frac{S_{i}}{\\tau_{i}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $G$ | 2.0 | N/A | Global coupling scaling |\n| $I_{ext}$ | 0.0 | N/A | External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al |\n| $I_{o}$ | 0.382 | nA | Effective external input parameter to the excitatory E and inhibitory I population (Deco et al |\n| $J_{N}$ | 0.15 | N/A | Excitatory synaptic coupling parameter (Deco et al |\n| $J_{i}$ | 1.0 | N/A | Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al |\n| $W_{e}$ | 1.0 | N/A | Excitatory population external input scaling weight |\n| $W_{i}$ | 0.7 | N/A | Inhibitory population external input scaling weight |\n| $a_{e}$ | 310.0 | nC^-1 | Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al |\n| $a_{i}$ | 615.0 | nC^-1 | Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al |\n| $b_{e}$ | 125.0 | Hz | Shift parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al |\n| $b_{i}$ | 177.0 | Hz | Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al |\n| $d_{e}$ | 0.16 | s | Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al |\n| $d_{i}$ | 0.087 | s | Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al |\n| $\\gamma_{e}$ | 0.000641 | N/A | Excitatory population kinetic parameter |\n| $\\gamma_{i}$ | 0.001 | N/A | Inhibitory population kinetic parameter |\n| $\\lambda$ | 0.0 | N/A | Inhibitory global coupling scaling |\n| $\\tau_{e}$ | 100.0 | ms | Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al |\n| $\\tau_{i}$ | 10.0 | ms | Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al |\n| $w_{p}$ | 1.4 | N/A | Excitatory population recurrence weight |\n\n\n\n## References\nDeco, G., Ponce-Alvarez, A., Hagmann, P., Romani, G., Mantini, D., & Corbetta, M. (2014). How local excitation-inhibition ratio impacts the whole brain dynamics. *Journal of Neuroscience*, 34, 7886-7898.\n",
+    "report_md": "\n\n## ReducedWongWangExcInh\nReduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.\n\n### Derived Variables\n$$\nJ_{N S e} = J_{N}*S_{e}\n$$\n$$\ncoupling = G*J_{N}*\\left(c_{glob} + S_{e}*c_{local}\\right)\n$$\n$$\nx_{e} = - b_{e} + a_{e}*\\left(I_{ext} + coupling + I_{o}*W_{e} + J_{N S e}*w_{p} - J_{i}*S_{i}\\right)\n$$\n$$\nx_{i} = - b_{i} + a_{i}*\\left(J_{N S e} - S_{i} + I_{o}*W_{i} + coupling*\\lambda\\right)\n$$\n$$\nH_{e} = \\frac{x_{e}}{1 - e^{- d_{e}*x_{e}}}\n$$\n$$\nH_{i} = \\frac{x_{i}}{1 - e^{- d_{i}*x_{i}}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} S_{e} = - \\frac{S_{e}}{\\tau_{e}} + H_{e}*\\gamma_{e}*\\left(1 - S_{e}\\right)\n$$\n$$\n\\frac{d}{d t} S_{i} = H_{i}*\\gamma_{i} - \\frac{S_{i}}{\\tau_{i}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $G$ | 2.0 | N/A | Global coupling scaling |\n| $I_{ext}$ | 0.0 | N/A | External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al |\n| $I_{o}$ | 0.382 | nA | Effective external input parameter to the excitatory E and inhibitory I population (Deco et al |\n| $J_{N}$ | 0.15 | N/A | Excitatory synaptic coupling parameter (Deco et al |\n| $J_{i}$ | 1.0 | N/A | Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al |\n| $W_{e}$ | 1.0 | N/A | Excitatory population external input scaling weight |\n| $W_{i}$ | 0.7 | N/A | Inhibitory population external input scaling weight |\n| $a_{e}$ | 310.0 | nC^-1 | Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al |\n| $a_{i}$ | 615.0 | nC^-1 | Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al |\n| $b_{e}$ | 125.0 | Hz | Shift parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al |\n| $b_{i}$ | 177.0 | Hz | Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al |\n| $d_{e}$ | 0.16 | s | Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al |\n| $d_{i}$ | 0.087 | s | Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al |\n| $\\gamma_{e}$ | 0.000641 | N/A | Excitatory population kinetic parameter |\n| $\\gamma_{i}$ | 0.001 | N/A | Inhibitory population kinetic parameter |\n| $\\lambda$ | 0.0 | N/A | Inhibitory global coupling scaling |\n| $\\tau_{e}$ | 100.0 | ms | Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al |\n| $\\tau_{i}$ | 10.0 | ms | Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al |\n| $w_{p}$ | 1.4 | N/A | Excitatory population recurrence weight |\n\n\n\n## References\nDeco, G., Ponce-Alvarez, A., Hagmann, P., Romani, G., Mantini, D., & Corbetta, M. (2014). How local excitation-inhibition ratio impacts the whole brain dynamics. *Journal of Neuroscience*, 34, 7886-7898.\n",
     "thumbnail": "browser/imgs/models/ReducedWongWangExcInh.png",
     "parameter_names": [
       "G",
@@ -3121,6 +3875,9 @@ window.searchData = [
       "coupling_terms": {
         "c_glob": {
           "name": "c_glob"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -3458,7 +4215,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/JansenRit.yaml",
-    "report_md": "\n\n# JansenRit\nThe Jansen-Rit is a neurophysiologically-inspired neural mass model of a cortical column (or area), developed to simulate the electrical brain activity, i.e., the electroencephalogram (EEG), and evoked-potentials (EPs; Jansen et al., 1993; Jansen & Rit, 1995). It is a 6-dimensional, non-linear, model describing the local average states of three interconnected neural populations: pyramidal cells (PCs), excitatory and inhibitory interneurons (EINs and IINs), interacting through positive and negative feedback loops. The main output of the model is the average membrane potential of the pyramidal cell population, as the sum of the potential of these cells is thought to be the source of the potential recorded in the EEG.\n\n## Equations\n\n### Derived Variables\n$$\n\\sigma_{y0 1} = \\frac{2.0*\\nu_{max}}{1.0 + e^{r*\\left(v_{0} - J*a_{1}*y_{0}\\right)}}\n$$\n$$\n\\sigma_{y0 3} = \\frac{2.0*\\nu_{max}}{1.0 + e^{r*\\left(v_{0} - J*a_{3}*y_{0}\\right)}}\n$$\n$$\n\\sigma_{y1 y2} = \\frac{2.0*\\nu_{max}}{1.0 + e^{r*\\left(v_{0} + y_{2} - y_{1}\\right)}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} y_{0} = y_{3}\n$$\n$$\n\\frac{d}{d t} y_{1} = y_{4}\n$$\n$$\n\\frac{d}{d t} y_{2} = y_{5}\n$$\n$$\n\\frac{d}{d t} y_{3} = - y_{0}*a^{2} - 2.0*a*y_{3} + A*a*\\sigma_{y1 y2}\n$$\n$$\n\\frac{d}{d t} y_{4} = - y_{1}*a^{2} - 2.0*a*y_{4} + A*a*\\left(c_{global} + \\mu + c_{local}*\\left(y_{1} - y_{2}\\right) + J*a_{2}*\\sigma_{y0 1}\\right)\n$$\n$$\n\\frac{d}{d t} y_{5} = - y_{2}*b^{2} - 2.0*b*y_{5} + B*J*a_{4}*b*\\sigma_{y0 3}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $A$ | 3.25 | Millivolt | Maximum amplitude of EPSP [mV] |\n| $B$ | 22.0 | Millivolt | Maximum amplitude of IPSP [mV] |\n| $J$ | 135.0 | N/A | Average number of synapses between three neuronal populations of the model |\n| $a_{1}$ | 1.0 | N/A | Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop) |\n| $a_{2}$ | 0.8 | N/A | Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs |\n| $a_{3}$ | 0.25 | N/A | Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs |\n| $a_{4}$ | 0.25 | N/A | Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs |\n| $a$ | 0.1 | ms^-1 | Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant. |\n| $b$ | 0.05 | ms^-1 | Rate constant of the inhibitory post-synaptic potential (IPSP) |\n| $\\mu$ | 0.22 | ms^-1 | Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e |\n| $\\nu_{max}$ | 0.0025 | ms^-1 | Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations |\n| $r$ | 0.56 | mV^-1 | Steepness (or gain) parameter of the sigmoid function Sigm_JR |\n| $v_{0}$ | 5.52 | mV | Average firing threshold (PSP) for which half of the firing rate is achieved |\n\n\n\n## References\nJansen, B., Zouridakis, G., & Brandt, M. (1993). A neurophysiologically-based mathematical model of flash visual evoked potentials. *Biological Cybernetics*, 68(3), 275-283.\n\nJansen, B. & Rit, V. (1995). Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns. *Biological Cybernetics*, 73(4), 357-366.\n",
+    "report_md": "\n\n## JansenRit\nThe Jansen-Rit is a neurophysiologically-inspired neural mass model of a cortical column (or area), developed to simulate the electrical brain activity, i.e., the electroencephalogram (EEG), and evoked-potentials (EPs; Jansen et al., 1993; Jansen & Rit, 1995). It is a 6-dimensional, non-linear, model describing the local average states of three interconnected neural populations: pyramidal cells (PCs), excitatory and inhibitory interneurons (EINs and IINs), interacting through positive and negative feedback loops. The main output of the model is the average membrane potential of the pyramidal cell population, as the sum of the potential of these cells is thought to be the source of the potential recorded in the EEG.\n\n### Derived Variables\n$$\n\\sigma_{y0 1} = \\frac{2.0*\\nu_{max}}{1.0 + e^{r*\\left(v_{0} - J*a_{1}*y_{0}\\right)}}\n$$\n$$\n\\sigma_{y0 3} = \\frac{2.0*\\nu_{max}}{1.0 + e^{r*\\left(v_{0} - J*a_{3}*y_{0}\\right)}}\n$$\n$$\n\\sigma_{y1 y2} = \\frac{2.0*\\nu_{max}}{1.0 + e^{r*\\left(v_{0} + y_{2} - y_{1}\\right)}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} y_{0} = y_{3}\n$$\n$$\n\\frac{d}{d t} y_{1} = y_{4}\n$$\n$$\n\\frac{d}{d t} y_{2} = y_{5}\n$$\n$$\n\\frac{d}{d t} y_{3} = - y_{0}*a^{2} - 2.0*a*y_{3} + A*a*\\sigma_{y1 y2}\n$$\n$$\n\\frac{d}{d t} y_{4} = - y_{1}*a^{2} - 2.0*a*y_{4} + A*a*\\left(c_{global} + \\mu + c_{local}*\\left(y_{1} - y_{2}\\right) + J*a_{2}*\\sigma_{y0 1}\\right)\n$$\n$$\n\\frac{d}{d t} y_{5} = - y_{2}*b^{2} - 2.0*b*y_{5} + B*J*a_{4}*b*\\sigma_{y0 3}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $A$ | 3.25 | Millivolt | Maximum amplitude of EPSP [mV] |\n| $B$ | 22.0 | Millivolt | Maximum amplitude of IPSP [mV] |\n| $J$ | 135.0 | N/A | Average number of synapses between three neuronal populations of the model |\n| $a_{1}$ | 1.0 | N/A | Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop) |\n| $a_{2}$ | 0.8 | N/A | Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs |\n| $a_{3}$ | 0.25 | N/A | Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs |\n| $a_{4}$ | 0.25 | N/A | Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs |\n| $a$ | 0.1 | ms^-1 | Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant. |\n| $b$ | 0.05 | ms^-1 | Rate constant of the inhibitory post-synaptic potential (IPSP) |\n| $\\mu$ | 0.22 | ms^-1 | Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e |\n| $\\nu_{max}$ | 0.0025 | ms^-1 | Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations |\n| $r$ | 0.56 | mV^-1 | Steepness (or gain) parameter of the sigmoid function Sigm_JR |\n| $v_{0}$ | 5.52 | mV | Average firing threshold (PSP) for which half of the firing rate is achieved |\n\n\n\n## References\nJansen, B., Zouridakis, G., & Brandt, M. (1993). A neurophysiologically-based mathematical model of flash visual evoked potentials. *Biological Cybernetics*, 68(3), 275-283.\n\nJansen, B. & Rit, V. (1995). Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns. *Biological Cybernetics*, 73(4), 357-366.\n",
     "thumbnail": "browser/imgs/models/JansenRit.png",
     "parameter_names": [
       "A",
@@ -4535,7 +5292,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/KIonEx.yaml",
-    "report_md": "\n\n# KIonEx\nIt describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate.\nThe model is derived as the mathematical limit of an infinite number of all-to-all coupled neurons, resulting in 5 state variables:\n    :math:`x` represents a phenomenological variable connected to the firing rate,\n    :math:`V` represent the average membrane potential,\n    :math:`n` represents the gating variable for potassium K,\n    :math:`\\Delta K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g` represents the extracellular potassium buffering by the external bath\n    \"\"\"\n\n## Equations\n\n### Derived Variables\n$$\nDNa_{i} = - DKi\n$$\n$$\nI_{Cl} = g_{Cl}*\\left(V + 26.64*\\log{\\left(\\frac{Cl_{o0}}{Cl_{i0}} \\right)}\\right)\n$$\n$$\nK_{i} = DKi + K_{i0}\n$$\n$$\n\\beta = \\frac{w_{i}}{w_{o}}\n$$\n$$\nh = 1.1 - \\frac{1.0}{1.0 + 24.5325301971094*e^{- 8.0*n}}\n$$\n$$\nminf = \\frac{1.0}{1.0 + e^{\\frac{Cmna - V}{DCmna}}}\n$$\n$$\nninf = \\frac{1.0}{1.0 + e^{\\frac{Cnk - V}{DCnk}}}\n$$\n$$\nr = \\frac{R_{minus}*x}{\\pi}\n$$\n$$\nDK_{o} = - DKi*\\beta\n$$\n$$\nDNa_{o} = - DNa_{i}*\\beta\n$$\n$$\nNa_{i} = DNa_{i} + Na_{i0}\n$$\n$$\nxcond = \\begin{cases} \\Delta - J*r*x + 2*R_{minus}*x*\\left(V - c_{minus}\\right) & \\text{for}\\: V \\leq Vstar \\\\\\Delta - J*r*x + 2*R_{plus}*x*\\left(V - c_{plus}\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nK_{o} = DK_{o} + K_{o0} + Kg\n$$\n$$\nNa_{o} = DNa_{o} + Na_{o0}\n$$\n$$\nI_{K} = \\left(V - 26.64*\\log{\\left(\\frac{K_{o}}{K_{i}} \\right)}\\right)*\\left(g_{Kl} + g_{K}*n\\right)\n$$\n$$\nI_{Na} = \\left(V - 26.64*\\log{\\left(\\frac{Na_{o}}{Na_{i}} \\right)}\\right)*\\left(g_{Nal} + g_{Na}*h*minf\\right)\n$$\n$$\nI_{pump} = \\frac{1.0*\\rho}{\\left(1.0 + e^{\\frac{Ckp - K_{o}}{DCkp}}\\right)*\\left(1.0 + e^{\\frac{Cnap - Na_{i}}{DCnap}}\\right)}\n$$\n$$\nV_{temp} = \\frac{- 1.0*I_{Cl} - 1.0*I_{K} - 1.0*I_{Na} - 1.0*I_{pump}}{Cm}\n$$\n$$\nVcond = \\begin{cases} \\frac{R_{minus}*c_{global}*\\left(- V + E\\right)}{\\pi} - R_{minus}*x^{2} + V_{temp} + \\eta & \\text{for}\\: V \\leq Vstar \\\\\\frac{R_{minus}*c_{global}*\\left(- V + E\\right)}{\\pi} - R_{plus}*x^{2} + V_{temp} + \\eta & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} DKi = - \\frac{\\gamma*\\left(I_{K} - 2.0*I_{pump}\\right)}{w_{i}}\n$$\n$$\n\\frac{d}{d t} Kg = \\epsilon*\\left(K_{bath} - K_{o}\\right)\n$$\n$$\n\\frac{d}{d t} V = Vcond\n$$\n$$\n\\frac{d}{d t} n = \\frac{ninf - n}{\\tau_{n}}\n$$\n$$\n\\frac{d}{d t} x = xcond\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Cm$ | 1.0 | N/A | membrane capacitance |\n| $\\Delta$ | 1.0 | N/A | HWHM heterogeneous noise |\n| $E$ | 0.0 | N/A | Reversal Potential |\n| $J$ | 0.1 | N/A | Mean Synaptic weight |\n| $K_{bath}$ | 5.5 | N/A | Potassium concentration in bath |\n| $R_{minus}$ | 0.5 | N/A | curvature left parabola |\n| $R_{plus}$ | -0.5 | N/A | curvature right parabola |\n| $Vstar$ | -31.0 | N/A | x-coordinate meeting point of parabolas |\n| $c_{minus}$ | -40.0 | N/A | x-coordinate left parabola |\n| $c_{plus}$ | -20.0 | N/A | x-coordinate right parabola |\n| $\\epsilon$ | 0.001 | N/A | diffusion rate |\n| $\\eta$ | 0.0 | N/A | Mean heterogeneous noise |\n| $\\gamma$ | 0.04 | N/A | conversion factor |\n| $\\tau_{n}$ | 4.0 | N/A | time constant of gating variable |\n| $Chn$ | 0.4 | N/A |  |\n| $Ckp$ | 5.5 | mol.m**-3 |  |\n| $Cl_{i0}$ | 4.8 | mMol/m**3 | initial concentration of intracellular Cl |\n| $Cl_{o0}$ | 112.0 | mMol/m**3 | initial concentration of extracellular Cl |\n| $Cmna$ | -24.0 | mV |  |\n| $Cnap$ | 21.0 | mol.m**-3 |  |\n| $Cnk$ | -19.0 | mV |  |\n| $DChn$ | -8.0 | N/A |  |\n| $DCkp$ | 1.0 | mol.m**-3 |  |\n| $DCmna$ | 12.0 | mV |  |\n| $DCnap$ | 21.0 | mol.m**-3 |  |\n| $DCnk$ | 18.0 | mV |  |\n| $K_{i0}$ | 130.0 | mMol/m**3 | initial concentration of intracellular K |\n| $K_{o0}$ | 4.8 | mMol/m**3 | initial concentration of extracellular K |\n| $Na_{i0}$ | 16.0 | mMol/m**3 | initial concentration of intracellular Na |\n| $Na_{o0}$ | 138.0 | mMol/m**3 | initial concentration of extracellular Na |\n| $g_{Cl}$ | 7.5 | nS | chloride conductance |\n| $g_{K}$ | 22.0 | nS | maximal potassium conductance |\n| $g_{Kl}$ | 0.12 | nS | potassium leak conductance |\n| $g_{Na}$ | 40.0 | nS | maximal sodiumconductance |\n| $g_{Nal}$ | 0.02 | nS | sodium leak conductance |\n| $\\rho$ | 250.0 | pA | maximal Na/K pump current |\n| $w_{i}$ | 2160.0 | umeter**3 | intracellular volume |\n| $w_{o}$ | 720.0 | umeter**3 | extracellular volume |\n\n\n\n## References\nCitation key 'Depannemaecker2023' not found.\n\nCitation key 'Rabuffo2024' not found.\n",
+    "report_md": "\n\n## KIonEx\nIt describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate. \nThe model is derived as the mathematical limit of an infinite number of all-to-all coupled neurons, resulting in 5 state variables:\n    :math:`x` represents a phenomenological variable connected to the firing rate, \n    :math:`V` represent the average membrane potential,\n    :math:`n` represents the gating variable for potassium K, \n    :math:`\\Delta K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g` represents the extracellular potassium buffering by the external bath\n    \"\"\"\n\n### Derived Variables\n$$\nDNa_{i} = - DKi\n$$\n$$\nI_{Cl} = g_{Cl}*\\left(V + 26.64*\\log{\\left(\\frac{Cl_{o0}}{Cl_{i0}} \\right)}\\right)\n$$\n$$\nK_{i} = DKi + K_{i0}\n$$\n$$\n\\beta = \\frac{w_{i}}{w_{o}}\n$$\n$$\nh = 1.1 - \\frac{1.0}{1.0 + 24.5325301971094*e^{- 8.0*n}}\n$$\n$$\nminf = \\frac{1.0}{1.0 + e^{\\frac{Cmna - V}{DCmna}}}\n$$\n$$\nninf = \\frac{1.0}{1.0 + e^{\\frac{Cnk - V}{DCnk}}}\n$$\n$$\nr = \\frac{R_{minus}*x}{\\pi}\n$$\n$$\nDK_{o} = - DKi*\\beta\n$$\n$$\nDNa_{o} = - DNa_{i}*\\beta\n$$\n$$\nNa_{i} = DNa_{i} + Na_{i0}\n$$\n$$\nxcond = \\begin{cases} \\Delta - J*r*x + 2*R_{minus}*x*\\left(V - c_{minus}\\right) & \\text{for}\\: V \\leq Vstar \\\\\\Delta - J*r*x + 2*R_{plus}*x*\\left(V - c_{plus}\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nK_{o} = DK_{o} + K_{o0} + Kg\n$$\n$$\nNa_{o} = DNa_{o} + Na_{o0}\n$$\n$$\nI_{K} = \\left(V - 26.64*\\log{\\left(\\frac{K_{o}}{K_{i}} \\right)}\\right)*\\left(g_{Kl} + g_{K}*n\\right)\n$$\n$$\nI_{Na} = \\left(V - 26.64*\\log{\\left(\\frac{Na_{o}}{Na_{i}} \\right)}\\right)*\\left(g_{Nal} + g_{Na}*h*minf\\right)\n$$\n$$\nI_{pump} = \\frac{1.0*\\rho}{\\left(1.0 + e^{\\frac{Ckp - K_{o}}{DCkp}}\\right)*\\left(1.0 + e^{\\frac{Cnap - Na_{i}}{DCnap}}\\right)}\n$$\n$$\nV_{temp} = \\frac{- 1.0*I_{Cl} - 1.0*I_{K} - 1.0*I_{Na} - 1.0*I_{pump}}{Cm}\n$$\n$$\nVcond = \\begin{cases} \\frac{R_{minus}*c_{global}*\\left(- V + E\\right)}{\\pi} - R_{minus}*x^{2} + V_{temp} + \\eta & \\text{for}\\: V \\leq Vstar \\\\\\frac{R_{minus}*c_{global}*\\left(- V + E\\right)}{\\pi} - R_{plus}*x^{2} + V_{temp} + \\eta & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} DKi = - \\frac{\\gamma*\\left(I_{K} - 2.0*I_{pump}\\right)}{w_{i}}\n$$\n$$\n\\frac{d}{d t} Kg = \\epsilon*\\left(K_{bath} - K_{o}\\right)\n$$\n$$\n\\frac{d}{d t} V = Vcond\n$$\n$$\n\\frac{d}{d t} n = \\frac{ninf - n}{\\tau_{n}}\n$$\n$$\n\\frac{d}{d t} x = xcond\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Cm$ | 1.0 | N/A | membrane capacitance |\n| $\\Delta$ | 1.0 | N/A | HWHM heterogeneous noise |\n| $E$ | 0.0 | N/A | Reversal Potential |\n| $J$ | 0.1 | N/A | Mean Synaptic weight |\n| $K_{bath}$ | 5.5 | N/A | Potassium concentration in bath |\n| $R_{minus}$ | 0.5 | N/A | curvature left parabola |\n| $R_{plus}$ | -0.5 | N/A | curvature right parabola |\n| $Vstar$ | -31.0 | N/A | x-coordinate meeting point of parabolas |\n| $c_{minus}$ | -40.0 | N/A | x-coordinate left parabola |\n| $c_{plus}$ | -20.0 | N/A | x-coordinate right parabola |\n| $\\epsilon$ | 0.001 | N/A | diffusion rate |\n| $\\eta$ | 0.0 | N/A | Mean heterogeneous noise |\n| $\\gamma$ | 0.04 | N/A | conversion factor |\n| $\\tau_{n}$ | 4.0 | N/A | time constant of gating variable |\n| $Chn$ | 0.4 | N/A |  |\n| $Ckp$ | 5.5 | mol.m**-3 |  |\n| $Cl_{i0}$ | 4.8 | mMol/m**3 | initial concentration of intracellular Cl |\n| $Cl_{o0}$ | 112.0 | mMol/m**3 | initial concentration of extracellular Cl |\n| $Cmna$ | -24.0 | mV |  |\n| $Cnap$ | 21.0 | mol.m**-3 |  |\n| $Cnk$ | -19.0 | mV |  |\n| $DChn$ | -8.0 | N/A |  |\n| $DCkp$ | 1.0 | mol.m**-3 |  |\n| $DCmna$ | 12.0 | mV |  |\n| $DCnap$ | 21.0 | mol.m**-3 |  |\n| $DCnk$ | 18.0 | mV |  |\n| $K_{i0}$ | 130.0 | mMol/m**3 | initial concentration of intracellular K |\n| $K_{o0}$ | 4.8 | mMol/m**3 | initial concentration of extracellular K |\n| $Na_{i0}$ | 16.0 | mMol/m**3 | initial concentration of intracellular Na |\n| $Na_{o0}$ | 138.0 | mMol/m**3 | initial concentration of extracellular Na |\n| $g_{Cl}$ | 7.5 | nS | chloride conductance |\n| $g_{K}$ | 22.0 | nS | maximal potassium conductance |\n| $g_{Kl}$ | 0.12 | nS | potassium leak conductance |\n| $g_{Na}$ | 40.0 | nS | maximal sodiumconductance |\n| $g_{Nal}$ | 0.02 | nS | sodium leak conductance |\n| $\\rho$ | 250.0 | pA | maximal Na/K pump current |\n| $w_{i}$ | 2160.0 | umeter**3 | intracellular volume |\n| $w_{o}$ | 720.0 | umeter**3 | extracellular volume |\n\n\n\n## References\nCitation key 'Depannemaecker2023' not found.\n\nCitation key 'Bandyopadhyay2021' not found.\n",
     "thumbnail": "browser/imgs/models/KIonEx.png",
     "parameter_names": [
       "Cm",
@@ -5723,7 +6480,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Epileptor5D.yaml",
-    "report_md": "\n\n# Epileptor5D\nEpilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns:\n- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges.\n- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.\n\nNote:\n------\n- Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n## Equations\n\n### Derived Variables\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} g = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\frac{d}{d t} x_{1} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\frac{d}{d t} y_{1} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\frac{d}{d t} z = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population |\n| $Iext$ | 3.1 | N/A | External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al |\n| $Kf$ | 0.0 | N/A | Correspond to the coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state variable |\n| $aa$ | 6.0 | N/A | Linear coefficient in fifth state variable |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state variabel |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in fourth state variable |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E5D uses a nonlinear influence on z_E5D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state variable,         called :math:`1/\\tau_{0}` in Jirsa paper |\n| $s$ | 4.0 | N/A | Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state variable |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in fifth state variable |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor5D |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity Parameter |\n\n\n\n## References\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n\nCitation key 'Proix2014' not found.\n",
+    "report_md": "\n\n## Epileptor5D\nEpilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: \n- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. \n- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.\n\nNote: \n------\n- Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### Derived Variables\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} g = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\frac{d}{d t} x_{1} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\frac{d}{d t} y_{1} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\frac{d}{d t} z = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population |\n| $Iext$ | 3.1 | N/A | External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al |\n| $Kf$ | 0.0 | N/A | Correspond to the coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state variable |\n| $aa$ | 6.0 | N/A | Linear coefficient in fifth state variable |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state variabel |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in fourth state variable |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E5D uses a nonlinear influence on z_E5D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state variable,         called :math:`1/\\tau_{0}` in Jirsa paper |\n| $s$ | 4.0 | N/A | Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state variable |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in fifth state variable |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor5D |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity Parameter |\n\n\n\n## References\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n\nCitation key 'Proix2014' not found.\n",
     "thumbnail": "browser/imgs/models/Epileptor5D.png",
     "parameter_names": [
       "Iext2",
@@ -6182,6 +6939,9 @@ window.searchData = [
     "coupling_terms.c_pop0": {
       "name": "c_pop0"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.theta": {
       "name": "theta",
       "domain": {
@@ -6201,7 +6961,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Kuramoto.yaml",
-    "report_md": "\n\n# Kuramoto\nThe Kuramoto model is a model of synchronization phenomena derived by Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including the study of neuronal oscillations and synchronization.\n\n## Equations\n\n### Derived Variables\n$$\nlc_{0} = \\sin{\\left(c_{local}*\\theta \\right)}\n$$\n$$\nI = c_{global} + lc_{0}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = I + \\omega\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 1.0 | rad/ms | Sets the base line frequency for the Kuramoto oscillator |\n\n\n\n## References\nCabral, J., Hugues, E., Sporns, O., & Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. *NeuroImage*, 57(1), 130-139.\n\nKuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators. *Lecture Notes in Physics*, 420-422.\n\nStrogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. *Physica D: Nonlinear Phenomena*, 143(1–4), 1-20.\n",
+    "report_md": "\n\n## Kuramoto\nThe Kuramoto model is a model of synchronization phenomena derived by Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including the study of neuronal oscillations and synchronization.\n\n### Derived Variables\n$$\nlc_{0} = \\sin{\\left(c_{local}*\\theta \\right)}\n$$\n$$\nI = c_{global} + lc_{0}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = I + \\omega\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 1.0 | rad/ms | Sets the base line frequency for the Kuramoto oscillator |\n\n\n\n## References\nCabral, J., Hugues, E., Sporns, O., & Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. *NeuroImage*, 57(1), 130-139.\n\nKuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators. *Lecture Notes in Physics*, 420-422.\n\nStrogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. *Physica D: Nonlinear Phenomena*, 143(1–4), 1-20.\n",
     "thumbnail": "browser/imgs/models/Kuramoto.png",
     "parameter_names": [
       "omega"
@@ -6257,6 +7017,9 @@ window.searchData = [
       "coupling_terms": {
         "c_pop0": {
           "name": "c_pop0"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -6323,6 +7086,9 @@ window.searchData = [
     "coupling_terms.c_pop1": {
       "name": "c_pop1"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.x": {
       "name": "x",
       "domain": {
@@ -6358,7 +7124,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/SupHopf.yaml",
-    "report_md": "\n\n# SupHopf\nSupercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017).\n\nThis normal form has a supercritical bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a < 0', the local dynamics has a stable fixed point and the system corresponds to a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in a stable limit cycle and the system switches to an oscillatory state.\n\n## Equations\n\n### Derived Variables\n$$\nlc_{0} = c_{local}*x\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = c_{global} + lc_{0} + x*\\left(a - x^{2} - y^{2}\\right) - \\omega*y\n$$\n$$\n\\frac{d}{d t} y = c_{pop1} + \\omega*x + y*\\left(a - x^{2} - y^{2}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | -0.5 | N/A | Local bifurcation parameter |\n| $\\omega$ | 1.0 | N/A | Angular frequency |\n\n\n\n## References\nCitation key 'Deco2017' not found.\n",
+    "report_md": "\n\n## SupHopf\nSupercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017). \n\nThis normal form has a supercritical bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a < 0', the local dynamics has a stable fixed point and the system corresponds to a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in a stable limit cycle and the system switches to an oscillatory state.\n\n### Derived Variables\n$$\nlc_{0} = c_{local}*x\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = c_{global} + lc_{0} + x*\\left(a - x^{2} - y^{2}\\right) - \\omega*y\n$$\n$$\n\\frac{d}{d t} y = c_{pop1} + \\omega*x + y*\\left(a - x^{2} - y^{2}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | -0.5 | N/A | Local bifurcation parameter |\n| $\\omega$ | 1.0 | N/A | Angular frequency |\n\n\n\n## References\nCitation key 'Deco2017' not found.\n",
     "thumbnail": "browser/imgs/models/SupHopf.png",
     "parameter_names": [
       "a",
@@ -6417,6 +7183,9 @@ window.searchData = [
         },
         "c_pop1": {
           "name": "c_pop1"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -6638,7 +7407,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/GastSchmidtKnosche_SD.yaml",
-    "report_md": "\n\n# GastSchmidtKnosche_SD\n4D model describing the Ott-Antonsen reduction of infinite all-to-all\n    coupled QIF neurons (Theta-neurons) with Synaptic Depression adaptation\n    mechanisms [Gastetal_2020]_.\n\n    The two state variables :math:`r` and :math:`V` represent the average firing rate and\n    the average membrane potential of our QIF neurons.\n    :math:`A` and :math:`B` are respectively the adaptation variable and its derivative.\n\n    The equations of the infinite QIF 2D population model read\n\n    .. math::\n            \\dot{r} &= 1/\\tau (\\Delta/(\\pi \\tau) + 2 V r)\\\\\n            \\dot{V} &= 1/\\tau (V^2 - \\tau^2 \\pi^2 r^2 + \\eta + J \\tau r (1 - A) + I)\\\\\n            \\dot{A} &= 1/\\tau_A (B)\\\\\n            \\dot{B} &= 1/\\tau_A (-2 B - A + \\alpha  r) \\\\\n\n    .. [Gastetal_2020] Gast, R., Schmidt, H., & Knösche, T. R. (2020). A mean-field description of bursting dynamics in spiking neural networks with short-term adaptation. *Neural Computation*, 32(9), 1615-1634.\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} A = \\frac{B}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} B = \\frac{- A - 2*B + \\alpha*r}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} V = \\frac{I + \\eta + V^{2} + c_{global}*cr + c_{pop1}*cv - \\pi^{2}*r^{2}*\\tau^{2} + J*r*\\tau*\\left(1 - A\\right)}{\\tau}\n$$\n$$\n\\frac{d}{d t} r = \\frac{2*V*r + \\frac{\\Delta}{\\pi*\\tau}}{\\tau}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 2.0 | N/A | Half-width of heterogeneous noise distribution |\n| $I$ | 0.0 | N/A | External homogeneous current |\n| $J$ | 21.2132 | N/A | Synaptic weight |\n| $\\alpha$ | 0.5 | N/A | adaptation rate |\n| $cr$ | 1.0 | N/A | It is the weight on Coupling through variable r |\n| $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |\n| $\\eta$ | -6.0 | N/A | Mean of heterogeneous noise distribution |\n| $\\tau_{A}$ | 10.0 | N/A | Adaptation time scale |\n| $\\tau$ | 1.0 | N/A | Characteristic time |\n\n\n\n## References\nCitation key 'Gast2020' not found.\n",
+    "report_md": "\n\n## GastSchmidtKnosche_SD\n4D model describing the Ott-Antonsen reduction of infinite all-to-all \n    coupled QIF neurons (Theta-neurons) with Synaptic Depression adaptation \n    mechanisms [Gastetal_2020]_.\n\n    The two state variables :math:`r` and :math:`V` represent the average firing rate and \n    the average membrane potential of our QIF neurons.\n    :math:`A` and :math:`B` are respectively the adaptation variable and its derivative.\n\n    The equations of the infinite QIF 2D population model read\n    \n    .. math::\n            \\dot{r} &= 1/\\tau (\\Delta/(\\pi \\tau) + 2 V r)\\\\\n            \\dot{V} &= 1/\\tau (V^2 - \\tau^2 \\pi^2 r^2 + \\eta + J \\tau r (1 - A) + I)\\\\ \n            \\dot{A} &= 1/\\tau_A (B)\\\\\n            \\dot{B} &= 1/\\tau_A (-2 B - A + \\alpha  r) \\\\\n\n    .. [Gastetal_2020] Gast, R., Schmidt, H., & Knösche, T. R. (2020). A mean-field description of bursting dynamics in spiking neural networks with short-term adaptation. *Neural Computation*, 32(9), 1615-1634.\n\n\n### State Equations\n$$\n\\frac{d}{d t} A = \\frac{B}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} B = \\frac{- A - 2*B + \\alpha*r}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} V = \\frac{I + \\eta + V^{2} + c_{global}*cr + c_{pop1}*cv - \\pi^{2}*r^{2}*\\tau^{2} + J*r*\\tau*\\left(1 - A\\right)}{\\tau}\n$$\n$$\n\\frac{d}{d t} r = \\frac{2*V*r + \\frac{\\Delta}{\\pi*\\tau}}{\\tau}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 2.0 | N/A | Half-width of heterogeneous noise distribution |\n| $I$ | 0.0 | N/A | External homogeneous current |\n| $J$ | 21.2132 | N/A | Synaptic weight |\n| $\\alpha$ | 0.5 | N/A | adaptation rate |\n| $cr$ | 1.0 | N/A | It is the weight on Coupling through variable r |\n| $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |\n| $\\eta$ | -6.0 | N/A | Mean of heterogeneous noise distribution |\n| $\\tau_{A}$ | 10.0 | N/A | Adaptation time scale |\n| $\\tau$ | 1.0 | N/A | Characteristic time |\n\n\n\n## References\nCitation key 'Gast2020' not found.\n",
     "thumbnail": "browser/imgs/models/GastSchmidtKnosche_SD.png",
     "parameter_names": [
       "Delta",
@@ -7083,7 +7852,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Epileptor2D.yaml",
-    "report_md": "\n\n# Epileptor2D\nEpileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).\n\nNote:\n------\n- Equations and default parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n## Equations\n\n### Derived Variables\n$$\nx1cond = \\begin{cases} a*x_{1}^{2} + x_{1}*\\left(- b + d\\right) & \\text{for}\\: x_{1} < 0 \\\\d*x_{1} - slope - 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3.0}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1.0} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x_{1} = tt*\\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\\right)\n$$\n$$\n\\frac{d}{d t} z = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext$ | 3.1 | N/A | External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E2D uses a nonlinear influence on z_E2D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor) |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor2D |\n| $x_{0}$ | -1.6 | N/A | Degree of excitability or epileptogenicity in Epileptor2D (Proix et al |\n\n\n\n## References\nCitation key 'Proix2017' not found.\n\nCitation key 'Proix2014' not found.\n",
+    "report_md": "\n\n## Epileptor2D\nEpileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).\n\nNote: \n------\n- Equations and default parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### Derived Variables\n$$\nx1cond = \\begin{cases} a*x_{1}^{2} + x_{1}*\\left(- b + d\\right) & \\text{for}\\: x_{1} < 0 \\\\d*x_{1} - slope - 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3.0}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1.0} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x_{1} = tt*\\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\\right)\n$$\n$$\n\\frac{d}{d t} z = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext$ | 3.1 | N/A | External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E2D uses a nonlinear influence on z_E2D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor) |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor2D |\n| $x_{0}$ | -1.6 | N/A | Degree of excitability or epileptogenicity in Epileptor2D (Proix et al |\n\n\n\n## References\nCitation key 'Proix2014' not found.\n\nCitation key 'Proix2017' not found.\n",
     "thumbnail": "browser/imgs/models/Epileptor2D.png",
     "parameter_names": [
       "Iext",
@@ -7665,6 +8434,9 @@ window.searchData = [
     "coupling_terms.c_pop0": {
       "name": "c_pop0"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.E": {
       "name": "E",
       "domain": {
@@ -7700,7 +8472,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/WilsonCowan.yaml",
-    "report_md": "\n\n# WilsonCowan\nThe Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973).\n\nThis model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011).\n\nKey parameters in the model are the strength of connectivity between each subtype of population (excitatory and inhibitory) and the strength of input to each subpopulation. The Input parameters P and Q also provide the entry point for local and long-range connectivity, that is, the activity coming from neighboring and distant populations respectively.\n\nVarying Input and connectivity generates a diversity of dynamical behaviors that are representative of observed activity in the brain, like multistability, oscillations, traveling waves and spatial patterns.\nWe consider the transmission parameters of the excitatory population to be glutamatergic and therefore to be modified by glutamatergic receptors. The inhibitory population is considered as GABAergic.\n\nNote:\n- Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)\n- Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)\n- The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.\n\n## Equations\n\n### Derived Variables\n$$\nlc_{0} = E*c_{local}\n$$\n$$\nlc_{1} = I*c_{local}\n$$\n$$\nx_{e} = \\alpha_{e}*\\left(P + c_{global} + lc_{0} + lc_{1} - \\theta_{e} + E*c_{ee} - I*c_{ei}\\right)\n$$\n$$\nx_{i} = \\alpha_{i}*\\left(Q + lc_{0} + lc_{1} - \\theta_{i} + E*c_{ie} - I*c_{ii}\\right)\n$$\n$$\ns_{e} = \\frac{c_{e}}{1.0 + e^{- a_{e}*\\left(x_{e} - b_{e}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{e}*b_{e}}}\n$$\n$$\ns_{i} = \\frac{c_{i}}{1.0 + e^{- a_{i}*\\left(x_{i} - b_{i}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{i}*b_{i}}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} E = \\frac{- E + s_{e}*\\left(k_{e} - E*r_{e}\\right)}{\\tau_{e}}\n$$\n$$\n\\frac{d}{d t} I = \\frac{- I + s_{i}*\\left(k_{i} - I*r_{i}\\right)}{\\tau_{i}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $P$ | 0.0 | N/A | External stimulus to the excitatory population (Wilson and Cowan, 1972) |\n| $Q$ | 0.0 | N/A | External stimulus to the inhibitory population (Wilson and Cowan, 1972) |\n| $a_{e}$ | 1.2 | N/A | Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972) |\n| $a_{i}$ | 1.0 | N/A | Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972) |\n| $\\alpha_{e}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $\\alpha_{i}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $b_{e}$ | 2.8 | N/A | Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al |\n| $b_{i}$ | 4.0 | N/A | Position of the maximum slope of a sigmoid function [in         threshold units] |\n| $c_{e}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function |\n| $c_{ee}$ | 12.0 | N/A | Excitatory to excitatory  coupling coefficient |\n| $c_{ei}$ | 4.0 | N/A | Inhibitory to excitatory coupling coefficient |\n| $c_{i}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al |\n| $c_{ie}$ | 13.0 | N/A | Excitatory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $c_{ii}$ | 11.0 | N/A | Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $k_{e}$ | 1.0 | N/A | Maximum value of the excitatory response function |\n| $k_{i}$ | 1.0 | N/A | Maximum value of the inhibitory response function |\n| $r_{e}$ | 1.0 | N/A | Excitatory refractory period |\n| $r_{i}$ | 1.0 | N/A | Inhibitory refractory period |\n| $shift_{sigmoid}$ | 1.0 | N/A | In order to have resting state (E=0 and I=0) in absence of external input,         the logistic curve are translated downward S(0)=0 |\n| $\\tau_{e}$ | 10.0 | ms | Excitatory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\tau_{i}$ | 10.0 | ms | Inhibitory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\theta_{e}$ | 0.0 | N/A | Excitation threshold of excitatory population (Sanz-Leon et al |\n| $\\theta_{i}$ | 0.0 | N/A | Excitation threshold of inhibitory population (Sanz-Leon et al |\n\n\n\n## References\nCitation key 'Wilson1972' not found.\n\nCitation key 'Wilson1973' not found.\n",
+    "report_md": "\n\n## WilsonCowan\nThe Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973). \n\nThis model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011). \n\nKey parameters in the model are the strength of connectivity between each subtype of population (excitatory and inhibitory) and the strength of input to each subpopulation. The Input parameters P and Q also provide the entry point for local and long-range connectivity, that is, the activity coming from neighboring and distant populations respectively.\n\nVarying Input and connectivity generates a diversity of dynamical behaviors that are representative of observed activity in the brain, like multistability, oscillations, traveling waves and spatial patterns.\nWe consider the transmission parameters of the excitatory population to be glutamatergic and therefore to be modified by glutamatergic receptors. The inhibitory population is considered as GABAergic.\n\nNote:\n- Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)\n- Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)\n- The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.\n\n### Derived Variables\n$$\nlc_{0} = E*c_{local}\n$$\n$$\nlc_{1} = I*c_{local}\n$$\n$$\nx_{e} = \\alpha_{e}*\\left(P + c_{global} + lc_{0} + lc_{1} - \\theta_{e} + E*c_{ee} - I*c_{ei}\\right)\n$$\n$$\nx_{i} = \\alpha_{i}*\\left(Q + lc_{0} + lc_{1} - \\theta_{i} + E*c_{ie} - I*c_{ii}\\right)\n$$\n$$\ns_{e} = \\frac{c_{e}}{1.0 + e^{- a_{e}*\\left(x_{e} - b_{e}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{e}*b_{e}}}\n$$\n$$\ns_{i} = \\frac{c_{i}}{1.0 + e^{- a_{i}*\\left(x_{i} - b_{i}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{i}*b_{i}}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} E = \\frac{- E + s_{e}*\\left(k_{e} - E*r_{e}\\right)}{\\tau_{e}}\n$$\n$$\n\\frac{d}{d t} I = \\frac{- I + s_{i}*\\left(k_{i} - I*r_{i}\\right)}{\\tau_{i}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $P$ | 0.0 | N/A | External stimulus to the excitatory population (Wilson and Cowan, 1972) |\n| $Q$ | 0.0 | N/A | External stimulus to the inhibitory population (Wilson and Cowan, 1972) |\n| $a_{e}$ | 1.2 | N/A | Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972) |\n| $a_{i}$ | 1.0 | N/A | Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972) |\n| $\\alpha_{e}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $\\alpha_{i}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $b_{e}$ | 2.8 | N/A | Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al |\n| $b_{i}$ | 4.0 | N/A | Position of the maximum slope of a sigmoid function [in         threshold units] |\n| $c_{e}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function |\n| $c_{ee}$ | 12.0 | N/A | Excitatory to excitatory  coupling coefficient |\n| $c_{ei}$ | 4.0 | N/A | Inhibitory to excitatory coupling coefficient |\n| $c_{i}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al |\n| $c_{ie}$ | 13.0 | N/A | Excitatory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $c_{ii}$ | 11.0 | N/A | Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $k_{e}$ | 1.0 | N/A | Maximum value of the excitatory response function |\n| $k_{i}$ | 1.0 | N/A | Maximum value of the inhibitory response function |\n| $r_{e}$ | 1.0 | N/A | Excitatory refractory period |\n| $r_{i}$ | 1.0 | N/A | Inhibitory refractory period |\n| $shift_{sigmoid}$ | 1.0 | N/A | In order to have resting state (E=0 and I=0) in absence of external input,         the logistic curve are translated downward S(0)=0 |\n| $\\tau_{e}$ | 10.0 | ms | Excitatory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\tau_{i}$ | 10.0 | ms | Inhibitory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\theta_{e}$ | 0.0 | N/A | Excitation threshold of excitatory population (Sanz-Leon et al |\n| $\\theta_{i}$ | 0.0 | N/A | Excitation threshold of inhibitory population (Sanz-Leon et al |\n\n\n\n## References\nCitation key 'Wilson1973' not found.\n\nCitation key 'Wilson1972' not found.\n",
     "thumbnail": "browser/imgs/models/WilsonCowan.png",
     "parameter_names": [
       "P",
@@ -8053,6 +8825,9 @@ window.searchData = [
       "coupling_terms": {
         "c_pop0": {
           "name": "c_pop0"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -8944,6 +9719,9 @@ window.searchData = [
     "coupling_terms.c_pop0": {
       "name": "c_pop0"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.E": {
       "name": "E",
       "domain": {
@@ -9035,7 +9813,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/ZerlautAdaptationFirstOrder.yaml",
-    "report_md": "\n\n# ZerlautAdaptationFirstOrder\n\n\n## Equations\n\n### Derived Variables\n$$\nlc_{E} = E*c_{local}\n$$\n$$\nlc_{I} = I*c_{local}\n$$\n$$\nFe_{ext} = \\begin{cases} 0 & \\text{for}\\: K_{ext e}*\\left(c_{global} + lc_{E} + ou_{drift}*weight_{noise}\\right) < 0 \\\\c_{global} + lc_{E} + ou_{drift}*weight_{noise} & \\text{otherwise} \\end{cases}\n$$\n$$\nFi_{ext} = lc_{I}\n$$\n$$\nfe_{e} = K_{ext e}*\\left(Fe_{ext} + external_{input ex ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfe_{i} = K_{ext e}*\\left(Fe_{ext} + external_{input in ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfi_{e} = K_{ext i}*\\left(Fi_{ext} + external_{input ex in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\nfi_{i} = K_{ext i}*\\left(Fi_{ext} + external_{input in in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\n\\mu_{Ge e} = Q_{e}*fe_{e}*\\tau_{e}\n$$\n$$\n\\mu_{Ge i} = Q_{e}*fe_{i}*\\tau_{e}\n$$\n$$\n\\mu_{Gi e} = Q_{i}*fi_{e}*\\tau_{i}\n$$\n$$\n\\mu_{Gi i} = Q_{i}*fi_{i}*\\tau_{i}\n$$\n$$\n\\mu_{G e} = g_{L} + \\mu_{Ge e} + \\mu_{Gi e}\n$$\n$$\n\\mu_{G i} = g_{L} + \\mu_{Ge i} + \\mu_{Gi i}\n$$\n$$\nT_{m e} = \\frac{C_{m}}{\\mu_{G e}}\n$$\n$$\nT_{m i} = \\frac{C_{m}}{\\mu_{G i}}\n$$\n$$\n\\mu_{V e} = \\frac{- W_{e} + E_{L e}*g_{L} + E_{e}*\\mu_{Ge e} + E_{i}*\\mu_{Gi e}}{\\mu_{G e}}\n$$\n$$\n\\mu_{V i} = \\frac{- W_{i} + E_{L i}*g_{L} + E_{e}*\\mu_{Ge i} + E_{i}*\\mu_{Gi i}}{\\mu_{G i}}\n$$\n$$\nU_{e e} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{e i} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nU_{i e} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{i i} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nV_{e} = \\frac{\\mu_{V e} - muV_{0}}{DmuV_{0}}\n$$\n$$\nV_{i} = \\frac{\\mu_{V i} - muV_{0}}{DmuV_{0}}\n$$\n$$\nT_{V e} = \\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2} + fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{T_{m e} + \\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{T_{m e} + \\tau_{i}}}\n$$\n$$\nT_{V i} = \\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2} + fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{T_{m i} + \\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{T_{m i} + \\tau_{i}}}\n$$\n$$\n\\sigma_{V e} = \\sqrt{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{2.0*T_{m e} + 2.0*\\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{2.0*T_{m e} + 2.0*\\tau_{i}}}\n$$\n$$\n\\sigma_{V i} = \\sqrt{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{2.0*T_{m i} + 2.0*\\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{2.0*T_{m i} + 2.0*\\tau_{i}}}\n$$\n$$\nS_{e} = \\frac{\\sigma_{V e} - sV_{0}}{DsV_{0}}\n$$\n$$\nS_{i} = \\frac{\\sigma_{V i} - sV_{0}}{DsV_{0}}\n$$\n$$\nT_{e} = \\frac{- TvN_{0} + \\frac{T_{V e}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nT_{i} = \\frac{- TvN_{0} + \\frac{T_{V i}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nV_{thre e} = 1000.0*P_{0 e} + 1000.0*P_{1 e}*V_{e} + 1000.0*P_{2 e}*S_{e} + 1000.0*P_{3 e}*T_{e} + 1000.0*P_{4 e}*V_{e}^{2} + 1000.0*P_{5 e}*S_{e}^{2} + 1000.0*P_{6 e}*T_{e}^{2} + 1000.0*P_{7 e}*S_{e}*V_{e} + 1000.0*P_{8 e}*T_{e}*V_{e} + 1000.0*P_{9 e}*S_{e}*T_{e}\n$$\n$$\nV_{thre i} = 1000.0*P_{0 i} + 1000.0*P_{1 i}*V_{i} + 1000.0*P_{2 i}*S_{i} + 1000.0*P_{3 i}*T_{i} + 1000.0*P_{4 i}*V_{i}^{2} + 1000.0*P_{5 i}*S_{i}^{2} + 1000.0*P_{6 i}*T_{i}^{2} + 1000.0*P_{7 i}*S_{i}*V_{i} + 1000.0*P_{8 i}*T_{i}*V_{i} + 1000.0*P_{9 i}*S_{i}*T_{i}\n$$\n$$\nf_{out e} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre e} - \\mu_{V e}\\right)}{2*\\sigma_{V e}} \\right)}}{2*T_{V e}}\n$$\n$$\nf_{out i} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre i} - \\mu_{V i}\\right)}{2*\\sigma_{V i}} \\right)}}{2*T_{V i}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} E = \\frac{f_{out e} - E}{T}\n$$\n$$\n\\frac{d}{d t} I = \\frac{f_{out i} - I}{T}\n$$\n$$\n\\frac{d}{d t} W_{e} = E*b_{e} - \\frac{W_{e}}{\\tau_{w e}} + \\frac{a_{e}*\\left(\\mu_{V e} - E_{L e}\\right)}{\\tau_{w e}}\n$$\n$$\n\\frac{d}{d t} W_{i} = I*b_{i} - \\frac{W_{i}}{\\tau_{w i}} + \\frac{a_{i}*\\left(\\mu_{V i} - E_{L i}\\right)}{\\tau_{w i}}\n$$\n$$\n\\frac{d}{d t} ou_{drift} = - \\frac{ou_{drift}}{\\tau_{OU}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C_{m}$ | 200.0 | N/A | membrane capacitance [pF] |\n| $DTvN_{0}$ | 1.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DmuV_{0}$ | 10.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DsV_{0}$ | 6.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $E_{L e}$ | -65.0 | N/A | leak reversal potential for excitatory [mV] |\n| $E_{L i}$ | -65.0 | N/A | leak reversal potential for inhibitory [mV] |\n| $E_{e}$ | 0.0 | N/A | excitatory reversal potential [mV] |\n| $E_{i}$ | -80.0 | N/A | inhibitory reversal potential [mV] |\n| $K_{ext e}$ | 400.0 | N/A | Number of excitatory connexions from external population |\n| $K_{ext i}$ | 0.0 | N/A | Number of inhibitory connexions from external population |\n| $N_{tot}$ | 10000.0 | N/A | cell number |\n| $P_{0 e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{0 i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{1 e}$ | 0.005063550882777035 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{1 i}$ | 0.004003689190271077 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{2 e}$ | -0.023470121807314552 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{2 i}$ | -0.008352013668528155 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{3 e}$ | 0.0022951513725067503 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{3 i}$ | 0.0002414237992765705 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{4 e}$ | -0.0004105302652029825 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{4 i}$ | -0.0005070645080016026 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{5 e}$ | 0.010547051343547399 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{5 i}$ | 0.0014345394104282397 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{6 e}$ | -0.03659252821136933 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{6 i}$ | -0.014686689498949967 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{7 e}$ | 0.007437487505797858 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{7 i}$ | 0.004502706285435741 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{8 e}$ | 0.001265064721846073 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{8 i}$ | 0.0028472190352532454 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{9 e}$ | -0.04072161294490446 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{9 i}$ | -0.015357804594594548 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $Q_{e}$ | 1.5 | N/A | excitatory quantal conductance [nS] |\n| $Q_{i}$ | 5.0 | N/A | inhibitory quantal conductance [nS] |\n| $S_{i}$ | 1.0 | N/A | Scaling of the remote input for the inhibitory population with         respect to the excitatory population |\n| $T$ | 20.0 | N/A | Time scale of describing network activity |\n| $TvN_{0}$ | 0.5 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $a_{e}$ | 4.0 | N/A | Excitatory adaptation conductance [nS] |\n| $a_{i}$ | 0.0 | N/A | Inhibitory adaptation conductance [nS] |\n| $b_{e}$ | 60.0 | N/A | Excitatory adaptation current increment [pA] |\n| $b_{i}$ | 0.0 | N/A | Inhibitory adaptation current increment [pA] |\n| $external_{input ex ex}$ | 0.0 | N/A | external drive |\n| $external_{input ex in}$ | 0.0 | N/A | external drive |\n| $external_{input in ex}$ | 0.0 | N/A | external drive |\n| $external_{input in in}$ | 0.0 | N/A | external drive |\n| $g_{L}$ | 10.0 | N/A | leak conductance [nS] |\n| $g$ | 0.2 | N/A | fraction of inhibitory cells |\n| $muV_{0}$ | -60.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $p_{connect e}$ | 0.05 | N/A | connectivity probability |\n| $p_{connect i}$ | 0.05 | N/A | connectivity probability |\n| $sV_{0}$ | 4.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $\\tau_{OU}$ | 5.0 | N/A | time constant noise |\n| $\\tau_{e}$ | 5.0 | N/A | excitatory decay [ms] |\n| $\\tau_{i}$ | 5.0 | N/A | inhibitory decay [ms] |\n| $\\tau_{w e}$ | 500.0 | N/A | Adaptation time constant of excitatory neurons [ms] |\n| $\\tau_{w i}$ | 1.0 | N/A | Adaptation time constant of inhibitory neurons [ms] |\n| $weight_{noise}$ | 10.5 | N/A | weight noise |\n\n\n\n## References\nCitation key 'Zerlaut2018' not found.\n\nCitation key 'diVolo2019' not found.\n",
+    "report_md": "\n\n## ZerlautAdaptationFirstOrder\n\n\n### Derived Variables\n$$\nlc_{E} = E*c_{local}\n$$\n$$\nlc_{I} = I*c_{local}\n$$\n$$\nFe_{ext} = \\begin{cases} 0 & \\text{for}\\: K_{ext e}*\\left(c_{global} + lc_{E} + ou_{drift}*weight_{noise}\\right) < 0 \\\\c_{global} + lc_{E} + ou_{drift}*weight_{noise} & \\text{otherwise} \\end{cases}\n$$\n$$\nFi_{ext} = lc_{I}\n$$\n$$\nfe_{e} = K_{ext e}*\\left(Fe_{ext} + external_{input ex ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfe_{i} = K_{ext e}*\\left(Fe_{ext} + external_{input in ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfi_{e} = K_{ext i}*\\left(Fi_{ext} + external_{input ex in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\nfi_{i} = K_{ext i}*\\left(Fi_{ext} + external_{input in in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\n\\mu_{Ge e} = Q_{e}*fe_{e}*\\tau_{e}\n$$\n$$\n\\mu_{Ge i} = Q_{e}*fe_{i}*\\tau_{e}\n$$\n$$\n\\mu_{Gi e} = Q_{i}*fi_{e}*\\tau_{i}\n$$\n$$\n\\mu_{Gi i} = Q_{i}*fi_{i}*\\tau_{i}\n$$\n$$\n\\mu_{G e} = g_{L} + \\mu_{Ge e} + \\mu_{Gi e}\n$$\n$$\n\\mu_{G i} = g_{L} + \\mu_{Ge i} + \\mu_{Gi i}\n$$\n$$\nT_{m e} = \\frac{C_{m}}{\\mu_{G e}}\n$$\n$$\nT_{m i} = \\frac{C_{m}}{\\mu_{G i}}\n$$\n$$\n\\mu_{V e} = \\frac{- W_{e} + E_{L e}*g_{L} + E_{e}*\\mu_{Ge e} + E_{i}*\\mu_{Gi e}}{\\mu_{G e}}\n$$\n$$\n\\mu_{V i} = \\frac{- W_{i} + E_{L i}*g_{L} + E_{e}*\\mu_{Ge i} + E_{i}*\\mu_{Gi i}}{\\mu_{G i}}\n$$\n$$\nU_{e e} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{e i} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nU_{i e} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{i i} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nV_{e} = \\frac{\\mu_{V e} - muV_{0}}{DmuV_{0}}\n$$\n$$\nV_{i} = \\frac{\\mu_{V i} - muV_{0}}{DmuV_{0}}\n$$\n$$\nT_{V e} = \\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2} + fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{T_{m e} + \\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{T_{m e} + \\tau_{i}}}\n$$\n$$\nT_{V i} = \\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2} + fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{T_{m i} + \\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{T_{m i} + \\tau_{i}}}\n$$\n$$\n\\sigma_{V e} = \\sqrt{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{2.0*T_{m e} + 2.0*\\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{2.0*T_{m e} + 2.0*\\tau_{i}}}\n$$\n$$\n\\sigma_{V i} = \\sqrt{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{2.0*T_{m i} + 2.0*\\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{2.0*T_{m i} + 2.0*\\tau_{i}}}\n$$\n$$\nS_{e} = \\frac{\\sigma_{V e} - sV_{0}}{DsV_{0}}\n$$\n$$\nS_{i} = \\frac{\\sigma_{V i} - sV_{0}}{DsV_{0}}\n$$\n$$\nT_{e} = \\frac{- TvN_{0} + \\frac{T_{V e}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nT_{i} = \\frac{- TvN_{0} + \\frac{T_{V i}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nV_{thre e} = 1000.0*P_{0 e} + 1000.0*P_{1 e}*V_{e} + 1000.0*P_{2 e}*S_{e} + 1000.0*P_{3 e}*T_{e} + 1000.0*P_{4 e}*V_{e}^{2} + 1000.0*P_{5 e}*S_{e}^{2} + 1000.0*P_{6 e}*T_{e}^{2} + 1000.0*P_{7 e}*S_{e}*V_{e} + 1000.0*P_{8 e}*T_{e}*V_{e} + 1000.0*P_{9 e}*S_{e}*T_{e}\n$$\n$$\nV_{thre i} = 1000.0*P_{0 i} + 1000.0*P_{1 i}*V_{i} + 1000.0*P_{2 i}*S_{i} + 1000.0*P_{3 i}*T_{i} + 1000.0*P_{4 i}*V_{i}^{2} + 1000.0*P_{5 i}*S_{i}^{2} + 1000.0*P_{6 i}*T_{i}^{2} + 1000.0*P_{7 i}*S_{i}*V_{i} + 1000.0*P_{8 i}*T_{i}*V_{i} + 1000.0*P_{9 i}*S_{i}*T_{i}\n$$\n$$\nf_{out e} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre e} - \\mu_{V e}\\right)}{2*\\sigma_{V e}} \\right)}}{2*T_{V e}}\n$$\n$$\nf_{out i} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre i} - \\mu_{V i}\\right)}{2*\\sigma_{V i}} \\right)}}{2*T_{V i}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} E = \\frac{f_{out e} - E}{T}\n$$\n$$\n\\frac{d}{d t} I = \\frac{f_{out i} - I}{T}\n$$\n$$\n\\frac{d}{d t} W_{e} = E*b_{e} - \\frac{W_{e}}{\\tau_{w e}} + \\frac{a_{e}*\\left(\\mu_{V e} - E_{L e}\\right)}{\\tau_{w e}}\n$$\n$$\n\\frac{d}{d t} W_{i} = I*b_{i} - \\frac{W_{i}}{\\tau_{w i}} + \\frac{a_{i}*\\left(\\mu_{V i} - E_{L i}\\right)}{\\tau_{w i}}\n$$\n$$\n\\frac{d}{d t} ou_{drift} = - \\frac{ou_{drift}}{\\tau_{OU}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C_{m}$ | 200.0 | N/A | membrane capacitance [pF] |\n| $DTvN_{0}$ | 1.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DmuV_{0}$ | 10.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DsV_{0}$ | 6.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $E_{L e}$ | -65.0 | N/A | leak reversal potential for excitatory [mV] |\n| $E_{L i}$ | -65.0 | N/A | leak reversal potential for inhibitory [mV] |\n| $E_{e}$ | 0.0 | N/A | excitatory reversal potential [mV] |\n| $E_{i}$ | -80.0 | N/A | inhibitory reversal potential [mV] |\n| $K_{ext e}$ | 400.0 | N/A | Number of excitatory connexions from external population |\n| $K_{ext i}$ | 0.0 | N/A | Number of inhibitory connexions from external population |\n| $N_{tot}$ | 10000.0 | N/A | cell number |\n| $P_{0 e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{0 i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{1 e}$ | 0.005063550882777035 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{1 i}$ | 0.004003689190271077 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{2 e}$ | -0.023470121807314552 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{2 i}$ | -0.008352013668528155 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{3 e}$ | 0.0022951513725067503 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{3 i}$ | 0.0002414237992765705 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{4 e}$ | -0.0004105302652029825 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{4 i}$ | -0.0005070645080016026 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{5 e}$ | 0.010547051343547399 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{5 i}$ | 0.0014345394104282397 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{6 e}$ | -0.03659252821136933 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{6 i}$ | -0.014686689498949967 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{7 e}$ | 0.007437487505797858 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{7 i}$ | 0.004502706285435741 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{8 e}$ | 0.001265064721846073 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{8 i}$ | 0.0028472190352532454 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{9 e}$ | -0.04072161294490446 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{9 i}$ | -0.015357804594594548 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $Q_{e}$ | 1.5 | N/A | excitatory quantal conductance [nS] |\n| $Q_{i}$ | 5.0 | N/A | inhibitory quantal conductance [nS] |\n| $S_{i}$ | 1.0 | N/A | Scaling of the remote input for the inhibitory population with         respect to the excitatory population |\n| $T$ | 20.0 | N/A | Time scale of describing network activity |\n| $TvN_{0}$ | 0.5 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $a_{e}$ | 4.0 | N/A | Excitatory adaptation conductance [nS] |\n| $a_{i}$ | 0.0 | N/A | Inhibitory adaptation conductance [nS] |\n| $b_{e}$ | 60.0 | N/A | Excitatory adaptation current increment [pA] |\n| $b_{i}$ | 0.0 | N/A | Inhibitory adaptation current increment [pA] |\n| $external_{input ex ex}$ | 0.0 | N/A | external drive |\n| $external_{input ex in}$ | 0.0 | N/A | external drive |\n| $external_{input in ex}$ | 0.0 | N/A | external drive |\n| $external_{input in in}$ | 0.0 | N/A | external drive |\n| $g_{L}$ | 10.0 | N/A | leak conductance [nS] |\n| $g$ | 0.2 | N/A | fraction of inhibitory cells |\n| $muV_{0}$ | -60.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $p_{connect e}$ | 0.05 | N/A | connectivity probability |\n| $p_{connect i}$ | 0.05 | N/A | connectivity probability |\n| $sV_{0}$ | 4.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $\\tau_{OU}$ | 5.0 | N/A | time constant noise |\n| $\\tau_{e}$ | 5.0 | N/A | excitatory decay [ms] |\n| $\\tau_{i}$ | 5.0 | N/A | inhibitory decay [ms] |\n| $\\tau_{w e}$ | 500.0 | N/A | Adaptation time constant of excitatory neurons [ms] |\n| $\\tau_{w i}$ | 1.0 | N/A | Adaptation time constant of inhibitory neurons [ms] |\n| $weight_{noise}$ | 10.5 | N/A | weight noise |\n\n\n\n## References\nCitation key 'Zerlaut2018' not found.\n\nCitation key 'diVolo2019' not found.\n",
     "thumbnail": "browser/imgs/models/ZerlautAdaptationFirstOrder.png",
     "parameter_names": [
       "C_m",
@@ -9962,6 +10740,9 @@ window.searchData = [
       "coupling_terms": {
         "c_pop0": {
           "name": "c_pop0"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -10481,6 +11262,9 @@ window.searchData = [
     "coupling_terms.c_pop0": {
       "name": "c_pop0"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.V": {
       "name": "V",
       "domain": {
@@ -10532,7 +11316,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/LarterBreakspear.yaml",
-    "report_md": "\n\n# LarterBreakspear\nThe Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium,\npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail.\n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors.\n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b),\n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.\n\n## Equations\n\n### Derived Variables\n$$\nQ_{V} = 0.5*Q_{Vmax}*\\left(1 + \\tanh{\\left(\\frac{V - V_{T}}{\\delta_{V}} \\right)}\\right)\n$$\n$$\nQ_{Z} = 0.5*Q_{Zmax}*\\left(1 + \\tanh{\\left(\\frac{Z - Z_{T}}{\\delta_{Z}} \\right)}\\right)\n$$\n$$\nm_{Ca} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Ca}}{\\delta_{Ca}} \\right)}\n$$\n$$\nm_{K} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{K}}{\\delta_{K}} \\right)}\n$$\n$$\nm_{Na} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Na}}{\\delta_{Na}} \\right)}\n$$\n$$\nlc_{0} = Q_{V}*c_{local}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} V = t_{scale}*\\left(I_{ext}*a_{ne} - g_{L}*\\left(V - V_{L}\\right) - \\left(V - V_{Na}\\right)*\\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) + m_{Ca}*\\left(V - V_{Ca}\\right)*\\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\\left(V - V_{K}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} W = \\frac{\\phi*t_{scale}*\\left(m_{K} - W\\right)}{\\tau_{K}}\n$$\n$$\n\\frac{d}{d t} Z = b*t_{scale}*\\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C$ | 0.1 | N/A | Coupling scaling factor |\n| $I_{ext}$ | 0.3 | N/A | Subcortical input current |\n| $Q_{Vmax}$ | 1.0 | Kilohertz | Maximal firing rate for excitatory populations |\n| $Q_{Zmax}$ | 1.0 | Kilohertz | Maximal firing rate for inhibitory population |\n| $T_{Ca}$ | -0.01 | N/A | Threshold value for Ca channels |\n| $T_{K}$ | 0.0 | N/A | Threshold value for K channels |\n| $T_{Na}$ | 0.3 | N/A | Threshold value for sodium channels |\n| $V_{Ca}$ | 1.0 | N/A | Calcium Nernst potential |\n| $V_{K}$ | -0.7 | N/A | K Nernst potential |\n| $V_{L}$ | -0.5 | N/A | Nernst potential leak channels |\n| $V_{Na}$ | 0.53 | N/A | Na Nernst potential |\n| $V_{T}$ | 0.0 | N/A | Threshold potential for excitatory neurons |\n| $Z_{T}$ | 0.0 | N/A | Threshold potential (mean) for inihibtory neurons |\n| $a_{ee}$ | 0.4 | N/A | Excitatory-to-excitatory synaptic strength |\n| $a_{ei}$ | 2.0 | N/A | Excitatory-to-inhibitory synaptic strength |\n| $a_{ie}$ | 2.0 | N/A | Inhibitory-to-excitatory synaptic strength |\n| $a_{ne}$ | 1.0 | N/A | Non-specific-to-excitatory synaptic strength |\n| $a_{ni}$ | 0.4 | N/A | Non-specific-to-inhibitory synaptic strength |\n| $b$ | 0.1 | N/A | Time constant scaling factor |\n| $\\delta_{Ca}$ | 0.15 | N/A | Variance of Calcium channel threshold |\n| $\\delta_{K}$ | 0.3 | N/A | Variance of Potassium channel threshold |\n| $\\delta_{Na}$ | 0.15 | N/A | Variance of sodium channel threshold |\n| $\\delta_{V}$ | 0.65 | N/A | Variance of excitatory threshold |\n| $\\delta_{Z}$ | 0.7 | N/A | Variance of inhibitory threshold |\n| $g_{Ca}$ | 1.1 | N/A | Conductance of population of calcium (Ca++) channels |\n| $g_{K}$ | 2.0 | N/A | Conductance of population of potassium (K) channels |\n| $g_{L}$ | 0.5 | N/A | Conductance of population of leak channels |\n| $g_{Na}$ | 6.7 | N/A | Conductance of population of Na channels |\n| $\\phi$ | 0.7 | N/A | Temperature scaling factor |\n| $r_{NMDA}$ | 0.25 | N/A | Ratio of NMDA to AMPA receptors |\n| $t_{scale}$ | 1.0 | N/A | Time scale factor |\n| $\\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |\n\n\n\n## References\nBreakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.\n\nLarter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.\n\nBreakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.\n",
+    "report_md": "\n\n## LarterBreakspear\nThe Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, \npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. \n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b), \n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.\n\n### Derived Variables\n$$\nQ_{V} = 0.5*Q_{Vmax}*\\left(1 + \\tanh{\\left(\\frac{V - V_{T}}{\\delta_{V}} \\right)}\\right)\n$$\n$$\nQ_{Z} = 0.5*Q_{Zmax}*\\left(1 + \\tanh{\\left(\\frac{Z - Z_{T}}{\\delta_{Z}} \\right)}\\right)\n$$\n$$\nm_{Ca} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Ca}}{\\delta_{Ca}} \\right)}\n$$\n$$\nm_{K} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{K}}{\\delta_{K}} \\right)}\n$$\n$$\nm_{Na} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Na}}{\\delta_{Na}} \\right)}\n$$\n$$\nlc_{0} = Q_{V}*c_{local}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} V = t_{scale}*\\left(I_{ext}*a_{ne} - g_{L}*\\left(V - V_{L}\\right) - \\left(V - V_{Na}\\right)*\\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) + m_{Ca}*\\left(V - V_{Ca}\\right)*\\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\\left(V - V_{K}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} W = \\frac{\\phi*t_{scale}*\\left(m_{K} - W\\right)}{\\tau_{K}}\n$$\n$$\n\\frac{d}{d t} Z = b*t_{scale}*\\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C$ | 0.1 | N/A | Coupling scaling factor |\n| $I_{ext}$ | 0.3 | N/A | Subcortical input current |\n| $Q_{Vmax}$ | 1.0 | Kilohertz | Maximal firing rate for excitatory populations |\n| $Q_{Zmax}$ | 1.0 | Kilohertz | Maximal firing rate for inhibitory population |\n| $T_{Ca}$ | -0.01 | N/A | Threshold value for Ca channels |\n| $T_{K}$ | 0.0 | N/A | Threshold value for K channels |\n| $T_{Na}$ | 0.3 | N/A | Threshold value for sodium channels |\n| $V_{Ca}$ | 1.0 | N/A | Calcium Nernst potential |\n| $V_{K}$ | -0.7 | N/A | K Nernst potential |\n| $V_{L}$ | -0.5 | N/A | Nernst potential leak channels |\n| $V_{Na}$ | 0.53 | N/A | Na Nernst potential |\n| $V_{T}$ | 0.0 | N/A | Threshold potential for excitatory neurons |\n| $Z_{T}$ | 0.0 | N/A | Threshold potential (mean) for inihibtory neurons |\n| $a_{ee}$ | 0.4 | N/A | Excitatory-to-excitatory synaptic strength |\n| $a_{ei}$ | 2.0 | N/A | Excitatory-to-inhibitory synaptic strength |\n| $a_{ie}$ | 2.0 | N/A | Inhibitory-to-excitatory synaptic strength |\n| $a_{ne}$ | 1.0 | N/A | Non-specific-to-excitatory synaptic strength |\n| $a_{ni}$ | 0.4 | N/A | Non-specific-to-inhibitory synaptic strength |\n| $b$ | 0.1 | N/A | Time constant scaling factor |\n| $\\delta_{Ca}$ | 0.15 | N/A | Variance of Calcium channel threshold |\n| $\\delta_{K}$ | 0.3 | N/A | Variance of Potassium channel threshold |\n| $\\delta_{Na}$ | 0.15 | N/A | Variance of sodium channel threshold |\n| $\\delta_{V}$ | 0.65 | N/A | Variance of excitatory threshold |\n| $\\delta_{Z}$ | 0.7 | N/A | Variance of inhibitory threshold |\n| $g_{Ca}$ | 1.1 | N/A | Conductance of population of calcium (Ca++) channels |\n| $g_{K}$ | 2.0 | N/A | Conductance of population of potassium (K) channels |\n| $g_{L}$ | 0.5 | N/A | Conductance of population of leak channels |\n| $g_{Na}$ | 6.7 | N/A | Conductance of population of Na channels |\n| $\\phi$ | 0.7 | N/A | Temperature scaling factor |\n| $r_{NMDA}$ | 0.25 | N/A | Ratio of NMDA to AMPA receptors |\n| $t_{scale}$ | 1.0 | N/A | Time scale factor |\n| $\\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |\n\n\n\n## References\nBreakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.\n\nBreakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.\n\nLarter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.\n",
     "thumbnail": "browser/imgs/models/LarterBreakspear.png",
     "parameter_names": [
       "C",
@@ -11003,6 +11787,9 @@ window.searchData = [
       "coupling_terms": {
         "c_pop0": {
           "name": "c_pop0"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -11240,7 +12027,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/GastSchmidtKnosche_SF.yaml",
-    "report_md": "\n\n# GastSchmidtKnosche_SF\n\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} A = \\frac{B}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} B = \\frac{- A - 2*B + \\alpha*r}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} V = \\frac{I + \\eta + V^{2} - A + c_{global}*cr + c_{pop1}*cv + J*r*\\tau - \\pi^{2}*r^{2}*\\tau^{2}}{\\tau}\n$$\n$$\n\\frac{d}{d t} r = \\frac{2*V*r + \\frac{\\Delta}{\\pi*\\tau}}{\\tau}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 2.0 | N/A | Half-width of heterogeneous noise distribution |\n| $I$ | 0.0 | N/A | External homogeneous current |\n| $J$ | 21.2132 | N/A | Synaptic weight |\n| $\\alpha$ | 10.0 | N/A | adaptation rate |\n| $cr$ | 1.0 | N/A | It is the weight on Coupling through variable r |\n| $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |\n| $\\eta$ | 1.0 | N/A | Mean of heterogeneous noise distribution |\n| $\\tau_{A}$ | 10.0 | N/A | Adaptation time scale |\n| $\\tau$ | 1.0 | N/A | Characteristic time |\n\n\n\n## References\nCitation key 'Gast2020' not found.\n",
+    "report_md": "\n\n## GastSchmidtKnosche_SF\n\n\n\n### State Equations\n$$\n\\frac{d}{d t} A = \\frac{B}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} B = \\frac{- A - 2*B + \\alpha*r}{\\tau_{A}}\n$$\n$$\n\\frac{d}{d t} V = \\frac{I + \\eta + V^{2} - A + c_{global}*cr + c_{pop1}*cv + J*r*\\tau - \\pi^{2}*r^{2}*\\tau^{2}}{\\tau}\n$$\n$$\n\\frac{d}{d t} r = \\frac{2*V*r + \\frac{\\Delta}{\\pi*\\tau}}{\\tau}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 2.0 | N/A | Half-width of heterogeneous noise distribution |\n| $I$ | 0.0 | N/A | External homogeneous current |\n| $J$ | 21.2132 | N/A | Synaptic weight |\n| $\\alpha$ | 10.0 | N/A | adaptation rate |\n| $cr$ | 1.0 | N/A | It is the weight on Coupling through variable r |\n| $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |\n| $\\eta$ | 1.0 | N/A | Mean of heterogeneous noise distribution |\n| $\\tau_{A}$ | 10.0 | N/A | Adaptation time scale |\n| $\\tau$ | 1.0 | N/A | Characteristic time |\n\n\n\n## References\nCitation key 'Gast2020' not found.\n",
     "thumbnail": "browser/imgs/models/GastSchmidtKnosche_SF.png",
     "parameter_names": [
       "Delta",
@@ -11519,7 +12306,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Hopfield.yaml",
-    "report_md": "\n\n# Hopfield\nThe Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).\nWhen the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).\n\nVarious extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].\n\nNote:\n- This model uses the modifications implemented by Golos et al. (2015).\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = \\frac{c_{pop1} - \\theta}{tauT}\n$$\n$$\n\\frac{d}{d t} x = \\frac{c_{global} - x}{taux}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $tauT$ | 5.0 | N/A | The slow time-scale for threshold calculus :math:`\\\\theta`, state-variable of the model |\n| $taux$ | 1.0 | N/A | The fast time-scale for potential calculus :math:`x`, state-variable of the model |\n\n\n\n## References\nCitation key 'Hopfield1982' not found.\n\nCitation key 'Hopfield1984' not found.\n",
+    "report_md": "\n\n## Hopfield\nThe Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).\nWhen the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).\n\nVarious extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].\n\nNote:\n- This model uses the modifications implemented by Golos et al. (2015).\n\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = \\frac{c_{pop1} - \\theta}{tauT}\n$$\n$$\n\\frac{d}{d t} x = \\frac{c_{global} - x}{taux}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $tauT$ | 5.0 | N/A | The slow time-scale for threshold calculus :math:`\\\\theta`, state-variable of the model |\n| $taux$ | 1.0 | N/A | The fast time-scale for potential calculus :math:`x`, state-variable of the model |\n\n\n\n## References\nCitation key 'Hopfield1982' not found.\n\nCitation key 'Hopfield1984' not found.\n",
     "thumbnail": "browser/imgs/models/Hopfield.png",
     "parameter_names": [
       "tauT",
@@ -11787,7 +12574,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Generic2dOscillator.yaml",
-    "report_md": "\n\n# Generic2dOscillator\nThe Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = d*\\tau*\\left(I*\\gamma + V*g + V*c_{local} + W*\\alpha + c_{glob}*\\gamma + e*V^{2} - f*V^{3}\\right)\n$$\n$$\n\\frac{d}{d t} W = \\frac{d*\\left(a + V*b + c*V^{2} - W*\\beta\\right)}{\\tau}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.0 | N/A | Baseline shift of the cubic nullcline |\n| $a$ | -2.0 | N/A | Vertical shift of the configurable nullcline |\n| $\\alpha$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the slow variable to the fast variable. |\n| $b$ | -10.0 | N/A | Linear slope of the configurable nullcline |\n| $\\beta$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the             slow variable to itself |\n| $c$ | 0.0 | N/A | Parabolic term of the configurable nullcline |\n| $d$ | 0.02 | N/A | Temporal scale factor |\n| $e$ | 3.0 | N/A | Coefficient of the quadratic term of the cubic nullcline |\n| $f$ | 1.0 | N/A | Coefficient of the cubic term of the cubic nullcline |\n| $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |\n| $\\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |\n| $\\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |\n\n\n\n## References\nNagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.\n\nFitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.\n",
+    "report_md": "\n\n## Generic2dOscillator\nThe Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = d*\\tau*\\left(I*\\gamma + V*g + V*c_{local} + W*\\alpha + c_{glob}*\\gamma + e*V^{2} - f*V^{3}\\right)\n$$\n$$\n\\frac{d}{d t} W = \\frac{d*\\left(a + V*b + c*V^{2} - W*\\beta\\right)}{\\tau}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.0 | N/A | Baseline shift of the cubic nullcline |\n| $a$ | -2.0 | N/A | Vertical shift of the configurable nullcline |\n| $\\alpha$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the slow variable to the fast variable. |\n| $b$ | -10.0 | N/A | Linear slope of the configurable nullcline |\n| $\\beta$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the             slow variable to itself |\n| $c$ | 0.0 | N/A | Parabolic term of the configurable nullcline |\n| $d$ | 0.02 | N/A | Temporal scale factor |\n| $e$ | 3.0 | N/A | Coefficient of the quadratic term of the cubic nullcline |\n| $f$ | 1.0 | N/A | Coefficient of the cubic term of the cubic nullcline |\n| $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |\n| $\\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |\n| $\\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |\n\n\n\n## References\nNagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.\n\nFitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.\n",
     "thumbnail": "browser/imgs/models/Generic2dOscillator.png",
     "parameter_names": [
       "I",
@@ -12120,6 +12907,9 @@ window.searchData = [
     "coupling_terms.c_pop0": {
       "name": "c_pop0"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.S": {
       "name": "S",
       "domain": {
@@ -12143,7 +12933,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/ReducedWongWang.yaml",
-    "report_md": "\n\n# ReducedWongWang\nReduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).\n\nRWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.\n\n## Equations\n\n### Derived Variables\n$$\nx = I_{o} + J_{N}*c_{global} + J_{N}*S*c_{local} + J_{N}*S*w\n$$\n$$\nH = \\frac{- b + a*x}{1 - e^{- d*\\left(- b + a*x\\right)}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} S = - \\frac{S}{\\tau_{s}} + H*\\gamma*\\left(1 - S\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{o}$ | 0.33 | nA | External input current to the neurons population (Deco et al |\n| $J_{N}$ | 0.2609 | nA | Excitatory recurrence |\n| $a$ | 0.27 | (pC)^-1 | Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $b$ | 0.108 | kHz | Shift parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $d$ | 154.0 | ms | Scaling parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $\\gamma$ | 0.641 | N/A | Kinetic parameter |\n| $\\tau_{s}$ | 100.0 | ms | Kinetic parameter |\n| $w$ | 0.6 | dimensionless | Excitatory recurrence |\n\n\n\n## References\nCitation key 'WongWang2006' not found.\n\nCitation key 'Deco2013' not found.\n",
+    "report_md": "\n\n## ReducedWongWang\nReduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).\n\nRWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.\n\n### Derived Variables\n$$\nx = I_{o} + J_{N}*c_{global} + J_{N}*S*c_{local} + J_{N}*S*w\n$$\n$$\nH = \\frac{- b + a*x}{1 - e^{- d*\\left(- b + a*x\\right)}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} S = - \\frac{S}{\\tau_{s}} + H*\\gamma*\\left(1 - S\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{o}$ | 0.33 | nA | External input current to the neurons population (Deco et al |\n| $J_{N}$ | 0.2609 | nA | Excitatory recurrence |\n| $a$ | 0.27 | (pC)^-1 | Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $b$ | 0.108 | kHz | Shift parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $d$ | 154.0 | ms | Scaling parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $\\gamma$ | 0.641 | N/A | Kinetic parameter |\n| $\\tau_{s}$ | 100.0 | ms | Kinetic parameter |\n| $w$ | 0.6 | dimensionless | Excitatory recurrence |\n\n\n\n## References\nCitation key 'Deco2013' not found.\n\nCitation key 'WongWang2006' not found.\n",
     "thumbnail": "browser/imgs/models/ReducedWongWang.png",
     "parameter_names": [
       "I_o",
@@ -12289,6 +13079,9 @@ window.searchData = [
       "coupling_terms": {
         "c_pop0": {
           "name": "c_pop0"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -12616,6 +13409,9 @@ window.searchData = [
     "coupling_terms.c_pop0": {
       "name": "c_pop0"
     },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
+    },
     "state_variables.v1": {
       "name": "v1",
       "domain": {
@@ -12811,7 +13607,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/ZetterbergJansen.yaml",
-    "report_md": "\n\n# ZetterbergJansen\n\n\n## Equations\n\n### Derived Variables\n$$\ncoupled_{input} = \\frac{2*e_{0}}{1 + e^{\\rho_{1}*\\left(\\rho_{2} - c_{global} - c_{local}*v_{6}\\right)}}\n$$\n$$\n\\sigma_{v1} = \\begin{cases} 0 & \\text{for}\\: \\rho_{1}*\\left(\\rho_{2} - v_{1}\\right) > 709 \\\\\\frac{2*e_{0}}{e^{\\rho_{1}*\\left(\\rho_{2} - v_{1}\\right)} + 1} & \\text{otherwise} \\end{cases}\n$$\n$$\n\\sigma_{v23} = \\begin{cases} 0 & \\text{for}\\: \\rho_{1}*\\left(\\rho_{2} - \\left(v_{2} - v_{3}\\right)\\right) > 709 \\\\\\frac{2*e_{0}}{e^{\\rho_{1}*\\left(\\rho_{2} - \\left(v_{2} - v_{3}\\right)\\right)} + 1} & \\text{otherwise} \\end{cases}\n$$\n$$\n\\sigma_{v45} = \\begin{cases} 0 & \\text{for}\\: \\rho_{1}*\\left(\\rho_{2} - \\left(v_{4} - v_{5}\\right)\\right) > 709 \\\\\\frac{2*e_{0}}{e^{\\rho_{1}*\\left(\\rho_{2} - \\left(v_{4} - v_{5}\\right)\\right)} + 1} & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} v_{1} = y_{1}\n$$\n$$\n\\frac{d}{d t} v_{2} = y_{2}\n$$\n$$\n\\frac{d}{d t} v_{3} = y_{3}\n$$\n$$\n\\frac{d}{d t} v_{4} = y_{4}\n$$\n$$\n\\frac{d}{d t} v_{5} = y_{5}\n$$\n$$\n\\frac{d}{d t} v_{6} = y_{2} - y_{3}\n$$\n$$\n\\frac{d}{d t} v_{7} = y_{4} - y_{5}\n$$\n$$\n\\frac{d}{d t} y_{1} = - v_{1}*ke^{2} - 2*ke*y_{1} + He*ke*\\left(\\gamma_{1}*\\sigma_{v23} + \\gamma_{1T}*\\left(U + coupled_{input}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = - v_{2}*ke^{2} - 2*ke*y_{2} + He*ke*\\left(\\gamma_{2}*\\sigma_{v1} + \\gamma_{2T}*\\left(P + coupled_{input}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} y_{3} = - v_{3}*ki^{2} - 2*ki*y_{3} + Hi*\\gamma_{4}*ki*\\sigma_{v45}\n$$\n$$\n\\frac{d}{d t} y_{4} = - v_{4}*ke^{2} - 2*ke*y_{4} + He*ke*\\left(\\gamma_{3}*\\sigma_{v23} + \\gamma_{3T}*\\left(Q + coupled_{input}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} y_{5} = - v_{5}*ke^{2} - 2*ki*y_{5} + Hi*\\gamma_{5}*ki*\\sigma_{v45}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $He$ | 3.25 | N/A | Maximum amplitude of EPSP [mV] |\n| $Hi$ | 22.0 | N/A | Maximum amplitude of IPSP [mV] |\n| $P$ | 0.12 | N/A | Maximum firing rate to the pyramidal population [ms^-1] |\n| $Q$ | 0.12 | N/A | Maximum firing rate to the interneurons population [ms^-1] |\n| $U$ | 0.12 | N/A | Maximum firing rate to the stellate population [ms^-1] |\n| $e_{0}$ | 0.0025 | N/A | Half of the maximum population mean firing rate [ms^-1] |\n| $\\gamma_{1T}$ | 1.0 | N/A | Coupling factor from the extrinisic input to the spiny stellate population |\n| $\\gamma_{1}$ | 135.0 | N/A | Average number of synapses between populations (pyramidal to stellate) |\n| $\\gamma_{2T}$ | 1.0 | N/A | Coupling factor from the extrinisic input to the pyramidal population |\n| $\\gamma_{2}$ | 108.0 | N/A | Average number of synapses between populations (stellate to pyramidal) |\n| $\\gamma_{3T}$ | 1.0 | N/A | Coupling factor from the extrinisic input to the inhibitory population |\n| $\\gamma_{3}$ | 33.75 | N/A | Connectivity constant (pyramidal to interneurons) |\n| $\\gamma_{4}$ | 33.75 | N/A | Connectivity constant (interneurons to pyramidal) |\n| $\\gamma_{5}$ | 15.0 | N/A | Connectivity constant (interneurons to interneurons) |\n| $ke$ | 0.1 | N/A | Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1] |\n| $ki$ | 0.05 | N/A | Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1] |\n| $\\rho_{1}$ | 0.56 | N/A | Steepness of the sigmoidal transformation [mV^-1] |\n| $\\rho_{2}$ | 6.0 | N/A | Firing threshold (PSP) for which a 50% firing rate is achieved |\n\n\n\n## References\nCitation key 'Zetterberg1978' not found.\n",
+    "report_md": "\n\n## ZetterbergJansen\n\n\n### Derived Variables\n$$\ncoupled_{input} = \\frac{2*e_{0}}{1 + e^{\\rho_{1}*\\left(\\rho_{2} - c_{global} - c_{local}*v_{6}\\right)}}\n$$\n$$\n\\sigma_{v1} = \\begin{cases} 0 & \\text{for}\\: \\rho_{1}*\\left(\\rho_{2} - v_{1}\\right) > 709 \\\\\\frac{2*e_{0}}{e^{\\rho_{1}*\\left(\\rho_{2} - v_{1}\\right)} + 1} & \\text{otherwise} \\end{cases}\n$$\n$$\n\\sigma_{v23} = \\begin{cases} 0 & \\text{for}\\: \\rho_{1}*\\left(\\rho_{2} - \\left(v_{2} - v_{3}\\right)\\right) > 709 \\\\\\frac{2*e_{0}}{e^{\\rho_{1}*\\left(\\rho_{2} - \\left(v_{2} - v_{3}\\right)\\right)} + 1} & \\text{otherwise} \\end{cases}\n$$\n$$\n\\sigma_{v45} = \\begin{cases} 0 & \\text{for}\\: \\rho_{1}*\\left(\\rho_{2} - \\left(v_{4} - v_{5}\\right)\\right) > 709 \\\\\\frac{2*e_{0}}{e^{\\rho_{1}*\\left(\\rho_{2} - \\left(v_{4} - v_{5}\\right)\\right)} + 1} & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} v_{1} = y_{1}\n$$\n$$\n\\frac{d}{d t} v_{2} = y_{2}\n$$\n$$\n\\frac{d}{d t} v_{3} = y_{3}\n$$\n$$\n\\frac{d}{d t} v_{4} = y_{4}\n$$\n$$\n\\frac{d}{d t} v_{5} = y_{5}\n$$\n$$\n\\frac{d}{d t} v_{6} = y_{2} - y_{3}\n$$\n$$\n\\frac{d}{d t} v_{7} = y_{4} - y_{5}\n$$\n$$\n\\frac{d}{d t} y_{1} = - v_{1}*ke^{2} - 2*ke*y_{1} + He*ke*\\left(\\gamma_{1}*\\sigma_{v23} + \\gamma_{1T}*\\left(U + coupled_{input}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = - v_{2}*ke^{2} - 2*ke*y_{2} + He*ke*\\left(\\gamma_{2}*\\sigma_{v1} + \\gamma_{2T}*\\left(P + coupled_{input}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} y_{3} = - v_{3}*ki^{2} - 2*ki*y_{3} + Hi*\\gamma_{4}*ki*\\sigma_{v45}\n$$\n$$\n\\frac{d}{d t} y_{4} = - v_{4}*ke^{2} - 2*ke*y_{4} + He*ke*\\left(\\gamma_{3}*\\sigma_{v23} + \\gamma_{3T}*\\left(Q + coupled_{input}\\right)\\right)\n$$\n$$\n\\frac{d}{d t} y_{5} = - v_{5}*ke^{2} - 2*ki*y_{5} + Hi*\\gamma_{5}*ki*\\sigma_{v45}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $He$ | 3.25 | N/A | Maximum amplitude of EPSP [mV] |\n| $Hi$ | 22.0 | N/A | Maximum amplitude of IPSP [mV] |\n| $P$ | 0.12 | N/A | Maximum firing rate to the pyramidal population [ms^-1] |\n| $Q$ | 0.12 | N/A | Maximum firing rate to the interneurons population [ms^-1] |\n| $U$ | 0.12 | N/A | Maximum firing rate to the stellate population [ms^-1] |\n| $e_{0}$ | 0.0025 | N/A | Half of the maximum population mean firing rate [ms^-1] |\n| $\\gamma_{1T}$ | 1.0 | N/A | Coupling factor from the extrinisic input to the spiny stellate population |\n| $\\gamma_{1}$ | 135.0 | N/A | Average number of synapses between populations (pyramidal to stellate) |\n| $\\gamma_{2T}$ | 1.0 | N/A | Coupling factor from the extrinisic input to the pyramidal population |\n| $\\gamma_{2}$ | 108.0 | N/A | Average number of synapses between populations (stellate to pyramidal) |\n| $\\gamma_{3T}$ | 1.0 | N/A | Coupling factor from the extrinisic input to the inhibitory population |\n| $\\gamma_{3}$ | 33.75 | N/A | Connectivity constant (pyramidal to interneurons) |\n| $\\gamma_{4}$ | 33.75 | N/A | Connectivity constant (interneurons to pyramidal) |\n| $\\gamma_{5}$ | 15.0 | N/A | Connectivity constant (interneurons to interneurons) |\n| $ke$ | 0.1 | N/A | Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1] |\n| $ki$ | 0.05 | N/A | Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1] |\n| $\\rho_{1}$ | 0.56 | N/A | Steepness of the sigmoidal transformation [mV^-1] |\n| $\\rho_{2}$ | 6.0 | N/A | Firing threshold (PSP) for which a 50% firing rate is achieved |\n\n\n\n## References\nCitation key 'Zetterberg1978' not found.\n",
     "thumbnail": "browser/imgs/models/ZetterbergJansen.png",
     "parameter_names": [
       "He",
@@ -13153,6 +13949,9 @@ window.searchData = [
       "coupling_terms": {
         "c_pop0": {
           "name": "c_pop0"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -13388,8 +14187,25 @@ window.searchData = [
       },
       "conditional": false
     },
+    "derived_variables.phase": {
+      "name": "phase",
+      "description": "Normalized phase output",
+      "equation": {
+        "rhs": "theta / (2*pi)"
+      }
+    },
+    "derived_variables.signal": {
+      "name": "signal",
+      "description": "Sinusoidal signal output",
+      "equation": {
+        "rhs": "sin(theta)"
+      }
+    },
     "coupling_terms.c_glob": {
       "name": "c_glob"
+    },
+    "coupling_terms.local_coupling": {
+      "name": "local_coupling"
     },
     "state_variables.theta": {
       "name": "theta",
@@ -13406,19 +14222,13 @@ window.searchData = [
       "coupling_variable": true,
       "initial_value": 0.1
     },
-    "output_transforms.phase": {
-      "equation": {
-        "rhs": "theta / (2*pi)"
-      }
-    },
-    "output_transforms.signal": {
-      "equation": {
-        "rhs": "sin(theta)"
-      }
-    },
+    "output": [
+      "phase",
+      "signal"
+    ],
     "type": "model",
     "file": "database/models/Kuramoto2.yaml",
-    "report_md": "\n\n# KuramotoModel2\nKuramotoModel2\n\n## Equations\n\n### Derived Parameters\n$$\nf = \\frac{500*\\omega}{\\pi}\n$$\n### Derived Variables\n$$\nlc_{0} = \\sin{\\left(c_{local}*\\theta \\right)}\n$$\n$$\nphase = \\frac{\\theta}{2*\\pi}\n$$\n$$\nsignal = \\sin{\\left(\\theta \\right)}\n$$\n$$\nI = c_{glob} + lc_{0}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = I + \\omega\n$$\n\n### Output Transforms\n$$\nphase = \\frac{\\theta}{2*\\pi}\n$$\n$$\nsignal = \\sin{\\left(\\theta \\right)}\n$$\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 1.0 | N/A | None |\n\n\n\n",
+    "report_md": "\n\n## KuramotoModel2\nKuramotoModel2\n\n### Derived Parameters\n$$\nf = \\frac{500*\\omega}{\\pi}\n$$\n### Derived Variables\n$$\nlc_{0} = \\sin{\\left(c_{local}*\\theta \\right)}\n$$\n$$\nphase = \\frac{\\theta}{2*\\pi}\n$$\n$$\nsignal = \\sin{\\left(\\theta \\right)}\n$$\n$$\nI = c_{glob} + lc_{0}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = I + \\omega\n$$\n\n### Output Transforms\n$$\nphase = \\frac{\\theta}{2*\\pi}\n$$\n$$\nsignal = \\sin{\\left(\\theta \\right)}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 1.0 | N/A | None |\n\n\n\n",
     "thumbnail": "browser/imgs/models/KuramotoModel2.png",
     "parameter_names": [
       "omega"
@@ -13468,11 +14278,28 @@ window.searchData = [
             "rhs": "c_glob+lc_0"
           },
           "conditional": false
+        },
+        "phase": {
+          "name": "phase",
+          "description": "Normalized phase output",
+          "equation": {
+            "rhs": "theta / (2*pi)"
+          }
+        },
+        "signal": {
+          "name": "signal",
+          "description": "Sinusoidal signal output",
+          "equation": {
+            "rhs": "sin(theta)"
+          }
         }
       },
       "coupling_terms": {
         "c_glob": {
           "name": "c_glob"
+        },
+        "local_coupling": {
+          "name": "local_coupling"
         }
       },
       "state_variables": {
@@ -13492,18 +14319,10 @@ window.searchData = [
           "initial_value": 0.1
         }
       },
-      "output_transforms": {
-        "phase": {
-          "equation": {
-            "rhs": "theta / (2*pi)"
-          }
-        },
-        "signal": {
-          "equation": {
-            "rhs": "sin(theta)"
-          }
-        }
-      }
+      "output": [
+        "phase",
+        "signal"
+      ]
     }
   },
   {
@@ -13574,13 +14393,19 @@ window.searchData = [
         "rhs": "0.25*C"
       }
     },
+    "derived_variables.v_pyr": {
+      "name": "v_pyr",
+      "description": "EEG-like output: pyramidal potential difference",
+      "equation": {
+        "rhs": "y1 - y2"
+      },
+      "unit": "mV"
+    },
     "functions.Sigm": {
       "definition": "JR sigmoid transformation",
-      "arguments": {
-        "v": {
-          "name": "v"
-        }
-      },
+      "arguments": [
+        "v"
+      ],
       "equation": {
         "rhs": "2*e0 / (1 + exp(r*(v0 - v)))"
       }
@@ -13630,19 +14455,12 @@ window.searchData = [
       },
       "unit": "mV*ms^-1"
     },
-    "output_transforms": [
-      {
-        "name": "v_pyr",
-        "description": "EEG-like output",
-        "equation": {
-          "rhs": "y1 - y2"
-        },
-        "unit": "mV"
-      }
+    "output": [
+      "v_pyr"
     ],
     "type": "model",
     "file": "database/models/Jansen1995.yaml",
-    "report_md": "\n\n# ModelJansen1995\nModelJansen1995\n\n## Equations\n\n### Derived Parameters\n$$\nC_{1} = C\n$$\n$$\nC_{2} = 0.8*C\n$$\n$$\nC_{3} = 0.25*C\n$$\n$$\nC_{4} = 0.25*C\n$$\n### Functions\n$$\n\\operatorname{Sigm}{\\left(v \\right)} = \\frac{2*e_{0}}{1 + e^{r*\\left(v_{0} - v\\right)}}\n$$\n### Derived Variables\n$$\nv_{pyr} = y_{1} - y_{2}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} y_{0} = y_{3}\n$$\n$$\n\\frac{d}{d t} y_{3} = - y_{0}*a^{2} - 2*a*y_{3} + A*a*\\operatorname{Sigm}{\\left(y_{1} - y_{2} \\right)}\n$$\n$$\n\\frac{d}{d t} y_{1} = y_{4}\n$$\n$$\n\\frac{d}{d t} y_{4} = - y_{1}*a^{2} - 2*a*y_{4} + A*a*\\left(c_{glob} + p + C_{2}*\\operatorname{Sigm}{\\left(C_{1}*y_{0} \\right)}\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = y_{5}\n$$\n$$\n\\frac{d}{d t} y_{5} = - y_{2}*b^{2} - 2*b*y_{5} + B*C_{4}*b*\\operatorname{Sigm}{\\left(C_{3}*y_{0} \\right)}\n$$\n\n### Output Transforms\n$$\nv_{pyr} = y_{1} - y_{2}\n$$\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $A$ | 3.25 | mV | None |\n| $B$ | 22.0 | mV | None |\n| $C$ | 135.0 | N/A | None |\n| $a$ | 0.1 | ms^-1 | None |\n| $b$ | 0.05 | ms^-1 | None |\n| $v_{0}$ | 6.0 | mV | None |\n| $e_{0}$ | 0.0025 | ms^-1 | None |\n| $r$ | 0.56 | mV^-1 | None |\n| $p$ | 0.24 | ms^-1 | None |\n\n\n\n",
+    "report_md": "\n\n## ModelJansen1995\nJR model with canonical parameters; long-range input is injected via a coupling term. Output is pyramidal potential difference.\n\n### Derived Parameters\n$$\nC_{1} = C\n$$\n$$\nC_{2} = 0.8*C\n$$\n$$\nC_{3} = 0.25*C\n$$\n$$\nC_{4} = 0.25*C\n$$\n### Functions\n$$\n\\operatorname{Sigm}{\\left(v \\right)} = \\frac{2*e_{0}}{1 + e^{r*\\left(v_{0} - v\\right)}}\n$$\n### Derived Variables\n$$\nv_{pyr} = y_{1} - y_{2}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} y_{0} = y_{3}\n$$\n$$\n\\frac{d}{d t} y_{3} = - y_{0}*a^{2} - 2*a*y_{3} + A*a*\\operatorname{Sigm}{\\left(y_{1} - y_{2} \\right)}\n$$\n$$\n\\frac{d}{d t} y_{1} = y_{4}\n$$\n$$\n\\frac{d}{d t} y_{4} = - y_{1}*a^{2} - 2*a*y_{4} + A*a*\\left(c_{glob} + p + C_{2}*\\operatorname{Sigm}{\\left(C_{1}*y_{0} \\right)}\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = y_{5}\n$$\n$$\n\\frac{d}{d t} y_{5} = - y_{2}*b^{2} - 2*b*y_{5} + B*C_{4}*b*\\operatorname{Sigm}{\\left(C_{3}*y_{0} \\right)}\n$$\n\n### Output Transforms\n$$\nv_{pyr} = y_{1} - y_{2}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $A$ | 3.25 | mV | None |\n| $B$ | 22.0 | mV | None |\n| $C$ | 135.0 | N/A | None |\n| $a$ | 0.1 | ms^-1 | None |\n| $b$ | 0.05 | ms^-1 | None |\n| $v_{0}$ | 6.0 | mV | None |\n| $e_{0}$ | 0.0025 | ms^-1 | None |\n| $r$ | 0.56 | mV^-1 | None |\n| $p$ | 0.24 | ms^-1 | None |\n\n\n\n",
     "thumbnail": "browser/imgs/models/ModelJansen1995.png",
     "parameter_names": [
       "A",
@@ -13737,14 +14555,22 @@ window.searchData = [
           }
         }
       },
+      "derived_variables": {
+        "v_pyr": {
+          "name": "v_pyr",
+          "description": "EEG-like output: pyramidal potential difference",
+          "equation": {
+            "rhs": "y1 - y2"
+          },
+          "unit": "mV"
+        }
+      },
       "functions": {
         "Sigm": {
           "definition": "JR sigmoid transformation",
-          "arguments": {
-            "v": {
-              "name": "v"
-            }
-          },
+          "arguments": [
+            "v"
+          ],
           "equation": {
             "rhs": "2*e0 / (1 + exp(r*(v0 - v)))"
           }
@@ -13799,15 +14625,8 @@ window.searchData = [
           "unit": "mV*ms^-1"
         }
       },
-      "output_transforms": [
-        {
-          "name": "v_pyr",
-          "description": "EEG-like output",
-          "equation": {
-            "rhs": "y1 - y2"
-          },
-          "unit": "mV"
-        }
+      "output": [
+        "v_pyr"
       ]
     }
   },
@@ -14333,7 +15152,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/EpileptorRestingState.yaml",
-    "report_md": "\n\n# EpileptorRestingState\nEpileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.\n\nThis model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).\n\n## Equations\n\n### Derived Variables\n$$\nlc_{1} = c_{local}*x_{rs}\n$$\n$$\noutput = p*\\left(x_{2} - x_{1}\\right) + x_{rs}*\\left(1 - p\\right)\n$$\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} g = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\frac{d}{d t} x_{1} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\frac{d}{d t} x_{rs} = d_{rs}*\\tau_{rs}*\\left(lc_{1} + I_{rs}*\\gamma_{rs} + \\alpha_{rs}*y_{rs} + e_{rs}*x_{rs}^{2} - f_{rs}*x_{rs}^{3} + K_{rs}*c_{pop2}*\\gamma_{rs}\\right)\n$$\n$$\n\\frac{d}{d t} y_{1} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\frac{d}{d t} y_{rs} = \\frac{d_{rs}*\\left(a_{rs} + b_{rs}*x_{rs} - \\beta_{rs}*y_{rs}\\right)}{\\tau_{rs}}\n$$\n$$\n\\frac{d}{d t} z = r*tt*\\left(zcond - z - 4*x_{0} + 4*x_{1} + Ks*c_{global}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{rs}$ | 0.0 | N/A | External input current to the third population (x_rs, y_rs) |\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population (x2, y2) |\n| $Iext$ | 3.1 | N/A | External input current to the first population (x1, y1) |\n| $K_{rs}$ | 1.0 | N/A | Coupling scaling on a fast time scale |\n| $Kf$ | 0.0 | N/A | Coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling, that is from the very fast time scale         toward the slow time scale |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x1 |\n| $a_{rs}$ | -2.0 | N/A | Vertical shift of the configurable nullcline         in the state-variable y_rs |\n| $aa$ | 6.0 | N/A | Linear coefficient in the fifth state-variable y2 |\n| $\\alpha_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to the fast variable x_rs |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x1 |\n| $b_{rs}$ | -10.0 | N/A | Linear coefficient of the state-variable y_rs |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in the fourth         state-variable x2 |\n| $\\beta_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to itself |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable y1,         called :math:'y_{0}' in Jirsa et al |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the second state-variable y1 |\n| $d_{rs}$ | 0.02 | N/A | Temporal scaling of the whole third system (x_rs, y_rs) |\n| $e_{rs}$ | 3.0 | N/A | Coefficient of the squared term in the sixth state-variable x_rs |\n| $f_{rs}$ | 1.0 | N/A | Coefficient of the cubic term in the sixth state-variable x_rs |\n| $\\gamma_{rs}$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where         excitatory input currents are negative |\n| $p$ | 0.0 | N/A | Linear coefficient |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state-variable z,         called :math:'1/\tau_{0}' in Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x1 |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in the fifth state-variable y2 |\n| $\\tau_{rs}$ | 1.0 | N/A | Temporal scaling coefficient in the third population (x_rs, y_rs) |\n| $tt$ | 1.0 | N/A | Time scaling of the Epileptor |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity parameter |\n\n\n\n## References\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n\nCitation key 'Courtiol2020' not found.\n",
+    "report_md": "\n\n## EpileptorRestingState\nEpileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.\n        \nThis model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).\n\n### Derived Variables\n$$\nlc_{1} = c_{local}*x_{rs}\n$$\n$$\noutput = p*\\left(x_{2} - x_{1}\\right) + x_{rs}*\\left(1 - p\\right)\n$$\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} g = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\frac{d}{d t} x_{1} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\frac{d}{d t} x_{rs} = d_{rs}*\\tau_{rs}*\\left(lc_{1} + I_{rs}*\\gamma_{rs} + \\alpha_{rs}*y_{rs} + e_{rs}*x_{rs}^{2} - f_{rs}*x_{rs}^{3} + K_{rs}*c_{pop2}*\\gamma_{rs}\\right)\n$$\n$$\n\\frac{d}{d t} y_{1} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\frac{d}{d t} y_{2} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\frac{d}{d t} y_{rs} = \\frac{d_{rs}*\\left(a_{rs} + b_{rs}*x_{rs} - \\beta_{rs}*y_{rs}\\right)}{\\tau_{rs}}\n$$\n$$\n\\frac{d}{d t} z = r*tt*\\left(zcond - z - 4*x_{0} + 4*x_{1} + Ks*c_{global}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{rs}$ | 0.0 | N/A | External input current to the third population (x_rs, y_rs) |\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population (x2, y2) |\n| $Iext$ | 3.1 | N/A | External input current to the first population (x1, y1) |\n| $K_{rs}$ | 1.0 | N/A | Coupling scaling on a fast time scale |\n| $Kf$ | 0.0 | N/A | Coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling, that is from the very fast time scale         toward the slow time scale |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x1 |\n| $a_{rs}$ | -2.0 | N/A | Vertical shift of the configurable nullcline         in the state-variable y_rs |\n| $aa$ | 6.0 | N/A | Linear coefficient in the fifth state-variable y2 |\n| $\\alpha_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to the fast variable x_rs |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x1 |\n| $b_{rs}$ | -10.0 | N/A | Linear coefficient of the state-variable y_rs |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in the fourth         state-variable x2 |\n| $\\beta_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to itself |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable y1,         called :math:'y_{0}' in Jirsa et al |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the second state-variable y1 |\n| $d_{rs}$ | 0.02 | N/A | Temporal scaling of the whole third system (x_rs, y_rs) |\n| $e_{rs}$ | 3.0 | N/A | Coefficient of the squared term in the sixth state-variable x_rs |\n| $f_{rs}$ | 1.0 | N/A | Coefficient of the cubic term in the sixth state-variable x_rs |\n| $\\gamma_{rs}$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where         excitatory input currents are negative |\n| $p$ | 0.0 | N/A | Linear coefficient |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state-variable z,         called :math:'1/\tau_{0}' in Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x1 |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in the fifth state-variable y2 |\n| $\\tau_{rs}$ | 1.0 | N/A | Temporal scaling coefficient in the third population (x_rs, y_rs) |\n| $tt$ | 1.0 | N/A | Time scaling of the Epileptor |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity parameter |\n\n\n\n## References\nCitation key 'Courtiol2020' not found.\n\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n",
     "thumbnail": "browser/imgs/models/EpileptorRestingState.png",
     "parameter_names": [
       "I_rs",
@@ -15035,7 +15854,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/MontbrioPazoRoxin.yaml",
-    "report_md": "\n\n# MontbrioPazoRoxin\n\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = \\frac{I + \\eta + V^{2} + c_{pop1}*cv + J*r*\\tau + c_{global}*cr*\\tau - \\pi^{2}*r^{2}*\\tau^{2}}{\\tau}\n$$\n$$\n\\frac{d}{d t} r = \\frac{2*V*r + \\frac{\\Delta}{\\pi*\\tau}}{\\tau}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 1.0 | N/A | Mean heterogeneous noise |\n| $I$ | 0.0 | N/A | External Current |\n| $J$ | 15.0 | N/A | Mean Synaptic weight |\n| $cr$ | 1.0 | N/A | It is the weight on Coupling through variable r |\n| $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |\n| $\\eta$ | -5.0 | N/A | Constant parameter to scale the rate of feedback from the firing rate variable to itself |\n| $\\tau$ | 1.0 | N/A | Membrane time constant |\n\n\n\n## References\nCitation key 'Montbrio2015' not found.\n",
+    "report_md": "\n\n## MontbrioPazoRoxin\n\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = \\frac{I + \\eta + V^{2} + c_{pop1}*cv + J*r*\\tau + c_{global}*cr*\\tau - \\pi^{2}*r^{2}*\\tau^{2}}{\\tau}\n$$\n$$\n\\frac{d}{d t} r = \\frac{2*V*r + \\frac{\\Delta}{\\pi*\\tau}}{\\tau}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 1.0 | N/A | Mean heterogeneous noise |\n| $I$ | 0.0 | N/A | External Current |\n| $J$ | 15.0 | N/A | Mean Synaptic weight |\n| $cr$ | 1.0 | N/A | It is the weight on Coupling through variable r |\n| $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |\n| $\\eta$ | -5.0 | N/A | Constant parameter to scale the rate of feedback from the firing rate variable to itself |\n| $\\tau$ | 1.0 | N/A | Membrane time constant |\n\n\n\n## References\nCitation key 'Montbrio2015' not found.\n",
     "thumbnail": "browser/imgs/models/MontbrioPazoRoxin.png",
     "parameter_names": [
       "Delta",
@@ -15321,7 +16140,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/CoombesByrne.yaml",
-    "report_md": "\n\n# CoombesByrne\n\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = c_{global} + \\eta + V^{2} + g*\\left(v_{syn} - V\\right) - \\pi^{2}*r^{2}\n$$\n$$\n\\frac{d}{d t} g = \\alpha*q\n$$\n$$\n\\frac{d}{d t} q = \\alpha*\\left(- g - 2*q + \\pi*k*r\\right)\n$$\n$$\n\\frac{d}{d t} r = \\frac{\\Delta}{\\pi} - g*r + 2*V*r\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 0.5 | N/A | Half-width of heterogeneous noise distribution |\n| $\\alpha$ | 0.95 | N/A | Parameter of the alpha-function |\n| $\\eta$ | 20.0 | N/A | Constant parameter to scale the rate of feedback from the             firing rate variable to itself |\n| $k$ | 1.0 | N/A | Local coupling strength |\n| $v_{syn}$ | -10.0 | N/A | QIF membrane reversal potential |\n\n\n\n## References\nCitation key 'Byrne2020' not found.\n",
+    "report_md": "\n\n## CoombesByrne\n4D model describing the Ott-Antonsen reduction of infinite all-to-all\ncoupled QIF neurons (Theta-neurons).\n\nNote: the original equations describe the dynamics of the Kuramoto parameter\n$Z$. Using the conformal transformation $Z=(1-W^\\star)/(1+W^\\star)$ and $W= \\pi r + i V$, we express the system dynamics in terms of two state variables $r$ and $V$ representing the average firing rate and the average membrane potential of our QIF neurons. The conductance variable and its derivative are $g$ and $q$.\n\n\n\n### State Equations\n$$\n\\frac{d}{d t} V = c_{global} + \\eta + V^{2} + g*\\left(v_{syn} - V\\right) - \\pi^{2}*r^{2}\n$$\n$$\n\\frac{d}{d t} g = \\alpha*q\n$$\n$$\n\\frac{d}{d t} q = \\alpha*\\left(- g - 2*q + \\pi*k*r\\right)\n$$\n$$\n\\frac{d}{d t} r = \\frac{\\Delta}{\\pi} - g*r + 2*V*r\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta$ | 0.5 | N/A | Half-width of heterogeneous noise distribution |\n| $\\alpha$ | 0.95 | N/A | Parameter of the alpha-function |\n| $\\eta$ | 20.0 | N/A | Constant parameter to scale the rate of feedback from the             firing rate variable to itself |\n| $k$ | 1.0 | N/A | Local coupling strength |\n| $v_{syn}$ | -10.0 | N/A | QIF membrane reversal potential |\n\n\n\n## References\nCitation key 'Byrne2020' not found.\n",
     "thumbnail": "browser/imgs/models/CoombesByrne.png",
     "parameter_names": [
       "Delta",
@@ -15781,7 +16600,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/DumontGutkin.yaml",
-    "report_md": "\n\n# DumontGutkin\n\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} V_{e} = \\frac{I_{e} + \\eta_{e} + V_{e}^{2} + s_{ee}*\\tau_{e} - s_{ei}*\\tau_{e} - \\pi^{2}*r_{e}^{2}*\\tau_{e}^{2}}{\\tau_{e}}\n$$\n$$\n\\frac{d}{d t} V_{i} = \\frac{I_{i} + \\eta_{i} + V_{i}^{2} + s_{ie}*\\tau_{i} - s_{ii}*\\tau_{i} - \\pi^{2}*r_{i}^{2}*\\tau_{i}^{2}}{\\tau_{i}}\n$$\n$$\n\\frac{d}{d t} r_{e} = \\frac{2*V_{e}*r_{e} + \\frac{\\Delta_{e}}{\\pi*\\tau_{e}}}{\\tau_{e}}\n$$\n$$\n\\frac{d}{d t} r_{i} = \\frac{2*V_{i}*r_{i} + \\frac{\\Delta_{i}}{\\pi*\\tau_{i}}}{\\tau_{i}}\n$$\n$$\n\\frac{d}{d t} s_{ee} = \\frac{c_{global} - s_{ee} + J_{ee}*r_{e}}{\\tau_{s}}\n$$\n$$\n\\frac{d}{d t} s_{ei} = \\frac{- s_{ei} + J_{ei}*r_{i}}{\\tau_{s}}\n$$\n$$\n\\frac{d}{d t} s_{ie} = \\frac{- s_{ie} + \\Gamma*c_{global} + J_{ie}*r_{e}}{\\tau_{s}}\n$$\n$$\n\\frac{d}{d t} s_{ii} = \\frac{- s_{ii} + J_{ii}*r_{i}}{\\tau_{s}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta_{e}$ | 1.0 | N/A | Half-width of heterogeneous noise distribution over excitatory population |\n| $\\Delta_{i}$ | 1.0 | N/A | Half-width of heterogeneous noise distribution over inhibitory population |\n| $\\Gamma$ | 5.0 | N/A | Ratio of excitatory VS inhibitory global couplings G_ie/G_ee  |\n| $I_{e}$ | 0.0 | N/A | External homogeneous current on excitatory population |\n| $I_{i}$ | 0.0 | N/A | External current on inhibitory population |\n| $J_{ee}$ | 0.0 | N/A | Synaptic weight e-->e |\n| $J_{ei}$ | 10.0 | N/A | Synaptic weight i-->e |\n| $J_{ie}$ | 0.0 | N/A | Synaptic weight e-->i |\n| $J_{ii}$ | 15.0 | N/A | Synaptic weight i-->i |\n| $\\eta_{e}$ | -5.0 | N/A | Mean heterogeneous current on excitatory population |\n| $\\eta_{i}$ | -5.0 | N/A | Mean heterogeneous current on inhibitory population |\n| $\\tau_{e}$ | 10.0 | N/A | Characteristic time of excitatory population |\n| $\\tau_{i}$ | 10.0 | N/A | Characteristic time of inhibitory population |\n| $\\tau_{s}$ | 1.0 | N/A | Synaptic time constant |\n\n\n\n## References\nCitation key 'Dumont2019' not found.\n",
+    "report_md": "\n\n## DumontGutkin\n\n\n\n### State Equations\n$$\n\\frac{d}{d t} V_{e} = \\frac{I_{e} + \\eta_{e} + V_{e}^{2} + s_{ee}*\\tau_{e} - s_{ei}*\\tau_{e} - \\pi^{2}*r_{e}^{2}*\\tau_{e}^{2}}{\\tau_{e}}\n$$\n$$\n\\frac{d}{d t} V_{i} = \\frac{I_{i} + \\eta_{i} + V_{i}^{2} + s_{ie}*\\tau_{i} - s_{ii}*\\tau_{i} - \\pi^{2}*r_{i}^{2}*\\tau_{i}^{2}}{\\tau_{i}}\n$$\n$$\n\\frac{d}{d t} r_{e} = \\frac{2*V_{e}*r_{e} + \\frac{\\Delta_{e}}{\\pi*\\tau_{e}}}{\\tau_{e}}\n$$\n$$\n\\frac{d}{d t} r_{i} = \\frac{2*V_{i}*r_{i} + \\frac{\\Delta_{i}}{\\pi*\\tau_{i}}}{\\tau_{i}}\n$$\n$$\n\\frac{d}{d t} s_{ee} = \\frac{c_{global} - s_{ee} + J_{ee}*r_{e}}{\\tau_{s}}\n$$\n$$\n\\frac{d}{d t} s_{ei} = \\frac{- s_{ei} + J_{ei}*r_{i}}{\\tau_{s}}\n$$\n$$\n\\frac{d}{d t} s_{ie} = \\frac{- s_{ie} + \\Gamma*c_{global} + J_{ie}*r_{e}}{\\tau_{s}}\n$$\n$$\n\\frac{d}{d t} s_{ii} = \\frac{- s_{ii} + J_{ii}*r_{i}}{\\tau_{s}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\Delta_{e}$ | 1.0 | N/A | Half-width of heterogeneous noise distribution over excitatory population |\n| $\\Delta_{i}$ | 1.0 | N/A | Half-width of heterogeneous noise distribution over inhibitory population |\n| $\\Gamma$ | 5.0 | N/A | Ratio of excitatory VS inhibitory global couplings G_ie/G_ee  |\n| $I_{e}$ | 0.0 | N/A | External homogeneous current on excitatory population |\n| $I_{i}$ | 0.0 | N/A | External current on inhibitory population |\n| $J_{ee}$ | 0.0 | N/A | Synaptic weight e-->e |\n| $J_{ei}$ | 10.0 | N/A | Synaptic weight i-->e |\n| $J_{ie}$ | 0.0 | N/A | Synaptic weight e-->i |\n| $J_{ii}$ | 15.0 | N/A | Synaptic weight i-->i |\n| $\\eta_{e}$ | -5.0 | N/A | Mean heterogeneous current on excitatory population |\n| $\\eta_{i}$ | -5.0 | N/A | Mean heterogeneous current on inhibitory population |\n| $\\tau_{e}$ | 10.0 | N/A | Characteristic time of excitatory population |\n| $\\tau_{i}$ | 10.0 | N/A | Characteristic time of inhibitory population |\n| $\\tau_{s}$ | 1.0 | N/A | Synaptic time constant |\n\n\n\n## References\nCitation key 'Dumont2019' not found.\n",
     "thumbnail": "browser/imgs/models/DumontGutkin.png",
     "parameter_names": [
       "Delta_e",
@@ -16229,7 +17048,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/lorenz96.yaml",
-    "report_md": "\n\n# Lorenz96\nLorenz96\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x_{0} = F - x_{0} + x_{9}*\\left(x_{1} - x_{8}\\right)\n$$\n$$\n\\frac{d}{d t} x_{1} = F - x_{1} + x_{0}*\\left(x_{2} - x_{9}\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = F - x_{2} + x_{1}*\\left(x_{3} - x_{0}\\right)\n$$\n$$\n\\frac{d}{d t} x_{3} = F - x_{3} + x_{2}*\\left(x_{4} - x_{1}\\right)\n$$\n$$\n\\frac{d}{d t} x_{4} = F - x_{4} + x_{3}*\\left(x_{5} - x_{2}\\right)\n$$\n$$\n\\frac{d}{d t} x_{5} = F - x_{5} + x_{4}*\\left(x_{6} - x_{3}\\right)\n$$\n$$\n\\frac{d}{d t} x_{6} = F - x_{6} + x_{5}*\\left(x_{7} - x_{4}\\right)\n$$\n$$\n\\frac{d}{d t} x_{7} = F - x_{7} + x_{6}*\\left(x_{8} - x_{5}\\right)\n$$\n$$\n\\frac{d}{d t} x_{8} = F - x_{8} + x_{7}*\\left(x_{9} - x_{6}\\right)\n$$\n$$\n\\frac{d}{d t} x_{9} = F - x_{9} + x_{8}*\\left(x_{0} - x_{7}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $F$ | 0.01 | N/A | Constant large-scale forcing. |\n| $N$ | 10.0 | N/A | Number of state variables (dimension explicitly expanded below). |\n\n\n\n",
+    "report_md": "\n\n## Lorenz96\nTen-dimensional explicit expansion of the Lorenz-96 system: dx_i/dt = (x_{i+1} - x_{i-2}) x_{i-1} - x_i + F\nwith cyclic indices modulo N (here N=10 unrolled to avoid symbolic indexing that the\ncurrent parser cannot interpret). Initial conditions follow the Julia reference\ndefault u0 = range(0; length=N, step=0.1) i.e. x_i(0) = 0.1*i.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x_{0} = F - x_{0} + x_{9}*\\left(x_{1} - x_{8}\\right)\n$$\n$$\n\\frac{d}{d t} x_{1} = F - x_{1} + x_{0}*\\left(x_{2} - x_{9}\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = F - x_{2} + x_{1}*\\left(x_{3} - x_{0}\\right)\n$$\n$$\n\\frac{d}{d t} x_{3} = F - x_{3} + x_{2}*\\left(x_{4} - x_{1}\\right)\n$$\n$$\n\\frac{d}{d t} x_{4} = F - x_{4} + x_{3}*\\left(x_{5} - x_{2}\\right)\n$$\n$$\n\\frac{d}{d t} x_{5} = F - x_{5} + x_{4}*\\left(x_{6} - x_{3}\\right)\n$$\n$$\n\\frac{d}{d t} x_{6} = F - x_{6} + x_{5}*\\left(x_{7} - x_{4}\\right)\n$$\n$$\n\\frac{d}{d t} x_{7} = F - x_{7} + x_{6}*\\left(x_{8} - x_{5}\\right)\n$$\n$$\n\\frac{d}{d t} x_{8} = F - x_{8} + x_{7}*\\left(x_{9} - x_{6}\\right)\n$$\n$$\n\\frac{d}{d t} x_{9} = F - x_{9} + x_{8}*\\left(x_{0} - x_{7}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $F$ | 0.01 | N/A | Constant large-scale forcing. |\n| $N$ | 10.0 | N/A | Number of state variables (dimension explicitly expanded below). |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Lorenz96.png",
     "parameter_names": [
       "F",
@@ -16415,7 +17234,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/sprott_dissipative_conservative.yaml",
-    "report_md": "\n\n# SprottDissipativeConservative\nSprottDissipativeConservative\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y + x*z + a*x*y\n$$\n$$\n\\frac{d}{d t} y = 1 - 2*x^{2} + b*y*z\n$$\n$$\n\\frac{d}{d t} z = - x^{2} - y^{2} + c*x\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 2.0 | N/A | Nonlinear mixed term coefficient a. |\n| $b$ | 1.0 | N/A | yz coupling coefficient b. |\n| $c$ | 1.0 | N/A | Linear term coefficient c in z equation. |\n\n\n\n",
+    "report_md": "\n\n## SprottDissipativeConservative\nMixed dissipative/conservative three-dimensional system where initial condition\nchoice yields either quasi-periodic torus motion or chaotic attractor behavior.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y + x*z + a*x*y\n$$\n$$\n\\frac{d}{d t} y = 1 - 2*x^{2} + b*y*z\n$$\n$$\n\\frac{d}{d t} z = - x^{2} - y^{2} + c*x\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 2.0 | N/A | Nonlinear mixed term coefficient a. |\n| $b$ | 1.0 | N/A | yz coupling coefficient b. |\n| $c$ | 1.0 | N/A | Linear term coefficient c in z equation. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/SprottDissipativeConservative.png",
     "parameter_names": [
       "a",
@@ -16652,7 +17471,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/hodgkin_huxley.yaml",
-    "report_md": "\n\n# HodgkinHuxley\nHodgkinHuxley\n\n## Equations\n\n### Derived Variables\n$$\nIK = gK*n^{4}*\\left(V - EK\\right)\n$$\n$$\nIL = gL*\\left(V - EL\\right)\n$$\n$$\nINa = gNa*h*m^{3}*\\left(V - ENa\\right)\n$$\n$$\n\\alpha_{h} = 0.07*e^{- \\frac{13}{4} - \\frac{V}{20}}\n$$\n$$\n\\alpha_{m} = \\frac{4.0 + 0.1*V}{1 - e^{-4 - \\frac{V}{10}}}\n$$\n$$\n\\alpha_{n} = \\frac{0.55 + 0.01*V}{1 - e^{- \\frac{11}{2} - \\frac{V}{10}}}\n$$\n$$\n\\beta_{h} = \\frac{1}{1 + e^{- \\frac{7}{2} - \\frac{V}{10}}}\n$$\n$$\n\\beta_{m} = 4*e^{- \\frac{65}{18} - \\frac{V}{18}}\n$$\n$$\n\\beta_{n} = 0.125*e^{- \\frac{13}{16} - \\frac{V}{80}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} V = \\frac{Iext - gL*\\left(V - EL\\right) - gK*n^{4}*\\left(V - EK\\right) - gNa*h*m^{3}*\\left(V - ENa\\right)}{Cm}\n$$\n$$\n\\frac{d}{d t} m = \\alpha_{m}*\\left(1 - m\\right) - \\beta_{m}*m\n$$\n$$\n\\frac{d}{d t} h = \\alpha_{h}*\\left(1 - h\\right) - \\beta_{h}*h\n$$\n$$\n\\frac{d}{d t} n = \\alpha_{n}*\\left(1 - n\\right) - \\beta_{n}*n\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Cm$ | 1.0 | N/A | Membrane capacitance (uF/cm^2). |\n| $gNa$ | 120.0 | N/A | Maximum sodium conductance. |\n| $gK$ | 36.0 | N/A | Maximum potassium conductance. |\n| $gL$ | 0.3 | N/A | Leak conductance. |\n| $ENa$ | 50.0 | N/A | Sodium reversal potential (mV). |\n| $EK$ | -77.0 | N/A | Potassium reversal potential (mV). |\n| $EL$ | -54.387 | N/A | Leak reversal potential (mV). |\n| $Iext$ | 10.0 | N/A | External applied current (uA/cm^2). |\n\n\n\n",
+    "report_md": "\n\n## HodgkinHuxley\nCanonical conductance-based neuron model capturing the biophysical basis of the\naction potential via voltage-gated sodium and potassium currents and a passive leak.\nFast activation/inactivation (m,h) of sodium and slower potassium activation (n)\nshape spike initiation, refractory period, and repetitive firing under sustained\ncurrent injection.\n\n### Derived Variables\n$$\nIK = gK*n^{4}*\\left(V - EK\\right)\n$$\n$$\nIL = gL*\\left(V - EL\\right)\n$$\n$$\nINa = gNa*h*m^{3}*\\left(V - ENa\\right)\n$$\n$$\n\\alpha_{h} = 0.07*e^{- \\frac{13}{4} - \\frac{V}{20}}\n$$\n$$\n\\alpha_{m} = \\frac{4.0 + 0.1*V}{1 - e^{-4 - \\frac{V}{10}}}\n$$\n$$\n\\alpha_{n} = \\frac{0.55 + 0.01*V}{1 - e^{- \\frac{11}{2} - \\frac{V}{10}}}\n$$\n$$\n\\beta_{h} = \\frac{1}{1 + e^{- \\frac{7}{2} - \\frac{V}{10}}}\n$$\n$$\n\\beta_{m} = 4*e^{- \\frac{65}{18} - \\frac{V}{18}}\n$$\n$$\n\\beta_{n} = 0.125*e^{- \\frac{13}{16} - \\frac{V}{80}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} V = \\frac{Iext - gL*\\left(V - EL\\right) - gK*n^{4}*\\left(V - EK\\right) - gNa*h*m^{3}*\\left(V - ENa\\right)}{Cm}\n$$\n$$\n\\frac{d}{d t} m = \\alpha_{m}*\\left(1 - m\\right) - \\beta_{m}*m\n$$\n$$\n\\frac{d}{d t} h = \\alpha_{h}*\\left(1 - h\\right) - \\beta_{h}*h\n$$\n$$\n\\frac{d}{d t} n = \\alpha_{n}*\\left(1 - n\\right) - \\beta_{n}*n\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Cm$ | 1.0 | N/A | Membrane capacitance (uF/cm^2). |\n| $gNa$ | 120.0 | N/A | Maximum sodium conductance. |\n| $gK$ | 36.0 | N/A | Maximum potassium conductance. |\n| $gL$ | 0.3 | N/A | Leak conductance. |\n| $ENa$ | 50.0 | N/A | Sodium reversal potential (mV). |\n| $EK$ | -77.0 | N/A | Potassium reversal potential (mV). |\n| $EL$ | -54.387 | N/A | Leak reversal potential (mV). |\n| $Iext$ | 10.0 | N/A | External applied current (uA/cm^2). |\n\n\n\n",
     "thumbnail": "browser/imgs/models/HodgkinHuxley.png",
     "parameter_names": [
       "Cm",
@@ -16879,7 +17698,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/labyrinth.yaml",
-    "report_md": "\n\n# Labyrinth\nLabyrinth\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = \\sin{\\left(y \\right)}\n$$\n$$\n\\frac{d}{d t} y = \\sin{\\left(z \\right)}\n$$\n$$\n\\frac{d}{d t} z = \\sin{\\left(x \\right)}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
+    "report_md": "\n\n## Labyrinth\nLabyrinth attractor: b = 0 limiting case of Thomas' cyclically symmetric system,\nproducing conservative-like intricate winding trajectories through a trigonometric\nvector field.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = \\sin{\\left(y \\right)}\n$$\n$$\n\\frac{d}{d t} y = \\sin{\\left(z \\right)}\n$$\n$$\n\\frac{d}{d t} z = \\sin{\\left(x \\right)}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
     "thumbnail": "browser/imgs/models/Labyrinth.png",
     "parameter_names": [],
     "state_variable_names": [
@@ -16969,7 +17788,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/stuartlandau_oscillator.yaml",
-    "report_md": "\n\n# StuartLandauOscillator\nStuartLandauOscillator\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = x*\\left(\\mu - x^{2} - y^{2}\\right) - \\omega*y - b*y*\\left(x^{2} + y^{2}\\right)\n$$\n$$\n\\frac{d}{d t} y = \\omega*x + y*\\left(\\mu - x^{2} - y^{2}\\right) + b*x*\\left(x^{2} + y^{2}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 1.0 | N/A | Linear growth (bifurcation) parameter μ. |\n| $\\omega$ | 1.0 | N/A | Base angular frequency ω. |\n| $b$ | 1.0 | N/A | Nonlinear frequency shift coefficient b. |\n\n\n\n",
+    "report_md": "\n\n## StuartLandauOscillator\nNormal form of supercritical Hopf bifurcation in Cartesian coordinates; radius\ndynamics decouple giving stable limit cycle of radius sqrt(mu) for mu > 0.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = x*\\left(\\mu - x^{2} - y^{2}\\right) - \\omega*y - b*y*\\left(x^{2} + y^{2}\\right)\n$$\n$$\n\\frac{d}{d t} y = \\omega*x + y*\\left(\\mu - x^{2} - y^{2}\\right) + b*x*\\left(x^{2} + y^{2}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 1.0 | N/A | Linear growth (bifurcation) parameter μ. |\n| $\\omega$ | 1.0 | N/A | Base angular frequency ω. |\n| $b$ | 1.0 | N/A | Nonlinear frequency shift coefficient b. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/StuartLandauOscillator.png",
     "parameter_names": [
       "mu",
@@ -17135,7 +17954,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/morris_lecar.yaml",
-    "report_md": "\n\n# MorrisLecar\nMorrisLecar\n\n## Equations\n\n### Derived Variables\n$$\nG = 0.5 + 0.5*\\tanh{\\left(\\frac{V - V_{3}}{V_{4}} \\right)}\n$$\n$$\nM = 0.5 + 0.5*\\tanh{\\left(\\frac{V - V_{1}}{V_{2}} \\right)}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} V = I - gL*\\left(V - VL\\right) - M*gCa*\\left(V - VCa\\right) - N*gK*\\left(V - VK\\right)\n$$\n$$\n\\frac{d}{d t} N = \\frac{G - N}{\\tau}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.15 | N/A | Applied current I. |\n| $V_{3}$ | 0.1 | N/A | Half-activation parameter V3. |\n| $V_{1}$ | -0.0 | N/A | Half-activation parameter V1. |\n| $V_{2}$ | 0.15 | N/A | Slope factor V2. |\n| $V_{4}$ | 0.1 | N/A | Slope factor V4. |\n| $VCa$ | 1.0 | N/A | Calcium reversal potential. |\n| $VL$ | -0.5 | N/A | Leak reversal potential. |\n| $VK$ | -0.7 | N/A | Potassium reversal potential. |\n| $gCa$ | 1.2 | N/A | Calcium conductance. |\n| $gK$ | 2.0 | N/A | Potassium conductance. |\n| $gL$ | 0.5 | N/A | Leak conductance. |\n| $\\tau$ | 3.0 | N/A | Recovery time constant τ. |\n\n\n\n",
+    "report_md": "\n\n## MorrisLecar\nTwo-variable conductance-based neuron model capturing excitability via fast\ncalcium and slower potassium dynamics; a simplification of Hodgkin-Huxley\nretaining rich bifurcation structure.\n\n### Derived Variables\n$$\nG = 0.5 + 0.5*\\tanh{\\left(\\frac{V - V_{3}}{V_{4}} \\right)}\n$$\n$$\nM = 0.5 + 0.5*\\tanh{\\left(\\frac{V - V_{1}}{V_{2}} \\right)}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} V = I - gL*\\left(V - VL\\right) - M*gCa*\\left(V - VCa\\right) - N*gK*\\left(V - VK\\right)\n$$\n$$\n\\frac{d}{d t} N = \\frac{G - N}{\\tau}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.15 | N/A | Applied current I. |\n| $V_{3}$ | 0.1 | N/A | Half-activation parameter V3. |\n| $V_{1}$ | -0.0 | N/A | Half-activation parameter V1. |\n| $V_{2}$ | 0.15 | N/A | Slope factor V2. |\n| $V_{4}$ | 0.1 | N/A | Slope factor V4. |\n| $VCa$ | 1.0 | N/A | Calcium reversal potential. |\n| $VL$ | -0.5 | N/A | Leak reversal potential. |\n| $VK$ | -0.7 | N/A | Potassium reversal potential. |\n| $gCa$ | 1.2 | N/A | Calcium conductance. |\n| $gK$ | 2.0 | N/A | Potassium conductance. |\n| $gL$ | 0.5 | N/A | Leak conductance. |\n| $\\tau$ | 3.0 | N/A | Recovery time constant τ. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/MorrisLecar.png",
     "parameter_names": [
       "I",
@@ -17311,7 +18130,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/lorenzdl.yaml",
-    "report_md": "\n\n# LorenzDiffusionless\nLorenzDiffusionless\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y - x\n$$\n$$\n\\frac{d}{d t} y = - x*z\n$$\n$$\n\\frac{d}{d t} z = - R + x*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $R$ | 4.7 | N/A | Constant parameter R controlling coexistence of attractors. |\n\n\n\n",
+    "report_md": "\n\n## LorenzDiffusionless\nDiffusionless variant of Lorenz-type flow supporting a pair of linked Malasoma\nstrange attractors with fractal basin boundaries for typical parameter values.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y - x\n$$\n$$\n\\frac{d}{d t} y = - x*z\n$$\n$$\n\\frac{d}{d t} z = - R + x*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $R$ | 4.7 | N/A | Constant parameter R controlling coexistence of attractors. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/LorenzDiffusionless.png",
     "parameter_names": [
       "R"
@@ -17409,7 +18228,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/forced_pendulum.yaml",
-    "report_md": "\n\n# ForcedPendulum\nForcedPendulum\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = v\n$$\n$$\n\\frac{d}{d t} v = - \\sin{\\left(x \\right)} + f*\\cos{\\left(\\omega*t \\right)} - d*v\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 2.2 | N/A | Driving angular frequency ω. |\n| $f$ | 27.0 | N/A | Driving amplitude f. |\n| $d$ | 0.2 | N/A | Linear damping coefficient d. |\n\n\n\n",
+    "report_md": "\n\n## ForcedPendulum\nDriven damped pendulum showing classic routes to chaos (period doubling and\nintermittency) and rich phase locking structure in parameter space.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = v\n$$\n$$\n\\frac{d}{d t} v = - \\sin{\\left(x \\right)} + f*\\cos{\\left(\\omega*t \\right)} - d*v\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 2.2 | N/A | Driving angular frequency ω. |\n| $f$ | 27.0 | N/A | Driving amplitude f. |\n| $d$ | 0.2 | N/A | Linear damping coefficient d. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/ForcedPendulum.png",
     "parameter_names": [
       "omega",
@@ -17533,7 +18352,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/guckenheimer_holmes.yaml",
-    "report_md": "\n\n# GuckenheimerHolmes\nGuckenheimerHolmes\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = a*x + x*\\left(y^{2} + z^{2}\\right) + d*y*z\n$$\n$$\n\\frac{d}{d t} y = b*y + y*\\left(x^{2} + z^{2}\\right) + e*x*z\n$$\n$$\n\\frac{d}{d t} z = c*z + z*\\left(x^{2} + y^{2}\\right) + f*x*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 0.5 | N/A | Linear growth/damping parameter in x-equation. |\n| $b$ | 0.5 | N/A | Linear growth/damping parameter in y-equation. |\n| $c$ | 0.5 | N/A | Linear growth/damping parameter in z-equation. |\n| $d$ | 1.0 | N/A | Nonlinear coupling parameter for x. |\n| $e$ | 1.0 | N/A | Nonlinear coupling parameter for y. |\n| $f$ | 1.0 | N/A | Nonlinear coupling parameter for z. |\n\n\n\n",
+    "report_md": "\n\n## GuckenheimerHolmes\nSymmetric three-dimensional normal form near a triple zero eigenvalue illustrating\nmode interactions, heteroclinic cycles, and the onset of complicated dynamics in\nequivariant bifurcation problems. Tunable linear and quadratic interaction terms\nproduce transitions between steady states, periodic orbits, and chaotic transients.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = a*x + x*\\left(y^{2} + z^{2}\\right) + d*y*z\n$$\n$$\n\\frac{d}{d t} y = b*y + y*\\left(x^{2} + z^{2}\\right) + e*x*z\n$$\n$$\n\\frac{d}{d t} z = c*z + z*\\left(x^{2} + y^{2}\\right) + f*x*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 0.5 | N/A | Linear growth/damping parameter in x-equation. |\n| $b$ | 0.5 | N/A | Linear growth/damping parameter in y-equation. |\n| $c$ | 0.5 | N/A | Linear growth/damping parameter in z-equation. |\n| $d$ | 1.0 | N/A | Nonlinear coupling parameter for x. |\n| $e$ | 1.0 | N/A | Nonlinear coupling parameter for y. |\n| $f$ | 1.0 | N/A | Nonlinear coupling parameter for z. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/GuckenheimerHolmes.png",
     "parameter_names": [
       "a",
@@ -17758,7 +18577,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/antidots.yaml",
-    "report_md": "\n\n# Antidots\nAntidots\n\n## Equations\n\n### Derived Variables\n$$\nUy = 0\n$$\n$$\nUx = 0\n$$\n$$\nxt = -0.5 + \\left(1.0*x \\bmod 1\\right)\n$$\n$$\nyt = -0.5 + \\left(1.0*y \\bmod 1\\right)\n$$\n$$\n\\rho = \\sqrt{xt^{2} + yt^{2}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = vx\n$$\n$$\n\\frac{d}{d t} y = vy\n$$\n$$\n\\frac{d}{d t} vx = - Ux + 2*B*vy*\\sqrt{2}\n$$\n$$\n\\frac{d}{d t} vy = - Uy - 2*B*vx*\\sqrt{2}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $d_{0}$ | 0.5 | N/A | Effective antidot diameter. |\n| $c$ | 0.2 | N/A | Smoothing factor c. |\n| $B$ | 1.0 | N/A | Magnetic field strength (normalized). |\n\n\n\n",
+    "report_md": "\n\n## Antidots\nHamiltonian antidot lattice (periodic Sinai-like billiard) with smooth circular\nrepulsive potentials and perpendicular magnetic field. Models guiding center\ndynamics and magnetotransport phenomena in mesoscopic systems. Smooth radial\nrepulsion implemented as a quartic polynomial potential inside radius (d0/2 + c)\nmatching the original implementation (Datseris 2019); outside region force is zero.\n\n### Derived Variables\n$$\nUy = 0\n$$\n$$\nUx = 0\n$$\n$$\nxt = -0.5 + \\left(1.0*x \\bmod 1\\right)\n$$\n$$\nyt = -0.5 + \\left(1.0*y \\bmod 1\\right)\n$$\n$$\n\\rho = \\sqrt{xt^{2} + yt^{2}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = vx\n$$\n$$\n\\frac{d}{d t} y = vy\n$$\n$$\n\\frac{d}{d t} vx = - Ux + 2*B*vy*\\sqrt{2}\n$$\n$$\n\\frac{d}{d t} vy = - Uy - 2*B*vx*\\sqrt{2}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $d_{0}$ | 0.5 | N/A | Effective antidot diameter. |\n| $c$ | 0.2 | N/A | Smoothing factor c. |\n| $B$ | 1.0 | N/A | Magnetic field strength (normalized). |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Antidots.png",
     "parameter_names": [
       "d0",
@@ -17953,7 +18772,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/more_chaos_example.yaml",
-    "report_md": "\n\n# MoreChaosExample\nMoreChaosExample\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y\n$$\n$$\n\\frac{d}{d t} y = - x - y*\\operatorname{sign}{\\left(z \\right)}\n$$\n$$\n\\frac{d}{d t} z = y^{2} - e^{- x^{2}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
+    "report_md": "\n\n## MoreChaosExample\nThree-dimensional chaotic flow whose attractor is multifractal with dimension\nclose to 3, introduced as an additional example in discussions about the need\nfor new chaos exemplars.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y\n$$\n$$\n\\frac{d}{d t} y = - x - y*\\operatorname{sign}{\\left(z \\right)}\n$$\n$$\n\\frac{d}{d t} z = y^{2} - e^{- x^{2}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
     "thumbnail": "browser/imgs/models/MoreChaosExample.png",
     "parameter_names": [],
     "state_variable_names": [
@@ -18052,7 +18871,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/shinriki.yaml",
-    "report_md": "\n\n# Shinriki\nShinriki\n\n## Equations\n\n### Derived Variables\n$$\nVnl = 2.295*10^{-5}*e^{3.0038*v_{1} - 3.0038*v_{2}} - 2.295*10^{-5}*e^{3.0038*v_{2} - 3.0038*v_{1}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} v_{1} = 6.89655172413793*v_{2} - 100.0*Vnl - 6.89655172413793*v_{1} + 100.0*v_{1}*\\left(0.144927536231884 - \\frac{1}{R_{1}}\\right)\n$$\n$$\n\\frac{d}{d t} v_{2} = 10.0*Vnl + 0.689655172413793*v_{1} - 10.0*v_{3} - 0.689655172413793*v_{2}\n$$\n$$\n\\frac{d}{d t} v_{3} = 3.125*v_{2} - 0.3125*v_{3}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $R_{1}$ | 22.0 | N/A | Variable resistor R1 controlling nonlinearity. |\n\n\n\n",
+    "report_md": "\n\n## Shinriki\nShinriki oscillator (stiff chaotic electronic circuit) with exponential nonlinearity.\nAll parameters except R1 fixed to canonical literature values.\n\n### Derived Variables\n$$\nVnl = 2.295*10^{-5}*e^{3.0038*v_{1} - 3.0038*v_{2}} - 2.295*10^{-5}*e^{3.0038*v_{2} - 3.0038*v_{1}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} v_{1} = 6.89655172413793*v_{2} - 100.0*Vnl - 6.89655172413793*v_{1} + 100.0*v_{1}*\\left(0.144927536231884 - \\frac{1}{R_{1}}\\right)\n$$\n$$\n\\frac{d}{d t} v_{2} = 10.0*Vnl + 0.689655172413793*v_{1} - 10.0*v_{3} - 0.689655172413793*v_{2}\n$$\n$$\n\\frac{d}{d t} v_{3} = 3.125*v_{2} - 0.3125*v_{3}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $R_{1}$ | 22.0 | N/A | Variable resistor R1 controlling nonlinearity. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Shinriki.png",
     "parameter_names": [
       "R1"
@@ -18156,7 +18975,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/nosehoover.yaml",
-    "report_md": "\n\n# NoseHoover\nNoseHoover\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y\n$$\n$$\n\\frac{d}{d t} y = - x + y*z\n$$\n$$\n\\frac{d}{d t} z = 1 - y^{2}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
+    "report_md": "\n\n## NoseHoover\nNosé–Hoover thermostat flow: minimal three-dimensional conservative system\nwith time-reversible chaotic dynamics arising in statistical mechanics and\nlater rediscovered as an algebraically simple chaotic flow.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y\n$$\n$$\n\\frac{d}{d t} y = - x + y*z\n$$\n$$\n\\frac{d}{d t} z = 1 - y^{2}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
     "thumbnail": "browser/imgs/models/NoseHoover.png",
     "parameter_names": [],
     "state_variable_names": [
@@ -18256,7 +19075,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/lotkavolterra.yaml",
-    "report_md": "\n\n# LotkaVolterraPredPrey\nLotkaVolterraPredPrey\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = \\alpha*x - \\beta*x*y\n$$\n$$\n\\frac{d}{d t} y = - \\gamma*y + \\delta*x*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\alpha$ | 1.5 | N/A | Prey intrinsic growth rate α. |\n| $\\beta$ | 1.0 | N/A | Predation interaction coefficient β. |\n| $\\delta$ | 1.0 | N/A | Predator growth efficiency δ. |\n| $\\gamma$ | 3.0 | N/A | Predator mortality rate γ. |\n\n\n\n",
+    "report_md": "\n\n## LotkaVolterraPredPrey\nThe famous Lotka-Volterra model is a simple ecological model describing the interaction\nbetween a predator and a prey species (or also parasite and host species). It has been\nused independently in epidemics, ecology, and economics. The prey (x) grows\nexponentially in absence of predators; predation converts prey into predator growth;\npredator (y) declines without prey. Default parameters produce sustained oscillations.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = \\alpha*x - \\beta*x*y\n$$\n$$\n\\frac{d}{d t} y = - \\gamma*y + \\delta*x*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\alpha$ | 1.5 | N/A | Prey intrinsic growth rate α. |\n| $\\beta$ | 1.0 | N/A | Predation interaction coefficient β. |\n| $\\delta$ | 1.0 | N/A | Predator growth efficiency δ. |\n| $\\gamma$ | 3.0 | N/A | Predator mortality rate γ. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/LotkaVolterraPredPrey.png",
     "parameter_names": [
       "alpha",
@@ -18376,7 +19195,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/gissinger.yaml",
-    "report_md": "\n\n# Gissinger\nGissinger\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} Q = Q*\\mu - D*V\n$$\n$$\n\\frac{d}{d t} D = Q*V - D*\\nu\n$$\n$$\n\\frac{d}{d t} V = \\Gamma - V + D*Q\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 0.119 | N/A | Growth parameter μ for dipole component Q. |\n| $\\nu$ | 0.1 | N/A | Damping parameter ν of D variable. |\n| $\\Gamma$ | 0.9 | N/A | Constant source term Γ in V equation. |\n\n\n\n",
+    "report_md": "\n\n## Gissinger\nLow-order model for geomagnetic field reversals exhibiting chaotic polarity changes.\nCaptures interplay between dipole (Q), quadrupole (D) and velocity (V) modes.\n\n\n### State Equations\n$$\n\\frac{d}{d t} Q = Q*\\mu - D*V\n$$\n$$\n\\frac{d}{d t} D = Q*V - D*\\nu\n$$\n$$\n\\frac{d}{d t} V = \\Gamma - V + D*Q\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 0.119 | N/A | Growth parameter μ for dipole component Q. |\n| $\\nu$ | 0.1 | N/A | Damping parameter ν of D variable. |\n| $\\Gamma$ | 0.9 | N/A | Constant source term Γ in V equation. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Gissinger.png",
     "parameter_names": [
       "mu",
@@ -18491,7 +19310,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/vanderpol.yaml",
-    "report_md": "\n\n# VanDerPolForced\nVanDerPolForced\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y\n$$\n$$\n\\frac{d}{d t} y = - x + F*\\sin{\\left(\\frac{2*\\pi*t}{T} \\right)} + \\mu*y*\\left(1 - x^{2}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 1.5 | N/A | Nonlinear damping parameter μ. |\n| $F$ | 1.2 | N/A | Forcing amplitude F. |\n| $T$ | 10.0 | N/A | Forcing period T. |\n\n\n\n",
+    "report_md": "\n\n## VanDerPolForced\nThe forced van der Pol oscillator features nonlinear (amplitude dependent) damping and\nsinusoidal forcing. The unforced system has a unique attracting relaxation cycle; with\nforcing it displays entrainment, quasi-periodicity or chaos depending on parameters.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y\n$$\n$$\n\\frac{d}{d t} y = - x + F*\\sin{\\left(\\frac{2*\\pi*t}{T} \\right)} + \\mu*y*\\left(1 - x^{2}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 1.5 | N/A | Nonlinear damping parameter μ. |\n| $F$ | 1.2 | N/A | Forcing amplitude F. |\n| $T$ | 10.0 | N/A | Forcing period T. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/VanDerPolForced.png",
     "parameter_names": [
       "mu",
@@ -18619,7 +19438,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/lorenz_bounded.yaml",
-    "report_md": "\n\n# LorenzBounded\nLorenzBounded\n\n## Equations\n\n### Derived Variables\n$$\nf = 1 - \\frac{X^{2} + Y^{2} + Z^{2}}{r^{2}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} X = f*\\sigma*\\left(Y - X\\right)\n$$\n$$\n\\frac{d}{d t} Y = f*\\left(- Y + X*\\left(\\rho - Z\\right)\\right)\n$$\n$$\n\\frac{d}{d t} Z = f*\\left(X*Y - Z*\\beta\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\beta$ | 2.667 | N/A | β parameter from original Lorenz with confinement. |\n| $r$ | 64.0 | N/A | Radius of confining potential sphere. |\n| $\\rho$ | 28.0 | N/A | ρ parameter as in Lorenz. |\n| $\\sigma$ | 10.0 | N/A | σ parameter as in Lorenz. |\n\n\n\n",
+    "report_md": "\n\n## LorenzBounded\nLorenz system modified by smooth radial confinement factor f = 1 - (||X||^2)/r^2\nproducing bounded dynamics with altered basin geometry while retaining core\nstretching and folding mechanisms.\n\n### Derived Variables\n$$\nf = 1 - \\frac{X^{2} + Y^{2} + Z^{2}}{r^{2}}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} X = f*\\sigma*\\left(Y - X\\right)\n$$\n$$\n\\frac{d}{d t} Y = f*\\left(- Y + X*\\left(\\rho - Z\\right)\\right)\n$$\n$$\n\\frac{d}{d t} Z = f*\\left(X*Y - Z*\\beta\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\beta$ | 2.667 | N/A | β parameter from original Lorenz with confinement. |\n| $r$ | 64.0 | N/A | Radius of confining potential sphere. |\n| $\\rho$ | 28.0 | N/A | ρ parameter as in Lorenz. |\n| $\\sigma$ | 10.0 | N/A | σ parameter as in Lorenz. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/LorenzBounded.png",
     "parameter_names": [
       "beta",
@@ -18781,7 +19600,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/swinging_atwood.yaml",
-    "report_md": "\n\n# SwingingAtwood\nSwingingAtwood\n\n## Equations\n\n### Derived Variables\n$$\nenergy = 0.5*m_{1}*\\left(v^{2} + l^{2}*\\omega^{2} + 2*l*\\omega*v*\\sin{\\left(\\theta \\right)}\\right) + 0.5*m_{2}*v^{2} + g*y*\\left(m_{1} + m_{2}\\right) + g*l*m_{1}*\\left(1 - \\cos{\\left(\\theta \\right)}\\right)\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = \\omega\n$$\n$$\n\\frac{d}{d t} \\omega = \\frac{- g*\\left(m_{1} + m_{2}\\right)*\\sin{\\left(\\theta \\right)} - m_{1}*\\omega^{2}*\\cos{\\left(\\theta \\right)}*\\sin{\\left(\\theta \\right)}}{l*\\left(m_{1} + m_{2}\\right) - l*m_{1}*\\cos^{2}{\\left(\\theta \\right)}}\n$$\n$$\n\\frac{d}{d t} y = v\n$$\n$$\n\\frac{d}{d t} v = \\frac{g*\\left(m_{2} - m_{1}*\\sin^{2}{\\left(\\theta \\right)}\\right)}{m_{1} + m_{2} - m_{1}*\\cos^{2}{\\left(\\theta \\right)}} - \\frac{l*m_{1}*\\omega^{2}*\\cos{\\left(\\theta \\right)}}{m_{1} + m_{2} - m_{1}*\\cos^{2}{\\left(\\theta \\right)}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $g$ | 9.81 | N/A | Gravitational acceleration. |\n| $l$ | 1.0 | N/A | Length of the pendulum string segment (nondimensionalized scale). |\n| $m_{1}$ | 1.0 | N/A | Mass of pendulum bob. |\n| $m_{2}$ | 3.0 | N/A | Mass of counterweight. |\n\n\n\n",
+    "report_md": "\n\n## SwingingAtwood\nThe swinging Atwood machine couples a pendulum to a vertically moving mass via a\nsingle inextensible string over a pulley. Competing exchanges between vertical and\nangular motion create a rich mixed phase space with coexisting regular islands and\nchaotic seas, providing a canonical laboratory example of low-dimensional Hamiltonian\nchaos and resonance overlap.\n\n### Derived Variables\n$$\nenergy = 0.5*m_{1}*\\left(v^{2} + l^{2}*\\omega^{2} + 2*l*\\omega*v*\\sin{\\left(\\theta \\right)}\\right) + 0.5*m_{2}*v^{2} + g*y*\\left(m_{1} + m_{2}\\right) + g*l*m_{1}*\\left(1 - \\cos{\\left(\\theta \\right)}\\right)\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta = \\omega\n$$\n$$\n\\frac{d}{d t} \\omega = \\frac{- g*\\left(m_{1} + m_{2}\\right)*\\sin{\\left(\\theta \\right)} - m_{1}*\\omega^{2}*\\cos{\\left(\\theta \\right)}*\\sin{\\left(\\theta \\right)}}{l*\\left(m_{1} + m_{2}\\right) - l*m_{1}*\\cos^{2}{\\left(\\theta \\right)}}\n$$\n$$\n\\frac{d}{d t} y = v\n$$\n$$\n\\frac{d}{d t} v = \\frac{g*\\left(m_{2} - m_{1}*\\sin^{2}{\\left(\\theta \\right)}\\right)}{m_{1} + m_{2} - m_{1}*\\cos^{2}{\\left(\\theta \\right)}} - \\frac{l*m_{1}*\\omega^{2}*\\cos{\\left(\\theta \\right)}}{m_{1} + m_{2} - m_{1}*\\cos^{2}{\\left(\\theta \\right)}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $g$ | 9.81 | N/A | Gravitational acceleration. |\n| $l$ | 1.0 | N/A | Length of the pendulum string segment (nondimensionalized scale). |\n| $m_{1}$ | 1.0 | N/A | Mass of pendulum bob. |\n| $m_{2}$ | 3.0 | N/A | Mass of counterweight. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/SwingingAtwood.png",
     "parameter_names": [
       "g",
@@ -18925,7 +19744,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/rikitake.yaml",
-    "report_md": "\n\n# Rikitake\nRikitake\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y*z - \\mu*x\n$$\n$$\n\\frac{d}{d t} y = x*\\left(z - \\alpha\\right) - \\mu*y\n$$\n$$\n\\frac{d}{d t} z = 1 - x*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 1.0 | N/A | Dissipation parameter μ. |\n| $\\alpha$ | 1.0 | N/A | Axial asymmetry parameter α. |\n\n\n\n",
+    "report_md": "\n\n## Rikitake\nRikitake two-disk dynamo model for geomagnetic polarity reversals. Exhibits\nchaotic switching between polarity states through nonlinear coupling of\nmechanical and electromagnetic components.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y*z - \\mu*x\n$$\n$$\n\\frac{d}{d t} y = x*\\left(z - \\alpha\\right) - \\mu*y\n$$\n$$\n\\frac{d}{d t} z = 1 - x*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 1.0 | N/A | Dissipation parameter μ. |\n| $\\alpha$ | 1.0 | N/A | Axial asymmetry parameter α. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Rikitake.png",
     "parameter_names": [
       "mu",
@@ -19041,7 +19860,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/sakarya.yaml",
-    "report_md": "\n\n# Sakarya\nSakarya\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y + a*x + y*z\n$$\n$$\n\\frac{d}{d t} y = y*z - x*z\n$$\n$$\n\\frac{d}{d t} z = b - z - m*x*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.0 | N/A | Linear growth coefficient a. |\n| $b$ | 1.0 | N/A | Constant drive term b. |\n| $m$ | 1.0 | N/A | Nonlinear coupling coefficient m. |\n\n\n\n",
+    "report_md": "\n\n## Sakarya\nFour-wing strange attractor born via merging of bistable attractors; exhibits\nrobust chaos and symmetry-related lobe structure transitions under parameter variation.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = y + a*x + y*z\n$$\n$$\n\\frac{d}{d t} y = y*z - x*z\n$$\n$$\n\\frac{d}{d t} z = b - z - m*x*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.0 | N/A | Linear growth coefficient a. |\n| $b$ | 1.0 | N/A | Constant drive term b. |\n| $m$ | 1.0 | N/A | Nonlinear coupling coefficient m. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Sakarya.png",
     "parameter_names": [
       "a",
@@ -19150,7 +19969,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/ueda.yaml",
-    "report_md": "\n\n# Ueda\nUeda\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = v\n$$\n$$\n\\frac{d}{d t} v = - x^{3} + B*\\cos{\\left(t \\right)} - k*v\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $k$ | 0.1 | N/A | Linear damping coefficient k. |\n| $B$ | 12.0 | N/A | Forcing amplitude B. |\n\n\n\n",
+    "report_md": "\n\n## Ueda\nClassic forced nonlinear oscillator (Ueda system) producing a broken-egg stroboscopic\nattractor under periodic sampling. Among early documented examples of deterministic\nchaos in driven oscillatory systems.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = v\n$$\n$$\n\\frac{d}{d t} v = - x^{3} + B*\\cos{\\left(t \\right)} - k*v\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $k$ | 0.1 | N/A | Linear damping coefficient k. |\n| $B$ | 12.0 | N/A | Forcing amplitude B. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Ueda.png",
     "parameter_names": [
       "k",
@@ -19262,7 +20081,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/henonheiles.yaml",
-    "report_md": "\n\n# HenonHeiles\nHenonHeiles\n\n## Equations\n\n### Derived Variables\n$$\nH = - \\frac{y^{3}}{3} + 0.5*px^{2} + 0.5*py^{2} + 0.5*x^{2} + 0.5*y^{2} + y*x^{2}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = px\n$$\n$$\n\\frac{d}{d t} y = py\n$$\n$$\n\\frac{d}{d t} px = - x - 2*x*y\n$$\n$$\n\\frac{d}{d t} py = y^{2} - y - x^{2}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
+    "report_md": "\n\n## HenonHeiles\nThe Hénon–Heiles system is a conservative 2 DoF Hamiltonian model introduced to\nstudy stellar motion near a galactic center and the search for a third integral\nof motion. The default initial condition is a typical chaotic orbit.\n\n### Derived Variables\n$$\nH = - \\frac{y^{3}}{3} + 0.5*px^{2} + 0.5*py^{2} + 0.5*x^{2} + 0.5*y^{2} + y*x^{2}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = px\n$$\n$$\n\\frac{d}{d t} y = py\n$$\n$$\n\\frac{d}{d t} px = - x - 2*x*y\n$$\n$$\n\\frac{d}{d t} py = y^{2} - y - x^{2}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
     "thumbnail": "browser/imgs/models/HenonHeiles.png",
     "parameter_names": [],
     "state_variable_names": [
@@ -19405,7 +20224,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/chua.yaml",
-    "report_md": "\n\n# Chua\nChua\n\n## Equations\n\n### Derived Variables\n$$\nh_{x} = m_{1}*x + \\left(- \\left|{-1 + x}\\right| + \\left|{1 + x}\\right|\\right)*\\left(0.5*m_{0} - 0.5*m_{1}\\right)\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = a*\\left(y - h_{x} - x\\right)\n$$\n$$\n\\frac{d}{d t} y = x + z - y\n$$\n$$\n\\frac{d}{d t} z = - b*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 15.6 | N/A | Parameter a scaling the active conductance term. |\n| $b$ | 25.58 | N/A | Parameter b scaling the third state equation term. |\n| $m_{0}$ | -1.1428571428571428 | N/A | Inner slope of Chua's piecewise-linear element. |\n| $m_{1}$ | -0.7142857142857143 | N/A | Outer slope of Chua's piecewise-linear element. |\n\n\n\n",
+    "report_md": "\n\n## Chua\nThis is a 3D continuous system that exhibits chaos.\n\nChua designed an electronic circuit with the expressed goal of exhibiting\nchaotic motion, and this system is obtained by rescaling the circuit units\nto simplify the form of the equation. [^Chua1992]\n\nThe parameters are a, b, m0, and m1. Setting a = 15.6, m0 = -8/7 and m1 = -5/7, and\nvarying the parameter b from b = 25 to b = 51, one observes a classic period-doubling\nbifurcation route to chaos. [^Chua2007]\n\n### Derived Variables\n$$\nh_{x} = m_{1}*x + \\left(- \\operatorname{abs}{\\left(-1 + x \\right)} + \\operatorname{abs}{\\left(1 + x \\right)}\\right)*\\left(0.5*m_{0} - 0.5*m_{1}\\right)\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = a*\\left(y - h_{x} - x\\right)\n$$\n$$\n\\frac{d}{d t} y = x + z - y\n$$\n$$\n\\frac{d}{d t} z = - b*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 15.6 | N/A | Parameter a scaling the active conductance term. |\n| $b$ | 25.58 | N/A | Parameter b scaling the third state equation term. |\n| $m_{0}$ | -1.1428571428571428 | N/A | Inner slope of Chua's piecewise-linear element. |\n| $m_{1}$ | -0.7142857142857143 | N/A | Outer slope of Chua's piecewise-linear element. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Chua.png",
     "parameter_names": [
       "a",
@@ -19553,7 +20372,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/lorenz84.yaml",
-    "report_md": "\n\n# Lorenz84\nLorenz84\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y^{2} - z^{2} + F*a - a*x\n$$\n$$\n\\frac{d}{d t} y = G - y + x*y - b*x*z\n$$\n$$\n\\frac{d}{d t} z = - z + x*z + b*x*y\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $F$ | 6.846 | N/A | Baroclinic forcing F. |\n| $G$ | 1.287 | N/A | Annual cycle modulation G. |\n| $a$ | 0.25 | N/A | Linear damping parameter a. |\n| $b$ | 4.0 | N/A | Coupling parameter b. |\n\n\n\n",
+    "report_md": "\n\n## Lorenz84\nLow-order atmospheric circulation model exhibiting multistability and fractal\nbasin boundaries with coexisting attractors under standard parameter set.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y^{2} - z^{2} + F*a - a*x\n$$\n$$\n\\frac{d}{d t} y = G - y + x*y - b*x*z\n$$\n$$\n\\frac{d}{d t} z = - z + x*z + b*x*y\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $F$ | 6.846 | N/A | Baroclinic forcing F. |\n| $G$ | 1.287 | N/A | Annual cycle modulation G. |\n| $a$ | 0.25 | N/A | Linear damping parameter a. |\n| $b$ | 4.0 | N/A | Coupling parameter b. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Lorenz84.png",
     "parameter_names": [
       "F",
@@ -19695,7 +20514,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/hyper_roessler.yaml",
-    "report_md": "\n\n# HyperRoessler\nHyperRoessler\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y - z\n$$\n$$\n\\frac{d}{d t} y = w + x + a*y\n$$\n$$\n\\frac{d}{d t} z = b + z*\\left(x - c\\right)\n$$\n$$\n\\frac{d}{d t} w = w*y - d*z\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 0.25 | N/A | Parameter a. |\n| $b$ | 3.0 | N/A | Parameter b. |\n| $c$ | 0.5 | N/A | Parameter c. |\n| $d$ | 0.05 | N/A | Parameter d for fourth dimension coupling. |\n\n\n\n",
+    "report_md": "\n\n## HyperRoessler\nFour-dimensional hyperchaotic extension of the Rössler system introducing an\nadditional variable that yields a second positive Lyapunov exponent over wide\nparameter ranges while preserving the spiral-type attractor structure.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y - z\n$$\n$$\n\\frac{d}{d t} y = w + x + a*y\n$$\n$$\n\\frac{d}{d t} z = b + z*\\left(x - c\\right)\n$$\n$$\n\\frac{d}{d t} w = w*y - d*z\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 0.25 | N/A | Parameter a. |\n| $b$ | 3.0 | N/A | Parameter b. |\n| $c$ | 0.5 | N/A | Parameter c. |\n| $d$ | 0.05 | N/A | Parameter d for fourth dimension coupling. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/HyperRoessler.png",
     "parameter_names": [
       "a",
@@ -19824,7 +20643,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/stommel_thermohaline.yaml",
-    "report_md": "\n\n# StommelThermohaline\nStommelThermohaline\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} T = \\eta_{1} - T - T*\\left|{S - T}\\right|\n$$\n$$\n\\frac{d}{d t} S = \\eta_{2} - S*\\eta_{3} - S*\\left|{S - T}\\right|\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\eta_{1}$ | 3.0 | N/A | Thermal forcing parameter η₁. |\n| $\\eta_{2}$ | 1.0 | N/A | Freshwater/salinity source parameter η₂. |\n| $\\eta_{3}$ | 0.3 | N/A | Salinity damping coefficient η₃. |\n\n\n\n",
+    "report_md": "\n\n## StommelThermohaline\nTwo-box thermohaline circulation model capturing temperature (T) and salinity (S)\ndriven density contrasts leading to multiple equilibria in overturning strength.\n\n\n### State Equations\n$$\n\\frac{d}{d t} T = \\eta_{1} - T - T*\\operatorname{abs}{\\left(T - S \\right)}\n$$\n$$\n\\frac{d}{d t} S = \\eta_{2} - S*\\eta_{3} - S*\\operatorname{abs}{\\left(T - S \\right)}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\eta_{1}$ | 3.0 | N/A | Thermal forcing parameter η₁. |\n| $\\eta_{2}$ | 1.0 | N/A | Freshwater/salinity source parameter η₂. |\n| $\\eta_{3}$ | 0.3 | N/A | Salinity damping coefficient η₃. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/StommelThermohaline.png",
     "parameter_names": [
       "eta1",
@@ -19934,7 +20753,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/duffing.yaml",
-    "report_md": "\n\n# DuffingForced\nDuffingForced\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = v\n$$\n$$\n\\frac{d}{d t} v = - x^{3} + f*\\cos{\\left(\\omega*t \\right)} - \\beta*x - d*v\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 2.2 | N/A | Forcing angular frequency ω. |\n| $f$ | 27.0 | N/A | Forcing amplitude f. |\n| $d$ | 0.2 | N/A | Linear damping coefficient d. |\n| $\\beta$ | 1.0 | N/A | Linear stiffness parameter β. |\n\n\n\n",
+    "report_md": "\n\n## DuffingForced\nForced Duffing oscillator with linear damping and periodic forcing. Exhibits rich nonlinear dynamics including bifurcations, quasiperiodicity, and chaos depending on forcing amplitude and frequency.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = v\n$$\n$$\n\\frac{d}{d t} v = - x^{3} + f*\\cos{\\left(\\omega*t \\right)} - \\beta*x - d*v\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega$ | 2.2 | N/A | Forcing angular frequency ω. |\n| $f$ | 27.0 | N/A | Forcing amplitude f. |\n| $d$ | 0.2 | N/A | Linear damping coefficient d. |\n| $\\beta$ | 1.0 | N/A | Linear stiffness parameter β. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/DuffingForced.png",
     "parameter_names": [
       "omega",
@@ -20088,7 +20907,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/magnetic_pendulum.yaml",
-    "report_md": "\n\n# MagneticPendulum\nMagneticPendulum\n\n## Equations\n\n### Derived Variables\n$$\nsum_{\\gamma terms x} = \\gamma*\\left(\\frac{-1 + x}{\\left(d^{2} + y^{2} + \\left(-1 + x\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{\\frac{1}{2} + x}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y + \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{\\frac{1}{2} + x}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y - \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}}\\right)\n$$\n$$\nsum_{\\gamma terms y} = \\gamma*\\left(\\frac{y}{\\left(d^{2} + y^{2} + \\left(-1 + x\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{y + \\frac{\\sqrt{3}}{2}}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y + \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{y - \\frac{\\sqrt{3}}{2}}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y - \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}}\\right)\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = vx\n$$\n$$\n\\frac{d}{d t} y = vy\n$$\n$$\n\\frac{d}{d t} vx = - sum_{\\gamma terms x} - \\alpha*vx - x*\\omega^{2}\n$$\n$$\n\\frac{d}{d t} vy = - sum_{\\gamma terms y} - \\alpha*vy - y*\\omega^{2}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\gamma$ | 1.0 | N/A | Base magnetic strength γ (if γs not explicitly varied). |\n| $d$ | 0.3 | N/A | Vertical offset of pendulum from magnet plane. |\n| $\\alpha$ | 0.2 | N/A | Linear damping coefficient α. |\n| $\\omega$ | 0.5 | N/A | Natural frequency ω. |\n| $N$ | 3.0 | N/A | Number of magnets equally spaced on unit circle. |\n\n\n\n",
+    "report_md": "\n\n## MagneticPendulum\nDamped planar magnetic pendulum over N fixed magnets forming a symmetric multistable\npotential. Exhibits fractal basin boundaries and sensitive dependence in final magnet\nattraction region selection.\n\n### Derived Variables\n$$\nsum_{\\gamma terms x} = \\gamma*\\left(\\frac{-1 + x}{\\left(d^{2} + y^{2} + \\left(-1 + x\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{\\frac{1}{2} + x}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y + \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{\\frac{1}{2} + x}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y - \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}}\\right)\n$$\n$$\nsum_{\\gamma terms y} = \\gamma*\\left(\\frac{y}{\\left(d^{2} + y^{2} + \\left(-1 + x\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{y + \\frac{\\sqrt{3}}{2}}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y + \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}} + \\frac{y - \\frac{\\sqrt{3}}{2}}{\\left(d^{2} + \\left(\\frac{1}{2} + x\\right)^{2} + \\left(y - \\frac{\\sqrt{3}}{2}\\right)^{2}\\right)^{\\frac{3}{2}}}\\right)\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} x = vx\n$$\n$$\n\\frac{d}{d t} y = vy\n$$\n$$\n\\frac{d}{d t} vx = - sum_{\\gamma terms x} - \\alpha*vx - x*\\omega^{2}\n$$\n$$\n\\frac{d}{d t} vy = - sum_{\\gamma terms y} - \\alpha*vy - y*\\omega^{2}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\gamma$ | 1.0 | N/A | Base magnetic strength γ (if γs not explicitly varied). |\n| $d$ | 0.3 | N/A | Vertical offset of pendulum from magnet plane. |\n| $\\alpha$ | 0.2 | N/A | Linear damping coefficient α. |\n| $\\omega$ | 0.5 | N/A | Natural frequency ω. |\n| $N$ | 3.0 | N/A | Number of magnets equally spaced on unit circle. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/MagneticPendulum.png",
     "parameter_names": [
       "gamma",
@@ -20293,7 +21112,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/coupled_roessler.yaml",
-    "report_md": "\n\n# CoupledRoessler\nCoupledRoessler\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x_{1} = - z_{1} - \\omega_{1}*y_{1}\n$$\n$$\n\\frac{d}{d t} y_{1} = a*y_{1} + k_{1}*\\left(y_{2} - y_{1}\\right) + \\omega_{1}*x_{1}\n$$\n$$\n\\frac{d}{d t} z_{1} = b + z_{1}*\\left(x_{1} - c\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = - z_{2} - \\omega_{2}*y_{2}\n$$\n$$\n\\frac{d}{d t} y_{2} = a*y_{2} + k_{2}*\\left(y_{1} - y_{2}\\right) + \\omega_{2}*x_{2}\n$$\n$$\n\\frac{d}{d t} z_{2} = b + z_{2}*\\left(x_{2} - c\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega_{1}$ | 0.18 | N/A | Frequency scaling of first oscillator. |\n| $\\omega_{2}$ | 0.22 | N/A | Frequency scaling of second oscillator. |\n| $a$ | 0.2 | N/A | Linear term coefficient a. |\n| $b$ | 0.2 | N/A | Drive parameter b. |\n| $c$ | 5.7 | N/A | Folding parameter c. |\n| $k_{1}$ | 0.115 | N/A | Diffusive coupling from oscillator 2 to 1. |\n| $k_{2}$ | 0.0 | N/A | Diffusive coupling from oscillator 1 to 2. |\n\n\n\n",
+    "report_md": "\n\n## CoupledRoessler\nPair of diffusively coupled Rössler oscillators used to study phase and\ngeneralized synchronization, lag synchronization and coupling asymmetry effects.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x_{1} = - z_{1} - \\omega_{1}*y_{1}\n$$\n$$\n\\frac{d}{d t} y_{1} = a*y_{1} + k_{1}*\\left(y_{2} - y_{1}\\right) + \\omega_{1}*x_{1}\n$$\n$$\n\\frac{d}{d t} z_{1} = b + z_{1}*\\left(x_{1} - c\\right)\n$$\n$$\n\\frac{d}{d t} x_{2} = - z_{2} - \\omega_{2}*y_{2}\n$$\n$$\n\\frac{d}{d t} y_{2} = a*y_{2} + k_{2}*\\left(y_{1} - y_{2}\\right) + \\omega_{2}*x_{2}\n$$\n$$\n\\frac{d}{d t} z_{2} = b + z_{2}*\\left(x_{2} - c\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\omega_{1}$ | 0.18 | N/A | Frequency scaling of first oscillator. |\n| $\\omega_{2}$ | 0.22 | N/A | Frequency scaling of second oscillator. |\n| $a$ | 0.2 | N/A | Linear term coefficient a. |\n| $b$ | 0.2 | N/A | Drive parameter b. |\n| $c$ | 5.7 | N/A | Folding parameter c. |\n| $k_{1}$ | 0.115 | N/A | Diffusive coupling from oscillator 2 to 1. |\n| $k_{2}$ | 0.0 | N/A | Diffusive coupling from oscillator 1 to 2. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/CoupledRoessler.png",
     "parameter_names": [
       "omega1",
@@ -20456,7 +21275,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/thomas_cyclical.yaml",
-    "report_md": "\n\n# ThomasCyclical\nThomasCyclical\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - b*x + \\sin{\\left(y \\right)}\n$$\n$$\n\\frac{d}{d t} y = - b*y + \\sin{\\left(z \\right)}\n$$\n$$\n\\frac{d}{d t} z = - b*z + \\sin{\\left(x \\right)}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $b$ | 0.2 | N/A | Linear damping parameter b. |\n\n\n\n",
+    "report_md": "\n\n## ThomasCyclical\nThomas' cyclically symmetric attractor: a smooth three-dimensional system with\nrotational symmetry across cyclic permutations (x,y,z). Reduces to the labyrinth\nsystem when b = 0. Displays a strange attractor with intertwined scroll-like lobes.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - b*x + \\sin{\\left(y \\right)}\n$$\n$$\n\\frac{d}{d t} y = - b*y + \\sin{\\left(z \\right)}\n$$\n$$\n\\frac{d}{d t} z = - b*z + \\sin{\\left(x \\right)}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $b$ | 0.2 | N/A | Linear damping parameter b. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/ThomasCyclical.png",
     "parameter_names": [
       "b"
@@ -20569,7 +21388,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/roessler.yaml",
-    "report_md": "\n\n# Roessler\nRoessler\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y - z\n$$\n$$\n\\frac{d}{d t} y = x + a*y\n$$\n$$\n\\frac{d}{d t} z = b + z*\\left(x - c\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 0.2 | N/A | Linear dissipation parameter in y equation. |\n| $b$ | 0.2 | N/A | Constant drive term in z equation. |\n| $c$ | 5.7 | N/A | Z-scaling parameter setting folding scale. |\n\n\n\n",
+    "report_md": "\n\n## Roessler\nThis three-dimensional continuous system is due to Rössler [^Rössler1976]. It is a\nsystem that by design behaves similarly to the Lorenz system and displays a strange\nattractor. However, it is easier to analyze qualitatively, as for example the attractor\nis composed of a single manifold. Default values are the same as the original paper.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y - z\n$$\n$$\n\\frac{d}{d t} y = x + a*y\n$$\n$$\n\\frac{d}{d t} z = b + z*\\left(x - c\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 0.2 | N/A | Linear dissipation parameter in y equation. |\n| $b$ | 0.2 | N/A | Constant drive term in z equation. |\n| $c$ | 5.7 | N/A | Z-scaling parameter setting folding scale. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Roessler.png",
     "parameter_names": [
       "a",
@@ -20700,7 +21519,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/lorenz.yaml",
-    "report_md": "\n\n# Lorenz63\nLorenz63\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} X = \\sigma*\\left(Y - X\\right)\n$$\n$$\n\\frac{d}{d t} Y = - Y + X*\\left(\\rho - Z\\right)\n$$\n$$\n\\frac{d}{d t} Z = X*Y - Z*\\beta\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\sigma$ | 10.0 | N/A | Prandtl number (σ) controlling rate of convection. |\n| $\\rho$ | 28.0 | N/A | Rayleigh number (ρ) scaled parameter driving convection. |\n| $\\beta$ | 2.6666666666666665 | N/A | Geometric factor (β = 8/3) related to aspect ratio. |\n\n\n\n",
+    "report_md": "\n\n## Lorenz63\nThe famous three dimensional system due to Lorenz [^Lorenz1963], shown to exhibit\nso-called \"deterministic nonperiodic flow\". It was originally invented to study a\nsimplified form of atmospheric convection.\n\nCurrently, it is most famous for its strange attractor (occuring at the default\nparameters), which resembles a butterfly. For the same reason it is\nalso associated with the term \"butterfly effect\" (a term which Lorenz himself disliked)\neven though the effect applies generally to dynamical systems.\nDefault values are the ones used in the original paper.\n\n\n### State Equations\n$$\n\\frac{d}{d t} X = \\sigma*\\left(Y - X\\right)\n$$\n$$\n\\frac{d}{d t} Y = - Y + X*\\left(\\rho - Z\\right)\n$$\n$$\n\\frac{d}{d t} Z = X*Y - Z*\\beta\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\sigma$ | 10.0 | N/A | Prandtl number (σ) controlling rate of convection. |\n| $\\rho$ | 28.0 | N/A | Rayleigh number (ρ) scaled parameter driving convection. |\n| $\\beta$ | 2.6666666666666665 | N/A | Geometric factor (β = 8/3) related to aspect ratio. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Lorenz63.png",
     "parameter_names": [
       "sigma",
@@ -20866,7 +21685,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/double_pendulum.yaml",
-    "report_md": "\n\n# DoublePendulum\nDoublePendulum\n\n## Equations\n\n### Derived Variables\n$$\n\\phi = \\theta_{2} - \\theta_{1}\n$$\n$$\n\\Delta = M_{1} + M_{2} - M_{2}*\\cos^{2}{\\left(\\phi \\right)}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta_{1} = \\omega_{1}\n$$\n$$\n\\frac{d}{d t} \\omega_{1} = \\frac{M_{2}*\\left(\\left(G*\\sin{\\left(\\theta_{2} \\right)} + L_{1}*\\omega_{1}^{2}*\\sin{\\left(\\phi \\right)}\\right)*\\cos{\\left(\\phi \\right)} + L_{2}*\\omega_{2}^{2}*\\sin{\\left(\\phi \\right)}\\right) - G*\\left(M_{1} + M_{2}\\right)*\\sin{\\left(\\theta_{1} \\right)}}{\\Delta*L_{1}}\n$$\n$$\n\\frac{d}{d t} \\theta_{2} = \\omega_{2}\n$$\n$$\n\\frac{d}{d t} \\omega_{2} = \\frac{\\left(M_{1} + M_{2}\\right)*\\left(G*\\left(- \\sin{\\left(\\theta_{2} \\right)} + \\cos{\\left(\\phi \\right)}*\\sin{\\left(\\theta_{1} \\right)}\\right) - L_{1}*\\omega_{1}^{2}*\\sin{\\left(\\phi \\right)}\\right) - L_{2}*M_{2}*\\omega_{2}^{2}*\\cos{\\left(\\phi \\right)}*\\sin{\\left(\\phi \\right)}}{\\Delta*L_{2}}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $G$ | 10.0 | N/A | Gravitational acceleration. |\n| $L_{1}$ | 1.0 | N/A | Length of first rod. |\n| $L_{2}$ | 1.0 | N/A | Length of second rod. |\n| $M_{1}$ | 1.0 | N/A | Mass of first bob. |\n| $M_{2}$ | 1.0 | N/A | Mass of second bob. |\n\n\n\n",
+    "report_md": "\n\n## DoublePendulum\nFamous chaotic double pendulum (planar) with two point masses connected by\nmassless rods. The ordering of variables is [θ₁, ω₁, θ₂, ω₂]. Shows sensitive\ndependence and rich energy-dependent phase space structure. The auxiliary\nvariables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equations.\n\n### Derived Variables\n$$\n\\phi = \\theta_{2} - \\theta_{1}\n$$\n$$\n\\Delta = M_{1} + M_{2} - M_{2}*\\cos^{2}{\\left(\\phi \\right)}\n$$\n\n### State Equations\n$$\n\\frac{d}{d t} \\theta_{1} = \\omega_{1}\n$$\n$$\n\\frac{d}{d t} \\omega_{1} = \\frac{M_{2}*\\left(\\left(G*\\sin{\\left(\\theta_{2} \\right)} + L_{1}*\\omega_{1}^{2}*\\sin{\\left(\\phi \\right)}\\right)*\\cos{\\left(\\phi \\right)} + L_{2}*\\omega_{2}^{2}*\\sin{\\left(\\phi \\right)}\\right) - G*\\left(M_{1} + M_{2}\\right)*\\sin{\\left(\\theta_{1} \\right)}}{\\Delta*L_{1}}\n$$\n$$\n\\frac{d}{d t} \\theta_{2} = \\omega_{2}\n$$\n$$\n\\frac{d}{d t} \\omega_{2} = \\frac{\\left(M_{1} + M_{2}\\right)*\\left(G*\\left(- \\sin{\\left(\\theta_{2} \\right)} + \\cos{\\left(\\phi \\right)}*\\sin{\\left(\\theta_{1} \\right)}\\right) - L_{1}*\\omega_{1}^{2}*\\sin{\\left(\\phi \\right)}\\right) - L_{2}*M_{2}*\\omega_{2}^{2}*\\cos{\\left(\\phi \\right)}*\\sin{\\left(\\phi \\right)}}{\\Delta*L_{2}}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $G$ | 10.0 | N/A | Gravitational acceleration. |\n| $L_{1}$ | 1.0 | N/A | Length of first rod. |\n| $L_{2}$ | 1.0 | N/A | Length of second rod. |\n| $M_{1}$ | 1.0 | N/A | Mass of first bob. |\n| $M_{2}$ | 1.0 | N/A | Mass of second bob. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/DoublePendulum.png",
     "parameter_names": [
       "G",
@@ -21055,7 +21874,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/riddled_basins.yaml",
-    "report_md": "\n\n# RiddledBasins\nRiddledBasins\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = vx\n$$\n$$\n\\frac{d}{d t} y = vy\n$$\n$$\n\\frac{d}{d t} vx = - y^{2} - \\gamma*vx + 4*x*\\left(1 - x^{2}\\right) + f_{0}*x_{0}*\\sin{\\left(\\omega*t \\right)}\n$$\n$$\n\\frac{d}{d t} vy = - \\gamma*vy - 2*y*\\left(x + \\bar{x}\\right) + f_{0}*y_{0}*\\sin{\\left(\\omega*t \\right)}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\gamma$ | 0.05 | N/A | Damping coefficient γ. |\n| $\\bar{x}$ | 1.9 | N/A | Shift parameter x̄. |\n| $f_{0}$ | 2.3 | N/A | Forcing amplitude f₀. |\n| $\\omega$ | 3.5 | N/A | Forcing angular frequency ω. |\n| $x_{0}$ | 1.0 | N/A | Forcing x-projection coefficient. |\n| $y_{0}$ | 0.0 | N/A | Forcing y-projection coefficient. |\n\n\n\n",
+    "report_md": "\n\n## RiddledBasins\nTime-periodically forced four-dimensional system exhibiting riddled basins of\nattraction: arbitrarily small neighborhoods contain points converging to\ndistinct attractors, illustrating extreme sensitivity in basin structure.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = vx\n$$\n$$\n\\frac{d}{d t} y = vy\n$$\n$$\n\\frac{d}{d t} vx = - y^{2} - \\gamma*vx + 4*x*\\left(1 - x^{2}\\right) + f_{0}*x_{0}*\\sin{\\left(\\omega*t \\right)}\n$$\n$$\n\\frac{d}{d t} vy = - \\gamma*vy - 2*y*\\left(x + \\bar{x}\\right) + f_{0}*y_{0}*\\sin{\\left(\\omega*t \\right)}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\gamma$ | 0.05 | N/A | Damping coefficient γ. |\n| $\\bar{x}$ | 1.9 | N/A | Shift parameter x̄. |\n| $f_{0}$ | 2.3 | N/A | Forcing amplitude f₀. |\n| $\\omega$ | 3.5 | N/A | Forcing angular frequency ω. |\n| $x_{0}$ | 1.0 | N/A | Forcing x-projection coefficient. |\n| $y_{0}$ | 0.0 | N/A | Forcing y-projection coefficient. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/RiddledBasins.png",
     "parameter_names": [
       "gamma",
@@ -21216,7 +22035,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/qbh.yaml",
-    "report_md": "\n\n# QuadrupoleBosonHamiltonian\nQuadrupoleBosonHamiltonian\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} q_{0} = A*p_{0}\n$$\n$$\n\\frac{d}{d t} p_{0} = - A*q_{0} - D*q_{0}*\\left(q_{0}^{2} + q_{2}^{2}\\right) - \\frac{3*B*\\sqrt{2}*\\left(q_{2}^{2} - q_{0}^{2}\\right)}{2}\n$$\n$$\n\\frac{d}{d t} q_{2} = A*p_{2}\n$$\n$$\n\\frac{d}{d t} p_{2} = - q_{2}*\\left(A + D*\\left(q_{0}^{2} + q_{2}^{2}\\right) + 3*B*q_{0}*\\sqrt{2}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $A$ | 1.0 | N/A | Harmonic scaling parameter A. |\n| $B$ | 0.55 | N/A | Cubic interaction coefficient B. |\n| $D$ | 0.4 | N/A | Quartic interaction coefficient D. |\n\n\n\n",
+    "report_md": "\n\n## QuadrupoleBosonHamiltonian\nConservative Hamiltonian system modeling quadrupole surface vibrations in a nuclear\ncontext. Adds a quartic term to Henon–Heiles-like structure producing energy-dependent\nchaoticity. Default initial condition is chaotic.\n\n\n### State Equations\n$$\n\\frac{d}{d t} q_{0} = A*p_{0}\n$$\n$$\n\\frac{d}{d t} p_{0} = - A*q_{0} - D*q_{0}*\\left(q_{0}^{2} + q_{2}^{2}\\right) - \\frac{3*B*\\sqrt{2}*\\left(q_{2}^{2} - q_{0}^{2}\\right)}{2}\n$$\n$$\n\\frac{d}{d t} q_{2} = A*p_{2}\n$$\n$$\n\\frac{d}{d t} p_{2} = - q_{2}*\\left(A + D*\\left(q_{0}^{2} + q_{2}^{2}\\right) + 3*B*q_{0}*\\sqrt{2}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $A$ | 1.0 | N/A | Harmonic scaling parameter A. |\n| $B$ | 0.55 | N/A | Cubic interaction coefficient B. |\n| $D$ | 0.4 | N/A | Quartic interaction coefficient D. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/QuadrupoleBosonHamiltonian.png",
     "parameter_names": [
       "A",
@@ -21350,7 +22169,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/halvorsen.yaml",
-    "report_md": "\n\n# Halvorsen\nHalvorsen\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y^{2} - 4*y - 4*z - a*x\n$$\n$$\n\\frac{d}{d t} y = - z^{2} - 4*x - 4*z - a*y\n$$\n$$\n\\frac{d}{d t} z = c - x^{2} - 4*x - 4*y - a*z\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.4 | N/A | Linear damping / coupling strength. |\n| $b$ | 0.4 | N/A | Quadratic saturation coefficient. |\n| $c$ | 1.0 | N/A | Constant drive parameter. |\n\n\n\n",
+    "report_md": "\n\n## Halvorsen\nSmooth three-dimensional chaotic flow with rotational symmetry and robust strange\nattractor arising from quadratic cross-couplings and constant drive. Exhibits\nintertwined scroll-like structure and sensitive dependence useful for benchmarking\nnonlinear state estimation and control strategies.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = - y^{2} - 4*y - 4*z - a*x\n$$\n$$\n\\frac{d}{d t} y = - z^{2} - 4*x - 4*z - a*y\n$$\n$$\n\\frac{d}{d t} z = c - x^{2} - 4*x - 4*y - a*z\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.4 | N/A | Linear damping / coupling strength. |\n| $b$ | 0.4 | N/A | Quadratic saturation coefficient. |\n| $c$ | 1.0 | N/A | Constant drive parameter. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/Halvorsen.png",
     "parameter_names": [
       "a",
@@ -21470,7 +22289,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/fitzhugh_nagumo.yaml",
-    "report_md": "\n\n# FitzHughNagumo\nFitzHughNagumo\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} v = I - w + a*v*\\left(1 - v\\right)*\\left(v - b\\right)\n$$\n$$\n\\frac{d}{d t} w = \\epsilon*\\left(v - w\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 3.0 | N/A | Excitability scaling parameter a. |\n| $b$ | 0.2 | N/A | Recovery nullcline parameter b. |\n| $\\epsilon$ | 0.01 | N/A | Time-scale separation ε. |\n| $I$ | 0.0 | N/A | External input current I. |\n\n\n\n",
+    "report_md": "\n\n## FitzHughNagumo\nFamous excitable system which emulates the firing of a neuron, reducing the biophysical\nHodgkin-Huxley description to two variables while preserving excitability and recovery\ndynamics. Captures threshold behavior, refractoriness and sustained spiking under drive.\n\n\n### State Equations\n$$\n\\frac{d}{d t} v = I - w + a*v*\\left(1 - v\\right)*\\left(v - b\\right)\n$$\n$$\n\\frac{d}{d t} w = \\epsilon*\\left(v - w\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 3.0 | N/A | Excitability scaling parameter a. |\n| $b$ | 0.2 | N/A | Recovery nullcline parameter b. |\n| $\\epsilon$ | 0.01 | N/A | Time-scale separation ε. |\n| $I$ | 0.0 | N/A | External input current I. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/FitzHughNagumo.png",
     "parameter_names": [
       "a",
@@ -21618,7 +22437,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/hindmarshrose.yaml",
-    "report_md": "\n\n# HindmarshRose\nHindmarshRose\n\n## Equations\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = I + y - z + b*x^{2} - a*x^{3}\n$$\n$$\n\\frac{d}{d t} y = c - y - d*x^{2}\n$$\n$$\n\\frac{d}{d t} z = r*\\left(- z + s*\\left(x - xr\\right)\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.0 | N/A | Cubic nonlinearity scaling a. |\n| $b$ | 3.0 | N/A | Quadratic term scaling b. |\n| $c$ | 1.0 | N/A | Constant current term c in y equation. |\n| $d$ | 5.0 | N/A | Scaling of x^2 in y equation. |\n| $r$ | 0.001 | N/A | Slow adaptation rate r. |\n| $s$ | 4.0 | N/A | Adaptation coupling strength s. |\n| $xr$ | -1.6 | N/A | Reference potential x_r. |\n| $I$ | 2.0 | N/A | External applied current I. |\n\n\n\n",
+    "report_md": "\n\n## HindmarshRose\nThe Hindmarsh-Rose model reproduces the bursting behavior of a neuron's membrane\npotential, characterized by a fast sequence of spikes followed by a quiescent period.\nThe x variable is the membrane potential; y the fast recovery (ionic current) variable;\nz a slow adaptation current. Parameter sets modulate transitions between quiescence,\ntonic spiking and bursting.\n\n\n### State Equations\n$$\n\\frac{d}{d t} x = I + y - z + b*x^{2} - a*x^{3}\n$$\n$$\n\\frac{d}{d t} y = c - y - d*x^{2}\n$$\n$$\n\\frac{d}{d t} z = r*\\left(- z + s*\\left(x - xr\\right)\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.0 | N/A | Cubic nonlinearity scaling a. |\n| $b$ | 3.0 | N/A | Quadratic term scaling b. |\n| $c$ | 1.0 | N/A | Constant current term c in y equation. |\n| $d$ | 5.0 | N/A | Scaling of x^2 in y equation. |\n| $r$ | 0.001 | N/A | Slow adaptation rate r. |\n| $s$ | 4.0 | N/A | Adaptation coupling strength s. |\n| $xr$ | -1.6 | N/A | Reference potential x_r. |\n| $I$ | 2.0 | N/A | External applied current I. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/HindmarshRose.png",
     "parameter_names": [
       "a",
@@ -21746,7 +22565,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/beta_transformation_map.yaml",
-    "report_md": "\n\n# BetaTransformationMap\nBetaTransformationMap\n\n## Equations\n\n\n### State Equations\n$$\nx = \\beta*x \\bmod 1\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\beta$ | 2.0 | N/A | Expansion factor β; Lyapunov exponent ln(β). |\n\n\n\n",
+    "report_md": "\n\n## BetaTransformationMap\nThe β-transformation (generalized Bernoulli map): x_{n+1} = (β x_n) mod 1. For β=2 it\nis the dyadic map with symbolic dynamics given by binary shift.\n\n\n### State Equations\n$$\nx = \\beta*x \\bmod 1\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\beta$ | 2.0 | N/A | Expansion factor β; Lyapunov exponent ln(β). |\n\n\n\n",
     "thumbnail": "browser/imgs/models/BetaTransformationMap.png",
     "parameter_names": [
       "beta"
@@ -21837,7 +22656,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/ulam_ring_4.yaml",
-    "report_md": "\n\n# UlamRing4\nUlamRing4\n\n## Equations\n\n\n### State Equations\n$$\nx_{0} = 2 - \\left(eps*x_{3} + x_{0}*\\left(1 - eps\\right)\\right)^{2}\n$$\n$$\nx_{1} = 2 - \\left(eps*x_{0} + x_{1}*\\left(1 - eps\\right)\\right)^{2}\n$$\n$$\nx_{2} = 2 - \\left(eps*x_{1} + x_{2}*\\left(1 - eps\\right)\\right)^{2}\n$$\n$$\nx_{3} = 2 - \\left(eps*x_{2} + x_{3}*\\left(1 - eps\\right)\\right)^{2}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $eps$ | 0.6 | N/A | Unidirectional coupling ε on a 4-node ring. |\n\n\n\n",
+    "report_md": "\n\n## UlamRing4\nFour unidirectionally coupled quadratic maps on a ring using the classic Ulam map\nf(x)=2 - x^2 as local dynamics; higher N can be constructed analogously.\n\n\n### State Equations\n$$\nx_{0} = 2 - \\left(eps*x_{3} + x_{0}*\\left(1 - eps\\right)\\right)^{2}\n$$\n$$\nx_{1} = 2 - \\left(eps*x_{0} + x_{1}*\\left(1 - eps\\right)\\right)^{2}\n$$\n$$\nx_{2} = 2 - \\left(eps*x_{1} + x_{2}*\\left(1 - eps\\right)\\right)^{2}\n$$\n$$\nx_{3} = 2 - \\left(eps*x_{2} + x_{3}*\\left(1 - eps\\right)\\right)^{2}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $eps$ | 0.6 | N/A | Unidirectional coupling ε on a 4-node ring. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/UlamRing4.png",
     "parameter_names": [
       "eps"
@@ -21959,7 +22778,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/zaslavskii_map.yaml",
-    "report_md": "\n\n# ZaslavskiiMap\nZaslavskiiMap\n\n## Equations\n\n### Derived Variables\n$$\n\\mu = \\frac{1 - e^{- r}}{r}\n$$\n\n### State Equations\n$$\nx = \\left(x + \\nu*\\left(1 + \\mu*y\\right) + eps*\\mu*\\nu*\\cos{\\left(2*\\pi*x \\right)}\\right) \\bmod 1\n$$\n$$\ny = \\left(y + eps*\\cos{\\left(2*\\pi*x \\right)}\\right)*e^{- r}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $eps$ | 5.0 | N/A | Forcing amplitude ε. |\n| $\\nu$ | 0.2 | N/A | Coupling strength ν. |\n| $r$ | 2.0 | N/A | Damping parameter r. |\n\n\n\n",
+    "report_md": "\n\n## ZaslavskiiMap\nTwo-dimensional dissipative map exhibiting chaotic attractors for standard parameter\nsets; sometimes mischaracterized as the “simplest” strange attractor.\n\n### Derived Variables\n$$\n\\mu = \\frac{1 - e^{- r}}{r}\n$$\n\n### State Equations\n$$\nx = \\left(x + \\nu*\\left(1 + \\mu*y\\right) + eps*\\mu*\\nu*\\cos{\\left(2*\\pi*x \\right)}\\right) \\bmod 1\n$$\n$$\ny = \\left(y + eps*\\cos{\\left(2*\\pi*x \\right)}\\right)*e^{- r}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $eps$ | 5.0 | N/A | Forcing amplitude ε. |\n| $\\nu$ | 0.2 | N/A | Coupling strength ν. |\n| $r$ | 2.0 | N/A | Damping parameter r. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/ZaslavskiiMap.png",
     "parameter_names": [
       "eps",
@@ -22075,7 +22894,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/grebogi_map.yaml",
-    "report_md": "\n\n# GrebogiMap\nGrebogiMap\n\n## Equations\n\n\n### State Equations\n$$\n\\theta = \\left(\\theta + a*\\sin{\\left(2*\\theta \\right)} - b*\\sin{\\left(4*\\theta \\right)} - x*\\sin{\\left(\\theta \\right)}\\right) \\bmod 2*\\pi\n$$\n$$\nx = - J_{0}*\\cos{\\left(\\theta \\right)}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.32 | N/A | Coefficient a in angle update. |\n| $b$ | 0.9 | N/A | Coefficient b in angle update. |\n| $J_{0}$ | 0.3 | N/A | Drive amplitude J0. |\n\n\n\n",
+    "report_md": "\n\n## GrebogiMap\nTwo-dimensional map with chaotic transients and fractal basin boundaries; converges\nto one of two fixed points depending on initial condition.\n\n\n### State Equations\n$$\n\\theta = \\left(\\theta + a*\\sin{\\left(2*\\theta \\right)} - b*\\sin{\\left(4*\\theta \\right)} - x*\\sin{\\left(\\theta \\right)}\\right) \\bmod 2*\\pi\n$$\n$$\nx = - J_{0}*\\cos{\\left(\\theta \\right)}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.32 | N/A | Coefficient a in angle update. |\n| $b$ | 0.9 | N/A | Coefficient b in angle update. |\n| $J_{0}$ | 0.3 | N/A | Drive amplitude J0. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/GrebogiMap.png",
     "parameter_names": [
       "a",
@@ -22167,7 +22986,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/arnold_cat_map.yaml",
-    "report_md": "\n\n# ArnoldCatMap\nArnoldCatMap\n\n## Equations\n\n\n### State Equations\n$$\nx = \\left(y + 2*x\\right) \\bmod 1\n$$\n$$\ny = \\left(x + y\\right) \\bmod 1\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
+    "report_md": "\n\n## ArnoldCatMap\nArnold’s cat map: linear automorphism of the torus with hyperbolic dynamics and\nuniform stretching and folding.\n\n\n### State Equations\n$$\nx = \\left(y + 2*x\\right) \\bmod 1\n$$\n$$\ny = \\left(x + y\\right) \\bmod 1\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n\n\n\n\n",
     "thumbnail": "browser/imgs/models/ArnoldCatMap.png",
     "parameter_names": [],
     "state_variable_names": [
@@ -22255,7 +23074,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/rulkov_map.yaml",
-    "report_md": "\n\n# RulkovMap\nRulkovMap\n\n## Equations\n\n\n### State Equations\n$$\nx = y + \\frac{\\alpha}{1 + x^{2}}\n$$\n$$\ny = y - \\beta - \\sigma*x\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\alpha$ | 4.1 | N/A | Nonlinearity parameter α controlling spiking/bursting. |\n| $\\beta$ | 0.001 | N/A | Bias parameter β. |\n| $\\sigma$ | 0.001 | N/A | Coupling parameter σ from fast to slow variable. |\n\n\n\n",
+    "report_md": "\n\n## RulkovMap\nTwo-dimensional phenomenological neuron map capable of spiking and bursting regimes.\n\n\n### State Equations\n$$\nx = y + \\frac{\\alpha}{1 + x^{2}}\n$$\n$$\ny = y - \\beta - \\sigma*x\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\alpha$ | 4.1 | N/A | Nonlinearity parameter α controlling spiking/bursting. |\n| $\\beta$ | 0.001 | N/A | Bias parameter β. |\n| $\\sigma$ | 0.001 | N/A | Coupling parameter σ from fast to slow variable. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/RulkovMap.png",
     "parameter_names": [
       "alpha",
@@ -22357,7 +23176,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/henon_map.yaml",
-    "report_md": "\n\n# HenonMap\nHenonMap\n\n## Equations\n\n\n### State Equations\n$$\nx = 1 + y - a*x^{2}\n$$\n$$\ny = b*x\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.4 | N/A | Quadratic nonlinearity coefficient a. |\n| $b$ | 0.3 | N/A | Linear contraction coefficient b. |\n\n\n\n",
+    "report_md": "\n\n## HenonMap\nThe Hénon map is a two-dimensional discrete-time dynamical system exhibiting a strange\nattractor for the default parameters a=1.4, b=0.3. It serves as a simple model for\nchaotic dynamics in smooth invertible maps.\n\n\n### State Equations\n$$\nx = 1 + y - a*x^{2}\n$$\n$$\ny = b*x\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.4 | N/A | Quadratic nonlinearity coefficient a. |\n| $b$ | 0.3 | N/A | Linear contraction coefficient b. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/HenonMap.png",
     "parameter_names": [
       "a",
@@ -22455,7 +23274,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/towel_map.yaml",
-    "report_md": "\n\n# TowelMap\nTowelMap\n\n## Equations\n\n\n### State Equations\n$$\nx = - \\left(1 - 2*z\\right)*\\left(0.0175 + 0.05*y\\right) + 3.8*x*\\left(1 - x\\right)\n$$\n$$\ny = \\left(1 - 1.9*x\\right)*\\left(-0.1 + \\left(0.35 + y\\right)*\\left(0.1 - 0.2*z\\right)\\right)\n$$\n$$\nz = b*y + 3.78*z*\\left(1 - z\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $b$ | 0.2 | N/A | Coupling coefficient b in z-update. |\n\n\n\n",
+    "report_md": "\n\n## TowelMap\nFolded-towel hyperchaotic map with two positive Lyapunov exponents, introduced by\nRössler. Named for the towel-like appearance of its attractor projections.\n\n\n### State Equations\n$$\nx = - \\left(1 - 2*z\\right)*\\left(0.0175 + 0.05*y\\right) + 3.8*x*\\left(1 - x\\right)\n$$\n$$\ny = \\left(1 - 1.9*x\\right)*\\left(-0.1 + \\left(0.35 + y\\right)*\\left(0.1 - 0.2*z\\right)\\right)\n$$\n$$\nz = b*y + 3.78*z*\\left(1 - z\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $b$ | 0.2 | N/A | Coupling coefficient b in z-update. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/TowelMap.png",
     "parameter_names": [
       "b"
@@ -22572,7 +23391,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/ikeda_map.yaml",
-    "report_md": "\n\n# IkedaMap\nIkedaMap\n\n## Equations\n\n### Derived Variables\n$$\n\\theta = c - \\frac{d}{1 + x^{2} + y^{2}}\n$$\n\n### State Equations\n$$\nx = a + b*\\left(x*\\cos{\\left(\\theta \\right)} - y*\\sin{\\left(\\theta \\right)}\\right)\n$$\n$$\ny = b*\\left(x*\\sin{\\left(\\theta \\right)} + y*\\cos{\\left(\\theta \\right)}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.0 | N/A | Constant bias a. |\n| $b$ | 1.0 | N/A | Linear scaling b. |\n| $c$ | 0.4 | N/A | Phase offset c. |\n| $d$ | 6.0 | N/A | Phase nonlinearity scale d. |\n\n\n\n",
+    "report_md": "\n\n## IkedaMap\nIkeda map modeling light propagation in a ring cavity with nonlinear phase; exhibits\nrich strange attractors.\n\n### Derived Variables\n$$\n\\theta = c - \\frac{d}{1 + x^{2} + y^{2}}\n$$\n\n### State Equations\n$$\nx = a + b*\\left(x*\\cos{\\left(\\theta \\right)} - y*\\sin{\\left(\\theta \\right)}\\right)\n$$\n$$\ny = b*\\left(x*\\sin{\\left(\\theta \\right)} + y*\\cos{\\left(\\theta \\right)}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $a$ | 1.0 | N/A | Constant bias a. |\n| $b$ | 1.0 | N/A | Linear scaling b. |\n| $c$ | 0.4 | N/A | Phase offset c. |\n| $d$ | 6.0 | N/A | Phase nonlinearity scale d. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/IkedaMap.png",
     "parameter_names": [
       "a",
@@ -22741,7 +23560,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/coupled_standard_maps_3.yaml",
-    "report_md": "\n\n# CoupledStandardMaps3\nCoupledStandardMaps3\n\n## Equations\n\n\n### State Equations\n$$\n\\theta_{0} = \\left(p_{0} + \\theta_{0} + k_{0}*\\sin{\\left(\\theta_{0} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)} - \\sin{\\left(\\theta_{0} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\np_{0} = \\left(p_{0} + k_{0}*\\sin{\\left(\\theta_{0} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)} - \\sin{\\left(\\theta_{0} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\n\\theta_{1} = \\left(p_{1} + \\theta_{1} + k_{1}*\\sin{\\left(\\theta_{1} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\np_{1} = \\left(p_{1} + k_{1}*\\sin{\\left(\\theta_{1} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\n\\theta_{2} = \\left(p_{2} + \\theta_{2} + k_{2}*\\sin{\\left(\\theta_{2} \\right)} - \\Gamma*\\left(\\sin{\\left(\\theta_{0} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\np_{2} = \\left(p_{2} + k_{2}*\\sin{\\left(\\theta_{2} \\right)} - \\Gamma*\\left(\\sin{\\left(\\theta_{0} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $k_{0}$ | 1.0 | N/A | Nonlinearity parameter for map 0. |\n| $k_{1}$ | 1.0 | N/A | Nonlinearity parameter for map 1. |\n| $k_{2}$ | 1.0 | N/A | Nonlinearity parameter for map 2. |\n| $\\Gamma$ | 1.0 | N/A | Coupling strength Γ among nearest neighbors on a ring. |\n\n\n\n",
+    "report_md": "\n\n## CoupledStandardMaps3\nThree coupled Chirikov standard maps with nearest-neighbor coupling on a ring.\nThis explicit unrolled form avoids symbolic indices by naming each (θ_i, p_i) pair.\n\n\n### State Equations\n$$\n\\theta_{0} = \\left(p_{0} + \\theta_{0} + k_{0}*\\sin{\\left(\\theta_{0} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)} - \\sin{\\left(\\theta_{0} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\np_{0} = \\left(p_{0} + k_{0}*\\sin{\\left(\\theta_{0} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)} - \\sin{\\left(\\theta_{0} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\n\\theta_{1} = \\left(p_{1} + \\theta_{1} + k_{1}*\\sin{\\left(\\theta_{1} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\np_{1} = \\left(p_{1} + k_{1}*\\sin{\\left(\\theta_{1} \\right)} - \\Gamma*\\left(- \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{0} - \\theta_{1} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\n\\theta_{2} = \\left(p_{2} + \\theta_{2} + k_{2}*\\sin{\\left(\\theta_{2} \\right)} - \\Gamma*\\left(\\sin{\\left(\\theta_{0} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n$$\np_{2} = \\left(p_{2} + k_{2}*\\sin{\\left(\\theta_{2} \\right)} - \\Gamma*\\left(\\sin{\\left(\\theta_{0} - \\theta_{2} \\right)} + \\sin{\\left(\\theta_{1} - \\theta_{2} \\right)}\\right)\\right) \\bmod 2*\\pi\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $k_{0}$ | 1.0 | N/A | Nonlinearity parameter for map 0. |\n| $k_{1}$ | 1.0 | N/A | Nonlinearity parameter for map 1. |\n| $k_{2}$ | 1.0 | N/A | Nonlinearity parameter for map 2. |\n| $\\Gamma$ | 1.0 | N/A | Coupling strength Γ among nearest neighbors on a ring. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/CoupledStandardMaps3.png",
     "parameter_names": [
       "k0",
@@ -22879,7 +23698,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/manneville_simple_map.yaml",
-    "report_md": "\n\n# MannevilleSimpleMap\nMannevilleSimpleMap\n\n## Equations\n\n\n### State Equations\n$$\nx = \\left(x*\\left(1 + \\epsilon\\right) + x^{2}*\\left(1 - \\epsilon\\right)\\right) \\bmod 1\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\epsilon$ | 0.1 | N/A | Intermittency control ε. |\n\n\n\n",
+    "report_md": "\n\n## MannevilleSimpleMap\nSimple intermittency map x_{n+1} = [(1+ε)x_n + (1-ε)x_n^2] mod 1, used to illustrate\nbursts separated by quiescent phases.\n\n\n### State Equations\n$$\nx = \\left(x*\\left(1 + \\epsilon\\right) + x^{2}*\\left(1 - \\epsilon\\right)\\right) \\bmod 1\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\epsilon$ | 0.1 | N/A | Intermittency control ε. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/MannevilleSimpleMap.png",
     "parameter_names": [
       "epsilon"
@@ -22944,7 +23763,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/logistic_map.yaml",
-    "report_md": "\n\n# LogisticMap\nLogisticMap\n\n## Equations\n\n\n### State Equations\n$$\nx = r*x*\\left(1 - x\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $r$ | 4.0 | N/A | Logistic growth rate r. |\n\n\n\n",
+    "report_md": "\n\n## LogisticMap\nOne-dimensional logistic map x_{n+1} = r x_n (1 - x_n), archetypal model for routes to chaos\nvia period-doubling. Default r=4.0 yields fully developed chaos.\n\n\n### State Equations\n$$\nx = r*x*\\left(1 - x\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $r$ | 4.0 | N/A | Logistic growth rate r. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/LogisticMap.png",
     "parameter_names": [
       "r"
@@ -23021,7 +23840,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/standard_map.yaml",
-    "report_md": "\n\n# StandardMap\nStandardMap\n\n## Equations\n\n\n### State Equations\n$$\n\\theta = \\left(p + \\theta + k*\\sin{\\left(\\theta \\right)}\\right) \\bmod 2*\\pi\n$$\n$$\np = \\left(p + k*\\sin{\\left(\\theta \\right)}\\right) \\bmod 2*\\pi\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $k$ | 0.971635 | N/A | Nonlinearity parameter controlling torus breakup. |\n\n\n\n",
+    "report_md": "\n\n## StandardMap\nChirikov standard map (area-preserving map on the 2-torus). At k≈0.971635 the golden\ninvariant torus breaks. Equations are expressed with modulo 2π on both variables.\n\n\n### State Equations\n$$\n\\theta = \\left(p + \\theta + k*\\sin{\\left(\\theta \\right)}\\right) \\bmod 2*\\pi\n$$\n$$\np = \\left(p + k*\\sin{\\left(\\theta \\right)}\\right) \\bmod 2*\\pi\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $k$ | 0.971635 | N/A | Nonlinearity parameter controlling torus breakup. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/StandardMap.png",
     "parameter_names": [
       "k"
@@ -23107,7 +23926,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/tent_map.yaml",
-    "report_md": "\n\n# TentMap\nTentMap\n\n## Equations\n\n\n### State Equations\n$$\nx = \\begin{cases} \\mu*x & \\text{for}\\: x < 0.5 \\\\\\mu*\\left(1 - x\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 2.0 | N/A | Slope parameter μ ∈ [0,2]. |\n\n\n\n",
+    "report_md": "\n\n## TentMap\nPiecewise-linear tent map on [0,1]. At μ=2 it is conjugate to the logistic map with r=4.\n\n\n### State Equations\n$$\nx = \\begin{cases} \\mu*x & \\text{for}\\: x < 0.5 \\\\\\mu*\\left(1 - x\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $\\mu$ | 2.0 | N/A | Slope parameter μ ∈ [0,2]. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/TentMap.png",
     "parameter_names": [
       "mu"
@@ -23212,7 +24031,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/nld_coupled_logistic_maps.yaml",
-    "report_md": "\n\n# NLDCoupledLogisticMaps4\nNLDCoupledLogisticMaps4\n\n## Equations\n\n\n### State Equations\n$$\nx_{0} = lam - x_{0}^{2} + k*\\left(x_{1}^{2} + x_{2}^{2} + x_{3}^{2} - 3*x_{0}^{2}\\right)\n$$\n$$\nx_{1} = lam - x_{1}^{2} + k*\\left(x_{0}^{2} + x_{2}^{2} + x_{3}^{2} - 3*x_{1}^{2}\\right)\n$$\n$$\nx_{2} = lam - x_{2}^{2} + k*\\left(x_{0}^{2} + x_{1}^{2} + x_{3}^{2} - 3*x_{2}^{2}\\right)\n$$\n$$\nx_{3} = lam - x_{3}^{2} + k*\\left(x_{0}^{2} + x_{1}^{2} + x_{2}^{2} - 3*x_{3}^{2}\\right)\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $lam$ | 1.2 | N/A | Local quadratic map parameter λ. |\n| $k$ | 0.08 | N/A | All-to-all coupling strength k. |\n\n\n\n",
+    "report_md": "\n\n## NLDCoupledLogisticMaps4\nFour-dimensional unrolled version of the nonlinear diffusion-like coupled logistic\nmaps with all-to-all coupling. General D requires symbolic indexing not supported\nby the current parser, hence D=4 explicit form.\n\n\n### State Equations\n$$\nx_{0} = lam - x_{0}^{2} + k*\\left(x_{1}^{2} + x_{2}^{2} + x_{3}^{2} - 3*x_{0}^{2}\\right)\n$$\n$$\nx_{1} = lam - x_{1}^{2} + k*\\left(x_{0}^{2} + x_{2}^{2} + x_{3}^{2} - 3*x_{1}^{2}\\right)\n$$\n$$\nx_{2} = lam - x_{2}^{2} + k*\\left(x_{0}^{2} + x_{1}^{2} + x_{3}^{2} - 3*x_{2}^{2}\\right)\n$$\n$$\nx_{3} = lam - x_{3}^{2} + k*\\left(x_{0}^{2} + x_{1}^{2} + x_{2}^{2} - 3*x_{3}^{2}\\right)\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $lam$ | 1.2 | N/A | Local quadratic map parameter λ. |\n| $k$ | 0.08 | N/A | All-to-all coupling strength k. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/NLDCoupledLogisticMaps4.png",
     "parameter_names": [
       "lam",
@@ -23326,7 +24145,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/julia/discrete/pomeau_manneville_map.yaml",
-    "report_md": "\n\n# PomeauMannevilleMap\nPomeauMannevilleMap\n\n## Equations\n\n\n### State Equations\n$$\nx = \\begin{cases} 3 - 4*x & \\text{for}\\: x > 0.5 \\\\-3 - 4*x & \\text{for}\\: x < -0.5 \\\\x*\\left(1 + \\left(2*\\left|{x}\\right|\\right)^{-1 + z}\\right) & \\text{for}\\: \\left|{x}\\right| \\leq 0.5 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n\n\n## Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $z$ | 2.5 | N/A | Intermittency exponent z. |\n\n\n\n",
+    "report_md": "\n\n## PomeauMannevilleMap\nIntermittent map with laminar phases and chaotic bursts; here given in the symmetric\npiecewise form commonly used in the literature.\n\n\n### State Equations\n$$\nx = \\begin{cases} 3 - 4*x & \\text{for}\\: x > 0.5 \\\\-3 - 4*x & \\text{for}\\: x < -0.5 \\\\x*\\left(1 + \\left(2*\\left|{x}\\right|\\right)^{-1 + z}\\right) & \\text{for}\\: \\left|{x}\\right| \\leq 0.5 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $z$ | 2.5 | N/A | Intermittency exponent z. |\n\n\n\n",
     "thumbnail": "browser/imgs/models/PomeauMannevilleMap.png",
     "parameter_names": [
       "z"
@@ -24270,7 +25089,8 @@ window.searchData = [
         "equation": {
           "rhs": "A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - a**2*y1"
         },
-        "unit": "mV*ms^-1"
+        "unit": "mV*ms^-1",
+        "coupling_variable": true
       },
       "y2": {
         "label": "Inhibitory interneuron membrane potential (position)",
@@ -24287,7 +25107,7 @@ window.searchData = [
         "unit": "mV*ms^-1"
       }
     },
-    "model.output_transforms": [
+    "model.output": [
       {
         "name": "v_pyr",
         "description": "EEG-like output",
@@ -24309,7 +25129,7 @@ window.searchData = [
           "name": "ModelJansen1995"
         },
         "integration": {
-          "method": "RungeKuttaFehlberg45",
+          "method": "RungeKutta4thOrder",
           "duration": 1000,
           "noise": {
             "gaussian": true,
@@ -24327,10 +25147,7 @@ window.searchData = [
           {
             "name": "Raw",
             "period": 1.0,
-            "imaging_modality": "EEG",
-            "select_variable": {
-              "name": "v_pyr"
-            }
+            "imaging_modality": "EEG"
           }
         ]
       },
@@ -24353,7 +25170,7 @@ window.searchData = [
           }
         },
         "integration": {
-          "method": "RungeKuttaFehlberg45",
+          "method": "RungeKutta4thOrder",
           "duration": 1000,
           "noise": {
             "gaussian": true,
@@ -24371,10 +25188,7 @@ window.searchData = [
           {
             "name": "Raw",
             "period": 1.0,
-            "imaging_modality": "EEG",
-            "select_variable": {
-              "name": "v_pyr"
-            }
+            "imaging_modality": "EEG"
           }
         ]
       },
@@ -24450,7 +25264,7 @@ window.searchData = [
           }
         },
         "integration": {
-          "method": "RungeKuttaFehlberg45",
+          "method": "RungeKutta4thOrder",
           "duration": 1000,
           "noise": {
             "gaussian": true,
@@ -24468,10 +25282,7 @@ window.searchData = [
           {
             "name": "Raw",
             "period": 1.0,
-            "imaging_modality": "EEG",
-            "select_variable": {
-              "name": "v_pyr"
-            }
+            "imaging_modality": "EEG"
           }
         ]
       },
@@ -24604,7 +25415,6 @@ window.searchData = [
           }
         ],
         "stimulation": {
-          "name": "Flash",
           "description": "Flash visual input to column 1 (Eq. 18)",
           "parameters": {
             "q": {
@@ -24635,7 +25445,7 @@ window.searchData = [
           "duration": 0.2
         },
         "integration": {
-          "method": "RungeKuttaFehlberg45",
+          "method": "RungeKutta4thOrder",
           "duration": 7.0,
           "transient_time": 6.0,
           "noise": {
@@ -24655,10 +25465,7 @@ window.searchData = [
           {
             "name": "Raw",
             "period": 1.0,
-            "imaging_modality": "EEG",
-            "select_variable": {
-              "name": "v_pyr"
-            }
+            "imaging_modality": "EEG"
           }
         ]
       },
@@ -24684,17 +25491,14 @@ window.searchData = [
           }
         },
         "integration": {
-          "method": "RungeKuttaFehlberg45",
+          "method": "RungeKutta4thOrder",
           "duration": 1000
         },
         "monitors": [
           {
             "name": "Raw",
             "period": 1.0,
-            "imaging_modality": "EEG",
-            "select_variable": {
-              "name": "v_pyr"
-            }
+            "imaging_modality": "EEG"
           }
         ]
       }
@@ -24703,364 +25507,450 @@ window.searchData = [
     "file": "database/studies/Jansen1995.yaml"
   },
   {
-    "id": 1,
-    "label": "ReducedWongWangEIB",
     "key": "Schirner2023",
-    "model.name": "EIB_ReducedWongWangExcInh",
-    "model.parameters": {
-      "a_e": {
-        "value": 310.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 500.0,
-          "step": 1.0
-        },
-        "description": "Excitatory input gain."
-      },
-      "b_e": {
-        "value": 125.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 200.0,
-          "step": 1.0
-        },
-        "description": "Excitatory input shift.",
-        "unit": "Hz"
-      },
-      "d_e": {
-        "value": 0.16,
-        "domain": {
-          "lo": 0.0,
-          "hi": 0.2,
-          "step": 0.001
-        },
-        "description": "Excitatory input scaling.",
-        "unit": "s"
-      },
-      "gamma_e": {
-        "value": 0.000641,
-        "domain": {
-          "lo": 0.0,
-          "hi": 0.001,
-          "step": 1e-05
-        },
-        "description": "Excitatory kinetic."
-      },
-      "tau_e": {
-        "value": 100.0,
-        "domain": {
-          "lo": 50.0,
-          "hi": 150.0,
-          "step": 1.0
-        },
-        "description": "Excitatory NMDA decay.",
-        "unit": "ms"
-      },
-      "w_p": {
-        "value": 1.2,
-        "domain": {
-          "lo": 0.0,
-          "hi": 2.0,
-          "step": 0.01
-        },
-        "description": "Excitatory recurrence weight."
-      },
-      "J_N": {
-        "value": 0.15,
-        "domain": {
-          "lo": 0.001,
-          "hi": 0.5,
-          "step": 0.001
-        },
-        "description": "NMDA current."
-      },
-      "W_e": {
-        "value": 1.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 2.0,
-          "step": 0.01
-        },
-        "description": "Excitatory external scaling."
-      },
-      "a_i": {
-        "value": 615.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 1000.0,
-          "step": 1.0
-        },
-        "description": "Inhibitory input gain."
-      },
-      "b_i": {
-        "value": 177.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 200.0,
-          "step": 1.0
-        },
-        "description": "Inhibitory input shift.",
-        "unit": "Hz"
-      },
-      "d_i": {
-        "value": 0.087,
-        "domain": {
-          "lo": 0.0,
-          "hi": 0.2,
-          "step": 0.001
-        },
-        "description": "Inhibitory input scaling.",
-        "unit": "s"
-      },
-      "gamma_i": {
-        "value": 0.001,
-        "domain": {
-          "lo": 0.0,
-          "hi": 0.002,
-          "step": 1e-05
-        },
-        "description": "Inhibitory kinetic."
-      },
-      "tau_i": {
-        "value": 10.0,
-        "domain": {
-          "lo": 5.0,
-          "hi": 100.0,
-          "step": 1.0
-        },
-        "description": "Inhibitory NMDA decay.",
-        "unit": "ms"
-      },
-      "J_i": {
-        "value": 1.2,
-        "domain": {
-          "lo": 0.001,
-          "hi": 2.0,
-          "step": 0.001
-        },
-        "description": "Local inhibitory current."
-      },
-      "W_i": {
-        "value": 0.7,
-        "domain": {
-          "lo": 0.0,
-          "hi": 1.0,
-          "step": 0.01
-        },
-        "description": "Inhibitory external scaling."
-      },
-      "I_o": {
-        "value": 0.382,
-        "domain": {
-          "lo": 0.0,
-          "hi": 1.0,
-          "step": 0.001
-        },
-        "description": "Effective external input."
-      },
-      "I_ext": {
-        "value": 0.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 1.0,
-          "step": 0.001
-        },
-        "description": "Effective external stimulus."
-      },
-      "lamda": {
-        "value": 0.1,
-        "domain": {
-          "lo": 0.0,
-          "hi": 1.0,
-          "step": 0.01
-        },
-        "description": "Inhibitory global coupling scaling."
-      },
-      "G": {
-        "value": 2.0,
-        "domain": {
-          "lo": 0.0,
-          "hi": 10.0,
-          "step": 0.01
-        },
-        "description": "Global coupling scaling."
-      }
-    },
-    "model.derived_variables": {
-      "c_lre": {
-        "name": "c_lre",
-        "equation": {
-          "rhs": "G * J_N * cpop_0"
-        }
-      },
-      "c_ffi": {
-        "name": "c_ffi",
-        "equation": {
-          "rhs": "G * J_N * cpop_1"
-        }
-      },
-      "x_e_pre": {
-        "name": "x_e_pre",
-        "equation": {
-          "rhs": "w_p * J_N * S_e - J_i * S_i + W_e * I_o + c_lre + I_ext"
-        },
-        "conditional": false
-      },
-      "x_i_pre": {
-        "name": "x_i_pre",
-        "equation": {
-          "rhs": "J_N * S_e - S_i + W_i * I_o + lamda * c_ffi"
-        },
-        "conditional": false
-      },
-      "x_e": {
-        "name": "x_e",
-        "equation": {
-          "lhs": "x_{ek}",
-          "rhs": "a_e * x_e_pre - b_e"
-        },
-        "conditional": false
-      },
-      "x_i": {
-        "name": "x_i",
-        "equation": {
-          "lhs": "x_{ik}",
-          "rhs": "a_i * x_i_pre - b_i"
-        },
-        "conditional": false
-      },
-      "H_e": {
-        "name": "H_e",
-        "equation": {
-          "lhs": "H(x_{ek})",
-          "rhs": "x_e / (1 - exp(-d_e * x_e))"
-        },
-        "conditional": false
-      },
-      "H_i": {
-        "name": "H_i",
-        "equation": {
-          "lhs": "H(x_{ik})",
-          "rhs": "x_i / (1 - exp(-d_i * x_i))"
-        },
-        "conditional": false
-      }
-    },
-    "model.state_variables": {
-      "S_e": {
-        "label": "Excitatory Firing Rate",
-        "domain": {
-          "lo": 0.0,
-          "hi": 1.0
-        },
-        "boundaries": {
-          "lo": 0.0,
-          "hi": 1.0
-        },
-        "equation": {
-          "lhs": "\\frac{dS_e}{dt}",
-          "rhs": "- S_e / tau_e + (1 - S_e) * H_e * gamma_e"
-        },
-        "unit": "unitless",
-        "variable_of_interest": true,
-        "coupling_variable": true
-      },
-      "S_i": {
-        "label": "Inhibitory Firing Rate",
-        "domain": {
-          "lo": 0.0,
-          "hi": 1.0
-        },
-        "boundaries": {
-          "lo": 0.0,
-          "hi": 1.0
-        },
-        "equation": {
-          "lhs": "\\frac{dS_i}{dt}",
-          "rhs": "- S_i / tau_i + H_i * gamma_i"
-        },
-        "unit": "unitless",
-        "variable_of_interest": true
-      }
-    },
-    "model.coupling_terms": {
-      "cpop_0": {
-        "description": "Local excitatory recurrence."
-      },
-      "cpop_1": {
-        "description": "Local inhibitory recurrence."
-      }
-    },
+    "title": "Brain simulation augments machine learning-based classification of dementia",
+    "year": 2023,
+    "doi": "10.1016/j.patter.2023.100787",
     "simulation_experiments": [
       {
         "id": 1,
-        "coupling": {
-          "name": "EIB_Linear",
+        "label": "EIB full brain network model",
+        "local_dynamics": {
+          "name": "EIB_ReducedWongWangExcInh",
+          "system_type": "continuous",
           "parameters": {
-            "a": {
-              "value": 0.05,
-              "domain": {
-                "lo": 0.0,
-                "hi": 1.0,
-                "step": 0.01
-              },
-              "description": "Rescales the connection strength while maintaining the ratio between different values."
+            "a_e": {
+              "value": 310.0
             },
-            "b": {
-              "value": 0.0,
-              "description": "Shifts the base of the connection strength while maintaining the absolute difference between different values."
+            "b_e": {
+              "value": 125.0
             },
-            "w": {
-              "value": 1,
-              "domain": {
-                "lo": 0.0,
-                "hi": 10.0,
-                "step": 0.01
-              },
-              "shape": "(N, 2, N)",
-              "description": "Balancing of long-range excitatory and feedforward inhibitory synaptic. Needs to be defined and have the shape (nodes, 2, nodes)"
+            "d_e": {
+              "value": 0.16
+            },
+            "gamma_e": {
+              "value": 0.000641
+            },
+            "tau_e": {
+              "value": 100.0
+            },
+            "w_p": {
+              "value": 1.4
+            },
+            "J_N": {
+              "value": 0.15
+            },
+            "W_e": {
+              "value": 1.0
+            },
+            "a_i": {
+              "value": 615.0
+            },
+            "b_i": {
+              "value": 177.0
+            },
+            "d_i": {
+              "value": 0.087
+            },
+            "gamma_i": {
+              "value": 0.001
+            },
+            "tau_i": {
+              "value": 10.0
+            },
+            "J_i": {
+              "value": 1.0
+            },
+            "W_i": {
+              "value": 0.7
+            },
+            "I_o": {
+              "value": 0.382
+            },
+            "I_ext": {
+              "value": 0.0
+            },
+            "G": {
+              "value": 2.0
+            },
+            "lamda": {
+              "value": 1.0
             }
           },
-          "sparse": true,
+          "derived_variables": {
+            "x_e_pre": {
+              "equation": {
+                "rhs": "w_p * J_N * S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
+              }
+            },
+            "x_i_pre": {
+              "equation": {
+                "rhs": "J_N * S_e - S_i + W_i * I_o + lamda * J_N * c_ffi"
+              }
+            },
+            "x_e": {
+              "equation": {
+                "rhs": "a_e * x_e_pre - b_e"
+              }
+            },
+            "x_i": {
+              "equation": {
+                "rhs": "a_i * x_i_pre - b_i"
+              }
+            },
+            "H_e": {
+              "equation": {
+                "rhs": "x_e / (1 - exp(-d_e * x_e))"
+              }
+            },
+            "H_i": {
+              "equation": {
+                "rhs": "x_i / (1 - exp(-d_i * x_i))"
+              }
+            }
+          },
+          "state_variables": {
+            "S_e": {
+              "initial_value": 0.001,
+              "boundaries": {
+                "lo": 0.0,
+                "hi": 1.0
+              },
+              "equation": {
+                "rhs": "-S_e / tau_e + (1 - S_e) * H_e * gamma_e"
+              },
+              "coupling_variable": true,
+              "noise": {
+                "additive": true,
+                "parameters": {
+                  "sigma": {
+                    "value": 0.01
+                  }
+                }
+              }
+            },
+            "S_i": {
+              "initial_value": 0.001,
+              "boundaries": {
+                "lo": 0.0,
+                "hi": 1.0
+              },
+              "equation": {
+                "rhs": "-S_i / tau_i + H_i * gamma_i"
+              }
+            }
+          },
+          "coupling_inputs": {
+            "coupling": {
+              "dimension": 2
+            }
+          },
+          "coupling_terms": {
+            "c_lre": {},
+            "c_ffi": {}
+          }
+        },
+        "coupling": {
+          "name": "EIBLinearCoupling",
+          "parameters": {
+            "wLRE": {
+              "value": 1.0,
+              "shape": "(N, N)"
+            },
+            "wFFI": {
+              "value": 1.0,
+              "shape": "(N, N)"
+            }
+          },
+          "incoming_states": [
+            "S_e"
+          ],
           "pre_expression": {
-            "lhs": "pre",
-            "rhs": "x_j * w"
+            "rhs": "[S_e * wLRE, S_e * wFFI]"
           },
           "post_expression": {
-            "lhs": "post",
-            "rhs": "a * gx + b"
+            "rhs": "gx"
+          }
+        },
+        "network": {
+          "number_of_regions": 379,
+          "parcellation": {
+            "atlas": {
+              "name": "hcpmmp1"
+            }
+          },
+          "tractogram": "dTOR",
+          "global_coupling_strength": {
+            "name": "G",
+            "value": 2.0
+          },
+          "conduction_speed": {
+            "name": "v",
+            "value": 6.0,
+            "unit": "m/s"
           }
         },
         "integration": {
           "method": "Heun",
-          "step_size": 6,
-          "initial_value": 0.1,
+          "step_size": 0.1,
           "duration": 720,
-          "noise": {
-            "additive": true,
-            "correlated": false,
-            "parameters": {
-              "sigma": {
-                "value": 5e-06
+          "unit": "ms"
+        },
+        "observations": {
+          "Bold": {
+            "description": "BOLD fMRI signal derived from excitatory synaptic activity (S_e) via Balloon-Windkessel hemodynamic model convolution.",
+            "source": "S_e",
+            "imaging_modality": "BOLD",
+            "period": 720.0,
+            "pipeline": [
+              {
+                "name": "BalloonWindkessel",
+                "description": "Balloon-Windkessel hemodynamic model for BOLD signal",
+                "output": "BOLD_raw",
+                "operation_type": "convolution",
+                "callable": {
+                  "name": "HemodynamicResponseFunctionTVB",
+                  "module": "tvb.analyzers.fmri_balloon",
+                  "qualname": "BalloonModel",
+                  "software": {
+                    "name": "tvb-library",
+                    "version": ">=2.0"
+                  }
+                }
+              },
+              {
+                "name": "downsample",
+                "input": "BalloonWindkessel",
+                "output": "Bold",
+                "operation_type": "subsample",
+                "equation": {
+                  "rhs": "(X[:-TR:TR] + X[TR::TR]) / 2"
+                },
+                "arguments": [
+                  {
+                    "name": "TR",
+                    "value": 720.0,
+                    "unit": "ms"
+                  }
+                ]
+              }
+            ]
+          },
+          "FC": {
+            "description": "Functional connectivity matrix (Pearson correlation)",
+            "source_observation": "Bold",
+            "pipeline": [
+              {
+                "name": "corrcoef",
+                "output": "FC",
+                "callable": {
+                  "module": "numpy",
+                  "qualname": "corrcoef"
+                },
+                "arguments": [
+                  {
+                    "name": "rowvar",
+                    "value": "False"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "modelfitting": [
+          {
+            "targets": [
+              {
+                "symbol": "r_{FC}",
+                "equation": {
+                  "rhs": "corr(FC_{sim}, FC_{emp})"
+                }
+              }
+            ],
+            "cost_function": {
+              "equation": {
+                "rhs": "1 - r_{FC}"
+              },
+              "parameters": {
+                "G": {
+                  "domain": {
+                    "lo": 0.0,
+                    "hi": 4.0,
+                    "step": 0.1
+                  }
+                },
+                "lamda": {
+                  "domain": {
+                    "lo": 0.0,
+                    "hi": 1.0,
+                    "step": 0.1
+                  }
+                }
               }
             }
           }
-        },
-        "monitors": {
-          "Raw": null,
-          "Bold": {
-            "period": 720
+        ],
+        "tuning_algorithms": [
+          {
+            "name": "FIC",
+            "type": "fic",
+            "description": "Feedback Inhibition Control maintains excitatory activity at a target level by adaptively adjusting local inhibitory weights.",
+            "objective": {
+              "type": "activity_target",
+              "target_variable": {
+                "name": "S_e"
+              },
+              "target_value": 0.25
+            },
+            "observables": [
+              {
+                "name": "mean_S_e",
+                "equation": {
+                  "rhs": "mean(S_e, axis=0)"
+                },
+                "source": "state",
+                "aggregation": "mean"
+              },
+              {
+                "name": "mean_S_i",
+                "equation": {
+                  "rhs": "mean(S_i, axis=0)"
+                },
+                "source": "state",
+                "aggregation": "mean"
+              }
+            ],
+            "update_rules": [
+              {
+                "name": "J_i_update",
+                "target_parameter": {
+                  "name": "J_i"
+                },
+                "equation": {
+                  "rhs": "J_i + eta_fic * (mean_S_i * mean_S_e - target_fic * mean_S_i)"
+                },
+                "requires": [
+                  {
+                    "name": "mean_S_e"
+                  },
+                  {
+                    "name": "mean_S_i"
+                  }
+                ]
+              }
+            ],
+            "learning_rate": 0.5,
+            "n_iterations": 200,
+            "hyperparameters": {
+              "target_fic": {
+                "value": 0.25,
+                "description": "Target S_e activity"
+              }
+            },
+            "simulation_period": 720.0
+          },
+          {
+            "name": "EIB",
+            "type": "eib",
+            "description": "EIB tuning optimizes dual coupling weights (wLRE, wFFI) to match empirical functional connectivity while maintaining local E-I balance.",
+            "objective": {
+              "type": "fc_matching",
+              "target_data": {
+                "name": "fc_empirical",
+                "source": "empirical"
+              },
+              "metric": {
+                "rhs": "rmse(fc_pred, fc_target)"
+              }
+            },
+            "observables": [
+              {
+                "name": "fc_pred",
+                "equation": {
+                  "rhs": "compute_fc(bold_signal)"
+                },
+                "source": "bold",
+                "aggregation": "window",
+                "window_size": 150
+              },
+              {
+                "name": "diff_FC",
+                "equation": {
+                  "rhs": "fc_target - fc_pred"
+                },
+                "source": "fc"
+              },
+              {
+                "name": "rmse_FC",
+                "equation": {
+                  "rhs": "rmse(fc_target, fc_pred, axis=1)"
+                },
+                "source": "fc"
+              }
+            ],
+            "update_rules": [
+              {
+                "name": "wLRE_update",
+                "target_parameter": {
+                  "name": "wLRE"
+                },
+                "equation": {
+                  "rhs": "wLRE + eta_eib * diff_FC * rmse_FC"
+                },
+                "bounds": {
+                  "lo": 0.0
+                },
+                "requires": [
+                  {
+                    "name": "diff_FC"
+                  },
+                  {
+                    "name": "rmse_FC"
+                  }
+                ]
+              },
+              {
+                "name": "wFFI_update",
+                "target_parameter": {
+                  "name": "wFFI"
+                },
+                "equation": {
+                  "rhs": "wFFI - eta_eib * diff_FC * rmse_FC"
+                },
+                "bounds": {
+                  "lo": 0.0
+                },
+                "requires": [
+                  {
+                    "name": "diff_FC"
+                  },
+                  {
+                    "name": "rmse_FC"
+                  }
+                ]
+              }
+            ],
+            "hyperparameters": {
+              "window_size": {
+                "value": 150,
+                "description": "BOLD window for FC"
+              }
+            },
+            "learning_rate": 0.005,
+            "n_iterations": 2000,
+            "learning_rate_schedule": "linear",
+            "simulation_period": 720.0,
+            "depends_on": [
+              {
+                "name": "FIC"
+              }
+            ]
           }
-        },
-        "connectivity": {
-          "number_of_regions": 379,
-          "parcellation": {
-            "label": "Glasser",
-            "atlas": {
-              "name": "hcpmmp1"
-            }
-          }
-        }
+        ]
+      },
+      {
+        "file": "Schirner2023_TwoNode.yaml",
+        "description": "Two-node EIB model for E/I balance studies"
       }
     ],
     "type": "study",
@@ -25436,6 +26326,1107 @@ window.searchData = [
     ],
     "type": "study",
     "file": "database/studies/Larter1999.yaml"
+  },
+  {
+    "id": 2,
+    "label": "two node multiscale model",
+    "description": "Full Schirner et al. two-node multiscale model with E/I balance. Combines large-scale RWW dynamics (PFC, PPC) with small-scale Murray-Wang functional circuit for decision-making. Implements LRE/FFI coupling modes for E/I ratio modulation.",
+    "local_dynamics.name": "EIB_ReducedWongWang_TwoNode",
+    "local_dynamics.system_type": "continuous",
+    "local_dynamics.description": "Modified ReducedWongWang model (Deco et al., 2014) with separate long-range excitation (LRE) and feedforward inhibition (FFI) channels.",
+    "local_dynamics.parameters": {
+      "a_e": {
+        "value": 310.0,
+        "unit": "Hz/nA",
+        "description": "Excitatory gain parameter"
+      },
+      "b_e": {
+        "value": 125.0,
+        "unit": "Hz",
+        "description": "Excitatory input shift"
+      },
+      "d_e": {
+        "value": 0.16,
+        "unit": "s",
+        "description": "Excitatory rectification parameter"
+      },
+      "a_i": {
+        "value": 615.0,
+        "unit": "Hz/nA",
+        "description": "Inhibitory gain parameter"
+      },
+      "b_i": {
+        "value": 177.0,
+        "unit": "Hz",
+        "description": "Inhibitory input shift"
+      },
+      "d_i": {
+        "value": 0.087,
+        "unit": "s",
+        "description": "Inhibitory rectification parameter"
+      },
+      "tau_e": {
+        "value": 100.0,
+        "unit": "ms",
+        "description": "Excitatory NMDA time constant"
+      },
+      "tau_i": {
+        "value": 10.0,
+        "unit": "ms",
+        "description": "Inhibitory time constant"
+      },
+      "gamma_e": {
+        "value": 0.000641,
+        "description": "Excitatory gamma (converted from 0.641/1000)"
+      },
+      "gamma_i": {
+        "value": 0.001,
+        "description": "Inhibitory gamma (converted from 1.0/1000)"
+      },
+      "w_p": {
+        "value": 1.4,
+        "description": "Recurrent excitation weight"
+      },
+      "J_NMDA": {
+        "value": 0.15,
+        "unit": "nA",
+        "description": "NMDA synaptic gain"
+      },
+      "eta": {
+        "value": 0.5,
+        "description": "FIC learning rate (matching EI_Tuning.qmd)"
+      },
+      "r0": {
+        "value": 0.25,
+        "description": "FIC target S_E activity level"
+      },
+      "t_fic_cutoff": {
+        "value": 20000.0,
+        "unit": "ms",
+        "description": "FIC tuning cutoff (matching standalone FIC_ts)"
+      },
+      "W_E": {
+        "value": 1.0,
+        "description": "Excitatory external weight"
+      },
+      "W_I": {
+        "value": 0.7,
+        "description": "Inhibitory external weight"
+      },
+      "I_0": {
+        "value": 0.382,
+        "unit": "nA",
+        "description": "Background input current"
+      },
+      "EI_ratio": {
+        "value": 2.33,
+        "description": "E/I ratio = LRE / FFI",
+        "reported_optimum": 2.33
+      },
+      "J_same_M1": {
+        "value": 0.3169,
+        "unit": "nA",
+        "description": "Same-pool recurrent weight in Module 1"
+      },
+      "J_diff_M1": {
+        "value": -0.033,
+        "unit": "nA",
+        "description": "Diff-pool inhibitory weight in Module 1"
+      },
+      "J_same_M2": {
+        "value": 0.351,
+        "unit": "nA",
+        "description": "Same-pool recurrent weight in Module 2"
+      },
+      "J_diff_M2": {
+        "value": -0.0671,
+        "unit": "nA",
+        "description": "Diff-pool inhibitory weight in Module 2"
+      },
+      "J_same_M2_to_M1": {
+        "value": 0.02,
+        "unit": "nA",
+        "description": "Same-pool weight from M2 to M1"
+      },
+      "J_diff_M2_to_M1": {
+        "value": -0.02,
+        "unit": "nA",
+        "description": "Diff-pool weight from M2 to M1"
+      },
+      "J_same_M1_to_M2": {
+        "value": 0.075,
+        "unit": "nA",
+        "description": "Same-pool weight from M1 to M2"
+      },
+      "J_diff_M1_to_M2": {
+        "value": -0.075,
+        "unit": "nA",
+        "description": "Diff-pool weight from M1 to M2"
+      },
+      "tau_MW": {
+        "value": 60.0,
+        "unit": "ms",
+        "description": "NMDA time constant for MW populations"
+      },
+      "gamma_MW": {
+        "value": 0.641,
+        "description": "Rate of saturation of S for MW"
+      },
+      "a_MW": {
+        "value": 270.0,
+        "unit": "Hz/nA",
+        "description": "MW firing rate gain parameter"
+      },
+      "b_MW": {
+        "value": 108.0,
+        "unit": "Hz",
+        "description": "MW firing rate offset parameter"
+      },
+      "c_MW": {
+        "value": 0.154,
+        "unit": "s",
+        "description": "MW firing rate rectification parameter"
+      },
+      "I_0_MW": {
+        "value": 0.334,
+        "unit": "nA",
+        "description": "Background input for MW populations"
+      },
+      "tau_AMPA": {
+        "value": 2.0,
+        "unit": "ms",
+        "description": "AMPA noise time constant"
+      },
+      "sigma_noise": {
+        "value": 0.009,
+        "unit": "nA",
+        "description": "MW noise strength"
+      },
+      "MW_noise_SD": {
+        "value": 0.007347,
+        "unit": "nA",
+        "description": "Standard deviation of MW noise"
+      },
+      "mean_norm": {
+        "value": 0.3807,
+        "unit": "nA",
+        "description": "Mean normalization (mean at E/I=2.33)"
+      },
+      "std_norm": {
+        "value": 0.310494,
+        "description": "Std normalization (MW_noise_SD / 0.02367)"
+      },
+      "contrast": {
+        "value": 6.4,
+        "unit": "%",
+        "description": "Stimulus contrast for decision task"
+      },
+      "I_app_base": {
+        "value": 0.0118,
+        "unit": "nA",
+        "description": "Base sensory input current"
+      }
+    },
+    "local_dynamics.coupling_terms": {
+      "cpop_0": {
+        "description": "Coupling population 0 (for LRE computation)"
+      },
+      "cpop_1": {
+        "description": "Coupling population 1 (for FFI computation)"
+      }
+    },
+    "local_dynamics.derived_variables": {
+      "c_lre": {
+        "equation": {
+          "rhs": "J_NMDA * cpop_0 * (EI_ratio / (EI_ratio + 1))"
+        },
+        "description": "Long-range excitation"
+      },
+      "c_ffi": {
+        "equation": {
+          "rhs": "J_NMDA * cpop_1 * (1 / (EI_ratio + 1))"
+        },
+        "description": "Feedforward inhibition"
+      },
+      "I_E": {
+        "equation": {
+          "rhs": "W_E * I_0 + w_p * J_NMDA * S_E + c_lre - J_i * S_I"
+        },
+        "description": "Total excitatory input current"
+      },
+      "I_I": {
+        "equation": {
+          "rhs": "W_I * I_0 + J_NMDA * S_E - S_I + c_ffi"
+        },
+        "description": "Total inhibitory input current"
+      },
+      "r_E": {
+        "equation": {
+          "rhs": "(a_e * I_E - b_e) / (1.0 - exp(-d_e * (a_e * I_E - b_e)))"
+        },
+        "description": "Excitatory firing rate (Hz)"
+      },
+      "r_I": {
+        "equation": {
+          "rhs": "(a_i * I_I - b_i) / (1.0 - exp(-d_i * (a_i * I_I - b_i)))"
+        },
+        "description": "Inhibitory firing rate (Hz)"
+      },
+      "LSI_PFC": {
+        "equation": {
+          "rhs": "(I_E - mean_norm) * std_norm"
+        },
+        "description": "Normalized large-scale input from PFC (node 0)"
+      },
+      "LSI_PPC": {
+        "equation": {
+          "rhs": "(I_E - mean_norm) * std_norm"
+        },
+        "description": "Normalized large-scale input from PPC (node 1)"
+      },
+      "I_appA": {
+        "equation": {
+          "rhs": "I_app_base * (1 + contrast / 100)"
+        },
+        "description": "Sensory input to population A"
+      },
+      "I_appB": {
+        "equation": {
+          "rhs": "I_app_base * (1 - contrast / 100)"
+        },
+        "description": "Sensory input to population B"
+      },
+      "I_A1": {
+        "equation": {
+          "rhs": "J_same_M1 * S_A1 + J_diff_M1 * S_B1 + J_same_M2_to_M1 * S_A2 + J_diff_M2_to_M1 * S_B2 + I_0_MW + LSI_PFC + I_appA"
+        },
+        "description": "Total input current to A1"
+      },
+      "I_B1": {
+        "equation": {
+          "rhs": "J_diff_M1 * S_A1 + J_same_M1 * S_B1 + J_diff_M2_to_M1 * S_A2 + J_same_M2_to_M1 * S_B2 + I_0_MW + LSI_PFC + I_appB"
+        },
+        "description": "Total input current to B1"
+      },
+      "I_A2": {
+        "equation": {
+          "rhs": "J_same_M1_to_M2 * S_A1 + J_diff_M1_to_M2 * S_B1 + J_same_M2 * S_A2 + J_diff_M2 * S_B2 + I_0_MW + LSI_PPC"
+        },
+        "description": "Total input current to A2"
+      },
+      "I_B2": {
+        "equation": {
+          "rhs": "J_diff_M1_to_M2 * S_A1 + J_same_M1_to_M2 * S_B1 + J_diff_M2 * S_A2 + J_same_M2 * S_B2 + I_0_MW + LSI_PPC"
+        },
+        "description": "Total input current to B2"
+      },
+      "r_A1": {
+        "equation": {
+          "rhs": "(a_MW * I_A1 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_A1 - b_MW)))"
+        },
+        "description": "Firing rate of population A1"
+      },
+      "r_B1": {
+        "equation": {
+          "rhs": "(a_MW * I_B1 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_B1 - b_MW)))"
+        },
+        "description": "Firing rate of population B1"
+      },
+      "r_A2": {
+        "equation": {
+          "rhs": "(a_MW * I_A2 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_A2 - b_MW)))"
+        },
+        "description": "Firing rate of population A2"
+      },
+      "r_B2": {
+        "equation": {
+          "rhs": "(a_MW * I_B2 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_B2 - b_MW)))"
+        },
+        "description": "Firing rate of population B2"
+      },
+      "fic_on": {
+        "conditional": true,
+        "equation": {
+          "rhs": "Piecewise((1, t < t_fic_cutoff), (0, True))"
+        },
+        "cases": [
+          {
+            "condition": "t < t_fic_cutoff",
+            "equation": {
+              "rhs": 1
+            }
+          },
+          {
+            "condition": "True",
+            "equation": {
+              "rhs": 0
+            }
+          }
+        ]
+      }
+    },
+    "local_dynamics.state_variables": {
+      "S_E": {
+        "description": "Excitatory synaptic gating variable",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.001,
+        "coupling_variable": true,
+        "equation": {
+          "rhs": "-S_E / tau_e + (1.0 - S_E) * gamma_e * r_E"
+        },
+        "noise": {
+          "noise_type": "gaussian",
+          "parameters": {
+            "sigma": {
+              "value": 0.01,
+              "description": "Noise strength (sigma_e)"
+            }
+          }
+        }
+      },
+      "S_I": {
+        "description": "Inhibitory synaptic gating variable",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.001,
+        "equation": {
+          "rhs": "-S_I / tau_i + gamma_i * r_I"
+        },
+        "noise": {
+          "noise_type": "gaussian",
+          "parameters": {
+            "sigma": {
+              "value": 0.01,
+              "description": "Noise strength (sigma_i)"
+            }
+          }
+        }
+      },
+      "S_A1": {
+        "description": "Synaptic gating variable for population A1 (Module 1)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "(1 - fic_on) * (-S_A1 / tau_MW + gamma_MW * (1.0 - S_A1) * r_A1 / 1000.0)"
+        }
+      },
+      "S_B1": {
+        "description": "Synaptic gating variable for population B1 (Module 1)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "(1 - fic_on) * (-S_B1 / tau_MW + gamma_MW * (1.0 - S_B1) * r_B1 / 1000.0)"
+        }
+      },
+      "S_A2": {
+        "description": "Synaptic gating variable for population A2 (Module 2)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "(1 - fic_on) * (-S_A2 / tau_MW + gamma_MW * (1.0 - S_A2) * r_A2 / 1000.0)"
+        }
+      },
+      "S_B2": {
+        "description": "Synaptic gating variable for population B2 (Module 2)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "(1 - fic_on) * (-S_B2 / tau_MW + gamma_MW * (1.0 - S_B2) * r_B2 / 1000.0)"
+        }
+      },
+      "J_i": {
+        "description": "Inhibitory synaptic gain (tuned via FIC/ISP)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 10.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 10.0
+        },
+        "initial_value": 0.685,
+        "equation": {
+          "rhs": "fic_on * eta * (S_I * S_E - r0 * S_I)"
+        }
+      }
+    },
+    "local_dynamics.output": [
+      "J_i",
+      "S_A1",
+      "r_A1",
+      "r_B1",
+      "r_A2",
+      "r_B2"
+    ],
+    "coupling.name": "EIB_DualCoupling",
+    "coupling.description": "Dual coupling modes: Long-Range Excitation (LRE) and Feedforward Inhibition (FFI). This produces two coupling outputs (cpop_0 and cpop_1) that are used to compute LRE and FFI in the local dynamics. The splitting by EI_ratio is applied in derived_variables.\nNOTE: The full EIB implementation (as in EI_Tuning.qmd) uses separate wLRE and wFFI weight matrices that are tuned independently. This YAML represents a simplified version where both coupling terms receive the same structural connectivity-weighted input, which is then split by EI_ratio in the local dynamics.",
+    "coupling.parameters": {
+      "J_NMDA": {
+        "value": 0.15,
+        "unit": "nA",
+        "description": "NMDA synaptic gain for coupling"
+      },
+      "wLRE": {
+        "value": 1.0,
+        "shape": "(N,N)",
+        "description": "Long-range excitation weight matrix (tunable)"
+      },
+      "wFFI": {
+        "value": 1.0,
+        "shape": "(N,N)",
+        "description": "Feedforward inhibition weight matrix (tunable)"
+      }
+    },
+    "coupling.incoming_states": [
+      "S_E"
+    ],
+    "coupling.pre_expression": {
+      "rhs": "S_E",
+      "label": "Extract S_E from connected nodes"
+    },
+    "coupling.post_expression": {
+      "rhs": "gx",
+      "label": "Weighted coupling (stacked for cpop_0 and cpop_1)"
+    },
+    "coupling.delayed": false,
+    "network.number_of_nodes": 2,
+    "network.number_of_regions": 2,
+    "network.description": "Two-node network with symmetric coupling",
+    "network.nodes": [
+      {
+        "id": 0,
+        "label": "Node_A",
+        "region": "PFC",
+        "description": "First node (e.g., Prefrontal Cortex)"
+      },
+      {
+        "id": 1,
+        "label": "Node_B",
+        "region": "PPC",
+        "description": "Second node (e.g., Posterior Parietal Cortex)"
+      }
+    ],
+    "network.edges": [
+      {
+        "source": 0,
+        "target": 1,
+        "label": "A->B",
+        "parameters": {
+          "weight": {
+            "value": 1.0,
+            "description": "Connection strength from A to B"
+          },
+          "delay": {
+            "value": 0.0,
+            "unit": "ms",
+            "description": "Transmission delay"
+          }
+        }
+      },
+      {
+        "source": 1,
+        "target": 0,
+        "label": "B->A",
+        "parameters": {
+          "weight": {
+            "value": 1.0,
+            "description": "Connection strength from B to A"
+          },
+          "delay": {
+            "value": 0.0,
+            "unit": "ms",
+            "description": "Transmission delay"
+          }
+        }
+      }
+    ],
+    "network.global_coupling_strength": {
+      "name": "G",
+      "value": 1.0,
+      "description": "Global coupling scaling (implicit in LRE/FFI)"
+    },
+    "integration.method": "Euler",
+    "integration.step_size": 1.0,
+    "integration.duration": 25000,
+    "integration.unit": "ms",
+    "integration.description": "FIC tuning: 20s, then 5s simulation (25s total)",
+    "type": "study",
+    "file": "database/studies/Schirner2023/Schirner2023_TwoNode.yaml"
+  },
+  {
+    "id": 2,
+    "label": "two node multiscale model",
+    "description": "Full Schirner et al. two-node multiscale model with E/I balance. Combines large-scale RWW dynamics (PFC, PPC) with small-scale Murray-Wang functional circuit for decision-making. Implements LRE/FFI coupling modes for E/I ratio modulation.",
+    "local_dynamics.name": "EIB_ReducedWongWang_TwoNode",
+    "local_dynamics.system_type": "continuous",
+    "local_dynamics.description": "Modified ReducedWongWang model (Deco et al., 2014) with separate long-range excitation (LRE) and feedforward inhibition (FFI) channels.",
+    "local_dynamics.parameters": {
+      "a_e": {
+        "value": 310.0,
+        "unit": "Hz/nA",
+        "description": "Excitatory gain parameter"
+      },
+      "b_e": {
+        "value": 125.0,
+        "unit": "Hz",
+        "description": "Excitatory input shift"
+      },
+      "d_e": {
+        "value": 0.16,
+        "unit": "s",
+        "description": "Excitatory rectification parameter"
+      },
+      "a_i": {
+        "value": 615.0,
+        "unit": "Hz/nA",
+        "description": "Inhibitory gain parameter"
+      },
+      "b_i": {
+        "value": 177.0,
+        "unit": "Hz",
+        "description": "Inhibitory input shift"
+      },
+      "d_i": {
+        "value": 0.087,
+        "unit": "s",
+        "description": "Inhibitory rectification parameter"
+      },
+      "tau_e": {
+        "value": 100.0,
+        "unit": "ms",
+        "description": "Excitatory NMDA time constant"
+      },
+      "tau_i": {
+        "value": 10.0,
+        "unit": "ms",
+        "description": "Inhibitory time constant"
+      },
+      "gamma_e": {
+        "value": 0.000641,
+        "description": "Excitatory gamma (converted from 0.641/1000)"
+      },
+      "gamma_i": {
+        "value": 0.001,
+        "description": "Inhibitory gamma (converted from 1.0/1000)"
+      },
+      "w_p": {
+        "value": 1.4,
+        "description": "Recurrent excitation weight"
+      },
+      "J_NMDA": {
+        "value": 0.15,
+        "unit": "nA",
+        "description": "NMDA synaptic gain"
+      },
+      "eta": {
+        "value": 0.5,
+        "description": "FIC learning rate (matching EI_Tuning.qmd)"
+      },
+      "r0": {
+        "value": 0.25,
+        "description": "FIC target S_E activity level"
+      },
+      "W_E": {
+        "value": 1.0,
+        "description": "Excitatory external weight"
+      },
+      "W_I": {
+        "value": 0.7,
+        "description": "Inhibitory external weight"
+      },
+      "I_0": {
+        "value": 0.382,
+        "unit": "nA",
+        "description": "Background input current"
+      },
+      "EI_ratio": {
+        "value": 2.33,
+        "description": "E/I ratio = LRE / FFI",
+        "reported_optimum": 2.33
+      },
+      "J_same_M1": {
+        "value": 0.3169,
+        "unit": "nA",
+        "description": "Same-pool recurrent weight in Module 1"
+      },
+      "J_diff_M1": {
+        "value": -0.033,
+        "unit": "nA",
+        "description": "Diff-pool inhibitory weight in Module 1"
+      },
+      "J_same_M2": {
+        "value": 0.351,
+        "unit": "nA",
+        "description": "Same-pool recurrent weight in Module 2"
+      },
+      "J_diff_M2": {
+        "value": -0.0671,
+        "unit": "nA",
+        "description": "Diff-pool inhibitory weight in Module 2"
+      },
+      "J_same_M2_to_M1": {
+        "value": 0.02,
+        "unit": "nA",
+        "description": "Same-pool weight from M2 to M1"
+      },
+      "J_diff_M2_to_M1": {
+        "value": -0.02,
+        "unit": "nA",
+        "description": "Diff-pool weight from M2 to M1"
+      },
+      "J_same_M1_to_M2": {
+        "value": 0.075,
+        "unit": "nA",
+        "description": "Same-pool weight from M1 to M2"
+      },
+      "J_diff_M1_to_M2": {
+        "value": -0.075,
+        "unit": "nA",
+        "description": "Diff-pool weight from M1 to M2"
+      },
+      "tau_MW": {
+        "value": 60.0,
+        "unit": "ms",
+        "description": "NMDA time constant for MW populations"
+      },
+      "gamma_MW": {
+        "value": 0.641,
+        "description": "Rate of saturation of S for MW"
+      },
+      "a_MW": {
+        "value": 270.0,
+        "unit": "Hz/nA",
+        "description": "MW firing rate gain parameter"
+      },
+      "b_MW": {
+        "value": 108.0,
+        "unit": "Hz",
+        "description": "MW firing rate offset parameter"
+      },
+      "c_MW": {
+        "value": 0.154,
+        "unit": "s",
+        "description": "MW firing rate rectification parameter"
+      },
+      "I_0_MW": {
+        "value": 0.334,
+        "unit": "nA",
+        "description": "Background input for MW populations"
+      },
+      "tau_AMPA": {
+        "value": 2.0,
+        "unit": "ms",
+        "description": "AMPA noise time constant"
+      },
+      "sigma_noise": {
+        "value": 0.009,
+        "unit": "nA",
+        "description": "MW noise strength"
+      },
+      "MW_noise_SD": {
+        "value": 0.007347,
+        "unit": "nA",
+        "description": "Standard deviation of MW noise"
+      },
+      "mean_norm": {
+        "value": 0.3807,
+        "unit": "nA",
+        "description": "Mean normalization (mean at E/I=2.33)"
+      },
+      "std_norm": {
+        "value": 0.310494,
+        "description": "Std normalization (MW_noise_SD / 0.02367)"
+      },
+      "contrast": {
+        "value": 6.4,
+        "unit": "%",
+        "description": "Stimulus contrast for decision task"
+      },
+      "I_app_base": {
+        "value": 0.0118,
+        "unit": "nA",
+        "description": "Base sensory input current"
+      }
+    },
+    "local_dynamics.coupling_terms": {
+      "cpop_0": {
+        "description": "Coupling population 0 (for LRE computation)"
+      },
+      "cpop_1": {
+        "description": "Coupling population 1 (for FFI computation)"
+      }
+    },
+    "local_dynamics.derived_variables": {
+      "c_lre": {
+        "equation": {
+          "rhs": "J_NMDA * cpop_0 * (EI_ratio / (EI_ratio + 1))"
+        },
+        "description": "Long-range excitation"
+      },
+      "c_ffi": {
+        "equation": {
+          "rhs": "J_NMDA * cpop_1 * (1 / (EI_ratio + 1))"
+        },
+        "description": "Feedforward inhibition"
+      },
+      "I_E": {
+        "equation": {
+          "rhs": "W_E * I_0 + w_p * J_NMDA * S_E + c_lre - J_i * S_I"
+        },
+        "description": "Total excitatory input current"
+      },
+      "I_I": {
+        "equation": {
+          "rhs": "W_I * I_0 + J_NMDA * S_E - S_I + c_ffi"
+        },
+        "description": "Total inhibitory input current"
+      },
+      "r_E": {
+        "equation": {
+          "rhs": "(a_e * I_E - b_e) / (1.0 - exp(-d_e * (a_e * I_E - b_e)))"
+        },
+        "description": "Excitatory firing rate (Hz)"
+      },
+      "r_I": {
+        "equation": {
+          "rhs": "(a_i * I_I - b_i) / (1.0 - exp(-d_i * (a_i * I_I - b_i)))"
+        },
+        "description": "Inhibitory firing rate (Hz)"
+      },
+      "LSI_PFC": {
+        "equation": {
+          "rhs": "(I_E - mean_norm) * std_norm"
+        },
+        "description": "Normalized large-scale input from PFC (node 0)"
+      },
+      "LSI_PPC": {
+        "equation": {
+          "rhs": "(I_E - mean_norm) * std_norm"
+        },
+        "description": "Normalized large-scale input from PPC (node 1)"
+      },
+      "I_appA": {
+        "equation": {
+          "rhs": "I_app_base * (1 + contrast / 100)"
+        },
+        "description": "Sensory input to population A"
+      },
+      "I_appB": {
+        "equation": {
+          "rhs": "I_app_base * (1 - contrast / 100)"
+        },
+        "description": "Sensory input to population B"
+      },
+      "I_A1": {
+        "equation": {
+          "rhs": "J_same_M1 * S_A1 + J_diff_M1 * S_B1 + J_same_M2_to_M1 * S_A2 + J_diff_M2_to_M1 * S_B2 + I_0_MW + LSI_PFC + I_appA"
+        },
+        "description": "Total input current to A1"
+      },
+      "I_B1": {
+        "equation": {
+          "rhs": "J_diff_M1 * S_A1 + J_same_M1 * S_B1 + J_diff_M2_to_M1 * S_A2 + J_same_M2_to_M1 * S_B2 + I_0_MW + LSI_PFC + I_appB"
+        },
+        "description": "Total input current to B1"
+      },
+      "I_A2": {
+        "equation": {
+          "rhs": "J_same_M1_to_M2 * S_A1 + J_diff_M1_to_M2 * S_B1 + J_same_M2 * S_A2 + J_diff_M2 * S_B2 + I_0_MW + LSI_PPC"
+        },
+        "description": "Total input current to A2"
+      },
+      "I_B2": {
+        "equation": {
+          "rhs": "J_diff_M1_to_M2 * S_A1 + J_same_M1_to_M2 * S_B1 + J_diff_M2 * S_A2 + J_same_M2 * S_B2 + I_0_MW + LSI_PPC"
+        },
+        "description": "Total input current to B2"
+      },
+      "r_A1": {
+        "equation": {
+          "rhs": "(a_MW * I_A1 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_A1 - b_MW)))"
+        },
+        "description": "Firing rate of population A1"
+      },
+      "r_B1": {
+        "equation": {
+          "rhs": "(a_MW * I_B1 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_B1 - b_MW)))"
+        },
+        "description": "Firing rate of population B1"
+      },
+      "r_A2": {
+        "equation": {
+          "rhs": "(a_MW * I_A2 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_A2 - b_MW)))"
+        },
+        "description": "Firing rate of population A2"
+      },
+      "r_B2": {
+        "equation": {
+          "rhs": "(a_MW * I_B2 - b_MW) / (1.0 - exp(-c_MW * (a_MW * I_B2 - b_MW)))"
+        },
+        "description": "Firing rate of population B2"
+      }
+    },
+    "local_dynamics.state_variables": {
+      "S_E": {
+        "description": "Excitatory synaptic gating variable",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.001,
+        "coupling_variable": true,
+        "equation": {
+          "rhs": "-S_E / tau_e + (1.0 - S_E) * gamma_e * r_E"
+        },
+        "noise": {
+          "noise_type": "gaussian",
+          "parameters": {
+            "sigma": {
+              "value": 0.01,
+              "description": "Noise strength (sigma_e)"
+            }
+          }
+        }
+      },
+      "S_I": {
+        "description": "Inhibitory synaptic gating variable",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.001,
+        "equation": {
+          "rhs": "-S_I / tau_i + gamma_i * r_I"
+        },
+        "noise": {
+          "noise_type": "gaussian",
+          "parameters": {
+            "sigma": {
+              "value": 0.01,
+              "description": "Noise strength (sigma_i)"
+            }
+          }
+        }
+      },
+      "S_A1": {
+        "description": "Synaptic gating variable for population A1 (Module 1)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "-S_A1 / tau_MW + gamma_MW * (1.0 - S_A1) * r_A1 / 1000.0"
+        }
+      },
+      "S_B1": {
+        "description": "Synaptic gating variable for population B1 (Module 1)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "-S_B1 / tau_MW + gamma_MW * (1.0 - S_B1) * r_B1 / 1000.0"
+        }
+      },
+      "S_A2": {
+        "description": "Synaptic gating variable for population A2 (Module 2)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "-S_A2 / tau_MW + gamma_MW * (1.0 - S_A2) * r_A2 / 1000.0"
+        }
+      },
+      "S_B2": {
+        "description": "Synaptic gating variable for population B2 (Module 2)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 1.0
+        },
+        "initial_value": 0.0,
+        "equation": {
+          "rhs": "-S_B2 / tau_MW + gamma_MW * (1.0 - S_B2) * r_B2 / 1000.0"
+        }
+      },
+      "J_i": {
+        "description": "Inhibitory synaptic gain (tuned via FIC/ISP)",
+        "domain": {
+          "lo": 0.0,
+          "hi": 10.0
+        },
+        "boundaries": {
+          "lo": 0.0,
+          "hi": 10.0
+        },
+        "initial_value": 0.685,
+        "equation": {
+          "rhs": "eta * (S_I * S_E - r0 * S_I)"
+        }
+      }
+    },
+    "coupling.name": "EIB_DualCoupling",
+    "coupling.description": "Dual coupling modes: Long-Range Excitation (LRE) and Feedforward Inhibition (FFI). This produces two coupling outputs (cpop_0 and cpop_1) that are used to compute LRE and FFI in the local dynamics. The splitting by EI_ratio is applied in derived_variables.\nNOTE: The full EIB implementation (as in EI_Tuning.qmd) uses separate wLRE and wFFI weight matrices that are tuned independently. This YAML represents a simplified version where both coupling terms receive the same structural connectivity-weighted input, which is then split by EI_ratio in the local dynamics.",
+    "coupling.parameters": {
+      "J_NMDA": {
+        "value": 0.15,
+        "unit": "nA",
+        "description": "NMDA synaptic gain for coupling"
+      },
+      "wLRE": {
+        "value": 1.0,
+        "shape": "(N,N)",
+        "description": "Long-range excitation weight matrix (tunable)"
+      },
+      "wFFI": {
+        "value": 1.0,
+        "shape": "(N,N)",
+        "description": "Feedforward inhibition weight matrix (tunable)"
+      }
+    },
+    "coupling.incoming_states": [
+      "S_E"
+    ],
+    "coupling.pre_expression": {
+      "rhs": "S_E",
+      "label": "Extract S_E from connected nodes"
+    },
+    "coupling.post_expression": {
+      "rhs": "gx",
+      "label": "Weighted coupling (stacked for cpop_0 and cpop_1)"
+    },
+    "coupling.delayed": false,
+    "network.number_of_nodes": 2,
+    "network.number_of_regions": 2,
+    "network.description": "Two-node network with symmetric coupling",
+    "network.nodes": [
+      {
+        "id": 0,
+        "label": "Node_A",
+        "region": "PFC",
+        "description": "First node (e.g., Prefrontal Cortex)"
+      },
+      {
+        "id": 1,
+        "label": "Node_B",
+        "region": "PPC",
+        "description": "Second node (e.g., Posterior Parietal Cortex)"
+      }
+    ],
+    "network.edges": [
+      {
+        "source": 0,
+        "target": 1,
+        "label": "A->B",
+        "parameters": {
+          "weight": {
+            "value": 1.0,
+            "description": "Connection strength from A to B"
+          },
+          "delay": {
+            "value": 0.0,
+            "unit": "ms",
+            "description": "Transmission delay"
+          }
+        }
+      },
+      {
+        "source": 1,
+        "target": 0,
+        "label": "B->A",
+        "parameters": {
+          "weight": {
+            "value": 1.0,
+            "description": "Connection strength from B to A"
+          },
+          "delay": {
+            "value": 0.0,
+            "unit": "ms",
+            "description": "Transmission delay"
+          }
+        }
+      }
+    ],
+    "network.global_coupling_strength": {
+      "name": "G",
+      "value": 1.0,
+      "description": "Global coupling scaling (implicit in LRE/FFI)"
+    },
+    "integration.method": "Euler",
+    "integration.step_size": 1.0,
+    "integration.duration": 25000,
+    "integration.unit": "ms",
+    "integration.description": "FIC tuning: 20s, then 5s simulation (25s total)",
+    "type": "study",
+    "file": "database/studies/Schirner2023/FIC_StateVariable.yaml"
   },
   {
     "name": "hcpmmp1",
@@ -30991,6 +32982,202 @@ window.searchData = [
     "atlas.name": "Yeo17",
     "n_regions": 17,
     "thumbnail": "browser/imgs/networks/space-MNI152_atlas-Yeo17_desc-dTOR.png"
+  },
+  {
+    "label": "Simple 3-Node Network Example",
+    "description": "Example network with 3 nodes and two different coupling types (excitatory and inhibitory)",
+    "coupling": [
+      {
+        "name": "excitatory",
+        "label": "Excitatory Linear Coupling",
+        "coupling_function": {
+          "rhs": "a * x",
+          "parameters": [
+            {
+              "name": "a",
+              "value": 1.0
+            }
+          ]
+        },
+        "delayed": true
+      },
+      {
+        "name": "inhibitory",
+        "label": "Inhibitory Sigmoidal Coupling",
+        "coupling_function": {
+          "rhs": "-1.0 / (1.0 + exp(-a * (x - theta)))",
+          "parameters": [
+            {
+              "name": "a",
+              "value": 0.5
+            },
+            {
+              "name": "theta",
+              "value": 0.0
+            }
+          ]
+        },
+        "delayed": true
+      }
+    ],
+    "nodes": [
+      {
+        "id": 0,
+        "label": "Node_A",
+        "dynamics": {
+          "name": "Generic2dOscillator",
+          "dataLocation": "database/models/Generic2dOscillator.yaml"
+        },
+        "position": {
+          "x": -10.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "region": "Left Frontal",
+        "initial_state": [
+          0.1,
+          0.0
+        ]
+      },
+      {
+        "id": 1,
+        "label": "Node_B",
+        "dynamics": {
+          "name": "Generic2dOscillator",
+          "dataLocation": "database/models/Generic2dOscillator.yaml"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 10.0,
+          "z": 0.0
+        },
+        "region": "Parietal",
+        "initial_state": [
+          -0.1,
+          0.0
+        ]
+      },
+      {
+        "id": 2,
+        "label": "Node_C",
+        "dynamics": {
+          "name": "Generic2dOscillator",
+          "dataLocation": "database/models/Generic2dOscillator.yaml"
+        },
+        "position": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "region": "Right Frontal",
+        "initial_state": [
+          0.0,
+          0.1
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "source": 0,
+        "target": 1,
+        "coupling": {
+          "name": "excitatory",
+          "label": "Excitatory Linear Coupling",
+          "coupling_function": {
+            "rhs": "a * x",
+            "parameters": [
+              {
+                "name": "a",
+                "value": 1.0
+              }
+            ]
+          },
+          "delayed": true
+        },
+        "weight": 0.8,
+        "delay": 2.0,
+        "distance": 14.14
+      },
+      {
+        "source": 1,
+        "target": 2,
+        "coupling": {
+          "name": "excitatory",
+          "label": "Excitatory Linear Coupling",
+          "coupling_function": {
+            "rhs": "a * x",
+            "parameters": [
+              {
+                "name": "a",
+                "value": 1.0
+              }
+            ]
+          },
+          "delayed": true
+        },
+        "weight": 0.9,
+        "delay": 1.8,
+        "distance": 14.14
+      },
+      {
+        "source": 2,
+        "target": 0,
+        "coupling": {
+          "name": "inhibitory",
+          "label": "Inhibitory Sigmoidal Coupling",
+          "coupling_function": {
+            "rhs": "-1.0 / (1.0 + exp(-a * (x - theta)))",
+            "parameters": [
+              {
+                "name": "a",
+                "value": 0.5
+              },
+              {
+                "name": "theta",
+                "value": 0.0
+              }
+            ]
+          },
+          "delayed": true
+        },
+        "weight": 0.6,
+        "delay": 2.5,
+        "distance": 20.0
+      },
+      {
+        "source": 1,
+        "target": 0,
+        "coupling": {
+          "name": "inhibitory",
+          "label": "Inhibitory Sigmoidal Coupling",
+          "coupling_function": {
+            "rhs": "-1.0 / (1.0 + exp(-a * (x - theta)))",
+            "parameters": [
+              {
+                "name": "a",
+                "value": 0.5
+              },
+              {
+                "name": "theta",
+                "value": 0.0
+              }
+            ]
+          },
+          "delayed": true
+        },
+        "weight": 0.4,
+        "delay": 2.2,
+        "distance": 14.14
+      }
+    ],
+    "number_of_nodes": 3,
+    "global_coupling_strength.name": "G",
+    "global_coupling_strength.value": 1.0,
+    "conduction_speed.name": "speed",
+    "conduction_speed.value": 3.0,
+    "conduction_speed.unit": "mm/ms",
+    "type": "network",
+    "file": "database/networks/example_3node_network.yaml"
   },
   {
     "type": "network",

@@ -1,9 +1,8 @@
 
 
-# StuartLandauOscillator
-StuartLandauOscillator
-
-## Equations
+## StuartLandauOscillator
+Normal form of supercritical Hopf bifurcation in Cartesian coordinates; radius
+dynamics decouple giving stable limit cycle of radius sqrt(mu) for mu > 0.
 
 
 ### State Equations
@@ -15,7 +14,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

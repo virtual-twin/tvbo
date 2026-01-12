@@ -1,9 +1,8 @@
 
 
-# Shinriki
-Shinriki
-
-## Equations
+## Shinriki
+Shinriki oscillator (stiff chaotic electronic circuit) with exponential nonlinearity.
+All parameters except R1 fixed to canonical literature values.
 
 ### Derived Variables
 $$
@@ -22,7 +21,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

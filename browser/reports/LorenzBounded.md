@@ -1,9 +1,9 @@
 
 
-# LorenzBounded
-LorenzBounded
-
-## Equations
+## LorenzBounded
+Lorenz system modified by smooth radial confinement factor f = 1 - (||X||^2)/r^2
+producing bounded dynamics with altered basin geometry while retaining core
+stretching and folding mechanisms.
 
 ### Derived Variables
 $$
@@ -22,7 +22,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

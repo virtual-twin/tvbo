@@ -1,9 +1,8 @@
 
 
-# Gissinger
-Gissinger
-
-## Equations
+## Gissinger
+Low-order model for geomagnetic field reversals exhibiting chaotic polarity changes.
+Captures interplay between dipole (Q), quadrupole (D) and velocity (V) modes.
 
 
 ### State Equations
@@ -18,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,8 @@
 
 
-# CoupledRoessler
-CoupledRoessler
-
-## Equations
+## CoupledRoessler
+Pair of diffusively coupled Rössler oscillators used to study phase and
+generalized synchronization, lag synchronization and coupling asymmetry effects.
 
 
 ### State Equations
@@ -27,7 +26,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

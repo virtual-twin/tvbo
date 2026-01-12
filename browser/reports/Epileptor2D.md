@@ -1,14 +1,12 @@
 
 
-# Epileptor2D
+## Epileptor2D
 Epileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).
 
-Note:
+Note: 
 ------
 - Equations and default parameters are taken from (Proix et al.,2014),
 - The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).
-
-## Equations
 
 ### Derived Variables
 $$
@@ -30,7 +28,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
@@ -50,6 +48,6 @@ $$
 
 
 ## References
-Citation key 'Proix2017' not found.
-
 Citation key 'Proix2014' not found.
+
+Citation key 'Proix2017' not found.

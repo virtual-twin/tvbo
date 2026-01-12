@@ -1,9 +1,7 @@
 
 
-# KuramotoModel2
+## KuramotoModel2
 KuramotoModel2
-
-## Equations
 
 ### Derived Parameters
 $$
@@ -36,7 +34,7 @@ $$
 signal = \sin{\left(\theta \right)}
 $$
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,9 @@
 
 
-# MoreChaosExample
-MoreChaosExample
-
-## Equations
+## MoreChaosExample
+Three-dimensional chaotic flow whose attractor is multifractal with dimension
+close to 3, introduced as an additional example in discussions about the need
+for new chaos exemplars.
 
 
 ### State Equations
@@ -18,7 +18,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

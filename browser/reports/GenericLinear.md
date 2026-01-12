@@ -1,9 +1,7 @@
 
 
-# GenericLinear
+## GenericLinear
 The Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e., one state-variable ('x')) neural mass model (Galán, 2008).
-
-## Equations
 
 
 ### State Equations
@@ -12,7 +10,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,11 @@
 
 
-# Antidots
-Antidots
-
-## Equations
+## Antidots
+Hamiltonian antidot lattice (periodic Sinai-like billiard) with smooth circular
+repulsive potentials and perpendicular magnetic field. Models guiding center
+dynamics and magnetotransport phenomena in mesoscopic systems. Smooth radial
+repulsion implemented as a quartic polynomial potential inside radius (d0/2 + c)
+matching the original implementation (Datseris 2019); outside region force is zero.
 
 ### Derived Variables
 $$
@@ -37,7 +39,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

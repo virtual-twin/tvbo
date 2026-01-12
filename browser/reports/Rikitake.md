@@ -1,9 +1,9 @@
 
 
-# Rikitake
-Rikitake
-
-## Equations
+## Rikitake
+Rikitake two-disk dynamo model for geomagnetic polarity reversals. Exhibits
+chaotic switching between polarity states through nonlinear coupling of
+mechanical and electromagnetic components.
 
 
 ### State Equations
@@ -18,7 +18,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,8 @@
 
 
-# CoupledStandardMaps3
-CoupledStandardMaps3
-
-## Equations
+## CoupledStandardMaps3
+Three coupled Chirikov standard maps with nearest-neighbor coupling on a ring.
+This explicit unrolled form avoids symbolic indices by naming each (θ_i, p_i) pair.
 
 
 ### State Equations
@@ -27,7 +26,7 @@ p_{2} = \left(p_{2} + k_{2}*\sin{\left(\theta_{2} \right)} - \Gamma*\left(\sin{\
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

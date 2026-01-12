@@ -1,9 +1,8 @@
 
 
-# ZaslavskiiMap
-ZaslavskiiMap
-
-## Equations
+## ZaslavskiiMap
+Two-dimensional dissipative map exhibiting chaotic attractors for standard parameter
+sets; sometimes mischaracterized as the “simplest” strange attractor.
 
 ### Derived Variables
 $$
@@ -19,7 +18,7 @@ y = \left(y + eps*\cos{\left(2*\pi*x \right)}\right)*e^{- r}
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

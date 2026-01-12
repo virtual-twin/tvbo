@@ -161,6 +161,69 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Interoperability</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">tvboptim</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/index.html">
+ <span class="dropdown-text">tvboptim Backend</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/JR_tvboptim.html">
+ <span class="dropdown-text">JR Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/RWW_tvboptim.html">
+ <span class="dropdown-text">RWW Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
+ <span class="dropdown-text">EI Tuning</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">PyRates</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/index.html">
+ <span class="dropdown-text">PyRates Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Analysis.html">
+ <span class="dropdown-text">PyRates Analysis</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Bifurcation.html">
+ <span class="dropdown-text">PyRates Bifurcation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
+ <span class="dropdown-text">Heterogeneous Networks</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">BIDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/index.html">
+ <span class="dropdown-text">BIDS Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_Export.html">
+ <span class="dropdown-text">BIDS Export</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_comp_modelling.md">
+ <span class="dropdown-text">BIDS Computational Modelling</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">OpenMINDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
+ <span class="dropdown-text">OpenMINDS Interoperability</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -215,8 +278,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><img src="_output/anim1.gif" class="img-fluid"></p>
 <section id="system-specification" class="level3">
 <h3 class="anchored" data-anchor-id="system-specification">System Specification</h3>
-<p>Define the pendulum <a href="../datamodel/classes/Dynamics.html">Dynamics</a> using YAML format with <a href="../datamodel/classes/Parameter.html">Parameter</a>s, <a href="../datamodel/classes/StateVariable.html">state variables</a>, and <a href="../datamodel/slots/output_transforms.html">output transforms</a>:</p>
-<div id="8226a8f0" class="cell" data-execution_count="3">
+<p>Define the pendulum <a href="../datamodel/classes/Dynamics.html">Dynamics</a> using YAML format with <a href="../datamodel/classes/Parameter.html">Parameter</a>s, <a href="../datamodel/classes/StateVariable.html">state variables</a>, and <a href="../datamodel/slots/output.html">output transforms</a>:</p>
+<div id="fccd8560" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yaml</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -250,7 +313,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="st">        initial_value: 0.0</span></span>
 <span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="st">        equation:</span></span>
 <span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="st">            rhs: -c*omega - omega0**2 * sin(theta)</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="st">output_transforms:</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="st">derived_variables:</span></span>
 <span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="st">    x:</span></span>
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="st">        description: X coordinate of the pendulum bob</span></span>
 <span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="st">        unit: m</span></span>
@@ -261,13 +324,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="st">        unit: m</span></span>
 <span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">        equation:</span></span>
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="st">            rhs: -L * cos(theta)</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>pendulum <span class="op">=</span> SimulationExperiment(</span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    local_dynamics<span class="op">=</span>Dynamics(<span class="op">**</span>yaml.load(dynamics_yaml, Loader<span class="op">=</span>yaml.FullLoader)),</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="st">output: </span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="st">    - x</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="st">    - y</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
 <span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> pendulum.run(duration<span class="op">=</span><span class="dv">5_000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>pendulum <span class="op">=</span> SimulationExperiment(</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span>Dynamics(<span class="op">**</span>yaml.load(dynamics_yaml, Loader<span class="op">=</span>yaml.FullLoader)),</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> pendulum.run(duration<span class="op">=</span><span class="dv">5_000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The system consists of: - <strong>Parameters</strong>: Physical constants (damping, frequency, length) - <strong>State variables</strong>: Time-evolving quantities (angle θ, angular velocity ω) - <strong>Output transforms</strong>: Computed observables (Cartesian coordinates x, y)</p>
 </section>

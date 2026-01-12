@@ -1,9 +1,7 @@
 
 
-# DuffingForced
-DuffingForced
-
-## Equations
+## DuffingForced
+Forced Duffing oscillator with linear damping and periodic forcing. Exhibits rich nonlinear dynamics including bifurcations, quasiperiodicity, and chaos depending on forcing amplitude and frequency.
 
 
 ### State Equations
@@ -15,7 +13,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

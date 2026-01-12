@@ -1,9 +1,11 @@
 
 
-# SwingingAtwood
-SwingingAtwood
-
-## Equations
+## SwingingAtwood
+The swinging Atwood machine couples a pendulum to a vertically moving mass via a
+single inextensible string over a pulley. Competing exchanges between vertical and
+angular motion create a rich mixed phase space with coexisting regular islands and
+chaotic seas, providing a canonical laboratory example of low-dimensional Hamiltonian
+chaos and resonance overlap.
 
 ### Derived Variables
 $$
@@ -25,7 +27,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,10 @@
 
 
-# Roessler
-Roessler
-
-## Equations
+## Roessler
+This three-dimensional continuous system is due to Rössler [^Rössler1976]. It is a
+system that by design behaves similarly to the Lorenz system and displays a strange
+attractor. However, it is easier to analyze qualitatively, as for example the attractor
+is composed of a single manifold. Default values are the same as the original paper.
 
 
 ### State Equations
@@ -18,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

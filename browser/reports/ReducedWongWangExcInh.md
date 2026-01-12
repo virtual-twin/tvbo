@@ -1,9 +1,7 @@
 
 
-# ReducedWongWangExcInh
+## ReducedWongWangExcInh
 Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.
-
-## Equations
 
 ### Derived Variables
 $$
@@ -34,7 +32,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

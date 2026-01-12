@@ -1,9 +1,8 @@
 
 
-# ForcedPendulum
-ForcedPendulum
-
-## Equations
+## ForcedPendulum
+Driven damped pendulum showing classic routes to chaos (period doubling and
+intermittency) and rich phase locking structure in parameter space.
 
 
 ### State Equations
@@ -15,7 +14,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

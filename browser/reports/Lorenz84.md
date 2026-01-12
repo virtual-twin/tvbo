@@ -1,9 +1,8 @@
 
 
-# Lorenz84
-Lorenz84
-
-## Equations
+## Lorenz84
+Low-order atmospheric circulation model exhibiting multistability and fractal
+basin boundaries with coexisting attractors under standard parameter set.
 
 
 ### State Equations
@@ -18,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

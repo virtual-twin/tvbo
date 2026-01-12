@@ -1,9 +1,9 @@
 
 
-# QuadrupoleBosonHamiltonian
-QuadrupoleBosonHamiltonian
-
-## Equations
+## QuadrupoleBosonHamiltonian
+Conservative Hamiltonian system modeling quadrupole surface vibrations in a nuclear
+context. Adds a quartic term to Henon–Heiles-like structure producing energy-dependent
+chaoticity. Default initial condition is chaotic.
 
 
 ### State Equations
@@ -21,7 +21,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

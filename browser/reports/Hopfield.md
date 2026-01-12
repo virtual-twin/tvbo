@@ -1,6 +1,6 @@
 
 
-# Hopfield
+## Hopfield
 The Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).
 When the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).
 
@@ -8,8 +8,6 @@ Various extensions of the initial model have been proposed, among which a noisel
 
 Note:
 - This model uses the modifications implemented by Golos et al. (2015).
-
-## Equations
 
 
 ### State Equations
@@ -21,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

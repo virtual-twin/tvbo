@@ -1,9 +1,15 @@
 
 
-# Lorenz63
-Lorenz63
+## Lorenz63
+The famous three dimensional system due to Lorenz [^Lorenz1963], shown to exhibit
+so-called "deterministic nonperiodic flow". It was originally invented to study a
+simplified form of atmospheric convection.
 
-## Equations
+Currently, it is most famous for its strange attractor (occuring at the default
+parameters), which resembles a butterfly. For the same reason it is
+also associated with the term "butterfly effect" (a term which Lorenz himself disliked)
+even though the effect applies generally to dynamical systems.
+Default values are the ones used in the original paper.
 
 
 ### State Equations
@@ -18,7 +24,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

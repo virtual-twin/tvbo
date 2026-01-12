@@ -1,9 +1,12 @@
 
 
-# CoombesByrne
+## CoombesByrne
+4D model describing the Ott-Antonsen reduction of infinite all-to-all
+coupled QIF neurons (Theta-neurons).
 
+Note: the original equations describe the dynamics of the Kuramoto parameter
+$Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi r + i V$, we express the system dynamics in terms of two state variables $r$ and $V$ representing the average firing rate and the average membrane potential of our QIF neurons. The conductance variable and its derivative are $g$ and $q$.
 
-## Equations
 
 
 ### State Equations
@@ -21,7 +24,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,9 @@
 
 
-# HyperRoessler
-HyperRoessler
-
-## Equations
+## HyperRoessler
+Four-dimensional hyperchaotic extension of the Rössler system introducing an
+additional variable that yields a second positive Lyapunov exponent over wide
+parameter ranges while preserving the spiral-type attractor structure.
 
 
 ### State Equations
@@ -21,7 +21,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

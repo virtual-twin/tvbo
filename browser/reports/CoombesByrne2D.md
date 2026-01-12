@@ -1,9 +1,7 @@
 
 
-# CoombesByrne2D
+## CoombesByrne2D
 
-
-## Equations
 
 
 ### State Equations
@@ -15,7 +13,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

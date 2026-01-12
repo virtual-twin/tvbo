@@ -1,9 +1,7 @@
 
 
-# Kuramoto
+## Kuramoto
 The Kuramoto model is a model of synchronization phenomena derived by Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including the study of neuronal oscillations and synchronization.
-
-## Equations
 
 ### Derived Variables
 $$
@@ -19,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

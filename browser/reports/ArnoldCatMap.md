@@ -1,9 +1,8 @@
 
 
-# ArnoldCatMap
-ArnoldCatMap
-
-## Equations
+## ArnoldCatMap
+Arnold’s cat map: linear automorphism of the torus with hyperbolic dynamics and
+uniform stretching and folding.
 
 
 ### State Equations
@@ -15,7 +14,7 @@ y = \left(x + y\right) \bmod 1
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

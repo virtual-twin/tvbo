@@ -1,21 +1,19 @@
 
 
-# Epileptor5D
+## Epileptor5D
 Epilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).
 
-Epileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns:
-- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges.
+Epileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: 
+- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. 
 - the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.
 
 The main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.
 
-Note:
+Note: 
 ------
 - Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),
 - The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),
 - The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).
-
-## Equations
 
 ### Derived Variables
 $$
@@ -52,7 +50,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

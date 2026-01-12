@@ -1,9 +1,7 @@
 
 
-# ZerlautAdaptationFirstOrder
+## ZerlautAdaptationFirstOrder
 
-
-## Equations
 
 ### Derived Variables
 $$
@@ -133,7 +131,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

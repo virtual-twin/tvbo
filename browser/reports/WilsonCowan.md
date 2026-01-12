@@ -1,9 +1,9 @@
 
 
-# WilsonCowan
-The Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973).
+## WilsonCowan
+The Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973). 
 
-This model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011).
+This model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011). 
 
 Key parameters in the model are the strength of connectivity between each subtype of population (excitatory and inhibitory) and the strength of input to each subpopulation. The Input parameters P and Q also provide the entry point for local and long-range connectivity, that is, the activity coming from neighboring and distant populations respectively.
 
@@ -14,8 +14,6 @@ Note:
 - Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)
 - Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)
 - The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.
-
-## Equations
 
 ### Derived Variables
 $$
@@ -46,7 +44,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
@@ -77,6 +75,6 @@ $$
 
 
 ## References
-Citation key 'Wilson1972' not found.
-
 Citation key 'Wilson1973' not found.
+
+Citation key 'Wilson1972' not found.

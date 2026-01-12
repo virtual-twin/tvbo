@@ -1,16 +1,14 @@
 
 
-# KIonEx
-It describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate.
+## KIonEx
+It describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate. 
 The model is derived as the mathematical limit of an infinite number of all-to-all coupled neurons, resulting in 5 state variables:
-    :math:`x` represents a phenomenological variable connected to the firing rate,
+    :math:`x` represents a phenomenological variable connected to the firing rate, 
     :math:`V` represent the average membrane potential,
-    :math:`n` represents the gating variable for potassium K,
+    :math:`n` represents the gating variable for potassium K, 
     :math:`\Delta K_{int}` represent the intracellular potassium concentration,
     :math:`K_g` represents the extracellular potassium buffering by the external bath
     """
-
-## Equations
 
 ### Derived Variables
 $$
@@ -89,7 +87,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
@@ -137,4 +135,4 @@ $$
 ## References
 Citation key 'Depannemaecker2023' not found.
 
-Citation key 'Rabuffo2024' not found.
+Citation key 'Bandyopadhyay2021' not found.

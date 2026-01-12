@@ -1,9 +1,11 @@
 
 
-# HindmarshRose
-HindmarshRose
-
-## Equations
+## HindmarshRose
+The Hindmarsh-Rose model reproduces the bursting behavior of a neuron's membrane
+potential, characterized by a fast sequence of spikes followed by a quiescent period.
+The x variable is the membrane potential; y the fast recovery (ionic current) variable;
+z a slow adaptation current. Parameter sets modulate transitions between quiescence,
+tonic spiking and bursting.
 
 
 ### State Equations
@@ -18,7 +20,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

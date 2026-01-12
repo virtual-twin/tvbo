@@ -1,9 +1,9 @@
 
 
-# NoseHoover
-NoseHoover
-
-## Equations
+## NoseHoover
+Nosé–Hoover thermostat flow: minimal three-dimensional conservative system
+with time-reversible chaotic dynamics arising in statistical mechanics and
+later rediscovered as an algebraically simple chaotic flow.
 
 
 ### State Equations
@@ -18,7 +18,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

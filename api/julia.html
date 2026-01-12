@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -126,6 +161,69 @@ ul.task-list li input[type="checkbox"] {
   </li>  
     </ul>
   </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Interoperability</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">tvboptim</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/index.html">
+ <span class="dropdown-text">tvboptim Backend</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/JR_tvboptim.html">
+ <span class="dropdown-text">JR Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/RWW_tvboptim.html">
+ <span class="dropdown-text">RWW Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
+ <span class="dropdown-text">EI Tuning</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">PyRates</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/index.html">
+ <span class="dropdown-text">PyRates Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Analysis.html">
+ <span class="dropdown-text">PyRates Analysis</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Bifurcation.html">
+ <span class="dropdown-text">PyRates Bifurcation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
+ <span class="dropdown-text">Heterogeneous Networks</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">BIDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/index.html">
+ <span class="dropdown-text">BIDS Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_Export.html">
+ <span class="dropdown-text">BIDS Export</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_comp_modelling.md">
+ <span class="dropdown-text">BIDS Computational Modelling</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">OpenMINDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
+ <span class="dropdown-text">OpenMINDS Interoperability</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -143,7 +241,15 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#tvbo.utils.julia" id="toc-tvbo.utils.julia" class="nav-link active" data-scroll-target="#tvbo.utils.julia">julia</a></li>
+  <li><a href="#tvbo.adapters.julia" id="toc-tvbo.adapters.julia" class="nav-link active" data-scroll-target="#tvbo.adapters.julia">julia</a>
+  <ul class="collapse">
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
+  <ul class="collapse">
+  <li><a href="#tvbo.adapters.julia.eval_with_auto_install" id="toc-tvbo.adapters.julia.eval_with_auto_install" class="nav-link" data-scroll-target="#tvbo.adapters.julia.eval_with_auto_install">eval_with_auto_install</a></li>
+  <li><a href="#tvbo.adapters.julia.get_julia" id="toc-tvbo.adapters.julia.get_julia" class="nav-link" data-scroll-target="#tvbo.adapters.julia.get_julia">get_julia</a></li>
+  <li><a href="#tvbo.adapters.julia.install_julia_package" id="toc-tvbo.adapters.julia.install_julia_package" class="nav-link" data-scroll-target="#tvbo.adapters.julia.install_julia_package">install_julia_package</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/api/julia.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -153,11 +259,90 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<section id="tvbo.utils.julia" class="level1">
+<section id="tvbo.adapters.julia" class="level1">
 <h1>julia</h1>
-<p><code>utils.julia</code></p>
+<p><code>adapters.julia</code></p>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.adapters.julia.eval_with_auto_install">eval_with_auto_install</a></td>
+<td>Evaluate Julia code, automatically installing missing packages if needed.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.adapters.julia.get_julia">get_julia</a></td>
+<td>Initialize Julia runtime. Use compiled_modules=False by default for stability.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.adapters.julia.install_julia_package">install_julia_package</a></td>
+<td>Install a Julia package if not already installed.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.adapters.julia.eval_with_auto_install" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.julia.eval_with_auto_install">eval_with_auto_install</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.julia.eval_with_auto_install(code, max_retries<span class="op">=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Evaluate Julia code, automatically installing missing packages if needed.</p>
+</section>
+<section id="tvbo.adapters.julia.get_julia" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.julia.get_julia">get_julia</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.julia.get_julia(compiled_modules<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Initialize Julia runtime. Use compiled_modules=False by default for stability.</p>
+</section>
+<section id="tvbo.adapters.julia.install_julia_package" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.julia.install_julia_package">install_julia_package</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.julia.install_julia_package(package_name, Main<span class="op">=</span><span class="va">None</span>, update<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Install a Julia package if not already installed.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 9%">
+<col style="width: 60%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>package_name</td>
+<td>str</td>
+<td>Name of the Julia package to install</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>Main</td>
+<td></td>
+<td>Julia Main module (will be retrieved if None)</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>update</td>
+<td>bool</td>
+<td>If True, update the package to the latest version</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->

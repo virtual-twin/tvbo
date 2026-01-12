@@ -161,6 +161,69 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Interoperability</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">tvboptim</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/index.html">
+ <span class="dropdown-text">tvboptim Backend</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/JR_tvboptim.html">
+ <span class="dropdown-text">JR Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/RWW_tvboptim.html">
+ <span class="dropdown-text">RWW Workflow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
+ <span class="dropdown-text">EI Tuning</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">PyRates</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/index.html">
+ <span class="dropdown-text">PyRates Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Analysis.html">
+ <span class="dropdown-text">PyRates Analysis</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Bifurcation.html">
+ <span class="dropdown-text">PyRates Bifurcation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
+ <span class="dropdown-text">Heterogeneous Networks</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">BIDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/index.html">
+ <span class="dropdown-text">BIDS Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_Export.html">
+ <span class="dropdown-text">BIDS Export</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_comp_modelling.md">
+ <span class="dropdown-text">BIDS Computational Modelling</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">OpenMINDS</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
+ <span class="dropdown-text">OpenMINDS Interoperability</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -182,7 +245,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.export.code.inline_functions" id="toc-tvbo.export.code.inline_functions" class="nav-link" data-scroll-target="#tvbo.export.code.inline_functions">inline_functions</a></li>
   <li><a href="#tvbo.export.code.print_Piecewise" id="toc-tvbo.export.code.print_Piecewise" class="nav-link" data-scroll-target="#tvbo.export.code.print_Piecewise">print_Piecewise</a></li>
+  <li><a href="#tvbo.export.code.render_equation" id="toc-tvbo.export.code.render_equation" class="nav-link" data-scroll-target="#tvbo.export.code.render_equation">render_equation</a></li>
+  <li><a href="#tvbo.export.code.render_expression" id="toc-tvbo.export.code.render_expression" class="nav-link" data-scroll-target="#tvbo.export.code.render_expression">render_expression</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -208,17 +274,90 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.export.code.inline_functions">inline_functions</a></td>
+<td>Inline all function applications in an expression.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.export.code.print_Piecewise">print_Piecewise</a></td>
 <td>Print Piecewise expressions as nested np.where statements.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.export.code.render_equation">render_equation</a></td>
+<td>Render an equation to a target format.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.export.code.render_expression">render_expression</a></td>
+<td>Render a SymPy expression or string to target format code.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.export.code.inline_functions" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.export.code.inline_functions">inline_functions</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>export.code.inline_functions(expr, func_defs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Inline all function applications in an expression.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<p>expr : sympy.Expr The expression containing function calls to inline. func_defs : dict Dictionary mapping function name -&gt; (arg_names, body_expr) where arg_names is a list of argument names and body_expr is the sympy expression for the function body.</p>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<p>sympy.Expr Expression with all function calls replaced by their inlined bodies.</p>
+</section>
+<section id="example" class="level4 doc-section doc-section-example">
+<h4 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h4>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>from sympy import symbols, Function x, y, v = symbols(‘x y v’) # Define Sigm(v) = 2<em>e0/(1 + exp(r</em>(v0 - v))) func_defs = {‘Sigm’: ([‘v’], 2<em>e0/(1 + exp(r</em>(v0 - v))))} expr = A<em>Sigm(x - y) inline_functions(expr, func_defs) 2</em>A<em>e0/(1 + exp(r</em>(v0 - x + y)))</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</section>
+</section>
 <section id="tvbo.export.code.print_Piecewise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.export.code.print_Piecewise">print_Piecewise</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>export.code.print_Piecewise(Printer, expr, verbose<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>export.code.print_Piecewise(Printer, expr, verbose<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Print Piecewise expressions as nested np.where statements.</p>
+</section>
+<section id="tvbo.export.code.render_equation" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.export.code.render_equation">render_equation</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>export.code.render_equation(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    equation,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    local_dict<span class="op">=</span>{},</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    replace<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    remove<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    inline_funcs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render an equation to a target format.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<p>equation : Equation The equation to render. format : str Target format: ‘jax’, ‘numpy’, ‘python’, ‘julia’, ‘fortran’, ‘latex’. local_dict : dict Dictionary of local symbols/functions for parsing. user_functions : dict Custom function mappings for the printer. replace : dict Symbol replacements {old_name: new_name}. remove : list Symbols to replace with zero. inline_funcs : dict, optional Dictionary mapping function name -&gt; (arg_names, body_expr) for inlining custom functions. The body_expr should be a sympy expression. Example: {‘Sigm’: ([‘v’], 2<em>e0/(1 + exp(r</em>(v0 - v))))} **kwargs Additional arguments passed to parse_eq.</p>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<p>str The rendered equation string.</p>
+</section>
+</section>
+<section id="tvbo.export.code.render_expression" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.export.code.render_expression">render_expression</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>export.code.render_expression(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    expression,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    infer_broadcasting<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a SymPy expression or string to target format code.</p>
+<p>Uses parse_eq for proper handling of indexed expressions and Sum/Product.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<p>expression : str or sympy.Expr The expression to render. format : str Target format (‘jax’, ‘numpy’, ‘julia’, ‘python’, etc.) user_functions : dict Custom function name mappings for the printer. These are also passed to parse_eq so they’re recognized as functions (not implicit multiplication). parameters : list of str, optional Parameter names to define as Symbols. These OVERRIDE SymPy built-in functions (e.g., ‘gamma’ becomes Symbol(‘gamma’), not the gamma function). infer_broadcasting : bool If True, analyze indexed expressions and automatically add broadcasting dimensions (e.g., rmse[i] -&gt; rmse[:, None] when used with a[i,j]). This enables mathematically correct notation to generate correct array code.</p>
 
 
+</section>
 </section>
 </section>
 </section>

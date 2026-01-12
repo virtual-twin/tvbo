@@ -1,9 +1,10 @@
 
 
-# GuckenheimerHolmes
-GuckenheimerHolmes
-
-## Equations
+## GuckenheimerHolmes
+Symmetric three-dimensional normal form near a triple zero eigenvalue illustrating
+mode interactions, heteroclinic cycles, and the onset of complicated dynamics in
+equivariant bifurcation problems. Tunable linear and quadratic interaction terms
+produce transitions between steady states, periodic orbits, and chaotic transients.
 
 
 ### State Equations
@@ -18,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

@@ -1,9 +1,8 @@
 
 
-# GrebogiMap
-GrebogiMap
-
-## Equations
+## GrebogiMap
+Two-dimensional map with chaotic transients and fractal basin boundaries; converges
+to one of two fixed points depending on initial condition.
 
 
 ### State Equations
@@ -15,7 +14,7 @@ x = - J_{0}*\cos{\left(\theta \right)}
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

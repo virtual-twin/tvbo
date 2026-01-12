@@ -1,9 +1,7 @@
 
 
-# MontbrioPazoRoxin
+## MontbrioPazoRoxin
 
-
-## Equations
 
 
 ### State Equations
@@ -15,7 +13,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

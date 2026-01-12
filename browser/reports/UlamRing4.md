@@ -1,9 +1,8 @@
 
 
-# UlamRing4
-UlamRing4
-
-## Equations
+## UlamRing4
+Four unidirectionally coupled quadratic maps on a ring using the classic Ulam map
+f(x)=2 - x^2 as local dynamics; higher N can be constructed analogously.
 
 
 ### State Equations
@@ -21,7 +20,7 @@ x_{3} = 2 - \left(eps*x_{2} + x_{3}*\left(1 - eps\right)\right)^{2}
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

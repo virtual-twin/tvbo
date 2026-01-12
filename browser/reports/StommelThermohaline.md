@@ -1,21 +1,20 @@
 
 
-# StommelThermohaline
-StommelThermohaline
-
-## Equations
+## StommelThermohaline
+Two-box thermohaline circulation model capturing temperature (T) and salinity (S)
+driven density contrasts leading to multiple equilibria in overturning strength.
 
 
 ### State Equations
 $$
-\frac{d}{d t} T = \eta_{1} - T - T*\left|{S - T}\right|
+\frac{d}{d t} T = \eta_{1} - T - T*\operatorname{abs}{\left(T - S \right)}
 $$
 $$
-\frac{d}{d t} S = \eta_{2} - S*\eta_{3} - S*\left|{S - T}\right|
+\frac{d}{d t} S = \eta_{2} - S*\eta_{3} - S*\operatorname{abs}{\left(T - S \right)}
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

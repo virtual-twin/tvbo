@@ -1,9 +1,8 @@
 
 
-# LorenzDiffusionless
-LorenzDiffusionless
-
-## Equations
+## LorenzDiffusionless
+Diffusionless variant of Lorenz-type flow supporting a pair of linked Malasoma
+strange attractors with fractal basin boundaries for typical parameter values.
 
 
 ### State Equations
@@ -18,7 +17,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|

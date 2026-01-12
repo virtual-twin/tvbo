@@ -1,9 +1,7 @@
 
 
-# GastSchmidtKnosche_SF
+## GastSchmidtKnosche_SF
 
-
-## Equations
 
 
 ### State Equations
@@ -21,7 +19,7 @@ $$
 $$
 
 
-## Parameters
+### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
