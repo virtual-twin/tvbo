@@ -74,18 +74,6 @@ dynamics:
       I_0:
         value: 0.382
         description: "[nA]. Effective external input"
-      J_N:
-        value: 0.15
-        description: "[nA] NMDA current"
-      J_I:
-        value: 1.0
-        description: "[nA] Local inhibitory current"
-      G:
-        value: 2.0
-        description: "Global coupling scaling"
-      lamda:
-        value: 0.0
-        description: "Inhibitory global coupling scaling"
       J_NMDA:
         value: 0.15
         description: "NMDA synaptic coupling"

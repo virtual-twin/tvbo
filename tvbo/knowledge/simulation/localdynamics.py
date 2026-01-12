@@ -226,9 +226,52 @@ def class2metadata(ontoclass, metadata):
             metadata.references.append(r.name)
 
 
-def update_parameters(metadata, ontoclass, verbose=0, **kwargs):
+def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
+    """
+    Update parameters from ontology.
+    
+    Parameters
+    ----------
+    metadata : Dynamics
+        Model metadata to update
+    ontoclass : owlready2.ThingClass
+        Ontology class
+    verbose : int
+        Verbosity level
+    only_used : bool
+        If True (default), only add parameters that are referenced in equations.
+        If False, add all parameters from ontology (legacy behavior).
+    **kwargs : dict
+        Parameter overrides
+    """
+    # Collect all symbols used in equations if only_used=True
+    used_symbols = set()
+    if only_used:
+        for eq_dict in [
+            getattr(metadata, 'parameters', {}),
+            getattr(metadata, 'state_variables', {}),
+            getattr(metadata, 'derived_variables', {}),
+            getattr(metadata, 'derived_parameters', {}),
+        ]:
+            for item in eq_dict.values():
+                if hasattr(item, 'equation') and item.equation and hasattr(item.equation, 'rhs'):
+                    # Parse equation to extract symbols
+                    from sympy.parsing.sympy_parser import parse_expr
+                    try:
+                        expr = parse_expr(str(item.equation.rhs))
+                        used_symbols.update(str(s) for s in expr.free_symbols)
+                    except:
+                        pass  # Skip unparseable equations
+
     for k, v in ontology.get_default_values(ontoclass, class_as_key=True).items():
         label = ontology.replace_suffix(k.label.first())
+
+        # Skip if only_used=True and this parameter isn't referenced in equations
+        if only_used and label not in used_symbols:
+            # Also check synonyms/symbols
+            if not any(syn in used_symbols for syn in (k.synonym + k.symbol)):
+                continue
+
         if range := ontology.get_range(k):
             lo, hi, step = range
             domain = tvbo_datamodel.Range(lo=lo, hi=hi, step=step)
