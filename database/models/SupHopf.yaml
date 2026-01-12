@@ -40,6 +40,8 @@ coupling_terms:
     name: c_pop0
   c_pop1:
     name: c_pop1
+  local_coupling:
+    name: local_coupling
 state_variables:
   x:
     name: x

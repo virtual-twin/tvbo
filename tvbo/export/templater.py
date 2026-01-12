@@ -24,7 +24,7 @@ TEMPLATES = templates.root
 
 
 def format_code(code, format="python", use_black=True, **kwargs):
-    if format in ["tvb", "python", "autodiff"]:
+    if format in ["tvb", "python", "autodiff", "jax", "numpy", "scipy", "tvboptim"]:
         code = autopep8.fix_code(code)
         if use_black:
             code = black.format_str(code, mode=black.FileMode(**kwargs))

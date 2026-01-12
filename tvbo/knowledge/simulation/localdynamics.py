@@ -1347,14 +1347,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
         if format == "tvb":
             template = templates.lookup.get_template("tvbo-tvb-model.py.mako")
 
-        elif format in ["python", "jax-python", "python-jax"]:
+        elif format in ["scipy", "python", "jax-python", "python-jax"]:
+            # scipy-compatible signature: func(y, t, param=val, ...)
             template = templates.lookup.get_template("tvbo-python-model.py.mako")
 
         elif format == "python-network":
             template = templates.lookup.get_template("tvbo-python-model.py.mako")
             kwargs.update({"coupling_as_argument": True})
 
-        elif format.lower() in ["autodiff", "jax"]:
+        elif format.lower() in ["autodiff", "jax", "numpy", "tvboptim"]:
+            # standard signature: dfun(current_state, t, cX, _p)
             template = templates.lookup.get_template("tvbo-jax-dfuns.py.mako")
 
         elif format == "julia":
@@ -1375,7 +1377,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         else:
             raise ValueError(f"Format {format} not supported.")
 
-        rendered_code = template.render(model=self, jax="jax" in format, **kwargs)
+        rendered_code = template.render(model=self, format=format, jax="jax" in format, **kwargs)
         return templater.format_code(rendered_code, format=format)
 
     def display_markdown(self, format="tvb", **kwargs):
