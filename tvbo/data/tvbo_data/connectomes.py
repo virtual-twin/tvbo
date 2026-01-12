@@ -123,6 +123,18 @@ class Network(tvbo_datamodel.Network):
                         else None
                     )
                     n_nodes = w_arr.shape[0]
+                    
+                    # Handle mismatched weight/length matrix sizes
+                    if l_arr is not None and l_arr.shape[0] != n_nodes:
+                        import warnings
+                        warnings.warn(
+                            f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
+                            f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
+                            f"Using minimum size."
+                        )
+                        n_nodes = min(n_nodes, l_arr.shape[0])
+                        w_arr = w_arr[:n_nodes, :n_nodes]
+                        l_arr = l_arr[:n_nodes, :n_nodes]
 
                     # Create nodes
                     nodes = [
