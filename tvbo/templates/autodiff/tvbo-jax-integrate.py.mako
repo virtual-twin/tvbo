@@ -98,7 +98,7 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
 
     cX = jax.vmap(cfun, in_axes=(None, -1, -1, None, None, None), out_axes=-1)(weights, history, current_state, params_cfun, delay_indices, t)
 
-    dX0 = dfun(current_state, cX, params_dfun, t)
+    dX0 = dfun(current_state, t, cX, params_dfun)
 
     X = current_state
 
@@ -120,7 +120,7 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     % endif
 
     # Calculate derivative ${k}
-    d${k} = dfun(${k}, cX, params_dfun, t)
+    d${k} = dfun(${k}, t, cX, params_dfun)
     % endfor
     # Calculate the state change dX
     dX = ${integration.update_expression.equation.rhs}

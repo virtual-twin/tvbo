@@ -46,7 +46,8 @@ derived_variables:
 coupling_terms:
     c_glob:
         name: c_glob
-
+    local_coupling:
+        name: local_coupling
 state_variables:
     theta:
         name: theta

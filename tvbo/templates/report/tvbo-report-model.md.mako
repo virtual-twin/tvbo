@@ -26,7 +26,7 @@ derived_parameters = [
     for p in model.derived_parameters.values()
 ]
 
-functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
+functions = [Eq(Function(f.name)(*[Symbol(arg.name if hasattr(arg, 'name') else str(arg)) for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
 %>
 
 ${'## ' + model.name}
