@@ -52,7 +52,7 @@ from tvb.basic.neotraits.api import NArray, Final, List, Range
 class ${model_name}(ModelNumbaDfun):
     """
     ${model.name} model generated from TVBO specification.
-    
+
     ${model.description or ''}
     """
 
