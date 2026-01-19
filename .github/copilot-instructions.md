@@ -47,6 +47,38 @@ Is this code specific to generated output syntax?
 3. **MVP First:** No fallbacks, no try-except blocks. Code should work as expected; if it breaks, we debug.
 4. **Readable:** Clear variable names, simple control flow, no unnecessary abstractions.
 
+## Schema-Driven Development (CRITICAL)
+
+**100% Trust the Schema. No Manual Unpacking.**
+
+Both Odoo models and Pydantic models are generated from the same LinkML schema. This means:
+
+1. **No Field-by-Field Unpacking:** Never write code like:
+   ```python
+   # WRONG - manual unpacking
+   if record.parameters:
+       data['parameters'] = record.parameters.read()
+   if record.state_variables:
+       data['state_variables'] = record.state_variables.read()
+   # ... more fields
+   ```
+
+2. **Use Generic Schema-Driven Resolution:** Instead, iterate over the schema:
+   ```python
+   # CORRECT - schema-driven, adapts automatically when schema changes
+   for field_name, field_obj in record._fields.items():
+       if field_obj.type == 'many2one':
+           data[field_name] = resolve_record(getattr(record, field_name))
+       elif field_obj.type == 'many2many':
+           data[field_name] = [resolve_record(r) for r in getattr(record, field_name)]
+   ```
+
+3. **Breaks Are Good:** If schema changes and code breaks, that's a FEATURE not a bug. Silent failures hide schema inconsistencies.
+
+4. **Zero Redundancy:** If both Odoo and Pydantic have the same field structure, conversion should be automatic - not manually coded for each field.
+
+5. **Single Source of Truth:** The LinkML schema (`schema/tvbo_datamodel.yaml`) defines everything. Code adapts to schema, not the other way around.
+
 ## Declarative Data Access Principles
 
 **Data access should mirror YAML schema structure.** Users access results using the same path as the YAML definition:
