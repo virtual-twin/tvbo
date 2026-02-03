@@ -12,36 +12,28 @@ TVB-GO Module
 This module provides utilities for working with TVB and the Gene Ontology.
 
 .. moduleauthor:: Leon K. Martin
-
-Attributes:
------------
-import json
-import os
-from os.path import abspath, dirname, join
-from urllib.request import urlopen, urlretrieve
-from urllib.request import urlretrieve
-import goatools
-import networkx as nx
-import numpy as np
-import pandas as pd
-import wget
-from goatools import obo_parser
-
-Functions:
-----------
 """
 import json
+import logging
 import os
+import sys
 from os.path import abspath, dirname, join
 from urllib.request import urlopen, urlretrieve
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-import pybel
-from goatools import obo_parser
-import logging
-import sys
+
+try:
+    import pybel
+    from goatools import obo_parser
+    import wget
+except ImportError as e:
+    raise ImportError(
+        "TVB-GO module requires knowledge extras. Install with:\n"
+        "  pip install tvbo[knowledge]\n"
+        "Or: pip install goatools pybel wget"
+    ) from e
 
 from tvbo.knowledge import constants
 

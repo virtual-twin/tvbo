@@ -44,10 +44,24 @@ from typing import List, Dict, Tuple, Optional, Union, Any
 import numpy as np
 import owlready2
 import pandas as pd
-import simple_colors as sc
-from fuzzywuzzy import process
 from owlready2 import *
 from tvbo.utils import Bunch
+
+try:
+    import simple_colors as sc
+    from fuzzywuzzy import process as fuzz_process
+except ImportError:
+    sc = None
+    fuzz_process = None
+
+
+def _require_fuzzy():
+    if fuzz_process is None:
+        raise ImportError(
+            "Fuzzy matching requires knowledge extras. Install with:\n"
+            "  pip install tvbo[knowledge]\n"
+            "Or: pip install fuzzywuzzy python-Levenshtein"
+        )
 
 from tvbo import knowledge, parse
 from tvbo.datamodel import tvbo_datamodel
@@ -1381,7 +1395,8 @@ def find_best_fuzzy_match(target, cls_list) -> owlready2.ThingClass:
         return onto[min(filtered_list, key=len)]
 
     # If no specific match, use fuzzy matching
-    best_match, _ = process.extractOne(target, string_list)
+    _require_fuzzy()
+    best_match, _ = fuzz_process.extractOne(target, string_list)
     return onto["best_match"]
 
 
