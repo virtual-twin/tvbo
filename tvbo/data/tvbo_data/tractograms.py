@@ -3,8 +3,16 @@ from os.path import basename, isfile
 
 import nibabel as nib
 import numpy as np
-from dipy.io.stateful_tractogram import Space, StatefulTractogram
-from dipy.io.streamline import load_tractogram, save_tractogram
+
+try:
+    from dipy.io.stateful_tractogram import Space, StatefulTractogram
+    from dipy.io.streamline import load_tractogram, save_tractogram
+except ImportError as e:
+    raise ImportError(
+        "Tractogram support requires 'dipy'. Install with:\n"
+        "  pip install tvbo[data]\n"
+        "Or: pip install dipy"
+    ) from e
 
 from tvbo.data.tvbo_data.atlases import atlas_data
 from tvbo.data.tvbo_data.connectomes import connectome_data

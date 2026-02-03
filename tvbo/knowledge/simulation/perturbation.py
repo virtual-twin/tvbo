@@ -1,8 +1,21 @@
 import os
 
-import librosa
 import matplotlib.pyplot as plt
 import numpy as np
+
+try:
+    import librosa
+except ImportError:
+    librosa = None
+
+
+def _require_librosa():
+    if librosa is None:
+        raise ImportError(
+            "Audio features require 'librosa'. Install with:\n"
+            "  pip install tvbo[audio]\n"
+            "Or: pip install librosa"
+        )
 import owlready2 as owl
 from scipy.interpolate import UnivariateSpline
 from sympy import Symbol, lambdify, pycode, sympify
@@ -50,6 +63,7 @@ def class2metadata(ontoclass):
 def load_acoustic_stimulus_from_audiofile(
     file_path, sampling_rate=1000, duration="full"
 ):
+    _require_librosa()
     # Load the audio file
     audio, sr = librosa.load(file_path, sr=None)
 
