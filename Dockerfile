@@ -3,12 +3,16 @@ FROM python:3.13-slim
 
 LABEL maintainer="Leon Martin <leon.martin@bih-charite.de>"
 
+# Build AUTO-07p (requires Fortran compiler)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ gfortran make git perl \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone --depth 1 https://github.com/auto-07p/auto-07p /auto-07p \
+    && cd /auto-07p && ./configure && make && pip install . \
+    && rm -rf /auto-07p/.git /auto-07p/doc /auto-07p/demos \
+    && apt-get purge -y gcc g++ make \
+    && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
-
-RUN git clone https://github.com/auto-07p/auto-07p /auto-07p && \
-    cd /auto-07p && ./configure && make && pip install .
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo tvboptim
