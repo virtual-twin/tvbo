@@ -25,7 +25,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: virtualtwin/tvbo
+          images: leonmartin2/tvbo
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
