@@ -15,6 +15,12 @@
 pip install tvbo
 ```
 
+### Platform Notes
+
+**Intel Mac Users (x86_64):** Due to JAX dropping Intel Mac support in version 0.5.0+, you need Python 3.9-3.12. The package will automatically install JAX 0.4.28 which is the last version supporting Intel Macs.
+
+**Apple Silicon Mac Users:** Python ≥3.10 is supported. You'll get the latest compatible JAX version automatically.
+
 ## 📖 Quick Start
 
 ### Example: Lorenz Attractor Simulation
