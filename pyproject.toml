@@ -72,7 +72,7 @@ dependencies = [
     "pydot >=3.0.3",
 
     # ML
-    "jax >=0.6.0",
+    "jax >=0.4.28",
     "equinox >=0.11.12",
 
     # Templating
