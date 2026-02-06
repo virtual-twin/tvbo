@@ -3,6 +3,8 @@
 Comprehensive comparison between schema-driven BOLD and TVB native implementation.
 Tests that our corrected HRF (time-reversed) produces the same results as TVB.
 """
+import pytest
+pytest.importorskip("tvb")
 
 import sys
 import numpy as np
