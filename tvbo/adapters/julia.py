@@ -79,8 +79,6 @@ def install_julia_package(package_name: str, Main=None, update: bool = False):
         Main: Julia Main module (will be retrieved if None)
         update: If True, update the package to the latest version
     """
-    global _installed_packages
-
     if Main is None:
         _, Main = get_julia()
 
