@@ -8,6 +8,9 @@ Tests:
 4. Exploration grid identity
 5. Optimization convergence comparison
 """
+import pytest
+pytest.importorskip("tvboptim")
+
 import os
 os.environ['XLA_FLAGS'] = '--xla_force_host_platform_device_count=8'
 
