@@ -27,7 +27,7 @@ Functions:
 import operator
 import pandas as pd
 from tvbo.data import db
-import pypandoc
+
 
 
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
@@ -147,8 +147,6 @@ def save_latex(conf, fpath):
 ##############
 # References #
 ##############
-from pybtex.database import parse_file
-
 
 def get_citation(citation_key) -> str:
     """Retrieve a BibTeX entry by its citation key and render it as an APA-style plain text citation.
@@ -206,6 +204,7 @@ def get_citation(citation_key) -> str:
 
 
 def to_pdf(render, outputfile):
+    import pypandoc
     pypandoc.convert_text(
         render,
         "pdf",

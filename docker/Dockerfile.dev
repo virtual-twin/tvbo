@@ -1,5 +1,8 @@
 # Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 
+# TVBO API container for LOCAL DEVELOPMENT
+# Does NOT install tvbo - it will be mounted and installed in editable mode
+
 FROM julia:latest AS julia
 FROM python:3.13-slim
 
@@ -18,9 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y gcc g++ make && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages
+# Install Python dependencies (but NOT tvbo - we'll mount and pip install -e it)
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo[julia] tvboptim
+    && pip install --no-cache-dir jupyterlab uvicorn fastapi tvboptim juliacall pyjulia
 
 ENV AUTO_DIR=/auto-07p
 WORKDIR /app
