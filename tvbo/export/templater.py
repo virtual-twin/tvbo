@@ -8,7 +8,6 @@
 import re
 from os.path import join
 
-import autopep8
 import black
 import numpy as np
 import sympy as sp
@@ -24,8 +23,15 @@ TEMPLATES = templates.root
 
 
 def format_code(code, format="python", use_black=True, **kwargs):
+    """Format code using black for Python variants.
+    
+    Args:
+        code: Source code string to format
+        format: Language/variant (python, jax, numpy, scipy, tvboptim)
+        use_black: Whether to apply black formatting (default True)
+        **kwargs: Additional black.FileMode options (line_length, etc.)
+    """
     if format in ["tvb", "python", "autodiff", "jax", "numpy", "scipy", "tvboptim"]:
-        code = autopep8.fix_code(code)
         if use_black:
             code = black.format_str(code, mode=black.FileMode(**kwargs))
     return code

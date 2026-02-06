@@ -11,7 +11,11 @@ This module contains helper functions for interacting with the TVBO ontology.
 import json
 
 import owlready2 as owl
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
 
 from tvbo.knowledge import ontology
 

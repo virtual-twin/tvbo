@@ -10,7 +10,11 @@ import os
 from collections import namedtuple
 
 from linkml_runtime.loaders import yaml_loader
-from pybtex.database import parse_file
+
+try:
+    from pybtex.database import parse_file
+except ImportError:
+    parse_file = None  # pybtex is optional (docs extra)
 
 from tvbo import parse
 
@@ -59,4 +63,9 @@ def load_study(citationkey: str):
 
 
 def load_bibliography():
+    if parse_file is None:
+        raise ImportError(
+            "pybtex is required for bibliography support. "
+            "Install it with: pip install tvbo[docs]"
+        )
     return parse_file(bib_file)

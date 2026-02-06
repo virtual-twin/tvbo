@@ -1,6 +1,10 @@
 from os.path import basename, dirname, join
 
-import nibabel as nib
+try:
+    import nibabel as nib
+except ImportError:
+    nib = None  # nibabel is optional (neuroimaging data support)
+
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout
@@ -8,7 +12,11 @@ from linkml_runtime.dumpers import yaml_dumper
 from linkml_runtime.loaders import yaml_loader
 
 from scipy.ndimage import center_of_mass
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
 
 from tvbo.data.tvbo_data import ATLAS_DIR, bids_utils
 from tvbo.datamodel import tvbo_datamodel
@@ -98,6 +106,8 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
     @property
     def volume(self):
+        if nib is None:
+            raise ImportError("nibabel is required for neuroimaging data. Install with: pip install nibabel")
         if self.name == "wholebrain":
             return nib.Nifti1Image(np.zeros((256, 256, 256)), np.eye(4))
         vpath = self._find_volume_path()

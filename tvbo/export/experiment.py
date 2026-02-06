@@ -10,7 +10,11 @@ from os.path import join
 import jax
 import jax.numpy as jnp
 import numpy as np
-from lems.base.util import validate_lems
+
+try:
+    from lems.base.util import validate_lems
+except ImportError:
+    validate_lems = None  # PyLEMS is optional (neuroml extra)
 
 from tvbo import templates
 from tvbo.data.tvbo_data.connectomes import Network
@@ -1191,7 +1195,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         file_prefix = self.get_experiment_file_prefix()
         lems_path = join(dir, f"{file_prefix}_simulation.xml")
         self.to_lems().export_to_file(lems_path)
-        validate_lems(lems_path)
+        if validate_lems is not None:
+            validate_lems(lems_path)
         return lems_path
 
     def to_lems(

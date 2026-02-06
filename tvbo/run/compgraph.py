@@ -1,7 +1,11 @@
 import numpy as np
 from scipy.integrate import odeint
 from scipy.interpolate import interp1d
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
 
 from tvbo.knowledge.simulation.observation import expand_to_4d
 from tvbo.data.types import TimeSeries

@@ -40,6 +40,10 @@ dependencies = [
 
     # Templating
     "mako>=1.3.10",
+    "black",
+
+    # BIDS dataset support
+    "pybids>=0.16.0",
 ]
 
 [project.optional-dependencies]
@@ -63,35 +67,19 @@ knowledge = [
 audio = ["librosa>=0.10.2"]
 
 # Documentation & reports
-docs = [
-    "pypandoc>=1.15",
-    "pybtex>=0.24.0",
-    "pypdf>=5.1.0",
-    "autopep8>=2.3.2",
-    "black>=25.9.0",
-]
+docs = ["pypandoc>=1.15", "pybtex>=0.24.0", "pypdf>=5.1.0", "black>=25.9.0"]
 
 # Julia integration
 julia = ["julia>=0.5.7"]
 
 # API server
-api = [
-    "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
-    "docker>=7.1.0",
-]
+api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 
 # TVB integration
-tvb = [
-    "tvb-library",
-    "tvb-framework",
-    "tvb-data",
-]
+tvb = ["tvb-library", "tvb-framework", "tvb-data"]
 
 # Full install (all features)
-all = [
-    "tvbo[neuroml,data,knowledge,audio,docs,api]",
-]
+all = ["tvbo[neuroml,data,knowledge,audio,docs,api]"]
 
 [project.urls]
 homepage = "https://virtual-twin.github.io/tvbo/"
@@ -110,7 +98,6 @@ path = "tvbo/__init__.py"
 
 [tool.hatch.envs.dev]
 dependencies = [
-    "black",
     "flake8",
     "pytest",
     "pytest-cov",
