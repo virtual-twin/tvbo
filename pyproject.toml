@@ -78,8 +78,11 @@ api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 # TVB integration
 tvb = ["tvb-library", "tvb-framework", "tvb-data"]
 
+# TVB optimization (JAX-based simulation & optimization)
+tvboptim = ["tvboptim"]
+
 # Full install (all features)
-all = ["tvbo[neuroml,data,knowledge,audio,docs,api]"]
+all = ["tvbo[neuroml,data,knowledge,audio,docs,api,tvb,tvboptim]"]
 
 [project.urls]
 homepage = "https://virtual-twin.github.io/tvbo/"
