@@ -18,6 +18,7 @@ project:
     - datamodel/**/*.qmd
     - Usage/*.qmd
     - Interoperability/**/*.qmd
+    - Developer/*.md
     - "!_archive/*"
   output-dir: _site
 
@@ -96,6 +97,8 @@ website:
                   - text: "OpenMINDS"
                   - text: "OpenMINDS Interoperability"
                     href: Interoperability/OpenMINDS.qmd
+            - text: "Developer"
+              href: Developer/contributing.md
 
         tools:
             - icon: github
