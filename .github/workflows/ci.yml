@@ -23,8 +23,28 @@ jobs:
             - name: Style warnings (non-blocking)
               run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+    compat:
+        name: Python ${{ matrix.python-version }}
+        needs: lint
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  cache: "pip"
+            - run: pip install -e . && pip install pytest
+            - name: Core tests
+              env:
+                  JAX_PLATFORMS: cpu
+              run: pytest -q tests/test_model_loading.py tests/test_graph.py tests/functional/test_dynamics_basic.py
+
     test:
-        name: Test
+        name: Full tests
         needs: lint
         runs-on: ubuntu-latest
         container:
@@ -38,7 +58,7 @@ jobs:
               run: pytest -q --ignore=tests/test_docs.py
 
     test-docs:
-        name: Test documentation
+        name: Doc tests
         needs: lint
         if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
@@ -60,7 +80,7 @@ jobs:
 
     package:
         name: Build package
-        needs: [test]
+        needs: [compat, test]
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
         steps:
