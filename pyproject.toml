@@ -91,8 +91,8 @@ tvb = ["tvb-library", "tvb-framework", "tvb-data"]
 # TVB optimization (JAX-based simulation & optimization)
 tvboptim = ["tvboptim @ git+https://github.com/virtual-twin/tvboptim.git"]
 
-# Full install (all features)
-all = ["tvbo[neuroml,data,knowledge,audio,docs,api,tvb,tvboptim]"]
+# Full install (all features except docs which requires private repos)
+all = ["tvbo[neuroml,data,knowledge,audio,api,tvb,tvboptim]"]
 
 [project.urls]
 homepage = "https://virtual-twin.github.io/tvbo/"
