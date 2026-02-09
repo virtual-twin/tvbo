@@ -24,26 +24,13 @@ jobs:
               run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     test:
-        name: Test (Python ${{ matrix.python-version }})
+        name: Test
         needs: lint
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                python-version: ["3.11", "3.12", "3.13"]
+        container:
+            image: ghcr.io/virtual-twin/tvbo:${{ (github.head_ref || github.ref_name) == 'main' && 'latest' || (github.head_ref || github.ref_name) }}
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v6
-              with:
-                  python-version: ${{ matrix.python-version }}
-                  cache: "pip"
-
-            - name: Install tvbo
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install ".[all]"
-                  pip install pytest pytest-cov nbformat
-
             - name: Run tests
               env:
                   JAX_PLATFORMS: cpu
@@ -51,28 +38,20 @@ jobs:
               run: pytest -q --ignore=tests/test_docs.py
 
     test-docs:
-        name: Test documentation notebooks
+        name: Test documentation
         needs: lint
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
+        container:
+            image: ghcr.io/virtual-twin/tvbo:${{ (github.head_ref || github.ref_name) == 'main' && 'latest' || (github.head_ref || github.ref_name) }}
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v6
-              with:
-                  python-version: "3.12"
-                  cache: "pip"
-
             - name: Install Quarto
               uses: quarto-dev/quarto-actions/setup@v2
-
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
-            - name: Install tvbo + doc deps
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install ".[all,docs]"
-                  pip install pytest nbformat jupyter
-
+            - name: Install doc dependencies
+              run: pip install ".[docs]"
             - name: Run doc tests
               env:
                   JAX_PLATFORMS: cpu
@@ -81,7 +60,7 @@ jobs:
 
     package:
         name: Build package
-        needs: [test, test-docs]
+        needs: [test]
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
         steps:
