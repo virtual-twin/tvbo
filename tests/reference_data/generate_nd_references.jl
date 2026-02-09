@@ -240,4 +240,171 @@ end
 println("  ✓ heterogeneous_kuramoto_reference.h5")
 
 
-println("\n=== All 5 references generated ===")
+
+# =============================================================================
+# Example 6: Cascading Failure (Component Callbacks)
+# https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/
+# =============================================================================
+println("=== Generating: cascading_failure ===")
+
+using DiffEqCallbacks
+
+function swing_equation(dv, v, esum, p, t)
+    P, I, γ = p
+    dv[1] = v[2]
+    dv[2] = P - γ * v[2] + esum[1]
+    dv[2] = dv[2] / I
+    nothing
+end
+vertex_cf = VertexModel(f=swing_equation, g=1, sym=[:δ, :ω], psym=[:P_ref, :I=>1, :γ=>0.1])
+
+function simple_edge(e, v_s, v_d, (K,), t)
+    e[1] = K * sin(v_s[1] - v_d[1])
+end
+edge_cf = EdgeModel(; g=AntiSymmetric(simple_edge), outsym=[:P], psym=[:K=>1.63, :limit=>1])
+
+g_cf = SimpleGraph([0 1 1 0 1;
+                     1 0 1 1 0;
+                     1 1 0 1 0;
+                     0 1 1 0 1;
+                     1 0 0 1 0])
+nw_cf = Network(g_cf, vertex_cf, edge_cf; dealias=true)
+
+set_default!(nw_cf, VIndex(1, :P_ref), -1.0)
+set_default!(nw_cf, VIndex(2, :P_ref),  1.5)
+set_default!(nw_cf, VIndex(3, :P_ref), -1.0)
+set_default!(nw_cf, VIndex(4, :P_ref), -1.0)
+set_default!(nw_cf, VIndex(5, :P_ref),  1.5)
+
+u0_cf = find_fixpoint(nw_cf)
+set_defaults!(nw_cf, u0_cf)
+
+# Component callbacks
+cond_cf = ComponentCondition([:P], [:limit]) do u, p, t
+    abs(u[:P]) - p[:limit]
+end
+affect_cf = ComponentAffect([], [:K]) do u, p, ctx
+    p[:K] = 0
+end
+edge_cb_cf = ContinuousComponentCallback(cond_cf, affect_cf)
+for i in 1:ne(g_cf)
+    set_callback!(nw_cf[EIndex(i)], edge_cb_cf)
+end
+trip_first_cf = PresetTimeComponentCallback(1.0, affect_cf)
+add_callback!(nw_cf[EIndex(5)], trip_first_cf)
+
+s_cf = NWState(nw_cf)
+prob_cf = ODEProblem(nw_cf, s_cf, (0.0, 6.0))
+sol_cf = solve(prob_cf, Tsit5(); saveat=0.01)
+
+N_cf = nv(g_cf)
+h5open(joinpath(outdir, "cascading_failure_reference.h5"), "w") do f
+    f["t"] = Array(sol_cf.t); f["u"] = Array(sol_cf)
+    f["x0"] = uflat(s_cf)
+    f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_cf)))
+    attrs(f)["N"] = N_cf; attrs(f)["n_sv"] = 2
+    attrs(f)["dt"] = 0.01; attrs(f)["duration"] = 6.0
+end
+println("  ✓ cascading_failure_reference.h5")
+
+
+# =============================================================================
+# Example 7: Stress on Truss (Heterogeneous 2D, observed functions)
+# https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/
+# =============================================================================
+println("=== Generating: stress_on_truss ===")
+
+using LinearAlgebra: norm
+
+function fixed_g(pos, x, p, t)
+    pos .= p
+end
+vertex_fix = VertexModel(g=fixed_g, psym=[:xfix, :yfix], outsym=[:x, :y], ff=NoFeedForward())
+
+function free_f(dx, x, Fsum, (M, γ, g), t)
+    v = view(x, 1:2)
+    dx[1:2] .= (Fsum .- γ .* v) ./ M
+    dx[2] -= g
+    dx[3:4] .= v
+    nothing
+end
+vertex_free = VertexModel(f=free_f, g=3:4, sym=[:vx=>0, :vy=>0, :x, :y],
+                          psym=[:M=>10, :γ=>200, :g=>9.81], insym=[:Fx, :Fy])
+
+function edge_g!(F, pos_src, pos_dst, (K, L), t)
+    dx = pos_dst[1] - pos_src[1]
+    dy = pos_dst[2] - pos_src[2]
+    d = sqrt(dx^2 + dy^2)
+    Fabs = K * (L - d)
+    F[1] = Fabs * dx / d
+    F[2] = Fabs * dy / d
+    nothing
+end
+function observedf(obsout, u, pos_src, pos_dst, (K, L), t)
+    dx = pos_dst[1] - pos_src[1]
+    dy = pos_dst[2] - pos_src[2]
+    d = sqrt(dx^2 + dy^2)
+    obsout[1] = K * (L - d)
+    nothing
+end
+beam = EdgeModel(g=AntiSymmetric(edge_g!), psym=[:K=>0.5e6, :L], outsym=[:Fx, :Fy],
+                 obsf=observedf, obssym=[:Fabs])
+
+N_tr = 5
+dx_tr = 1.0
+shift_tr = 0.2
+g_tr = SimpleGraph(2*N_tr + 1)
+for i in 1:N_tr
+    add_edge!(g_tr, i, i+N_tr)
+    if i < N_tr
+        add_edge!(g_tr, i+1, i+N_tr); add_edge!(g_tr, i, i+1); add_edge!(g_tr, i+N_tr, i+N_tr+1)
+    end
+end
+add_edge!(g_tr, 2*N_tr, 2*N_tr+1)
+
+pos0_tr = zeros(Float64, 2*N_tr+1, 2)
+for i in 1:N_tr
+    pos0_tr[i, 1] = (i-1)*dx_tr;  pos0_tr[i, 2] = 0.0
+    pos0_tr[i+N_tr, 1] = i*dx_tr + shift_tr;  pos0_tr[i+N_tr, 2] = 1.0
+end
+pos0_tr[2*N_tr+1, 1] = N_tr*dx_tr + 1.0;  pos0_tr[2*N_tr+1, 2] = -1.0
+
+fixed_tr = [1, 4]
+
+verts_tr = VertexModel[vertex_free for _ in 1:nv(g_tr)]
+for i in fixed_tr
+    verts_tr[i] = vertex_fix
+end
+nw_tr = Network(g_tr, verts_tr, beam)
+
+s_tr = NWState(nw_tr)
+for i in 1:nv(g_tr)
+    if i in fixed_tr
+        s_tr.p.v[i, :xfix] = pos0_tr[i, 1]
+        s_tr.p.v[i, :yfix] = pos0_tr[i, 2]
+    else
+        s_tr.v[i, :x] = pos0_tr[i, 1]
+        s_tr.v[i, :y] = pos0_tr[i, 2]
+    end
+end
+for (i, e) in enumerate(edges(g_tr))
+    s_tr.p.e[i, :L] = norm(pos0_tr[src(e), :] - pos0_tr[dst(e), :])
+end
+
+s_tr.p.v[11, :M] = 200
+s_tr.p.v[11, :γ] = 100
+
+prob_tr = ODEProblem(nw_tr, s_tr, (0.0, 12.0))
+sol_tr = solve(prob_tr, Tsit5(); saveat=0.01)
+
+h5open(joinpath(outdir, "stress_on_truss_reference.h5"), "w") do f
+    f["t"] = Array(sol_tr.t); f["u"] = Array(sol_tr)
+    f["x0"] = uflat(s_tr)
+    f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_tr)))
+    attrs(f)["N"] = nv(g_tr); attrs(f)["n_sv_free"] = 4; attrs(f)["n_fixed"] = length(fixed_tr)
+    attrs(f)["dt"] = 0.01; attrs(f)["duration"] = 12.0
+end
+println("  ✓ stress_on_truss_reference.h5")
+
+
+println("\n=== All 7 references generated ===")

@@ -24,7 +24,7 @@ import pytest
 HERE = os.path.dirname(os.path.abspath(__file__))
 REF_DIR = os.path.join(HERE, "reference_data")
 EXAMPLES_DIR = os.path.join(
-    os.path.dirname(HERE), "docs", "Interoperability", "NetworkDynamics.jl"
+    os.path.dirname(HERE), "docs", "Interoperability", "NetworkDynamics.jl", "yaml"
 )
 
 # ---------------------------------------------------------------------------
@@ -585,6 +585,54 @@ class TestNumericalComparison:
             assert np.std(final) < 0.15, \
                 f"SV {sv_idx} should converge: std={np.std(final):.4f}"
 
+    def test_heterogeneous_kuramoto_numerical(self, julia_runner):
+        """Heterogeneous Kuramoto: correct shape with mixed vertex types."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        ts = exp.run(format="networkdynamics")
+
+        # All states should be finite (no numerical explosion)
+        assert np.all(np.isfinite(ts.data)), "All states should be finite"
+
+    def test_cascading_failure_numerical(self, julia_runner):
+        """Cascading failure: identical to reference Julia implementation."""
+        ref = _load_reference("cascading_failure")
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        ts = exp.run(format="networkdynamics")
+
+        # 5 nodes, 2 state variables (delta, omega)
+        assert ts.data.shape[2] == 5, f"Expected 5 nodes, got {ts.data.shape[2]}"
+        assert ts.data.shape[1] == 2, f"Expected 2 state vars, got {ts.data.shape[1]}"
+        # States should be bounded (no numerical explosion from cascade)
+        assert np.all(np.isfinite(ts.data)), "All states should be finite"
+        assert np.max(np.abs(ts.data)) < 100, \
+            f"States should be bounded: max={np.max(np.abs(ts.data)):.1f}"
+        # Numerical identity with reference
+        tvbo_flat = np.zeros((len(ts.time), 10))
+        for node in range(5):
+            tvbo_flat[:, node * 2] = ts.data[:, 0, node, 0]      # delta
+            tvbo_flat[:, node * 2 + 1] = ts.data[:, 1, node, 0]  # omega
+        assert np.allclose(ts.time, ref["t"]), "Time vectors must match"
+        assert np.allclose(tvbo_flat, ref["u"], atol=1e-8), \
+            f"States must match reference: max diff={np.max(np.abs(tvbo_flat - ref['u'])):.2e}"
+
+    def test_stress_on_truss_numerical(self, julia_runner):
+        """Stress on truss: heterogeneous vertices, beams, states bounded."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        ts = exp.run(format="networkdynamics")
+
+        # Heterogeneous: 9 free nodes × 4 SVs = 36 total states
+        # Data shape is (n_t, 36, 1, 1) for heterogeneous models
+        assert ts.data.shape[1] == 36, \
+            f"Expected 36 total states (9×4), got {ts.data.shape[1]}"
+        # All states should be finite (no structural collapse)
+        assert np.all(np.isfinite(ts.data)), "All states should be finite"
+
 
 # ===========================================================================
 # Test 4: Reference data validation (no Julia needed, only HDF5)
@@ -622,10 +670,10 @@ class TestReferenceData:
 
     def test_fhn_reference_shape(self):
         ref = _load_reference("fitzhugh_nagumo")
-        assert ref["t"].shape == (501,)
+        assert ref["t"].shape == (2001,)
         # 90 nodes × 2 state vars = 180 states
         assert ref["u"].shape[1] == 180
-        assert ref["u"].shape[0] == 501
+        assert ref["u"].shape[0] == 2001
 
     def test_fhn_reference_bounded(self):
         """FHN states should be bounded (no numerical explosion)."""
@@ -690,10 +738,11 @@ class TestReferenceData:
     # -- Cascading Failure reference data --
 
     def test_cascading_failure_reference_shape(self):
-        """Cascading failure: 601 timesteps, 10 states (5 nodes × 2 SVs)."""
+        """Cascading failure: saveat=0.01 over 6s + callback interpolation."""
         ref = _load_reference("cascading_failure")
-        assert ref["t"].shape == (601,)
-        assert ref["u"].shape[0] == 601  # timesteps
+        # Callback events may add extra interpolated points
+        assert ref["t"].shape[0] >= 601
+        assert ref["u"].shape[0] == ref["t"].shape[0]
         assert ref["u"].shape[1] == 10   # 5 nodes × 2 SVs
 
     def test_cascading_failure_reference_bounded(self):

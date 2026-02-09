@@ -67,6 +67,50 @@ def _extract_graph_data(n_nodes: int) -> dict:
     return {"adjacency": adj, "positions": pos, "weights": w}
 
 
+def _extract_edge_observables(
+    outsym_names: list[str],
+    coupling_observed: dict,
+) -> dict[str, np.ndarray]:
+    """Extract edge observables from Julia solution using outsym metadata.
+
+    For each symbol in outsym_names, extracts the per-edge time series
+    using ``eidxs(sol, :, :sym)``.
+
+    For coupling-defined observed variables (obssym), extracts those too.
+
+    Returns a dict mapping symbol names to arrays of shape ``(n_t, n_edges)``.
+    """
+    from tvbo.run.julia import run_julia_code
+
+    edge_data = {}
+    all_syms = list(outsym_names)
+
+    # Also collect obssym from coupling observed definitions
+    for obs_list in coupling_observed.values():
+        for obs in obs_list:
+            name = getattr(obs, 'name', str(obs))
+            if name not in all_syms:
+                all_syms.append(name)
+
+    if all_syms:
+        # Ensure SymbolicIndexingInterface is available for eidxs
+        try:
+            run_julia_code("import SymbolicIndexingInterface")
+        except Exception:
+            pass
+
+    for sym in all_syms:
+        try:
+            raw = run_julia_code(
+                f"hcat(sol(sol.t; idxs=eidxs(sol, :, :{sym})).u...)'"
+            )
+            edge_data[sym] = np.array(raw, dtype=float)
+        except Exception:
+            pass  # Symbol not available in solution — skip
+
+    return edge_data
+
+
 class NetworkDynamicsAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia).
 
@@ -136,12 +180,28 @@ class NetworkDynamicsAdapter(BaseAdapter):
         sv_names = ctx['sv_names']
         n_sv = ctx['n_sv']
         n_nodes = ctx['n_nodes']
-        data = solution_to_array(t, u, n_sv, n_nodes)
+        is_hetero = ctx.get('is_heterogeneous', False)
 
-        # 7. Extract graph data from Julia
+        if is_hetero:
+            # Heterogeneous models: nodes have different numbers of SVs,
+            # so the total state dimension != n_nodes * n_sv.
+            # Return raw (n_t, n_total_states, 1, 1) — no node/SV split.
+            n_t = len(t)
+            n_total = u.shape[0]
+            data = u.T[:, :, np.newaxis, np.newaxis]   # (n_t, n_states, 1, 1)
+        else:
+            data = solution_to_array(t, u, n_sv, n_nodes)
+
+        # 7. Extract edge observables from outsym metadata
+        edge_data = _extract_edge_observables(
+            ctx.get('outsym_names', []),
+            ctx.get('coupling_observed', {}),
+        )
+
+        # 8. Extract graph data from Julia
         graph_data = _extract_graph_data(n_nodes)
 
-        # 8. Restore original working directory
+        # 9. Restore original working directory
         os.chdir(original_cwd)
 
         dt = ctx['dt']
@@ -157,4 +217,5 @@ class NetworkDynamicsAdapter(BaseAdapter):
         ts.source_experiment = exp
         ts.sol = sol  # keep full Julia object for interactive use
         ts.graph = graph_data  # adjacency, positions, weights
+        ts.edge_data = edge_data  # edge observables from outsym/obssym
         return ts

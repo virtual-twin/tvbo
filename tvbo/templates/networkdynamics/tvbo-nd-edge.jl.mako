@@ -55,7 +55,7 @@ if coupling_outsym:
 elif outsym_names is None:
     outsym_names = ['coupling']
 
-# Observed variables
+# Observed variables (explicit definitions only - no auto-generation)
 coupling_obs = list((coupling.observed or {}).values()) if getattr(coupling, 'observed', None) else []
 has_observed = len(coupling_obs) > 0
 %>
@@ -85,13 +85,11 @@ function ${coupling.name}_obsf!(obsout, u, v_src, v_dst, (${", ".join(cparam_nam
 % for i, obs in enumerate(coupling_obs):
 <%
     obs_rhs = str(obs.equation.rhs).strip()
-    # Translate variable names to ND.jl v_src/v_dst indexing
-    obs_lines = obs_rhs.splitlines()
+    # Translate variable names directly without sympy processing to avoid rewriting
+    obs_code = obs_rhs.replace('x_j', 'v_src[1]').replace('x_i', 'v_dst[1]')
 %>
     ## ${obs.name}: ${obs.description or ''}
-% for line in obs_lines:
-    ${line.strip()}
-% endfor
+    obsout[${i+1}] = ${obs_code}
 % endfor
     nothing
 end

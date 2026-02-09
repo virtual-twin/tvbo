@@ -1,0 +1,63 @@
+---
+title: "Cascading Failure"
+subtitle: "Dynamic line tripping in a power grid with component callbacks"
+---
+
+Replicates the [NetworkDynamics.jl Cascading Failure tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) — swing equation power grid with dynamic line tripping. When power flow on a line exceeds its limit, the line is disconnected (K → 0), potentially triggering a cascade. Uses `find_fixpoint` for steady-state initial conditions and component-based callbacks for discrete events.
+
+Reference: Schäfer, B., Witthaut, D., Timme, M., & Latora, V. (2018). *Dynamically induced cascading failures in power grids.* Nature Communications, 9(1), 1–13.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/cascading_failure.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/cascading_failure.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/cascading_failure.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Run simulation — edge observables extracted automatically from outsym metadata
+ts = exp.run(format="networkdynamics")
+power_flows = ts.edge_data['P']
+
+# Plot edge power flows (matches ND.jl tutorial)
+fig, ax = plt.subplots(figsize=(10, 6))
+for i in range(power_flows.shape[1]):
+    ax.plot(ts.time, power_flows[:, i], label=f'Line {i+1}', lw=2)
+
+ax.set_xlabel('Time [s]', fontsize=12)
+ax.set_ylabel('Power Flow [p.u.]', fontsize=12)
+ax.set_title('Cascading Failure: Edge Power Flows', fontsize=14, fontweight='bold')
+ax.legend(loc='best', fontsize=9)
+ax.grid(True, alpha=0.3)
+ax.set_xlim(0, 6)
+plt.tight_layout()
+plt.show()
+```
+
+
+
+

@@ -1,0 +1,198 @@
+# =============================================================================
+# Cascading Failure in a Power Grid
+# =============================================================================
+# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/
+#
+# Swing equation power grid model with component-based callbacks for
+# line tripping. Demonstrates:
+#   - find_fixpoint for initial conditions
+#   - ContinuousComponentCallback for threshold-triggered line failure
+#   - PresetTimeComponentCallback for initial perturbation
+#
+# Reference: Schäfer et al. (2018). Dynamically induced cascading failures
+# in power grids. Nature Communications, 9(1), 1-13.
+# =============================================================================
+
+id: 105
+label: "Cascading Failure"
+description: >
+    Minimal example of dynamic cascading failure in a power grid.
+    Swing equation vertices with active power flow on edges. When the
+    power flow on a line exceeds its limit, the line trips (K → 0).
+    Uses find_fixpoint for steady-state initial conditions and
+    component-based callbacks for discrete events.
+    Recreates the NetworkDynamics.jl Cascading Failure tutorial.
+references:
+    - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/"
+    - "Schäfer, B., Witthaut, D., Timme, M., & Latora, V. (2018). Dynamically induced cascading failures in power grids. Nature Communications, 9(1), 1-13."
+
+# -- Local Dynamics ------------------------------------------------------------
+local_dynamics:
+    name: SwingEquation
+    label: "Swing equation"
+    description: >
+        Power grid node modeled by the swing equation.
+        dδ/dt = ω, dω/dt = (P_ref - γ·ω + esum) / I.
+        Output is the voltage angle δ (first state), used by edges for
+        power flow computation.
+    system_type: continuous
+    autonomous: true
+    parameters:
+        P_ref:
+            label: "Reference power"
+            symbol: "P_ref"
+            value: 0.0
+            unit: "p.u."
+            description: "Power setpoint: positive = generator, negative = load"
+        I:
+            label: "Inertia"
+            symbol: "I"
+            value: 1.0
+            unit: "s²"
+            description: "Rotational inertia of the generator/load"
+        gamma:
+            label: "Damping coefficient"
+            symbol: "γ"
+            value: 0.1
+            unit: "1/s"
+            description: "Droop / damping coefficient"
+    coupling_terms:
+        c_power:
+            description: "Aggregated active power flow from incident edges"
+    state_variables:
+        delta:
+            label: "Voltage angle"
+            symbol: "δ"
+            equation:
+                rhs: "omega"
+            initial_value: 0.0
+            unit: "rad"
+            coupling_variable: true
+            variable_of_interest: true
+        omega:
+            label: "Angular velocity deviation"
+            symbol: "ω"
+            equation:
+                rhs: "(P_ref - gamma * omega + c_power) / I"
+            initial_value: 0.0
+            unit: "rad/s"
+            variable_of_interest: true
+
+# -- Network -------------------------------------------------------------------
+network:
+    label: "5-node power grid"
+    description: >
+        Simple undirected graph with 5 nodes and 7 edges. Two generators
+        (nodes 2, 5) and three loads (nodes 1, 3, 4).
+    number_of_nodes: 5
+    number_of_regions: 5
+    edges:
+        # 7 undirected edges from adjacency matrix:
+        # [0,1,1,0,1; 1,0,1,1,0; 1,1,0,1,0; 0,1,1,0,1; 1,0,0,1,0]
+        - source: 0
+          target: 1
+        - source: 0
+          target: 2
+        - source: 0
+          target: 4
+        - source: 1
+          target: 2
+        - source: 1
+          target: 3
+        - source: 2
+          target: 3
+        - source: 3
+          target: 4
+
+    nodes:
+        - id: 0
+          label: "Load 1"
+          parameters:
+              - name: P_ref
+                value: -1.0
+        - id: 1
+          label: "Generator 1"
+          parameters:
+              - name: P_ref
+                value: 1.5
+        - id: 2
+          label: "Load 2"
+          parameters:
+              - name: P_ref
+                value: -1.0
+        - id: 3
+          label: "Load 3"
+          parameters:
+              - name: P_ref
+                value: -1.0
+        - id: 4
+          label: "Generator 2"
+          parameters:
+              - name: P_ref
+                value: 1.5
+
+    coupling:
+        ActivePower:
+            name: ActivePower
+            label: "Active power flow"
+            description: >
+                Antisymmetric active power line: P = K sin(δ_src - δ_dst).
+                Has additional parameter 'limit' for callback threshold.
+            delayed: false
+            parameters:
+                K:
+                    label: "Coupling strength"
+                    value: 1.63
+                    unit: "p.u."
+                    description: "Line susceptance / coupling constant"
+                limit:
+                    label: "Line power limit"
+                    value: 1.0
+                    unit: "p.u."
+                    description: "Threshold for line tripping"
+            pre_expression:
+                rhs: "K * sin(x_j - x_i)"
+                description: "Active power flow"
+            outsym:
+                - P
+
+# -- Events (callbacks) -------------------------------------------------------
+events:
+    edge_trip:
+        event_type: continuous
+        condition:
+            rhs: "abs(u[:P]) - p[:limit]"
+            description: "Triggers when power flow exceeds line limit"
+        condition_states:
+            - P
+        condition_parameters:
+            - limit
+        affect:
+            rhs: "p[:K] = 0"
+            description: "Trip the line by setting coupling to zero"
+        affect_parameters:
+            - K
+        target_component: all_edges
+
+    initial_perturbation:
+        event_type: preset_time
+        trigger_times:
+            - 1.0
+        affect:
+            rhs: "p[:K] = 0"
+            description: "Trip line 5 at t=1.0 to start cascade"
+        affect_parameters:
+            - K
+        target_component: "edge_5"
+
+# -- Execution -----------------------------------------------------------------
+execution:
+    find_fixpoint: true
+
+# -- Integration ---------------------------------------------------------------
+integration:
+    description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 6]"
+    method: Tsit5
+    step_size: 0.01
+    duration: 6.0
+    time_scale: "s"
