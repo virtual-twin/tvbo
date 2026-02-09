@@ -247,21 +247,33 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
     # Collect all symbols used in equations if only_used=True
     used_symbols = set()
     if only_used:
-        for eq_dict in [
+        from sympy.parsing.sympy_parser import parse_expr
+
+        # Build local_dict so that ALL names in the model are treated as plain
+        # Symbols.  Without this, sympy interprets 'e' as Euler's number (E)
+        # and 'I' as the imaginary unit, so they never appear as free_symbols
+        # and the corresponding parameters are silently dropped.
+        all_names: set[str] = set()
+        eq_dicts = [
             getattr(metadata, 'parameters', {}),
             getattr(metadata, 'state_variables', {}),
             getattr(metadata, 'derived_variables', {}),
             getattr(metadata, 'derived_parameters', {}),
-        ]:
+        ]
+        for eq_dict in eq_dicts:
+            all_names.update(str(k) for k in eq_dict.keys())
+        # Also include ontology parameter labels so they aren't shadowed
+        for k in ontology.get_default_values(ontoclass, class_as_key=True):
+            label = ontology.replace_suffix(k.label.first())
+            all_names.add(label)
+            all_names.update(k.synonym + k.symbol)
+        local_dict = {n: Symbol(n) for n in all_names}
+
+        for eq_dict in eq_dicts:
             for item in eq_dict.values():
                 if hasattr(item, 'equation') and item.equation and hasattr(item.equation, 'rhs'):
-                    # Parse equation to extract symbols
-                    from sympy.parsing.sympy_parser import parse_expr
-                    try:
-                        expr = parse_expr(str(item.equation.rhs))
-                        used_symbols.update(str(s) for s in expr.free_symbols)
-                    except:
-                        pass  # Skip unparseable equations
+                    expr = parse_expr(str(item.equation.rhs), local_dict=local_dict)
+                    used_symbols.update(str(s) for s in expr.free_symbols)
 
     for k, v in ontology.get_default_values(ontoclass, class_as_key=True).items():
         label = ontology.replace_suffix(k.label.first())
