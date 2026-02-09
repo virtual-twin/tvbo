@@ -1096,9 +1096,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() == "pyrates":
             return self._run_pyrates(**kwargs)
 
+        elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
+            return self._run_networkdynamics(**kwargs)
+
         else:
             raise ValueError(
-                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates"
+                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, networkdynamics"
             )
 
         return simulation_data
@@ -1142,6 +1145,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             matrix_edge_threshold=matrix_edge_threshold,
             **kwargs,
         )
+
+    def _run_networkdynamics(self, **kwargs) -> TimeSeries:
+        """Run simulation using NetworkDynamics.jl via pyjulia."""
+        from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
+
+        adapter = NetworkDynamicsAdapter(self)
+        return adapter.run(**kwargs)
 
     def get_experiment_file_prefix(self):
         atlas = (
@@ -1384,10 +1394,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 use_black=False,
             )
 
+        elif format.lower() == "julia":
+            template = templates.lookup.get_template(
+                "tvbo-julia-DifferentialEquations.jl.mako"
+            )
+            rendered_code = template.render(
+                experiment=self, model=self.local_dynamics, **kwargs
+            )
+
+        elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
+            template = templates.lookup.get_template(
+                "tvbo-nd-experiment.jl.mako"
+            )
+            rendered_code = template.render(experiment=self, **kwargs)
+
         else:
             raise ValueError(
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
-                "rateml, rateml-python, rateml-cuda, cuda, rateml-driver"
+                "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
+                "julia, networkdynamics, nd"
             )
 
         return rendered_code

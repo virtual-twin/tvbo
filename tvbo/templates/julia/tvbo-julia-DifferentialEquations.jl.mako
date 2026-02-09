@@ -2,8 +2,8 @@
 <%
 if 'experiment' in context.keys():
     model = context['experiment'].model
-    dt = context['experiment'].metadata.integration.step_size
-    duration = context['experiment'].metadata.integration.duration
+    dt = context['experiment'].integration.step_size
+    duration = context['experiment'].integration.duration
 else:
     model = context['model']
 
@@ -52,7 +52,7 @@ using Plots
 plot(
     sol,
     linewidth = 5,
-    title = "Solution to ${model.metadata.name} ODE",
+    title = "Solution to ${model.name} ODE",
     xaxis = "Time (t)",
     yaxis = "u(t) (units)",
     label = "Simulation"

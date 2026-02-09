@@ -11,8 +11,8 @@ def install():
     import julia
     julia.install()
 
-def get_julia(compiled_modules=False):
-    """Initialize Julia runtime. Use compiled_modules=False by default for stability."""
+def get_julia(compiled_modules=True):
+    """Initialize Julia runtime. Use compiled_modules=True to use precompiled packages."""
     global _julia_instance, _julia_main
     if _julia_instance is None or _julia_main is None:
         try:

@@ -26,7 +26,7 @@ sigma_vec = [
 ]
 
 # Drift and diffusion
-f! = ${model.metadata.name}!
+f! = ${model.name}!
 function g!(du, u, p, t)
     @inbounds for i in eachindex(u)
         du[i] = sigma_vec[i]

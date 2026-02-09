@@ -70,7 +70,7 @@ bifurcation_result = br
 args_po = (	record_from_solution = (x, p; k...) -> begin
 		xtt = get_periodic_orbit(p.prob, x, p.p)
 		return (
-                % for i, sv in enumerate(model.metadata.state_variables.values()):
+                % for i, sv in enumerate(model.state_variables.values()):
                 max_${sv.name} = maximum(xtt[${i+1},:]),
 				min_${sv.name} = minimum(xtt[${i+1},:]),
                 % endfor
@@ -79,7 +79,7 @@ args_po = (	record_from_solution = (x, p; k...) -> begin
 	plot_solution = (x, p; k...) -> begin
 		xtt = get_periodic_orbit(p.prob, x, p.p)
 		arg = (marker = :d, markersize = 1)
-        ${'\n\t'.join([f"plot!(xtt.t, xtt[{i+1},:]; label = \"{sv.name}\", arg..., k...)" for i, sv in enumerate(model.metadata.state_variables.values())])}
+        ${'\n\t'.join([f"plot!(xtt.t, xtt[{i+1},:]; label = \"{sv.name}\", arg..., k...)" for i, sv in enumerate(model.state_variables.values())])}
 		plot!(br; subplot = 1, putspecialptlegend = false)
 		end,
 	# we use the supremum norm

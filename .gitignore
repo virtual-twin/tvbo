@@ -89,3 +89,6 @@ docs/Interoperability/*.so
 docs/Interoperability/*.f90
 temp
 rwongwang_kernel.cu
+docs/site_libs
+docs/**/figure-html
+docs/Interoperability/NetworkDynamics.jl/*.gif

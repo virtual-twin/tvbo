@@ -30,6 +30,7 @@ lookup = TemplateLookup(
         join(root, "pde"),
         join(root, "pyrates"),
         join(root, "tvboptim"),
+        join(root, "networkdynamics"),
     ],
     module_directory=join(root, "modules"),
 )
