@@ -67,7 +67,17 @@ knowledge = [
 audio = ["librosa>=0.10.2"]
 
 # Documentation & reports
-docs = ["pypandoc>=1.15", "pybtex>=0.24.0", "pypdf>=5.1.0", "black>=25.9.0"]
+docs = [
+    "pypandoc>=1.15",
+    "pybtex>=0.24.0",
+    "pypdf>=5.1.0",
+    "black>=25.9.0",
+    "pyrates>=1.0.0",
+    "pycobi>=0.8.0",
+    "bsplot @ git+https://github.com/leon-k-martin/bsplot.git",
+    "jupyter",
+    "nbclient>=0.10.0",
+]
 
 # Julia integration
 julia = ["julia>=0.5.7"]
