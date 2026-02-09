@@ -74,6 +74,7 @@ docs = [
     "black>=25.9.0",
     "pyrates>=1.0.0",
     "pycobi>=0.8.0",
+    "bsplot @ git+https://github.com/leon-k-martin/bsplot.git",
     "jupyter",
     "nbclient>=0.10.0",
 ]

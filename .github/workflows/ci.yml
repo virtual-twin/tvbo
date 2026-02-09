@@ -63,6 +63,9 @@ jobs:
             - name: Install Quarto
               uses: quarto-dev/quarto-actions/setup@v2
 
+            - name: Configure git for private repos
+              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
             - name: Install tvbo + doc deps
               run: |
                   python -m pip install --upgrade pip
