@@ -20,7 +20,7 @@ import pandas as pd
 
 # Load experiment and network
 exp = SimulationExperiment.from_file(
-    "/Users/leonmartin_bih/tools/tvbo/database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
+    "database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
 )
 print(exp.render_code('tvboptim'))
 ```
@@ -29,12 +29,10 @@ print(exp.render_code('tvboptim'))
 weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
 
 # Load atlas for brain mapping
-dk_info = pd.read_csv(
-    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/fs_default_freesurfer_idx.csv"
-)
-dk = nib.load(
-    "/Users/leonmartin_bih/work_data/toolboxes/tvboptim/docs/data/dk_average/aparc+aseg-mni_09c.nii.gz"
-)
+import tvboptim.data
+_dk_data = os.path.join(os.path.dirname(tvboptim.data.__file__), "plotting", "dk_average")
+dk_info = pd.read_csv(os.path.join(_dk_data, "fs_default_freesurfer_idx.csv"))
+dk = nib.load(os.path.join(_dk_data, "aparc+aseg-mni_09c.nii.gz"))
 dk_info.drop_duplicates(subset="freesurfer_idx", inplace=True)
 region_labels = np.array(region_labels)
 
