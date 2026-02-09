@@ -10,7 +10,7 @@ Replicates the [NetworkDynamics.jl Heterogeneous System tutorial](https://juliad
 ```{python}
 #| echo: false
 from IPython.display import Code, Markdown
-Code(filename="kuramoto.yaml", language="yaml")
+Code(filename="yaml/kuramoto.yaml", language="yaml")
 ```
 
 ## Model Report
@@ -19,7 +19,7 @@ Code(filename="kuramoto.yaml", language="yaml")
 #| echo: false
 #| output: asis
 from tvbo import SimulationExperiment
-exp = SimulationExperiment.from_file("kuramoto.yaml")
+exp = SimulationExperiment.from_file("yaml/kuramoto.yaml")
 Markdown(exp.generate_report())
 ```
 
@@ -27,7 +27,7 @@ Markdown(exp.generate_report())
 
 ```{python}
 from tvbo import SimulationExperiment
-exp = SimulationExperiment.from_file("kuramoto.yaml")
+exp = SimulationExperiment.from_file("yaml/kuramoto.yaml")
 Code(exp.render_code("networkdynamics"), language='julia')
 ```
 

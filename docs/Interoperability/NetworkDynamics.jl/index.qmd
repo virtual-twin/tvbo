@@ -30,7 +30,7 @@ The following tutorials require additional features:
 
 | Tutorial | Missing Feature |
 |----------|----------------|
-| [Cascading Failure](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) | Callbacks / discrete events (generalizing Stimulus → Event) |
+| [Cascading Failure](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) | Callbacks / discrete events |
 | [Gas Network](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/gas_network/) | ModelingToolkit.jl equation-based modeling (out of scope) |
 | [Stress on Truss](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) | 2D spatial coupling, observed functions |
 
@@ -40,7 +40,7 @@ The following tutorials require additional features:
 from tvbo import SimulationExperiment
 
 # Load experiment from YAML
-exp = SimulationExperiment.from_file("diffusion.yaml")
+exp = SimulationExperiment.from_file("yaml/diffusion.yaml")
 
 # Generate NetworkDynamics.jl code
 julia_code = exp.render_code("networkdynamics")

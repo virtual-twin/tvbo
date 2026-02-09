@@ -12,7 +12,7 @@ and esum has dimension n_out.
 
 Context: model (Dynamics instance)
 </%doc>
-<%page args="model"/>
+<%page args="model, all_couplings=None"/>
 <%!
 from tvbo.export.code import render_expression
 %>
@@ -29,6 +29,24 @@ n_sv = len(sv_names)
 coupling_vars = [name for name, sv in model.state_variables.items()
                  if getattr(sv, 'coupling_variable', False)]
 n_out = len(coupling_vars) if coupling_vars else n_sv
+
+# Compute StateMask range: indices (1-based) of coupling variables in state vector
+if coupling_vars:
+    cvar_indices = [i + 1 for i, name in enumerate(sv_names) if name in coupling_vars]
+    # Check if indices are contiguous for StateMask(start:end)
+    g_start = cvar_indices[0]
+    g_end = cvar_indices[-1]
+else:
+    g_start = 1
+    g_end = n_sv
+
+# Compute insym from coupling outsym (if multi-dimensional coupling)
+insym = None
+if all_couplings and len(ct_names) > 1:
+    # Get the default coupling's outsym
+    default_coupling = next(iter(all_couplings.values())) if all_couplings else None
+    if default_coupling and getattr(default_coupling, 'outsym', None):
+        insym = list(default_coupling.outsym)
 
 # All symbol names the parser must recognize (prevents omega0 → omega*0 etc.)
 all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
@@ -51,12 +69,22 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
     ${", ".join(sv_names)} = ${arg_x}
 % endif
 
+<%
+    # Check if multi-dim esum can use broadcasting: single coupling term,
+    # n_out > 1, and every SV equation is just the coupling term name
+    use_broadcast = (
+        len(ct_names) == 1 and n_out > 1
+        and all(str(sv.equation.rhs).strip() == ct_names[0]
+                for sv in model.state_variables.values())
+    )
+%>\
+    % if use_broadcast:
+    ## Multi-dim coupling: all SVs = coupling term → broadcast esum directly
+    dx .= esum
+    % else:
     % for i, ct in enumerate(ct_names):
     % if len(ct_names) == 1 and n_out == 1:
     ${ct} = esum[1]
-    % elif len(ct_names) == 1 and n_out > 1:
-    ## Multi-dim coupling: esum is a vector, assign directly
-    ${ct} = esum
     % else:
     ${ct} = esum[${i + 1}]
     % endif
@@ -70,16 +98,20 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
     % for i, sv in enumerate(model.state_variables.values()):
     dx[${i + 1}] = ${juliacode(sv.equation.rhs)}
     % endfor
+    % endif
     nothing
 end
 
 ## ── VertexModel ─────────────────────────────────────────────────────────────
 vertex_${model.name} = VertexModel(;
     f = ${model.name}_f!,
-    g = StateMask(1:${n_out}),
+    g = StateMask(${g_start}:${g_end}),
     sym = [${", ".join(f':{sv}' for sv in sv_names)}],
 % if param_names:
     psym = [${", ".join(f':{p} => {model.parameters[p].value}' for p in param_names)}],
+% endif
+% if insym:
+    insym = [${", ".join(f':{s}' for s in insym)}],
 % endif
     name = :${model.name},
 )

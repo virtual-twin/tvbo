@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from tvbo.adapters.base import BaseAdapter
+
 if TYPE_CHECKING:
     from tvbo.data.types import TimeSeries
     from tvbo.export.experiment import SimulationExperiment
@@ -65,11 +67,23 @@ def _extract_graph_data(n_nodes: int) -> dict:
     return {"adjacency": adj, "positions": pos, "weights": w}
 
 
-class NetworkDynamicsAdapter:
-    """Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia)."""
+class NetworkDynamicsAdapter(BaseAdapter):
+    """Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia).
 
-    def __init__(self, experiment: "SimulationExperiment"):
-        self.experiment = experiment
+    Inherits metadata processing from BaseAdapter. The prepare_context()
+    method pre-computes all template variables so Mako templates stay clean.
+    """
+
+    def render_code(self, **kwargs) -> str:
+        """Render Julia code with pre-computed context from BaseAdapter."""
+        from tvbo import templates
+
+        ctx = self.prepare_context()
+        ctx.update(kwargs)
+        template = templates.lookup.get_template(
+            "tvbo-nd-experiment.jl.mako"
+        )
+        return template.render(**ctx)
 
     def run(self, **kwargs) -> "TimeSeries":
         """Run simulation using NetworkDynamics.jl.
@@ -98,12 +112,11 @@ class NetworkDynamicsAdapter:
         ensure_packages(*REQUIRED_PACKAGES)
 
         # 2. Generate Julia code, strip plotting
-        code = exp.render_code("networkdynamics")
+        code = self.render_code(**kwargs)
         code = _strip_plot_lines(code)
 
         # 3. Change Julia working directory to YAML source dir
         #    so that readdlm("Norm_G_DTI.txt") etc. resolve correctly.
-        #    Save and restore because Julia cd() affects Python cwd via pyjulia.
         source = getattr(exp, '_source_file', None)
         import os
         original_cwd = os.getcwd()
@@ -119,12 +132,10 @@ class NetworkDynamicsAdapter:
         t, u, sol = extract_ode_solution()
 
         # 6. Reshape to TVBO convention
-        sv_names = list(exp.local_dynamics.state_variables.keys())
-        n_sv = len(sv_names)
-        n_nodes = (
-            getattr(exp.network, "number_of_nodes", None)
-            or getattr(exp.network, "number_of_regions", 1)
-        )
+        ctx = self.prepare_context()
+        sv_names = ctx['sv_names']
+        n_sv = ctx['n_sv']
+        n_nodes = ctx['n_nodes']
         data = solution_to_array(t, u, n_sv, n_nodes)
 
         # 7. Extract graph data from Julia
@@ -133,7 +144,7 @@ class NetworkDynamicsAdapter:
         # 8. Restore original working directory
         os.chdir(original_cwd)
 
-        dt = float(exp.integration.step_size) if exp.integration else 0.01
+        dt = ctx['dt']
         ts = TimeSeries(
             time=t,
             data=data,

@@ -14,110 +14,22 @@ Supports:
   - Homogeneous networks: single VertexModel + EdgeModel for all nodes
   - Heterogeneous networks: multiple VertexModels assigned per-node via vertex_array
   - Multi-dimensional coupling: outdim > 1 for broadcasting edge functions
-  - Static vertices: dynamics with system_type="static" or no state_variables
+  - Static vertices: dynamics with no state_variables
 
-Context: experiment (SimulationExperiment instance)
+Context: Pre-computed dict from BaseAdapter.prepare_context()
 </%doc>
-<%page args="experiment"/>
-<%
-from collections import OrderedDict
-
-model = experiment.local_dynamics
-network = experiment.network
-integration = experiment.integration
-
-# ── Build dynamics library ──────────────────────────────────────────────────
-# Collect all unique dynamics models from the experiment
-dynamics_dict = OrderedDict()
-# Always include the default model first
-if model:
-    dynamics_dict[model.name] = model
-# Add any additional dynamics from the library
-if hasattr(experiment, 'dynamics') and isinstance(experiment.dynamics, dict) and experiment.dynamics:
-    for name, dyn in experiment.dynamics.items():
-        if name not in dynamics_dict:
-            dynamics_dict[name] = dyn
-
-# Check if network has nodes with per-node dynamics assignments
-nodes = getattr(network, 'nodes', None) or []
-has_heterogeneous_nodes = False
-node_dynamics_map = {}  # node_id → dynamics_name
-if nodes:
-    for node in nodes:
-        dyn_name = None
-        if hasattr(node, 'dynamics') and node.dynamics:
-            dyn_name = str(node.dynamics)
-        node_dynamics_map[node.id] = dyn_name or model.name
-        if dyn_name and dyn_name != model.name:
-            has_heterogeneous_nodes = True
-
-is_heterogeneous = has_heterogeneous_nodes and len(dynamics_dict) > 1
-
-# ── Resolve couplings ──────────────────────────────────────────────────────
-# Collect all unique coupling models
-nw_couplings = getattr(network, 'coupling', None) or {}
-if isinstance(nw_couplings, dict) and nw_couplings:
-    coupling = next(iter(nw_couplings.values()))
-    all_couplings = OrderedDict(nw_couplings)
-else:
-    coupling = experiment.coupling
-    all_couplings = OrderedDict({coupling.name: coupling}) if coupling else OrderedDict()
-
-# ── Compute coupling output dimension ──────────────────────────────────────
-# The edge outdim matches the number of coupling variables (vertex outputs)
-# For homogeneous networks, use the default model. For heterogeneous, use
-# the model that has the most coupling outputs.
-def _get_outdim(dyn):
-    """Get coupling output dimension from a Dynamics model."""
-    if not dyn or not dyn.state_variables:
-        return 1
-    coupling_vars = [name for name, sv in dyn.state_variables.items()
-                     if getattr(sv, 'coupling_variable', False)]
-    return len(coupling_vars) if coupling_vars else len(dyn.state_variables)
-
-def _get_outsym_names(dyn, outdim):
-    """Get output symbol names for edge model."""
-    if outdim == 1:
-        return ['coupling']
-    coupling_vars = [name for name, sv in dyn.state_variables.items()
-                     if getattr(sv, 'coupling_variable', False)]
-    if coupling_vars:
-        return [f'flow_{v}' for v in coupling_vars]
-    return [f'flow_{name}' for name in list(dyn.state_variables.keys())[:outdim]]
-
-outdim = _get_outdim(model)
-outsym_names = _get_outsym_names(model, outdim)
-
-sv_names = list(model.state_variables.keys())
-n_sv = len(sv_names)
-n_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
-
-dt = integration.step_size if integration else 0.01
-duration = integration.duration if integration else 1000.0
-
-# Detect stochastic: any state variable with noise intensity > 0
-is_stochastic = False
-for dyn in dynamics_dict.values():
-    for sv in (dyn.state_variables or {}).values():
-        n = getattr(sv, 'noise', None)
-        if n and getattr(getattr(n, 'intensity', None), 'value', None):
-            try:
-                if float(n.intensity.value) > 0:
-                    is_stochastic = True
-                    break
-            except Exception:
-                pass
-    if is_stochastic:
-        break
-
-# Detect static vertex models (no state variables, only output function)
-def _is_static(dyn):
-    """Check if dynamics is a static/algebraic model (no differential equations)."""
-    sys_type = getattr(dyn, 'system_type', None)
-    if sys_type and 'static' in str(sys_type).lower():
-        return True
-    return not dyn.state_variables
-%>
+## Template args: all pre-computed by BaseAdapter.prepare_context()
+<%page args="experiment, model, network, integration, \
+dynamics_dict, node_dynamics_map, all_couplings, coupling, \
+coupling_vars, outdim, outsym_names, \
+n_nodes, nodes, graph_gen, edges_list, emf_names, \
+has_edge_matrix, has_explicit_edges, is_directed, \
+sv_names, n_sv, is_heterogeneous, is_stochastic, \
+dt, duration, solver_method, needs_stiff, needs_weighted, \
+weight_matrix, weight_sym, \
+dist_info, needs_random, dist_seed, \
+all_events, has_events, coupling_observed, find_fixpoint, \
+is_static, parse_node_parameters, get_noise_sigmas, graph_generator_call"/>
 
 ## ── Packages ────────────────────────────────────────────────────────────────
 using Graphs
@@ -127,12 +39,6 @@ using StochasticDiffEq
 % else:
 using OrdinaryDiffEqTsit5
 % endif
-<%
-solver_method = getattr(integration, 'method', 'Tsit5') if integration else 'Tsit5'
-needs_stiff = solver_method and 'auto' in str(solver_method).lower()
-needs_weighted = bool(getattr(network, 'edge_matrix_files', None))
-graph_gen = getattr(network, 'graph_generator', None)
-%>
 % if needs_stiff:
 using OrdinaryDiffEqSDIRK
 % endif
@@ -140,48 +46,34 @@ using OrdinaryDiffEqSDIRK
 using DelimitedFiles
 using SimpleWeightedGraphs
 % endif
-<%
-# Directed graph: edge_matrix_files produce SimpleWeightedDiGraph → SimpleDiGraph,
-# or GraphGenerator.directed flag
-is_directed = needs_weighted or (graph_gen and getattr(graph_gen, 'directed', False))
-%>
 
 ## ── Vertex models (node dynamics) ───────────────────────────────────────────
 % for dyn_name, dyn in dynamics_dict.items():
-% if _is_static(dyn):
-## Static vertex: no dynamics, outputs parameter value
+% if is_static(dyn):
+## Static vertex: no dynamics, outputs parameter values
 <%
     static_params = list((dyn.parameters or {}).keys())
-    # Output symbols: must match the coupling variable names of the default model
-    # so that ND.jl can wire the static output to the same edge input
-    if coupling_vars:
-        static_outsyms = coupling_vars[:1]  # static node outputs first coupling var
-    else:
-        static_outsyms = list((dyn.output or {}).keys()) if getattr(dyn, 'output', None) else \
-                         list((dyn.state_variables or {}).keys()) if dyn.state_variables else \
-                         [sv_names[0]] if sv_names else ['out']
+    # Output symbols: use coupling vars from default model
+    # (static vertex must output the same symbols that edges expect)
+    static_outsyms = coupling_vars if coupling_vars else ['out']
+    n_static_out = len(static_outsyms)
 %>
 function ${dyn.name}_g!(out, x, p, t)
-% if static_params:
-    (${", ".join(static_params)},) = p
-    out[1] = ${static_params[0]}
-% else:
-    out[1] = 0.0
-% endif
+    out .= p
     nothing
 end
 vertex_${dyn.name} = VertexModel(;
     g = ${dyn.name}_g!,
     outsym = [${", ".join(f':{s}' for s in static_outsyms)}],
 % if static_params:
-    psym = [${", ".join(f':{p} => {dyn.parameters[p].value}' for p in static_params)}],
+    psym = [${", ".join(f':{p}' for p in static_params)}],
 % endif
     ff = NoFeedForward(),
     name = :${dyn.name},
 )
 
 % else:
-<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn" />
+<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, all_couplings=all_couplings" />
 
 % endif
 % endfor
@@ -194,42 +86,8 @@ vertex_${dyn.name} = VertexModel(;
 
 ## ── Graph ───────────────────────────────────────────────────────────────────
 <%
-import numpy as np
-from tvbo.templates.base.utils import graph_generator_call
-
-emf_list = getattr(network, 'edge_matrix_files', None) or []
-# Extract filename string from File objects
-emf_names = []
-for f in emf_list:
-    if hasattr(f, 'name') and f.name:
-        emf_names.append(str(f.name))
-    elif isinstance(f, str):
-        emf_names.append(f)
-    else:
-        fname = getattr(f, 'file_name', None) or getattr(f, 'path', None)
-        if fname:
-            emf_names.append(str(fname))
-
-has_edge_matrix = len(emf_names) > 0
-
-# Build graph from explicit edges
-edges_list = getattr(network, 'edges', None) or []
-has_explicit_edges = len(edges_list) > 0
-
-# For large networks, build a weight matrix instead of individual add_edge! calls
 MATRIX_THRESHOLD = 50
 use_matrix = has_explicit_edges and len(edges_list) > MATRIX_THRESHOLD
-
-if use_matrix:
-    W = np.zeros((n_nodes, n_nodes))
-    for e in edges_list:
-        w = 1.0
-        params = getattr(e, 'parameters', None) or []
-        for p in params:
-            pname = getattr(p, 'name', None) or (p.get('name') if isinstance(p, dict) else None)
-            if pname == 'weight':
-                w = float(getattr(p, 'value', None) or (p.get('value') if isinstance(p, dict) else 1.0))
-        W[e.source, e.target] = w
 %>
 % if has_edge_matrix:
 G = readdlm("${emf_names[0]}", ',', Float64, '\n')
@@ -238,12 +96,20 @@ edge_weights = getfield.(collect(edges(g_weighted)), :weight)
 g = SimpleDiGraph(g_weighted)
 % elif graph_gen:
 g = ${graph_generator_call(graph_gen, n_nodes, 'julia')}
-% elif use_matrix:
+% elif use_matrix and weight_matrix is not None:
 using SimpleWeightedGraphs
+<%
+import numpy as np
+W = weight_matrix
+%>
 W = [${'; '.join(' '.join(f'{W[i,j]:.6g}' for j in range(n_nodes)) for i in range(n_nodes))}]
 g = SimpleDiGraph(SimpleWeightedDiGraph(W))
 % elif has_explicit_edges:
+% if is_directed:
 g = SimpleDiGraph(${n_nodes})
+% else:
+g = SimpleGraph(${n_nodes})
+% endif
     % for e in edges_list:
 add_edge!(g, ${e.source + 1}, ${e.target + 1})
     % endfor
@@ -253,13 +119,9 @@ g = complete_graph(${n_nodes})
 
 ## ── Network ─────────────────────────────────────────────────────────────────
 <%
-# Determine the default coupling name (first one)
 default_coupling_name = next(iter(all_couplings.keys())) if all_couplings else coupling.name
-
-# Detect if coupling has a 'weight' parameter that should be set from edge_matrix_files
-cparam_names_list = list((coupling.parameters or {}).keys())
-has_weight_param = 'w' in cparam_names_list or 'weight' in cparam_names_list
-weight_sym = 'w' if 'w' in cparam_names_list else ('weight' if 'weight' in cparam_names_list else None)
+has_weight_param = weight_sym is not None
+needs_dealias = is_heterogeneous or has_events
 %>
 % if is_heterogeneous:
 ## Heterogeneous network: different vertex models per node
@@ -271,33 +133,56 @@ vertex_array[${node.id + 1}] = vertex_${node_dynamics_map[node.id]}
 % endfor
 
 nw = Network(g, vertex_array, edge_${default_coupling_name}; dealias=true)
+% elif needs_dealias:
+nw = Network(g, vertex_${model.name}, edge_${default_coupling_name}; dealias=true)
 % else:
 nw = Network(g, vertex_${model.name}, edge_${default_coupling_name})
 % endif
-% if has_edge_matrix and weight_sym:
+% if has_edge_matrix and has_weight_param:
 
 ## Set per-edge weights from connectivity matrix
 p = NWParameter(nw)
 p.e[1:ne(g), :${weight_sym}] = edge_weights
 % endif
 
+## ── Per-node defaults (set on network before NWState) ───────────────────────
+% if find_fixpoint and is_heterogeneous:
+## Set per-node parameter defaults for find_fixpoint (heterogeneous)
+% for node in nodes:
+<%
+    dyn_name = node_dynamics_map.get(node.id, model.name)
+    dyn = dynamics_dict[dyn_name]
+    node_idx = node.id + 1
+    node_params = parse_node_parameters(node)
+%>
+% for p_name, p_val in node_params.items():
+set_default!(nw, VIndex(${node_idx}, :${p_name}), ${p_val})
+% endfor
+% endfor
+% elif find_fixpoint and not is_heterogeneous:
+## Set per-node parameter defaults for find_fixpoint (homogeneous)
+% for node in nodes:
+<%
+    node_idx = node.id + 1
+    node_params = parse_node_parameters(node)
+%>
+% for p_name, p_val in node_params.items():
+set_default!(nw, VIndex(${node_idx}, :${p_name}), ${p_val})
+% endfor
+% endfor
+% endif
+
+## ── Find fixpoint (steady-state initial conditions) ─────────────────────────
+% if find_fixpoint:
+
+## Use ND.jl find_fixpoint for steady-state initial conditions
+u0 = find_fixpoint(nw)
+set_defaults!(nw, u0)
+% endif
+
 ## ── Initial state ───────────────────────────────────────────────────────────
 <%
-from tvbo.templates.base.utils import (
-    collect_sv_distributions, collect_param_distributions,
-    has_distributions, get_distribution_seed, sample_expression,
-)
-# Collect distributions from ALL dynamics models
-all_sv_dists = {}
-all_param_dists = {}
-needs_random = False
-dist_seed = 42
-for dyn_name, dyn in dynamics_dict.items():
-    if has_distributions(dyn):
-        needs_random = True
-        dist_seed = get_distribution_seed(dyn)
-    all_sv_dists[dyn_name] = collect_sv_distributions(dyn)
-    all_param_dists[dyn_name] = collect_param_distributions(dyn)
+from tvbo.templates.base.utils import sample_expression, collect_param_distributions
 %>
 s = NWState(nw)
 % if needs_random:
@@ -310,30 +195,12 @@ rng = MersenneTwister(${dist_seed})
 <%
     dyn_name = node_dynamics_map.get(node.id, model.name)
     dyn = dynamics_dict[dyn_name]
-    node_idx = node.id + 1  # Julia 1-indexed
-    # Per-node initial_state overrides (list of floats matching state var order)
+    node_idx = node.id + 1
     node_init = getattr(node, 'initial_state', None) or []
-    node_sv_names = list((dyn.state_variables or {}).keys())
-    # Per-node parameter overrides
-    node_params = {}
-    for p in (getattr(node, 'parameters', None) or []):
-        if isinstance(p, dict):
-            node_params[p.get('name', '')] = p.get('value')
-        elif hasattr(p, 'name') and not isinstance(p, str):
-            node_params[getattr(p, 'name', '')] = getattr(p, 'value', None)
-        elif isinstance(p, str):
-            # ParameterName is a string subclass with dict repr: "{'name': ..., 'value': ...}"
-            import ast
-            try:
-                d = ast.literal_eval(str(p))
-                if isinstance(d, dict) and 'name' in d:
-                    node_params[d['name']] = d.get('value')
-            except (ValueError, SyntaxError):
-                pass
+    node_params = parse_node_parameters(node)
 %>
 % for i, sv in enumerate((dyn.state_variables or {}).values()):
 <%
-    # Priority: node.initial_state[i] > sv.initial_value > distribution
     d = getattr(sv, 'distribution', None)
     has_dist = d and getattr(d, 'domain', None)
     init_val = node_init[i] if i < len(node_init) else None
@@ -346,22 +213,23 @@ s.v[${node_idx}, :${sv.name}] = ${sample_expression(d, 'julia')}
 s.v[${node_idx}, :${sv.name}] = ${sv.initial_value}
 % endif
 % endfor
+% if not find_fixpoint:
 % for p_name in list((dyn.parameters or {}).keys()):
 <%
-    # Per-node parameter override (from YAML nodes section)
     p_val = node_params.get(p_name, None)
 %>
 % if p_val is not None:
 s.p.v[${node_idx}, :${p_name}] = ${p_val}
 % endif
 % endfor
-% for p_name, p, d in all_param_dists.get(dyn_name, []):
+% for p_name, p_obj, d in dist_info.get(dyn_name, {}).get('param', []):
 % if p_name not in node_params:
 s.p.v[${node_idx}, :${p_name}] = ${sample_expression(d, 'julia')}
 % endif
 % endfor
+% endif
 % endfor
-% else:
+% elif not find_fixpoint:
 ## Homogeneous initial conditions
 % for i, sv in enumerate(model.state_variables.values()):
 <%
@@ -376,10 +244,110 @@ end
 s.v[1:nv(g), :${sv.name}] .= ${sv.initial_value}
 % endif
 % endfor
-% for p_name, p, d in collect_param_distributions(model):
+% for p_name, p_obj, d in collect_param_distributions(model):
 for node in 1:nv(g)
     s.p.v[node, :${p_name}] = ${sample_expression(d, 'julia')}
 end
+% endfor
+% endif
+<%
+# Collect per-edge parameter overrides (skip 'weight' — handled by connectivity matrix)
+edge_param_lines = []
+for i, edge in enumerate(edges_list):
+    eparams = getattr(edge, 'parameters', None) or {}
+    if isinstance(eparams, dict):
+        for p_name, p_obj in eparams.items():
+            if p_name == 'weight':
+                continue
+            val = getattr(p_obj, 'value', None) if hasattr(p_obj, 'value') else p_obj
+            if val is not None:
+                edge_param_lines.append(f's.p.e[{i + 1}, :{p_name}] = {val}')
+    else:
+        for p in eparams:
+            ep = parse_node_parameters({'parameters': [p]}) if not isinstance(p, dict) else p
+            for p_name, p_val in (ep if isinstance(ep, dict) else {}).items():
+                if p_name == 'weight' or p_val is None:
+                    continue
+                edge_param_lines.append(f's.p.e[{i + 1}, :{p_name}] = {p_val}')
+%>
+% if edge_param_lines:
+
+## Per-edge parameter overrides
+% for line in edge_param_lines:
+${line}
+% endfor
+% endif
+
+## ── Events / Callbacks ──────────────────────────────────────────────────────
+% if has_events:
+<%
+    # Separate events by type
+    continuous_events = [(ev, src) for ev, src in all_events if str(getattr(ev.event_type, 'text', ev.event_type)) == 'continuous']
+    preset_events = [(ev, src) for ev, src in all_events if str(getattr(ev.event_type, 'text', ev.event_type)) == 'preset_time']
+    discrete_events = [(ev, src) for ev, src in all_events if str(getattr(ev.event_type, 'text', ev.event_type)) == 'discrete']
+%>
+% for ev, ev_src in continuous_events:
+<%
+    cond_syms = ', '.join(f':{s}' for s in (ev.condition_states or []))
+    cond_psyms = ', '.join(f':{p}' for p in (ev.condition_parameters or []))
+    affect_syms = '[]'
+    affect_psyms = ', '.join(f':{p}' for p in (ev.affect_parameters or []))
+%>
+
+## Continuous callback: ${ev.name}
+${ev.name}_cond = ComponentCondition([${cond_syms}], [${cond_psyms}]) do u, p, t
+    ${ev.condition.rhs}
+end
+${ev.name}_affect = ComponentAffect([], [${affect_psyms}]) do u, p, ctx
+    ${ev.affect.rhs}
+end
+${ev.name}_cb = ContinuousComponentCallback(${ev.name}_cond, ${ev.name}_affect)
+% if ev.target_component == 'all_edges':
+for i in 1:ne(g)
+    set_callback!(nw[EIndex(i)], ${ev.name}_cb)
+end
+% elif ev.target_component and ev.target_component.startswith('edge_'):
+<%
+    edge_idx = int(ev.target_component.split('_')[1])
+%>
+set_callback!(nw[EIndex(${edge_idx})], ${ev.name}_cb)
+% endif
+% endfor
+% for ev, ev_src in preset_events:
+<%
+    affect_psyms = ', '.join(f':{p}' for p in (ev.affect_parameters or []))
+    times = ', '.join(str(t) for t in ev.trigger_times) if ev.trigger_times else '0.0'
+%>
+
+## Preset-time callback: ${ev.name}
+<%
+    # Can reuse existing affect if same affect body
+    # Check if an identical affect was already defined
+    reuse_affect = None
+    for prev_ev, _ in continuous_events:
+        if str(prev_ev.affect.rhs) == str(ev.affect.rhs) and \
+           list(prev_ev.affect_parameters or []) == list(ev.affect_parameters or []):
+            reuse_affect = prev_ev.name + '_affect'
+            break
+%>
+% if reuse_affect:
+${ev.name}_cb = PresetTimeComponentCallback(${times}, ${reuse_affect})
+% else:
+${ev.name}_affect = ComponentAffect([], [${affect_psyms}]) do u, p, ctx
+    ${ev.affect.rhs}
+end
+${ev.name}_cb = PresetTimeComponentCallback(${times}, ${ev.name}_affect)
+% endif
+% if ev.target_component and ev.target_component.startswith('edge_'):
+<%
+    edge_idx = int(ev.target_component.split('_')[1])
+%>
+add_callback!(nw[EIndex(${edge_idx})], ${ev.name}_cb)
+% elif ev.target_component == 'all_edges':
+for i in 1:ne(g)
+    add_callback!(nw[EIndex(i)], ${ev.name}_cb)
+end
+% endif
 % endfor
 % endif
 
@@ -387,16 +355,7 @@ end
 tspan = (0.0, ${duration})
 % if is_stochastic:
 <%
-sigma_vals = []
-for sv in model.state_variables.values():
-    n = getattr(sv, 'noise', None)
-    val = 0.0
-    if n and getattr(getattr(n, 'intensity', None), 'value', None):
-        try:
-            val = float(n.intensity.value)
-        except Exception:
-            pass
-    sigma_vals.append(val)
+sigma_vals = get_noise_sigmas(model)
 %>
 
 function nw_noise!(du, u, p, t)
@@ -411,7 +370,12 @@ end
 
 prob = SDEProblem(nw, nw_noise!, uflat(s), tspan, pflat(s))
 sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
-% elif has_edge_matrix and weight_sym:
+% elif find_fixpoint:
+## ODEProblem from NWState: auto-extracts initial state, parameters, and callbacks
+u0 = NWState(nw)
+prob = ODEProblem(nw, u0, tspan)
+sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); saveat=${dt})
+% elif has_edge_matrix and has_weight_param:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(p))
 sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); saveat=${dt})
 % else:

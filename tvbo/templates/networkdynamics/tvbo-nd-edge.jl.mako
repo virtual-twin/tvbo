@@ -9,9 +9,12 @@ tvbo coupling has:
 In NetworkDynamics.jl the edge g! computes the pre_expression.
 The post_expression scaling is folded into the vertex f!.
 
-Supports multi-dimensional coupling: when outdim > 1 (e.g. 2D diffusion),
-the edge function uses broadcasting (e_dst .= v_src .- v_dst) and outsym
-lists multiple flow symbols.
+Supports:
+  - Single-line expressions: e_dst[1] = K * sin(v_src[1] - v_dst[1])
+  - Multi-line custom edge functions: beam force, etc.
+  - Multi-dimensional coupling: outdim > 1 (e.g. 2D diffusion, 2D beams)
+  - Observed functions (obsf/obssym): post-hoc edge observables
+  - Coupling-defined outsym: explicit output symbol names
 
 Context: coupling (Coupling instance), outdim (int), outsym_names (list[str])
 </%doc>
@@ -30,23 +33,31 @@ juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_
 # Get pre-expression
 pre_rhs = str(coupling.pre_expression.rhs) if coupling.pre_expression else "v_src[1] - v_dst[1]"
 
+# Detect multi-line custom function body (contains newlines or e_dst assignments)
+is_custom_body = '\n' in pre_rhs.strip() or 'e_dst[' in pre_rhs
+
 # Detect antisymmetric pattern (f(x_j) - f(x_i))
-is_antisymmetric = 'x_j' in pre_rhs and 'x_i' in pre_rhs and '-' in pre_rhs
+is_antisymmetric = not is_custom_body and 'x_j' in pre_rhs and 'x_i' in pre_rhs and '-' in pre_rhs
 
-# For multi-dim: decide between scalar indexing and broadcasting
-if outdim > 1 and is_antisymmetric:
-    # Pure difference: use broadcasting  e_dst .= v_src .- v_dst
-    # Replace x_j/x_i with v_src/v_dst (no indexing)
-    julia_pre = juliacode(pre_rhs).replace('x_j', 'v_src').replace('x_i', 'v_dst')
-    use_broadcast = True
-else:
-    # Scalar or non-trivial expression: use [1] indexing
-    julia_pre = juliacode(pre_rhs).replace('x_j', 'v_src[1]').replace('x_i', 'v_dst[1]')
-    use_broadcast = False
+# For standard expressions: translate x_j/x_i to v_src/v_dst
+if not is_custom_body:
+    if outdim > 1 and is_antisymmetric:
+        julia_pre = juliacode(pre_rhs).replace('x_j', 'v_src').replace('x_i', 'v_dst')
+        use_broadcast = True
+    else:
+        julia_pre = juliacode(pre_rhs).replace('x_j', 'v_src[1]').replace('x_i', 'v_dst[1]')
+        use_broadcast = False
 
-# Output symbol names
-if outsym_names is None:
+# Output symbol names: prefer coupling.outsym, then fallback
+coupling_outsym = list(coupling.outsym) if getattr(coupling, 'outsym', None) else None
+if coupling_outsym:
+    outsym_names = coupling_outsym
+elif outsym_names is None:
     outsym_names = ['coupling']
+
+# Observed variables
+coupling_obs = list((coupling.observed or {}).values()) if getattr(coupling, 'observed', None) else []
+has_observed = len(coupling_obs) > 0
 %>
 
 ## ── Edge coupling function ──────────────────────────────────────────────────
@@ -55,29 +66,73 @@ function ${coupling.name}_edge_g!(e_dst, v_src, v_dst, (${", ".join(cparam_names
 % else:
 function ${coupling.name}_edge_g!(e_dst, v_src, v_dst, p, t)
 % endif
-% if use_broadcast:
+% if is_custom_body:
+    ## Custom multi-line edge function body
+% for line in pre_rhs.strip().splitlines():
+    ${line.strip()}
+% endfor
+% elif use_broadcast:
     e_dst .= ${julia_pre}
 % else:
     e_dst[1] = ${julia_pre}
 % endif
     nothing
 end
+% if has_observed:
 
-% if is_antisymmetric and not is_directed:
+## ── Edge observed function ──────────────────────────────────────────────────
+function ${coupling.name}_obsf!(obsout, u, v_src, v_dst, (${", ".join(cparam_names)},), t)
+% for i, obs in enumerate(coupling_obs):
+<%
+    obs_rhs = str(obs.equation.rhs).strip()
+    # Translate variable names to ND.jl v_src/v_dst indexing
+    obs_lines = obs_rhs.splitlines()
+%>
+    ## ${obs.name}: ${obs.description or ''}
+% for line in obs_lines:
+    ${line.strip()}
+% endfor
+% endfor
+    nothing
+end
+% endif
+
+% if (is_antisymmetric or is_custom_body) and not is_directed:
 edge_${coupling.name} = EdgeModel(;
     g = AntiSymmetric(${coupling.name}_edge_g!),
     outsym = [${", ".join(f':{s}' for s in outsym_names)}],
     % if has_params:
     psym = [${", ".join(f':{p} => {coupling.parameters[p].value}' for p in cparam_names)}],
     % endif
+    % if has_observed:
+    obsf = ${coupling.name}_obsf!,
+    obssym = [${", ".join(f':{obs.name}' for obs in coupling_obs)}],
+    % endif
     name = :${coupling.name},
 )
-% else:
+% elif is_directed:
 edge_${coupling.name} = EdgeModel(;
     g = Directed(${coupling.name}_edge_g!),
     outsym = [${", ".join(f':{s}' for s in outsym_names)}],
     % if has_params:
     psym = [${", ".join(f':{p} => {coupling.parameters[p].value}' for p in cparam_names)}],
+    % endif
+    % if has_observed:
+    obsf = ${coupling.name}_obsf!,
+    obssym = [${", ".join(f':{obs.name}' for obs in coupling_obs)}],
+    % endif
+    name = :${coupling.name},
+)
+% else:
+edge_${coupling.name} = EdgeModel(;
+    g = Symmetric(${coupling.name}_edge_g!),
+    outsym = [${", ".join(f':{s}' for s in outsym_names)}],
+    % if has_params:
+    psym = [${", ".join(f':{p} => {coupling.parameters[p].value}' for p in cparam_names)}],
+    % endif
+    % if has_observed:
+    obsf = ${coupling.name}_obsf!,
+    obssym = [${", ".join(f':{obs.name}' for obs in coupling_obs)}],
     % endif
     name = :${coupling.name},
 )
