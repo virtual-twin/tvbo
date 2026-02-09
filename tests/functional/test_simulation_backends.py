@@ -120,12 +120,21 @@ class TestJAXBackendDetailed:
 class TestOptionalBackends:
     """Tests for optional backends that may not be installed."""
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES[:3], ids=MODEL_IDS[:3])  # First 3 models only
+    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_run_tvb(self, model_file):
         """Test running simulation with TVB backend (if available)."""
         pytest.importorskip("tvb.simulator")
 
         model = Dynamics.from_file(model_file)
+
+        # Skip non-autonomous models — TVB dfun has no time argument
+        if getattr(model, 'autonomous', True) is False:
+            pytest.skip("Non-autonomous model: TVB dfun does not support explicit time dependence")
+
+        # Skip discrete models — TVB only supports continuous ODE/SDE
+        if getattr(model, 'system_type', None) == 'discrete':
+            pytest.skip("Discrete model: TVB only supports continuous dynamics")
+
         exp = SimulationExperiment(local_dynamics=model)
 
         try:
@@ -138,7 +147,7 @@ class TestOptionalBackends:
                 pytest.skip(f"TVB backend issue: {e}")
             raise
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES[:3], ids=MODEL_IDS[:3])  # First 3 models only
+    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_run_pyrates(self, model_file):
         """Test running simulation with PyRates backend (if available)."""
         pytest.importorskip("pyrates")
