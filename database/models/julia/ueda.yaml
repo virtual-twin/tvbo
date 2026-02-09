@@ -1,4 +1,5 @@
 name: Ueda
+autonomous: false
 references:
 - Ruelle1980
 - Ueda1961
