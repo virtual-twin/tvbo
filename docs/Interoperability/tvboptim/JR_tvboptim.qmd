@@ -20,7 +20,7 @@ import pandas as pd
 
 # Load experiment and network
 exp = SimulationExperiment.from_file(
-    "database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
+    "../../../database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
 )
 print(exp.render_code('tvboptim'))
 ```
