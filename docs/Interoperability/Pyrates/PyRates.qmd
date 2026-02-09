@@ -183,7 +183,8 @@ from tvbo import Dynamics
 from IPython.display import Markdown, display
 
 # Load an existing PyRates model (Van der Pol oscillator from PyRates)
-vdp_pyrates_path = "/Users/leonmartin_bih/work_data/toolboxes/PyRates/model_templates/oscillators/vanderpol.yaml"
+import model_templates
+vdp_pyrates_path = os.path.join(os.path.dirname(model_templates.__file__), "oscillators", "vanderpol.yaml")
 
 # Load into TVBO (loads the first operator)
 vdp_imported = Dynamics.from_pyrates(vdp_pyrates_path)
@@ -251,7 +252,8 @@ from tvbo import SimulationExperiment
 from IPython.display import Markdown, display
 
 # Load a multi-operator file (synaptic plasticity has 3 operators)
-plasticity_path = "/Users/leonmartin_bih/work_data/toolboxes/PyRates/model_templates/neural_mass_models/synaptic_plasticity.yaml"
+import model_templates
+plasticity_path = os.path.join(os.path.dirname(model_templates.__file__), "neural_mass_models", "synaptic_plasticity.yaml")
 
 exp_multi = SimulationExperiment.from_pyrates(plasticity_path)
 
