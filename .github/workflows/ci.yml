@@ -44,6 +44,9 @@ jobs:
                   pip install pytest pytest-cov nbformat
 
             - name: Run tests
+              env:
+                  JAX_PLATFORMS: cpu
+                  XLA_FLAGS: "--xla_force_host_platform_device_count=8"
               run: pytest -q --ignore=tests/test_docs.py
 
     test-docs:
@@ -67,6 +70,9 @@ jobs:
                   pip install pytest nbformat jupyter
 
             - name: Run doc tests
+              env:
+                  JAX_PLATFORMS: cpu
+                  XLA_FLAGS: "--xla_force_host_platform_device_count=8"
               run: pytest tests/test_docs.py -v -m docs
 
     package:
