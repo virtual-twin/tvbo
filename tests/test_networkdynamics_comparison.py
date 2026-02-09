@@ -31,11 +31,6 @@ EXAMPLES_DIR = os.path.join(
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _h5_exists(name):
-    """Check if the HDF5 reference file exists."""
-    return os.path.isfile(os.path.join(REF_DIR, f"{name}_reference.h5"))
-
-
 def _load_reference(name):
     """Load reference data from HDF5."""
     import h5py
@@ -62,25 +57,7 @@ def _load_reference(name):
     return data
 
 
-def _julia_available():
-    """Check if pyjulia is available and working."""
-    try:
-        from tvbo.run.julia import init_julia
-        init_julia()
-        return True
-    except Exception:
-        return False
 
-
-julia_available = pytest.mark.skipif(
-    not _julia_available(),
-    reason="pyjulia not available"
-)
-
-ref_data_available = pytest.mark.skipif(
-    not any(_h5_exists(n) for n in ["diffusion", "kuramoto", "fitzhugh_nagumo"]),
-    reason="HDF5 reference data not generated (run generate_nd_references.jl)"
-)
 
 
 # ===========================================================================
@@ -96,6 +73,7 @@ class TestCodeGeneration:
     @pytest.fixture(params=[
         "diffusion", "kuramoto", "fitzhugh_nagumo",
         "diffusion_2d", "heterogeneous_kuramoto",
+        "cascading_failure", "stress_on_truss",
     ])
     def all_examples(self, request):
         return request.param
@@ -194,6 +172,14 @@ class TestCodeGeneration:
         assert "StateMask(1:2)" in code
         assert "sym = [:x, :phi]" in code
 
+    def test_diffusion_2d_broadcast_esum(self):
+        """2D diffusion: vertex uses broadcasting (dx .= esum) for multi-dim coupling."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "dx .= esum" in code
+
     def test_diffusion_2d_broadcasting_edge(self):
         """2D diffusion: edge uses broadcasting (e_dst .= v_src .- v_dst)."""
         from tvbo import SimulationExperiment
@@ -285,6 +271,120 @@ class TestCodeGeneration:
         code = exp.render_code("networkdynamics")
         assert "dealias=true" in code
 
+    # -- Cascading Failure specific tests --
+
+    def test_cascading_failure_find_fixpoint(self):
+        """Cascading failure uses find_fixpoint for initial conditions."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "find_fixpoint(nw)" in code
+        assert "set_defaults!(nw, u0)" in code
+
+    def test_cascading_failure_callbacks(self):
+        """Cascading failure has component-based callbacks."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "ComponentCondition" in code
+        assert "ComponentAffect" in code
+        assert "ContinuousComponentCallback" in code
+        assert "set_callback!" in code
+
+    def test_cascading_failure_preset_time_callback(self):
+        """Cascading failure has a preset time callback on edge 5."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "PresetTimeComponentCallback" in code
+        assert "add_callback!" in code
+
+    def test_cascading_failure_per_node_params(self):
+        """Cascading failure sets per-node P_ref via set_default!."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "set_default!(nw, VIndex(1, :P_ref), -1.0)" in code
+        assert "set_default!(nw, VIndex(2, :P_ref), 1.5)" in code
+
+    def test_cascading_failure_outsym(self):
+        """Cascading failure edge outputs :P."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "outsym = [:P]" in code
+
+    def test_cascading_failure_dealias(self):
+        """Cascading failure uses dealias=true for per-edge callbacks."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "dealias=true" in code
+
+    def test_cascading_failure_ode_problem_nwstate(self):
+        """Cascading failure uses ODEProblem(nw, u0, tspan) with NWState."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "ODEProblem(nw, u0, tspan)" in code
+
+    # -- Stress on Truss specific tests --
+
+    def test_stress_on_truss_heterogeneous_vertices(self):
+        """Stress on truss uses FreeVertex and FixedVertex."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "vertex_FreeVertex" in code
+        assert "vertex_FixedVertex" in code
+        assert "vertex_array = VertexModel[" in code
+
+    def test_stress_on_truss_fixed_vertex_no_feedforward(self):
+        """FixedVertex uses NoFeedForward and outputs :x, :y."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "ff = NoFeedForward()" in code
+
+    def test_stress_on_truss_2d_coupling(self):
+        """Stress on truss has 2D coupling with outsym [:Fx, :Fy]."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "outsym = [:Fx, :Fy]" in code
+        assert "insym = [:Fx, :Fy]" in code
+        assert "StateMask(3:4)" in code
+
+    def test_stress_on_truss_observed_function(self):
+        """Stress on truss beam has an observed function for Fabs."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        assert "obsf" in code
+        assert "obssym = [:Fabs]" in code
+
+    def test_stress_on_truss_per_edge_L(self):
+        """Stress on truss sets per-edge L (rest length) values."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        code = exp.render_code("networkdynamics")
+        # Vertical beams have L=1.562050
+        assert ":L] = 1.56205" in code
+        # Cross braces have L=1.019804
+        assert ":L] = 1.019804" in code
+
 
 # ===========================================================================
 # Test 2: YAML specification correctness
@@ -364,13 +464,58 @@ class TestYAMLSpecs:
         # Node 4 has KuramotoInertia
         assert str(nodes[4].dynamics) == "KuramotoInertia"
 
+    def test_cascading_failure_yaml(self):
+        """Cascading failure YAML: 5 nodes, swing equation, events, find_fixpoint."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        assert exp.network.number_of_nodes == 5
+        assert exp.integration.duration == 6.0
+        assert exp.local_dynamics.name == "SwingEquation"
+        # Has events
+        events = getattr(exp, 'events', [])
+        assert len(events) >= 2
+        # Has find_fixpoint execution config
+        exec_cfg = getattr(exp, 'execution', None)
+        assert exec_cfg is not None
+        assert getattr(exec_cfg, 'find_fixpoint', False) is True
+
+    def test_stress_on_truss_yaml(self):
+        """Stress on truss YAML: 11 nodes, 2 vertex types, per-edge L."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        assert exp.network.number_of_nodes == 11
+        assert exp.integration.duration == 12.0
+        assert exp.local_dynamics.name == "FreeVertex"
+        # Has FixedVertex in dynamics library
+        assert "FixedVertex" in exp.dynamics
+        # Edges
+        edges = exp.network.edges
+        assert len(edges) == 18
+        # FreeVertex has coupling_variables x and y
+        svs = exp.local_dynamics.state_variables
+        assert svs["x"].coupling_variable is True
+        assert svs["y"].coupling_variable is True
+        assert getattr(svs["vx"], "coupling_variable", False) is not True
+        assert getattr(svs["vy"], "coupling_variable", False) is not True
+
 
 # ===========================================================================
 # Test 3: Live execution + numerical comparison (requires pyjulia + HDF5)
 # ===========================================================================
-@julia_available
 class TestNumericalComparison:
     """Run TVBO-generated code in Julia and compare with reference data."""
+
+    @pytest.fixture(autouse=True)
+    def _require_julia(self):
+        """Skip entire class if pyjulia is not available."""
+        pytest.importorskip("julia", reason="pyjulia not installed")
+        from tvbo.run.julia import run_julia_code
+        try:
+            run_julia_code("1+1")
+        except Exception:
+            pytest.skip("Julia runtime not available")
 
     @pytest.fixture
     def julia_runner(self):
@@ -378,10 +523,6 @@ class TestNumericalComparison:
         from tvbo.run.julia import run_julia_code, extract_ode_solution
         return run_julia_code, extract_ode_solution
 
-    @pytest.mark.skipif(
-        not _h5_exists("diffusion"),
-        reason="diffusion_reference.h5 not found"
-    )
     def test_diffusion_numerical(self, julia_runner):
         """Diffusion: TVBO result matches original within tolerance."""
         ref = _load_reference("diffusion")
@@ -399,10 +540,6 @@ class TestNumericalComparison:
         assert np.std(final_states) < 0.1, \
             f"Diffusion should converge: std={np.std(final_states):.4f}"
 
-    @pytest.mark.skipif(
-        not _h5_exists("kuramoto"),
-        reason="kuramoto_reference.h5 not found"
-    )
     def test_kuramoto_numerical(self, julia_runner):
         """Kuramoto: TVBO result has correct shape and reasonable dynamics."""
         from tvbo import SimulationExperiment
@@ -416,10 +553,6 @@ class TestNumericalComparison:
         assert ts.data[-1, 0, 0, 0] != ts.data[0, 0, 0, 0], \
             "Phase should change over time"
 
-    @pytest.mark.skipif(
-        not _h5_exists("fitzhugh_nagumo"),
-        reason="fitzhugh_nagumo_reference.h5 not found"
-    )
     def test_fhn_numerical(self, julia_runner):
         """FHN: TVBO result has correct shape and shows synchronization."""
         from tvbo import SimulationExperiment
@@ -429,11 +562,28 @@ class TestNumericalComparison:
 
         # Check shape: 90 nodes, 2 state variables (u, v)
         assert ts.data.shape[2] == 90, f"Expected 90 nodes, got {ts.data.shape[2]}"
-        assert ts.data.shape[3] == 2, f"Expected 2 state vars, got {ts.data.shape[3]}"
+        assert ts.data.shape[1] == 2, f"Expected 2 state vars, got {ts.data.shape[1]}"
         # u variables should be bounded (no numerical explosion)
+        # TVBO convention: (time, sv, nodes, 1) — sv=0 is 'u'
         u_data = ts.data[:, 0, :, 0]
         assert np.all(np.abs(u_data) < 50), \
             f"u should be bounded: max={np.max(np.abs(u_data)):.1f}"
+
+    def test_diffusion_2d_numerical(self, julia_runner):
+        """2D diffusion: TVBO result has correct shape and converges."""
+        from tvbo import SimulationExperiment
+        yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
+        exp = SimulationExperiment.from_file(yaml_path)
+        ts = exp.run(format="networkdynamics")
+
+        # Check shape: 10 nodes, 2 state variables (x, phi)
+        assert ts.data.shape[2] == 10, f"Expected 10 nodes, got {ts.data.shape[2]}"
+        assert ts.data.shape[1] == 2, f"Expected 2 state vars, got {ts.data.shape[1]}"
+        # Both x and phi should converge (diffusion)
+        for sv_idx in range(2):
+            final = ts.data[-1, sv_idx, :, 0]
+            assert np.std(final) < 0.15, \
+                f"SV {sv_idx} should converge: std={np.std(final):.4f}"
 
 
 # ===========================================================================
@@ -442,8 +592,6 @@ class TestNumericalComparison:
 class TestReferenceData:
     """Validate the HDF5 reference data itself for consistency."""
 
-    @pytest.mark.skipif(not _h5_exists("diffusion"),
-                        reason="diffusion_reference.h5 not found")
     def test_diffusion_reference_shape(self):
         ref = _load_reference("diffusion")
         assert ref["t"].shape == (201,)
@@ -451,8 +599,6 @@ class TestReferenceData:
         assert ref["u"].shape[0] == 201  # 201 time points
         assert ref["x0"].shape == (20,)
 
-    @pytest.mark.skipif(not _h5_exists("diffusion"),
-                        reason="diffusion_reference.h5 not found")
     def test_diffusion_reference_convergence(self):
         """Diffusion should converge toward uniform state."""
         ref = _load_reference("diffusion")
@@ -460,8 +606,6 @@ class TestReferenceData:
         assert np.std(final) < 0.15, \
             f"Diffusion should converge: std={np.std(final):.6f}"
 
-    @pytest.mark.skipif(not _h5_exists("kuramoto"),
-                        reason="kuramoto_reference.h5 not found")
     def test_kuramoto_reference_shape(self):
         ref = _load_reference("kuramoto")
         assert ref["t"].shape == (201,)
@@ -469,8 +613,6 @@ class TestReferenceData:
         assert ref["u"].shape[0] == 201
         assert ref["omega0"].shape == (8,)
 
-    @pytest.mark.skipif(not _h5_exists("kuramoto"),
-                        reason="kuramoto_reference.h5 not found")
     def test_kuramoto_reference_frequencies(self):
         """Omega0 should be centered and span [1/N, 1]."""
         ref = _load_reference("kuramoto")
@@ -478,8 +620,6 @@ class TestReferenceData:
         assert abs(np.sum(ω)) < 1e-10, f"ω should be centered: sum={np.sum(ω)}"
         assert ω.shape == (8,)
 
-    @pytest.mark.skipif(not _h5_exists("fitzhugh_nagumo"),
-                        reason="fitzhugh_nagumo_reference.h5 not found")
     def test_fhn_reference_shape(self):
         ref = _load_reference("fitzhugh_nagumo")
         assert ref["t"].shape == (501,)
@@ -487,8 +627,6 @@ class TestReferenceData:
         assert ref["u"].shape[1] == 180
         assert ref["u"].shape[0] == 501
 
-    @pytest.mark.skipif(not _h5_exists("fitzhugh_nagumo"),
-                        reason="fitzhugh_nagumo_reference.h5 not found")
     def test_fhn_reference_bounded(self):
         """FHN states should be bounded (no numerical explosion)."""
         ref = _load_reference("fitzhugh_nagumo")
@@ -496,8 +634,6 @@ class TestReferenceData:
         assert np.max(np.abs(ref["u"])) < 50, \
             f"States should be bounded: max={np.max(np.abs(ref['u'])):.1f}"
 
-    @pytest.mark.skipif(not _h5_exists("fitzhugh_nagumo"),
-                        reason="fitzhugh_nagumo_reference.h5 not found")
     def test_fhn_connectivity_matrix(self):
         """FHN connectivity matrix should be 90×90 with correct sparsity."""
         ref = _load_reference("fitzhugh_nagumo")
@@ -509,8 +645,6 @@ class TestReferenceData:
 
     # -- 2D Diffusion reference data --
 
-    @pytest.mark.skipif(not _h5_exists("diffusion_2d"),
-                        reason="diffusion_2d_reference.h5 not found")
     def test_diffusion_2d_reference_shape(self):
         """2D Diffusion reference: 301 timesteps, 20 states (10 nodes × 2 SVs)."""
         ref = _load_reference("diffusion_2d")
@@ -519,8 +653,6 @@ class TestReferenceData:
         assert ref["u"].shape[0] == 301
         assert ref["u"].shape[1] == 20
 
-    @pytest.mark.skipif(not _h5_exists("diffusion_2d"),
-                        reason="diffusion_2d_reference.h5 not found")
     def test_diffusion_2d_reference_convergence(self):
         """2D Diffusion: both state variables should converge."""
         ref = _load_reference("diffusion_2d")
@@ -535,8 +667,6 @@ class TestReferenceData:
 
     # -- Heterogeneous Kuramoto reference data --
 
-    @pytest.mark.skipif(not _h5_exists("heterogeneous_kuramoto"),
-                        reason="heterogeneous_kuramoto_reference.h5 not found")
     def test_heterogeneous_kuramoto_reference_shape(self):
         """Heterogeneous Kuramoto reference: 201 timesteps, mixed state dim."""
         ref = _load_reference("heterogeneous_kuramoto")
@@ -545,21 +675,63 @@ class TestReferenceData:
         # Total: 0 + 1+1+1 + 2 + 1+1+1 = 8 states
         assert ref["u"].shape[0] == 201
 
-    @pytest.mark.skipif(not _h5_exists("heterogeneous_kuramoto"),
-                        reason="heterogeneous_kuramoto_reference.h5 not found")
     def test_heterogeneous_kuramoto_reference_bounded(self):
         """Heterogeneous Kuramoto: all states should be finite and bounded."""
         ref = _load_reference("heterogeneous_kuramoto")
         assert np.all(np.isfinite(ref["u"])), "All states should be finite"
 
-    @pytest.mark.skipif(not _h5_exists("heterogeneous_kuramoto"),
-                        reason="heterogeneous_kuramoto_reference.h5 not found")
     def test_heterogeneous_kuramoto_vertex_types_data(self):
         """Heterogeneous Kuramoto: vertex types are correctly stored."""
         ref = _load_reference("heterogeneous_kuramoto")
         if "vertex_types" in ref:
             vtypes = ref["vertex_types"]
             assert len(vtypes) == 8
+
+    # -- Cascading Failure reference data --
+
+    def test_cascading_failure_reference_shape(self):
+        """Cascading failure: 601 timesteps, 10 states (5 nodes × 2 SVs)."""
+        ref = _load_reference("cascading_failure")
+        assert ref["t"].shape == (601,)
+        assert ref["u"].shape[0] == 601  # timesteps
+        assert ref["u"].shape[1] == 10   # 5 nodes × 2 SVs
+
+    def test_cascading_failure_reference_bounded(self):
+        """Cascading failure: states should be bounded (no numerical explosion)."""
+        ref = _load_reference("cascading_failure")
+        assert np.all(np.isfinite(ref["u"])), "All states should be finite"
+        assert np.max(np.abs(ref["u"])) < 100, \
+            f"States should be bounded: max={np.max(np.abs(ref['u'])):.1f}"
+
+    def test_cascading_failure_adjacency(self):
+        """Cascading failure: 5×5 adjacency matrix with 7 edges."""
+        ref = _load_reference("cascading_failure")
+        adj = ref["adjacency"]
+        assert adj.shape == (5, 5)
+        n_edges = np.count_nonzero(adj)
+        assert n_edges == 14  # 7 undirected edges × 2
+
+    # -- Stress on Truss reference data --
+
+    def test_stress_on_truss_reference_shape(self):
+        """Stress on truss: 1201 timesteps, 36 states (9 free × 4 SVs)."""
+        ref = _load_reference("stress_on_truss")
+        assert ref["t"].shape == (1201,)
+        assert ref["u"].shape[0] == 1201  # timesteps
+        assert ref["u"].shape[1] == 36    # 9 free nodes × 4 SVs
+
+    def test_stress_on_truss_reference_bounded(self):
+        """Stress on truss: states should be bounded (no numerical explosion)."""
+        ref = _load_reference("stress_on_truss")
+        assert np.all(np.isfinite(ref["u"])), "All states should be finite"
+
+    def test_stress_on_truss_adjacency(self):
+        """Stress on truss: 11×11 adjacency matrix with 18 edges."""
+        ref = _load_reference("stress_on_truss")
+        adj = ref["adjacency"]
+        assert adj.shape == (11, 11)
+        n_edges = np.count_nonzero(adj)
+        assert n_edges == 36  # 18 undirected edges × 2
 
 
 # ===========================================================================
@@ -571,6 +743,7 @@ class TestDocURLs:
     @pytest.fixture(params=[
         "diffusion", "kuramoto", "fitzhugh_nagumo",
         "diffusion_2d", "heterogeneous_kuramoto",
+        "cascading_failure", "stress_on_truss",
     ])
     def yaml_path(self, request):
         return os.path.join(EXAMPLES_DIR, f"{request.param}.yaml")

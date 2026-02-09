@@ -10,7 +10,7 @@ Replicates the [NetworkDynamics.jl Getting Started tutorial](https://juliadynami
 ```{python}
 #| echo: false
 from IPython.display import Code, Markdown
-Code(filename="diffusion.yaml", language="yaml")
+Code(filename="yaml/diffusion.yaml", language="yaml")
 ```
 
 ## Model Report
@@ -19,7 +19,7 @@ Code(filename="diffusion.yaml", language="yaml")
 #| echo: false
 #| output: asis
 from tvbo import SimulationExperiment
-exp = SimulationExperiment.from_file("diffusion.yaml")
+exp = SimulationExperiment.from_file("yaml/diffusion.yaml")
 Markdown(exp.generate_report())
 ```
 
@@ -27,7 +27,7 @@ Markdown(exp.generate_report())
 
 ```{python}
 from tvbo import SimulationExperiment
-exp = SimulationExperiment.from_file("diffusion.yaml")
+exp = SimulationExperiment.from_file("yaml/diffusion.yaml")
 Code(exp.render_code("networkdynamics"), language='julia')
 ```
 

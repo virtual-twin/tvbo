@@ -1,0 +1,39 @@
+---
+title: "2D Network Diffusion"
+subtitle: "Multi-dimensional diffusion with broadcasting edge functions"
+---
+
+Extends the [NetworkDynamics.jl Getting Started tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) to 2D diffusion — each node has two state variables ($x$, $\phi$), both marked as coupling variables. The edge function broadcasts over all dimensions using `e_dst .= v_src .- v_dst`.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/diffusion_2d.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/diffusion_2d.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/diffusion_2d.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+ts = exp.run(format="networkdynamics")
+ts.plot()
+```

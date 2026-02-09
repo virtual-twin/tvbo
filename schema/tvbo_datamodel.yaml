@@ -132,6 +132,18 @@ enums:
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }
             none: { description: "No aggregation" }
+    EventType:
+        description: "Type of event triggering mechanism."
+        permissible_values:
+            continuous:
+                description: "Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback."
+            discrete:
+                description: "Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback."
+            preset_time:
+                description: "Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback."
+            stimulus:
+                description: "Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior."
+
     StandardGraphType:
         description: >
             Well-known graph generator families with automatic backend mapping.
@@ -270,6 +282,94 @@ classes:
                 multivalued: true
                 range: float
                 array: {}
+
+    Event:
+        description: >-
+            A discrete or continuous event that modifies the system during simulation.
+            Generalizes Stimulus: can represent external inputs (stimulus type),
+            threshold-triggered state changes (continuous/discrete type),
+            or time-scheduled interventions (preset_time type).
+            Attaches to components (nodes/edges) or to the experiment level.
+        slots:
+            - name
+            - label
+            - description
+            - parameters
+        attributes:
+            event_type:
+                range: EventType
+                ifabsent: "stimulus"
+                description: "Type of event trigger mechanism."
+            condition:
+                range: Equation
+                inlined: true
+                description: >-
+                    Condition function. For continuous events: triggers when
+                    expression crosses zero. For discrete events: triggers when
+                    expression evaluates to true. Not used for preset_time or
+                    stimulus types.
+            condition_states:
+                multivalued: true
+                range: string
+                description: >-
+                    State variable symbols accessible in the condition function.
+                    For edges, can include source/destination vertex outputs.
+            condition_parameters:
+                multivalued: true
+                range: string
+                description: "Parameter symbols accessible in the condition function."
+            affect:
+                range: Equation
+                inlined: true
+                description: >-
+                    Affect function: what happens when the event triggers.
+                    Can modify state variables and/or parameters.
+                    For stimulus type, this is the stimulus equation.
+            affect_states:
+                multivalued: true
+                range: string
+                description: "State variable symbols modifiable in the affect function."
+            affect_parameters:
+                multivalued: true
+                range: string
+                description: "Parameter symbols modifiable in the affect function."
+            affect_negative:
+                range: Equation
+                inlined: true
+                description: >-
+                    Affect on downcrossing (continuous events only).
+                    If not specified, uses the same affect for both crossings.
+            trigger_times:
+                multivalued: true
+                range: float
+                description: >-
+                    Predetermined trigger times for preset_time events.
+                    The solver will step exactly to these times.
+            target_component:
+                range: string
+                description: >-
+                    Component to attach this event to. Can be a node label,
+                    edge label, or 'all_edges'/'all_vertices' for broadcast.
+                    If not specified, event is experiment-level.
+            equation:
+                range: Equation
+                inlined: true
+                description: >-
+                    Stimulus equation for stimulus-type events.
+                    Legacy compatibility with Stimulus class.
+            regions:
+                multivalued: true
+                range: integer
+                array: {}
+                description: "Target regions for stimulus-type events."
+            weighting:
+                multivalued: true
+                range: float
+                array: {}
+                description: "Per-region weighting for stimulus-type events."
+            duration:
+                range: float
+                description: "Duration of stimulus-type events."
 
     TemporalApplicableEquation:
         is_a: Equation
@@ -526,6 +626,11 @@ classes:
                 multivalued: true
                 range: float
                 description: "Initial values for state variables"
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: "Events attached to this node (e.g., threshold-based state changes)."
 
     Edge:
         class_uri: tvbo:Edge
@@ -558,6 +663,23 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            dynamics:
+                range: Dynamics
+                required: false
+                inlined: false
+                description: >-
+                    Dynamics model for this edge. When specified, the edge has
+                    its own state variables and ODE (EdgeModel with f in ND.jl).
+                    Uses the same Dynamics class as nodes — state_variables define
+                    edge states, derived_variables define observables, output defines
+                    what is visible for plotting/analysis. The coupling_function on
+                    Coupling still defines how vertex outputs map to edge outputs
+                    for aggregation at vertices.
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: "Events attached to this edge (e.g., threshold-based line tripping)."
 
     Observation:
         description: >-
@@ -738,6 +860,17 @@ classes:
                 range: boolean
                 ifabsent: "true"
                 description: "Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t)."
+            observed:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+                description: >-
+                    Observable functions computed from states, inputs, and parameters
+                    after simulation. Unlike derived_variables (which are intermediate
+                    algebraic expressions used within the ODE), observed variables
+                    are post-hoc quantities recoverable from the solution.
+                    Maps to obsf/obssym in ND.jl EdgeModel/VertexModel.
+                    Example: absolute force magnitude computed from force components.
 
     StateVariable:
         class_uri: tvbo:StateVariable
@@ -1538,6 +1671,23 @@ classes:
                 range: boolean
                 ifabsent: true
                 description: "Whether coupling includes transmission delays"
+            outsym:
+                multivalued: true
+                range: string
+                description: >-
+                    Output symbol names for the edge model.
+                    E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces.
+                    Maps directly to outsym in ND.jl EdgeModel.
+                    If not specified, derived from coupling variables of the
+                    connected vertex dynamics.
+            observed:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+                description: >-
+                    Observable functions computed from edge inputs and parameters
+                    after simulation. Maps to obsf/obssym in ND.jl EdgeModel.
+                    Example: absolute force magnitude computed from force components.
 
             # Hierarchical/subspace coupling attributes (optional)
             inner_coupling:
@@ -1615,6 +1765,13 @@ classes:
                 range: integer
                 ifabsent: integer(42)
                 description: "Base random seed for reproducibility"
+            find_fixpoint:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Whether to find a fixed point (steady state) before
+                    time integration. Used as initial condition for ODEProblem.
+                    Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
 
     SimulationExperiment:
         tree_root: true
@@ -1676,6 +1833,14 @@ classes:
             stimulation:
                 range: Stimulus
                 inlined: true
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: >-
+                    Events that apply at the experiment level.
+                    For component-level events, attach them to individual
+                    nodes or edges instead.
             field_dynamics:
                 range: PDE # Distributed, spatially resolved dynamics (PDE)
                 inlined: true

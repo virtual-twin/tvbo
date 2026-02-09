@@ -1403,10 +1403,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
         elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
+            from tvbo.adapters.base import BaseAdapter
+            adapter = BaseAdapter(self)
+            ctx = adapter.prepare_context()
+            ctx.update(kwargs)
             template = templates.lookup.get_template(
                 "tvbo-nd-experiment.jl.mako"
             )
-            rendered_code = template.render(experiment=self, **kwargs)
+            rendered_code = template.render(**ctx)
 
         else:
             raise ValueError(
