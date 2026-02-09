@@ -94,7 +94,7 @@ network:
     number_of_nodes: 90
     number_of_regions: 90
     edge_matrix_files:
-        - Norm_G_DTI.txt
+        - ../Norm_G_DTI.txt
     parcellation:
         label: "AAL-90"
         atlas:

@@ -1,0 +1,53 @@
+---
+title: "Stress on Truss"
+subtitle: "2D truss structure with stiff springs and observed forces"
+---
+
+Replicates the [NetworkDynamics.jl Stress on Truss tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) — a 2D truss of point masses connected by stiff beams. Free vertices move under gravity and spring forces; fixed vertices act as supports. Demonstrates heterogeneous vertex types, 2D coupling (`insym`/`outsym`), observed functions (`obsf`), and per-edge parameters.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/stress_on_truss.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/stress_on_truss.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/stress_on_truss.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+ts = exp.run(format="networkdynamics")
+ts.plot()
+```
+
+## Results
+
+```{python}
+#| echo: false
+import numpy as np
+# Free vertices only (9 of 11 nodes have states)
+x_data = ts.data[:, 2, :, 0]   # x position
+y_data = ts.data[:, 3, :, 0]   # y position
+print(f"Shape: {ts.data.shape}")
+print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
+print(f"x range: [{x_data.min():.3f}, {x_data.max():.3f}]")
+print(f"y range: [{y_data.min():.3f}, {y_data.max():.3f}]")
+```
