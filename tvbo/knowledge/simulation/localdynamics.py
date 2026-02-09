@@ -229,7 +229,7 @@ def class2metadata(ontoclass, metadata):
 def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
     """
     Update parameters from ontology.
-    
+
     Parameters
     ----------
     metadata : Dynamics
@@ -1754,35 +1754,34 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.adapters.julia import eval_with_auto_install, get_julia
+            from tvbo.run.julia import (
+                extract_bifurcation_result,
+                extract_ode_solution,
+                run_julia_code,
+            )
 
-            jl, Main = get_julia(compiled_modules=False)
-            eval_with_auto_install(code)
+            run_julia_code(code)
             if format == "julia":
-                t = eval_with_auto_install("Array(sol.t)")
-                u_mat = eval_with_auto_install("Array(hcat(sol.u...))")  # states x time
-                import numpy as _np
-
-                t_arr = _np.array(t, dtype=float)
-                data = _np.array(u_mat, dtype=float).T  # time x states
+                t, u_raw, sol = extract_ode_solution()
+                # Single-node ODE: u_raw is (n_sv, n_t), hcat(sol.u...) gives states×time
+                data = u_raw.T  # time x states
                 data4 = data[:, :, None, None]
                 labels_dimensions = {
                     "State Variable": list(self.state_variables.keys()),
                     "Region": ["Region0"],
                 }
                 return TimeSeries(
-                    time=t_arr,
+                    time=t,
                     data=data4,
                     title=self.name,
-                    sample_period=(t_arr[1] - t_arr[0]) if t_arr.size > 1 else None,
+                    sample_period=(t[1] - t[0]) if t.size > 1 else None,
                     labels_dimensions=labels_dimensions,
                 )
             elif format == "bifurcation-julia":
-                import numpy as _np
-
-                br_obj = eval_with_auto_install("bifurcation_result")
+                br_obj = extract_bifurcation_result()
                 bif_res = BifurcationResult(br=br_obj, model=self, **kwargs)
                 if "periodic_orbits" in kwargs and kwargs["periodic_orbits"]:
+                    from tvbo.adapters.julia import eval_with_auto_install
                     po = eval_with_auto_install("po_results")
 
                     bif_res.periodic_orbits = [

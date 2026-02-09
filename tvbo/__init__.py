@@ -47,6 +47,46 @@ def clean_temp():
     os.makedirs(tempdir)
 
 
+# ---------------------------------------------------------------------------
+# JAX backend configuration
+# ---------------------------------------------------------------------------
+# jax-metal (Apple GPU) plugin versions <= 0.1.1 are incompatible with
+# JAX >= 0.7 and crash with "UNIMPLEMENTED: default_memory_space is not
+# supported".  Detect this early and fall back to the CPU backend so that
+# *every* downstream JAX call works out of the box.
+# Users can override by setting JAX_PLATFORMS or jax_default_device before
+# importing tvbo.
+def _configure_jax_backend():
+    """Fall back to CPU when the Metal plugin is broken."""
+    # Respect explicit user override
+    if "JAX_PLATFORMS" in os.environ:
+        return
+    try:
+        import jax                                     # noqa: E402
+        if jax.default_backend().upper() == "METAL":
+            # Quick smoke-test: try the simplest device operation
+            try:
+                jax.numpy.zeros(1)
+            except Exception:
+                import warnings
+                warnings.warn(
+                    "jax-metal plugin detected but incompatible with the "
+                    "installed JAX version. Falling back to CPU. "
+                    "Uninstall jax-metal or upgrade it to fix this: "
+                    "  pip uninstall jax-metal",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                jax.config.update(
+                    "jax_default_device", jax.devices("cpu")[0]
+                )
+    except ImportError:
+        pass  # JAX not installed – nothing to configure
+
+
+_configure_jax_backend()
+# ---------------------------------------------------------------------------
+
 from .data import tvbo_data
 from .data.tvbo_data.connectomes import Connectome, Network
 from .data.tvbo_data.atlases import Atlas

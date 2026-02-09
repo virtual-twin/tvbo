@@ -398,8 +398,8 @@ class JuliaPrinter(spj.JuliaCodePrinter):
         # Be tolerant: allow partial printing instead of raising for unknown constructs.
         settings.setdefault("strict", False)
         super().__init__(settings=settings)
-        # Add array function mappings (Julia uses _known_functions internally)
-        self._known_functions.update(ARRAY_FUNCTION_MAPPINGS["julia"])
+        # Add array function mappings
+        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["julia"])
 
     # SymPy's JuliaCodePrinter does not implement IndexedBase by default; our templates
     # occasionally introduce placeholder IndexedBase symbols (e.g. x_i, x_j) for clarity.

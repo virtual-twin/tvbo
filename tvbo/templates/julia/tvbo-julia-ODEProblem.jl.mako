@@ -12,4 +12,4 @@ u0 = [
 # Define time span
 tspan = (0.0, ${duration}) # Adjust time span as needed
 
-prob = ODEProblem(${model.metadata.name}!, u0, tspan, p)
+prob = ODEProblem(${model.name}!, u0, tspan, p)

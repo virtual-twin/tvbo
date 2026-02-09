@@ -132,6 +132,21 @@ enums:
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }
             none: { description: "No aggregation" }
+    StandardGraphType:
+        description: >
+            Well-known graph generator families with automatic backend mapping.
+            The type field on GraphGenerator is a free string; this enum lists
+            common types that get automatic code generation for Julia (Graphs.jl)
+            and Python (NetworkX).
+        permissible_values:
+            BarabasiAlbert: { description: "Barabasi-Albert preferential attachment (params: k)" }
+            WattsStrogatz: { description: "Watts-Strogatz small-world (params: k, p)" }
+            ErdosRenyi: { description: "Erdos-Renyi random graph (params: p)" }
+            Complete: { description: "Complete graph (all-to-all)" }
+            Cycle: { description: "Cycle graph (ring)" }
+            Star: { description: "Star graph" }
+            RandomRegular: { description: "Random regular graph (params: k)" }
+            Grid: { description: "Grid/lattice graph (params: dims)" }
     RequirementRole:
         permissible_values:
             engine: { description: "Primary simulation/processing engine" }
@@ -427,6 +442,47 @@ classes:
                 range: File
                 multivalued: true
 
+            graph_generator:
+                range: GraphGenerator
+                inlined: true
+                description: >
+                    Graph generator specification.  When set, overrides explicit
+                    edges/nodes for graph construction.  The type field is a free
+                    string; StandardGraphType lists well-known types that get
+                    automatic code generation across backends.
+
+    GraphGenerator:
+        description: >
+            Backend-agnostic graph generator specification.  Captures the
+            mathematical family (type) and its parameters so that each backend
+            can emit the correct constructor call (Graphs.jl, NetworkX, etc.).
+            The number of nodes is always taken from Network.number_of_nodes.
+        slots:
+            - name
+            - description
+        attributes:
+            type:
+                range: string
+                required: true
+                description: >
+                    Graph family name.  Use a StandardGraphType value for
+                    automatic backend mapping, or any custom string for
+                    documentation purposes.
+            seed:
+                range: integer
+                description: "Random seed for reproducible graph generation."
+            directed:
+                range: boolean
+                ifabsent: boolean(false)
+                description: "Whether to generate a directed graph."
+            parameters:
+                range: Parameter
+                multivalued: true
+                inlined: true
+                description: >
+                    Generator parameters (e.g. k, p, dims).  Names are
+                    matched by the backend mapping to construct the call.
+
     File:
         slots:
             - name
@@ -507,7 +563,7 @@ classes:
         description: >-
             Unified class for all observation/measurement specifications.
             Covers monitors (BOLD, EEG), tuning observables, and derived quantities.
-            Pipeline is a sequence of Functions with input → output flow.
+            Pipeline is a sequence of Functions with input -> output flow.
         class_uri: tvbo:Observation
         slots:
             - name
@@ -567,9 +623,9 @@ classes:
                 range: integer
                 description: "Number of samples for windowed aggregation"
 
-            # Processing pipeline (sequence of Functions with input → output flow)
+            # Processing pipeline (sequence of Functions with input -> output flow)
             pipeline:
-                description: "Ordered sequence of Functions. Each Function transforms input → output."
+                description: "Ordered sequence of Functions. Each Function transforms input -> output."
                 multivalued: true
                 inlined_as_list: true
                 range: FunctionCall
@@ -586,7 +642,7 @@ classes:
                 inlined: true
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
-    # Function now handles input → process → output flow directly
+    # Function now handles input -> process -> output flow directly
 
     DerivedObservation:
         description: >-
@@ -712,21 +768,38 @@ classes:
             initial_value:
                 range: float
                 ifabsent: float(0.1)
+            distribution:
+                range: Distribution
+                inlined: true
+                description: "Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean."
             history:
                 range: TimeSeries
                 inlined: true
 
     Distribution:
+        description: >-
+            A probability distribution for sampling parameters or initial conditions.
+            Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
+            Custom distributions use a Function for the PDF/sampling rule.
+            Default name is Uniform when only domain is given.
         slots:
             - name
-            - equation
             - parameters
+        slot_usage:
+            name:
+                ifabsent: string(Uniform)
         attributes:
-            dependencies:
-                multivalued: true
-                range: Parameter
+            domain:
+                range: Range
                 inlined: true
-
+                description: "Support of the distribution (sampling bounds). For Uniform this fully defines the distribution."
+            function:
+                range: Function
+                inlined: true
+                description: "Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions."
+            seed:
+                range: integer
+                description: "Random seed for reproducible sampling."
             correlation:
                 range: Matrix
                 inlined: true
@@ -750,6 +823,10 @@ classes:
                 range: string
             heterogeneous:
                 range: boolean
+            distribution:
+                range: Distribution
+                inlined: true
+                description: "Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true."
             free:
                 range: boolean
             shape:
@@ -800,7 +877,7 @@ classes:
     Function:
         class_uri: tvbo:Function
         description: >-
-            A function with explicit input → transformation → output flow.
+            A function with explicit input -> transformation -> output flow.
             Can be equation-based (symbolic) or software-based (callable).
             In a pipeline, functions are chained: output of one becomes input of next.
         slots:
@@ -1957,7 +2034,7 @@ classes:
             discretization:
                 range: DiscretizationMethod
             time_integrator:
-                description: "e.g., implicit Euler, Crank–Nicolson."
+                description: "e.g., implicit Euler, Crank-Nicolson."
                 range: string
             dt:
                 description: "Time step (s)."

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-09T14:03:39
+# Generation date: 2026-02-09T16:48:07
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -77,6 +77,10 @@ DEFAULT_ = TVBO
 
 # Class references
 class TractogramName(extended_str):
+    pass
+
+
+class GraphGeneratorName(extended_str):
     pass
 
 
@@ -572,6 +576,7 @@ class Network(YAMLRoot):
     distance_unit: Optional[str] = "mm"
     time_unit: Optional[str] = "ms"
     edge_matrix_files: Optional[Union[Union[str, FileName], list[Union[str, FileName]]]] = empty_list()
+    graph_generator: Optional[Union[dict, "GraphGenerator"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -631,6 +636,55 @@ class Network(YAMLRoot):
         if not isinstance(self.edge_matrix_files, list):
             self.edge_matrix_files = [self.edge_matrix_files] if self.edge_matrix_files is not None else []
         self.edge_matrix_files = [v if isinstance(v, FileName) else FileName(v) for v in self.edge_matrix_files]
+
+        if self.graph_generator is not None and not isinstance(self.graph_generator, GraphGenerator):
+            self.graph_generator = GraphGenerator(**as_dict(self.graph_generator))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class GraphGenerator(YAMLRoot):
+    """
+    Backend-agnostic graph generator specification. Captures the mathematical family (type) and its parameters so that
+    each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.). The number of nodes is always
+    taken from Network.number_of_nodes.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["GraphGenerator"]
+    class_class_curie: ClassVar[str] = "tvbo:GraphGenerator"
+    class_name: ClassVar[str] = "GraphGenerator"
+    class_model_uri: ClassVar[URIRef] = TVBO.GraphGenerator
+
+    name: Union[str, GraphGeneratorName] = None
+    type: str = None
+    description: Optional[str] = None
+    seed: Optional[int] = None
+    directed: Optional[Union[bool, Bool]] = False
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, GraphGeneratorName):
+            self.name = GraphGeneratorName(self.name)
+
+        if self._is_empty(self.type):
+            self.MissingRequiredField("type")
+        if not isinstance(self.type, str):
+            self.type = str(self.type)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.seed is not None and not isinstance(self.seed, int):
+            self.seed = int(self.seed)
+
+        if self.directed is not None and not isinstance(self.directed, Bool):
+            self.directed = Bool(self.directed)
+
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -785,7 +839,7 @@ class Edge(YAMLRoot):
 class Observation(YAMLRoot):
     """
     Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and
-    derived quantities. Pipeline is a sequence of Functions with input → output flow.
+    derived quantities. Pipeline is a sequence of Functions with input -> output flow.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1045,6 +1099,7 @@ class StateVariable(YAMLRoot):
     stimulation_variable: Optional[Union[bool, Bool]] = None
     boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
+    distribution: Optional[Union[dict, "Distribution"]] = None
     history: Optional[Union[dict, "TimeSeries"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1092,6 +1147,9 @@ class StateVariable(YAMLRoot):
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
 
+        if self.distribution is not None and not isinstance(self.distribution, Distribution):
+            self.distribution = Distribution(**as_dict(self.distribution))
+
         if self.history is not None and not isinstance(self.history, TimeSeries):
             self.history = TimeSeries(**as_dict(self.history))
 
@@ -1100,6 +1158,11 @@ class StateVariable(YAMLRoot):
 
 @dataclass(repr=False)
 class Distribution(YAMLRoot):
+    """
+    A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform,
+    Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling
+    rule. Default name is Uniform when only domain is given.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Distribution"]
@@ -1107,10 +1170,11 @@ class Distribution(YAMLRoot):
     class_name: ClassVar[str] = "Distribution"
     class_model_uri: ClassVar[URIRef] = TVBO.Distribution
 
-    name: Union[str, DistributionName] = None
-    equation: Optional[Union[dict, Equation]] = None
+    name: Union[str, DistributionName] = "Uniform"
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
-    dependencies: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    domain: Optional[Union[dict, Range]] = None
+    function: Optional[Union[dict, "Function"]] = None
+    seed: Optional[int] = None
     correlation: Optional[Union[dict, Matrix]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1119,12 +1183,16 @@ class Distribution(YAMLRoot):
         if not isinstance(self.name, DistributionName):
             self.name = DistributionName(self.name)
 
-        if self.equation is not None and not isinstance(self.equation, Equation):
-            self.equation = Equation(**as_dict(self.equation))
-
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="dependencies", slot_type=Parameter, key_name="name", keyed=True)
+        if self.domain is not None and not isinstance(self.domain, Range):
+            self.domain = Range(**as_dict(self.domain))
+
+        if self.function is not None and not isinstance(self.function, Function):
+            self.function = Function(**as_dict(self.function))
+
+        if self.seed is not None and not isinstance(self.seed, int):
+            self.seed = int(self.seed)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -1154,6 +1222,7 @@ class Parameter(YAMLRoot):
     unit: Optional[str] = None
     comment: Optional[str] = None
     heterogeneous: Optional[Union[bool, Bool]] = None
+    distribution: Optional[Union[dict, Distribution]] = None
     free: Optional[Union[bool, Bool]] = None
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
@@ -1199,6 +1268,9 @@ class Parameter(YAMLRoot):
 
         if self.heterogeneous is not None and not isinstance(self.heterogeneous, Bool):
             self.heterogeneous = Bool(self.heterogeneous)
+
+        if self.distribution is not None and not isinstance(self.distribution, Distribution):
+            self.distribution = Distribution(**as_dict(self.distribution))
 
         if self.free is not None and not isinstance(self.free, Bool):
             self.free = Bool(self.free)
@@ -1288,8 +1360,8 @@ class Argument(YAMLRoot):
 @dataclass(repr=False)
 class Function(YAMLRoot):
     """
-    A function with explicit input → transformation → output flow. Can be equation-based (symbolic) or software-based
-    (callable). In a pipeline, functions are chained: output of one becomes input of next.
+    A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or
+    software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -4060,6 +4132,42 @@ class AggregationType(EnumDefinitionImpl):
         description="How to aggregate time series data",
     )
 
+class StandardGraphType(EnumDefinitionImpl):
+    """
+    Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free
+    string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python
+    (NetworkX).
+    """
+    BarabasiAlbert = PermissibleValue(
+        text="BarabasiAlbert",
+        description="Barabasi-Albert preferential attachment (params: k)")
+    WattsStrogatz = PermissibleValue(
+        text="WattsStrogatz",
+        description="Watts-Strogatz small-world (params: k, p)")
+    ErdosRenyi = PermissibleValue(
+        text="ErdosRenyi",
+        description="Erdos-Renyi random graph (params: p)")
+    Complete = PermissibleValue(
+        text="Complete",
+        description="Complete graph (all-to-all)")
+    Cycle = PermissibleValue(
+        text="Cycle",
+        description="Cycle graph (ring)")
+    Star = PermissibleValue(
+        text="Star",
+        description="Star graph")
+    RandomRegular = PermissibleValue(
+        text="RandomRegular",
+        description="Random regular graph (params: k)")
+    Grid = PermissibleValue(
+        text="Grid",
+        description="Grid/lattice graph (params: dims)")
+
+    _defn = EnumDefinition(
+        name="StandardGraphType",
+        description="""Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).""",
+    )
+
 class RequirementRole(EnumDefinitionImpl):
 
     engine = PermissibleValue(
@@ -4426,6 +4534,21 @@ slots.network__time_unit = Slot(uri=TVBO.time_unit, name="network__time_unit", c
 slots.network__edge_matrix_files = Slot(uri=TVBO.edge_matrix_files, name="network__edge_matrix_files", curie=TVBO.curie('edge_matrix_files'),
                    model_uri=TVBO.network__edge_matrix_files, domain=None, range=Optional[Union[Union[str, FileName], list[Union[str, FileName]]]])
 
+slots.network__graph_generator = Slot(uri=TVBO.graph_generator, name="network__graph_generator", curie=TVBO.curie('graph_generator'),
+                   model_uri=TVBO.network__graph_generator, domain=None, range=Optional[Union[dict, GraphGenerator]])
+
+slots.graphGenerator__type = Slot(uri=TVBO.type, name="graphGenerator__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.graphGenerator__type, domain=None, range=str)
+
+slots.graphGenerator__seed = Slot(uri=TVBO.seed, name="graphGenerator__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.graphGenerator__seed, domain=None, range=Optional[int])
+
+slots.graphGenerator__directed = Slot(uri=TVBO.directed, name="graphGenerator__directed", curie=TVBO.curie('directed'),
+                   model_uri=TVBO.graphGenerator__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.graphGenerator__parameters = Slot(uri=TVBO.parameters, name="graphGenerator__parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
 slots.file__type = Slot(uri=TVBO.type, name="file__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.file__type, domain=None, range=Optional[str])
 
@@ -4576,11 +4699,20 @@ slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable_
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
 
+slots.stateVariable__distribution = Slot(uri=TVBO.distribution, name="stateVariable__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.stateVariable__distribution, domain=None, range=Optional[Union[dict, Distribution]])
+
 slots.stateVariable__history = Slot(uri=TVBO.history, name="stateVariable__history", curie=TVBO.curie('history'),
                    model_uri=TVBO.stateVariable__history, domain=None, range=Optional[Union[dict, TimeSeries]])
 
-slots.distribution__dependencies = Slot(uri=TVBO.dependencies, name="distribution__dependencies", curie=TVBO.curie('dependencies'),
-                   model_uri=TVBO.distribution__dependencies, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+slots.distribution__domain = Slot(uri=TVBO.domain, name="distribution__domain", curie=TVBO.curie('domain'),
+                   model_uri=TVBO.distribution__domain, domain=None, range=Optional[Union[dict, Range]])
+
+slots.distribution__function = Slot(uri=TVBO.function, name="distribution__function", curie=TVBO.curie('function'),
+                   model_uri=TVBO.distribution__function, domain=None, range=Optional[Union[dict, Function]])
+
+slots.distribution__seed = Slot(uri=TVBO.seed, name="distribution__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.distribution__seed, domain=None, range=Optional[int])
 
 slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
                    model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])
@@ -4590,6 +4722,9 @@ slots.parameter__comment = Slot(uri=TVBO.comment, name="parameter__comment", cur
 
 slots.parameter__heterogeneous = Slot(uri=TVBO.heterogeneous, name="parameter__heterogeneous", curie=TVBO.curie('heterogeneous'),
                    model_uri=TVBO.parameter__heterogeneous, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.parameter__distribution = Slot(uri=TVBO.distribution, name="parameter__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.parameter__distribution, domain=None, range=Optional[Union[dict, Distribution]])
 
 slots.parameter__free = Slot(uri=TVBO.free, name="parameter__free", curie=TVBO.curie('free'),
                    model_uri=TVBO.parameter__free, domain=None, range=Optional[Union[bool, Bool]])
@@ -5541,6 +5676,9 @@ slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie
 
 slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.Dynamics_system_type, domain=Dynamics, range=Optional[str])
+
+slots.Distribution_name = Slot(uri=TVBO.name, name="Distribution_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Distribution_name, domain=Distribution, range=Union[str, DistributionName])
 
 slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])

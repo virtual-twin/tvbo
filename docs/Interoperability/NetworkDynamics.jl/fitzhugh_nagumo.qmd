@@ -1,0 +1,61 @@
+---
+title: "FitzHugh-Nagumo Brain Synchronization"
+subtitle: "Directed weighted coupling on a 90-region brain atlas"
+---
+
+Replicates the [NetworkDynamics.jl Directed and Weighted Graphs tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/) — FitzHugh-Nagumo oscillators on a 90-region AAL brain connectivity derived from DTI (Tzourio-Mazoyer et al., 2002). The structural connectivity matrix `Norm_G_DTI.txt` provides directed, weighted edges.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="fitzhugh_nagumo.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("fitzhugh_nagumo.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("fitzhugh_nagumo.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+ts = exp.run(format="networkdynamics")
+ts.plot()
+```
+
+## Results
+
+```{python}
+#| echo: false
+import numpy as np
+u_data = ts.data[:, 0, :, 0]  # u variable for all nodes
+print(f"Shape: {ts.data.shape}")
+print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
+print(f"u range: [{u_data.min():.3f}, {u_data.max():.3f}]")
+print(f"Final u std across nodes: {np.std(u_data[-1]):.4f}")
+print(f"(Lower std indicates synchronization)")
+```
+
+## Animate
+
+```{python}
+ani = ts.animate("u", format="dots")
+ani.save("fitzhugh_nagumo.gif", writer="pillow", fps=20)
+```
+
+![](fitzhugh_nagumo.gif)

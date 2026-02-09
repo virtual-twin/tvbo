@@ -846,6 +846,128 @@ class TimeSeries(BaseTimeSeries):
             plt.close()
             return fig
 
+    def animate(
+        self,
+        state=0,
+        format="dots",
+        interval=50,
+        cmap="viridis",
+        node_size=120,
+        figsize=(10, 4),
+    ):
+        """Animate timeseries on a graph layout.
+
+        Each node is a dot positioned by the graph layout; its color
+        reflects the timeseries value of the selected state variable
+        over time.
+
+        Parameters
+        ----------
+        state : int or str
+            State variable index or name to animate.
+        format : str
+            Animation format.  Currently only ``'dots'`` is supported.
+        interval : int
+            Milliseconds between frames.
+        cmap : str
+            Matplotlib colormap name.
+        node_size : int
+            Scatter point size.
+        figsize : tuple
+            Figure size ``(width, height)``.
+
+        Returns
+        -------
+        matplotlib.animation.FuncAnimation
+            The animation object (render with ``HTML(ani.to_jshtml())``
+            in Jupyter, or ``ani.save(...)``).
+        """
+        from matplotlib.animation import FuncAnimation
+
+        graph = getattr(self, "graph", None)
+        if graph is None:
+            raise ValueError(
+                "No graph data attached.  Run with format='networkdynamics' "
+                "to get graph positions."
+            )
+        pos = graph["positions"]
+        adj = graph["adjacency"]
+
+        # Resolve state index
+        if isinstance(state, str):
+            sv_list = list(
+                self.labels_dimensions.get("State Variable", [])
+            )
+            state = sv_list.index(state)
+
+        # Data: (time, nodes) for selected state
+        vals = self.data[:, state, :, 0]  # (T, N)
+        vmin, vmax = float(vals.min()), float(vals.max())
+        x, y = pos[:, 0], pos[:, 1]
+
+        fig, (ax_graph, ax_ts) = plt.subplots(
+            1, 2, figsize=figsize,
+            gridspec_kw={"width_ratios": [1, 1.2]},
+        )
+
+        # Draw edges
+        for i in range(adj.shape[0]):
+            for j in range(adj.shape[1]):
+                if adj[i, j] != 0:
+                    ax_graph.plot(
+                        [x[i], x[j]], [y[i], y[j]],
+                        color="lightgray", linewidth=0.5, zorder=0,
+                    )
+
+        sc = ax_graph.scatter(
+            x, y, c=vals[0], cmap=cmap, s=node_size,
+            vmin=vmin, vmax=vmax, zorder=2, edgecolors="k", linewidths=0.5,
+        )
+        ax_graph.set_aspect("equal")
+        ax_graph.set_title(f"t = {self.time[0]:.2f}")
+        ax_graph.axis("off")
+        fig.colorbar(sc, ax=ax_graph, shrink=0.7)
+
+        # Time-series panel: all nodes
+        n_nodes = vals.shape[1]
+        cm = plt.get_cmap(cmap)
+        norm = plt.Normalize(vmin=0, vmax=n_nodes - 1)
+        lines = []
+        for i in range(n_nodes):
+            ln, = ax_ts.plot(
+                [], [], color=cm(norm(i)), linewidth=0.5, alpha=0.6,
+            )
+            lines.append(ln)
+        avg_ln, = ax_ts.plot([], [], color="k", linewidth=1.5, label="mean")
+        ax_ts.set_xlim(self.time[0], self.time[-1])
+        ax_ts.set_ylim(vmin - 0.05 * abs(vmax - vmin), vmax + 0.05 * abs(vmax - vmin))
+        sv_labels = list(self.labels_dimensions.get("State Variable", []))
+        sv_name = sv_labels[state] if state < len(sv_labels) else f"state {state}"
+        ax_ts.set_xlabel("time")
+        ax_ts.set_ylabel(sv_name)
+        ax_ts.legend(loc="upper right", fontsize="small")
+        fig.tight_layout()
+
+        # Subsample for performance
+        step = max(1, len(self.time) // 200)
+        frames = list(range(0, len(self.time), step))
+
+        def update(frame):
+            sc.set_array(vals[frame])
+            ax_graph.set_title(f"t = {self.time[frame]:.2f}")
+            for i, ln in enumerate(lines):
+                ln.set_data(self.time[:frame + 1], vals[:frame + 1, i])
+            avg_ln.set_data(
+                self.time[:frame + 1], vals[:frame + 1].mean(axis=1),
+            )
+            return [sc] + lines + [avg_ln]
+
+        ani = FuncAnimation(
+            fig, update, frames=frames, interval=interval, blit=False,
+        )
+        plt.close(fig)
+        return ani
+
     def plot_eeg(
         self,
         VOI: str | None = None,
