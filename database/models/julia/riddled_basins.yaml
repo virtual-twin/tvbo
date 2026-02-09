@@ -1,4 +1,5 @@
 name: RiddledBasins
+autonomous: false
 references:
 - OttRiddled2014
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl

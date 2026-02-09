@@ -678,6 +678,10 @@ classes:
                 inlined: true
             system_type:
                 range: SystemType
+            autonomous:
+                range: boolean
+                ifabsent: "true"
+                description: "Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t)."
 
     StateVariable:
         class_uri: tvbo:StateVariable

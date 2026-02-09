@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-01-12T13:27:32
+# Generation date: 2026-02-09T14:03:39
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -948,6 +948,7 @@ class Dynamics(YAMLRoot):
     stimulus: Optional[Union[dict, Stimulus]] = None
     modes: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     system_type: Optional[Union[str, "SystemType"]] = None
+    autonomous: Optional[Union[bool, Bool]] = True
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1011,6 +1012,9 @@ class Dynamics(YAMLRoot):
 
         if self.system_type is not None and not isinstance(self.system_type, SystemType):
             self.system_type = SystemType(self.system_type)
+
+        if self.autonomous is not None and not isinstance(self.autonomous, Bool):
+            self.autonomous = Bool(self.autonomous)
 
         if self.system_type is not None and not isinstance(self.system_type, str):
             self.system_type = str(self.system_type)
@@ -4550,6 +4554,9 @@ slots.dynamics__modes = Slot(uri=TVBO.modes, name="dynamics__modes", curie=TVBO.
 
 slots.dynamics__system_type = Slot(uri=TVBO.system_type, name="dynamics__system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.dynamics__system_type, domain=None, range=Optional[Union[str, "SystemType"]])
+
+slots.dynamics__autonomous = Slot(uri=TVBO.autonomous, name="dynamics__autonomous", curie=TVBO.curie('autonomous'),
+                   model_uri=TVBO.dynamics__autonomous, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.stateVariable__variable_of_interest = Slot(uri=TVBO.variable_of_interest, name="stateVariable__variable_of_interest", curie=TVBO.curie('variable_of_interest'),
                    model_uri=TVBO.stateVariable__variable_of_interest, domain=None, range=Optional[Union[bool, Bool]])
