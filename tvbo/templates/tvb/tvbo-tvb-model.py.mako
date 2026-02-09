@@ -11,6 +11,23 @@ else:
     model = context['model'].metadata
     standalone = True
 render = lambda obj: model.render_equation(obj, format='numpy')
+
+# In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
+# Use the ontology to identify which coupling terms are global (part of coupling array)
+# vs local (passed as separate dfun argument). This correctly handles models like SupHopf
+# that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
+from tvbo.knowledge import ontology as _onto
+try:
+    _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
+    global_coupling_terms = {k: v for k, v in model.coupling_terms.items() if k in _global_names}
+except Exception:
+    # Model not in ontology — filter by naming convention:
+    # 'local_coupling' and 'lc_*' prefixed terms are local coupling
+    def _is_local(name):
+        return name == 'local_coupling' or name.startswith('lc_')
+    global_coupling_terms = {k: v for k, v in model.coupling_terms.items() if not _is_local(k)}
+local_coupling_terms = {k: v for k, v in model.coupling_terms.items() if k not in global_coupling_terms}
+has_local_coupling = bool(local_coupling_terms)
 %>
 % if standalone:
 # Auto-generated standalone model file
@@ -109,7 +126,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 
     coupling_terms = Final(
         label="Coupling terms",
-        default=${[p.name for p in model.coupling_terms.values()]}
+        default=${[p.name for p in global_coupling_terms.values()]}
     )
 
     _R = None
@@ -136,7 +153,8 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
                     "    {svars} = state\n"
                     % if isinstance(model.output, list):
                         % for var_name in model.output:
-                    "    ${var_name} = {derived_expr}\n"
+<%                          dv = model.derived_variables.get(var_name) %>\
+                    "    ${var_name} = ${render(dv) if dv else var_name}\n"
                         % endfor
                     % else:
                         % for ot in model.output.values():
@@ -151,7 +169,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
             svars=svars,
             voi_names=','.join(self.variables_of_interest)
         )
-        namespace = {'numpy': np, 'pi':np.pi, 'sin':np.sin}
+        namespace = {'numpy': np, 'np': np, 'pi':np.pi, 'sin':np.sin}
         namespace.update(self.__dict__)
         self.log.debug('building observer with code:\n%s', code)
         exec(code, namespace)
@@ -174,7 +192,11 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % if model.functions:
         # Functions
 % for f in model.functions.values():
-        ${fn.function_def(f, format='numpy', render_func=render) | trim,n}
+<%
+    fndef = capture(fn.function_def, f, format='numpy', render_func=render).strip()
+    indented_fndef = '\n'.join('        ' + line if line.strip() else '' for line in fndef.split('\n'))
+%>
+${indented_fndef}
 % endfor
 % endif
 
@@ -183,9 +205,9 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endfor
 
 ## Coupling Terms
-        # Coupling Terms
-% for cterm in model.coupling_terms:
-        ${cterm} = coupling[${list(model.coupling_terms).index(cterm)}, :]
+        # Coupling Terms (from coupling array)
+% for cterm in global_coupling_terms:
+        ${cterm} = coupling[${list(global_coupling_terms).index(cterm)}, :]
 % endfor
 
 ## Derived Variables
