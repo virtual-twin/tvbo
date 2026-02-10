@@ -1,0 +1,41 @@
+---
+title: "Usage Guide"
+sidebar: usage
+---
+
+Learn how to use TVBO for defining, simulating, and analyzing brain network models.
+
+## Fundamentals
+
+| Guide | Description |
+|-------|-------------|
+| [Defining Dynamical Systems](DefineDynamicalSystem.qmd) | Create neural mass models from YAML, Python, or the ontology |
+| [Defining Networks](DefineNetworks.qmd) | Build brain networks from matrices, YAML, connectome databases, or BIDS |
+| [Simulation Experiments](SimulationExperiments.qmd) | Combine components, run on multiple backends, inspect results |
+
+## Observation & Analysis
+
+| Guide | Description |
+|-------|-------------|
+| [Observation Models](ObservationModels.qmd) | BOLD, FC, PSD — define what to measure from simulations |
+| [Parameter Exploration](ParameterExploration.qmd) | Systematic parameter sweeps and grid search |
+| [Model Fitting](ModelFitting.qmd) | Loss functions and gradient-based optimization |
+| [Algorithms](Algorithms.qmd) | Built-in tuning algorithms (FIC, EIB) |
+| [Bifurcation Analysis](BifurcationAnalysis.qmd) | Stability analysis and bifurcation diagrams |
+
+## Simulation Features
+
+| Guide | Description |
+|-------|-------------|
+| [Events & Stimulation](Events.qmd) | External stimuli, per-region input, time-varying parameters |
+| [Noise & Stochastic Integration](Noise.qmd) | Additive and multiplicative noise, Ornstein-Uhlenbeck processes |
+| [Code Generation & Export](CodeGeneration.qmd) | Generate standalone code, export to YAML/BIDS/NeuroML/OpenMINDS |
+
+## Advanced
+
+| Guide | Description |
+|-------|-------------|
+| [PDE Simulation](PDESimulation.qmd) | Surface-based PDE solving with finite elements (scikit-fem) |
+| [Heterogeneous Node Dynamics](HeterogeneousNodes.qmd) | Different dynamics per network node |
+| [Heterogeneous Edge Dynamics](HeterogeneousEdges.qmd) | Synaptic plasticity and edge-level dynamics |
+| [Unit-Aware Computations](UnitValidation.qmd) | Physical units across simulation components |
