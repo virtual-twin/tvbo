@@ -52,16 +52,21 @@ class ModelingToolkitAdapter(BaseAdapter):
 
     Uses @component syntax (MTK v11+), mtkcompile, ODEProblem, and solve.
 
-    Accepts either a ``Dynamics`` or ``SimulationExperiment`` as input.
-    When given ``Dynamics``, a minimal ``SimulationExperiment`` is created.
-    ``get_lowered_dynamics`` / ``get_lowered_experiment`` return the
-    corresponding type.
+    Accepts ``Dynamics``, ``SimulationExperiment``, or no argument::
+
+        adapter = ModelingToolkitAdapter()              # empty, set .experiment later
+        adapter = ModelingToolkitAdapter(dynamics)      # wraps in minimal experiment
+        adapter = ModelingToolkitAdapter(exp)            # full experiment
     """
 
-    def __init__(self, source):
+    def __init__(self, source=None):
         from tvbo.export.experiment import SimulationExperiment
         from tvbo.knowledge.simulation.localdynamics import Dynamics
 
+        if source is None:
+            self.experiment = None
+            self._input_dynamics = None
+            return
         if isinstance(source, Dynamics):
             self._input_dynamics = source
             source = SimulationExperiment(local_dynamics=source)
