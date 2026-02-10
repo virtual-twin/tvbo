@@ -57,12 +57,19 @@ website:
               menu:
                   - text: "Defining Dynamical Systems"
                     href: Usage/DefineDynamicalSystem.qmd
-                #   - text: "Setting up Simulation Experiments"
-                #     href: Usage/SetupSimulationExperiments.qmd
-                #   - text: "Running Simulations"
-                #     href: Usage/RunSimulations.qmd
-                #   - text: "Analyzing Results"
-                #     href: Usage/AnalyzeResults.qmd
+                  - text: "Defining Networks"
+                  - text: "Simulation Experiments"
+                  - text: "Events"
+                  - text: "Parameter Exploration"
+                  - text: "Model Fitting"
+                  - text: "Algorithms"
+                  - text: "Bifurcation Analysis"
+                  - section: "Advanced"
+                    contents:
+                        - text: "Overview"
+                          href: Usage/HeterogeneousEdges.qmd
+                        - text: "Higher-Order ODE Lowering"
+                          href: Usage/HeterogeneousNodes.qmd
             - text: "Interoperability"
               menu:
                   - text: "---"
