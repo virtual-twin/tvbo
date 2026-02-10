@@ -5,11 +5,11 @@ execute:
   eval: false
 ---
 
-## Overview
+## Why this matters
 
-This example demonstrates tvbo's symbolic round-trip with ModelingToolkit.jl, based on the [MTK higher-order ODE tutorial](https://docs.sciml.ai/ModelingToolkit/stable/examples/higher_order/).
+Many dynamical systems are naturally expressed as higher-order ODEs, but most simulation backends only support first-order systems. Manually rewriting $\ddot{x} = f(x)$ into a first-order system is tedious and error-prone — you need to introduce auxiliary variables, track extra initial conditions, and keep everything consistent.
 
-A second-order variant of the Lorenz system is defined in YAML with `equation_order: 2` on the $x$ variable. tvbo renders this as `Dt(Dt(x))` in MTK code. When MTK compiles the system, it automatically introduces an auxiliary variable $\dot{x}$ and produces an equivalent first-order system. tvbo then extracts these lowered equations back as SymPy expressions.
+`tvbo` automates this by round-tripping through ModelingToolkit.jl: send a higher-order system to Julia, let MTK's compiler do the structural transformation, and get back clean first-order symbolic equations ready for any backend.
 
 $$
 \ddot{x} = \sigma(y - x) \quad \Longrightarrow \quad \begin{cases} \dot{x} = x_t \\ \dot{x_t} = \sigma(y - x) \end{cases}
@@ -17,7 +17,7 @@ $$
 
 ## The YAML Specification
 
-The key feature is the `equation_order: 2` attribute on the `x` state variable, which tells tvbo (and MTK) that the equation $\sigma(y - x)$ is a *second-order* ODE. The `derivative_initial_value: 2.0` provides the initial condition for $\dot{x}(0)$.
+Mark a state variable with `equation_order: 2` to declare its equation as second-order. Provide the derivative initial condition separately with`derivative_initial_value: 2.0`:
 
 ```yaml
 state_variables:
@@ -28,16 +28,6 @@ state_variables:
     equation_order: 2
     equation:
       rhs: sigma * (y - x)
-  y:
-    name: y
-    initial_value: 0.0
-    equation:
-      rhs: x * (rho - z) - y
-  z:
-    name: z
-    initial_value: 0.0
-    equation:
-      rhs: x * y - beta * z
 ```
 
 
@@ -106,12 +96,10 @@ This matches the original MTK tutorial’s $x$-$y$ state-space plot.
 
 ## Summary
 
-| Step | Tool | Representation |
-|------|------|----------------|
-| YAML | tvbo | `equation_order: 2`, `rhs: sigma * (y - x)` |
-| SymPy | tvbo | `Eq(Derivative(x, (t, 2)), sigma*(-x + y))` |
-| Julia | MTK template | `Dt(Dt(x)) ~ sigma * (y - x)` |
-| Lowered | MTK `mtkcompile` | `dx/dt = x_t`, `dx_t/dt = sigma*(-x + y)` |
-| Back to SymPy | `adapter.lower()` | `Eq(Derivative(x_t, t), sigma*(-x + y))` |
-
-This round-trip lets tvbo leverage MTK's powerful symbolic engine while maintaining SymPy as the canonical internal representation.
+| Step | What happens |
+|------|-------------|
+| YAML | Define `equation_order: 2` on the state variable |
+| tvbo → MTK | Generates `Dt(Dt(x)) ~ sigma * (y - x)` |
+| MTK compiles | Introduces $x_t$, produces first-order system |
+| MTK → tvbo | Extracts lowered equations as SymPy |
+| Run anywhere | Lowered system works with `tvboptim`, `JAX`, `TVB`, ... |
