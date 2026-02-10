@@ -2092,7 +2092,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
         format="markdown",
         template_name="tvbo-report-model",
         outputfile=None,
-        derivative_notation: str = "d",
+        derivative_notation: str = "dot",
     ):
         self.update_metadata()
         if format in ["markdown", "pdf"]:
