@@ -222,6 +222,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
  <span class="dropdown-text">OpenMINDS Interoperability</span></a>
   </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">ModelingToolkit.jl</li>
+        <li>
+    <a class="dropdown-item" href="../Interoperability/ModelingToolkit.jl/index.html">
+ <span class="dropdown-text">MTK Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Interoperability/ModelingToolkit.jl/higher_order.html">
+ <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item">
@@ -264,8 +274,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.adapters.modelingtoolkit" class="level1">
 <h1>modelingtoolkit</h1>
 <p><code>adapters.modelingtoolkit</code></p>
-<p>ModelingToolkit.jl backend adapter for SimulationExperiment.</p>
-<p>Extends NetworkDynamicsAdapter to use MTK equation-based templates instead of function-based templates. Shares the same Julia runtime, solution extraction, and graph/edge-observable logic.</p>
+<p>Standalone ModelingToolkit.jl backend adapter for SimulationExperiment.</p>
+<p>Pure MTK adapter using <span class="citation" data-cites="component">@component</span> + mtkcompile + ODEProblem + solve. No dependency on NetworkDynamics.jl.</p>
+<p>Key capability: symbolic round-trip. tvbo’s SymPy equations are rendered to MTK Julia code, MTK’s <code>mtkcompile</code> performs structural transformations (e.g.&nbsp;higher-order ODE lowering), and the resulting equations are extracted back into SymPy.</p>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
 <table class="caption-top table">
@@ -278,15 +289,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter">ModelingToolkitAdapter</a></td>
-<td>Adapter for running SimulationExperiment via MTK + NetworkDynamics.jl.</td>
+<td>Adapter for running SimulationExperiment via pure ModelingToolkit.jl.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter">ModelingToolkitAdapter</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Adapter for running SimulationExperiment via MTK + NetworkDynamics.jl.</p>
-<p>Uses the same pyjulia runtime as NetworkDynamicsAdapter but renders code via <span class="citation" data-cites="mtkmodel">@mtkmodel</span> templates instead of function-based templates.</p>
+<p>Adapter for running SimulationExperiment via pure ModelingToolkit.jl.</p>
+<p>Uses <span class="citation" data-cites="component">@component</span> syntax (MTK v11+), mtkcompile, ODEProblem, and solve.</p>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -298,27 +309,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code">render_code</a></td>
-<td>Render Julia code using MTK templates.</td>
+<td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations">get_lowered_equations</a></td>
+<td>Send higher-order system to MTK and get back first-order SymPy equations.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code">render_code</a></td>
+<td>Render Julia code using the standalone MTK template.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run">run</a></td>
-<td>Run simulation using MTK + NetworkDynamics.jl.</td>
+<td>Run simulation using pure ModelingToolkit.jl.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations">get_lowered_equations</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Send higher-order system to MTK and get back first-order SymPy equations.</p>
+<p>Performs a symbolic round-trip:</p>
+<ol type="1">
+<li>Render the experiment as MTK Julia code (includes <code>mtkcompile</code>)</li>
+<li>Execute in Julia — MTK automatically lowers higher-order ODEs</li>
+<li>Extract <code>equations(sys)</code>, <code>unknowns(sys)</code>, <code>parameters(sys)</code></li>
+<li>Parse the lowered equation strings back into SymPy <code>Eq</code> objects</li>
+</ol>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<p>dict <code>{"equations": {name: sympy.Eq, ...},        "unknowns": [str, ...],        "parameters": [str, ...]}</code></p>
+</section>
+</section>
 <section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code">render_code</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.render_code(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Render Julia code using MTK templates.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.render_code(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render Julia code using the standalone MTK template.</p>
 </section>
 <section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run">run</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.run(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Run simulation using MTK + NetworkDynamics.jl.</p>
-<p>Same logic as NetworkDynamicsAdapter.run() but uses MTK templates and ensures ModelingToolkit.jl is installed.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.run(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Run simulation using pure ModelingToolkit.jl.</p>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<p>TimeSeries TVBO TimeSeries with simulation results.</p>
 
 
+</section>
 </section>
 </section>
 </section>
