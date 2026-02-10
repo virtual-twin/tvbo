@@ -79,16 +79,16 @@ from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
 adapter = ModelingToolkitAdapter()
 firstoder_ODE = adapter.lower(exp.local_dynamics)
-Markdown(firstoder_ODE.generate_report(derivative_notation="dot"))
+Markdown(firstoder_ODE.generate_report())
 ```
 
 To run the lowered system with backends that only support first-order ODEs:
 
 ```{python}
 lowered_exp = adapter.lower(exp)
-lowered_exp.integration.method='Euler'
-result = lowered_exp.run("tvbo")
-result.get_state(["x", "y"]).plot(type="statespace")
+lowered_exp.integration.method='Heun'
+result = lowered_exp.run("tvboptim")
+result.integration.main.to_timeseries().get_state(["x", "y"]).plot(type="statespace")
 ```
 
 MTK introduced `x_t` (written as `xˍt` in Julia) and produced four first-order equations:

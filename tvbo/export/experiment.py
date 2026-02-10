@@ -1467,7 +1467,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         format: str = "markdown",
         template_name: str = "tvbo-report-experiment",
         outputfile: str | None = None,
-        derivative_notation: str = "d",
+        derivative_notation: str = "dot",
     ) -> str:
         """Render a human-readable report for this experiment.
 

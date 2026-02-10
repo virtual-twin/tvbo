@@ -794,6 +794,7 @@ def run_${algo_name}(
         post_tuning_observations=post_tuning_observations,
         n_iterations=n_iterations,
         hyperparameters=_hyperparams,
+        state_names=${state_names},
         # Additional fields for algorithm chaining
         monitors=_monitors_out,
 % for obs in collectible_observations:

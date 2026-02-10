@@ -26,22 +26,88 @@ class SimulationResult(Bunch):
     Mirrors the YAML structure by attaching observations to the simulation
     they derive from. This provides consistent access regardless of mode.
 
+    Supports TimeSeries-like access via get_state() and plot(), converting
+    the raw 3D data (time, state, nodes) to a full TimeSeries on demand.
+
     Attributes
     ----------
     data : jnp.ndarray
         Raw simulation data (time, state, nodes)
     time : jnp.ndarray
         Time vector
+    state_names : list[str]
+        Names of state variables (e.g., ['x', 'y'])
     observations : Bunch
         Computed observations from this simulation (bold, fc, etc.)
     """
 
-    def __init__(self, result=None, observations=None, **kwargs):
+    def __init__(self, result=None, observations=None, state_names=None, **kwargs):
         super().__init__(**kwargs)
         if result is not None:
             self.data = result.data if hasattr(result, 'data') else result
             self.time = result.ts if hasattr(result, 'ts') else None
+        self.state_names = state_names or []
         self.observations = observations or Bunch()
+
+    def to_timeseries(self):
+        """Convert to a full TimeSeries object for plotting and analysis.
+
+        Returns
+        -------
+        TimeSeries
+            4D time series (Time, State Variable, Space, Mode)
+        """
+        data = self.data
+        if data is None:
+            raise ValueError("No simulation data to convert")
+
+        time = self.time
+        if time is None:
+            time = np.arange(data.shape[0])
+
+        # tvboptim data shape: (n_timesteps, n_states, n_nodes)
+        # TimeSeries expects: (Time, State Variable, Space, Mode)
+        if data.ndim == 3:
+            data_4d = np.expand_dims(np.asarray(data), -1)  # add Mode dimension
+        elif data.ndim == 4:
+            data_4d = np.asarray(data)
+        else:
+            data_4d = np.asarray(data)
+
+        labels_dimensions = {}
+        if self.state_names:
+            labels_dimensions['State Variable'] = list(self.state_names)
+
+        dt = float(time[1] - time[0]) if len(time) > 1 else 1.0
+
+        return TimeSeries(
+            time=np.asarray(time),
+            data=data_4d,
+            sample_period=dt,
+            labels_dimensions=labels_dimensions,
+        )
+
+    def get_state(self, sv_label):
+        """Get state variable(s) as a TimeSeries, supporting plotting.
+
+        Parameters
+        ----------
+        sv_label : str or list[str]
+            State variable name(s) to extract.
+
+        Returns
+        -------
+        TimeSeries
+            Subset time series for the requested state variables.
+        """
+        return self.to_timeseries().get_state(sv_label)
+
+    def plot(self, **kwargs):
+        """Plot the simulation result as a TimeSeries.
+
+        Supports all TimeSeries plot types (timeseries, statespace, etc.).
+        """
+        return self.to_timeseries().plot(**kwargs)
 
     def __repr__(self):
         n_obs = len(self.observations.keys()) if self.observations else 0
@@ -80,7 +146,8 @@ class AlgorithmResult(Bunch):
 
     def __init__(self, name: str = None, state=None, history=None,
                  pre_tuning=None, post_tuning=None, post_tuning_observations=None,
-                 n_iterations: int = None, hyperparameters=None, **kwargs):
+                 n_iterations: int = None, hyperparameters=None,
+                 state_names=None, **kwargs):
         super().__init__(**kwargs)
         self.name = name
         self.state = state
@@ -88,14 +155,15 @@ class AlgorithmResult(Bunch):
 
         # Wrap simulations in SimulationResult for consistent access
         if pre_tuning is not None and not isinstance(pre_tuning, SimulationResult):
-            self.pre_tuning = SimulationResult(result=pre_tuning)
+            self.pre_tuning = SimulationResult(result=pre_tuning, state_names=state_names)
         else:
             self.pre_tuning = pre_tuning
 
         if post_tuning is not None and not isinstance(post_tuning, SimulationResult):
             self.post_tuning = SimulationResult(
                 result=post_tuning,
-                observations=post_tuning_observations or Bunch()
+                observations=post_tuning_observations or Bunch(),
+                state_names=state_names,
             )
         else:
             self.post_tuning = post_tuning
