@@ -1158,7 +1158,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return adapter.run(**kwargs)
 
     def _run_modelingtoolkit(self, **kwargs) -> TimeSeries:
-        """Run simulation using MTK + NetworkDynamics.jl via pyjulia."""
+        """Run simulation using pure ModelingToolkit.jl via pyjulia."""
         from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
         adapter = ModelingToolkitAdapter(self)
@@ -1467,6 +1467,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         format: str = "markdown",
         template_name: str = "tvbo-report-experiment",
         outputfile: str | None = None,
+        derivative_notation: str = "d",
     ) -> str:
         """Render a human-readable report for this experiment.
 
@@ -1489,7 +1490,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("format must be one of: markdown, html, pdf")
 
         # Render with full experiment context; the template will include the model template
-        render = template.render(experiment=self)
+        render = template.render(
+            experiment=self, derivative_notation=derivative_notation
+        )
 
         # Persist if requested
         if outputfile:

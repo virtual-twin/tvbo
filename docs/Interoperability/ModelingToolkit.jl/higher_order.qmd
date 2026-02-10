@@ -1,0 +1,116 @@
+---
+title: "Automatic Higher-Order ODE Lowering"
+subtitle: "Symbolic round-trip between SymPy and ModelingToolkit.jl"
+execute:
+  eval: false
+---
+
+## Overview
+
+This example demonstrates tvbo's symbolic round-trip with ModelingToolkit.jl, based on the [MTK higher-order ODE tutorial](https://docs.sciml.ai/ModelingToolkit/stable/examples/higher_order/).
+
+A second-order variant of the Lorenz system is defined in YAML with `equation_order: 2` on the $x$ variable. tvbo renders this as `Dt(Dt(x))` in MTK code. When MTK compiles the system, it automatically introduces an auxiliary variable $\dot{x}$ and produces an equivalent first-order system. tvbo then extracts these lowered equations back as SymPy expressions.
+
+$$
+\ddot{x} = \sigma(y - x) \quad \Longrightarrow \quad \begin{cases} \dot{x} = x_t \\ \dot{x_t} = \sigma(y - x) \end{cases}
+$$
+
+## The YAML Specification
+
+The key feature is the `equation_order: 2` attribute on the `x` state variable, which tells tvbo (and MTK) that the equation $\sigma(y - x)$ is a *second-order* ODE. The `derivative_initial_value: 2.0` provides the initial condition for $\dot{x}(0)$.
+
+```{.yaml filename="yaml/lorenz_higher_order.yaml"}
+state_variables:
+    x:
+        name: x
+        initial_value: 1.0
+        derivative_initial_value: 2.0
+        equation_order: 2
+        equation:
+            rhs: sigma * (y - x)
+    y:
+        name: y
+        initial_value: 0.0
+        equation:
+            rhs: x * (rho - z) - y
+    z:
+        name: z
+        initial_value: 0.0
+        equation:
+            rhs: x * y - beta * z
+```
+
+
+## Step 1: Load and Inspect the SymPy Equations
+
+```{python}
+from tvbo import SimulationExperiment
+from IPython.display import Markdown
+exp = SimulationExperiment.from_file(
+    "yaml/lorenz_higher_order.yaml"
+)
+Markdown(exp.local_dynamics.generate_report(derivative_notation='dot'))
+```
+
+tvbo correctly represents the second-order derivative
+
+## Step 2: Render MTK Code
+
+```{python}
+code = exp.render_code("mtk")
+print(code)
+```
+
+The template generates `Dt(Dt(x))` — MTK's notation for $\frac{d^2 x}{dt^2}$
+
+
+The derivative initial condition is passed via:
+
+```julia
+u0 = [Dt(sys.x) => 2.0]
+```
+
+## Step 3: Symbolic Round-Trip — Get Lowered Equations
+
+Here is the key feature: we send the higher-order system to Julia, let MTK's `mtkcompile` do the structural transformation, and extract the lowered first-order equations back as SymPy.
+
+```{python}
+from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
+adapter = ModelingToolkitAdapter(exp)
+lowered = adapter.get_lowered_equations()
+lowered
+```
+
+To run the lowered system with backends that only support first-order ODEs:
+
+```{python}
+lowered_exp = adapter.get_lowered_experiment()
+result = lowered_exp.run("jax")
+result.get_state(["x", "y"]).plot(type="statespace")
+```
+
+MTK introduced `x_t` (written as `xˍt` in Julia) and produced four first-order equations:
+
+The returned SymPy equations are standard `sympy.Eq` objects — they can be used for further symbolic analysis, code generation to other backends, or substitution.
+
+## Step 4: Run the Simulation
+
+```{python}
+result = exp.run("mtk")
+result.get_state(["x", "y"]).plot(type="statespace")
+```
+
+This matches the original MTK tutorial’s $x$-$y$ state-space plot.
+
+## Summary
+
+| Step | Tool | Representation |
+|------|------|----------------|
+| YAML | tvbo | `equation_order: 2`, `rhs: sigma * (y - x)` |
+| SymPy | tvbo | `Eq(Derivative(x, (t, 2)), sigma*(-x + y))` |
+| Julia | MTK template | `Dt(Dt(x)) ~ sigma * (y - x)` |
+| Lowered | MTK `mtkcompile` | `dx/dt = x_t`, `dx_t/dt = sigma*(-x + y)` |
+| Back to SymPy | `get_lowered_equations()` | `Eq(Derivative(x_t, t), sigma*(-x + y))` |
+
+This round-trip lets tvbo leverage MTK's powerful symbolic engine while maintaining SymPy as the canonical internal representation.

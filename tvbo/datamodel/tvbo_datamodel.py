@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-10T12:06:14
+# Generation date: 2026-02-10T13:56:03
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1210,10 +1210,12 @@ class StateVariable(YAMLRoot):
     variable_of_interest: Optional[Union[bool, Bool]] = True
     coupling_variable: Optional[Union[bool, Bool]] = False
     equation_type: Optional[str] = "differential"
+    equation_order: Optional[int] = 1
     noise: Optional[Union[dict, "Noise"]] = None
     stimulation_variable: Optional[Union[bool, Bool]] = None
     boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
+    derivative_initial_value: Optional[float] = None
     distribution: Optional[Union[dict, "Distribution"]] = None
     history: Optional[Union[dict, "TimeSeries"]] = None
 
@@ -1253,6 +1255,9 @@ class StateVariable(YAMLRoot):
         if self.equation_type is not None and not isinstance(self.equation_type, str):
             self.equation_type = str(self.equation_type)
 
+        if self.equation_order is not None and not isinstance(self.equation_order, int):
+            self.equation_order = int(self.equation_order)
+
         if self.noise is not None and not isinstance(self.noise, Noise):
             self.noise = Noise(**as_dict(self.noise))
 
@@ -1264,6 +1269,9 @@ class StateVariable(YAMLRoot):
 
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
+
+        if self.derivative_initial_value is not None and not isinstance(self.derivative_initial_value, float):
+            self.derivative_initial_value = float(self.derivative_initial_value)
 
         if self.distribution is not None and not isinstance(self.distribution, Distribution):
             self.distribution = Distribution(**as_dict(self.distribution))
@@ -4900,6 +4908,9 @@ slots.stateVariable__coupling_variable = Slot(uri=TVBO.coupling_variable, name="
 slots.stateVariable__equation_type = Slot(uri=TVBO.equation_type, name="stateVariable__equation_type", curie=TVBO.curie('equation_type'),
                    model_uri=TVBO.stateVariable__equation_type, domain=None, range=Optional[str])
 
+slots.stateVariable__equation_order = Slot(uri=TVBO.equation_order, name="stateVariable__equation_order", curie=TVBO.curie('equation_order'),
+                   model_uri=TVBO.stateVariable__equation_order, domain=None, range=Optional[int])
+
 slots.stateVariable__noise = Slot(uri=TVBO.noise, name="stateVariable__noise", curie=TVBO.curie('noise'),
                    model_uri=TVBO.stateVariable__noise, domain=None, range=Optional[Union[dict, Noise]])
 
@@ -4911,6 +4922,9 @@ slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable_
 
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
+
+slots.stateVariable__derivative_initial_value = Slot(uri=TVBO.derivative_initial_value, name="stateVariable__derivative_initial_value", curie=TVBO.curie('derivative_initial_value'),
+                   model_uri=TVBO.stateVariable__derivative_initial_value, domain=None, range=Optional[float])
 
 slots.stateVariable__distribution = Slot(uri=TVBO.distribution, name="stateVariable__distribution", curie=TVBO.curie('distribution'),
                    model_uri=TVBO.stateVariable__distribution, domain=None, range=Optional[Union[dict, Distribution]])
