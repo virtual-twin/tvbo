@@ -80,7 +80,7 @@ docs = [
 ]
 
 # Julia integration
-julia = ["julia>=0.5.7"]
+julia = ["juliacall>=0.9.20"]
 
 # API server
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]

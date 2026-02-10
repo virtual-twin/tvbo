@@ -93,3 +93,5 @@ docs/site_libs
 docs/**/figure-html
 docs/Interoperability/NetworkDynamics.jl/*.gif
 docs/Interoperability/NetworkDynamics.jl/_output
+Manifest.toml
+Project.toml

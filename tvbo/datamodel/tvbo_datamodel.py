@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-09T21:25:58
+# Generation date: 2026-02-10T12:06:14
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -843,10 +843,10 @@ class Node(YAMLRoot):
     id: int = None
     label: Optional[str] = None
     description: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
-    parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
     initial_state: Optional[Union[float, list[float]]] = empty_list()
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
@@ -862,6 +862,8 @@ class Node(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
         if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
             self.dynamics = DynamicsName(self.dynamics)
 
@@ -870,10 +872,6 @@ class Node(YAMLRoot):
 
         if self.region is not None and not isinstance(self.region, str):
             self.region = str(self.region)
-
-        if not isinstance(self.parameters, list):
-            self.parameters = [self.parameters] if self.parameters is not None else []
-        self.parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.parameters]
 
         if not isinstance(self.initial_state, list):
             self.initial_state = [self.initial_state] if self.initial_state is not None else []
@@ -1211,6 +1209,7 @@ class StateVariable(YAMLRoot):
     unit: Optional[str] = None
     variable_of_interest: Optional[Union[bool, Bool]] = True
     coupling_variable: Optional[Union[bool, Bool]] = False
+    equation_type: Optional[str] = "differential"
     noise: Optional[Union[dict, "Noise"]] = None
     stimulation_variable: Optional[Union[bool, Bool]] = None
     boundaries: Optional[Union[dict, Range]] = None
@@ -1250,6 +1249,9 @@ class StateVariable(YAMLRoot):
 
         if self.coupling_variable is not None and not isinstance(self.coupling_variable, Bool):
             self.coupling_variable = Bool(self.coupling_variable)
+
+        if self.equation_type is not None and not isinstance(self.equation_type, str):
+            self.equation_type = str(self.equation_type)
 
         if self.noise is not None and not isinstance(self.noise, Noise):
             self.noise = Noise(**as_dict(self.noise))
@@ -2441,6 +2443,7 @@ class Coupling(YAMLRoot):
     incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
+    symmetry: Optional[str] = "directed"
     outsym: Optional[Union[str, list[str]]] = empty_list()
     observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
     inner_coupling: Optional[Union[dict, "Coupling"]] = None
@@ -2485,6 +2488,9 @@ class Coupling(YAMLRoot):
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
+
+        if self.symmetry is not None and not isinstance(self.symmetry, str):
+            self.symmetry = str(self.symmetry)
 
         if not isinstance(self.outsym, list):
             self.outsym = [self.outsym] if self.outsym is not None else []
@@ -4765,9 +4771,6 @@ slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO
 slots.node__region = Slot(uri=TVBO.region, name="node__region", curie=TVBO.curie('region'),
                    model_uri=TVBO.node__region, domain=None, range=Optional[str])
 
-slots.node__parameters = Slot(uri=TVBO.parameters, name="node__parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.node__parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
-
 slots.node__initial_state = Slot(uri=TVBO.initial_state, name="node__initial_state", curie=TVBO.curie('initial_state'),
                    model_uri=TVBO.node__initial_state, domain=None, range=Optional[Union[float, list[float]]])
 
@@ -4893,6 +4896,9 @@ slots.stateVariable__variable_of_interest = Slot(uri=TVBO.variable_of_interest, 
 
 slots.stateVariable__coupling_variable = Slot(uri=TVBO.coupling_variable, name="stateVariable__coupling_variable", curie=TVBO.curie('coupling_variable'),
                    model_uri=TVBO.stateVariable__coupling_variable, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.stateVariable__equation_type = Slot(uri=TVBO.equation_type, name="stateVariable__equation_type", curie=TVBO.curie('equation_type'),
+                   model_uri=TVBO.stateVariable__equation_type, domain=None, range=Optional[str])
 
 slots.stateVariable__noise = Slot(uri=TVBO.noise, name="stateVariable__noise", curie=TVBO.curie('noise'),
                    model_uri=TVBO.stateVariable__noise, domain=None, range=Optional[Union[dict, Noise]])
@@ -5271,6 +5277,9 @@ slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local
 
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__symmetry = Slot(uri=TVBO.symmetry, name="coupling__symmetry", curie=TVBO.curie('symmetry'),
+                   model_uri=TVBO.coupling__symmetry, domain=None, range=Optional[str])
 
 slots.coupling__outsym = Slot(uri=TVBO.outsym, name="coupling__outsym", curie=TVBO.curie('outsym'),
                    model_uri=TVBO.coupling__outsym, domain=None, range=Optional[Union[str, list[str]]])

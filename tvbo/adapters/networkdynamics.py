@@ -111,6 +111,36 @@ def _extract_edge_observables(
     return edge_data
 
 
+def _extract_vertex_observables(
+    vertex_dv_names: list[str],
+    n_nodes: int,
+) -> dict[str, np.ndarray]:
+    """Extract vertex derived-variable observables from Julia solution.
+
+    For each symbol in vertex_dv_names, extracts per-node time series
+    using ``vidxs(sol, i, :sym)``.
+
+    Returns a dict mapping symbol names to arrays of shape ``(n_t, n_nodes)``.
+    """
+    from tvbo.run.julia import run_julia_code
+
+    vertex_data = {}
+    if not vertex_dv_names:
+        return vertex_data
+
+    for sym in vertex_dv_names:
+        try:
+            raw = run_julia_code(
+                f"hcat([sol(sol.t; idxs=vidxs(sol, i, :{sym})).u"
+                f" for i in 1:{n_nodes}]...)'"
+            )
+            vertex_data[sym] = np.array(raw, dtype=float)
+        except Exception:
+            pass  # Symbol not available for all nodes — skip
+
+    return vertex_data
+
+
 class NetworkDynamicsAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia).
 
@@ -338,6 +368,12 @@ class NetworkDynamicsAdapter(BaseAdapter):
             ctx.get('coupling_observed', {}),
         )
 
+        # 7b. Extract vertex derived-variable observables
+        vertex_data = _extract_vertex_observables(
+            ctx.get('vertex_dv_names', []),
+            n_nodes,
+        )
+
         # 8. Extract graph data from Julia
         graph_data = _extract_graph_data(n_nodes)
 
@@ -358,6 +394,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         ts.sol = sol  # keep full Julia object for interactive use
         ts.graph = graph_data  # adjacency, positions, weights
         ts.edge_data = edge_data  # edge observables from outsym/obssym
+        ts.vertex_data = vertex_data  # vertex derived-variable observables
 
         # Spatial metadata (for heterogeneous spatial models)
         if is_hetero and self.get_coupling_vars(ctx['model']):

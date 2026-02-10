@@ -93,7 +93,29 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
     ${dp.name} = ${juliacode(dp.equation.rhs)}
     % endfor
     % for dv in (model.derived_variables or {}).values():
+    % if getattr(dv, 'conditional', False) and getattr(dv, 'cases', None):
+<%
+    cases = list(dv.cases)
+    parts = []
+    for case in cases:
+        cond_str = str(case.condition).strip()
+        eq_rhs = juliacode(case.equation.rhs)
+        if cond_str.lower() == 'true':
+            parts.append(eq_rhs)
+        else:
+            parts.append((cond_str, eq_rhs))
+    # Build nested ifelse chain
+    def build_ifelse(parts):
+        if len(parts) == 1:
+            return parts[0] if isinstance(parts[0], str) else parts[0][1]
+        cond, val = parts[0]
+        return f"ifelse({cond}, {val}, {build_ifelse(parts[1:])})"
+    ifelse_expr = build_ifelse(parts)
+%>
+    ${dv.name} = ${ifelse_expr}
+    % else:
     ${dv.name} = ${juliacode(dv.equation.rhs)}
+    % endif
     % endfor
     % for i, sv in enumerate(model.state_variables.values()):
     dx[${i + 1}] = ${juliacode(sv.equation.rhs)}

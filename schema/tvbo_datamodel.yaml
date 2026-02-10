@@ -601,6 +601,7 @@ classes:
         slots:
             - label
             - description
+            - parameters
         attributes:
             id:
                 range: integer
@@ -618,10 +619,6 @@ classes:
             region:
                 range: string
                 description: "Brain region or anatomical label"
-            parameters:
-                multivalued: true
-                range: Parameter
-                description: "Node-specific parameter overrides"
             initial_state:
                 multivalued: true
                 range: float
@@ -890,6 +887,13 @@ classes:
             coupling_variable:
                 range: boolean
                 ifabsent: false
+            equation_type:
+                range: string
+                ifabsent: "string(differential)"
+                description: >-
+                    Type of equation: 'differential' (default) means dx/dt = rhs,
+                    'algebraic' means 0 = rhs or x ~ rhs (DAE constraint).
+                    Algebraic equations are used by ModelingToolkit.jl backend.
             noise:
                 range: Noise
                 inlined: true
@@ -1671,6 +1675,13 @@ classes:
                 range: boolean
                 ifabsent: true
                 description: "Whether coupling includes transmission delays"
+            symmetry:
+                range: string
+                ifabsent: "string(directed)"
+                description: >-
+                    Edge symmetry type for NetworkDynamics.jl EdgeModel:
+                    'directed' (default), 'antisymmetric', or 'symmetric'.
+                    AntiSymmetric edges flip sign for the reverse direction.
             outsym:
                 multivalued: true
                 range: string
