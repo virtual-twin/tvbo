@@ -8,13 +8,13 @@ mechanical and electromagnetic components.
 
 ### State Equations
 $$
-\frac{d}{d t} x = y*z - \mu*x
+\dot{x} = y*z - \mu*x
 $$
 $$
-\frac{d}{d t} y = x*\left(z - \alpha\right) - \mu*y
+\dot{y} = x*\left(z - \alpha\right) - \mu*y
 $$
 $$
-\frac{d}{d t} z = 1 - x*y
+\dot{z} = 1 - x*y
 $$
 
 

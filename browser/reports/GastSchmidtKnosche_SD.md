@@ -22,16 +22,16 @@
 
 ### State Equations
 $$
-\frac{d}{d t} A = \frac{B}{\tau_{A}}
+\dot{A} = \frac{B}{\tau_{A}}
 $$
 $$
-\frac{d}{d t} B = \frac{- A - 2*B + \alpha*r}{\tau_{A}}
+\dot{B} = \frac{- A - 2*B + \alpha*r}{\tau_{A}}
 $$
 $$
-\frac{d}{d t} V = \frac{I + \eta + V^{2} + c_{global}*cr + c_{pop1}*cv - \pi^{2}*r^{2}*\tau^{2} + J*r*\tau*\left(1 - A\right)}{\tau}
+\dot{V} = \frac{I + \eta + V^{2} + c_{global}*cr + c_{pop1}*cv - \pi^{2}*r^{2}*\tau^{2} + J*r*\tau*\left(1 - A\right)}{\tau}
 $$
 $$
-\frac{d}{d t} r = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
+\dot{r} = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
 $$
 
 

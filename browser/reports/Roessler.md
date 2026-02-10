@@ -9,13 +9,13 @@ is composed of a single manifold. Default values are the same as the original pa
 
 ### State Equations
 $$
-\frac{d}{d t} x = - y - z
+\dot{x} = - y - z
 $$
 $$
-\frac{d}{d t} y = x + a*y
+\dot{y} = x + a*y
 $$
 $$
-\frac{d}{d t} z = b + z*\left(x - c\right)
+\dot{z} = b + z*\left(x - c\right)
 $$
 
 

@@ -6,28 +6,28 @@
 
 ### State Equations
 $$
-\frac{d}{d t} V_{e} = \frac{I_{e} + \eta_{e} + V_{e}^{2} + s_{ee}*\tau_{e} - s_{ei}*\tau_{e} - \pi^{2}*r_{e}^{2}*\tau_{e}^{2}}{\tau_{e}}
+\dot{V_{e}} = \frac{I_{e} + \eta_{e} + V_{e}^{2} + s_{ee}*\tau_{e} - s_{ei}*\tau_{e} - \pi^{2}*r_{e}^{2}*\tau_{e}^{2}}{\tau_{e}}
 $$
 $$
-\frac{d}{d t} V_{i} = \frac{I_{i} + \eta_{i} + V_{i}^{2} + s_{ie}*\tau_{i} - s_{ii}*\tau_{i} - \pi^{2}*r_{i}^{2}*\tau_{i}^{2}}{\tau_{i}}
+\dot{V_{i}} = \frac{I_{i} + \eta_{i} + V_{i}^{2} + s_{ie}*\tau_{i} - s_{ii}*\tau_{i} - \pi^{2}*r_{i}^{2}*\tau_{i}^{2}}{\tau_{i}}
 $$
 $$
-\frac{d}{d t} r_{e} = \frac{2*V_{e}*r_{e} + \frac{\Delta_{e}}{\pi*\tau_{e}}}{\tau_{e}}
+\dot{r_{e}} = \frac{2*V_{e}*r_{e} + \frac{\Delta_{e}}{\pi*\tau_{e}}}{\tau_{e}}
 $$
 $$
-\frac{d}{d t} r_{i} = \frac{2*V_{i}*r_{i} + \frac{\Delta_{i}}{\pi*\tau_{i}}}{\tau_{i}}
+\dot{r_{i}} = \frac{2*V_{i}*r_{i} + \frac{\Delta_{i}}{\pi*\tau_{i}}}{\tau_{i}}
 $$
 $$
-\frac{d}{d t} s_{ee} = \frac{c_{global} - s_{ee} + J_{ee}*r_{e}}{\tau_{s}}
+\dot{s_{ee}} = \frac{c_{global} - s_{ee} + J_{ee}*r_{e}}{\tau_{s}}
 $$
 $$
-\frac{d}{d t} s_{ei} = \frac{- s_{ei} + J_{ei}*r_{i}}{\tau_{s}}
+\dot{s_{ei}} = \frac{- s_{ei} + J_{ei}*r_{i}}{\tau_{s}}
 $$
 $$
-\frac{d}{d t} s_{ie} = \frac{- s_{ie} + \Gamma*c_{global} + J_{ie}*r_{e}}{\tau_{s}}
+\dot{s_{ie}} = \frac{- s_{ie} + \Gamma*c_{global} + J_{ie}*r_{e}}{\tau_{s}}
 $$
 $$
-\frac{d}{d t} s_{ii} = \frac{- s_{ii} + J_{ii}*r_{i}}{\tau_{s}}
+\dot{s_{ii}} = \frac{- s_{ii} + J_{ii}*r_{i}}{\tau_{s}}
 $$
 
 

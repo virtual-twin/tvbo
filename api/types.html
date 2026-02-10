@@ -336,8 +336,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    post_tuning_observations<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    n_iterations<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    hyperparameters<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    state_names<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Result of an iterative algorithm (FIC, EIB, etc.).</p>
 <p>Provides structured access to algorithm outputs with consistent naming regardless of which algorithm was run.</p>
 <section id="attributes" class="level4 doc-section doc-section-attributes">
@@ -548,14 +549,73 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.types.SimulationResult" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult">SimulationResult</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult(result<span class="op">=</span><span class="va">None</span>, observations<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    result<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    observations<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    state_names<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Wrapper for simulation result with attached observations.</p>
 <p>Mirrors the YAML structure by attaching observations to the simulation they derive from. This provides consistent access regardless of mode.</p>
+<p>Supports TimeSeries-like access via get_state() and plot(), converting the raw 3D data (time, state, nodes) to a full TimeSeries on demand.</p>
 <section id="attributes-5" class="level4 doc-section doc-section-attributes">
 <h4 class="doc-section doc-section-attributes anchored" data-anchor-id="attributes-5">Attributes</h4>
-<p>data : jnp.ndarray Raw simulation data (time, state, nodes) time : jnp.ndarray Time vector observations : Bunch Computed observations from this simulation (bold, fc, etc.)</p>
+<p>data : jnp.ndarray Raw simulation data (time, state, nodes) time : jnp.ndarray Time vector state_names : list[str] Names of state variables (e.g., [‘x’, ‘y’]) observations : Bunch Computed observations from this simulation (bold, fc, etc.)</p>
+</section>
+<section id="methods-2" class="level4">
+<h4 class="anchored" data-anchor-id="methods-2">Methods</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.data.types.SimulationResult.get_state">get_state</a></td>
+<td>Get state variable(s) as a TimeSeries, supporting plotting.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.types.SimulationResult.plot">plot</a></td>
+<td>Plot the simulation result as a TimeSeries.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.types.SimulationResult.to_timeseries">to_timeseries</a></td>
+<td>Convert to a full TimeSeries object for plotting and analysis.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.data.types.SimulationResult.get_state" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult.get_state">get_state</h5>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.get_state(sv_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Get state variable(s) as a TimeSeries, supporting plotting.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<p>sv_label : str or list[str] State variable name(s) to extract.</p>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<p>TimeSeries Subset time series for the requested state variables.</p>
+</section>
+</section>
+<section id="tvbo.data.types.SimulationResult.plot" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult.plot">plot</h5>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.plot(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the simulation result as a TimeSeries.</p>
+<p>Supports all TimeSeries plot types (timeseries, statespace, etc.).</p>
+</section>
+<section id="tvbo.data.types.SimulationResult.to_timeseries" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult.to_timeseries">to_timeseries</h5>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.to_timeseries()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Convert to a full TimeSeries object for plotting and analysis.</p>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<p>TimeSeries 4D time series (Time, State Variable, Space, Mode)</p>
 
 
+</section>
+</section>
 </section>
 </section>
 </section>

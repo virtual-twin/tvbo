@@ -8,13 +8,13 @@ vector field.
 
 ### State Equations
 $$
-\frac{d}{d t} x = \sin{\left(y \right)}
+\dot{x} = \sin{\left(y \right)}
 $$
 $$
-\frac{d}{d t} y = \sin{\left(z \right)}
+\dot{y} = \sin{\left(z \right)}
 $$
 $$
-\frac{d}{d t} z = \sin{\left(x \right)}
+\dot{z} = \sin{\left(x \right)}
 $$
 
 

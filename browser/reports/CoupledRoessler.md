@@ -7,22 +7,22 @@ generalized synchronization, lag synchronization and coupling asymmetry effects.
 
 ### State Equations
 $$
-\frac{d}{d t} x_{1} = - z_{1} - \omega_{1}*y_{1}
+\dot{x_{1}} = - z_{1} - \omega_{1}*y_{1}
 $$
 $$
-\frac{d}{d t} y_{1} = a*y_{1} + k_{1}*\left(y_{2} - y_{1}\right) + \omega_{1}*x_{1}
+\dot{y_{1}} = a*y_{1} + k_{1}*\left(y_{2} - y_{1}\right) + \omega_{1}*x_{1}
 $$
 $$
-\frac{d}{d t} z_{1} = b + z_{1}*\left(x_{1} - c\right)
+\dot{z_{1}} = b + z_{1}*\left(x_{1} - c\right)
 $$
 $$
-\frac{d}{d t} x_{2} = - z_{2} - \omega_{2}*y_{2}
+\dot{x_{2}} = - z_{2} - \omega_{2}*y_{2}
 $$
 $$
-\frac{d}{d t} y_{2} = a*y_{2} + k_{2}*\left(y_{1} - y_{2}\right) + \omega_{2}*x_{2}
+\dot{y_{2}} = a*y_{2} + k_{2}*\left(y_{1} - y_{2}\right) + \omega_{2}*x_{2}
 $$
 $$
-\frac{d}{d t} z_{2} = b + z_{2}*\left(x_{2} - c\right)
+\dot{z_{2}} = b + z_{2}*\left(x_{2} - c\right)
 $$
 
 

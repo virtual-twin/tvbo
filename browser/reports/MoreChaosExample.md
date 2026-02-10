@@ -8,13 +8,13 @@ for new chaos exemplars.
 
 ### State Equations
 $$
-\frac{d}{d t} x = y
+\dot{x} = y
 $$
 $$
-\frac{d}{d t} y = - x - y*\operatorname{sign}{\left(z \right)}
+\dot{y} = - x - y*\operatorname{sign}{\left(z \right)}
 $$
 $$
-\frac{d}{d t} z = y^{2} - e^{- x^{2}}
+\dot{z} = y^{2} - e^{- x^{2}}
 $$
 
 

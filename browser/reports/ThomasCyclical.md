@@ -8,13 +8,13 @@ system when b = 0. Displays a strange attractor with intertwined scroll-like lob
 
 ### State Equations
 $$
-\frac{d}{d t} x = - b*x + \sin{\left(y \right)}
+\dot{x} = - b*x + \sin{\left(y \right)}
 $$
 $$
-\frac{d}{d t} y = - b*y + \sin{\left(z \right)}
+\dot{y} = - b*y + \sin{\left(z \right)}
 $$
 $$
-\frac{d}{d t} z = - b*z + \sin{\left(x \right)}
+\dot{z} = - b*z + \sin{\left(x \right)}
 $$
 
 

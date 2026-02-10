@@ -14,16 +14,16 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} \theta = \omega
+\dot{\theta} = \omega
 $$
 $$
-\frac{d}{d t} \omega = \frac{- g*\left(m_{1} + m_{2}\right)*\sin{\left(\theta \right)} - m_{1}*\omega^{2}*\cos{\left(\theta \right)}*\sin{\left(\theta \right)}}{l*\left(m_{1} + m_{2}\right) - l*m_{1}*\cos^{2}{\left(\theta \right)}}
+\dot{\omega} = \frac{- g*\left(m_{1} + m_{2}\right)*\sin{\left(\theta \right)} - m_{1}*\omega^{2}*\cos{\left(\theta \right)}*\sin{\left(\theta \right)}}{l*\left(m_{1} + m_{2}\right) - l*m_{1}*\cos^{2}{\left(\theta \right)}}
 $$
 $$
-\frac{d}{d t} y = v
+\dot{y} = v
 $$
 $$
-\frac{d}{d t} v = \frac{g*\left(m_{2} - m_{1}*\sin^{2}{\left(\theta \right)}\right)}{m_{1} + m_{2} - m_{1}*\cos^{2}{\left(\theta \right)}} - \frac{l*m_{1}*\omega^{2}*\cos{\left(\theta \right)}}{m_{1} + m_{2} - m_{1}*\cos^{2}{\left(\theta \right)}}
+\dot{v} = \frac{g*\left(m_{2} - m_{1}*\sin^{2}{\left(\theta \right)}\right)}{m_{1} + m_{2} - m_{1}*\cos^{2}{\left(\theta \right)}} - \frac{l*m_{1}*\omega^{2}*\cos{\left(\theta \right)}}{m_{1} + m_{2} - m_{1}*\cos^{2}{\left(\theta \right)}}
 $$
 
 

@@ -115,19 +115,19 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} E = \frac{f_{out e} - E}{T}
+\dot{E} = \frac{f_{out e} - E}{T}
 $$
 $$
-\frac{d}{d t} I = \frac{f_{out i} - I}{T}
+\dot{I} = \frac{f_{out i} - I}{T}
 $$
 $$
-\frac{d}{d t} W_{e} = E*b_{e} - \frac{W_{e}}{\tau_{w e}} + \frac{a_{e}*\left(\mu_{V e} - E_{L e}\right)}{\tau_{w e}}
+\dot{W_{e}} = E*b_{e} - \frac{W_{e}}{\tau_{w e}} + \frac{a_{e}*\left(\mu_{V e} - E_{L e}\right)}{\tau_{w e}}
 $$
 $$
-\frac{d}{d t} W_{i} = I*b_{i} - \frac{W_{i}}{\tau_{w i}} + \frac{a_{i}*\left(\mu_{V i} - E_{L i}\right)}{\tau_{w i}}
+\dot{W_{i}} = I*b_{i} - \frac{W_{i}}{\tau_{w i}} + \frac{a_{i}*\left(\mu_{V i} - E_{L i}\right)}{\tau_{w i}}
 $$
 $$
-\frac{d}{d t} ou_{drift} = - \frac{ou_{drift}}{\tau_{OU}}
+\dot{ou_{drift}} = - \frac{ou_{drift}}{\tau_{OU}}
 $$
 
 
@@ -197,6 +197,6 @@ $$
 
 
 ## References
-Citation key 'diVolo2019' not found.
-
 Citation key 'Zerlaut2018' not found.
+
+Citation key 'diVolo2019' not found.

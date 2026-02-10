@@ -9,13 +9,13 @@ produce transitions between steady states, periodic orbits, and chaotic transien
 
 ### State Equations
 $$
-\frac{d}{d t} x = a*x + x*\left(y^{2} + z^{2}\right) + d*y*z
+\dot{x} = a*x + x*\left(y^{2} + z^{2}\right) + d*y*z
 $$
 $$
-\frac{d}{d t} y = b*y + y*\left(x^{2} + z^{2}\right) + e*x*z
+\dot{y} = b*y + y*\left(x^{2} + z^{2}\right) + e*x*z
 $$
 $$
-\frac{d}{d t} z = c*z + z*\left(x^{2} + y^{2}\right) + f*x*y
+\dot{z} = c*z + z*\left(x^{2} + y^{2}\right) + f*x*y
 $$
 
 

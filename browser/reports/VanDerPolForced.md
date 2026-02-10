@@ -8,10 +8,10 @@ forcing it displays entrainment, quasi-periodicity or chaos depending on paramet
 
 ### State Equations
 $$
-\frac{d}{d t} x = y
+\dot{x} = y
 $$
 $$
-\frac{d}{d t} y = - x + F*\sin{\left(\frac{2*\pi*t}{T} \right)} + \mu*y*\left(1 - x^{2}\right)
+\dot{y} = - x + F*\sin{\left(\frac{2*\pi*t}{T} \right)} + \mu*y*\left(1 - x^{2}\right)
 $$
 
 

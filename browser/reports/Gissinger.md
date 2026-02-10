@@ -7,13 +7,13 @@ Captures interplay between dipole (Q), quadrupole (D) and velocity (V) modes.
 
 ### State Equations
 $$
-\frac{d}{d t} Q = Q*\mu - D*V
+\dot{Q} = Q*\mu - D*V
 $$
 $$
-\frac{d}{d t} D = Q*V - D*\nu
+\dot{D} = Q*V - D*\nu
 $$
 $$
-\frac{d}{d t} V = \Gamma - V + D*Q
+\dot{V} = \Gamma - V + D*Q
 $$
 
 

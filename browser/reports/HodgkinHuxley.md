@@ -38,16 +38,16 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} V = \frac{Iext - gL*\left(V - EL\right) - gK*n^{4}*\left(V - EK\right) - gNa*h*m^{3}*\left(V - ENa\right)}{Cm}
+\dot{V} = \frac{Iext - gL*\left(V - EL\right) - gK*n^{4}*\left(V - EK\right) - gNa*h*m^{3}*\left(V - ENa\right)}{Cm}
 $$
 $$
-\frac{d}{d t} m = \alpha_{m}*\left(1 - m\right) - \beta_{m}*m
+\dot{m} = \alpha_{m}*\left(1 - m\right) - \beta_{m}*m
 $$
 $$
-\frac{d}{d t} h = \alpha_{h}*\left(1 - h\right) - \beta_{h}*h
+\dot{h} = \alpha_{h}*\left(1 - h\right) - \beta_{h}*h
 $$
 $$
-\frac{d}{d t} n = \alpha_{n}*\left(1 - n\right) - \beta_{n}*n
+\dot{n} = \alpha_{n}*\left(1 - n\right) - \beta_{n}*n
 $$
 
 

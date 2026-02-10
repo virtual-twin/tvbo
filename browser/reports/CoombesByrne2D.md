@@ -6,10 +6,10 @@
 
 ### State Equations
 $$
-\frac{d}{d t} V = c_{global} + \eta + V^{2} - \pi^{2}*r^{2} + \pi*k*r*\left(v_{syn} - V\right)
+\dot{V} = c_{global} + \eta + V^{2} - \pi^{2}*r^{2} + \pi*k*r*\left(v_{syn} - V\right)
 $$
 $$
-\frac{d}{d t} r = \frac{\Delta}{\pi} + 2*V*r - \pi*k*r^{2}
+\dot{r} = \frac{\Delta}{\pi} + 2*V*r - \pi*k*r^{2}
 $$
 
 

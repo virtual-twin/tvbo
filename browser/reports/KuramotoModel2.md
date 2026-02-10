@@ -23,7 +23,7 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} \theta = I + \omega
+\dot{\theta} = I + \omega
 $$
 
 ### Output Transforms

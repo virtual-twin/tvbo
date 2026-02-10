@@ -11,16 +11,16 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
 
 ### State Equations
 $$
-\frac{d}{d t} V = c_{global} + \eta + V^{2} + g*\left(v_{syn} - V\right) - \pi^{2}*r^{2}
+\dot{V} = c_{global} + \eta + V^{2} + g*\left(v_{syn} - V\right) - \pi^{2}*r^{2}
 $$
 $$
-\frac{d}{d t} g = \alpha*q
+\dot{g} = \alpha*q
 $$
 $$
-\frac{d}{d t} q = \alpha*\left(- g - 2*q + \pi*k*r\right)
+\dot{q} = \alpha*\left(- g - 2*q + \pi*k*r\right)
 $$
 $$
-\frac{d}{d t} r = \frac{\Delta}{\pi} - g*r + 2*V*r
+\dot{r} = \frac{\Delta}{\pi} - g*r + 2*V*r
 $$
 
 

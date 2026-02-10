@@ -12,13 +12,13 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} X = f*\sigma*\left(Y - X\right)
+\dot{X} = f*\sigma*\left(Y - X\right)
 $$
 $$
-\frac{d}{d t} Y = f*\left(- Y + X*\left(\rho - Z\right)\right)
+\dot{Y} = f*\left(- Y + X*\left(\rho - Z\right)\right)
 $$
 $$
-\frac{d}{d t} Z = f*\left(X*Y - Z*\beta\right)
+\dot{Z} = f*\left(X*Y - Z*\beta\right)
 $$
 
 

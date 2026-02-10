@@ -14,13 +14,13 @@ Default values are the ones used in the original paper.
 
 ### State Equations
 $$
-\frac{d}{d t} X = \sigma*\left(Y - X\right)
+\dot{X} = \sigma*\left(Y - X\right)
 $$
 $$
-\frac{d}{d t} Y = - Y + X*\left(\rho - Z\right)
+\dot{Y} = - Y + X*\left(\rho - Z\right)
 $$
 $$
-\frac{d}{d t} Z = X*Y - Z*\beta
+\dot{Z} = X*Y - Z*\beta
 $$
 
 

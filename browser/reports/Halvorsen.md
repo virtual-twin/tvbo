@@ -9,13 +9,13 @@ nonlinear state estimation and control strategies.
 
 ### State Equations
 $$
-\frac{d}{d t} x = - y^{2} - 4*y - 4*z - a*x
+\dot{x} = - y^{2} - 4*y - 4*z - a*x
 $$
 $$
-\frac{d}{d t} y = - z^{2} - 4*x - 4*z - a*y
+\dot{y} = - z^{2} - 4*x - 4*z - a*y
 $$
 $$
-\frac{d}{d t} z = c - x^{2} - 4*x - 4*y - a*z
+\dot{z} = c - x^{2} - 4*x - 4*y - a*z
 $$
 
 

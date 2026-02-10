@@ -19,40 +19,40 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} v_{1} = y_{1}
+\dot{v_{1}} = y_{1}
 $$
 $$
-\frac{d}{d t} v_{2} = y_{2}
+\dot{v_{2}} = y_{2}
 $$
 $$
-\frac{d}{d t} v_{3} = y_{3}
+\dot{v_{3}} = y_{3}
 $$
 $$
-\frac{d}{d t} v_{4} = y_{4}
+\dot{v_{4}} = y_{4}
 $$
 $$
-\frac{d}{d t} v_{5} = y_{5}
+\dot{v_{5}} = y_{5}
 $$
 $$
-\frac{d}{d t} v_{6} = y_{2} - y_{3}
+\dot{v_{6}} = y_{2} - y_{3}
 $$
 $$
-\frac{d}{d t} v_{7} = y_{4} - y_{5}
+\dot{v_{7}} = y_{4} - y_{5}
 $$
 $$
-\frac{d}{d t} y_{1} = - v_{1}*ke^{2} - 2*ke*y_{1} + He*ke*\left(\gamma_{1}*\sigma_{v23} + \gamma_{1T}*\left(U + coupled_{input}\right)\right)
+\dot{y_{1}} = - v_{1}*ke^{2} - 2*ke*y_{1} + He*ke*\left(\gamma_{1}*\sigma_{v23} + \gamma_{1T}*\left(U + coupled_{input}\right)\right)
 $$
 $$
-\frac{d}{d t} y_{2} = - v_{2}*ke^{2} - 2*ke*y_{2} + He*ke*\left(\gamma_{2}*\sigma_{v1} + \gamma_{2T}*\left(P + coupled_{input}\right)\right)
+\dot{y_{2}} = - v_{2}*ke^{2} - 2*ke*y_{2} + He*ke*\left(\gamma_{2}*\sigma_{v1} + \gamma_{2T}*\left(P + coupled_{input}\right)\right)
 $$
 $$
-\frac{d}{d t} y_{3} = - v_{3}*ki^{2} - 2*ki*y_{3} + Hi*\gamma_{4}*ki*\sigma_{v45}
+\dot{y_{3}} = - v_{3}*ki^{2} - 2*ki*y_{3} + Hi*\gamma_{4}*ki*\sigma_{v45}
 $$
 $$
-\frac{d}{d t} y_{4} = - v_{4}*ke^{2} - 2*ke*y_{4} + He*ke*\left(\gamma_{3}*\sigma_{v23} + \gamma_{3T}*\left(Q + coupled_{input}\right)\right)
+\dot{y_{4}} = - v_{4}*ke^{2} - 2*ke*y_{4} + He*ke*\left(\gamma_{3}*\sigma_{v23} + \gamma_{3T}*\left(Q + coupled_{input}\right)\right)
 $$
 $$
-\frac{d}{d t} y_{5} = - v_{5}*ke^{2} - 2*ki*y_{5} + Hi*\gamma_{5}*ki*\sigma_{v45}
+\dot{y_{5}} = - v_{5}*ke^{2} - 2*ki*y_{5} + Hi*\gamma_{5}*ki*\sigma_{v45}
 $$
 
 

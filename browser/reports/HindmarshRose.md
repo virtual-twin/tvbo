@@ -10,13 +10,13 @@ tonic spiking and bursting.
 
 ### State Equations
 $$
-\frac{d}{d t} x = I + y - z + b*x^{2} - a*x^{3}
+\dot{x} = I + y - z + b*x^{2} - a*x^{3}
 $$
 $$
-\frac{d}{d t} y = c - y - d*x^{2}
+\dot{y} = c - y - d*x^{2}
 $$
 $$
-\frac{d}{d t} z = r*\left(- z + s*\left(x - xr\right)\right)
+\dot{z} = r*\left(- z + s*\left(x - xr\right)\right)
 $$
 
 

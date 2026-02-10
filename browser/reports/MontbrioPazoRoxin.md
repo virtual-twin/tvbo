@@ -6,10 +6,10 @@
 
 ### State Equations
 $$
-\frac{d}{d t} V = \frac{I + \eta + V^{2} + c_{pop1}*cv + J*r*\tau + c_{global}*cr*\tau - \pi^{2}*r^{2}*\tau^{2}}{\tau}
+\dot{V} = \frac{I + \eta + V^{2} + c_{pop1}*cv + J*r*\tau + c_{global}*cr*\tau - \pi^{2}*r^{2}*\tau^{2}}{\tau}
 $$
 $$
-\frac{d}{d t} r = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
+\dot{r} = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
 $$
 
 

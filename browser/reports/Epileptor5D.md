@@ -31,22 +31,22 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} g = tt*\left(0.001*x_{1} - 0.01*g\right)
+\dot{g} = tt*\left(0.001*x_{1} - 0.01*g\right)
 $$
 $$
-\frac{d}{d t} x_{1} = tt*\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\right)
+\dot{x_{1}} = tt*\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\right)
 $$
 $$
-\frac{d}{d t} x_{2} = tt*\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\right)
+\dot{x_{2}} = tt*\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\right)
 $$
 $$
-\frac{d}{d t} y_{1} = tt*\left(c - y_{1} - d*x_{1}^{2}\right)
+\dot{y_{1}} = tt*\left(c - y_{1} - d*x_{1}^{2}\right)
 $$
 $$
-\frac{d}{d t} y_{2} = \frac{tt*\left(y2cond - y_{2}\right)}{\tau}
+\dot{y_{2}} = \frac{tt*\left(y2cond - y_{2}\right)}{\tau}
 $$
 $$
-\frac{d}{d t} z = r*tt*\left(h - z + Ks*c_{global}\right)
+\dot{z} = r*tt*\left(h - z + Ks*c_{global}\right)
 $$
 
 
@@ -76,6 +76,6 @@ $$
 
 
 ## References
-Citation key 'Proix2014' not found.
-
 Jirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.
+
+Citation key 'Proix2014' not found.

@@ -15,16 +15,16 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} x = vx
+\dot{x} = vx
 $$
 $$
-\frac{d}{d t} y = vy
+\dot{y} = vy
 $$
 $$
-\frac{d}{d t} vx = - sum_{\gamma terms x} - \alpha*vx - x*\omega^{2}
+\dot{vx} = - sum_{\gamma terms x} - \alpha*vx - x*\omega^{2}
 $$
 $$
-\frac{d}{d t} vy = - sum_{\gamma terms y} - \alpha*vy - y*\omega^{2}
+\dot{vy} = - sum_{\gamma terms y} - \alpha*vy - y*\omega^{2}
 $$
 
 

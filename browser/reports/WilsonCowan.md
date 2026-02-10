@@ -37,10 +37,10 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} E = \frac{- E + s_{e}*\left(k_{e} - E*r_{e}\right)}{\tau_{e}}
+\dot{E} = \frac{- E + s_{e}*\left(k_{e} - E*r_{e}\right)}{\tau_{e}}
 $$
 $$
-\frac{d}{d t} I = \frac{- I + s_{i}*\left(k_{i} - I*r_{i}\right)}{\tau_{i}}
+\dot{I} = \frac{- I + s_{i}*\left(k_{i} - I*r_{i}\right)}{\tau_{i}}
 $$
 
 

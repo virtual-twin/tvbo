@@ -7,13 +7,13 @@ strange attractors with fractal basin boundaries for typical parameter values.
 
 ### State Equations
 $$
-\frac{d}{d t} x = y - x
+\dot{x} = y - x
 $$
 $$
-\frac{d}{d t} y = - x*z
+\dot{y} = - x*z
 $$
 $$
-\frac{d}{d t} z = - R + x*y
+\dot{z} = - R + x*y
 $$
 
 

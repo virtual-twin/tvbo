@@ -8,16 +8,16 @@ distinct attractors, illustrating extreme sensitivity in basin structure.
 
 ### State Equations
 $$
-\frac{d}{d t} x = vx
+\dot{x} = vx
 $$
 $$
-\frac{d}{d t} y = vy
+\dot{y} = vy
 $$
 $$
-\frac{d}{d t} vx = - y^{2} - \gamma*vx + 4*x*\left(1 - x^{2}\right) + f_{0}*x_{0}*\sin{\left(\omega*t \right)}
+\dot{vx} = - y^{2} - \gamma*vx + 4*x*\left(1 - x^{2}\right) + f_{0}*x_{0}*\sin{\left(\omega*t \right)}
 $$
 $$
-\frac{d}{d t} vy = - \gamma*vy - 2*y*\left(x + \bar{x}\right) + f_{0}*y_{0}*\sin{\left(\omega*t \right)}
+\dot{vy} = - \gamma*vy - 2*y*\left(x + \bar{x}\right) + f_{0}*y_{0}*\sin{\left(\omega*t \right)}
 $$
 
 

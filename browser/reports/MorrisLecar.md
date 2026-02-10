@@ -15,10 +15,10 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} V = I - gL*\left(V - VL\right) - M*gCa*\left(V - VCa\right) - N*gK*\left(V - VK\right)
+\dot{V} = I - gL*\left(V - VL\right) - M*gCa*\left(V - VCa\right) - N*gK*\left(V - VK\right)
 $$
 $$
-\frac{d}{d t} N = \frac{G - N}{\tau}
+\dot{N} = \frac{G - N}{\tau}
 $$
 
 

@@ -7,13 +7,13 @@ robust chaos and symmetry-related lobe structure transitions under parameter var
 
 ### State Equations
 $$
-\frac{d}{d t} x = y + a*x + y*z
+\dot{x} = y + a*x + y*z
 $$
 $$
-\frac{d}{d t} y = y*z - x*z
+\dot{y} = y*z - x*z
 $$
 $$
-\frac{d}{d t} z = b - z - m*x*y
+\dot{z} = b - z - m*x*y
 $$
 
 

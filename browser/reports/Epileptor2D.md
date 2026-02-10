@@ -21,10 +21,10 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} x_{1} = tt*\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\right)
+\dot{x_{1}} = tt*\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\right)
 $$
 $$
-\frac{d}{d t} z = r*tt*\left(h - z + Ks*c_{global}\right)
+\dot{z} = r*tt*\left(h - z + Ks*c_{global}\right)
 $$
 
 

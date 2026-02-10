@@ -295,9 +295,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter">ModelingToolkitAdapter</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter(source<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Adapter for running SimulationExperiment via pure ModelingToolkit.jl.</p>
 <p>Uses <span class="citation" data-cites="component">@component</span> syntax (MTK v11+), mtkcompile, ODEProblem, and solve.</p>
+<p>Accepts <code>Dynamics</code>, <code>SimulationExperiment</code>, or no argument::</p>
+<pre><code>adapter = ModelingToolkitAdapter()              # empty, set .experiment later
+adapter = ModelingToolkitAdapter(dynamics)      # wraps in minimal experiment
+adapter = ModelingToolkitAdapter(exp)            # full experiment</code></pre>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -309,8 +313,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations">get_lowered_equations</a></td>
-<td>Send higher-order system to MTK and get back first-order SymPy equations.</td>
+<td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.lower">lower</a></td>
+<td>Lower higher-order ODEs via MTK’s <code>mtkcompile</code>.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code">render_code</a></td>
@@ -322,30 +326,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations" class="level5">
-<h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations">get_lowered_equations</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.get_lowered_equations(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Send higher-order system to MTK and get back first-order SymPy equations.</p>
-<p>Performs a symbolic round-trip:</p>
-<ol type="1">
-<li>Render the experiment as MTK Julia code (includes <code>mtkcompile</code>)</li>
-<li>Execute in Julia — MTK automatically lowers higher-order ODEs</li>
-<li>Extract <code>equations(sys)</code>, <code>unknowns(sys)</code>, <code>parameters(sys)</code></li>
-<li>Parse the lowered equation strings back into SymPy <code>Eq</code> objects</li>
-</ol>
+<section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.lower" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.lower">lower</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.lower(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    returns<span class="op">=</span><span class="st">'auto'</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Lower higher-order ODEs via MTK’s <code>mtkcompile</code>.</p>
+<p>Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into a tvbo <code>Dynamics</code> or <code>SimulationExperiment</code>.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<p>source : Dynamics | SimulationExperiment, optional The system to lower. Can also be set at init time. returns : str What to return:</p>
+<pre><code>- ``"sympy"`` — dict of SymPy equations, unknowns, parameters
+- ``"dynamics"`` — tvbo ``Dynamics`` with lowered equations
+- ``"experiment"`` — tvbo ``SimulationExperiment`` with lowered
+  dynamics
+- ``"auto"`` (default) — same type as the input: ``Dynamics``
+  if given ``Dynamics``, ``SimulationExperiment`` if given an
+  experiment, ``"sympy"`` if empty.</code></pre>
+</section>
 <section id="returns" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
-<p>dict <code>{"equations": {name: sympy.Eq, ...},        "unknowns": [str, ...],        "parameters": [str, ...]}</code></p>
+<p>dict | Dynamics | SimulationExperiment</p>
 </section>
 </section>
 <section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.render_code">render_code</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.render_code(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.render_code(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render Julia code using the standalone MTK template.</p>
 </section>
 <section id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run">run</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.run(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>adapters.modelingtoolkit.ModelingToolkitAdapter.run(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Run simulation using pure ModelingToolkit.jl.</p>
 <section id="returns-1" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>

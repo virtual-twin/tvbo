@@ -8,13 +8,13 @@ later rediscovered as an algebraically simple chaotic flow.
 
 ### State Equations
 $$
-\frac{d}{d t} x = y
+\dot{x} = y
 $$
 $$
-\frac{d}{d t} y = - x + y*z
+\dot{y} = - x + y*z
 $$
 $$
-\frac{d}{d t} z = 1 - y^{2}
+\dot{z} = 1 - y^{2}
 $$
 
 

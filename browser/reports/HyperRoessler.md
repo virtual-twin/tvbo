@@ -8,16 +8,16 @@ parameter ranges while preserving the spiral-type attractor structure.
 
 ### State Equations
 $$
-\frac{d}{d t} x = - y - z
+\dot{x} = - y - z
 $$
 $$
-\frac{d}{d t} y = w + x + a*y
+\dot{y} = w + x + a*y
 $$
 $$
-\frac{d}{d t} z = b + z*\left(x - c\right)
+\dot{z} = b + z*\left(x - c\right)
 $$
 $$
-\frac{d}{d t} w = w*y - d*z
+\dot{w} = w*y - d*z
 $$
 
 

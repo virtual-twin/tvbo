@@ -12,10 +12,10 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} x = c_{global} + lc_{0} + x*\left(a - x^{2} - y^{2}\right) - \omega*y
+\dot{x} = c_{global} + lc_{0} + x*\left(a - x^{2} - y^{2}\right) - \omega*y
 $$
 $$
-\frac{d}{d t} y = c_{pop1} + \omega*x + y*\left(a - x^{2} - y^{2}\right)
+\dot{y} = c_{pop1} + \omega*x + y*\left(a - x^{2} - y^{2}\right)
 $$
 
 

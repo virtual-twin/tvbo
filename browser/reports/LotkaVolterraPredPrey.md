@@ -10,10 +10,10 @@ predator (y) declines without prey. Default parameters produce sustained oscilla
 
 ### State Equations
 $$
-\frac{d}{d t} x = \alpha*x - \beta*x*y
+\dot{x} = \alpha*x - \beta*x*y
 $$
 $$
-\frac{d}{d t} y = - \gamma*y + \delta*x*y
+\dot{y} = - \gamma*y + \delta*x*y
 $$
 
 

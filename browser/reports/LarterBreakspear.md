@@ -36,13 +36,13 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} V = t_{scale}*\left(I_{ext}*a_{ne} - g_{L}*\left(V - V_{L}\right) - \left(V - V_{Na}\right)*\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\left(1.0 - C\right)*\left(Q_{V} + lc_{0}\right)\right) + m_{Ca}*\left(V - V_{Ca}\right)*\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\left(1.0 - C\right)*\left(Q_{V} + lc_{0}\right)\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\left(V - V_{K}\right)\right)
+\dot{V} = t_{scale}*\left(I_{ext}*a_{ne} - g_{L}*\left(V - V_{L}\right) - \left(V - V_{Na}\right)*\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\left(1.0 - C\right)*\left(Q_{V} + lc_{0}\right)\right) + m_{Ca}*\left(V - V_{Ca}\right)*\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\left(1.0 - C\right)*\left(Q_{V} + lc_{0}\right)\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\left(V - V_{K}\right)\right)
 $$
 $$
-\frac{d}{d t} W = \frac{\phi*t_{scale}*\left(m_{K} - W\right)}{\tau_{K}}
+\dot{W} = \frac{\phi*t_{scale}*\left(m_{K} - W\right)}{\tau_{K}}
 $$
 $$
-\frac{d}{d t} Z = b*t_{scale}*\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\right)
+\dot{Z} = b*t_{scale}*\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\right)
 $$
 
 
@@ -86,8 +86,8 @@ $$
 
 
 ## References
+Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.
+
 Breakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.
 
 Breakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.
-
-Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.

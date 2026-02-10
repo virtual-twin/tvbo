@@ -18,13 +18,13 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} x = a*\left(y - h_{x} - x\right)
+\dot{x} = a*\left(y - h_{x} - x\right)
 $$
 $$
-\frac{d}{d t} y = x + z - y
+\dot{y} = x + z - y
 $$
 $$
-\frac{d}{d t} z = - b*y
+\dot{z} = - b*y
 $$
 
 

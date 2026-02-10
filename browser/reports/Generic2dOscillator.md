@@ -6,10 +6,10 @@ The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonli
 
 ### State Equations
 $$
-\frac{d}{d t} V = d*\tau*\left(I*\gamma + V*g + V*c_{local} + W*\alpha + c_{glob}*\gamma + e*V^{2} - f*V^{3}\right)
+\dot{V} = d*\tau*\left(I*\gamma + V*g + V*c_{local} + W*\alpha + c_{glob}*\gamma + e*V^{2} - f*V^{3}\right)
 $$
 $$
-\frac{d}{d t} W = \frac{d*\left(a + V*b + c*V^{2} - W*\beta\right)}{\tau}
+\dot{W} = \frac{d*\left(a + V*b + c*V^{2} - W*\beta\right)}{\tau}
 $$
 
 
@@ -33,6 +33,6 @@ $$
 
 
 ## References
-FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.
-
 Nagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.
+
+FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.

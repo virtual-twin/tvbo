@@ -15,7 +15,7 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} S = - \frac{S}{\tau_{s}} + H*\gamma*\left(1 - S\right)
+\dot{S} = - \frac{S}{\tau_{s}} + H*\gamma*\left(1 - S\right)
 $$
 
 
@@ -35,6 +35,6 @@ $$
 
 
 ## References
-Citation key 'WongWang2006' not found.
-
 Citation key 'Deco2013' not found.
+
+Citation key 'WongWang2006' not found.

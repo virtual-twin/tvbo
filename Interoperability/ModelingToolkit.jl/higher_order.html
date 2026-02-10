@@ -568,7 +568,7 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#why-this-matters" id="toc-why-this-matters" class="nav-link active" data-scroll-target="#why-this-matters">Why this matters</a></li>
   <li><a href="#the-yaml-specification" id="toc-the-yaml-specification" class="nav-link" data-scroll-target="#the-yaml-specification">The YAML Specification</a></li>
   <li><a href="#step-1-load-and-inspect-the-sympy-equations" id="toc-step-1-load-and-inspect-the-sympy-equations" class="nav-link" data-scroll-target="#step-1-load-and-inspect-the-sympy-equations">Step 1: Load and Inspect the SymPy Equations</a></li>
   <li><a href="#step-2-render-mtk-code" id="toc-step-2-render-mtk-code" class="nav-link" data-scroll-target="#step-2-render-mtk-code">Step 2: Render MTK Code</a></li>
@@ -601,119 +601,73 @@ window.Quarto = {
 </header>
 
 
-<section id="overview" class="level2">
-<h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>This example demonstrates tvbo’s symbolic round-trip with ModelingToolkit.jl, based on the <a href="https://docs.sciml.ai/ModelingToolkit/stable/examples/higher_order/">MTK higher-order ODE tutorial</a>.</p>
-<p>A second-order variant of the Lorenz system is defined in YAML with <code>equation_order: 2</code> on the <span class="math inline">\(x\)</span> variable. tvbo renders this as <code>Dt(Dt(x))</code> in MTK code. When MTK compiles the system, it automatically introduces an auxiliary variable <span class="math inline">\(\dot{x}\)</span> and produces an equivalent first-order system. tvbo then extracts these lowered equations back as SymPy expressions.</p>
+<section id="why-this-matters" class="level2">
+<h2 class="anchored" data-anchor-id="why-this-matters">Why this matters</h2>
+<p>Many dynamical systems are naturally expressed as higher-order ODEs, but most simulation backends only support first-order systems. Manually rewriting <span class="math inline">\(\ddot{x} = f(x)\)</span> into a first-order system is tedious and error-prone — you need to introduce auxiliary variables, track extra initial conditions, and keep everything consistent.</p>
+<p><code>tvbo</code> automates this by round-tripping through ModelingToolkit.jl: send a higher-order system to Julia, let MTK’s compiler do the structural transformation, and get back clean first-order symbolic equations ready for any backend.</p>
 <p><span class="math display">\[
 \ddot{x} = \sigma(y - x) \quad \Longrightarrow \quad \begin{cases} \dot{x} = x_t \\ \dot{x_t} = \sigma(y - x) \end{cases}
 \]</span></p>
 </section>
 <section id="the-yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="the-yaml-specification">The YAML Specification</h2>
-<p>The key feature is the <code>equation_order: 2</code> attribute on the <code>x</code> state variable, which tells tvbo (and MTK) that the equation <span class="math inline">\(\sigma(y - x)\)</span> is a <em>second-order</em> ODE. The <code>derivative_initial_value: 2.0</code> provides the initial condition for <span class="math inline">\(\dot{x}(0)\)</span>.</p>
-<div class="code-with-filename">
-<div class="code-with-filename-file">
-<pre><strong>yaml/lorenz_higher_order.yaml</strong></pre>
-</div>
-<div class="sourceCode" id="cb1" data-filename="yaml/lorenz_higher_order.yaml"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">state_variables</span><span class="kw">:</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">x</span><span class="kw">:</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">name</span><span class="kw">:</span><span class="at"> x</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.0</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">derivative_initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">2.0</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">equation_order</span><span class="kw">:</span><span class="at"> </span><span class="dv">2</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">equation</span><span class="kw">:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> sigma * (y - x)</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">y</span><span class="kw">:</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="ch">y</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.0</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">equation</span><span class="kw">:</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> x * (rho - z) - y</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">z</span><span class="kw">:</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">name</span><span class="kw">:</span><span class="at"> z</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.0</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">equation</span><span class="kw">:</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> x * y - beta * z</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<p>Mark a state variable with <code>equation_order: 2</code> to declare its equation as second-order. Provide the derivative initial condition separately with<code>derivative_initial_value: 2.0</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">state_variables</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">x</span><span class="kw">:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> x</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.0</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">derivative_initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">2.0</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">equation_order</span><span class="kw">:</span><span class="at"> </span><span class="dv">2</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">equation</span><span class="kw">:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> sigma * (y - x)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="step-1-load-and-inspect-the-sympy-equations" class="level2">
 <h2 class="anchored" data-anchor-id="step-1-load-and-inspect-the-sympy-equations">Step 1: Load and Inspect the SymPy Equations</h2>
-<div id="cf63d949" class="cell" data-execution_count="1">
+<div id="f6030fa6" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"yaml/lorenz_higher_order.yaml"</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> exp.local_dynamics</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># tvbo's SymPy representation — higher-order</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>eqs <span class="op">=</span> model.get_equations(<span class="st">"state-equations"</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>eqs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Markdown(exp.local_dynamics.generate_report(derivative_notation<span class="op">=</span><span class="st">'dot'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>tvbo correctly represents the second-order derivative:</p>
-<pre><code>  Eq(Derivative(x, (t, 2)), sigma*(-x + y))
-  Eq(Derivative(y, t), x*(rho - z) - y)
-  Eq(Derivative(z, t), -beta*z + x*y)</code></pre>
+<p>tvbo correctly represents the second-order derivative</p>
 </section>
 <section id="step-2-render-mtk-code" class="level2">
 <h2 class="anchored" data-anchor-id="step-2-render-mtk-code">Step 2: Render MTK Code</h2>
-<div id="845f987e" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"mtk"</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="259b097b" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"mtk"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The template generates <code>Dt(Dt(x))</code> — MTK’s notation for <span class="math inline">\(\frac{d^2 x}{dt^2}\)</span>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">@component</span> <span class="kw">function</span> <span class="fu">Lorenz63_HigherOrder</span>(; name)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="pp">@parameters</span> <span class="cf">begin</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        sigma <span class="op">=</span> <span class="fl">10.0</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        rho <span class="op">=</span> <span class="fl">28.0</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        beta <span class="op">=</span> <span class="fl">2.6666666666666665</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="pp">@variables</span> <span class="cf">begin</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">x</span>(t)<span class="op">=</span><span class="fl">1.0</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">y</span>(t)<span class="op">=</span><span class="fl">0.0</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">z</span>(t)<span class="op">=</span><span class="fl">0.0</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    eqs <span class="op">=</span> [</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">Dt</span>(<span class="fu">Dt</span>(x)) <span class="op">~</span> sigma <span class="op">*</span> (y <span class="op">-</span> x),</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="fu">Dt</span>(y) <span class="op">~</span> <span class="op">-</span>y <span class="op">+</span> x <span class="op">*</span> (rho <span class="op">-</span> z),</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="fu">Dt</span>(z) <span class="op">~</span> x <span class="op">*</span> y <span class="op">-</span> beta <span class="op">*</span> z,</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">System</span>(eqs, t; name)</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The template generates <code>Dt(Dt(x))</code> — MTK’s notation for <span class="math inline">\(\frac{d^2 x}{dt^2}\)</span></p>
 <p>The derivative initial condition is passed via:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> [<span class="fu">Dt</span>(sys.x) <span class="op">=&gt;</span> <span class="fl">2.0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> [<span class="fu">Dt</span>(sys.x) <span class="op">=&gt;</span> <span class="fl">2.0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="step-3-symbolic-round-trip-get-lowered-equations" class="level2">
 <h2 class="anchored" data-anchor-id="step-3-symbolic-round-trip-get-lowered-equations">Step 3: Symbolic Round-Trip — Get Lowered Equations</h2>
 <p>Here is the key feature: we send the higher-order system to Julia, let MTK’s <code>mtkcompile</code> do the structural transformation, and extract the lowered first-order equations back as SymPy.</p>
-<div id="47280771" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.modelingtoolkit <span class="im">import</span> ModelingToolkitAdapter</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> ModelingToolkitAdapter(exp)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>lowered <span class="op">=</span> adapter.get_lowered_equations()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Unknowns: </span><span class="sc">{</span>lowered[<span class="st">'unknowns'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Parameters: </span><span class="sc">{</span>lowered[<span class="st">'parameters'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, eq <span class="kw">in</span> lowered[<span class="st">"equations"</span>].items():</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>eq<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="62d4e8c4" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.modelingtoolkit <span class="im">import</span> ModelingToolkitAdapter</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> ModelingToolkitAdapter()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>firstoder_ODE <span class="op">=</span> adapter.lower(exp.local_dynamics)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>Markdown(firstoder_ODE.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To run the lowered system with backends that only support first-order ODEs:</p>
+<div id="cd5d983a" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>lowered_exp <span class="op">=</span> adapter.lower(exp)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>lowered_exp.integration.method<span class="op">=</span><span class="st">'Heun'</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> lowered_exp.run(<span class="st">"tvboptim"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>result.integration.main.to_timeseries().get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>MTK introduced <code>x_t</code> (written as <code>xˍt</code> in Julia) and produced four first-order equations:</p>
-<pre><code>Unknowns: ['x', 'z', 'y', 'x_t']
-Parameters: ['sigma', 'rho', 'beta']
-
-  Eq(Derivative(x, t), x_t)
-  Eq(Derivative(z, t), -beta*z + x*y)
-  Eq(Derivative(y, t), x*(rho - z) - y)
-  Eq(Derivative(x_t, t), sigma*(-x + y))</code></pre>
 <p>The returned SymPy equations are standard <code>sympy.Eq</code> objects — they can be used for further symbolic analysis, code generation to other backends, or substitution.</p>
 </section>
 <section id="step-4-run-the-simulation" class="level2">
 <h2 class="anchored" data-anchor-id="step-4-run-the-simulation">Step 4: Run the Simulation</h2>
-<div id="7bdf5358" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"mtk"</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>result.plot()</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>result.get_statevariables([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="83f856ad" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"mtk"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>result.get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This matches the original MTK tutorial’s <span class="math inline">\(x\)</span>-<span class="math inline">\(y\)</span> state-space plot.</p>
 </section>
@@ -721,46 +675,38 @@ Parameters: ['sigma', 'rho', 'beta']
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 21%">
-<col style="width: 21%">
-<col style="width: 57%">
+<col style="width: 31%">
+<col style="width: 68%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>Step</th>
-<th>Tool</th>
-<th>Representation</th>
+<th>What happens</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>YAML</td>
-<td>tvbo</td>
-<td><code>equation_order: 2</code>, <code>rhs: sigma * (y - x)</code></td>
+<td>Define <code>equation_order: 2</code> on the state variable</td>
 </tr>
 <tr class="even">
-<td>SymPy</td>
-<td>tvbo</td>
-<td><code>Eq(Derivative(x, (t, 2)), sigma*(-x + y))</code></td>
+<td>tvbo → MTK</td>
+<td>Generates <code>Dt(Dt(x)) ~ sigma * (y - x)</code></td>
 </tr>
 <tr class="odd">
-<td>Julia</td>
-<td>MTK template</td>
-<td><code>Dt(Dt(x)) ~ sigma * (y - x)</code></td>
+<td>MTK compiles</td>
+<td>Introduces <span class="math inline">\(x_t\)</span>, produces first-order system</td>
 </tr>
 <tr class="even">
-<td>Lowered</td>
-<td>MTK <code>mtkcompile</code></td>
-<td><code>dx/dt = x_t</code>, <code>dx_t/dt = sigma*(-x + y)</code></td>
+<td>MTK → tvbo</td>
+<td>Extracts lowered equations as SymPy</td>
 </tr>
 <tr class="odd">
-<td>Back to SymPy</td>
-<td><code>get_lowered_equations()</code></td>
-<td><code>Eq(Derivative(x_t, t), sigma*(-x + y))</code></td>
+<td>Run anywhere</td>
+<td>Lowered system works with <code>tvboptim</code>, <code>JAX</code>, <code>TVB</code>, …</td>
 </tr>
 </tbody>
 </table>
-<p>This round-trip lets tvbo leverage MTK’s powerful symbolic engine while maintaining SymPy as the canonical internal representation.</p>
 
 
 </section>

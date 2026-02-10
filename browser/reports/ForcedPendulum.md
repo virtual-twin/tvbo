@@ -7,10 +7,10 @@ intermittency) and rich phase locking structure in parameter space.
 
 ### State Equations
 $$
-\frac{d}{d t} x = v
+\dot{x} = v
 $$
 $$
-\frac{d}{d t} v = - \sin{\left(x \right)} + f*\cos{\left(\omega*t \right)} - d*v
+\dot{v} = - \sin{\left(x \right)} + f*\cos{\left(\omega*t \right)} - d*v
 $$
 
 

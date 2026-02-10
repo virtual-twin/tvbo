@@ -12,10 +12,10 @@ Note:
 
 ### State Equations
 $$
-\frac{d}{d t} \theta = \frac{c_{pop1} - \theta}{tauT}
+\dot{\theta} = \frac{c_{pop1} - \theta}{tauT}
 $$
 $$
-\frac{d}{d t} x = \frac{c_{global} - x}{taux}
+\dot{x} = \frac{c_{global} - x}{taux}
 $$
 
 
@@ -29,6 +29,6 @@ $$
 
 
 ## References
-Citation key 'Hopfield1984' not found.
-
 Citation key 'Hopfield1982' not found.
+
+Citation key 'Hopfield1984' not found.

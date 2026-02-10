@@ -7,13 +7,13 @@ choice yields either quasi-periodic torus motion or chaotic attractor behavior.
 
 ### State Equations
 $$
-\frac{d}{d t} x = y + x*z + a*x*y
+\dot{x} = y + x*z + a*x*y
 $$
 $$
-\frac{d}{d t} y = 1 - 2*x^{2} + b*y*z
+\dot{y} = 1 - 2*x^{2} + b*y*z
 $$
 $$
-\frac{d}{d t} z = - x^{2} - y^{2} + c*x
+\dot{z} = - x^{2} - y^{2} + c*x
 $$
 
 

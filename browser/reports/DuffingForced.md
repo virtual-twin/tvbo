@@ -6,10 +6,10 @@ Forced Duffing oscillator with linear damping and periodic forcing. Exhibits ric
 
 ### State Equations
 $$
-\frac{d}{d t} x = v
+\dot{x} = v
 $$
 $$
-\frac{d}{d t} v = - x^{3} + f*\cos{\left(\omega*t \right)} - \beta*x - d*v
+\dot{v} = - x^{3} + f*\cos{\left(\omega*t \right)} - \beta*x - d*v
 $$
 
 

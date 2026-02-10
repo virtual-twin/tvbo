@@ -27,22 +27,22 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} y_{0} = y_{3}
+\dot{y_{0}} = y_{3}
 $$
 $$
-\frac{d}{d t} y_{3} = - y_{0}*a^{2} - 2*a*y_{3} + A*a*\operatorname{Sigm}{\left(y_{1} - y_{2} \right)}
+\dot{y_{3}} = - y_{0}*a^{2} - 2*a*y_{3} + A*a*\operatorname{Sigm}{\left(y_{1} - y_{2} \right)}
 $$
 $$
-\frac{d}{d t} y_{1} = y_{4}
+\dot{y_{1}} = y_{4}
 $$
 $$
-\frac{d}{d t} y_{4} = - y_{1}*a^{2} - 2*a*y_{4} + A*a*\left(c_{glob} + p + C_{2}*\operatorname{Sigm}{\left(C_{1}*y_{0} \right)}\right)
+\dot{y_{4}} = - y_{1}*a^{2} - 2*a*y_{4} + A*a*\left(c_{glob} + p + C_{2}*\operatorname{Sigm}{\left(C_{1}*y_{0} \right)}\right)
 $$
 $$
-\frac{d}{d t} y_{2} = y_{5}
+\dot{y_{2}} = y_{5}
 $$
 $$
-\frac{d}{d t} y_{5} = - y_{2}*b^{2} - 2*b*y_{5} + B*C_{4}*b*\operatorname{Sigm}{\left(C_{3}*y_{0} \right)}
+\dot{y_{5}} = - y_{2}*b^{2} - 2*b*y_{5} + B*C_{4}*b*\operatorname{Sigm}{\left(C_{3}*y_{0} \right)}
 $$
 
 ### Output Transforms

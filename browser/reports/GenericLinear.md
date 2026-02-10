@@ -6,7 +6,7 @@ The Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e., on
 
 ### State Equations
 $$
-\frac{d}{d t} x = c_{global} + \gamma*x + c_{local}*x
+\dot{x} = c_{global} + \gamma*x + c_{local}*x
 $$
 
 

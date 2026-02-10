@@ -8,10 +8,10 @@ dynamics. Captures threshold behavior, refractoriness and sustained spiking unde
 
 ### State Equations
 $$
-\frac{d}{d t} v = I - w + a*v*\left(1 - v\right)*\left(v - b\right)
+\dot{v} = I - w + a*v*\left(1 - v\right)*\left(v - b\right)
 $$
 $$
-\frac{d}{d t} w = \epsilon*\left(v - w\right)
+\dot{w} = \epsilon*\left(v - w\right)
 $$
 
 

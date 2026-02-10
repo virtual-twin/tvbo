@@ -71,19 +71,19 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} DKi = - \frac{\gamma*\left(I_{K} - 2.0*I_{pump}\right)}{w_{i}}
+\dot{DKi} = - \frac{\gamma*\left(I_{K} - 2.0*I_{pump}\right)}{w_{i}}
 $$
 $$
-\frac{d}{d t} Kg = \epsilon*\left(K_{bath} - K_{o}\right)
+\dot{Kg} = \epsilon*\left(K_{bath} - K_{o}\right)
 $$
 $$
-\frac{d}{d t} V = Vcond
+\dot{V} = Vcond
 $$
 $$
-\frac{d}{d t} n = \frac{ninf - n}{\tau_{n}}
+\dot{n} = \frac{ninf - n}{\tau_{n}}
 $$
 $$
-\frac{d}{d t} x = xcond
+\dot{x} = xcond
 $$
 
 

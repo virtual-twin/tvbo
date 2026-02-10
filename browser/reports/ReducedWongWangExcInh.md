@@ -25,10 +25,10 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} S_{e} = - \frac{S_{e}}{\tau_{e}} + H_{e}*\gamma_{e}*\left(1 - S_{e}\right)
+\dot{S_{e}} = - \frac{S_{e}}{\tau_{e}} + H_{e}*\gamma_{e}*\left(1 - S_{e}\right)
 $$
 $$
-\frac{d}{d t} S_{i} = H_{i}*\gamma_{i} - \frac{S_{i}}{\tau_{i}}
+\dot{S_{i}} = H_{i}*\gamma_{i} - \frac{S_{i}}{\tau_{i}}
 $$
 
 

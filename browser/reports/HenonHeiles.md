@@ -12,16 +12,16 @@ $$
 
 ### State Equations
 $$
-\frac{d}{d t} x = px
+\dot{x} = px
 $$
 $$
-\frac{d}{d t} y = py
+\dot{y} = py
 $$
 $$
-\frac{d}{d t} px = - x - 2*x*y
+\dot{px} = - x - 2*x*y
 $$
 $$
-\frac{d}{d t} py = y^{2} - y - x^{2}
+\dot{py} = y^{2} - y - x^{2}
 $$
 
 
