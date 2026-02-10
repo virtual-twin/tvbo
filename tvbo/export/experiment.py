@@ -1099,9 +1099,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
             return self._run_networkdynamics(**kwargs)
 
+        elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
+            return self._run_modelingtoolkit(**kwargs)
+
         else:
             raise ValueError(
-                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, networkdynamics"
+                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
+                "networkdynamics, mtk, modelingtoolkit"
             )
 
         return simulation_data
@@ -1151,6 +1155,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
 
         adapter = NetworkDynamicsAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_modelingtoolkit(self, **kwargs) -> TimeSeries:
+        """Run simulation using MTK + NetworkDynamics.jl via pyjulia."""
+        from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
+        adapter = ModelingToolkitAdapter(self)
         return adapter.run(**kwargs)
 
     def get_experiment_file_prefix(self):
@@ -1412,11 +1423,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
             rendered_code = template.render(**ctx)
 
+        elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
+            from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+            adapter = ModelingToolkitAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
         else:
             raise ValueError(
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
                 "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
-                "julia, networkdynamics, nd"
+                "julia, networkdynamics, nd, mtk, modelingtoolkit"
             )
 
         return rendered_code

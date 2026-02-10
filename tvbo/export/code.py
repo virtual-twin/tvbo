@@ -431,6 +431,91 @@ class JuliaPrinter(spj.JuliaCodePrinter):
         return out
 
 
+class MTKPrinter(JuliaPrinter):
+    """Printer for ModelingToolkit.jl @mtkmodel equations.
+
+    MTK equations are scalar symbolic, so we use plain ``*``, ``/``, ``^``
+    instead of Julia's element-wise ``.*``, ``./``, ``.^``.
+    """
+
+    def _print_Mul(self, expr):
+        from sympy import S, Mul, Pow, Rational
+        from sympy.core.operations import AssocOp
+        from sympy.printing.precedence import precedence
+
+        if (expr.is_number and expr.is_imaginary
+                and expr.as_coeff_Mul()[0].is_integer):
+            return "%sim" % self._print(-S.ImaginaryUnit * expr)
+
+        prec = precedence(expr)
+
+        c, e = expr.as_coeff_Mul()
+        if c < 0:
+            from sympy.core.mul import _keep_coeff
+            expr = _keep_coeff(-c, e)
+            sign = "-"
+        else:
+            sign = ""
+
+        a = []  # numerator
+        b = []  # denominator
+
+        pow_paren = []
+        if self.order not in ('old', 'none'):
+            args = expr.as_ordered_factors()
+        else:
+            args = Mul.make_args(expr)
+
+        for item in args:
+            if (item.is_commutative and item.is_Pow and item.exp.is_Rational
+                    and item.exp.is_negative):
+                if item.exp != -1:
+                    b.append(Pow(item.base, -item.exp, evaluate=False))
+                else:
+                    if len(item.args[0].args) != 1 and isinstance(item.base, Mul):
+                        pow_paren.append(item)
+                    b.append(Pow(item.base, -item.exp))
+            elif item.is_Rational and item is not S.Infinity and item.p == 1:
+                b.append(Rational(item.q))
+            else:
+                a.append(item)
+
+        a = a or [S.One]
+        a_str = [self.parenthesize(x, prec) for x in a]
+        b_str = [self.parenthesize(x, prec) for x in b]
+
+        for item in pow_paren:
+            if item.base in b:
+                b_str[b.index(item.base)] = "(%s)" % b_str[b.index(item.base)]
+
+        # Always scalar: use * and / (never .* or ./)
+        def multjoin(a_str):
+            return " * ".join(a_str)
+
+        if not b:
+            return sign + multjoin(a_str)
+        elif len(b) == 1:
+            return "%s / %s" % (sign + multjoin(a_str), b_str[0])
+        else:
+            return "%s / (%s)" % (sign + multjoin(a_str), multjoin(b_str))
+
+    def _print_Pow(self, expr):
+        from sympy.core.numbers import equal_valued
+        from sympy.printing.precedence import precedence
+
+        PREC = precedence(expr)
+        if equal_valued(expr.exp, 0.5):
+            return "sqrt(%s)" % self._print(expr.base)
+        if expr.is_commutative:
+            if equal_valued(expr.exp, -0.5):
+                return "1 / sqrt(%s)" % self._print(expr.base)
+            if equal_valued(expr.exp, -1):
+                return "1 / %s" % self.parenthesize(expr.base, PREC)
+        # Always scalar: use ^ (never .^)
+        return '%s ^ %s' % (self.parenthesize(expr.base, PREC),
+                            self.parenthesize(expr.exp, PREC))
+
+
 class FortranPrinter(spf.FCodePrinter):
     def __init__(self, settings=None):
         settings = settings or {}
@@ -482,6 +567,8 @@ def get_printer(format):
         return JaxPrinter()
     elif format == "julia":
         return JuliaPrinter()
+    elif format == "mtk":
+        return MTKPrinter()
     elif format == "fortran":
         return FortranPrinter()
     elif format == "python":

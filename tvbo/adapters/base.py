@@ -253,11 +253,23 @@ class BaseAdapter:
     def parse_node_parameters(node) -> dict[str, float]:
         """Parse per-node parameter overrides from a Node object.
 
-        Handles ParameterName (string subclass with dict repr).
+        Node.parameters is now a keyed dict {name: Parameter} (inlined).
         Returns {param_name: value}.
         """
         node_params = {}
-        for p in (getattr(node, 'parameters', None) or []):
+        params = getattr(node, 'parameters', None)
+        if not params:
+            return node_params
+        # New format: dict keyed by ParameterName -> Parameter object
+        if isinstance(params, dict):
+            for name, p in params.items():
+                if hasattr(p, 'value'):
+                    node_params[str(name)] = p.value
+                elif isinstance(p, dict):
+                    node_params[str(name)] = p.get('value')
+            return node_params
+        # Legacy fallback: list of ParameterName strings or dicts
+        for p in params:
             if isinstance(p, dict):
                 node_params[p.get('name', '')] = p.get('value')
             elif hasattr(p, 'name') and not isinstance(p, str):
@@ -406,6 +418,37 @@ class BaseAdapter:
         # Coupling observables
         coupling_observed = self.get_coupling_observed(all_couplings)
 
+        # Vertex derived-variable names (union across all dynamics)
+        vertex_dv_names = []
+        for dyn in dynamics_dict.values():
+            for dv_name in (getattr(dyn, 'derived_variables', None) or {}):
+                if str(dv_name) not in vertex_dv_names:
+                    vertex_dv_names.append(str(dv_name))
+        # Also from default model
+        for dv_name in (getattr(model, 'derived_variables', None) or {}):
+            if str(dv_name) not in vertex_dv_names:
+                vertex_dv_names.append(str(dv_name))
+
+        # Auto-extract tstops from conditional derived-variable breakpoints
+        import re
+        tstops = set()
+        for dyn in list(dynamics_dict.values()) + [model]:
+            if not dyn:
+                continue
+            for dv in (getattr(dyn, 'derived_variables', None) or {}).values():
+                if getattr(dv, 'conditional', False):
+                    for case in (getattr(dv, 'cases', None) or []):
+                        cond = getattr(case, 'condition', '') or ''
+                        # Extract numeric values from conditions like "t <= 14400"
+                        for m in re.findall(r'[\d.]+', cond):
+                            try:
+                                val = float(m)
+                                if val > 0:
+                                    tstops.add(val)
+                            except ValueError:
+                                pass
+        tstops = sorted(tstops)
+
         # Execution config
         exec_info = self.get_execution_info()
 
@@ -463,6 +506,12 @@ class BaseAdapter:
 
             # Coupling observables
             'coupling_observed': coupling_observed,
+
+            # Vertex observables
+            'vertex_dv_names': vertex_dv_names,
+
+            # Discontinuity times (from conditional derived variables)
+            'tstops': tstops,
 
             # Execution
             'find_fixpoint': exec_info['find_fixpoint'],
