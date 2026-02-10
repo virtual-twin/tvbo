@@ -5,6 +5,7 @@ and emits spurious MainInclude warnings on Julia ≥ 1.3.
 """
 
 import re
+from typing import Any, Optional
 
 _julia_main = None
 _installed_packages = set()
@@ -38,7 +39,7 @@ def get_julia(compiled_modules=True):
     return None, _julia_main
 
 
-def install_julia_package(package_name: str, Main=None, update: bool = False):
+def install_julia_package(package_name: str, Main: Optional[Any] = None, update: bool = False):
     """Install a Julia package if not already installed.
 
     Args:
