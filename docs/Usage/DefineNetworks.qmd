@@ -4,7 +4,8 @@
 
 ```{python}
 from tvbo import Network
-Network()
+net = Network()
+net
 ```
 
 ```{python}

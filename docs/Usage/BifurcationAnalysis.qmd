@@ -1,0 +1,70 @@
+---
+title: Bifurcation Analysis
+sidebar: usage
+jupyter: python3
+---
+
+Bifurcation analysis reveals how a system's qualitative behavior changes as parameters vary — fixed points, oscillations, and transitions.
+
+## Quick Start
+
+```{python}
+from tvbo import Dynamics
+
+model = Dynamics.from_file("../../database/models/Generic2dOscillator.yaml")
+print(model.equations())
+```
+
+## Running Bifurcation Analysis
+
+Three backends are available:
+
+```python
+# Julia BifurcationKit.jl (recommended)
+result = model.run('bifurcation-julia')
+
+# Numerical continuation (MatCont-style)
+result = model.run('bifurcation-numcont')
+
+# AUTO-07p
+result = model.run('bifurcation-auto7p')
+```
+
+## BifurcationResult
+
+```python
+result = model.run('bifurcation-julia')
+
+# Bifurcation branches and special points
+result.branches
+result.special_points  # Hopf, branch points, etc.
+
+# Variable of interest
+result.voi('V')
+
+# Plot stability diagram
+result.plot()
+```
+
+## Code Generation
+
+View the generated Julia code for BifurcationKit:
+
+```{python}
+code = model.render_code('bifurcation-julia')
+print(code[:500])
+```
+
+## What Can Be Detected
+
+| Bifurcation | Description |
+|-------------|-------------|
+| **Hopf** | Transition from fixed point to oscillation |
+| **Branch point** | Multiple coexisting equilibria |
+| **Fold** | Saddle-node, sudden appearance/disappearance of fixed points |
+| **Period doubling** | Route to chaos |
+
+## See Also
+
+- [PyRates Bifurcation](/Interoperability/Pyrates/PyRates_Bifurcation.qmd) — bifurcation via PyRates
+- [Defining Dynamical Systems](DefineDynamicalSystem.qmd) — model definition

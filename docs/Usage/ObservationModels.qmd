@@ -1,0 +1,91 @@
+---
+title: Observation Models
+sidebar: usage
+jupyter: python3
+---
+
+Observation models define what to measure from a simulation — BOLD signals, functional connectivity, power spectral density, and custom pipelines.
+
+## BOLD Signal
+
+The Balloon-Windkessel hemodynamic model transforms neural activity into a BOLD fMRI signal:
+
+```{python}
+import yaml
+from tvbo import SimulationExperiment
+
+exp_yaml = """
+dynamics:
+    name: ReducedWongWang
+    parameters:
+        a: {value: 0.27}
+        b: {value: 0.108}
+        d: {value: 0.154}
+        gamma: {value: 0.641}
+        tau_s: {value: 100}
+        w: {value: 0.6}
+        J_N: {value: 0.2609}
+        I_o: {value: 0.3}
+    state_variables:
+        S:
+            equation: {rhs: "-S/tau_s + (1 - S) * gamma * d * (a*J_N*w*S + I_o + c_in) / (1 + exp(-1*(a*(J_N*w*S + I_o + c_in) - b)/d))"}
+            initial_value: 0.5
+    coupling_terms:
+        c_in: {}
+integration:
+    step_size: 0.1
+    duration: 5000
+observations:
+    - name: bold
+      state_variable: S
+      pipeline:
+          - function: tvbo.knowledge.simulation.observation.bold_windkessel
+            parameters:
+                TR: {value: 2000}
+"""
+
+exp = SimulationExperiment.from_string(exp_yaml)
+result = exp.run()
+```
+
+## Functional Connectivity
+
+FC computes pairwise correlations between regional time series:
+
+```yaml
+observations:
+    - name: fc
+      state_variable: S
+      pipeline:
+          - function: numpy.corrcoef
+```
+
+## Available Observation Models
+
+Pre-defined observation models in `database/observation_models/`:
+
+| Model | File | Description |
+|-------|------|-------------|
+| BOLD (TVB) | `bold_tvb.yaml` | Balloon-Windkessel HRF with downsampling |
+| FC | `FC.yaml` | Pearson correlation matrix |
+
+## Custom Observation Pipeline
+
+Observations are pipelines of chained functions — the output of one becomes the input of the next:
+
+```yaml
+observations:
+    - name: filtered_bold
+      state_variable: S
+      pipeline:
+          - function: scipy.signal.detrend
+          - function: tvbo.knowledge.simulation.observation.bold_windkessel
+            parameters:
+                TR: {value: 2000}
+          - function: numpy.corrcoef
+```
+
+## See Also
+
+- [Model Fitting](ModelFitting.qmd) — use observations as targets for optimization
+- [Parameter Exploration](ParameterExploration.qmd) — sweep parameters with observation-based metrics

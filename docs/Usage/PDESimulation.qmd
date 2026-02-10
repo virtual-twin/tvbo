@@ -1,0 +1,93 @@
+---
+title: PDE Simulation
+sidebar: usage
+jupyter: python3
+---
+
+TVBO supports surface-based partial differential equations using finite element methods via [scikit-fem](https://scikit-fem.readthedocs.io/).
+
+## Diffusion on a Cortical Surface
+
+A minimal diffusion equation on the cortical surface mesh:
+
+$$\frac{\partial u}{\partial t} = \nabla \cdot (D \, \nabla u)$$
+
+with Dirichlet boundary conditions ($u = 0$ on boundary).
+
+## YAML Specification
+
+```yaml
+label: "Cortical diffusion"
+description: "Solve u_t = div(D * grad(u)) with zero Dirichlet boundary."
+field_dynamics:
+    domain:
+        label: "Cortex"
+        coordinate_space: {name: "MNI152"}
+    field:
+        label: "u"
+        quantity_kind: "concentration"
+        initial_value: 1.0
+        mesh:
+            element_type: triangle
+            dataLocation: "path/to/cortex.pial.gii"
+    operators:
+        - operator_type: laplacian
+          coefficient:
+              name: "D"
+              value: 1.0e-5
+    boundary_conditions:
+        - bc_type: Dirichlet
+          value: {rhs: "0"}
+    solver:
+        discretization: FEM
+        time_integrator: "implicit Euler"
+        dt: 10
+integration:
+    duration: 2000
+```
+
+## Running a PDE Experiment
+
+```python
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_file("path/to/pde_experiment.yaml")
+result = exp.run('pde')
+
+# Visualize the solution on the mesh
+ns = exp.execute('pde')
+ns.visualize(result.data[-1])
+```
+
+## Generated Code
+
+The PDE backend generates a self-contained scikit-fem solver:
+
+```python
+code = exp.render_code('pde')
+print(code[:500])
+```
+
+The generated code includes:
+
+- `_load_mesh()` — loads GIFTI (`.gii`) or general meshio formats
+- `build()` — assembles mass and stiffness matrices
+- `solve_pde()` — implicit Euler timestepping
+- `visualize()` — matplotlib field plot
+
+## Schema Classes
+
+| Class | Purpose |
+|-------|---------|
+| `PDE` | Top-level PDE problem definition |
+| `SpatialDomain` | Coordinate space and geometry |
+| `Mesh` | Triangle/tetrahedron element mesh |
+| `FieldStateVariable` | Spatially distributed state variable |
+| `DifferentialOperator` | Gradient, divergence, laplacian, curl |
+| `BoundaryCondition` | Dirichlet, Neumann, Robin, Periodic |
+| `PDESolver` | FEM/FDM/FVM discretization config |
+
+## See Also
+
+- [Simulation Experiments](SimulationExperiments.qmd) — the `'pde'` backend
+- [Code Generation & Export](CodeGeneration.qmd) — `render_code('pde')`
