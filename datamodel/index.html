@@ -190,6 +190,10 @@ ul.task-list li input[type="checkbox"] {
   </li>  
     </ul>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../Developer/contributing.html"> 
+<span class="menu-text">Developer</span></a>
+  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -399,7 +403,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td><a href="../datamodel/classes/Distribution.html">Distribution</a></td>
-<td></td>
+<td>A probability distribution for sampling parameters or initial conditions</td>
 </tr>
 <tr class="odd">
 <td><a href="../datamodel/classes/Dynamics.html">Dynamics</a></td>
@@ -418,28 +422,36 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="odd">
+<td><a href="../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/classes/ExecutionConfig.html">ExecutionConfig</a></td>
 <td>Configuration for computational execution (parallelization, precision, hardwa…</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/classes/Exploration.html">Exploration</a></td>
 <td>Parameter space exploration (grid search, sweep)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/classes/File.html">File</a></td>
 <td></td>
 </tr>
-<tr class="even">
-<td><a href="../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input → transformation → output flow</td>
-</tr>
 <tr class="odd">
+<td><a href="../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+</tr>
+<tr class="even">
 <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="../datamodel/classes/LossFunction.html">LossFunction</a></td>
 <td>A loss function for optimization with optional aggregation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/classes/FunctionCall.html">FunctionCall</a></td>
 <td>Invocation of a function in a pipeline</td>
+</tr>
+<tr class="even">
+<td><a href="../datamodel/classes/GraphGenerator.html">GraphGenerator</a></td>
+<td>Backend-agnostic graph generator specification</td>
 </tr>
 <tr class="odd">
 <td><a href="../datamodel/classes/Integrator.html">Integrator</a></td>
@@ -619,6 +631,22 @@ ul.task-list li input[type="checkbox"] {
 <td>Indicates whether the noise is additive</td>
 </tr>
 <tr class="even">
+<td><a href="../datamodel/slots/affect.html">affect</a></td>
+<td>Affect function: what happens when the event triggers</td>
+</tr>
+<tr class="odd">
+<td><a href="../datamodel/slots/affect_negative.html">affect_negative</a></td>
+<td>Affect on downcrossing (continuous events only)</td>
+</tr>
+<tr class="even">
+<td><a href="../datamodel/slots/affect_parameters.html">affect_parameters</a></td>
+<td>Parameter symbols modifiable in the affect function</td>
+</tr>
+<tr class="odd">
+<td><a href="../datamodel/slots/affect_states.html">affect_states</a></td>
+<td>State variable symbols modifiable in the affect function</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/slots/age.html">age</a></td>
 <td></td>
 </tr>
@@ -663,203 +691,211 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="odd">
+<td><a href="../datamodel/slots/autonomous.html">autonomous</a></td>
+<td>Whether the system is autonomous (equations do not depend explicitly on time …</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/slots/axesOrigin.html">axesOrigin</a></td>
 <td>Enter the origin (central point where all axes intersect)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/baseline_value.html">baseline_value</a></td>
 <td>Preoperative baseline value of the score</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/batch_size.html">batch_size</a></td>
 <td>Batch size for vectorized operations (None = auto)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/bc_type.html">bc_type</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/bids_dir.html">bids_dir</a></td>
 <td>Path to BEP017-compliant BIDS directory for loading connectivity matrices</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/boundaries.html">boundaries</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/boundary_conditions.html">boundary_conditions</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/bounds.html">bounds</a></td>
 <td>Constraints on parameter values after update</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/build_hash.html">build_hash</a></td>
 <td>Deterministic hash/fingerprint of the resolved dependency set</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/call_args.html">call_args</a></td>
 <td>Arguments passed when calling the instance (<strong>call</strong>)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/callable.html">callable</a></td>
 <td>Software implementation reference (if software-based)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/cases.html">cases</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/center.html">center</a></td>
 <td>Add the center coordinate of this entity</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/center_coordinates.html">center_coordinates</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/class_call.html">class_call</a></td>
 <td>Class instantiation and call (alternative to callable/function)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/class_reference.html">class_reference</a></td>
 <td>Direct class reference (alternative to pipeline)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/clinical_improvement.html">clinical_improvement</a></td>
 <td>Observed improvement relative to baseline based on a defined score</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/clinical_scores.html">clinical_scores</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/coefficient.html">coefficient</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/color.html">color</a></td>
 <td>Add the color code used for visual representation of this entity</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/comment.html">comment</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/condition.html">condition</a></td>
 <td>The condition for this block (e</td>
 </tr>
+<tr class="even">
+<td><a href="../datamodel/slots/condition_parameters.html">condition_parameters</a></td>
+<td>Parameter symbols accessible in the condition function</td>
+</tr>
 <tr class="odd">
+<td><a href="../datamodel/slots/condition_states.html">condition_states</a></td>
+<td>State variable symbols accessible in the condition function</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/slots/conditional.html">conditional</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/conditionals.html">conditionals</a></td>
 <td>Conditional logic for piecewise equations</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/conduction_speed.html">conduction_speed</a></td>
 <td>Conduction speed for computing delays from distances</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/connectivity.html">connectivity</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/connectivity_ref.html">connectivity_ref</a></td>
 <td>Reference to connectivity data (_conndata-network_connectivity</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/constructor_args.html">constructor_args</a></td>
 <td>Arguments passed to <strong>init</strong> when instantiating the class</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/contact_id.html">contact_id</a></td>
 <td>Identifier (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/contacts.html">contacts</a></td>
 <td>List of physical contacts along the electrode</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/container_image.html">container_image</a></td>
 <td>Container image reference (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/coordinate.html">coordinate</a></td>
 <td>3D coordinate of the contact center in the defined coordinate space</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/coordinate_space.html">coordinate_space</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/coordinates.html">coordinates</a></td>
 <td>Node coordinates (x,y,z) in the given coordinate space</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/correlated.html">correlated</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/correlation.html">correlation</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/coupling.html">coupling</a></td>
 <td>Reusable coupling configurations referenced by edges (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/coupling_function.html">coupling_function</a></td>
 <td>Mathematical function defining the coupling</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/coupling_inputs.html">coupling_inputs</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/coupling_terms.html">coupling_terms</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/coupling_variable.html">coupling_variable</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/data.html">data</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/data_source.html">data_source</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/dataLocation.html">dataLocation</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/dataset_id.html">dataset_id</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/default.html">default</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/defaultImage.html">defaultImage</a></td>
 <td>Add all image files used as visual representation of this common coordinate s…</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/definition.html">definition</a></td>
 <td></td>
 </tr>
-<tr class="odd">
-<td><a href="../datamodel/slots/delayed.html">delayed</a></td>
-<td></td>
-</tr>
 <tr class="even">
-<td><a href="../datamodel/slots/dependencies.html">dependencies</a></td>
+<td><a href="../datamodel/slots/delayed.html">delayed</a></td>
 <td></td>
 </tr>
 <tr class="odd">
@@ -900,7 +936,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td><a href="../datamodel/slots/directed.html">directed</a></td>
-<td>Whether the edge is directed</td>
+<td>Whether to generate a directed graph</td>
 </tr>
 <tr class="odd">
 <td><a href="../datamodel/slots/discretization.html">discretization</a></td>
@@ -912,7 +948,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td><a href="../datamodel/slots/distribution.html">distribution</a></td>
-<td>For hierarchical coupling: distribution method (‘broadcast’, ‘weighted’) or c…</td>
+<td>Distribution for sampling initial conditions per node</td>
 </tr>
 <tr class="even">
 <td><a href="../datamodel/slots/doi.html">doi</a></td>
@@ -999,40 +1035,56 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="odd">
+<td><a href="../datamodel/slots/equation_type.html">equation_type</a></td>
+<td>Type of equation: ‘differential’ (default) means dx/dt = rhs, ‘algebraic’ mea…</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/slots/evaluator.html">evaluator</a></td>
 <td>Who performed the rating (e</td>
 </tr>
+<tr class="odd">
+<td><a href="../datamodel/slots/event_type.html">event_type</a></td>
+<td>Type of event trigger mechanism</td>
+</tr>
 <tr class="even">
+<td><a href="../datamodel/slots/events.html">events</a></td>
+<td>Events attached to this node (e</td>
+</tr>
+<tr class="odd">
 <td><a href="../datamodel/slots/execution.html">execution</a></td>
 <td>Per-optimization execution configuration (overrides experiment-level defaults…</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/explorations.html">explorations</a></td>
 <td>Parameter exploration/grid search specifications</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/explored_values.html">explored_values</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/expression.html">expression</a></td>
 <td>The equation to apply when the condition is met</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/extension.html">extension</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/field.html">field</a></td>
 <td>Primary field being solved for (deprecated; use state_variables)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/field_dynamics.html">field_dynamics</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/file.html">file</a></td>
 <td></td>
+</tr>
+<tr class="odd">
+<td><a href="../datamodel/slots/find_fixpoint.html">find_fixpoint</a></td>
+<td>Whether to find a fixed point (steady state) before time integration</td>
 </tr>
 <tr class="even">
 <td><a href="../datamodel/slots/format.html">format</a></td>
@@ -1056,7 +1108,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td><a href="../datamodel/slots/function.html">function</a></td>
-<td>Reference to a defined Function (by name)</td>
+<td>Custom distribution function (PDF or sampling callable)</td>
 </tr>
 <tr class="even">
 <td><a href="../datamodel/slots/functions.html">functions</a></td>
@@ -1079,324 +1131,332 @@ ul.task-list li input[type="checkbox"] {
 <td>Global scaling factor for all coupling weights</td>
 </tr>
 <tr class="odd">
+<td><a href="../datamodel/slots/graph_generator.html">graph_generator</a></td>
+<td>Graph generator specification</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/slots/groups.html">groups</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/handedness.html">handedness</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/has_reference.html">has_reference</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/hash.html">hash</a></td>
 <td>Build or artifact hash for exact reproducibility (wheel, sdist, image layer)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/head.html">head</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/hemisphere.html">hemisphere</a></td>
 <td>Add the hemisphere of this entity</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/heterogeneous.html">heterogeneous</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/hi.html">hi</a></td>
 <td>Upper bound or stopping value</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/history.html">history</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/homepage.html">homepage</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/hyperparameters.html">hyperparameters</a></td>
 <td>Stage-specific hyperparameters (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/id.html">id</a></td>
 <td>Unique node identifier</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/imaging_modality.html">imaging_modality</a></td>
 <td>Type of imaging modality (BOLD, EEG, MEG, etc</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/includes.html">includes</a></td>
 <td>Include update rules from other algorithms with optional argument overrides</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/incoming_states.html">incoming_states</a></td>
 <td>References to state variables from connected nodes (source)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/initial_expression.html">initial_expression</a></td>
 <td>Analytic initial condition for the field</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/initial_state.html">initial_state</a></td>
 <td>Initial values for state variables</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/initial_value.html">initial_value</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/inner_coupling.html">inner_coupling</a></td>
 <td>For hierarchical coupling: inner coupling applied at regional level</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/input.html">input</a></td>
 <td>Simple input reference: name of previous function’s output in pipeline</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/integration.html">integration</a></td>
 <td>Integration settings for optimization simulations (overrides experiment defau…</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/intensity.html">intensity</a></td>
 <td>Optional scalar or vector intensity parameter for noise</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/intermediate_expressions.html">intermediate_expressions</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/iri.html">iri</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/key.html">key</a></td>
 <td>Key/variable name within the file (for</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/keys.html">keys</a></td>
 <td>Named keys for multi-dimensional coupling</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/label.html">label</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/labels_dimensions.html">labels_dimensions</a></td>
 <td>Mapping of dimension names to their labels (JSON-encoded dict)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/labels_ordering.html">labels_ordering</a></td>
 <td>Ordering of dimensions: Time, State Variable, Space, Mode</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/latex.html">latex</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/learning_rate.html">learning_rate</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/learning_rate_schedule.html">learning_rate_schedule</a></td>
 <td>Learning rate schedule: ‘constant’, ‘linear’, ‘exponential’</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/learning_rate_warmup.html">learning_rate_warmup</a></td>
 <td>Linear warmup of learning rate from 0 to learning_rate over n_iterations</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/lefthandside.html">lefthandside</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/license.html">license</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/lo.html">lo</a></td>
 <td>Lower bound or starting value</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/loader.html">loader</a></td>
 <td>Callable that loads the data (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/local_coupling_term.html">local_coupling_term</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/local_dynamics.html">local_dynamics</a></td>
 <td>Default dynamics model for all nodes (used when node</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/local_states.html">local_states</a></td>
 <td>References to state variables from local node (target)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/log_scale.html">log_scale</a></td>
 <td>Whether to use logarithmic spacing</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/loss.html">loss</a></td>
 <td>Loss function call</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/manufacturer.html">manufacturer</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/max_iterations.html">max_iterations</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/mesh.html">mesh</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/method.html">method</a></td>
 <td>Integration method (euler, heun, rk4, etc</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/metric.html">metric</a></td>
 <td>Metric equation for matching (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/modality.html">modality</a></td>
 <td>Imaging modality or simulation output type</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/mode.html">mode</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/model.html">model</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/model_equation_ref.html">model_equation_ref</a></td>
 <td>BIDS ModelEq reference: path to _eq</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/model_param_ref.html">model_param_ref</a></td>
 <td>BIDS ModelParam reference: path to _param</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/modes.html">modes</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/modified.html">modified</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/module.html">module</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/modules.html">modules</a></td>
 <td>(Deprecated) Former ad-hoc list; use environment</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/n.html">n</a></td>
 <td>Number of points (alternative to step for grid exploration)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/n_iterations.html">n_iterations</a></td>
 <td>Number of iterations to run</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/n_parallel.html">n_parallel</a></td>
 <td>Parallel evaluations</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/n_regions.html">n_regions</a></td>
 <td>Total number of regions</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/n_threads.html">n_threads</a></td>
 <td>Number of CPU threads per worker (-1 = auto-detect)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/n_vertices.html">n_vertices</a></td>
 <td>Total number of vertices</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/n_workers.html">n_workers</a></td>
 <td>Number of parallel workers (maps to pmap devices in JAX, processes in multipr…</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/name.html">name</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/nativeUnit.html">nativeUnit</a></td>
 <td>Add the native unit that is used for this common coordinate space version</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/network.html">network</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/nodes.html">nodes</a></td>
 <td>List of nodes with individual dynamics (optional, for heterogeneous networks)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/noise.html">noise</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/noise_type.html">noise_type</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/normalization.html">normalization</a></td>
 <td>Normalization equation for connectivity weights</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/notes.html">notes</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/number_of_modes.html">number_of_modes</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/number_of_nodes.html">number_of_nodes</a></td>
 <td>Number of nodes in the network (derived from nodes if not set)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/number_of_regions.html">number_of_regions</a></td>
 <td>Number of regions (derived from nodes if not set)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/number_of_stages.html">number_of_stages</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/number_of_subjects.html">number_of_subjects</a></td>
 <td>Number of subjects in the tractography dataset</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/objective.html">objective</a></td>
 <td>What the algorithm optimizes for</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/observable.html">observable</a></td>
 <td>Observable to compute at each point</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/observational_measures.html">observational_measures</a></td>
 <td>BEP017 measure names for observational targets (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/observations.html">observations</a></td>
 <td>References to observations defined in the observations section</td>
+</tr>
+<tr class="even">
+<td><a href="../datamodel/slots/observed.html">observed</a></td>
+<td>Observable functions computed from states, inputs, and parameters after simul…</td>
 </tr>
 <tr class="odd">
 <td><a href="../datamodel/slots/on_region.html">on_region</a></td>
@@ -1431,320 +1491,328 @@ ul.task-list li input[type="checkbox"] {
 <td>Output transformation equation (if equation-based)</td>
 </tr>
 <tr class="odd">
+<td><a href="../datamodel/slots/outsym.html">outsym</a></td>
+<td>Output symbol names for the edge model</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/slots/over.html">over</a></td>
 <td>Dimension to aggregate over (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/package.html">package</a></td>
 <td>Reference to the software package identity</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/parameters.html">parameters</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/parcellation.html">parcellation</a></td>
 <td>Brain parcellation/atlas reference</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/parent_score.html">parent_score</a></td>
 <td>If this score is a subscore of a broader composite</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/path.html">path</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/percent_change.html">percent_change</a></td>
 <td>Percent change compared to preoperative baseline (positive = improvement)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/period.html">period</a></td>
 <td>Sampling period for monitors (ms)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/pipeline.html">pipeline</a></td>
 <td>Ordered sequence of Functions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/platform.html">platform</a></td>
 <td>OS / architecture description (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/position.html">position</a></td>
 <td>Spatial coordinates (x, y, z) of the node</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/post_expression.html">post_expression</a></td>
 <td>Post-processing expression applied after coupling</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/pre_expression.html">pre_expression</a></td>
 <td>Pre-processing expression applied before coupling</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/precision.html">precision</a></td>
 <td>Floating point precision: ‘float32’ or ‘float64’</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/preconditioner.html">preconditioner</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/preprocessing.html">preprocessing</a></td>
 <td>Optional preprocessing to apply after loading</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/processing_pipeline.html">processing_pipeline</a></td>
 <td>Processing pipeline used to generate the tractography</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/protocols.html">protocols</a></td>
 <td>All DBS protocols assigned to this subject</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/pulse_width.html">pulse_width</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/pycode.html">pycode</a></td>
 <td>Python code for the equation</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/quantity_kind.html">quantity_kind</a></td>
 <td>Scalar, vector, or tensor</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/random_seed.html">random_seed</a></td>
 <td>Base random seed for reproducibility</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/random_state.html">random_state</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/recon_path.html">recon_path</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/reference.html">reference</a></td>
 <td>DOI, PMID or persistent identifier</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/references.html">references</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/region.html">region</a></td>
 <td>Brain region or anatomical label</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/region_labels.html">region_labels</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/region_mapping.html">region_mapping</a></td>
 <td>For hierarchical coupling: vertex-to-region mapping for aggregation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/regional_connectivity.html">regional_connectivity</a></td>
 <td>For hierarchical coupling: region-to-region connectivity with weights and del…</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/regions.html">regions</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/relatedUBERONTerm.html">relatedUBERONTerm</a></td>
 <td>Add the related anatomical entity as defined by the UBERON ontology</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/reported_optimum.html">reported_optimum</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/repository.html">repository</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/requirements.html">requirements</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/requires.html">requires</a></td>
 <td>Observables required by this update rule</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/righthandside.html">righthandside</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/role.html">role</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/run_id.html">run_id</a></td>
 <td>BIDS run number</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/sample.html">sample</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/sampling_period.html">sampling_period</a></td>
 <td>Time between samples (inverse of sampling_rate)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/sampling_period_unit.html">sampling_period_unit</a></td>
 <td>Unit of the sampling period (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/sampling_rate.html">sampling_rate</a></td>
 <td>Sampling rate in Hz</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/scale.html">scale</a></td>
 <td>The scale this score belongs to, if applicable</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/scipy_ode_base.html">scipy_ode_base</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/score.html">score</a></td>
 <td></td>
 </tr>
-<tr class="odd">
-<td><a href="../datamodel/slots/seed.html">seed</a></td>
-<td></td>
-</tr>
 <tr class="even">
+<td><a href="../datamodel/slots/seed.html">seed</a></td>
+<td>Random seed for reproducible graph generation</td>
+</tr>
+<tr class="odd">
 <td><a href="../datamodel/slots/session_id.html">session_id</a></td>
 <td>BIDS session identifier</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/settings.html">settings</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/sex.html">sex</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/shape.html">shape</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/simulation_experiments.html">simulation_experiments</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/simulation_period.html">simulation_period</a></td>
 <td>Duration of each simulation step (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/size.html">size</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/skip_t.html">skip_t</a></td>
 <td>Number of samples to skip at the start (transient removal)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/software.html">software</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/software_environment.html">software_environment</a></td>
 <td>Software environment used to generate this data</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/solver.html">solver</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/source.html">source</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/source_code.html">source_code</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/source_experiment.html">source_experiment</a></td>
 <td>Reference to the SimulationExperiment that generated this TimeSeries</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/source_observations.html">source_observations</a></td>
 <td>One or more observations to derive from</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/source_url.html">source_url</a></td>
 <td>Canonical source or repository URL</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/source_var.html">source_var</a></td>
 <td>Output variable from source node to use (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/sources.html">sources</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/sparse.html">sparse</a></td>
 <td>Whether the coupling uses sparse representations</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/stages.html">stages</a></td>
 <td>Ordered list of optimization stages</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/state_variables.html">state_variables</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/state_wise_sigma.html">state_wise_sigma</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/step.html">step</a></td>
 <td>Step size</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/step_size.html">step_size</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/steps.html">steps</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/stimulation.html">stimulation</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/stimulation_variable.html">stimulation_variable</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/stimulus.html">stimulus</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/structural_measures.html">structural_measures</a></td>
 <td>BEP017 measure names for structural connectivity (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/subject_id.html">subject_id</a></td>
 <td>BIDS subject identifier</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/subjects.html">subjects</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/symbol.html">symbol</a></td>
 <td></td>
+</tr>
+<tr class="odd">
+<td><a href="../datamodel/slots/symmetry.html">symmetry</a></td>
+<td>Edge symmetry type for NetworkDynamics</td>
 </tr>
 <tr class="even">
 <td><a href="../datamodel/slots/system_type.html">system_type</a></td>
@@ -1763,108 +1831,116 @@ ul.task-list li input[type="checkbox"] {
 <td>Target node ID</td>
 </tr>
 <tr class="even">
+<td><a href="../datamodel/slots/target_component.html">target_component</a></td>
+<td>Component to attach this event to</td>
+</tr>
+<tr class="odd">
 <td><a href="../datamodel/slots/target_data.html">target_data</a></td>
 <td>Reference to empirical data observation for matching objectives</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/target_parameter.html">target_parameter</a></td>
 <td>The parameter to update (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/target_structure.html">target_structure</a></td>
 <td>Anatomical target structure from a brain atlas</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/target_value.html">target_value</a></td>
 <td>Target value for activity objectives</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/target_var.html">target_var</a></td>
 <td>Input variable on target node to connect to (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/target_variable.html">target_variable</a></td>
 <td>State variable for activity targets (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/targets.html">targets</a></td>
 <td>State variables this noise applies to; if omitted, applies globally</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/task_name.html">task_name</a></td>
 <td>BIDS task name for the simulation (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/tensor_coefficient.html">tensor_coefficient</a></td>
 <td>Optional anisotropic tensor (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/terminology.html">terminology</a></td>
 <td>Add the parcellation terminology version used for this brain atlas version</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/threshold_applied.html">threshold_applied</a></td>
 <td>Threshold value applied to the E-field simulation</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/time.html">time</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/time_dependent.html">time_dependent</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/time_integrator.html">time_integrator</a></td>
 <td>e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/time_post_surgery.html">time_post_surgery</a></td>
 <td>Timepoint of assessment in days or months after implantation</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/time_range.html">time_range</a></td>
 <td>Time range for generated TimeSeries (for kernel generators)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/time_scale.html">time_scale</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/time_unit.html">time_unit</a></td>
 <td>Default time unit for the network (e</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/timepoint.html">timepoint</a></td>
 <td>Timepoint of assessment (e</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/timing_info.html">timing_info</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/title.html">title</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/tolerances.html">tolerances</a></td>
 <td>Abs/rel tolerances</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/tractogram.html">tractogram</a></td>
 <td>Reference to tractography data</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/slots/trajectory.html">trajectory</a></td>
 <td>The planned trajectory for electrode implantation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/slots/transient_time.html">transient_time</a></td>
 <td></td>
 </tr>
+<tr class="even">
+<td><a href="../datamodel/slots/trigger_times.html">trigger_times</a></td>
+<td>Predetermined trigger times for preset_time events</td>
+</tr>
 <tr class="odd">
 <td><a href="../datamodel/slots/type.html">type</a></td>
-<td></td>
+<td>Graph family name</td>
 </tr>
 <tr class="even">
 <td><a href="../datamodel/slots/unit.html">unit</a></td>
@@ -1988,24 +2064,32 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="odd">
+<td><a href="../datamodel/enums/EventType.html">EventType</a></td>
+<td>Type of event triggering mechanism</td>
+</tr>
+<tr class="even">
 <td><a href="../datamodel/enums/ImagingModality.html">ImagingModality</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/enums/NoiseType.html">NoiseType</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/enums/OperatorType.html">OperatorType</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../datamodel/enums/ReductionType.html">ReductionType</a></td>
 <td>Operations for reducing/aggregating values across dimensions</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../datamodel/enums/RequirementRole.html">RequirementRole</a></td>
 <td></td>
+</tr>
+<tr class="odd">
+<td><a href="../datamodel/enums/StandardGraphType.html">StandardGraphType</a></td>
+<td>Well-known graph generator families with automatic backend mapping</td>
 </tr>
 <tr class="even">
 <td><a href="../datamodel/enums/SystemType.html">SystemType</a></td>

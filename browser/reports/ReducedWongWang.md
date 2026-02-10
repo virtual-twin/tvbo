@@ -35,6 +35,6 @@ $$
 
 
 ## References
-Citation key 'Deco2013' not found.
-
 Citation key 'WongWang2006' not found.
+
+Citation key 'Deco2013' not found.

@@ -1,7 +1,7 @@
 
 
 ## KuramotoModel2
-KuramotoModel2
+
 
 ### Derived Parameters
 $$

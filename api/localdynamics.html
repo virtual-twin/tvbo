@@ -224,6 +224,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../Developer/contributing.html"> 
+<span class="menu-text">Developer</span></a>
+  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -246,6 +250,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
   <li><a href="#tvbo.knowledge.simulation.localdynamics.order_by_equations" id="toc-tvbo.knowledge.simulation.localdynamics.order_by_equations" class="nav-link" data-scroll-target="#tvbo.knowledge.simulation.localdynamics.order_by_equations">order_by_equations</a></li>
+  <li><a href="#tvbo.knowledge.simulation.localdynamics.update_parameters" id="toc-tvbo.knowledge.simulation.localdynamics.update_parameters" class="nav-link" data-scroll-target="#tvbo.knowledge.simulation.localdynamics.update_parameters">update_parameters</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -274,6 +279,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.knowledge.simulation.localdynamics.order_by_equations">order_by_equations</a></td>
 <td>Orders the <code>derived_variables</code> dictionary based on the key order of the <code>dependent_equations</code> dictionary.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.knowledge.simulation.localdynamics.update_parameters">update_parameters</a></td>
+<td>Update parameters from ontology.</td>
+</tr>
 </tbody>
 </table>
 <section id="tvbo.knowledge.simulation.localdynamics.order_by_equations" class="level3">
@@ -285,8 +294,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Orders the <code>derived_variables</code> dictionary based on the key order of the <code>dependent_equations</code> dictionary.</p>
 <p>Parameters: derived_variables (dict): Dictionary to be ordered. dependent_equations (dict): Dictionary providing the key order for sorting.</p>
 <p>Returns: dict: A new dictionary ordered by the key order from <code>dependent_equations</code>.</p>
+</section>
+<section id="tvbo.knowledge.simulation.localdynamics.update_parameters" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.knowledge.simulation.localdynamics.update_parameters">update_parameters</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>knowledge.simulation.localdynamics.update_parameters(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    metadata,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    ontoclass,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    verbose<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    only_used<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Update parameters from ontology.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<p>metadata : Dynamics Model metadata to update ontoclass : owlready2.ThingClass Ontology class verbose : int Verbosity level only_used : bool If True (default), only add parameters that are referenced in equations. If False, add all parameters from ontology (legacy behavior). **kwargs : dict Parameter overrides</p>
 
 
+</section>
 </section>
 </section>
 </section>

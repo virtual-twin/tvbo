@@ -133,6 +133,6 @@ $$
 
 
 ## References
-Citation key 'Depannemaecker2023' not found.
-
 Citation key 'Bandyopadhyay2021' not found.
+
+Citation key 'Depannemaecker2023' not found.

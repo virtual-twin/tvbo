@@ -224,6 +224,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Developer/contributing.html"> 
+<span class="menu-text">Developer</span></a>
+  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -277,43 +281,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/CommonCoordinateSpace.html">CommonCoordinateSpace</a></td>
-<td>A schema for representing a version of a common coordinate space</td>
+<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
+<td>A loss function for optimization with optional aggregation</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/DBSProtocol.html">DBSProtocol</a></td>
-<td>A protocol describing DBS therapy, potentially bilateral or multi-lead</td>
+<td><a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a></td>
+<td>Backend-agnostic graph generator specification</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
-<td>Unified class for all observation/measurement specifications</td>
+<td><a href="../../datamodel/classes/Algorithm.html">Algorithm</a></td>
+<td>A complete specification of an iterative parameter tuning algorithm</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ParcellationEntity.html">ParcellationEntity</a></td>
+<td>A schema for representing a parcellation entity, which is an anatomical locat…</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
 <td>no</td>
 </tr>
 <tr class="even">
 <td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
 <td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Distribution.html">Distribution</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
-<td>Defines how a parameter is updated based on observables</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/BrainAtlas.html">BrainAtlas</a></td>
-<td>A schema for representing a version of a brain atlas</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
-<td>Identity information about a software package independent of a specific versi…</td>
 <td>no</td>
 </tr>
 <tr class="odd">
@@ -327,33 +331,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>yes</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
+<td><a href="../../datamodel/classes/Callable.html">Callable</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
+<td><a href="../../datamodel/classes/File.html">File</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
-<td>Observation derived from one or more other observations</td>
+<td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
+<td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input → transformation → output flow</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a></td>
-<td>Specification of a coupling input channel for multi-coupling dynamics</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Tractogram.html">Tractogram</a></td>
-<td>Reference to tractography/diffusion MRI data used to derive structural connec…</td>
+<td><a href="../../datamodel/classes/OptimizationStage.html">OptimizationStage</a></td>
+<td>A single stage in a multi-stage optimization workflow</td>
 <td>no</td>
 </tr>
 <tr class="odd">
@@ -362,38 +356,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/ClassReference.html">ClassReference</a></td>
-<td>Reference to a class that can be instantiated and called</td>
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
+<td>Metadata about a clinical score or scale</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Argument.html">Argument</a></td>
-<td>A function argument with explicit value specification</td>
+<td><a href="../../datamodel/classes/BrainAtlas.html">BrainAtlas</a></td>
+<td>A schema for representing a version of a brain atlas</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/ParcellationEntity.html">ParcellationEntity</a></td>
-<td>A schema for representing a parcellation entity, which is an anatomical locat…</td>
+<td><a href="../../datamodel/classes/DBSProtocol.html">DBSProtocol</a></td>
+<td>A protocol describing DBS therapy, potentially bilateral or multi-lead</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
+<td><a href="../../datamodel/classes/Dynamics.html">Dynamics</a></td>
 <td></td>
-<td>no</td>
+<td>yes</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
-<td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
-<td>A loss function for optimization with optional aggregation</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Optimization.html">Optimization</a></td>
-<td>Configuration for parameter optimization</td>
+<td><a href="../../datamodel/classes/CommonCoordinateSpace.html">CommonCoordinateSpace</a></td>
+<td>A schema for representing a version of a common coordinate space</td>
 <td>no</td>
 </tr>
 <tr class="odd">
@@ -402,13 +386,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Algorithm.html">Algorithm</a></td>
-<td>A complete specification of an iterative parameter tuning algorithm</td>
+<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
+<td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
+<td>Defines how a parameter is updated based on observables</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Optimization.html">Optimization</a></td>
+<td>Configuration for parameter optimization</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Tractogram.html">Tractogram</a></td>
+<td>Reference to tractography/diffusion MRI data used to derive structural connec…</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Distribution.html">Distribution</a></td>
+<td>A probability distribution for sampling parameters or initial conditions</td>
+<td>yes</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Argument.html">Argument</a></td>
+<td>A function argument with explicit value specification</td>
+<td>no</td>
+</tr>
+<tr class="even">
 <td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
 <td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/ClassReference.html">ClassReference</a></td>
+<td>Reference to a class that can be instantiated and called</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -417,28 +431,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
-<td>Metadata about a clinical score or scale</td>
+<td><a href="../../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Dynamics.html">Dynamics</a></td>
-<td></td>
-<td>yes</td>
+<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
+<td>Unified class for all observation/measurement specifications</td>
+<td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/File.html">File</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a></td>
+<td>Specification of a coupling input channel for multi-coupling dynamics</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Callable.html">Callable</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/OptimizationStage.html">OptimizationStage</a></td>
-<td>A single stage in a multi-stage optimization workflow</td>
+<td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
+<td>Identity information about a software package independent of a specific versi…</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -496,30 +510,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DBSProtocol</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> ClinicalScale</span></span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> ClinicalScore</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Tractogram</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> File</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Observation</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Dynamics</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> StateVariable</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Distribution</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Parameter</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> CouplingInput</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Argument</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Function</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Callable</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DataSource</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> OptimizationStage</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Exploration</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> UpdateRule</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Algorithm</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Coupling</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareEnvironment</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareRequirement</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwarePackage</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="fu">required</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Event</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Tractogram</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> GraphGenerator</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> File</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Observation</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Dynamics</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> StateVariable</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Distribution</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Parameter</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> CouplingInput</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Argument</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Function</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Callable</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DataSource</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> OptimizationStage</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Exploration</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> UpdateRule</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Algorithm</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Coupling</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareEnvironment</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareRequirement</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwarePackage</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="fu">required</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 

@@ -190,6 +190,10 @@ ul.task-list li input[type="checkbox"] {
   </li>  
     </ul>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../Developer/contributing.html"> 
+<span class="menu-text">Developer</span></a>
+  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -260,6 +264,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#tvbo.run" id="toc-tvbo.run" class="nav-link" data-scroll-target="#tvbo.run">tvbo.run</a></li>
   <li><a href="#tvbo.summary" id="toc-tvbo.summary" class="nav-link" data-scroll-target="#tvbo.summary">tvbo.summary</a></li>
   <li><a href="#templates" id="toc-templates" class="nav-link" data-scroll-target="#templates">Templates</a></li>
+  <li><a href="#tvbo.templates.rateml" id="toc-tvbo.templates.rateml" class="nav-link" data-scroll-target="#tvbo.templates.rateml">tvbo.templates.rateml</a></li>
   <li><a href="#tvb-optim-templates" id="toc-tvb-optim-templates" class="nav-link" data-scroll-target="#tvb-optim-templates">TVB-Optim Templates</a></li>
   <li><a href="#utilities-module-for-tvb-o" id="toc-utilities-module-for-tvb-o" class="nav-link" data-scroll-target="#utilities-module-for-tvb-o">Utilities Module for TVB-O</a></li>
   </ul></li>
@@ -283,10 +288,22 @@ ul.task-list li input[type="checkbox"] {
 <table class="caption-top table">
 <tbody>
 <tr class="odd">
-<td><a href="../api/julia.html#tvbo.adapters.julia">julia</a></td>
-<td></td>
+<td><a href="../api/base.html#tvbo.adapters.base">base</a></td>
+<td>Base adapter for processing SimulationExperiment metadata.</td>
 </tr>
 <tr class="even">
+<td><a href="../api/julia.html#tvbo.adapters.julia">julia</a></td>
+<td>Python ↔︎ Julia bridge using juliacall (PythonCall.jl).</td>
+</tr>
+<tr class="odd">
+<td><a href="../api/modelingtoolkit.html#tvbo.adapters.modelingtoolkit">modelingtoolkit</a></td>
+<td>ModelingToolkit.jl backend adapter for SimulationExperiment.</td>
+</tr>
+<tr class="even">
+<td><a href="../api/networkdynamics.html#tvbo.adapters.networkdynamics">networkdynamics</a></td>
+<td>NetworkDynamics.jl backend adapter for SimulationExperiment.</td>
+</tr>
+<tr class="odd">
 <td><a href="../api/pyrates.html#tvbo.adapters.pyrates">pyrates</a></td>
 <td>PyRates backend adapter for SimulationExperiment.</td>
 </tr>
@@ -406,34 +423,38 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="even">
+<td><a href="../api/cuda.html#tvbo.export.cuda">cuda</a></td>
+<td>CUDA Adapter for TVBO</td>
+</tr>
+<tr class="odd">
 <td><a href="../api/experiment.html#tvbo.export.experiment">experiment</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/functions.html#tvbo.export.functions">functions</a></td>
 <td>Function Code Generation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/lemsgenerator.html#tvbo.export.lemsgenerator">lemsgenerator</a></td>
 <td># LEMS-Generator</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/openminds.html#tvbo.export.openminds">openminds</a></td>
 <td>OpenMINDS JSON-LD conversion utilities for TVBO.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/pyrates.html#tvbo.export.pyrates">pyrates</a></td>
 <td>PyRates Integration Module</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/report.html#tvbo.export.report">report</a></td>
 <td>Report Module</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/templater.html#tvbo.export.templater">templater</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/tvbids.html#tvbo.export.tvbids">tvbids</a></td>
 <td>Brain Imaging Data Structure (BIDS) Export for TVB-O</td>
 </tr>
@@ -615,6 +636,10 @@ ul.task-list li input[type="checkbox"] {
 <td><a href="../api/compgraph.html#tvbo.run.compgraph">compgraph</a></td>
 <td></td>
 </tr>
+<tr class="even">
+<td><a href="../api/julia.html#tvbo.run.julia">julia</a></td>
+<td>Low-level Julia execution utilities for running generated Julia code.</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -636,6 +661,17 @@ ul.task-list li input[type="checkbox"] {
 <section id="templates" class="level2">
 <h2 class="anchored" data-anchor-id="templates">Templates</h2>
 <p>Templates for generating code.</p>
+</section>
+<section id="tvbo.templates.rateml" class="level2">
+<h2 class="anchored" data-anchor-id="tvbo.templates.rateml">tvbo.templates.rateml</h2>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><a href="../api/utils.html#tvbo.templates.rateml.utils">utils</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="tvb-optim-templates" class="level2">
 <h2 class="anchored" data-anchor-id="tvb-optim-templates">TVB-Optim Templates</h2>
