@@ -173,23 +173,76 @@ class ModelingToolkitAdapter(BaseAdapter):
 
     # ── Symbolic round-trip ────────────────────────────────────────────
 
-    def get_lowered_equations(self, **kwargs):
-        """Send higher-order system to MTK and get back first-order SymPy equations.
+    def lower(self, source=None, returns="auto", **kwargs):
+        """Lower higher-order ODEs via MTK's ``mtkcompile``.
 
-        Performs a symbolic round-trip:
+        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile →
+        lowered first-order SymPy equations, optionally wrapped back into
+        a tvbo ``Dynamics`` or ``SimulationExperiment``.
 
-        1. Render the experiment as MTK Julia code (includes ``mtkcompile``)
-        2. Execute in Julia — MTK automatically lowers higher-order ODEs
-        3. Extract ``equations(sys)``, ``unknowns(sys)``, ``parameters(sys)``
-        4. Parse the lowered equation strings back into SymPy ``Eq`` objects
+        Parameters
+        ----------
+        source : Dynamics | SimulationExperiment, optional
+            The system to lower. Can also be set at init time.
+        returns : str
+            What to return:
+
+            - ``"sympy"`` — dict of SymPy equations, unknowns, parameters
+            - ``"dynamics"`` — tvbo ``Dynamics`` with lowered equations
+            - ``"experiment"`` — tvbo ``SimulationExperiment`` with lowered
+              dynamics
+            - ``"auto"`` (default) — same type as the input: ``Dynamics``
+              if given ``Dynamics``, ``SimulationExperiment`` if given an
+              experiment, ``"sympy"`` if empty.
 
         Returns
         -------
-        dict
-            ``{"equations": {name: sympy.Eq, ...},
-               "unknowns": [str, ...],
-               "parameters": [str, ...]}``
+        dict | Dynamics | SimulationExperiment
         """
+        from tvbo.export.experiment import SimulationExperiment
+        from tvbo.knowledge.simulation.localdynamics import Dynamics
+
+        # Accept source at call time — set up adapter state
+        if source is not None:
+            if isinstance(source, Dynamics):
+                self._input_dynamics = source
+                self.experiment = SimulationExperiment(local_dynamics=source)
+            else:
+                self._input_dynamics = None
+                self.experiment = source
+
+        result = self._lower_sympy(**kwargs)
+
+        # Resolve "auto" based on what was passed to __init__
+        if returns == "auto":
+            if self._input_dynamics is not None:
+                returns = "dynamics"
+            elif self.experiment is not None:
+                returns = "experiment"
+            else:
+                returns = "sympy"
+
+        if returns == "sympy":
+            return result
+
+        if returns in ("dynamics", "experiment"):
+            dyn = self._apply_lowered(result)
+            if returns == "dynamics":
+                return dyn
+            return self.experiment.copy(
+                local_dynamics=dyn,
+                model=dyn,
+            )
+
+        raise ValueError(
+            f"Unknown returns={returns!r}. "
+            "Use 'sympy', 'dynamics', 'experiment', or 'auto'."
+        )
+
+    # ── Internal helpers for lower() ──────────────────────────────────
+
+    def _lower_sympy(self, **kwargs):
+        """Run MTK round-trip, return raw dict of SymPy equations."""
         from tvbo.run.julia import ensure_packages, run_julia_code
 
         # 1. Ensure packages + render & execute the model (up to mtkcompile)
@@ -236,16 +289,8 @@ class ModelingToolkitAdapter(BaseAdapter):
             "parameters": param_names,
         }
 
-    def get_lowered_dynamics(self, **kwargs):
-        """Return a first-order Dynamics object lowered via MTK.
-
-        Uses MTK's ``mtkcompile`` to lower higher-order ODEs, then maps the
-        resulting equations back into a tvbo Dynamics specification.
-
-        The original dynamics is deepcopied and equations are updated
-        directly on the copy's state variables (no dict/list construction
-        to avoid LinkML JsonObj errors).
-        """
+    def _apply_lowered(self, lowered):
+        """Apply lowered equations onto a deepcopy of the original Dynamics."""
         from tvbo.datamodel.tvbo_datamodel import (
             Equation,
             StateVariable,
@@ -253,8 +298,6 @@ class ModelingToolkitAdapter(BaseAdapter):
         )
 
         original = self.experiment.local_dynamics
-        lowered = self.get_lowered_equations(**kwargs)
-
         dyn = deepcopy(original)
         dyn.name = f"{original.name}_FirstOrder"
         dyn.description = (
@@ -287,14 +330,6 @@ class ModelingToolkitAdapter(BaseAdapter):
                 dyn.state_variables[name] = sv
 
         return dyn
-
-    def get_lowered_experiment(self, **kwargs):
-        """Return a new SimulationExperiment using the lowered Dynamics."""
-        lowered_dyn = self.get_lowered_dynamics(**kwargs)
-        return self.experiment.copy(
-            local_dynamics=lowered_dyn,
-            model=lowered_dyn,
-        )
 
 
 # ── Helpers for parsing MTK equation strings to SymPy ───────────────

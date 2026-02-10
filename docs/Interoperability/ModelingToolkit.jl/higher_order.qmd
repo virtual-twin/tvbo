@@ -19,25 +19,25 @@ $$
 
 The key feature is the `equation_order: 2` attribute on the `x` state variable, which tells tvbo (and MTK) that the equation $\sigma(y - x)$ is a *second-order* ODE. The `derivative_initial_value: 2.0` provides the initial condition for $\dot{x}(0)$.
 
-```{.yaml filename="yaml/lorenz_higher_order.yaml"}
+```yaml
 state_variables:
-    x:
-        name: x
-        initial_value: 1.0
-        derivative_initial_value: 2.0
-        equation_order: 2
-        equation:
-            rhs: sigma * (y - x)
-    y:
-        name: y
-        initial_value: 0.0
-        equation:
-            rhs: x * (rho - z) - y
-    z:
-        name: z
-        initial_value: 0.0
-        equation:
-            rhs: x * y - beta * z
+  x:
+    name: x
+    initial_value: 1.0
+    derivative_initial_value: 2.0
+    equation_order: 2
+    equation:
+      rhs: sigma * (y - x)
+  y:
+    name: y
+    initial_value: 0.0
+    equation:
+      rhs: x * (rho - z) - y
+  z:
+    name: z
+    initial_value: 0.0
+    equation:
+      rhs: x * y - beta * z
 ```
 
 
@@ -77,16 +77,17 @@ Here is the key feature: we send the higher-order system to Julia, let MTK's `mt
 ```{python}
 from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
-adapter = ModelingToolkitAdapter(exp)
-lowered = adapter.get_lowered_equations()
-lowered
+adapter = ModelingToolkitAdapter()
+firstoder_ODE = adapter.lower(exp.local_dynamics)
+Markdown(firstoder_ODE.generate_report(derivative_notation="dot"))
 ```
 
 To run the lowered system with backends that only support first-order ODEs:
 
 ```{python}
-lowered_exp = adapter.get_lowered_experiment()
-result = lowered_exp.run("jax")
+lowered_exp = adapter.lower(exp)
+lowered_exp.integration.method='Euler'
+result = lowered_exp.run("tvbo")
 result.get_state(["x", "y"]).plot(type="statespace")
 ```
 
@@ -111,6 +112,6 @@ This matches the original MTK tutorial’s $x$-$y$ state-space plot.
 | SymPy | tvbo | `Eq(Derivative(x, (t, 2)), sigma*(-x + y))` |
 | Julia | MTK template | `Dt(Dt(x)) ~ sigma * (y - x)` |
 | Lowered | MTK `mtkcompile` | `dx/dt = x_t`, `dx_t/dt = sigma*(-x + y)` |
-| Back to SymPy | `get_lowered_equations()` | `Eq(Derivative(x_t, t), sigma*(-x + y))` |
+| Back to SymPy | `adapter.lower()` | `Eq(Derivative(x_t, t), sigma*(-x + y))` |
 
 This round-trip lets tvbo leverage MTK's powerful symbolic engine while maintaining SymPy as the canonical internal representation.
