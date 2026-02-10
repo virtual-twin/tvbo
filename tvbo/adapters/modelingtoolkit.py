@@ -1,42 +1,76 @@
 # -*- coding: utf-8 -*-
-"""ModelingToolkit.jl backend adapter for SimulationExperiment.
+"""Standalone ModelingToolkit.jl backend adapter for SimulationExperiment.
 
-Extends NetworkDynamicsAdapter to use MTK equation-based templates
-instead of function-based templates. Shares the same Julia runtime,
-solution extraction, and graph/edge-observable logic.
+Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
+No dependency on NetworkDynamics.jl.
+
+Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to
+MTK Julia code, MTK's ``mtkcompile`` performs structural transformations
+(e.g. higher-order ODE lowering), and the resulting equations are extracted
+back into SymPy.
 """
 
 from __future__ import annotations
 
+import re
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
-from tvbo.adapters.networkdynamics import (
-    REQUIRED_PACKAGES,
-    NetworkDynamicsAdapter,
-    _extract_edge_observables,
-    _extract_graph_data,
-    _extract_vertex_observables,
-    _strip_plot_lines,
-)
+from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
     from tvbo.data.types import TimeSeries
 
-# Additional Julia packages required by MTK templates
+# Julia packages required by the MTK backend
 MTK_PACKAGES = [
     "ModelingToolkit",
+    "OrdinaryDiffEqTsit5",
+    "Plots",
 ]
 
 
-class ModelingToolkitAdapter(NetworkDynamicsAdapter):
-    """Adapter for running SimulationExperiment via MTK + NetworkDynamics.jl.
+def _strip_plot_lines(code: str) -> str:
+    """Remove plotting lines from generated Julia code for headless run."""
+    lines = code.splitlines()
+    filtered = []
+    skip = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("using Plots") or stripped.startswith("plot("):
+            skip = True
+            continue
+        if skip and stripped == "":
+            skip = False
+            continue
+        skip = False
+        filtered.append(line)
+    return "\n".join(filtered)
 
-    Uses the same pyjulia runtime as NetworkDynamicsAdapter but renders
-    code via @mtkmodel templates instead of function-based templates.
+
+class ModelingToolkitAdapter(BaseAdapter):
+    """Adapter for running SimulationExperiment via pure ModelingToolkit.jl.
+
+    Uses @component syntax (MTK v11+), mtkcompile, ODEProblem, and solve.
+
+    Accepts either a ``Dynamics`` or ``SimulationExperiment`` as input.
+    When given ``Dynamics``, a minimal ``SimulationExperiment`` is created.
+    ``get_lowered_dynamics`` / ``get_lowered_experiment`` return the
+    corresponding type.
     """
 
+    def __init__(self, source):
+        from tvbo.export.experiment import SimulationExperiment
+        from tvbo.knowledge.simulation.localdynamics import Dynamics
+
+        if isinstance(source, Dynamics):
+            self._input_dynamics = source
+            source = SimulationExperiment(local_dynamics=source)
+        else:
+            self._input_dynamics = None
+        super().__init__(source)
+
     def render_code(self, **kwargs) -> str:
-        """Render Julia code using MTK templates."""
+        """Render Julia code using the standalone MTK template."""
         from tvbo import templates
 
         ctx = self.prepare_context()
@@ -47,10 +81,12 @@ class ModelingToolkitAdapter(NetworkDynamicsAdapter):
         return template.render(**ctx)
 
     def run(self, **kwargs) -> "TimeSeries":
-        """Run simulation using MTK + NetworkDynamics.jl.
+        """Run simulation using pure ModelingToolkit.jl.
 
-        Same logic as NetworkDynamicsAdapter.run() but uses MTK templates
-        and ensures ModelingToolkit.jl is installed.
+        Returns
+        -------
+        TimeSeries
+            TVBO TimeSeries with simulation results.
         """
         import os
 
@@ -66,8 +102,8 @@ class ModelingToolkitAdapter(NetworkDynamicsAdapter):
 
         exp = self.experiment
 
-        # 1. Ensure required Julia packages (ND + MTK)
-        ensure_packages(*REQUIRED_PACKAGES, *MTK_PACKAGES)
+        # 1. Ensure required Julia packages
+        ensure_packages(*MTK_PACKAGES)
 
         # 2. Generate Julia code, strip plotting
         code = self.render_code(**kwargs)
@@ -92,45 +128,27 @@ class ModelingToolkitAdapter(NetworkDynamicsAdapter):
         sv_names = ctx['sv_names']
         n_sv = ctx['n_sv']
         n_nodes = ctx['n_nodes']
-        is_hetero = ctx.get('is_heterogeneous', False)
 
-        if is_hetero:
-            n_total = u.shape[0]
+        # Pure MTK: single model, n_nodes=1 typically
+        # u shape from MTK: (n_unknowns, n_t)
+        # n_unknowns may differ from n_sv if mtkcompile introduced
+        # auxiliary variables (e.g., higher-order ODE lowering)
+        n_unknowns = u.shape[0] if u.ndim == 2 else 1
+        if n_unknowns != n_sv * n_nodes:
             data = u.T[:, :, np.newaxis, np.newaxis]
-
-            dynamics_dict = ctx['dynamics_dict']
-            node_dynamics_map = ctx['node_dynamics_map']
-            nodes = ctx['nodes']
-            default_name = ctx['model'].name if ctx['model'] else None
-            state_labels = []
-            for node in nodes:
-                dyn_name = node_dynamics_map.get(node.id, default_name)
-                dyn = dynamics_dict.get(dyn_name)
-                if dyn and dyn.state_variables:
-                    for sv_name in dyn.state_variables:
-                        state_labels.append(f"{sv_name}_{node.id}")
-            if len(state_labels) != n_total:
-                state_labels = [f"x_{i}" for i in range(n_total)]
+            try:
+                unknowns = run_julia_code("string.(unknowns(sys))")
+                state_labels = [
+                    _mtk_to_python_name(str(s).replace("(t)", ""))
+                    for s in list(unknowns)
+                ]
+            except Exception:
+                state_labels = [f"x_{i}" for i in range(n_unknowns)]
         else:
             data = solution_to_array(t, u, n_sv, n_nodes)
             state_labels = sv_names
 
-        # 7. Extract edge observables
-        edge_data = _extract_edge_observables(
-            ctx.get('outsym_names', []),
-            ctx.get('coupling_observed', {}),
-        )
-
-        # 7b. Extract vertex derived-variable observables
-        vertex_data = _extract_vertex_observables(
-            ctx.get('vertex_dv_names', []),
-            n_nodes,
-        )
-
-        # 8. Extract graph data
-        graph_data = _extract_graph_data(n_nodes)
-
-        # 9. Restore working directory
+        # 7. Restore working directory
         os.chdir(original_cwd)
 
         dt = ctx['dt']
@@ -139,20 +157,208 @@ class ModelingToolkitAdapter(NetworkDynamicsAdapter):
             data=data,
             labels_dimensions={
                 "State Variable": state_labels,
-                "Region": list(range(n_nodes)),
+                "Region": list(range(max(n_nodes, 1))),
             },
             sample_period=dt,
         )
         ts.source_experiment = exp
         ts.sol = sol
-        ts.graph = graph_data
-        ts.edge_data = edge_data
-        ts.vertex_data = vertex_data
-
-        if is_hetero and self.get_coupling_vars(ctx['model']):
-            ts.node_positions = self.build_node_positions(ts, ctx)
-            ts.initial_positions = self.get_initial_positions()
-            ts.fixed_nodes = self.get_fixed_nodes()
-            ts.node_metadata = self.get_node_metadata()
 
         return ts
+
+    # ── Symbolic round-trip ────────────────────────────────────────────
+
+    def get_lowered_equations(self, **kwargs):
+        """Send higher-order system to MTK and get back first-order SymPy equations.
+
+        Performs a symbolic round-trip:
+
+        1. Render the experiment as MTK Julia code (includes ``mtkcompile``)
+        2. Execute in Julia — MTK automatically lowers higher-order ODEs
+        3. Extract ``equations(sys)``, ``unknowns(sys)``, ``parameters(sys)``
+        4. Parse the lowered equation strings back into SymPy ``Eq`` objects
+
+        Returns
+        -------
+        dict
+            ``{"equations": {name: sympy.Eq, ...},
+               "unknowns": [str, ...],
+               "parameters": [str, ...]}``
+        """
+        from tvbo.run.julia import ensure_packages, run_julia_code
+
+        # 1. Ensure packages + render & execute the model (up to mtkcompile)
+        ensure_packages(*MTK_PACKAGES)
+        code = self.render_code(**kwargs)
+
+        # Only keep code up to (and including) the mtkcompile line —
+        # we don't need ODEProblem / solve / plot for equation extraction.
+        lines = []
+        for line in code.splitlines():
+            lines.append(line)
+            if 'mtkcompile' in line:
+                break
+        run_julia_code("\n".join(lines))
+
+        # 2. Extract from compiled system
+        n_eqs = int(run_julia_code("length(equations(sys))"))
+        param_names = list(run_julia_code("string.(parameters(sys))"))
+        unknown_strs = list(run_julia_code("string.(unknowns(sys))"))
+
+        # 3. Parse each equation RHS back to SymPy
+        equations = {}
+        for i in range(1, n_eqs + 1):
+            lhs_str = str(run_julia_code(
+                f"string(equations(sys)[{i}].lhs)"
+            ))
+            rhs_str = str(run_julia_code(
+                f"string(equations(sys)[{i}].rhs)"
+            ))
+            var_name, eq = _parse_mtk_equation(
+                lhs_str, rhs_str, unknown_strs, param_names,
+            )
+            equations[var_name] = eq
+
+        # Variable names cleaned for Python
+        unknowns = [
+            _mtk_to_python_name(s.replace("(t)", ""))
+            for s in unknown_strs
+        ]
+
+        return {
+            "equations": equations,
+            "unknowns": unknowns,
+            "parameters": param_names,
+        }
+
+    def get_lowered_dynamics(self, **kwargs):
+        """Return a first-order Dynamics object lowered via MTK.
+
+        Uses MTK's ``mtkcompile`` to lower higher-order ODEs, then maps the
+        resulting equations back into a tvbo Dynamics specification.
+
+        The original dynamics is deepcopied and equations are updated
+        directly on the copy's state variables (no dict/list construction
+        to avoid LinkML JsonObj errors).
+        """
+        from tvbo.datamodel.tvbo_datamodel import (
+            Equation,
+            StateVariable,
+            StateVariableName,
+        )
+
+        original = self.experiment.local_dynamics
+        lowered = self.get_lowered_equations(**kwargs)
+
+        dyn = deepcopy(original)
+        dyn.name = f"{original.name}_FirstOrder"
+        dyn.description = (
+            f"First-order equivalent of {original.name} (lowered via MTK)."
+        )
+
+        # Update existing state variables with lowered equations
+        for name, eq in lowered["equations"].items():
+            if name in dyn.state_variables:
+                sv = dyn.state_variables[name]
+                sv.equation.lhs = str(eq.lhs)
+                sv.equation.rhs = str(eq.rhs)
+                sv.equation_order = 1
+                sv.derivative_initial_value = None
+            else:
+                # Auxiliary variable introduced by MTK (e.g. x_t for dx/dt)
+                init_val = _infer_aux_initial_value(name, original)
+                sv = StateVariable(
+                    name=StateVariableName(name),
+                    equation=Equation(
+                        lhs=str(eq.lhs),
+                        rhs=str(eq.rhs),
+                    ),
+                    equation_type="differential",
+                    equation_order=1,
+                    initial_value=init_val,
+                    variable_of_interest=False,
+                    description="Auxiliary variable introduced by MTK",
+                )
+                dyn.state_variables[name] = sv
+
+        return dyn
+
+    def get_lowered_experiment(self, **kwargs):
+        """Return a new SimulationExperiment using the lowered Dynamics."""
+        lowered_dyn = self.get_lowered_dynamics(**kwargs)
+        return self.experiment.copy(
+            local_dynamics=lowered_dyn,
+            model=lowered_dyn,
+        )
+
+
+# ── Helpers for parsing MTK equation strings to SymPy ───────────────
+
+
+def _mtk_to_python_name(name: str) -> str:
+    """Convert MTK's Unicode auxiliary names to Python-safe names.
+
+    ``xˍt`` → ``x_t``, ``xˍtt`` → ``x_tt``, etc.
+    """
+    return name.replace("\u02cd", "_")
+
+
+def _parse_mtk_equation(lhs_str, rhs_str, unknown_strs, param_names):
+    """Parse a single MTK equation string pair into a SymPy Eq.
+
+    Parameters
+    ----------
+    lhs_str : str
+        LHS from Julia, e.g. ``"Differential(t, 1)(x(t))"``.
+    rhs_str : str
+        RHS from Julia, e.g. ``"sigma*(-x(t) + y(t))"``.
+    unknown_strs : list[str]
+        Unknown names from Julia, e.g. ``["x(t)", "xˍt(t)", ...]``.
+    param_names : list[str]
+        Parameter names from Julia.
+
+    Returns
+    -------
+    tuple[str, sympy.Eq]
+        ``(python_var_name, Eq(Derivative(var, t), rhs_expr))``.
+    """
+    from sympy import Derivative, Eq, Symbol, parse_expr
+
+    # Extract variable name from LHS: "Differential(t, 1)(x(t))" -> "x"
+    m = re.search(r'\)\((\w+)\(t\)\)', lhs_str)
+    var_name_jl = m.group(1) if m else lhs_str
+    var_name = _mtk_to_python_name(var_name_jl)
+
+    # Build local_dict for SymPy parsing
+    local_dict = {}
+    for p in param_names:
+        local_dict[p] = Symbol(p)
+    for u_str in unknown_strs:
+        u_jl = u_str.replace("(t)", "")
+        u_py = _mtk_to_python_name(u_jl)
+        local_dict[u_py] = Symbol(u_py)
+
+    # Clean RHS: strip "(t)" from variables, convert Unicode names
+    rhs_clean = rhs_str
+    for u_str in unknown_strs:
+        u_jl = u_str.replace("(t)", "")
+        u_py = _mtk_to_python_name(u_jl)
+        rhs_clean = rhs_clean.replace(u_str, u_py)
+
+    t = Symbol("t")
+    rhs_expr = parse_expr(rhs_clean, local_dict=local_dict)
+    eq = Eq(Derivative(Symbol(var_name), t), rhs_expr)
+
+    return var_name, eq
+
+
+def _infer_aux_initial_value(var_name, original):
+    """Infer initial values for MTK-introduced auxiliary variables."""
+    if "_t" in var_name:
+        base = var_name.split("_t", 1)[0]
+        base_sv = original.state_variables.get(base)
+        if base_sv is not None:
+            deriv_init = getattr(base_sv, "derivative_initial_value", None)
+            if var_name == f"{base}_t" and deriv_init is not None:
+                return deriv_init
+    return 0.0

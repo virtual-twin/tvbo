@@ -894,6 +894,15 @@ classes:
                     Type of equation: 'differential' (default) means dx/dt = rhs,
                     'algebraic' means 0 = rhs or x ~ rhs (DAE constraint).
                     Algebraic equations are used by ModelingToolkit.jl backend.
+            equation_order:
+                range: integer
+                ifabsent: int(1)
+                description: >-
+                    Order of the time derivative on the LHS. Default 1 means
+                    dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs
+                    (second-order ODE), etc. Higher-order ODEs are automatically
+                    lowered to coupled first-order systems by backends like
+                    ModelingToolkit.jl via mtkcompile.
             noise:
                 range: Noise
                 inlined: true
@@ -905,6 +914,13 @@ classes:
             initial_value:
                 range: float
                 ifabsent: float(0.1)
+            derivative_initial_value:
+                range: float
+                description: >-
+                    Initial value for the first time derivative, used when
+                    equation_order > 1. For a second-order ODE d²x/dt² = f,
+                    this sets dx/dt(0). Required by ModelingToolkit.jl to
+                    fully specify higher-order initial value problems.
             distribution:
                 range: Distribution
                 inlined: true

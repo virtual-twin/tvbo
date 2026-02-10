@@ -97,6 +97,12 @@ website:
                   - text: "OpenMINDS"
                   - text: "OpenMINDS Interoperability"
                     href: Interoperability/OpenMINDS.qmd
+                  - text: "---"
+                  - text: "ModelingToolkit.jl"
+                  - text: "MTK Overview"
+                    href: Interoperability/ModelingToolkit.jl/index.qmd
+                  - text: "Higher-Order ODE Lowering"
+                    href: Interoperability/ModelingToolkit.jl/higher_order.qmd
             - text: "Developer"
               href: Developer/contributing.md
 
@@ -190,6 +196,12 @@ website:
                     contents:
                       - text: "Stress on Truss"
                         href: Interoperability/NetworkDynamics.jl/stress_on_truss.qmd
+              - section: "ModelingToolkit.jl"
+                contents:
+                  - text: "Overview"
+                    href: Interoperability/ModelingToolkit.jl/index.qmd
+                  - text: "Higher-Order ODE Lowering"
+                    href: Interoperability/ModelingToolkit.jl/higher_order.qmd
               - section: "BIDS"
                 contents:
                   - text: "Overview"

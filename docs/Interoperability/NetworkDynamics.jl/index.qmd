@@ -27,8 +27,6 @@ Each TVBO example corresponds to (a part of) an original ND.jl tutorial:
 | [Directed & Weighted Graphs](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/) | [FitzHugh-Nagumo](fitzhugh_nagumo.qmd) | Weighted directed graphs from DTI matrix files, neuroscience models |
 | [Cascading Failure](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) | [Cascading Failure](cascading_failure.qmd) | Discrete callbacks, edge tripping, swing equation |
 | [Stress on Truss](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) | [Stress on Truss](stress_on_truss.qmd) | 2D coupling (`insym`/`outsym`), observed functions (`obsf`), per-edge parameters, heterogeneous vertices |
-| [Gas Network](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/gas_network/) | [Gas Network](gas_network.qmd) | MTK `@mtkmodel`, complex pipe physics, `find_fixpoint`, static + dynamic vertices |
-| [Initialization Tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/init_tutorial/) | [Gas Network Initialization](init_tutorial.qmd) | MTK `@mtkmodel`, two-phase static→dynamic init, PI controller, preset-time callbacks |
 
 ## Quick Start
 
@@ -52,11 +50,9 @@ The code generation pipeline:
    - `tvbo-nd-vertex.jl.mako` — generates the vertex function `f!` and `VertexModel`
    - `tvbo-nd-edge.jl.mako` — generates the edge function `g!` and `EdgeModel`
    - `tvbo-nd-experiment.jl.mako` — orchestrates the full script (imports, graph, solve, plot)
-3. **MTK templates**: The `mtk` format uses equation-based ModelingToolkit.jl templates:
-   - `tvbo-mtk-vertex.jl.mako` — generates `@mtkmodel` blocks with `@variables`, `@parameters`, `@equations`
-   - `tvbo-mtk-edge.jl.mako` — generates `@mtkmodel` for edge/pipe models
-   - `tvbo-mtk-experiment.jl.mako` — orchestrates the full MTK script with `find_fixpoint` support
-4. **Symbolic rendering**: Equations from the YAML are rendered to Julia syntax via `JuliaPrinter`
+3. **Symbolic rendering**: Equations from the YAML are rendered to Julia syntax via `JuliaPrinter`
+
+For standalone (non-network) systems, see the [ModelingToolkit.jl backend](../ModelingToolkit.jl/index.qmd).
 
 ## Distributions
 

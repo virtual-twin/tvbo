@@ -607,9 +607,16 @@ class BaseTimeSeries:
         return sv_index
 
     def get_state(self, sv_label):
-        sv_data = self.data[:, self._get_index_of_state_variable(sv_label), :, :]
+        if isinstance(sv_label, (list, tuple, np.ndarray)):
+            indices = [self._get_index_of_state_variable(s) for s in sv_label]
+            sv_data = self.data[:, indices, :, :]
+            sv_labels = list(sv_label)
+        else:
+            sv_data = self.data[:, self._get_index_of_state_variable(sv_label), :, :]
+            sv_labels = [sv_label]
+
         subspace_labels_dimensions = deepcopy(self.labels_dimensions)
-        subspace_labels_dimensions[self.labels_ordering[1]] = [sv_label]
+        subspace_labels_dimensions[self.labels_ordering[1]] = sv_labels
         if sv_data.ndim == 3:
             sv_data = np.expand_dims(sv_data, 1)
         return self.duplicate(
@@ -760,6 +767,8 @@ class BaseTimeSeries:
 @register_pytree_node_class
 class TimeSeries(BaseTimeSeries):
     def get_state_variable(self, sv_label):
+        if isinstance(sv_label, (list, tuple, np.ndarray)):
+            return self.get_state(sv_label)
         import math
 
         import sympy as sp
@@ -779,6 +788,7 @@ class TimeSeries(BaseTimeSeries):
         )
 
     def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
+        plot_type = kwargs.pop("type", "timeseries")
         if not ax:
             fig, ax = plt.subplots()
             return_fig = True
@@ -787,6 +797,66 @@ class TimeSeries(BaseTimeSeries):
 
         if title:
             ax.set_title(title)
+
+        if plot_type in {
+            "statespace",
+            "state-space",
+            "phase",
+            "phase_space",
+            "trajectory",
+        }:
+            region = kwargs.pop("region", 0)
+            mode = kwargs.pop("mode", 0)
+            sv_labels = (
+                kwargs.pop("state_variables", None)
+                or kwargs.pop("state_variables_labels", None)
+            )
+
+            n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
+            if sv_labels:
+                if isinstance(sv_labels, str):
+                    sv_labels = [sv_labels]
+                indices = [self._get_index_of_state_variable(s) for s in sv_labels]
+            else:
+                indices = list(range(min(2, n_svar)))
+                sv_labels = (
+                    self.labels_dimensions.get("State Variable", None)
+                    if isinstance(self.labels_dimensions, dict)
+                    else None
+                )
+                if sv_labels:
+                    sv_labels = [sv_labels[i] for i in indices]
+
+            if len(indices) < 2:
+                raise ValueError(
+                    "State-space plot requires at least two state variables"
+                )
+
+            data = self.data
+            if data.ndim == 4:
+                x = data[:, indices[0], region, mode]
+                y = data[:, indices[1], region, mode]
+            elif data.ndim == 3:
+                x = data[:, indices[0], region]
+                y = data[:, indices[1], region]
+            elif data.ndim == 2:
+                x = data[:, indices[0]]
+                y = data[:, indices[1]]
+            else:
+                raise ValueError("Unsupported data shape for state-space plot")
+            ax.plot(x, y, **kwargs)
+
+            if sv_labels and len(sv_labels) >= 2:
+                ax.set_xlabel(str(sv_labels[0]))
+                ax.set_ylabel(str(sv_labels[1]))
+            else:
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+
+            if return_fig:
+                plt.close()
+                return fig
+            return None
 
 
         n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1

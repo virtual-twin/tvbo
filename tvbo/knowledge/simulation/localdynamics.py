@@ -1177,7 +1177,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
             else:
                 expression = parse_eq(sv.equation, local_dict=scope)
 
-            lhs_expr = sv_symbol if discrete else Derivative(sv_symbol, t)
+            order = int(getattr(sv, 'equation_order', 1) or 1)
+            if discrete:
+                lhs_expr = sv_symbol
+            elif order > 1:
+                lhs_expr = Derivative(sv_symbol, *([t] * order))
+            else:
+                lhs_expr = Derivative(sv_symbol, t)
             equations["state-equations"].append(Eq(lhs=lhs_expr, rhs=expression))
 
         if format == "state-equations":
@@ -2082,7 +2088,11 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
             f.write(self.render_code())
 
     def generate_report(
-        self, format="markdown", template_name="tvbo-report-model", outputfile=None
+        self,
+        format="markdown",
+        template_name="tvbo-report-model",
+        outputfile=None,
+        derivative_notation: str = "d",
     ):
         self.update_metadata()
         if format in ["markdown", "pdf"]:
@@ -2091,7 +2101,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
             template = templates.lookup.get_template(f"{template_name}.html.mako")
 
         render = (
-            template.render(model=self)
+            template.render(model=self, derivative_notation=derivative_notation)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )

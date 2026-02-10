@@ -9,6 +9,7 @@ mons = getattr(exp, 'monitors', []) or []
 stim = getattr(exp, 'stimulation', None)
 reqs = getattr(exp, 'requirements', None) or []
 env  = getattr(exp, 'environment', None)
+derivative_notation = context.get('derivative_notation', 'd')
 
 def _p(obj, name, default=None):
     return getattr(obj, name, default) if obj is not None else default
@@ -151,7 +152,7 @@ if isinstance(mons, dict):
 
   <h2>Local Dynamics</h2>
   % if model is not None:
-  <%include file="tvbo-report-model.html.mako" args="model=model"/>
+  <%include file="tvbo-report-model.html.mako" args="model=model, derivative_notation=derivative_notation"/>
   % else:
   <p><em>No local dynamics specified.</em></p>
   % endif
