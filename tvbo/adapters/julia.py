@@ -1,5 +1,6 @@
 from importlib import import_module
 import re
+import sys
 
 _julia_instance = None
 _julia_main = None
@@ -20,56 +21,54 @@ def get_julia(compiled_modules=True):
         except ImportError:
             raise ImportError("PyJulia (julia) package not installed. Run: pip install julia")
 
-        # Silence Julia warnings during startup
         import os
         os.environ['JULIA_NUM_THREADS'] = '1'
 
-        try:
-            # Use minimal Julia configuration for stability
-            _julia_instance = jl.Julia(
-                compiled_modules=compiled_modules,
-                debug=False,
-                init_julia=True,
-                runtime='/opt/homebrew/Cellar/julia/1.12.2/bin/julia'  # explicit path for macOS homebrew
-            )
-        except jl.UnsupportedPythonError:
-            # PyJulia is not configured for this Python environment, configure it now
-            print("Configuring PyJulia for the current Python environment...")
-            try:
-                jl.install()
-            except Exception as install_err:
-                print(f"Julia install failed: {install_err}")
-                print("Trying alternative initialization...")
-            # Retry after installation
-            _julia_instance = jl.Julia(
-                compiled_modules=compiled_modules,
-                debug=False,
-                init_julia=True
-            )
-        except FileNotFoundError:
-            # Julia binary not found, try without explicit path
-            _julia_instance = jl.Julia(
-                compiled_modules=compiled_modules,
-                debug=False,
-                init_julia=True
-            )
-        except Exception as e:
-            print(f"Error initializing Julia: {e}")
-            print("Retrying with minimal configuration...")
-            try:
-                _julia_instance = jl.Julia(compiled_modules=False, debug=False)
-            except Exception as retry_err:
-                raise RuntimeError(
-                    f"Failed to initialize Julia: {retry_err}. "
-                    "Try restarting the kernel or reinstalling: pip install julia && python -c 'import julia; julia.install()'"
-                )
+        # Suppress Julia's MainInclude warnings (written to fd 2 by Julia C runtime)
+        stderr_fd = sys.stderr.fileno()
+        saved_fd = os.dup(stderr_fd)
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, stderr_fd)
+        os.close(devnull)
 
         try:
+            _init_julia_instance(jl, compiled_modules)
             _julia_main = import_module("julia.Main")
-        except Exception as e:
-            raise RuntimeError(f"Failed to import julia.Main: {e}")
+        finally:
+            os.dup2(saved_fd, stderr_fd)
+            os.close(saved_fd)
 
     return _julia_instance, _julia_main
+
+
+def _init_julia_instance(jl, compiled_modules):
+    """Try multiple strategies to initialize the Julia runtime."""
+    global _julia_instance
+    try:
+        _julia_instance = jl.Julia(
+            compiled_modules=compiled_modules,
+            debug=False,
+            init_julia=True,
+            runtime='/opt/homebrew/Cellar/julia/1.12.2/bin/julia'
+        )
+    except jl.UnsupportedPythonError:
+        try:
+            jl.install()
+        except Exception:
+            pass
+        _julia_instance = jl.Julia(
+            compiled_modules=compiled_modules,
+            debug=False,
+            init_julia=True,
+        )
+    except FileNotFoundError:
+        _julia_instance = jl.Julia(
+            compiled_modules=compiled_modules,
+            debug=False,
+            init_julia=True,
+        )
+    except Exception:
+        _julia_instance = jl.Julia(compiled_modules=False, debug=False)
 
 def install_julia_package(package_name: str, Main=None, update: bool = False):
     """Install a Julia package if not already installed.

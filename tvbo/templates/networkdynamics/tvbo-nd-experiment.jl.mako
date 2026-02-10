@@ -252,8 +252,22 @@ end
 % endif
 <%
 # Collect per-edge parameter overrides (skip 'weight' — handled by connectivity matrix)
+# IMPORTANT: SimpleGraph stores edges sorted by (min, max), so s.p.e[i, :param]
+# corresponds to the i-th edge in sorted order, not YAML insertion order.
+# We must sort edges the same way to assign parameters to the correct edges.
 edge_param_lines = []
-for i, edge in enumerate(edges_list):
+
+# Build list of (sorted_key, original_edge) to match SimpleGraph ordering
+edges_with_keys = []
+for edge in edges_list:
+    s_node = min(edge.source, edge.target) + 1
+    t_node = max(edge.source, edge.target) + 1
+    edges_with_keys.append(((s_node, t_node), edge))
+
+# Sort by (min_node, max_node) — same order as SimpleGraph edges()
+edges_with_keys.sort(key=lambda x: x[0])
+
+for i, (key, edge) in enumerate(edges_with_keys):
     eparams = getattr(edge, 'parameters', None) or {}
     if isinstance(eparams, dict):
         for p_name, p_obj in eparams.items():

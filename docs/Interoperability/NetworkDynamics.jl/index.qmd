@@ -14,25 +14,26 @@ The **NetworkDynamics.jl** backend generates Julia code for simulating dynamical
 
 ## Examples
 
-These examples recreate the official [NetworkDynamics.jl tutorials](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) using tvbo's declarative YAML format:
+These examples recreate the official [NetworkDynamics.jl tutorials](https://juliadynamics.github.io/NetworkDynamics.jl/stable/) using tvbo's declarative YAML format.
 
-| Example | Original Tutorial | Network | Description |
-|---------|-------------------|---------|-------------|
-| [Network Diffusion](diffusion.qmd) | [Getting Started](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) (1D part) | 20-node BA | Diffusion on an undirected network |
-| [2D Network Diffusion](diffusion_2d.qmd) | [Getting Started](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) (2D extension) | 10-node BA | Multi-dimensional diffusion with broadcasting |
-| [Kuramoto Oscillators](kuramoto.qmd) | [Heterogeneous System](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/) (homogeneous part) | 8-node ring | Phase oscillators with heterogeneous frequencies |
-| [Heterogeneous Kuramoto](heterogeneous_kuramoto.qmd) | [Heterogeneous System](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/) (full tutorial) | 8-node ring | 3 vertex types: standard, static, inertia |
-| [FitzHugh-Nagumo](fitzhugh_nagumo.qmd) | [Directed & Weighted Graphs](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/) | 90-node AAL | FHN synchronization on a brain atlas |
-| [Cascading Failure](cascading_failure.qmd) | [Cascading Failure](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) | 5-node grid | Swing equation with line tripping callbacks |
-| [Stress on Truss](stress_on_truss.qmd) | [Stress on Truss](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) | 11-node truss | 2D structure with heterogeneous vertices, observed forces |
+### Mapping to Original Tutorials
 
-### Not yet supported
+Each TVBO example corresponds to (a part of) an original ND.jl tutorial:
 
-The following tutorials require additional features:
+| Original ND.jl Tutorial | TVBO Example(s) | Features Demonstrated |
+|--------------------------|------------------|-----------------------|
+| [Getting Started (Network Diffusion)](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) | [Network Diffusion](diffusion.qmd), [2D Network Diffusion](diffusion_2d.qmd) | Basic `VertexModel`/`EdgeModel`, graph generators, 1D and 2D state variables |
+| [Heterogeneous System](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/) | [Kuramoto Oscillators](kuramoto.qmd), [Heterogeneous Kuramoto](heterogeneous_kuramoto.qmd) | Per-node parameter distributions, multiple vertex types (standard, static, inertia) |
+| [Directed & Weighted Graphs](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/) | [FitzHugh-Nagumo](fitzhugh_nagumo.qmd) | Weighted directed graphs from DTI matrix files, neuroscience models |
+| [Cascading Failure](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) | [Cascading Failure](cascading_failure.qmd) | Discrete callbacks, edge tripping, swing equation |
+| [Stress on Truss](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) | [Stress on Truss](stress_on_truss.qmd) | 2D coupling (`insym`/`outsym`), observed functions (`obsf`), per-edge parameters, heterogeneous vertices |
 
-| Tutorial | Missing Feature |
-|----------|----------------|
-| [Gas Network](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/gas_network/) | ModelingToolkit.jl equation-based modeling (out of scope) |
+### Not Yet Supported
+
+| Original ND.jl Tutorial | Missing Feature |
+|--------------------------|----------------|
+| [Gas Network](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/gas_network/) | ModelingToolkit.jl `@mtkmodel` equation-based modeling |
+| [Initialization Tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/init_tutorial/) | ModelingToolkit.jl `@mtkmodel`, `find_fixpoint()` steady-state initialization, two-phase static→dynamic init |
 
 ## Quick Start
 

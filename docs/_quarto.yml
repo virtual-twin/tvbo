@@ -162,6 +162,34 @@ website:
                     href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
                   - text: "Heterogeneous Networks"
                     href: Interoperability/Pyrates/PyRates_Heterogenous_Network.qmd
+              - section: "NetworkDynamics.jl"
+                contents:
+                  - text: "Overview"
+                    href: Interoperability/NetworkDynamics.jl/index.qmd
+                  - section: "Scalar & Multi-Dimensional Diffusion"
+                    contents:
+                      - text: "Network Diffusion"
+                        href: Interoperability/NetworkDynamics.jl/diffusion.qmd
+                      - text: "2D Network Diffusion"
+                        href: Interoperability/NetworkDynamics.jl/diffusion_2d.qmd
+                  - section: "Heterogeneous Oscillator Networks"
+                    contents:
+                      - text: "Kuramoto Oscillators"
+                        href: Interoperability/NetworkDynamics.jl/kuramoto.qmd
+                      - text: "Heterogeneous Kuramoto"
+                        href: Interoperability/NetworkDynamics.jl/heterogeneous_kuramoto.qmd
+                  - section: "Directed & Weighted Brain Networks"
+                    contents:
+                      - text: "FitzHugh-Nagumo Synchronization"
+                        href: Interoperability/NetworkDynamics.jl/fitzhugh_nagumo.qmd
+                  - section: "Callbacks & Dynamic Events"
+                    contents:
+                      - text: "Cascading Failure"
+                        href: Interoperability/NetworkDynamics.jl/cascading_failure.qmd
+                  - section: "Multi-Dimensional Coupling & Observations"
+                    contents:
+                      - text: "Stress on Truss"
+                        href: Interoperability/NetworkDynamics.jl/stress_on_truss.qmd
               - section: "BIDS"
                 contents:
                   - text: "Overview"

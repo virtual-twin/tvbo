@@ -118,6 +118,127 @@ class NetworkDynamicsAdapter(BaseAdapter):
     method pre-computes all template variables so Mako templates stay clean.
     """
 
+    # ── Spatial / heterogeneous metadata ─────────────────────────────────
+
+    def get_initial_positions(self) -> np.ndarray:
+        """Extract initial (x, y, …) positions for ALL nodes from YAML.
+
+        For free (dynamic) nodes: positions come from ``initial_state``
+        at the indices marked ``coupling_variable=True``.
+        For static (fixed) nodes: positions come from node parameter
+        values (in parameter-definition order).
+
+        Returns shape ``(n_nodes, n_coupling_vars)``.
+        """
+        dynamics_dict = self.build_dynamics_dict()
+        node_dynamics_map = self.build_node_dynamics_map()
+        nodes = list(self.experiment.network.nodes)
+        default_model = self.experiment.local_dynamics
+
+        # Determine coupling var indices from the default (free) model
+        coupling_vars = self.get_coupling_vars(default_model)
+        n_cv = len(coupling_vars) or 1
+        sv_names = list(default_model.state_variables.keys())
+        cv_indices = [i for i, name in enumerate(sv_names)
+                      if name in coupling_vars]
+
+        positions = np.zeros((len(nodes), n_cv))
+        for node in nodes:
+            dyn_name = node_dynamics_map[node.id]
+            dyn = dynamics_dict[dyn_name]
+            if self.is_static(dyn):
+                # Static node: positions from per-node parameter overrides
+                params = self.parse_node_parameters(node)
+                if params:
+                    vals = list(params.values())
+                    positions[node.id, :len(vals)] = [
+                        float(v) for v in vals[:n_cv]
+                    ]
+            else:
+                # Dynamic node: positions from initial_state at cv indices
+                init = getattr(node, 'initial_state', None)
+                if init:
+                    init_vals = [float(v) for v in init]
+                    for j, idx in enumerate(cv_indices):
+                        if idx < len(init_vals):
+                            positions[node.id, j] = init_vals[idx]
+        return positions
+
+    def get_fixed_nodes(self) -> set[int]:
+        """Return set of node IDs with static dynamics (no state variables)."""
+        dynamics_dict = self.build_dynamics_dict()
+        node_dynamics_map = self.build_node_dynamics_map()
+        fixed = set()
+        for node in self.experiment.network.nodes:
+            dyn_name = node_dynamics_map[node.id]
+            dyn = dynamics_dict[dyn_name]
+            if self.is_static(dyn):
+                fixed.add(node.id)
+        return fixed
+
+    def get_node_metadata(self) -> dict[int, dict]:
+        """Extract per-node metadata: dynamics name, parameters, type.
+
+        Returns ``{node_id: {'dynamics': str, 'params': dict, 'static': bool}}``.
+        """
+        dynamics_dict = self.build_dynamics_dict()
+        node_dynamics_map = self.build_node_dynamics_map()
+        meta = {}
+        for node in self.experiment.network.nodes:
+            dyn_name = node_dynamics_map[node.id]
+            dyn = dynamics_dict[dyn_name]
+            meta[node.id] = {
+                'dynamics': dyn_name,
+                'params': self.parse_node_parameters(node),
+                'static': self.is_static(dyn),
+                'label': getattr(node, 'label', None),
+            }
+        return meta
+
+    def build_node_positions(
+        self, ts: "TimeSeries", ctx: dict,
+    ) -> np.ndarray:
+        """Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
+
+        For free nodes: positions come from the coupling-variable columns
+        of the flat heterogeneous state vector.
+        For fixed nodes: positions are constant (from YAML parameters).
+        """
+        dynamics_dict = ctx['dynamics_dict']
+        node_dynamics_map = ctx['node_dynamics_map']
+        nodes = ctx['nodes']
+        default_model = ctx['model']
+        coupling_vars = self.get_coupling_vars(default_model)
+        n_cv = len(coupling_vars) or 1
+
+        n_t = len(ts.time)
+        n_nodes = len(nodes)
+        positions = np.zeros((n_t, n_nodes, n_cv))
+
+        # Initial positions for fixed nodes
+        init_pos = self.get_initial_positions()
+
+        # Walk through state vector to find coupling-var columns per node
+        state_offset = 0
+        for node in nodes:
+            dyn_name = node_dynamics_map[node.id]
+            dyn = dynamics_dict[dyn_name]
+            if self.is_static(dyn):
+                # Constant position for all timesteps
+                positions[:, node.id, :] = init_pos[node.id]
+            else:
+                # Find which state indices correspond to coupling vars
+                sv_names = list(dyn.state_variables.keys())
+                for j, cv_name in enumerate(coupling_vars):
+                    if cv_name in sv_names:
+                        sv_idx = sv_names.index(cv_name)
+                        col = state_offset + sv_idx
+                        positions[:, node.id, j] = ts.data[:, col, 0, 0]
+                state_offset += len(sv_names)
+        return positions
+
+    # ── Code generation ──────────────────────────────────────────────────
+
     def render_code(self, **kwargs) -> str:
         """Render Julia code with pre-computed context from BaseAdapter."""
         from tvbo import templates
@@ -189,8 +310,27 @@ class NetworkDynamicsAdapter(BaseAdapter):
             n_t = len(t)
             n_total = u.shape[0]
             data = u.T[:, :, np.newaxis, np.newaxis]   # (n_t, n_states, 1, 1)
+
+            # Build per-state labels from node-dynamics map
+            dynamics_dict = ctx['dynamics_dict']
+            node_dynamics_map = ctx['node_dynamics_map']
+            nodes = ctx['nodes']
+            default_name = ctx['model'].name if ctx['model'] else None
+            state_labels = []
+            for node in nodes:
+                dyn_name = node_dynamics_map.get(node.id, default_name)
+                dyn = dynamics_dict.get(dyn_name)
+                if dyn and dyn.state_variables:
+                    for sv_name in dyn.state_variables:
+                        state_labels.append(
+                            f"{sv_name}_{node.id}"
+                        )
+            # Fallback if label count doesn't match
+            if len(state_labels) != n_total:
+                state_labels = [f"x_{i}" for i in range(n_total)]
         else:
             data = solution_to_array(t, u, n_sv, n_nodes)
+            state_labels = sv_names
 
         # 7. Extract edge observables from outsym metadata
         edge_data = _extract_edge_observables(
@@ -209,7 +349,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
             time=t,
             data=data,
             labels_dimensions={
-                "State Variable": sv_names,
+                "State Variable": state_labels,
                 "Region": list(range(n_nodes)),
             },
             sample_period=dt,
@@ -218,4 +358,12 @@ class NetworkDynamicsAdapter(BaseAdapter):
         ts.sol = sol  # keep full Julia object for interactive use
         ts.graph = graph_data  # adjacency, positions, weights
         ts.edge_data = edge_data  # edge observables from outsym/obssym
+
+        # Spatial metadata (for heterogeneous spatial models)
+        if is_hetero and self.get_coupling_vars(ctx['model']):
+            ts.node_positions = self.build_node_positions(ts, ctx)
+            ts.initial_positions = self.get_initial_positions()
+            ts.fixed_nodes = self.get_fixed_nodes()
+            ts.node_metadata = self.get_node_metadata()
+
         return ts
