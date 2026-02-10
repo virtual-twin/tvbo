@@ -53,7 +53,7 @@ print(f"(Should converge to ~0 as all nodes reach equilibrium)")
 
 ```{python}
 ani = ts.animate("v", format="dots")
-ani.save("diffusion.gif", writer="pillow", fps=20)
+ani.save("_output/diffusion.gif", writer="pillow", fps=20)
 ```
 
-![](diffusion.gif)
+![](_output/diffusion.gif)

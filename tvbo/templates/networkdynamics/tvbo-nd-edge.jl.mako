@@ -85,11 +85,20 @@ function ${coupling.name}_obsf!(obsout, u, v_src, v_dst, (${", ".join(cparam_nam
 % for i, obs in enumerate(coupling_obs):
 <%
     obs_rhs = str(obs.equation.rhs).strip()
-    # Translate variable names directly without sympy processing to avoid rewriting
-    obs_code = obs_rhs.replace('x_j', 'v_src[1]').replace('x_i', 'v_dst[1]')
+    is_multiline_obs = '\n' in obs_rhs or 'obsout[' in obs_rhs
 %>
     ## ${obs.name}: ${obs.description or ''}
+% if is_multiline_obs:
+    ## Custom multi-line observed body
+% for line in obs_rhs.splitlines():
+    ${line.strip()}
+% endfor
+% else:
+<%
+    obs_code = obs_rhs.replace('x_j', 'v_src[1]').replace('x_i', 'v_dst[1]')
+%>
     obsout[${i+1}] = ${obs_code}
+% endif
 % endfor
     nothing
 end
