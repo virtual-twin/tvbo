@@ -117,6 +117,7 @@ derived_observations_dict = dict(_dobs_raw.items()) if hasattr(_dobs_raw, 'items
 # State variable names from model
 model = experiment.local_dynamics
 state_var_names = list(model.state_variables.keys()) if model and model.state_variables else []
+state_names = state_var_names
 
 # Build coupling parameter lookup: param_name -> coupling_key
 coupling_param_to_key = {}

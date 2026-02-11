@@ -1794,14 +1794,24 @@ class Dynamics(tvbo_datamodel.Dynamics):
             elif format == "bifurcation-julia":
                 br_obj = extract_bifurcation_result()
                 bif_res = BifurcationResult(br=br_obj, model=self, **kwargs)
-                if "periodic_orbits" in kwargs and kwargs["periodic_orbits"]:
+                # Auto-detect PO branches from continuation object or explicit kwarg
+                cont = kwargs.get("continuation", None)
+                _has_branches = (
+                    ("periodic_orbits" in kwargs and kwargs["periodic_orbits"])
+                    or (cont and getattr(cont, "branches", None))
+                )
+                if _has_branches:
                     from tvbo.adapters.julia import eval_with_auto_install
-                    po = eval_with_auto_install("po_results")
-
-                    bif_res.periodic_orbits = [
-                        BifurcationResult(br=p, model=self, **kwargs)
-                        for p in po.branches
-                    ]
+                    try:
+                        po = eval_with_auto_install("po_results")
+                        bif_res.periodic_orbits = [
+                            BifurcationResult(br=p, model=self, **kwargs)
+                            for p in po.branches
+                        ]
+                    except Exception as e:
+                        import warnings
+                        warnings.warn(f"Periodic orbit extraction failed: {e}")
+                        bif_res.periodic_orbits = []
                 return bif_res
 
         elif "python" == format:
@@ -1991,7 +2001,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         y0, y1 = ax1.get_ylim()
 
         # Parameter sweep across continuation parameter range inferred from result
-        p_min, p_max = bif.parameter.min(), bif.parameter.max()
+        p_min, p_max = bif.df["param"].min(), bif.df["param"].max()
         a_values = np.linspace(p_min, p_max, n_runs)
 
         for i, p in enumerate(a_values):

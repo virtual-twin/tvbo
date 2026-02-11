@@ -16,26 +16,31 @@
 
 <%def name="render_operator(m, op_name=None)">
 <%
-    # Replace reserved names that conflict with SymPy/PyRates built-ins:
-    # - 'I' conflicts with PyRates built-in 'I' (imaginary unit/current)
-    # - 'gamma' conflicts with SymPy's gamma function
-    # - 'beta' conflicts with SymPy's beta function (Euler beta)
-    # - 'zeta' conflicts with SymPy's zeta function (Riemann zeta)
-    # - 'lambda' is a Python keyword
-    # - 'E' conflicts with SymPy's E (Euler's number)
-    # - 'N' conflicts with SymPy's N (numerical evaluation)
-    # - 'S' conflicts with SymPy's S (sympify shorthand)
-    # - 'O' conflicts with SymPy's O (big-O notation)
+    # Replace reserved names that conflict with SymPy/PyRates built-ins.
+    # These names cannot be used as-is because SymPy's sympify (used by PyRates
+    # internally) resolves them to built-in objects instead of symbols:
+    # - 'I': imaginary unit
+    # - 'E': Euler's number (exp(1))
+    # - 'S': SymPy's SingletonRegistry (sympify shorthand)
+    # - 'N': SymPy's numerical evaluation function
+    # - 'O': big-O notation class
+    # - 'Q': SymPy's AssumptionKeys object
+    # - 'gamma', 'beta', 'zeta': SymPy special functions
+    # - 'lambda': Python keyword
+    # - 'epsilon': PyRates internal parsing conflict
+    # Suffix '_' avoids implying the symbol is a parameter (it may be a state var).
     repl = {
-        "I": "Ipar",
-        "gamma": "gamma_par",
-        "beta": "beta_par",
-        "zeta": "zeta_par",
-        "lambda": "lambda_par",
-        "E": "E_par",
-        "N": "N_par",
-        "S": "S_par",
-        "O": "O_par",
+        "I": "I_",
+        "gamma": "gamma_",
+        "beta": "beta_",
+        "zeta": "zeta_",
+        "lambda": "lambda_",
+        "E": "E_",
+        "N": "N_",
+        "S": "S_",
+        "O": "O_",
+        "Q": "Q_",
+        "epsilon": "epsilon_",
     }
 
     # Get model name
@@ -56,29 +61,24 @@
     if 'local_coupling' not in defined_coupling_names:
         remove_terms.append('local_coupling')
 
-    # Add derived variables (algebraic equations)
+    # Add derived variables (algebraic equations) — apply repl to keys too
     for k, dv in m.derived_variables.items():
-        # Use sympy format (bare function names) and inline any custom functions
-        equations.append(f"{k} = {m.render_equation(dv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
-        variables[k] = "variable"
+        display_k = repl.get(k, k)
+        equations.append(f"{display_k} = {m.render_equation(dv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
+        variables[display_k] = "variable"
 
-    # Add state variable equations (differential equations)
+    # Add state variable equations (differential equations) — apply repl to keys/LHS
     for k, sv in (m.state_variables or {}).items():
-        # Use sympy format and inline any custom functions
-        equations.append(f"{k}' = {m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
+        display_k = repl.get(k, k)
+        equations.append(f"{display_k}' = {m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
         iv = sv.initial_value
-        variables[k] = f"variable({iv})"
+        variables[display_k] = f"variable({iv})"
 
-    ## # Add output transforms (algebraic equations)
-    ## # Note: PyRates tracks only state variables (DEs) in the state vector.
-    ## # Algebraic outputs are computed inline but not stored for recording.
-    ## # We define them as 'variable' so they're computed, and post-process results
-    ## # to derive output values from recorded state variables.
-    ## for k, ot in (m.output or {}).items():
-    ##     equations.append(f"{k} = {m.render_equation(ot, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
-    ##     variables[k] = "variable"
+    # For non-autonomous models, add time variable 't' so PyRates can resolve it
+    if getattr(m, 'autonomous', True) is False:
+        variables["t"] = "variable"
 
-    # Add parameters as constants
+    # Add parameters as constants — apply repl to keys
     for param_name, param in (m.parameters or {}).items():
         if param_name in repl:
             param_name = repl[param_name]
@@ -86,11 +86,12 @@
         val = param.value
         variables[param_name] = float(val)
 
-    # Add derived parameters as equations
+    # Add derived parameters as equations — apply repl to keys
     for dp_name, dp in (m.derived_parameters or {}).items():
+        display_dp = repl.get(dp_name, dp_name)
         eq_str = m.render_equation(dp, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
-        equations.append(f"{dp_name} = {eq_str}")
-        variables[dp_name] = "variable"
+        equations.append(f"{display_dp} = {eq_str}")
+        variables[display_dp] = "variable"
 
     # Add coupling terms as inputs
     for ct_name in (m.coupling_terms or {}).keys():

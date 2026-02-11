@@ -54,62 +54,9 @@ website:
             - text: "Knowledge Browser"
               href: browser.qmd
             - text: "Usage"
-              menu:
-                  - text: "Defining Dynamical Systems"
-                    href: Usage/DefineDynamicalSystem.qmd
-                  - text: "Defining Networks"
-                  - text: "Simulation Experiments"
-                  - text: "Events"
-                  - text: "Parameter Exploration"
-                  - text: "Model Fitting"
-                  - text: "Algorithms"
-                  - text: "Bifurcation Analysis"
-                  - section: "Advanced"
-                    contents:
-                        - text: "Overview"
-                          href: Usage/HeterogeneousEdges.qmd
-                        - text: "Higher-Order ODE Lowering"
-                          href: Usage/HeterogeneousNodes.qmd
+              href: Usage/index.qmd
             - text: "Interoperability"
-              menu:
-                  - text: "---"
-                  - text: "tvboptim"
-                  - text: "tvboptim Backend"
-                    href: Interoperability/tvboptim/index.qmd
-                  - text: "JR Workflow"
-                    href: Interoperability/tvboptim/JR_tvboptim.qmd
-                  - text: "RWW Workflow"
-                    href: Interoperability/tvboptim/RWW_tvboptim.qmd
-                  - text: "EI Tuning"
-                    href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
-                  - text: "---"
-                  - text: "PyRates"
-                  - text: "PyRates Overview"
-                    href: Interoperability/Pyrates/index.qmd
-                  - text: "PyRates Analysis"
-                    href: Interoperability/Pyrates/PyRates_Analysis.qmd
-                  - text: "PyRates Bifurcation"
-                    href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
-                  - text: "Heterogeneous Networks"
-                    href: Interoperability/Pyrates/PyRates_Heterogenous_Network.qmd
-                  - text: "---"
-                  - text: "BIDS"
-                  - text: "BIDS Overview"
-                    href: Interoperability/BIDS/index.qmd
-                  - text: "BIDS Export"
-                    href: Interoperability/BIDS/BIDS_Export.qmd
-                  - text: "BIDS Computational Modelling"
-                    href: Interoperability/BIDS/BIDS_comp_modelling.md
-                  - text: "---"
-                  - text: "OpenMINDS"
-                  - text: "OpenMINDS Interoperability"
-                    href: Interoperability/OpenMINDS.qmd
-                  - text: "---"
-                  - text: "ModelingToolkit.jl"
-                  - text: "MTK Overview"
-                    href: Interoperability/ModelingToolkit.jl/index.qmd
-                  - text: "Higher-Order ODE Lowering"
-                    href: Interoperability/ModelingToolkit.jl/higher_order.qmd
+              href: Interoperability/index.qmd
             - text: "Developer"
               href: Developer/contributing.md
 
@@ -221,6 +168,50 @@ website:
                 contents:
                   - text: "OpenMINDS Interoperability"
                     href: Interoperability/OpenMINDS.qmd
+        - id: usage
+          title: "Usage"
+          collapse-level: 2
+          contents:
+              - text: "Overview"
+                href: Usage/index.qmd
+              - section: "Fundamentals"
+                contents:
+                  - text: "Defining Dynamical Systems"
+                    href: Usage/DefineDynamicalSystem.qmd
+                  - text: "Defining Networks"
+                    href: Usage/DefineNetworks.qmd
+                  - text: "Simulation Experiments"
+                    href: Usage/SimulationExperiments.qmd
+              - section: "Observation & Analysis"
+                contents:
+                  - text: "Observation Models"
+                    href: Usage/ObservationModels.qmd
+                  - text: "Parameter Exploration"
+                    href: Usage/ParameterExploration.qmd
+                  - text: "Model Fitting"
+                    href: Usage/ModelFitting.qmd
+                  - text: "Algorithms"
+                    href: Usage/Algorithms.qmd
+                  - text: "Bifurcation Analysis"
+                    href: Usage/BifurcationAnalysis.qmd
+              - section: "Simulation Features"
+                contents:
+                  - text: "Events & Stimulation"
+                    href: Usage/Events.qmd
+                  - text: "Noise & Stochastic Integration"
+                    href: Usage/Noise.qmd
+                  - text: "Code Generation & Export"
+                    href: Usage/CodeGeneration.qmd
+              - section: "Advanced"
+                contents:
+                  - text: "PDE Simulation"
+                    href: Usage/PDESimulation.qmd
+                  - text: "Heterogeneous Node Dynamics"
+                    href: Usage/HeterogeneousNodes.qmd
+                  - text: "Heterogeneous Edge Dynamics"
+                    href: Usage/HeterogeneousEdges.qmd
+                  - text: "Unit-Aware Computations"
+                    href: Usage/UnitValidation.qmd
 
     page-footer:
         center: |

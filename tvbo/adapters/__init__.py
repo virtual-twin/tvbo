@@ -3,8 +3,10 @@
 
 This module contains adapters for different simulation backends:
 - pyrates: PyRates backend adapter
-- julia: Julia language integration (pyjulia)
+- julia: Julia language integration (juliacall)
 - networkdynamics: NetworkDynamics.jl backend adapter
+- modelingtoolkit: ModelingToolkit.jl backend adapter
+- bifurcationkit: BifurcationKit.jl backend adapter
 """
 
 from tvbo.adapters.base import BaseAdapter
