@@ -2,8 +2,15 @@
 <%page args="model"/>
 <%!
 from tvbo.export.code import render_expression
-juliacode = lambda expr: render_expression(expr, format='julia')
-from tvbo.knowledge.simulation import equations
+%>
+<%
+sv_names = list(model.state_variables.keys())
+param_names = list(model.parameters.keys())
+ct_names = list(model.coupling_terms.keys()) if model.coupling_terms else []
+dv_names = list(model.derived_variables.keys()) if model.derived_variables else []
+dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
+all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
+juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_symbols)
 %>
 using SpecialFunctions
 
@@ -15,9 +22,9 @@ function ${model.name}!(dx, x, p, t = 0, local_coupling = 0)
     e = Base.MathConstants.e
     pi = π
 
-    (;${", ".join([p.name for p in model.parameters.values()] + [p.name for p in model.coupling_terms.values()])}) = p
+    (;${", ".join(param_names + ct_names)}) = p
 
-    ${", ".join([sv.name for sv in model.state_variables.values()])} = x
+    ${", ".join(sv_names)} = x
 
     ${"\n    ".join([f"{dp.name} = {juliacode(dp.equation.rhs)}" for dp in model.derived_parameters.values()])}
 
@@ -28,4 +35,4 @@ function ${model.name}!(dx, x, p, t = 0, local_coupling = 0)
 end
 
 # Parameter values
-p = (${", ".join([f"{p.name} = {p.value}" for p in model.parameters.values()] + [f"{p.name} = 0.0" for p in model.coupling_terms.values()])})
+p = (${", ".join([f"{p.name} = {p.value}" for p in model.parameters.values()] + [f"{ct} = 0.0" for ct in ct_names])})

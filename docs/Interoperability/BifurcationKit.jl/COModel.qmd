@@ -1,0 +1,100 @@
+---
+title: "CO Oxidation on Catalyst Surface"
+subtitle: "Replicating BifurcationKit.jl COModel.jl example"
+---
+
+## Overview
+
+This example replicates [COModel.jl](https://github.com/bifurcationkit/BifurcationKit.jl/blob/main/examples/COModel.jl) from BifurcationKit.jl, modeling catalytic CO oxidation on a platinum surface.
+
+The model has three state variables:
+- **x**: CO surface coverage
+- **y**: O₂ surface coverage
+- **s**: Subsurface oxygen
+
+A conservation law gives free sites: **z = 1 − x − y − s**
+
+## Model Definition (Inline YAML)
+
+```{python}
+from tvbo import Dynamics
+
+co_model_yaml = """
+name: COOxidation
+description: Catalytic CO oxidation on Pt surface
+
+parameters:
+    q1: {name: q1, value: 2.5, domain: {lo: 0, hi: 10}}
+    q2: {name: q2, value: 2.0, domain: {lo: 0.5, hi: 5}}
+    q3: {name: q3, value: 10.0, domain: {lo: 0, hi: 20}}
+    q4: {name: q4, value: 0.0675, domain: {lo: 0, hi: 1}}
+    q5: {name: q5, value: 1.0, domain: {lo: 0, hi: 5}}
+    q6: {name: q6, value: 0.1, domain: {lo: 0, hi: 1}}
+    k: {name: k, value: 0.4, domain: {lo: 0, hi: 3}}
+
+derived_variables:
+    z: {name: z, equation: {lhs: z, rhs: "1 - x - y - s"}}
+
+state_variables:
+    x:
+        name: x
+        initial_value: 0.001137
+        equation: {lhs: "Derivative(x, t)", rhs: "2*q1*z**2 - 2*q5*x**2 - q3*x*y"}
+    y:
+        name: y
+        initial_value: 0.891483
+        equation: {lhs: "Derivative(y, t)", rhs: "q2*z - q6*y - q3*x*y"}
+    s:
+        name: s
+        initial_value: 0.062345
+        equation: {lhs: "Derivative(s, t)", rhs: "q4*(z - k*s)"}
+
+number_of_modes: 1
+"""
+
+model = Dynamics.from_string(co_model_yaml)
+```
+
+## Bifurcation Analysis
+
+```{python}
+from tvbo.knowledge.simulation.continuation import Continuation
+
+bifurcation_yaml = """
+name: co_eq_in_q2
+dynamics: COOxidation
+free_parameters:
+    - name: q2
+      domain: {lo: "0.5", hi: "2.0"}
+ds: 1.0e-4
+ds_max: 0.015
+n_inversion: 6
+max_steps: 400
+bothside: true
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:-1"
+      delta_p: 0.00025
+      bothside: true
+      continuation:
+          ds: 0.02
+          ds_min: 1.0e-6
+          max_steps: 300
+          newton_tol: 1.0e-9
+          detect_bifurcation: 0
+          options:
+              - {name: tangent, value: Bordered}
+      discretization:
+          method: collocation
+          parameters:
+              - {name: mesh_intervals, value: 50}
+              - {name: degree, value: 3}
+              - {name: mesh_adaptation, value: true}
+          options:
+              - {name: jacobian, value: DenseAnalyticalInplace}
+"""
+
+cont = Continuation.from_string(bifurcation_yaml)
+result = model.run('bifurcation-julia', continuation=cont)
+result.plot()
+```
