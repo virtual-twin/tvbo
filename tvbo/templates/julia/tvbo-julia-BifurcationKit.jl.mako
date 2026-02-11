@@ -167,12 +167,36 @@ elif context.get('periodic_orbits', False) or context.get('branches', False):
 else:
     _has_branches = False
 
-# Branch helper: extract setting from first branch, falling back to kwargs then default
+# Branch helper: extract setting from branch sub-continuation, then parent cont, then kwargs, then default.
+# This ensures values explicitly set on the parent (e.g. n_inversion: 8) propagate
+# to PO branches unless the branch sub-continuation explicitly overrides them.
+_br_cont = _get(_branches[0], 'continuation') if _branches else None
 def _br_val(attr_path, kwarg, default, cast=float):
-    if _branches:
-        v = _get(_branches[0], attr_path)
+    # attr_path is like 'continuation.ds' — strip 'continuation.' prefix for sub-cont lookup
+    sub_attr = attr_path.split('.', 1)[-1] if '.' in attr_path else attr_path
+    # 1. Try branch sub-continuation (only if it was explicitly provided)
+    if _br_cont is not None:
+        v = _get(_br_cont, sub_attr)
+        if v is not None:
+            # Check if this differs from the schema default for that field
+            # to distinguish user-set from auto-defaulted values
+            _schema_defaults = {
+                'ds': 0.01, 'ds_min': 1e-4, 'ds_max': 0.1, 'max_steps': 400,
+                'newton_tol': 1e-12, 'newton_max_iterations': 25, 'nev': 3,
+                'tol_stability': 1e-10, 'detect_bifurcation': 3,
+                'n_inversion': 2, 'max_bisection_steps': 25,
+            }
+            schema_default = _schema_defaults.get(sub_attr)
+            # If value differs from schema default, user explicitly set it → use it
+            if schema_default is None or cast(v) != cast(schema_default):
+                return cast(v)
+            # If value matches schema default, fall through to parent
+    # 2. Try parent continuation
+    if cont is not None:
+        v = _get(cont, sub_attr)
         if v is not None:
             return cast(v)
+    # 3. Try explicit kwarg
     v = context.get(kwarg, None)
     if v is not None:
         return cast(v)
