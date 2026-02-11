@@ -203,6 +203,44 @@ enums:
             none:
                 description: "No reduction (return per-element values)"
 
+    ContinuationAlgorithm:
+        description: >-
+            Predictor-corrector algorithm for numerical continuation.
+        permissible_values:
+            PALC:
+                description: "Pseudo-arclength continuation (default). Uses weighted dot product constraint."
+            MoorePenrose:
+                description: "Moore-Penrose continuation."
+            Natural:
+                description: "Natural parameter continuation. Simple parameter stepping, no arc-length constraint."
+
+    NumericalDiscretizationMethod:
+        description: >-
+            Numerical discretization method for boundary value problems
+            (periodic orbits, connecting orbits, quasi-periodic tori).
+        permissible_values:
+            collocation:
+                description: "Orthogonal collocation at Gauss points."
+            trapezoid:
+                description: "Trapezoidal rule discretization."
+            shooting:
+                description: "Standard multiple shooting."
+            poincare:
+                description: "Poincaré shooting."
+
+    InitialStateMethod:
+        description: >-
+            Strategy for obtaining the starting equilibrium or periodic orbit.
+        permissible_values:
+            time_integration:
+                description: "Integrate the ODE forward until convergence (robust, default)."
+            newton:
+                description: "Use Newton's method to find the nearest fixed point."
+            given:
+                description: "Use the model's default initial values directly."
+            from_branch:
+                description: "Start from a point on a previously computed branch."
+
 classes:
     Range:
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
@@ -1606,7 +1644,295 @@ classes:
                 range: Algorithm
                 description: Other algorithms that must run first (e.g., EIB depends on FIC)
 
+    # =============================================================================
+    # Continuation & Bifurcation Analysis
+    # =============================================================================
+    # Abstract metadata — toolkit-agnostic. All attributes must apply to any
+    # continuation engine (BifurcationKit, AUTO-07p, MatCont, COCO, …).
+    # Toolkit-specific string options go in the `options` slot.
+    # =============================================================================
+
+    Option:
+        description: >-
+            A toolkit-specific key-value option (string name + string value).
+            Used for backend settings that are not universal numeric parameters
+            (e.g., solver name, tangent method, jacobian type).
+        attributes:
+            name:
+                range: string
+                required: true
+                identifier: true
+                description: "Option name (key)."
+            value:
+                range: string
+                required: true
+                description: "Option value."
+
+    Discretization:
+        description: >-
+            Discretization method for boundary value problems in continuation
+            (periodic orbits, connecting orbits, quasi-periodic tori).
+            Specifies the method; method-specific numerics go in parameters,
+            string options (e.g., jacobian type) go in options.
+        slots:
+            - parameters
+        attributes:
+            method:
+                range: NumericalDiscretizationMethod
+                ifabsent: string(collocation)
+                description: "Discretization method."
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: "Toolkit-specific string options (jacobian type, etc.)."
+
+    InitialState:
+        description: >-
+            How to obtain the starting equilibrium or periodic orbit for
+            continuation. Most robust: time-integrate to steady state.
+        attributes:
+            method:
+                range: InitialStateMethod
+                ifabsent: string(time_integration)
+                description: "Strategy for finding the initial state."
+            duration:
+                range: float
+                ifabsent: float(2000.0)
+                description: "Integration duration for time_integration method."
+            abs_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Absolute tolerance for ODE integration."
+            rel_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Relative tolerance for ODE integration."
+            solver:
+                range: Integrator
+                inlined: true
+                description: >-
+                    ODE solver / integrator for time_integration method.
+                    Specify method (e.g., Tsit5, Heun, RK4) and step size.
+            source_branch:
+                range: string
+                description: >-
+                    Name of a previously computed branch (for from_branch method).
+            source_point:
+                range: string
+                description: >-
+                    Which point on the source branch: 'endpoint', 'hopf:1',
+                    'fold:2', a step number, etc.
+
+    BranchSwitch:
+        description: >-
+            Specification for switching from a detected bifurcation point
+            to a new branch (periodic orbits from Hopf, fold continuation,
+            etc.). Each BranchSwitch says: "from which special point on the
+            parent branch, continue what kind of object, with what settings."
+            Override parent solver settings via the inline continuation field —
+            only explicitly set attributes take effect; everything else is
+            inherited from the parent Continuation.
+        slots:
+            - name
+            - description
+            - parameters
+        attributes:
+            # --- What to branch from ---
+            source_point:
+                range: string
+                ifabsent: string(hopf:-1)
+                description: >-
+                    Which bifurcation point to start from. Syntax:
+                    - 'hopf:-1' = last Hopf (default)
+                    - 'hopf:all' = all Hopf points
+                    - 'hopf:1' = first Hopf
+                    - 'fold:2' = second fold
+                    - integer = specific special point index
+
+            # --- Branching perturbation ---
+            delta_p:
+                range: float
+                ifabsent: float(0.01)
+                description: >-
+                    Initial parameter offset from the bifurcation point.
+
+            # --- Solver overrides (same type as parent — only set fields override) ---
+            continuation:
+                range: Continuation
+                inlined: true
+                description: >-
+                    Override solver settings for this branch. Uses the same
+                    Continuation type — only explicitly set attributes
+                    override the parent's values.
+
+            # --- Discretization (for periodic orbits, connecting orbits, etc.) ---
+            discretization:
+                range: Discretization
+                inlined: true
+                description: >-
+                    Discretization method for the branch solution. Required
+                    for periodic orbit branches (Hopf → PO). Not needed for
+                    codim-2 branches (fold/Hopf continuation).
+
+            # --- Direction ---
+            bothside:
+                range: boolean
+                ifabsent: boolean(false)
+                description: "Continue branch in both directions."
+
+            # --- Toolkit-specific options ---
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: >-
+                    Toolkit-specific string options for this branch
+                    (linear solver, etc.).
+
+    Continuation:
+        description: >-
+            Complete specification of a numerical continuation / bifurcation
+            analysis. All universal solver settings live directly here.
+            Toolkit-specific string options go in the options slot.
+            When used inside a BranchSwitch, only explicitly set attributes
+            override the parent's values.
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            # --- Dynamics reference ---
+            dynamics:
+                range: Dynamics
+                inlined: false
+                description: >-
+                    Reference to the dynamical system model (by name).
+                    Resolved from the experiment's dynamics dict at runtime.
+
+            # --- What to vary ---
+            free_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: >-
+                    Parameters to vary. First parameter is primary (codim-1);
+                    second enables codim-2 continuation. Each Parameter has
+                    name + domain (Range with lo/hi bounds).
+
+            # --- Step size control ---
+            ds:
+                range: float
+                ifabsent: float(0.01)
+                description: "Initial arc-length step size."
+            ds_min:
+                range: float
+                ifabsent: float(1e-4)
+                description: "Minimum adaptive step size."
+            ds_max:
+                range: float
+                ifabsent: float(0.1)
+                description: "Maximum adaptive step size."
+            max_steps:
+                range: integer
+                ifabsent: integer(400)
+                description: "Maximum continuation steps."
+
+            # --- Newton corrector ---
+            newton_tol:
+                range: float
+                ifabsent: float(1e-12)
+                description: "Absolute tolerance for Newton corrector convergence."
+            newton_max_iterations:
+                range: integer
+                ifabsent: integer(25)
+                description: "Maximum Newton corrector iterations per step."
+
+            # --- Eigenvalue / stability ---
+            nev:
+                range: integer
+                ifabsent: integer(3)
+                description: >-
+                    Number of eigenvalues to compute. Must be >= number of
+                    state variables for reliable Hopf detection.
+            tol_stability:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Tolerance on real part of eigenvalue for stability boundary."
+
+            # --- Bifurcation detection ---
+            detect_bifurcation:
+                range: integer
+                ifabsent: integer(3)
+                description: >-
+                    Bifurcation detection level.
+                    0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.
+            detect_fold:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "Enable fold (limit point) detection."
+            n_inversion:
+                range: integer
+                ifabsent: integer(2)
+                description: >-
+                    Number of eigenvalue sign inversions to flag a bifurcation.
+                    Must be even. Higher = fewer false positives.
+            max_bisection_steps:
+                range: integer
+                ifabsent: integer(25)
+                description: "Maximum bisection steps for bifurcation point localization."
+
+            # --- Continuation algorithm ---
+            algorithm:
+                range: ContinuationAlgorithm
+                ifabsent: string(PALC)
+                description: "Predictor-corrector algorithm."
+
+            # --- Initial state ---
+            initial_state:
+                range: InitialState
+                inlined: true
+                description: >-
+                    How to obtain the initial equilibrium. Default: time
+                    integration to steady state.
+
+            # --- Child branches ---
+            branches:
+                multivalued: true
+                range: BranchSwitch
+                inlined: true
+                description: >-
+                    Child branches to continue from detected bifurcation
+                    points (PO from Hopf, fold continuation, etc.).
+
+            # --- Bidirectional ---
+            bothside:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "Continue in both directions from the starting point."
+
+            # --- Execution / backend ---
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Per-analysis execution configuration."
+            software:
+                range: SoftwareRequirement
+                inlined: true
+                description: "Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.)."
+
+            # --- Toolkit-specific options ---
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: >-
+                    Toolkit-specific string options (tangent method,
+                    solver name, etc.).
+
     Integrator:
+        aliases:
+            - Solver
         slots:
             - time_scale
             - unit
@@ -1886,6 +2212,14 @@ classes:
                 range: Algorithm
                 inlined: true
                 description: "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
+            continuations:
+                multivalued: true
+                range: Continuation
+                inlined: true
+                description: >-
+                    Numerical continuation and bifurcation analysis specifications.
+                    Each entry defines a continuation experiment (equilibrium branch,
+                    codim-2 curve, periodic orbit family, etc.).
             # Either reference a full reusable environment (preferred) or, for
             # legacy/simple cases, a single software requirement.
             environment:

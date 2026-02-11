@@ -35,6 +35,22 @@ TVBO_TO_PYRATES_SOLVER = {
     "RK4": "scipy",
 }
 
+# Names that conflict with SymPy/PyRates built-ins and must be renamed.
+# Must match the repl dict in tvbo-pyrates-model.yaml.mako.
+PYRATES_REPL = {
+    "I": "I_",
+    "gamma": "gamma_",
+    "beta": "beta_",
+    "zeta": "zeta_",
+    "lambda": "lambda_",
+    "E": "E_",
+    "N": "N_",
+    "S": "S_",
+    "O": "O_",
+    "Q": "Q_",
+    "epsilon": "epsilon_",
+}
+
 
 class PyRatesAdapter:
     """Adapter for running SimulationExperiment via PyRates backend."""
@@ -312,8 +328,10 @@ class PyRatesAdapter:
                 return
             node_id = prefix.rstrip("_") or "node_0"
             for sv_name in (dyn.state_variables or {}).keys():
+                # Apply same renaming as the PyRates YAML template
+                pyrates_sv_name = PYRATES_REPL.get(sv_name, sv_name)
                 key = f"{prefix}{sv_name}" if prefix else sv_name
-                outputs[key] = f"{node_id}/{op_name}/{sv_name}"
+                outputs[key] = f"{node_id}/{op_name}/{pyrates_sv_name}"
 
         network = getattr(exp, "network", None)
         if network is not None and hasattr(network, "nodes") and network.nodes:

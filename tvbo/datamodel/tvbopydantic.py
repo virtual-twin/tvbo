@@ -415,6 +415,68 @@ class ReductionType(str, Enum):
     """
 
 
+class ContinuationAlgorithm(str, Enum):
+    """
+    Predictor-corrector algorithm for numerical continuation.
+    """
+    PALC = "PALC"
+    """
+    Pseudo-arclength continuation (default). Uses weighted dot product constraint.
+    """
+    MoorePenrose = "MoorePenrose"
+    """
+    Moore-Penrose continuation.
+    """
+    Natural = "Natural"
+    """
+    Natural parameter continuation. Simple parameter stepping, no arc-length constraint.
+    """
+
+
+class NumericalDiscretizationMethod(str, Enum):
+    """
+    Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori).
+    """
+    collocation = "collocation"
+    """
+    Orthogonal collocation at Gauss points.
+    """
+    trapezoid = "trapezoid"
+    """
+    Trapezoidal rule discretization.
+    """
+    shooting = "shooting"
+    """
+    Standard multiple shooting.
+    """
+    poincare = "poincare"
+    """
+    Poincaré shooting.
+    """
+
+
+class InitialStateMethod(str, Enum):
+    """
+    Strategy for obtaining the starting equilibrium or periodic orbit.
+    """
+    time_integration = "time_integration"
+    """
+    Integrate the ODE forward until convergence (robust, default).
+    """
+    newton = "newton"
+    """
+    Use Newton's method to find the nearest fixed point.
+    """
+    given = "given"
+    """
+    Use the model's default initial values directly.
+    """
+    from_branch = "from_branch"
+    """
+    Start from a point on a previously computed branch.
+    """
+
+
 
 class Coordinate(ConfiguredBaseModel):
     """
@@ -462,6 +524,9 @@ class BrainAtlas(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -510,6 +575,9 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -572,6 +640,9 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -616,6 +687,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -676,6 +748,7 @@ class Dataset(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -779,6 +852,7 @@ class Contact(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -843,6 +917,9 @@ class DBSProtocol(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -887,6 +964,9 @@ class ClinicalScale(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -934,6 +1014,9 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -966,6 +1049,8 @@ class ClinicalScore(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1064,6 +1149,7 @@ class Equation(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1096,6 +1182,8 @@ class Equation(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -1127,6 +1215,8 @@ class Equation(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1190,6 +1280,8 @@ class Stimulus(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -1221,6 +1313,8 @@ class Stimulus(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1248,7 +1342,8 @@ class Stimulus(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
-    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'Integrator'], 'ifabsent': 'float(1000)'} })
+    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
+         'ifabsent': 'float(1000)'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
@@ -1272,6 +1367,7 @@ class Stimulus(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1323,6 +1419,9 @@ class Event(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -1350,6 +1449,7 @@ class Event(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1393,6 +1493,8 @@ class Event(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1422,6 +1524,8 @@ class Event(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -1449,7 +1553,7 @@ class Event(ConfiguredBaseModel):
                        'DifferentialOperator']} })
     regions: Optional[AnyShapeArray[int]] = Field(default=None, description="""Target regions for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
     weighting: Optional[AnyShapeArray[float]] = Field(default=None, description="""Per-region weighting for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
-    duration: Optional[float] = Field(default=None, description="""Duration of stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'Integrator']} })
+    duration: Optional[float] = Field(default=None, description="""Duration of stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator']} })
 
 
 class TemporalApplicableEquation(Equation):
@@ -1467,6 +1571,8 @@ class TemporalApplicableEquation(Equation):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -1497,6 +1603,7 @@ class TemporalApplicableEquation(Equation):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1545,6 +1652,8 @@ class TemporalApplicableEquation(Equation):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1596,6 +1705,7 @@ class Parcellation(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1649,6 +1759,9 @@ class Tractogram(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -1676,6 +1789,7 @@ class Tractogram(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1719,6 +1833,8 @@ class Tractogram(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1772,6 +1888,7 @@ class Matrix(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1815,6 +1932,8 @@ class Matrix(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1887,6 +2006,7 @@ class Network(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1930,6 +2050,8 @@ class Network(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2000,6 +2122,9 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2032,6 +2157,8 @@ class GraphGenerator(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2070,6 +2197,8 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2104,6 +2233,9 @@ class File(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2136,6 +2268,8 @@ class File(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2191,6 +2325,7 @@ class Node(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2234,6 +2369,8 @@ class Node(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2263,14 +2400,16 @@ class Node(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
     id: int = Field(default=..., description="""Unique node identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
+    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
     position: Optional[Coordinate] = Field(default=None, description="""Spatial coordinates (x, y, z) of the node""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
-    initial_state: Optional[list[float]] = Field(default=[], description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
+    initial_state: Optional[list[float]] = Field(default=[], description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this node (e.g., threshold-based state changes).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
 
 
@@ -2303,6 +2442,7 @@ class Edge(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2346,6 +2486,8 @@ class Edge(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2375,6 +2517,8 @@ class Edge(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2384,7 +2528,7 @@ class Edge(ConfiguredBaseModel):
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'False'} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
+    dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this edge (e.g., threshold-based line tripping).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
 
 
@@ -2420,6 +2564,9 @@ class Observation(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2448,6 +2595,7 @@ class Observation(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2491,6 +2639,8 @@ class Observation(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2533,6 +2683,8 @@ class Observation(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2586,6 +2738,9 @@ class DerivedObservation(Observation):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2614,6 +2769,7 @@ class DerivedObservation(Observation):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2657,6 +2813,8 @@ class DerivedObservation(Observation):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2699,6 +2857,8 @@ class DerivedObservation(Observation):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2755,6 +2915,9 @@ class Dynamics(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2783,6 +2946,7 @@ class Dynamics(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2811,6 +2975,8 @@ class Dynamics(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2842,6 +3008,8 @@ class Dynamics(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2908,6 +3076,9 @@ class StateVariable(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2939,6 +3110,7 @@ class StateVariable(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2993,6 +3165,8 @@ class StateVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3079,6 +3253,9 @@ class Distribution(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3096,6 +3273,8 @@ class Distribution(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -3139,6 +3318,9 @@ class Parameter(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3166,6 +3348,7 @@ class Parameter(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3190,7 +3373,7 @@ class Parameter(ConfiguredBaseModel):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -3227,6 +3410,8 @@ class Parameter(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3307,6 +3492,9 @@ class CouplingInput(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3339,6 +3527,8 @@ class CouplingInput(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3392,6 +3582,9 @@ class Argument(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3424,6 +3617,8 @@ class Argument(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3442,7 +3637,7 @@ class Argument(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     value: Optional[Union[float, int, str]] = Field(default=None, description="""Argument value. Can be: - Literal: 1.0, \"string\", etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'integer'}, {'range': 'string'}],
-         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+         'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
@@ -3487,6 +3682,9 @@ class Function(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3515,6 +3713,7 @@ class Function(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3576,6 +3775,8 @@ class Function(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3654,6 +3855,9 @@ class LossFunction(Function):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3682,6 +3886,7 @@ class LossFunction(Function):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3743,6 +3948,8 @@ class LossFunction(Function):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3816,6 +4023,9 @@ class Callable(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3848,6 +4058,8 @@ class Callable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3866,7 +4078,7 @@ class Callable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
-    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
 
 
 class ClassReference(Callable):
@@ -3904,6 +4116,9 @@ class ClassReference(Callable):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3936,6 +4151,8 @@ class ClassReference(Callable):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3954,7 +4171,7 @@ class ClassReference(Callable):
                        'PDESolver',
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
-    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
 
 
 class Case(ConfiguredBaseModel):
@@ -4004,6 +4221,9 @@ class DerivedParameter(Parameter):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4040,6 +4260,8 @@ class DerivedParameter(Parameter):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4103,6 +4325,7 @@ class DerivedParameter(Parameter):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4123,7 +4346,7 @@ class DerivedParameter(Parameter):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -4169,6 +4392,9 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4196,6 +4422,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4243,6 +4470,8 @@ class DerivedVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4302,6 +4531,8 @@ class Noise(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -4357,6 +4588,7 @@ class RandomStream(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4400,6 +4632,8 @@ class RandomStream(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4461,6 +4695,9 @@ class DataSource(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4488,6 +4725,7 @@ class DataSource(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4531,6 +4769,8 @@ class DataSource(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4587,6 +4827,9 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4614,6 +4857,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4657,6 +4901,8 @@ class OptimizationStage(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4674,8 +4920,8 @@ class OptimizationStage(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude'],
+    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage'], 'ifabsent': 'integer(100)'} })
@@ -4693,6 +4939,7 @@ class Optimization(OptimizationStage):
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-optimization execution configuration (overrides experiment-level defaults). Useful for setting random_seed, precision, or hardware for optimization phase.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, description="""Integration settings for optimization simulations (overrides experiment defaults). If specified, creates a fresh model_fn and state with prepare() before optimization. Can specify different duration, step_size, method than the experiment. If not specified, uses experiment-level integration settings.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
@@ -4724,6 +4971,9 @@ class Optimization(OptimizationStage):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4751,6 +5001,7 @@ class Optimization(OptimizationStage):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4794,6 +5045,8 @@ class Optimization(OptimizationStage):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4811,8 +5064,8 @@ class Optimization(OptimizationStage):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude'],
+    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage'], 'ifabsent': 'integer(100)'} })
@@ -4853,6 +5106,9 @@ class Exploration(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4880,6 +5136,7 @@ class Exploration(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4923,6 +5180,8 @@ class Exploration(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4943,6 +5202,7 @@ class Exploration(ConfiguredBaseModel):
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-exploration execution configuration (overrides experiment-level defaults). Useful for setting random_seed, n_workers for parallel grid search.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
     parameters: dict[str, Parameter] = Field(default=..., description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -4956,6 +5216,8 @@ class Exploration(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -4997,6 +5259,9 @@ class UpdateRule(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -5029,6 +5294,8 @@ class UpdateRule(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5070,7 +5337,7 @@ class AlgorithmInclude(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude']} })
+    algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation']} })
     arguments: Optional[dict[str, Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
 
 
@@ -5103,6 +5370,7 @@ class TuningObjective(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5146,6 +5414,8 @@ class TuningObjective(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5206,6 +5476,9 @@ class Algorithm(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -5238,6 +5511,8 @@ class Algorithm(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5258,6 +5533,7 @@ class Algorithm(ConfiguredBaseModel):
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-algorithm execution configuration (overrides experiment-level defaults). Useful for setting random_seed per algorithm to ensure reproducibility.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
     type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
@@ -5279,20 +5555,54 @@ class Algorithm(ConfiguredBaseModel):
     depends_on: Optional[list[str]] = Field(default=[], description="""Other algorithms that must run first (e.g., EIB depends on FIC)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
 
 
-class Integrator(ConfiguredBaseModel):
+class Option(ConfiguredBaseModel):
+    """
+    A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type).
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    name: str = Field(default=..., description="""Option name (key).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
+                       'CouplingInput',
                        'Argument',
+                       'Function',
+                       'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Integrator',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialField']} })
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+
+
+class Discretization(ConfiguredBaseModel):
+    """
+    Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters, string options (e.g., jacobian type) go in options.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'Event',
@@ -5305,10 +5615,72 @@ class Integrator(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'Integrator'], 'ifabsent': 'float(1000)'} })
+    method: Optional[NumericalDiscretizationMethod] = Field(default=NumericalDiscretizationMethod.collocation, description="""Discretization method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Integrator'],
+         'ifabsent': 'string(collocation)'} })
+    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (jacobian type, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+
+
+class InitialState(ConfiguredBaseModel):
+    """
+    How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    method: Optional[InitialStateMethod] = Field(default=InitialStateMethod.time_integration, description="""Strategy for finding the initial state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Integrator'],
+         'ifabsent': 'string(time_integration)'} })
+    duration: Optional[float] = Field(default=2000.0, description="""Integration duration for time_integration method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
+         'ifabsent': 'float(2000.0)'} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState'], 'ifabsent': 'float(1e-10)'} })
+    solver: Optional[Integrator] = Field(default=None, description="""ODE solver / integrator for time_integration method. Specify method (e.g., Tsit5, Heun, RK4) and step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'PDE']} })
+    source_branch: Optional[str] = Field(default=None, description="""Name of a previously computed branch (for from_branch method).""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState']} })
+    source_point: Optional[str] = Field(default=None, description="""Which point on the source branch: 'endpoint', 'hopf:1', 'fold:2', a step number, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch']} })
+
+
+class BranchSwitch(ConfiguredBaseModel):
+    """
+    Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: \"from which special point on the parent branch, continue what kind of object, with what settings.\" Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
@@ -5337,6 +5709,8 @@ class Integrator(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5354,7 +5728,266 @@ class Integrator(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'string(euler)'} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    source_point: Optional[str] = Field(default="hopf:-1", description="""Which bifurcation point to start from. Syntax: - 'hopf:-1' = last Hopf (default) - 'hopf:all' = all Hopf points - 'hopf:1' = first Hopf - 'fold:2' = second fold - integer = specific special point index""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch'], 'ifabsent': 'string(hopf:-1)'} })
+    delta_p: Optional[float] = Field(default=0.01, description="""Initial parameter offset from the bifurcation point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch'], 'ifabsent': 'float(0.01)'} })
+    continuation: Optional[Continuation] = Field(default=None, description="""Override solver settings for this branch. Uses the same Continuation type — only explicitly set attributes override the parent's values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch']} })
+    discretization: Optional[Discretization] = Field(default=None, description="""Discretization method for the branch solution. Required for periodic orbit branches (Hopf → PO). Not needed for codim-2 branches (fold/Hopf continuation).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
+    bothside: Optional[bool] = Field(default=False, description="""Continue branch in both directions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation'], 'ifabsent': 'boolean(false)'} })
+    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options for this branch (linear solver, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+
+
+class Continuation(ConfiguredBaseModel):
+    """
+    Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only explicitly set attributes override the parent's values.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    dynamics: Optional[str] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    free_parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    ds: Optional[float] = Field(default=0.01, description="""Initial arc-length step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(0.01)'} })
+    ds_min: Optional[float] = Field(default=1e-4, description="""Minimum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(1e-4)'} })
+    ds_max: Optional[float] = Field(default=0.1, description="""Maximum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(0.1)'} })
+    max_steps: Optional[int] = Field(default=400, description="""Maximum continuation steps.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(400)'} })
+    newton_tol: Optional[float] = Field(default=1e-12, description="""Absolute tolerance for Newton corrector convergence.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(1e-12)'} })
+    newton_max_iterations: Optional[int] = Field(default=25, description="""Maximum Newton corrector iterations per step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(25)'} })
+    nev: Optional[int] = Field(default=3, description="""Number of eigenvalues to compute. Must be >= number of state variables for reliable Hopf detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(3)'} })
+    tol_stability: Optional[float] = Field(default=1e-10, description="""Tolerance on real part of eigenvalue for stability boundary.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(1e-10)'} })
+    detect_bifurcation: Optional[int] = Field(default=3, description="""Bifurcation detection level. 0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(3)'} })
+    detect_fold: Optional[bool] = Field(default=True, description="""Enable fold (limit point) detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'boolean(true)'} })
+    n_inversion: Optional[int] = Field(default=2, description="""Number of eigenvalue sign inversions to flag a bifurcation. Must be even. Higher = fewer false positives.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(2)'} })
+    max_bisection_steps: Optional[int] = Field(default=25, description="""Maximum bisection steps for bifurcation point localization.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(25)'} })
+    algorithm: Optional[ContinuationAlgorithm] = Field(default=ContinuationAlgorithm.PALC, description="""Predictor-corrector algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
+         'ifabsent': 'string(PALC)'} })
+    initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
+    branches: Optional[dict[str, BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    bothside: Optional[bool] = Field(default=True, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation'], 'ifabsent': 'boolean(true)'} })
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-analysis execution configuration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
+                       'Exploration',
+                       'Algorithm',
+                       'Continuation',
+                       'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, description="""Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
+    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (tangent method, solver name, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+
+
+class Integrator(ConfiguredBaseModel):
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'aliases': ['Solver'], 'from_schema': 'https://w3id.org/tvbo'})
+
+    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
+    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+                       'StateVariable',
+                       'Parameter',
+                       'Argument',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Integrator',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialField']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
+         'ifabsent': 'float(1000)'} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Integrator'],
+         'ifabsent': 'string(euler)'} })
     step_size: Optional[float] = Field(default=0.01220703125, json_schema_extra = { "linkml_meta": {'aliases': ['dt'],
          'domain_of': ['Integrator'],
          'ifabsent': 'float(0.01220703125)'} })
@@ -5400,6 +6033,9 @@ class Coupling(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -5428,6 +6064,7 @@ class Coupling(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5455,6 +6092,8 @@ class Coupling(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -5486,6 +6125,8 @@ class Coupling(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5551,6 +6192,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5594,6 +6236,8 @@ class RegionMapping(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5683,6 +6327,8 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5724,6 +6370,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5740,7 +6387,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     local_dynamics: Optional[Dynamics] = Field(default=None, description="""Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
+    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -5754,12 +6401,14 @@ class SimulationExperiment(ConfiguredBaseModel):
     optimization: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     algorithms: Optional[dict[str, Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    continuations: Optional[dict[str, Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
-    software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
     references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
 
 
@@ -5789,6 +6438,7 @@ class SimulationStudy(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5834,6 +6484,8 @@ class SimulationStudy(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5892,6 +6544,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5935,6 +6588,8 @@ class TimeSeries(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6026,6 +6681,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6069,6 +6725,8 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6122,6 +6780,9 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -6170,6 +6831,9 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -6202,6 +6866,8 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6277,6 +6943,9 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -6309,6 +6978,8 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6361,6 +7032,7 @@ class NDArray(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6404,6 +7076,8 @@ class NDArray(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6471,6 +7145,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6514,6 +7189,8 @@ class SpatialDomain(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6567,6 +7244,7 @@ class Mesh(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6610,6 +7288,8 @@ class Mesh(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6674,6 +7354,7 @@ class SpatialField(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6717,6 +7398,8 @@ class SpatialField(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6781,6 +7464,7 @@ class FieldStateVariable(StateVariable):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6824,6 +7508,8 @@ class FieldStateVariable(StateVariable):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6869,6 +7555,9 @@ class FieldStateVariable(StateVariable):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -6950,6 +7639,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -7015,6 +7705,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -7058,6 +7749,8 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -7077,7 +7770,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'PDE']} })
     bc_type: Optional[BoundaryConditionType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
     on_region: Optional[str] = Field(default=None, description="""Mesh/atlas subset where BC applies.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
-    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
                        'SpatialField',
                        'BoundaryCondition'],
@@ -7110,6 +7803,7 @@ class PDESolver(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -7153,6 +7847,8 @@ class PDESolver(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -7172,7 +7868,7 @@ class PDESolver(ConfiguredBaseModel):
                        'PDE']} })
     requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
-    discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
+    discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
     time_integrator: Optional[str] = Field(default=None, description="""e.g., implicit Euler, Crank-Nicolson.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     step_size: Optional[float] = Field(default=None, description="""Time step (s).""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     tolerances: Optional[str] = Field(default=None, description="""Abs/rel tolerances.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
@@ -7208,6 +7904,7 @@ class PDE(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -7251,6 +7948,8 @@ class PDE(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -7280,6 +7979,8 @@ class PDE(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -7295,7 +7996,7 @@ class PDE(ConfiguredBaseModel):
     operators: Optional[list[DifferentialOperator]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     sources: Optional[list[Equation]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     boundary_conditions: Optional[list[BoundaryCondition]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['FieldStateVariable', 'PDE']} })
-    solver: Optional[PDESolver] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
+    solver: Optional[PDESolver] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'PDE']} })
     derived_parameters: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     derived_variables: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     functions: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
@@ -7360,6 +8061,11 @@ UpdateRule.model_rebuild()
 AlgorithmInclude.model_rebuild()
 TuningObjective.model_rebuild()
 Algorithm.model_rebuild()
+Option.model_rebuild()
+Discretization.model_rebuild()
+InitialState.model_rebuild()
+BranchSwitch.model_rebuild()
+Continuation.model_rebuild()
 Integrator.model_rebuild()
 Coupling.model_rebuild()
 RegionMapping.model_rebuild()

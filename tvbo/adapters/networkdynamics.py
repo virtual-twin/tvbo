@@ -23,6 +23,7 @@ REQUIRED_PACKAGES = [
     "Graphs",
     "NetworkDynamics",
     "OrdinaryDiffEqTsit5",
+    "OrdinaryDiffEqSDIRK",
     "SimpleWeightedGraphs",
     "StochasticDiffEq",
 ]

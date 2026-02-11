@@ -23,6 +23,7 @@ from tvbo.datamodel import tvbo_datamodel
 from tvbo.export import templater
 from tvbo.export.templater import format_code
 from tvbo.knowledge import Coupling, Integrator
+from tvbo.knowledge.simulation.continuation import Continuation
 from tvbo.knowledge.simulation.localdynamics import Dynamics
 from tvbo.knowledge.simulation.network import Coupling, _Network
 from tvbo.parse import metadata
@@ -108,6 +109,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if getattr(self, "network", None) and not isinstance(self.network, Network):
             self.network = _coerce(Network, self.network)
+
+        # Auto-upgrade continuations to runtime Continuation class
+        conts = getattr(self, "continuations", None)
+        if conts and isinstance(conts, dict):
+            for key, val in conts.items():
+                if val is not None and not isinstance(val, Continuation):
+                    conts[key] = _coerce(Continuation, val)
 
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
@@ -1102,10 +1110,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
             return self._run_modelingtoolkit(**kwargs)
 
+        elif format.lower() in [
+            "bifurcationkit", "bifurcationkit.jl", "bifurcation",
+            "bifurcation-julia",
+        ]:
+            return self._run_bifurcation(**kwargs)
+
         else:
             raise ValueError(
                 f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
-                "networkdynamics, mtk, modelingtoolkit"
+                "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl"
             )
 
         return simulation_data
@@ -1162,6 +1176,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
         adapter = ModelingToolkitAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_bifurcation(self, **kwargs):
+        """Run bifurcation analysis via BifurcationKit.jl."""
+        from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+
+        adapter = BifurcationKitAdapter(self)
         return adapter.run(**kwargs)
 
     def get_experiment_file_prefix(self):
@@ -1426,6 +1447,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
             from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
             adapter = ModelingToolkitAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
+        elif format.lower() in [
+            "bifurcationkit", "bifurcationkit.jl", "bifurcation",
+            "bifurcation-julia",
+        ]:
+            from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+            adapter = BifurcationKitAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
         else:

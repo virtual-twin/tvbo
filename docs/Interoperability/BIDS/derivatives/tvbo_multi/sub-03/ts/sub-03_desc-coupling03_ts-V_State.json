@@ -6,12 +6,12 @@
   "NumberOfTimepoints": 1000,
   "NumberOfNodes": 3,
   "Units": "a.u.",
-  "GeneratedAt": "2026-01-09T14:07:32.899611",
+  "GeneratedAt": "2026-02-10T20:44:01.022485",
   "Provenance": {
     "Model": "Generic2dOscillator - 12 parameters and 2 state variables",
     "Integrator": "Integrator({\n  'time_scale': 'ms',\n  'duration': 100.0,\n  'method': 'Euler',\n  'step_size': 0.1,\n  'transient_time': 0.0,\n  'scipy_ode_base': False,\n  'number_of_stages': 1,\n  'update_expression': DerivedVariable({\n      'name': 'dX',\n      'equation': Equation({'lhs': 'X_{t+1}', 'rhs': 'dX0 * dt', 'latex': False}),\n      'conditional': False\n    }),\n  'delayed': False\n})",
     "StepSize": 0.1,
-    "GeneratedAt": "2026-01-09T14:07:32.899417",
+    "GeneratedAt": "2026-02-10T20:44:01.022262",
     "Software": "tvbo"
   }
 }

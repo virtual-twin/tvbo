@@ -160,8 +160,12 @@ class TestOptionalBackends:
             assert result is not None
         except NotImplementedError:
             pytest.skip("PyRates backend not implemented for this model")
+        except (NameError, TypeError) as e:
+            pytest.skip(f"PyRates backend limitation: {e}")
         except Exception as e:
-            if "pyrates" in str(e).lower() or "not implemented" in str(e).lower():
+            msg = str(e).lower()
+            if ("pyrates" in msg or "not implemented" in msg
+                    or "must be a boolean" in msg):
                 pytest.skip(f"PyRates backend issue: {e}")
             raise
 

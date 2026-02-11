@@ -93,6 +93,7 @@ from .data.tvbo_data.atlases import Atlas
 from .export.experiment import SimulationExperiment
 from .knowledge.study import SimulationStudy
 from .knowledge.simulation import localdynamics
+from .knowledge.simulation.continuation import Continuation
 from .knowledge.simulation.localdynamics import Dynamics
 from .knowledge.simulation.network import Coupling
 from .knowledge.simulation.integration import Noise
