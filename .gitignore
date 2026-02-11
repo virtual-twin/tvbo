@@ -96,3 +96,4 @@ docs/Interoperability/NetworkDynamics.jl/_output
 Manifest.toml
 Project.toml
 _test_*
+_check_*
