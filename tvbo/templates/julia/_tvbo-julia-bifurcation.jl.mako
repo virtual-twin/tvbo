@@ -1,3 +1,15 @@
+<%!
+from tvbo.export.code import render_expression
+%>
+<%
+sv_names = list(model.state_variables.keys())
+param_names = list(model.parameters.keys())
+ct_names = list(model.coupling_terms.keys()) if model.coupling_terms else []
+dv_names = list(model.derived_variables.keys()) if model.derived_variables else []
+dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
+all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
+juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_symbols)
+%>
 ENV["LC_ALL"] = "en_US.UTF-8"
 ENV["LANG"] = "en_US.UTF-8"
 ENV["LANGUAGE"] = "en_US.UTF-8"
@@ -10,21 +22,21 @@ using JSON
 const BK = BifurcationKit
 
 function TMvf!(dz, z, p, t = 0)
-    (;${", ".join([p.name for p in model.parameters.values()] + [p.name for p in model.coupling_terms.values()])}) = p
-    ${", ".join([sv.name for sv in model.state_variables.values()])} = z
+    (;${", ".join(param_names + ct_names)}) = p
+    ${", ".join(sv_names)} = z
 
     local_coupling = 0
 
-    ${"\n    ".join([f"{dp.name} = {dp.equation.rhs.replace('**', '^')}" for dp in model.derived_parameters.values()])}
+    ${"\n    ".join([f"{dp.name} = {juliacode(dp.equation.rhs)}" for dp in model.derived_parameters.values()])}
 
-    ${"\n    ".join([f"{dv.name} = {dv.equation.rhs.replace('**', '^')}" for dv in model.derived_variables.values()])}
+    ${"\n    ".join([f"{dv.name} = {juliacode(dv.equation.rhs)}" for dv in model.derived_variables.values()])}
 
-    ${"\n    ".join([f"dz[{i+1}] = {sv.equation.rhs.replace('**', '^')}" for i, sv in enumerate(model.state_variables.values())])}
+    ${"\n    ".join([f"dz[{i+1}] = {juliacode(sv.equation.rhs)}" for i, sv in enumerate(model.state_variables.values())])}
     dz
 end
 
 # parameter values
-par_tm = (${", ".join([f"{p.name} = {p.value}" for p in model.parameters.values()] + [f"{p.name} = 0.0" for p in model.coupling_terms.values()])})
+par_tm = (${", ".join([f"{p.name} = {p.value}" for p in model.parameters.values()] + [f"{ct} = 0.0" for ct in ct_names])})
 
 # initial condition
 z0 = ${[0.1 for i in model.state_variables] if not random_initial_conditions else (f"rand({len(model.state_variables)})" if not initial_conditions else initial_conditions)}

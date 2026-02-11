@@ -9,62 +9,72 @@ Bifurcation analysis reveals how a system's qualitative behavior changes as para
 ## Quick Start
 
 ```{python}
-from tvbo import Dynamics
-
-model = Dynamics.from_file("../../database/models/Generic2dOscillator.yaml")
-print(model.equations())
+from IPython.display import Markdown
+from tvbo import Continuation, Dynamics, SimulationExperiment
+model = Dynamics.from_ontology('Generic2dOscillator')
+Markdown(model.generate_report())
 ```
 
-## Running Bifurcation Analysis
-
-Three backends are available:
-
-```python
-# Julia BifurcationKit.jl (recommended)
-result = model.run('bifurcation-julia')
-
-# Numerical continuation (MatCont-style)
-result = model.run('bifurcation-numcont')
-
-# AUTO-07p
-result = model.run('bifurcation-auto7p')
-```
-
-## BifurcationResult
-
-```python
-result = model.run('bifurcation-julia')
-
-# Bifurcation branches and special points
-result.branches
-result.special_points  # Hopf, branch points, etc.
-
-# Variable of interest
-result.voi('V')
-
-# Plot stability diagram
-result.plot()
-```
-
-## Code Generation
-
-View the generated Julia code for BifurcationKit:
 
 ```{python}
-code = model.render_code('bifurcation-julia')
-print(code[:500])
+cont = Continuation.from_string(
+    """\
+name: eq_in_a
+label: "Equilibrium branch in a"
+description: >-
+    Continue the equilibrium branch of the Generic2dOscillator as parameter
+    a is varied. Detect Hopf bifurcations and continue periodic orbits from
+    all Hopf points.
+dynamics: Generic2dOscillator
+
+free_parameters:
+    - name: I
+      domain:
+          lo: "-10"
+          hi: "20"
+
+max_steps: 200
+bothside: true
+
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:all"
+      bothside: true
+"""
+)
+
+exp = SimulationExperiment(dynamics=model, continuations=[cont])
+bif_result2 = exp.run("bifurcationkit.jl")
+bif_result2.plot(VOI='V')
 ```
 
-## What Can Be Detected
+```{python}
+cont = Continuation.from_string(
+    """\
+name: jr_mu
+dynamics: JansenRit
 
-| Bifurcation | Description |
-|-------------|-------------|
-| **Hopf** | Transition from fixed point to oscillation |
-| **Branch point** | Multiple coexisting equilibria |
-| **Fold** | Saddle-node, sudden appearance/disappearance of fixed points |
-| **Period doubling** | Route to chaos |
+free_parameters:
+    - name: mu
+      domain:
+          lo: "-1"
+          hi: "1"
 
-## See Also
+max_steps: 200
+ds: 0.0001
+newton_tol: 1.0e-6
+bothside: true
 
-- [PyRates Bifurcation](/Interoperability/Pyrates/PyRates_Bifurcation.qmd) — bifurcation via PyRates
-- [Defining Dynamical Systems](DefineDynamicalSystem.qmd) — model definition
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:all"
+      bothside: true
+"""
+)
+
+exp = SimulationExperiment(
+    dynamics=Dynamics.from_ontology("JansenRit"), continuations=[cont]
+)
+bif_result2 = exp.run("bifurcationkit.jl")
+bif_result2.plot(VOI="y0")
+```
