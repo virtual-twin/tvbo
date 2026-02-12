@@ -1672,8 +1672,7 @@ classes:
         description: >-
             Discretization method for boundary value problems in continuation
             (periodic orbits, connecting orbits, quasi-periodic tori).
-            Specifies the method; method-specific numerics go in parameters,
-            string options (e.g., jacobian type) go in options.
+            Specifies the method; method-specific numerics go in parameters.
         slots:
             - parameters
         attributes:
@@ -1681,6 +1680,19 @@ classes:
                 range: NumericalDiscretizationMethod
                 ifabsent: string(collocation)
                 description: "Discretization method."
+            ode_solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    ODE solver for flow-based methods (shooting, poincaré).
+                    Specifies algorithm (e.g. Vern9, Rodas5) and tolerances.
+                    Not needed for collocation or trapezoid.
+            linear_solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    Linear solver for the Newton bordered system.
+                    E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).
             options:
                 multivalued: true
                 range: Option
@@ -1709,11 +1721,11 @@ classes:
                 ifabsent: float(1e-10)
                 description: "Relative tolerance for ODE integration."
             solver:
-                range: Integrator
+                range: Solver
                 inlined: true
                 description: >-
-                    ODE solver / integrator for time_integration method.
-                    Specify method (e.g., Tsit5, Heun, RK4) and step size.
+                    ODE solver for time_integration method.
+                    Specify method (e.g., Tsit5, Heun, RK4) and tolerances.
             source_branch:
                 range: string
                 description: >-
@@ -1741,7 +1753,6 @@ classes:
             # --- What to branch from ---
             source_point:
                 range: string
-                ifabsent: string(hopf:-1)
                 description: >-
                     Which bifurcation point to start from. Syntax:
                     - 'hopf:-1' = last Hopf (default)
@@ -1753,7 +1764,6 @@ classes:
             # --- Branching perturbation ---
             delta_p:
                 range: float
-                ifabsent: float(0.01)
                 description: >-
                     Initial parameter offset from the bifurcation point.
 
@@ -1778,7 +1788,6 @@ classes:
             # --- Direction ---
             bothside:
                 range: boolean
-                ifabsent: boolean(false)
                 description: "Continue branch in both directions."
 
             # --- Toolkit-specific options ---
@@ -1823,63 +1832,51 @@ classes:
             # --- Step size control ---
             ds:
                 range: float
-                ifabsent: float(0.01)
                 description: "Initial arc-length step size."
             ds_min:
                 range: float
-                ifabsent: float(1e-4)
                 description: "Minimum adaptive step size."
             ds_max:
                 range: float
-                ifabsent: float(0.1)
                 description: "Maximum adaptive step size."
             max_steps:
                 range: integer
-                ifabsent: integer(400)
                 description: "Maximum continuation steps."
 
             # --- Newton corrector ---
             newton_tol:
                 range: float
-                ifabsent: float(1e-12)
                 description: "Absolute tolerance for Newton corrector convergence."
             newton_max_iterations:
                 range: integer
-                ifabsent: integer(25)
                 description: "Maximum Newton corrector iterations per step."
 
             # --- Eigenvalue / stability ---
             nev:
                 range: integer
-                ifabsent: integer(3)
                 description: >-
                     Number of eigenvalues to compute. Must be >= number of
                     state variables for reliable Hopf detection.
             tol_stability:
                 range: float
-                ifabsent: float(1e-10)
                 description: "Tolerance on real part of eigenvalue for stability boundary."
 
             # --- Bifurcation detection ---
             detect_bifurcation:
                 range: integer
-                ifabsent: integer(3)
                 description: >-
                     Bifurcation detection level.
                     0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.
             detect_fold:
                 range: boolean
-                ifabsent: boolean(true)
                 description: "Enable fold (limit point) detection."
             n_inversion:
                 range: integer
-                ifabsent: integer(2)
                 description: >-
                     Number of eigenvalue sign inversions to flag a bifurcation.
                     Must be even. Higher = fewer false positives.
             max_bisection_steps:
                 range: integer
-                ifabsent: integer(25)
                 description: "Maximum bisection steps for bifurcation point localization."
 
             # --- Continuation algorithm ---
@@ -1908,7 +1905,6 @@ classes:
             # --- Bidirectional ---
             bothside:
                 range: boolean
-                ifabsent: boolean(true)
                 description: "Continue in both directions from the starting point."
 
             # --- Execution / backend ---
@@ -1930,9 +1926,34 @@ classes:
                     Toolkit-specific string options (tangent method,
                     solver name, etc.).
 
+    Solver:
+        description: >-
+            Lightweight specification of a numerical ODE solver / integrator.
+            Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in
+            shooting methods, initial-state integration, and other contexts
+            where only the algorithm and tolerances matter.
+        attributes:
+            method:
+                range: string
+                ifabsent: string(Tsit5)
+                description: >-
+                    Solver algorithm name (e.g., Vern9, Rodas5, Tsit5,
+                    euler, heun, rk4).
+            abs_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Absolute tolerance for adaptive solvers."
+            rel_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Relative tolerance for adaptive solvers."
+
     Integrator:
-        aliases:
-            - Solver
+        is_a: Solver
+        description: >-
+            Fixed-step or adaptive ODE integrator with TVB-specific extensions
+            (noise, transient time, etc.). Inherits abs_tol, rel_tol
+            from Solver. Overrides method default to 'euler'.
         slots:
             - time_scale
             - unit
@@ -1943,7 +1964,7 @@ classes:
             method:
                 range: string
                 ifabsent: string(euler)
-                description: Integration method (euler, heun, rk4, etc.)
+                description: "Integration method (euler, heun, rk4, etc.)"
             step_size:
                 range: float
                 ifabsent: float(0.01220703125)

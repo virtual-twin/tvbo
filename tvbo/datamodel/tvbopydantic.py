@@ -5599,7 +5599,7 @@ class Option(ConfiguredBaseModel):
 
 class Discretization(ConfiguredBaseModel):
     """
-    Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters, string options (e.g., jacobian type) go in options.
+    Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
@@ -5620,8 +5620,10 @@ class Discretization(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    method: Optional[NumericalDiscretizationMethod] = Field(default=NumericalDiscretizationMethod.collocation, description="""Discretization method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Integrator'],
+    method: Optional[NumericalDiscretizationMethod] = Field(default=NumericalDiscretizationMethod.collocation, description="""Discretization method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
          'ifabsent': 'string(collocation)'} })
+    ode_solver: Optional[Solver] = Field(default=None, description="""ODE solver for flow-based methods (shooting, poincaré). Specifies algorithm (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or trapezoid.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization']} })
+    linear_solver: Optional[Solver] = Field(default=None, description="""Linear solver for the Newton bordered system. E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization']} })
     options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (jacobian type, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 
@@ -5631,13 +5633,13 @@ class InitialState(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    method: Optional[InitialStateMethod] = Field(default=InitialStateMethod.time_integration, description="""Strategy for finding the initial state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Integrator'],
+    method: Optional[InitialStateMethod] = Field(default=InitialStateMethod.time_integration, description="""Strategy for finding the initial state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
          'ifabsent': 'string(time_integration)'} })
     duration: Optional[float] = Field(default=2000.0, description="""Integration duration for time_integration method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
          'ifabsent': 'float(2000.0)'} })
-    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState'], 'ifabsent': 'float(1e-10)'} })
-    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState'], 'ifabsent': 'float(1e-10)'} })
-    solver: Optional[Integrator] = Field(default=None, description="""ODE solver / integrator for time_integration method. Specify method (e.g., Tsit5, Heun, RK4) and step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'PDE']} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    solver: Optional[Solver] = Field(default=None, description="""ODE solver for time_integration method. Specify method (e.g., Tsit5, Heun, RK4) and tolerances.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'PDE']} })
     source_branch: Optional[str] = Field(default=None, description="""Name of a previously computed branch (for from_branch method).""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState']} })
     source_point: Optional[str] = Field(default=None, description="""Which point on the source branch: 'endpoint', 'hopf:1', 'fold:2', a step number, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch']} })
 
@@ -5745,11 +5747,11 @@ class BranchSwitch(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    source_point: Optional[str] = Field(default="hopf:-1", description="""Which bifurcation point to start from. Syntax: - 'hopf:-1' = last Hopf (default) - 'hopf:all' = all Hopf points - 'hopf:1' = first Hopf - 'fold:2' = second fold - integer = specific special point index""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch'], 'ifabsent': 'string(hopf:-1)'} })
-    delta_p: Optional[float] = Field(default=0.01, description="""Initial parameter offset from the bifurcation point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch'], 'ifabsent': 'float(0.01)'} })
+    source_point: Optional[str] = Field(default=None, description="""Which bifurcation point to start from. Syntax: - 'hopf:-1' = last Hopf (default) - 'hopf:all' = all Hopf points - 'hopf:1' = first Hopf - 'fold:2' = second fold - integer = specific special point index""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch']} })
+    delta_p: Optional[float] = Field(default=None, description="""Initial parameter offset from the bifurcation point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch']} })
     continuation: Optional[Continuation] = Field(default=None, description="""Override solver settings for this branch. Uses the same Continuation type — only explicitly set attributes override the parent's values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch']} })
     discretization: Optional[Discretization] = Field(default=None, description="""Discretization method for the branch solution. Required for periodic orbit branches (Hopf → PO). Not needed for codim-2 branches (fold/Hopf continuation).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
-    bothside: Optional[bool] = Field(default=False, description="""Continue branch in both directions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation'], 'ifabsent': 'boolean(false)'} })
+    bothside: Optional[bool] = Field(default=None, description="""Continue branch in both directions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
     options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options for this branch (linear solver, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 
@@ -5880,23 +5882,23 @@ class Continuation(ConfiguredBaseModel):
                        'PDE']} })
     dynamics: Optional[str] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
     free_parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
-    ds: Optional[float] = Field(default=0.01, description="""Initial arc-length step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(0.01)'} })
-    ds_min: Optional[float] = Field(default=1e-4, description="""Minimum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(1e-4)'} })
-    ds_max: Optional[float] = Field(default=0.1, description="""Maximum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(0.1)'} })
-    max_steps: Optional[int] = Field(default=400, description="""Maximum continuation steps.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(400)'} })
-    newton_tol: Optional[float] = Field(default=1e-12, description="""Absolute tolerance for Newton corrector convergence.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(1e-12)'} })
-    newton_max_iterations: Optional[int] = Field(default=25, description="""Maximum Newton corrector iterations per step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(25)'} })
-    nev: Optional[int] = Field(default=3, description="""Number of eigenvalues to compute. Must be >= number of state variables for reliable Hopf detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(3)'} })
-    tol_stability: Optional[float] = Field(default=1e-10, description="""Tolerance on real part of eigenvalue for stability boundary.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'float(1e-10)'} })
-    detect_bifurcation: Optional[int] = Field(default=3, description="""Bifurcation detection level. 0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(3)'} })
-    detect_fold: Optional[bool] = Field(default=True, description="""Enable fold (limit point) detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'boolean(true)'} })
-    n_inversion: Optional[int] = Field(default=2, description="""Number of eigenvalue sign inversions to flag a bifurcation. Must be even. Higher = fewer false positives.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(2)'} })
-    max_bisection_steps: Optional[int] = Field(default=25, description="""Maximum bisection steps for bifurcation point localization.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation'], 'ifabsent': 'integer(25)'} })
+    ds: Optional[float] = Field(default=None, description="""Initial arc-length step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    ds_min: Optional[float] = Field(default=None, description="""Minimum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    ds_max: Optional[float] = Field(default=None, description="""Maximum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    max_steps: Optional[int] = Field(default=None, description="""Maximum continuation steps.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    newton_tol: Optional[float] = Field(default=None, description="""Absolute tolerance for Newton corrector convergence.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    newton_max_iterations: Optional[int] = Field(default=None, description="""Maximum Newton corrector iterations per step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    nev: Optional[int] = Field(default=None, description="""Number of eigenvalues to compute. Must be >= number of state variables for reliable Hopf detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    tol_stability: Optional[float] = Field(default=None, description="""Tolerance on real part of eigenvalue for stability boundary.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    detect_bifurcation: Optional[int] = Field(default=None, description="""Bifurcation detection level. 0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    detect_fold: Optional[bool] = Field(default=None, description="""Enable fold (limit point) detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    n_inversion: Optional[int] = Field(default=None, description="""Number of eigenvalue sign inversions to flag a bifurcation. Must be even. Higher = fewer false positives.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    max_bisection_steps: Optional[int] = Field(default=None, description="""Maximum bisection steps for bifurcation point localization.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     algorithm: Optional[ContinuationAlgorithm] = Field(default=ContinuationAlgorithm.PALC, description="""Predictor-corrector algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(PALC)'} })
     initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
     branches: Optional[dict[str, BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
-    bothside: Optional[bool] = Field(default=True, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation'], 'ifabsent': 'boolean(true)'} })
+    bothside: Optional[bool] = Field(default=None, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-analysis execution configuration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
@@ -5906,8 +5908,23 @@ class Continuation(ConfiguredBaseModel):
     options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (tangent method, solver name, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 
-class Integrator(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'aliases': ['Solver'], 'from_schema': 'https://w3id.org/tvbo'})
+class Solver(ConfiguredBaseModel):
+    """
+    Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    method: Optional[str] = Field(default="Tsit5", description="""Solver algorithm name (e.g., Vern9, Rodas5, Tsit5, euler, heun, rk4).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
+         'ifabsent': 'string(Tsit5)'} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+
+
+class Integrator(Solver):
+    """
+    Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
@@ -5986,7 +6003,7 @@ class Integrator(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Integrator'],
+    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
          'ifabsent': 'string(euler)'} })
     step_size: Optional[float] = Field(default=0.01220703125, json_schema_extra = { "linkml_meta": {'aliases': ['dt'],
          'domain_of': ['Integrator'],
@@ -6000,6 +6017,8 @@ class Integrator(ConfiguredBaseModel):
     intermediate_expressions: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     update_expression: Optional[DerivedVariable] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     delayed: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
 
 
 class Coupling(ConfiguredBaseModel):
@@ -8066,6 +8085,7 @@ Discretization.model_rebuild()
 InitialState.model_rebuild()
 BranchSwitch.model_rebuild()
 Continuation.model_rebuild()
+Solver.model_rebuild()
 Integrator.model_rebuild()
 Coupling.model_rebuild()
 RegionMapping.model_rebuild()

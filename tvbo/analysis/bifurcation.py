@@ -354,4 +354,154 @@ class BifurcationResult:
         return ax
 
 
-__all__ = ["BifurcationResult"]
+class PyRatesBifurcationResult(BifurcationResult):
+    """Bifurcation result from PyRates/PyCoBi (AUTO-07p) backend.
+
+    Provides the same interface as ``BifurcationResult`` but extracts
+    data from PyCoBi's ``ODESystem`` instead of juliacall objects.
+    """
+
+    def __init__(
+        self,
+        ode,
+        cont_name,
+        model=None,
+        state_var_names=None,
+        icp=1,
+        fp_name="param",
+        periodic_orbit_results=None,
+        **kwargs,
+    ):
+        # Skip parent __init__ (it uses juliacall)
+        self.br = None
+        self.model = model
+        self.ICS = fp_name
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+        self.state_var_index = {}
+        if state_var_names:
+            self.state_var_index = {
+                name: idx for idx, name in enumerate(state_var_names)
+            }
+
+        # Extract continuation data from PyCoBi
+        self.df = self._extract_pycobi_df(ode, cont_name, state_var_names, icp)
+
+        # Extract special points
+        self._annotate_special_points(ode, cont_name)
+
+        # Build hopf/bp index lists
+        self.hopf_indices = []
+        self.bp_indices = []
+        self.hopf_steps = []
+        self.bp_steps = []
+        if "specialpoint" in self.df.columns:
+            sp_series = self.df["specialpoint"].astype(str)
+            hopf_mask = sp_series.str.contains(
+                "hopf|HB", case=False, na=False
+            )
+            bp_mask = sp_series.str.contains("bp|BP", case=False, na=False)
+            self.hopf_indices = self.df.index[hopf_mask].tolist()
+            self.bp_indices = self.df.index[bp_mask].tolist()
+            if "step" in self.df.columns:
+                self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
+                self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
+
+        # Handle periodic orbits
+        self.periodic_orbits = []
+        if periodic_orbit_results:
+            for po_name, po_cont in periodic_orbit_results:
+                po_res = PyRatesBifurcationResult(
+                    ode=ode,
+                    cont_name=po_name,
+                    model=model,
+                    state_var_names=state_var_names,
+                    icp=icp,
+                    fp_name=fp_name,
+                )
+                self.periodic_orbits.append(po_res)
+
+    @staticmethod
+    def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
+        """Extract continuation branch as a pandas DataFrame from PyCoBi."""
+        try:
+            # PyCoBi stores solutions accessible via ode[cont_name]
+            cont_data = ode[cont_name]
+        except (KeyError, IndexError):
+            return pd.DataFrame()
+
+        rows = []
+        for sol_key in cont_data:
+            try:
+                sol = cont_data[sol_key]
+                row = {}
+
+                # State variables: U(1), U(2), ...
+                if state_var_names:
+                    for i, sv_name in enumerate(state_var_names):
+                        try:
+                            row[sv_name] = float(sol[f"U({i + 1})"])
+                        except (KeyError, TypeError):
+                            pass
+
+                # Parameter value
+                row["param"] = float(sol[f"PAR({icp})"])
+
+                # Stability info
+                row["stable"] = sol.get("stable", True)
+                row["step"] = int(sol_key) if str(sol_key).isdigit() else 0
+
+                # Special point type
+                pt_type = sol.get("TY", "")
+                row["specialpoint"] = (
+                    str(pt_type) if pt_type and str(pt_type) != "0" else None
+                )
+
+                # Newton iterations
+                row["n_unstable"] = 0
+                row["n_imag"] = 0
+
+                rows.append(row)
+            except Exception:
+                continue
+
+        if not rows:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(rows)
+        # Ensure stable column is boolean
+        if "stable" in df.columns:
+            df["stable"] = df["stable"].astype(bool)
+        return df
+
+    def _annotate_special_points(self, ode, cont_name):
+        """Annotate special points from PyCoBi continuation."""
+        # Map AUTO-07p type codes to BifurcationKit-style names
+        auto_to_bif = {
+            "LP": "fold",
+            "HB": "hopf",
+            "BP": "bp",
+            "PD": "pd",
+            "TR": "ns",    # Torus/Neimark-Sacker
+            "UZ": "user",
+            "EP": "endpoint",
+        }
+
+        if "specialpoint" not in self.df.columns:
+            self.df["specialpoint"] = None
+        if "sp_norm" not in self.df.columns:
+            self.df["sp_norm"] = np.nan
+        if "sp_idx" not in self.df.columns:
+            self.df["sp_idx"] = np.nan
+
+        for i, row in self.df.iterrows():
+            sp = row.get("specialpoint")
+            if sp and sp != "None":
+                # Normalize AUTO type codes to BifurcationKit names
+                sp_str = str(sp).strip()
+                normalized = auto_to_bif.get(sp_str, sp_str.lower())
+                self.df.at[i, "specialpoint"] = normalized
+
+
+__all__ = ["BifurcationResult", "PyRatesBifurcationResult"]

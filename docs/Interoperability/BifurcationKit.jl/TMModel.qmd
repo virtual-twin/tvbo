@@ -28,10 +28,10 @@ description: Tsodyks-Markram mean-field model with synaptic plasticity
 
 parameters:
     J: {name: J, value: 3.07, domain: {lo: 0, hi: 10}}
-    alpha: {name: alpha, value: 1.5, domain: {lo: 0.1, hi: 5}}
+    alpha: {name: alpha, value: 1.4, domain: {lo: 0.1, hi: 5}}
     E0: {name: E0, value: -2.0, domain: {lo: -10, hi: 2}}
     tau: {name: tau, value: 0.013, domain: {lo: 0.001, hi: 0.1}}
-    tauD: {name: tauD, value: 0.200, domain: {lo: 0.01, hi: 1.0}}
+    tauD: {name: tauD, value: 0.20, domain: {lo: 0.01, hi: 1.0}}
     tauF: {name: tauF, value: 1.5, domain: {lo: 0.1, hi: 5.0}}
     U0: {name: U0, value: 0.3, domain: {lo: 0, hi: 1}}
 
@@ -65,51 +65,50 @@ model = Dynamics.from_string(model_yaml)
 Orthogonal collocation with automatic mesh refinement:
 
 ```{python}
-from tvbo.knowledge.simulation.continuation import Continuation
-
+from tvbo import SimulationExperiment, Continuation
 po_collocation = """
 name: tm_po_collocation
 dynamics: TsodyksMarkram
 free_parameters:
     - name: E0
-      domain: {lo: "-10", hi: "1"}
-n_inversion: 8
-nev: 3
-newton_tol: 1.0e-9
+      domain: {lo: "-2", hi: "-1"}
 bothside: true
 branches:
     - name: po_from_hopf
-      source_point: "hopf:all"
-      bothside: true
+      source_point: "hopf:2"
+      bothside: false
       continuation:
           name: tm_po_collocation_po_from_hopf
-          ds: 0.0001
-          ds_min: 1.0e-6
-          ds_max: 0.02
-          max_steps: 200
-          newton_tol: 1.0e-5
+          ds: 0.001
+          ds_min: 1.0e-4
+          ds_max: 0.1
+          max_steps: 110
           tol_stability: 1.0e-5
-          options:
-              - {name: tangent, value: Bordered}
       discretization:
           method: collocation
+          linear_solver:
+              method: COPBLS
           parameters:
-              - {name: mesh_intervals, value: 100}
+              - {name: mesh_intervals, value: 50}
               - {name: degree, value: 4}
               - {name: mesh_adaptation, value: true}
-          options:
-              - {name: jacobian, value: DenseAnalyticalInplace}
 """
 
 cont = Continuation.from_string(po_collocation)
-result = model.run('bifurcation-julia', continuation=cont)
+exp = SimulationExperiment(dynamics=model, continuations=[cont])
+
+print(exp.render_code('bifurcationkit.jl'))
+```
+
+```{python}
+result = exp.run('bifurcationkit.jl')
 result.plot()
 ```
 
 <details>
 <summary>Click to expand: Generated Julia code for collocation method</summary>
 ```{python}
-print(model.render_code('bifurcation-julia', continuation=cont))
+print(exp.render_code('bifurcationkit.jl'))
 ```
 </details>
 
@@ -121,33 +120,31 @@ name: tm_po_trapezoid
 dynamics: TsodyksMarkram
 free_parameters:
     - name: E0
-      domain: {lo: "-10", hi: "1"}
-n_inversion: 8
-nev: 3
-newton_tol: 1.0e-9
-bothside: true
+      domain: {lo: "-2", hi: "-1"}
+bothside: false
 branches:
     - name: po_from_hopf
-      source_point: "hopf:-1"
-      bothside: true
+      source_point: "hopf:2"
+      bothside: false
+      delta_p: 0.001
       continuation:
           name: tm_po_trapezoid_po_from_hopf
-          ds: 1.0e-4
+          ds: 0.004
           ds_min: 1.0e-4
-          max_steps: 90
-          newton_tol: 1.0e-11
-          tol_stability: 1.0e-6
-          detect_bifurcation: 2
+          ds_max: 0.1
+          max_steps: 80
+          newton_tol: 1.0e-7
+          tol_stability: 1.0e-7
       discretization:
           method: trapezoid
           parameters:
-              - {name: mesh_intervals, value: 150}
-      parameters:
-          - {name: max_norm_bound, value: 1.0}
+              - {name: mesh_intervals, value: 250}
 """
 
 cont_trap = Continuation.from_string(po_trapezoid)
-result_trap = model.run('bifurcation-julia', continuation=cont_trap)
+exp_trap = SimulationExperiment(dynamics=model, continuations=[cont_trap])
+result_trap = exp.run('bifurcationkit.jl')
+result_trap.plot()
 ```
 
 ## Method 3: Standard Shooting
@@ -160,73 +157,82 @@ name: tm_po_shooting
 dynamics: TsodyksMarkram
 free_parameters:
     - name: E0
-      domain: {lo: "-10", hi: "1"}
-n_inversion: 8
-nev: 3
-newton_tol: 1.0e-9
-bothside: true
+      domain: {lo: "-2", hi: "-1"}
+bothside: false
 branches:
     - name: po_from_hopf
-      source_point: "hopf:all"
-      bothside: true
+      source_point: "hopf:2"
+      bothside: false
       continuation:
           name: tm_po_shooting_po_from_hopf
-          ds: -1.0e-4
+          ds: -0.0001
           ds_min: 1.0e-4
-          max_steps: 120
-          newton_tol: 1.0e-11
-          tol_stability: 1.0e-7
-          detect_bifurcation: 3
+          ds_max: 0.1
+          max_steps: 110
+          tol_stability: 1.0e-4
       discretization:
           method: shooting
+          ode_solver:
+              method: Vern9
+              abs_tol: 1e-12
+              rel_tol: 1e-10
+          linear_solver:
+              method: MatrixBLS
           parameters:
               - {name: n_sections, value: 15}
               - {name: parallel, value: true}
-          options:
-              - {name: ode_solver, value: Rodas5}
+      parameters:
+          - {name: max_norm_bound, value: 10}
 """
 
 cont_shoot = Continuation.from_string(po_shooting)
-result_shoot = model.run('bifurcation-julia', continuation=cont_shoot)
+exp_shoot = SimulationExperiment(dynamics=model, continuations=[cont_shoot])
+result_shoot = exp_shoot.run('bifurcationkit.jl')
+result_shoot.plot()
 ```
 
 ## Method 4: Poincaré Shooting
 
 Reduced-dimension shooting:
 
-```python
+```{python}
 po_poincare = """
 name: tm_po_poincare
 dynamics: TsodyksMarkram
 free_parameters:
     - name: E0
-      domain: {lo: "-10", hi: "1"}
-n_inversion: 8
-nev: 3
-newton_tol: 1.0e-9
-bothside: true
+      domain: {lo: "-2", hi: "-1"}
+bothside: false
 branches:
     - name: po_from_hopf
-      source_point: "hopf:-1"
-      bothside: true
+      source_point: "hopf:2"
+      bothside: false
       continuation:
-          ds: 1.0e-4
+          name: tm_po_poincare_po_from_hopf
+          ds: 0.0001
           ds_max: 0.02
           max_steps: 50
           newton_tol: 1.0e-9
+          newton_max_iterations: 15
           tol_stability: 1.0e-6
           detect_bifurcation: 2
       discretization:
           method: poincare
+          ode_solver:
+              method: Rodas5
+              abs_tol: 1e-12
+              rel_tol: 1e-10
+          linear_solver:
+              method: MatrixBLS
           parameters:
               - {name: n_sections, value: 5}
               - {name: parallel, value: true}
-          options:
-              - {name: ode_solver, value: Rodas5}
       parameters:
           - {name: max_norm_bound, value: 1.0}
 """
 
 cont_poinc = Continuation.from_string(po_poincare)
-result_poinc = model.run('bifurcation-julia', continuation=cont_poinc)
+exp_poinc = SimulationExperiment(dynamics=model, continuations=[cont_poinc])
+result_poinc = exp_poinc.run('bifurcationkit.jl')
+result_poinc.plot()
 ```

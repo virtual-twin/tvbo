@@ -1430,9 +1430,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 "tvbo-julia-DifferentialEquations.jl.mako"
             )
         elif format == "bifurcation-julia":
+            from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+            continuation = kwargs.pop("continuation", None)
+            ctx = BifurcationKitAdapter._prepare_context(
+                self, continuation, **kwargs
+            )
             template = templates.lookup.get_template(
                 "tvbo-julia-BifurcationKit.jl.mako"
             )
+            rendered_code = template.render(**ctx)
+            return templater.format_code(rendered_code, format=format)
         elif format == "bifurcation-numcont":
             template = templates.lookup.get_template("tvbo-numcont.py.mako")
         elif format == "bifurcation-auto7p":

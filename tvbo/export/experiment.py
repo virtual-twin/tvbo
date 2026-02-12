@@ -1116,10 +1116,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ]:
             return self._run_bifurcation(**kwargs)
 
+        elif format.lower() in [
+            "pyrates-bifurcation", "pyrates-bif", "pycobi",
+            "bifurcation-pyrates", "auto", "auto-07p",
+        ]:
+            return self._run_pyrates_bifurcation(**kwargs)
+
         else:
             raise ValueError(
                 f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
-                "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl"
+                "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl, "
+                "pyrates-bifurcation"
             )
 
         return simulation_data
@@ -1183,6 +1190,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
         adapter = BifurcationKitAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_pyrates_bifurcation(self, **kwargs):
+        """Run bifurcation analysis via PyRates/PyCoBi (AUTO-07p)."""
+        from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
+
+        adapter = PyRatesBifurcationAdapter(self)
         return adapter.run(**kwargs)
 
     def get_experiment_file_prefix(self):
@@ -1457,11 +1471,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             adapter = BifurcationKitAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
+        elif format.lower() in [
+            "pyrates-bifurcation", "pyrates-bif", "pycobi",
+            "bifurcation-pyrates", "auto", "auto-07p",
+        ]:
+            from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
+            adapter = PyRatesBifurcationAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
         else:
             raise ValueError(
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
                 "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
-                "julia, networkdynamics, nd, mtk, modelingtoolkit"
+                "julia, networkdynamics, nd, mtk, modelingtoolkit, "
+                "bifurcationkit.jl, pyrates-bifurcation"
             )
 
         return rendered_code

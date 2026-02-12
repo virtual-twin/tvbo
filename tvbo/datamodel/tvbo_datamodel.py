@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-11T12:08:37
+# Generation date: 2026-02-12T19:40:36
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2400,8 +2400,7 @@ class Option(YAMLRoot):
 class Discretization(YAMLRoot):
     """
     Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits,
-    quasi-periodic tori). Specifies the method; method-specific numerics go in parameters, string options (e.g.,
-    jacobian type) go in options.
+    quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -2412,6 +2411,8 @@ class Discretization(YAMLRoot):
 
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     method: Optional[Union[str, "NumericalDiscretizationMethod"]] = 'collocation'
+    ode_solver: Optional[Union[dict, "Solver"]] = None
+    linear_solver: Optional[Union[dict, "Solver"]] = None
     options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2419,6 +2420,12 @@ class Discretization(YAMLRoot):
 
         if self.method is not None and not isinstance(self.method, NumericalDiscretizationMethod):
             self.method = getattr(NumericalDiscretizationMethod, self.method)
+
+        if self.ode_solver is not None and not isinstance(self.ode_solver, Solver):
+            self.ode_solver = Solver(**as_dict(self.ode_solver))
+
+        if self.linear_solver is not None and not isinstance(self.linear_solver, Solver):
+            self.linear_solver = Solver(**as_dict(self.linear_solver))
 
         self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
 
@@ -2442,7 +2449,7 @@ class InitialState(YAMLRoot):
     duration: Optional[float] = 2000.0
     abs_tol: Optional[float] = 1e-10
     rel_tol: Optional[float] = 1e-10
-    solver: Optional[Union[dict, "Integrator"]] = None
+    solver: Optional[Union[dict, "Solver"]] = None
     source_branch: Optional[str] = None
     source_point: Optional[str] = None
 
@@ -2459,8 +2466,8 @@ class InitialState(YAMLRoot):
         if self.rel_tol is not None and not isinstance(self.rel_tol, float):
             self.rel_tol = float(self.rel_tol)
 
-        if self.solver is not None and not isinstance(self.solver, Integrator):
-            self.solver = Integrator(**as_dict(self.solver))
+        if self.solver is not None and not isinstance(self.solver, Solver):
+            self.solver = Solver(**as_dict(self.solver))
 
         if self.source_branch is not None and not isinstance(self.source_branch, str):
             self.source_branch = str(self.source_branch)
@@ -2489,11 +2496,11 @@ class BranchSwitch(YAMLRoot):
     name: Union[str, BranchSwitchName] = None
     description: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
-    source_point: Optional[str] = "hopf:-1"
-    delta_p: Optional[float] = 0.01
+    source_point: Optional[str] = None
+    delta_p: Optional[float] = None
     continuation: Optional[Union[dict, "Continuation"]] = None
     discretization: Optional[Union[dict, Discretization]] = None
-    bothside: Optional[Union[bool, Bool]] = False
+    bothside: Optional[Union[bool, Bool]] = None
     options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2546,22 +2553,22 @@ class Continuation(YAMLRoot):
     description: Optional[str] = None
     dynamics: Optional[Union[str, DynamicsName]] = None
     free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
-    ds: Optional[float] = 0.01
-    ds_min: Optional[float] = 1e-4
-    ds_max: Optional[float] = 0.1
-    max_steps: Optional[int] = 400
-    newton_tol: Optional[float] = 1e-12
-    newton_max_iterations: Optional[int] = 25
-    nev: Optional[int] = 3
-    tol_stability: Optional[float] = 1e-10
-    detect_bifurcation: Optional[int] = 3
-    detect_fold: Optional[Union[bool, Bool]] = True
-    n_inversion: Optional[int] = 2
-    max_bisection_steps: Optional[int] = 25
+    ds: Optional[float] = None
+    ds_min: Optional[float] = None
+    ds_max: Optional[float] = None
+    max_steps: Optional[int] = None
+    newton_tol: Optional[float] = None
+    newton_max_iterations: Optional[int] = None
+    nev: Optional[int] = None
+    tol_stability: Optional[float] = None
+    detect_bifurcation: Optional[int] = None
+    detect_fold: Optional[Union[bool, Bool]] = None
+    n_inversion: Optional[int] = None
+    max_bisection_steps: Optional[int] = None
     algorithm: Optional[Union[str, "ContinuationAlgorithm"]] = 'PALC'
     initial_state: Optional[Union[dict, InitialState]] = None
     branches: Optional[Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]] = empty_dict()
-    bothside: Optional[Union[bool, Bool]] = True
+    bothside: Optional[Union[bool, Bool]] = None
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
     options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
@@ -2642,7 +2649,42 @@ class Continuation(YAMLRoot):
 
 
 @dataclass(repr=False)
-class Integrator(YAMLRoot):
+class Solver(YAMLRoot):
+    """
+    Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5,
+    etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and
+    tolerances matter.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Solver"]
+    class_class_curie: ClassVar[str] = "tvbo:Solver"
+    class_name: ClassVar[str] = "Solver"
+    class_model_uri: ClassVar[URIRef] = TVBO.Solver
+
+    method: Optional[str] = "Tsit5"
+    abs_tol: Optional[float] = 1e-10
+    rel_tol: Optional[float] = 1e-10
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.method is not None and not isinstance(self.method, str):
+            self.method = str(self.method)
+
+        if self.abs_tol is not None and not isinstance(self.abs_tol, float):
+            self.abs_tol = float(self.abs_tol)
+
+        if self.rel_tol is not None and not isinstance(self.rel_tol, float):
+            self.rel_tol = float(self.rel_tol)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Integrator(Solver):
+    """
+    Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits
+    abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Integrator"]
@@ -5601,6 +5643,12 @@ slots.option__value = Slot(uri=TVBO.value, name="option__value", curie=TVBO.curi
 slots.discretization__method = Slot(uri=TVBO.method, name="discretization__method", curie=TVBO.curie('method'),
                    model_uri=TVBO.discretization__method, domain=None, range=Optional[Union[str, "NumericalDiscretizationMethod"]])
 
+slots.discretization__ode_solver = Slot(uri=TVBO.ode_solver, name="discretization__ode_solver", curie=TVBO.curie('ode_solver'),
+                   model_uri=TVBO.discretization__ode_solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.discretization__linear_solver = Slot(uri=TVBO.linear_solver, name="discretization__linear_solver", curie=TVBO.curie('linear_solver'),
+                   model_uri=TVBO.discretization__linear_solver, domain=None, range=Optional[Union[dict, Solver]])
+
 slots.discretization__options = Slot(uri=TVBO.options, name="discretization__options", curie=TVBO.curie('options'),
                    model_uri=TVBO.discretization__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
 
@@ -5617,7 +5665,7 @@ slots.initialState__rel_tol = Slot(uri=TVBO.rel_tol, name="initialState__rel_tol
                    model_uri=TVBO.initialState__rel_tol, domain=None, range=Optional[float])
 
 slots.initialState__solver = Slot(uri=TVBO.solver, name="initialState__solver", curie=TVBO.curie('solver'),
-                   model_uri=TVBO.initialState__solver, domain=None, range=Optional[Union[dict, Integrator]])
+                   model_uri=TVBO.initialState__solver, domain=None, range=Optional[Union[dict, Solver]])
 
 slots.initialState__source_branch = Slot(uri=TVBO.source_branch, name="initialState__source_branch", curie=TVBO.curie('source_branch'),
                    model_uri=TVBO.initialState__source_branch, domain=None, range=Optional[str])
@@ -5705,6 +5753,15 @@ slots.continuation__software = Slot(uri=TVBO.software, name="continuation__softw
 
 slots.continuation__options = Slot(uri=TVBO.options, name="continuation__options", curie=TVBO.curie('options'),
                    model_uri=TVBO.continuation__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.solver__method = Slot(uri=TVBO.method, name="solver__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.solver__method, domain=None, range=Optional[str])
+
+slots.solver__abs_tol = Slot(uri=TVBO.abs_tol, name="solver__abs_tol", curie=TVBO.curie('abs_tol'),
+                   model_uri=TVBO.solver__abs_tol, domain=None, range=Optional[float])
+
+slots.solver__rel_tol = Slot(uri=TVBO.rel_tol, name="solver__rel_tol", curie=TVBO.curie('rel_tol'),
+                   model_uri=TVBO.solver__rel_tol, domain=None, range=Optional[float])
 
 slots.integrator__method = Slot(uri=TVBO.method, name="integrator__method", curie=TVBO.curie('method'),
                    model_uri=TVBO.integrator__method, domain=None, range=Optional[str])

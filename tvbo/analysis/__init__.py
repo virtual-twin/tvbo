@@ -3,6 +3,6 @@
 Houses analysis result container classes (e.g., BifurcationResult) and related
 APIs that are logically distinct from plotting utilities or simulation drivers.
 """
-from .bifurcation import BifurcationResult  # re-export
+from .bifurcation import BifurcationResult, PyRatesBifurcationResult  # re-export
 
-__all__ = ["BifurcationResult"]
+__all__ = ["BifurcationResult", "PyRatesBifurcationResult"]
