@@ -13,6 +13,94 @@ if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
     from tvbo.export.experiment import SimulationExperiment
 
+# Schema attr → Julia kwarg name mapping for ContinuationPar
+_CONT_FIELDS = [
+    ("ds", "ds"),
+    ("ds_min", "dsmin"),
+    ("ds_max", "dsmax"),
+    ("max_steps", "max_steps"),
+    ("tol_stability", "tol_stability"),
+    ("nev", "nev"),
+    ("n_inversion", "n_inversion"),
+    ("max_bisection_steps", "max_bisection_steps"),
+    ("detect_bifurcation", "detect_bifurcation"),
+]
+
+
+def _str(val):
+    """Convert LinkML PermissibleValue enums or plain values to string."""
+    if val is None:
+        return None
+    return val.text if hasattr(val, "text") else str(val)
+
+
+def _get(obj, path, default=None):
+    """Nested attribute access: _get(cont, 'initial_state.duration')."""
+    cur = obj
+    for p in path.split("."):
+        if cur is None:
+            return default
+        cur = getattr(cur, p, None)
+    return cur if cur is not None else default
+
+
+def _get_param(obj, name):
+    """Look up named parameter value in obj.parameters."""
+    if obj is None:
+        return None
+    params = getattr(obj, "parameters", None)
+    if params is None:
+        return None
+    if isinstance(params, dict):
+        p = params.get(name)
+        return p.value if p and p.value is not None else None
+    if isinstance(params, (list, tuple)):
+        for p in params:
+            if getattr(p, "name", None) == name:
+                return p.value if p.value is not None else None
+    return None
+
+
+def _get_option(obj, name):
+    """Look up named option value in obj.options."""
+    if obj is None:
+        return None
+    opts = getattr(obj, "options", None)
+    if opts is None:
+        return None
+    if isinstance(opts, dict):
+        o = opts.get(name)
+        return o.value if o and o.value is not None else None
+    if isinstance(opts, (list, tuple)):
+        for o in opts:
+            if getattr(o, "name", None) == name:
+                return o.value if o.value is not None else None
+    return None
+
+
+def _cont_kwargs(c):
+    """Build list of 'jl_key = value' strings from a Continuation object."""
+    args = []
+    if c is None:
+        return args
+    for schema_attr, jl_key in _CONT_FIELDS:
+        v = getattr(c, schema_attr, None)
+        if v is not None:
+            args.append(f"{jl_key} = {v}")
+    return args
+
+
+def _newton_kwargs(c):
+    """Build NewtonPar kwargs from a Continuation object."""
+    args = []
+    if c is None:
+        return args
+    if c.newton_tol is not None:
+        args.append(f"tol = {c.newton_tol}")
+    if c.newton_max_iterations is not None:
+        args.append(f"max_iterations = {c.newton_max_iterations}")
+    return args
+
 
 class BifurcationKitAdapter:
     """Adapter for running bifurcation analysis via BifurcationKit.jl.
@@ -24,6 +112,190 @@ class BifurcationKitAdapter:
 
     def __init__(self, experiment: "SimulationExperiment"):
         self.experiment = experiment
+
+    # ── Context preparation ──────────────────────────────────────────────
+
+    @staticmethod
+    def _prepare_context(model, cont, **kwargs):
+        """Pre-compute every value the template needs.
+
+        Returns a flat dict of simple strings/numbers/booleans
+        so the template does zero processing.
+        """
+        ctx = dict(model=model, continuation=cont)
+
+        # -- Free parameter --
+        fp_dict = cont.free_parameters if cont else None
+        if fp_dict:
+            fp_first = (
+                next(iter(fp_dict.values()))
+                if isinstance(fp_dict, dict)
+                else fp_dict[0]
+            )
+            ICS = str(fp_first.name)
+            if fp_first.domain:
+                p_min = float(fp_first.domain.lo)
+                p_max = float(fp_first.domain.hi)
+            elif model.parameters[ICS].domain:
+                p_min = float(model.parameters[ICS].domain.lo)
+                p_max = float(model.parameters[ICS].domain.hi)
+            else:
+                p_min, p_max = None, None
+        else:
+            ICS = kwargs.get("ICS")
+            dom = model.parameters[ICS].domain if ICS else None
+            p_min = float(kwargs.get("p_min", dom.lo if dom else None))
+            p_max = float(kwargs.get("p_max", dom.hi if dom else None))
+
+        p_default = (
+            float(model.parameters[ICS].value)
+            if model.parameters[ICS].value is not None
+            else None
+        )
+        ctx["ICS"] = ICS
+        ctx["p_min"] = p_min
+        ctx["p_max"] = p_max
+        ctx["p_start"] = p_default
+
+        # -- Initial state (use schema defaults when unspecified) --
+        from tvbo.datamodel.tvbo_datamodel import InitialState
+        iss = (cont.initial_state if cont else None) or InitialState()
+        ctx["iss_duration"] = _get(iss, "duration")
+        ctx["iss_solver"] = _str(_get(iss, "solver.method"))
+        ctx["iss_atol"] = _get(iss, "abs_tol")
+        ctx["iss_rtol"] = _get(iss, "rel_tol")
+
+        # -- Algorithm string (schema default: PALC) --
+        alg = _str(cont.algorithm) if cont else None
+        tangent = _str(_get_option(cont, "tangent"))
+        ctx["alg_str"] = (
+            f"{alg}(tangent = {tangent}())" if alg and tangent
+            else f"{alg}()" if alg
+            else None
+        )
+
+        # -- ContinuationPar args string --
+        cp_args = [f"p_min = {float(p_min)}", f"p_max = {float(p_max)}"]
+        cp_args.extend(_cont_kwargs(cont))
+        nargs = _newton_kwargs(cont)
+        if nargs:
+            cp_args.append(
+                f"newton_options = NewtonPar({', '.join(nargs)})"
+            )
+        ctx["cp_args_str"] = ",\n    ".join(cp_args)
+
+        # -- continuation() kwargs string --
+        cont_kw = ["normC = norminf"]
+        if cont and cont.bothside:
+            cont_kw.append("bothside = true")
+        ctx["cont_call_kwargs_str"] = ", ".join(cont_kw)
+
+        # -- Quiet --
+        ctx["quiet"] = kwargs.get("quiet", True)
+
+        # -- Branches --
+        branches_raw = []
+        if cont and cont.branches:
+            br_raw = cont.branches
+            branches_raw = (
+                list(br_raw.values())
+                if isinstance(br_raw, dict)
+                else list(br_raw)
+            )
+        ctx["branches"] = [
+            BifurcationKitAdapter._prepare_branch(b) for b in branches_raw
+        ]
+
+        return ctx
+
+    @staticmethod
+    def _prepare_branch(br):
+        """Pre-compute all values for one branch (periodic orbit)."""
+        bc = br.continuation  # sub-Continuation or None
+
+        # PO ContinuationPar override args
+        po_cp = _cont_kwargs(bc)
+        po_n = _newton_kwargs(bc)
+        if po_n:
+            po_cp.append(f"newton_options = NewtonPar({', '.join(po_n)})")
+        po_cp_str = ", ".join(po_cp) if po_cp else ""
+
+        # Source point
+        source = br.source_point
+        all_hopf = source == "hopf:all" if source else False
+        if source and ":" in source:
+            hopf_idx_str = source.split(":")[1]
+            hopf_idx = (
+                int(hopf_idx_str)
+                if hopf_idx_str.lstrip("-").isdigit()
+                else None
+            )
+        else:
+            hopf_idx = None
+
+        # Discretization
+        disc = br.discretization
+        method = _str(_get(disc, "method"))
+
+        # Collocation params (int cast: Julia positional args)
+        _mi = _get_param(disc, "mesh_intervals")
+        mesh_intervals = int(_mi) if _mi is not None else None
+        _dg = _get_param(disc, "degree")
+        degree = int(_dg) if _dg is not None else None
+        meshadapt = _get_param(disc, "mesh_adaptation")
+        jacobian = _str(_get_option(disc, "jacobian"))
+
+        # Shooting params (int cast: Julia positional arg)
+        _ns = _get_param(disc, "n_sections")
+        n_sections = int(_ns) if _ns is not None else None
+        parallel = _get_param(disc, "parallel")
+
+        # ODE solver for flow-based methods (shooting, poincaré)
+        ode_solver = _str(_get(disc, "ode_solver.method"))
+        ode_abstol = _get(disc, "ode_solver.abs_tol")
+        ode_reltol = _get(disc, "ode_solver.rel_tol")
+
+        # Linear solver — Solver object on Discretization
+        linear_solver = _str(_get(disc, "linear_solver.method"))
+
+        # PO continuation() kwargs string
+        po_kw = ["plot = false", "args_po..."]
+        if br.delta_p is not None:
+            po_kw.append(f"\u03b4p = {br.delta_p}")
+        po_tangent = _str(_get_option(bc, "tangent"))
+        if po_tangent:
+            po_kw.append(f"alg = PALC(tangent = {po_tangent}())")
+        if linear_solver:
+            po_kw.append(f"linear_algo = {linear_solver}()")
+        po_kw.append("verbosity = 0")
+        if br.bothside:
+            po_kw.append("bothside = true")
+        max_norm = _get_param(br, "max_norm_bound")
+        if max_norm is not None:
+            po_kw.append(
+                f"callback_newton = BifurcationKit.cbMaxNorm({float(max_norm)})"
+            )
+        po_kwargs_str = ",\n            ".join(po_kw)
+
+        return dict(
+            po_cp_args_str=po_cp_str,
+            source=source,
+            all_hopf=all_hopf,
+            hopf_idx=hopf_idx,
+            method=method,
+            mesh_intervals=mesh_intervals,
+            degree=degree,
+            meshadapt=meshadapt,
+            jacobian=jacobian,
+            n_sections=n_sections,
+            parallel=parallel,
+            ode_solver=ode_solver,
+            ode_abstol=ode_abstol,
+            ode_reltol=ode_reltol,
+            po_kwargs_str=po_kwargs_str,
+        )
+
+    # ── Public API ───────────────────────────────────────────────────────
 
     def render_code(self, model=None, continuation=None, **kwargs) -> str:
         """Render BifurcationKit Julia code for a single continuation.
@@ -45,12 +317,12 @@ class BifurcationKitAdapter:
             if conts:
                 continuation = next(iter(conts.values()))
 
+        ctx = self._prepare_context(model, continuation, **kwargs)
+
         template = templates.lookup.get_template(
             "tvbo-julia-BifurcationKit.jl.mako"
         )
-        return template.render(
-            model=model, continuation=continuation, **kwargs
-        )
+        return template.render(**ctx)
 
     def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
         """Run bifurcation analysis for each continuation in the experiment.

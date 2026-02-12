@@ -3,6 +3,7 @@
 
 This module contains adapters for different simulation backends:
 - pyrates: PyRates backend adapter
+- pyrates_bifurcation: PyRates/PyCoBi bifurcation analysis adapter
 - julia: Julia language integration (juliacall)
 - networkdynamics: NetworkDynamics.jl backend adapter
 - modelingtoolkit: ModelingToolkit.jl backend adapter

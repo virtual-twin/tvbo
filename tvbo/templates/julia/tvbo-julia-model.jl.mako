@@ -14,13 +14,7 @@ juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_
 %>
 using SpecialFunctions
 
-function ${model.name}!(dx, x, p, t = 0, local_coupling = 0)
-
-    exp = Base.exp
-    sqrt = Base.sqrt
-    tanh = Base.tanh
-    e = Base.MathConstants.e
-    pi = π
+function ${model.name}!(dx, x, p, t = 0)
 
     (;${", ".join(param_names + ct_names)}) = p
 

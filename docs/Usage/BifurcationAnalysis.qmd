@@ -35,6 +35,9 @@ free_parameters:
 
 max_steps: 200
 bothside: true
+ds_min: 1.0e-4
+ds: 0.01
+tol_stability: 1.0e-6
 
 branches:
     - name: po_from_hopf
@@ -61,7 +64,8 @@ free_parameters:
           hi: "1"
 
 max_steps: 200
-ds: 0.0001
+ds: 0.01
+tol_stability: 1.0e-12
 newton_tol: 1.0e-6
 bothside: true
 
