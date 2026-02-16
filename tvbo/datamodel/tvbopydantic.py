@@ -5624,6 +5624,9 @@ class Discretization(ConfiguredBaseModel):
          'ifabsent': 'string(collocation)'} })
     ode_solver: Optional[Solver] = Field(default=None, description="""ODE solver for flow-based methods (shooting, poincaré). Specifies algorithm (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or trapezoid.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization']} })
     linear_solver: Optional[Solver] = Field(default=None, description="""Linear solver for the Newton bordered system. E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization']} })
+    mesh_intervals: Optional[int] = Field(default=50, description="""Number of mesh intervals (time slices) for collocation or trapezoid methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in PeriodicOrbitTrapProblem(M=...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(50)'} })
+    degree: Optional[int] = Field(default=4, description="""Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N, m).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(4)'} })
+    n_sections: Optional[int] = Field(default=3, description="""Number of shooting sections for shooting or Poincaré methods.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(3)'} })
     options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (jacobian type, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 

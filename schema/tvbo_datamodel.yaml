@@ -1693,6 +1693,26 @@ classes:
                 description: >-
                     Linear solver for the Newton bordered system.
                     E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).
+            mesh_intervals:
+                range: integer
+                ifabsent: int(50)
+                description: >-
+                    Number of mesh intervals (time slices) for collocation
+                    or trapezoid methods. Collocation: N in
+                    PeriodicOrbitOCollProblem(N, m). Trapezoid: M in
+                    PeriodicOrbitTrapProblem(M=...).
+            degree:
+                range: integer
+                ifabsent: int(4)
+                description: >-
+                    Polynomial degree per mesh interval for collocation.
+                    The m in PeriodicOrbitOCollProblem(N, m).
+            n_sections:
+                range: integer
+                ifabsent: int(3)
+                description: >-
+                    Number of shooting sections for shooting or Poincaré
+                    methods.
             options:
                 multivalued: true
                 range: Option
