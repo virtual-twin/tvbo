@@ -202,9 +202,23 @@ class BifurcationKitAdapter:
                 if isinstance(br_raw, dict)
                 else list(br_raw)
             )
-        ctx["branches"] = [
-            BifurcationKitAdapter._prepare_branch(b) for b in branches_raw
-        ]
+
+        # Separate PO branches from codim-2 branches
+        po_branches = []
+        codim2_branches = []
+        for b in branches_raw:
+            bc = getattr(b, 'continuation', None)
+            has_fp2 = bc and getattr(bc, 'free_parameters', None)
+            if has_fp2:
+                codim2_branches.append(
+                    BifurcationKitAdapter._prepare_codim2_branch(b, cont)
+                )
+            else:
+                po_branches.append(
+                    BifurcationKitAdapter._prepare_branch(b)
+                )
+        ctx["branches"] = po_branches
+        ctx["codim2_branches"] = codim2_branches
 
         return ctx
 
@@ -233,27 +247,26 @@ class BifurcationKitAdapter:
         else:
             hopf_idx = None
 
-        # Discretization
-        disc = br.discretization
+        # Discretization (use schema defaults when unspecified)
+        from tvbo.datamodel.tvbo_datamodel import Discretization
+        disc = br.discretization or Discretization()
         method = _str(_get(disc, "method"))
 
-        # Collocation params (int cast: Julia positional args)
-        _mi = _get_param(disc, "mesh_intervals")
-        mesh_intervals = int(_mi) if _mi is not None else None
-        _dg = _get_param(disc, "degree")
-        degree = int(_dg) if _dg is not None else None
+        # Collocation/trapezoid params (direct attributes with schema defaults)
+        mesh_intervals = _get(disc, "mesh_intervals")
+        degree = _get(disc, "degree")
         meshadapt = _get_param(disc, "mesh_adaptation")
         jacobian = _str(_get_option(disc, "jacobian"))
 
-        # Shooting params (int cast: Julia positional arg)
-        _ns = _get_param(disc, "n_sections")
-        n_sections = int(_ns) if _ns is not None else None
+        # Shooting params (direct attribute with schema default)
+        n_sections = _get(disc, "n_sections")
         parallel = _get_param(disc, "parallel")
 
         # ODE solver for flow-based methods (shooting, poincaré)
         ode_solver = _str(_get(disc, "ode_solver.method"))
         ode_abstol = _get(disc, "ode_solver.abs_tol")
         ode_reltol = _get(disc, "ode_solver.rel_tol")
+        ode_time_span = float(_get_param(disc, "ode_time_span") or 1000.0)
 
         # Linear solver — Solver object on Discretization
         linear_solver = _str(_get(disc, "linear_solver.method"))
@@ -292,6 +305,7 @@ class BifurcationKitAdapter:
             ode_solver=ode_solver,
             ode_abstol=ode_abstol,
             ode_reltol=ode_reltol,
+            ode_time_span=ode_time_span,
             po_kwargs_str=po_kwargs_str,
         )
 
@@ -324,6 +338,18 @@ class BifurcationKitAdapter:
         )
         return template.render(**ctx)
 
+    @staticmethod
+    def _get_ics(cont):
+        """Extract the free parameter name from a Continuation spec."""
+        fp = getattr(cont, 'free_parameters', None)
+        if not fp:
+            return None
+        if isinstance(fp, dict) and fp:
+            return str(next(iter(fp.values())).name)
+        if isinstance(fp, list) and fp:
+            return str(fp[0].name)
+        return None
+
     def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
         """Run bifurcation analysis for each continuation in the experiment.
 
@@ -355,11 +381,17 @@ class BifurcationKitAdapter:
             run_julia_code(code)
 
             br_obj = extract_bifurcation_result()
-            bif_res = BifurcationResult(br=br_obj, model=model, **kwargs)
+            ICS = self._get_ics(cont)
+            bif_res = BifurcationResult(
+                br=br_obj, model=model, ICS=ICS, **kwargs
+            )
 
             if getattr(cont, "branches", None):
                 bif_res.periodic_orbits = self._extract_periodic_orbits(
-                    model, **kwargs
+                    model, ICS=ICS, **kwargs
+                )
+                bif_res.codim2_curves = self._extract_codim2_results(
+                    model, ICS=ICS, **kwargs
                 )
 
             results[name] = bif_res
@@ -396,3 +428,127 @@ class BifurcationKitAdapter:
             ]
         except Exception:
             return []
+
+    def _extract_codim2_results(self, model, **kwargs) -> list:
+        """Extract codim-2 continuation curves from Julia Main."""
+        from tvbo.adapters.julia import eval_with_auto_install
+        from tvbo.analysis import BifurcationResult
+
+        try:
+            c2 = eval_with_auto_install("codim2_results")
+            results = []
+            for entry in c2:
+                br_obj = entry
+                res = BifurcationResult(br=br_obj, model=model, **kwargs)
+                res._is_codim2 = True
+
+                # Infer source type from continuation kind
+                from tvbo.analysis.bifurcation import continuation_kind
+                kind = continuation_kind(br_obj)
+                if kind == 'HopfCont':
+                    res._source_type = 'hopf'
+                elif kind == 'FoldCont':
+                    res._source_type = 'fold'
+                else:
+                    res._source_type = 'fold'
+
+                # BifurcationKit codim-2 branches store both parameters
+                # as named columns plus the 'param' column (= continuation
+                # parameter). Identify both by matching model parameters.
+                if not res.df.empty and model:
+                    import numpy as np
+                    model_params = set(
+                        model.parameters.keys()
+                    ) if hasattr(model, 'parameters') else set()
+                    param_cols = [
+                        c for c in res.df.columns if c in model_params
+                    ]
+                    # The column whose values match 'param' is the
+                    # codim-2 continuation parameter; the other is the
+                    # co-parameter (param2).
+                    res._ics_name = None
+                    res._fp2_name = None
+                    for col in param_cols:
+                        if np.allclose(
+                            res.df[col].values, res.df['param'].values,
+                            equal_nan=True, rtol=1e-10
+                        ):
+                            res._ics_name = col
+                        else:
+                            res._fp2_name = col
+                            res.df['param2'] = res.df[col]
+                    # Fallback: if we couldn't match, use first param col
+                    if res._fp2_name is None and len(param_cols) >= 2:
+                        for col in param_cols:
+                            if col != (res._ics_name or ''):
+                                res._fp2_name = col
+                                res.df['param2'] = res.df[col]
+                                break
+
+                results.append(res)
+            return results
+        except Exception:
+            return []
+
+    @staticmethod
+    def _prepare_codim2_branch(br, parent_cont):
+        """Pre-compute context for a codim-2 branch."""
+        bc = br.continuation
+        fp2 = getattr(bc, 'free_parameters', None) or {}
+        if isinstance(fp2, dict) and fp2:
+            fp2_first = next(iter(fp2.values()))
+        elif isinstance(fp2, list) and fp2:
+            fp2_first = fp2[0]
+        else:
+            raise ValueError("Codim-2 branch requires free_parameters.")
+
+        ICS2 = str(fp2_first.name)
+        p2_min = float(fp2_first.domain.lo) if fp2_first.domain else -20
+        p2_max = float(fp2_first.domain.hi) if fp2_first.domain else 20
+
+        source = getattr(br, 'source_point', None) or 'hopf:all'
+        source_type = source.split(':')[0]  # 'hopf' or 'fold'
+        all_source = ':all' in source
+
+        # Source index (Julia 1-based)
+        source_idx_jl = None
+        if not all_source and ':' in source:
+            idx_str = source.split(':')[1]
+            if idx_str.lstrip('-').isdigit():
+                idx = int(idx_str)
+                source_idx_jl = idx if idx >= 0 else f'end{idx + 1}' if idx != -1 else 'end'
+
+        # Codim-2 ContinuationPar args
+        cp_args = [f'p_min = {p2_min}', f'p_max = {p2_max}']
+        cp_args.extend(_cont_kwargs(bc))
+        if not any('ds =' in a for a in cp_args):
+            cp_args.append('ds = 0.01')
+        if not any('dsmax' in a.lower() for a in cp_args):
+            cp_args.append('dsmax = 0.1')
+        if not any('max_steps' in a for a in cp_args):
+            cp_args.append('max_steps = 300')
+        codim2_cp_str = ', '.join(cp_args)
+
+        # Codim-2 continuation kwargs
+        codim2_kw = [
+            'normC = norminf',
+            'detect_codim2_bifurcation = 2',
+            'update_minaug_every_step = 1',
+            'start_with_eigen = true',
+            'verbosity = 0',
+        ]
+        if br.bothside:
+            codim2_kw.append('bothside = true')
+        codim2_kwargs_str = ',\n            '.join(codim2_kw)
+
+        return {
+            'name': str(br.name),
+            'ICS2': ICS2,
+            'p2_min': p2_min,
+            'p2_max': p2_max,
+            'source_type': source_type,
+            'all_source': all_source,
+            'source_idx_jl': source_idx_jl,
+            'codim2_cp_str': codim2_cp_str,
+            'codim2_kwargs_str': codim2_kwargs_str,
+        }
