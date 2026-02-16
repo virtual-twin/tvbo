@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-12T19:40:36
+# Generation date: 2026-02-13T16:31:56
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2413,6 +2413,9 @@ class Discretization(YAMLRoot):
     method: Optional[Union[str, "NumericalDiscretizationMethod"]] = 'collocation'
     ode_solver: Optional[Union[dict, "Solver"]] = None
     linear_solver: Optional[Union[dict, "Solver"]] = None
+    mesh_intervals: Optional[int] = 50
+    degree: Optional[int] = 4
+    n_sections: Optional[int] = 3
     options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2426,6 +2429,15 @@ class Discretization(YAMLRoot):
 
         if self.linear_solver is not None and not isinstance(self.linear_solver, Solver):
             self.linear_solver = Solver(**as_dict(self.linear_solver))
+
+        if self.mesh_intervals is not None and not isinstance(self.mesh_intervals, int):
+            self.mesh_intervals = int(self.mesh_intervals)
+
+        if self.degree is not None and not isinstance(self.degree, int):
+            self.degree = int(self.degree)
+
+        if self.n_sections is not None and not isinstance(self.n_sections, int):
+            self.n_sections = int(self.n_sections)
 
         self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
 
@@ -5648,6 +5660,15 @@ slots.discretization__ode_solver = Slot(uri=TVBO.ode_solver, name="discretizatio
 
 slots.discretization__linear_solver = Slot(uri=TVBO.linear_solver, name="discretization__linear_solver", curie=TVBO.curie('linear_solver'),
                    model_uri=TVBO.discretization__linear_solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.discretization__mesh_intervals = Slot(uri=TVBO.mesh_intervals, name="discretization__mesh_intervals", curie=TVBO.curie('mesh_intervals'),
+                   model_uri=TVBO.discretization__mesh_intervals, domain=None, range=Optional[int])
+
+slots.discretization__degree = Slot(uri=TVBO.degree, name="discretization__degree", curie=TVBO.curie('degree'),
+                   model_uri=TVBO.discretization__degree, domain=None, range=Optional[int])
+
+slots.discretization__n_sections = Slot(uri=TVBO.n_sections, name="discretization__n_sections", curie=TVBO.curie('n_sections'),
+                   model_uri=TVBO.discretization__n_sections, domain=None, range=Optional[int])
 
 slots.discretization__options = Slot(uri=TVBO.options, name="discretization__options", curie=TVBO.curie('options'),
                    model_uri=TVBO.discretization__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
