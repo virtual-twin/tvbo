@@ -139,7 +139,7 @@ for hopf_idx in hopf_indices
         coll_kwargs.append(f"meshadapt = {'true' if br0['meshadapt'] else 'false'}")
     if br0['jacobian'] is not None:
         coll_kwargs.append(f"jacobian = BifurcationKit.{br0['jacobian']}()")
-    coll_kw_str = ',\n                ' + ',\n                '.join(coll_kwargs) if coll_kwargs else ''
+    coll_kw_str = ', ' + ', '.join(coll_kwargs) if coll_kwargs else ''
 %>\
         br_po = continuation(
             br, hopf_idx, opts_po_cont,
@@ -147,19 +147,11 @@ for hopf_idx in hopf_indices
             ${br0['po_kwargs_str']},
         )
 % elif br0['method'] == 'trapezoid':
-% if br0['mesh_intervals'] is not None:
         br_po = continuation(
             br, hopf_idx, opts_po_cont,
             PeriodicOrbitTrapProblem(M = ${br0['mesh_intervals']});
             ${br0['po_kwargs_str']},
         )
-% else:
-        br_po = continuation(
-            br, hopf_idx, opts_po_cont,
-            PeriodicOrbitTrapProblem();
-            ${br0['po_kwargs_str']},
-        )
-% endif
 % elif br0['method'] == 'shooting':
 <%
     ode_kwargs = []
@@ -173,7 +165,7 @@ for hopf_idx in hopf_indices
         shoot_kwargs.append(f"parallel = {'true' if br0['parallel'] else 'false'}")
     shoot_kw_str = ', ' + ', '.join(shoot_kwargs) if shoot_kwargs else ''
 %>\
-        prob_ode = ODEProblem(${model.name}!, copy(x0), (0.0, 1.0), p${ode_kw_str})
+        prob_ode = ODEProblem(${model.name}!, copy(x0), (0.0, ${br0['ode_time_span']}), p${ode_kw_str})
         br_po = continuation(
             br, hopf_idx, opts_po_cont,
             ShootingProblem(${br0['n_sections']}, prob_ode, OrdinaryDiffEq.${br0['ode_solver']}()${shoot_kw_str});
@@ -192,7 +184,7 @@ for hopf_idx in hopf_indices
         poinc_kwargs.append(f"parallel = {'true' if br0['parallel'] else 'false'}")
     poinc_kw_str = ', ' + ', '.join(poinc_kwargs) if poinc_kwargs else ''
 %>\
-        prob_ode = ODEProblem(${model.name}!, copy(x0), (0.0, 1.0), p${ode_kw_str_p})
+        prob_ode = ODEProblem(${model.name}!, copy(x0), (0.0, ${br0['ode_time_span']}), p${ode_kw_str_p})
         br_po = continuation(
             br, hopf_idx, opts_po_cont,
             PoincareShootingProblem(${br0['n_sections']}, prob_ode, OrdinaryDiffEq.${br0['ode_solver']}()${poinc_kw_str});
@@ -207,4 +199,58 @@ end
 
 po_results = (hopf_indices = hopf_indices, branches = po_branches)
 
+% endif
+
+% if codim2_branches:
+########################################################################################################################
+## Codim-2 continuation
+codim2_results = Any[]
+
+% for c2 in codim2_branches:
+<%
+src_type = c2['source_type']
+## In BifurcationKit.jl, fold points can be :bp or :fold.
+## Hopf points are :hopf.
+is_fold = src_type in ('fold', 'branch_point', 'bp')
+%>\
+# Codim-2 branch: ${c2['name']} (${src_type} → ${c2['ICS2']})
+begin
+    local _bif_indices = Int[]
+    for (i, sp) in enumerate(br.specialpoint)
+% if is_fold:
+        (sp.type == :bp || sp.type == :fold) && push!(_bif_indices, i)
+% else:
+        sp.type == :${src_type} && push!(_bif_indices, i)
+% endif
+    end
+
+% if c2['all_source']:
+    # All ${src_type} points
+% elif c2['source_idx_jl'] is not None:
+    if !isempty(_bif_indices)
+        _bif_indices = [_bif_indices[${c2['source_idx_jl']}]]
+    end
+% else:
+    if !isempty(_bif_indices)
+        _bif_indices = [_bif_indices[end]]
+    end
+% endif
+
+    local _opts_c2 = ContinuationPar(${c2['codim2_cp_str']})
+
+    for _bif_idx in _bif_indices
+        try
+            local _br_c2 = continuation(
+                br, _bif_idx, (@optic _.${c2['ICS2']}),
+                _opts_c2;
+                ${c2['codim2_kwargs_str']},
+            )
+            push!(codim2_results, _br_c2)
+        catch e
+            @warn "Codim-2 continuation from ${src_type} $_bif_idx failed" exception=(e, catch_backtrace())
+        end
+    end
+end
+
+% endfor
 % endif
