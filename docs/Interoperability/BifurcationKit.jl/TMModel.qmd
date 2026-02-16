@@ -86,11 +86,11 @@ branches:
           tol_stability: 1.0e-5
       discretization:
           method: collocation
+          mesh_intervals: 50
+          degree: 4
           linear_solver:
               method: COPBLS
           parameters:
-              - {name: mesh_intervals, value: 50}
-              - {name: degree, value: 4}
               - {name: mesh_adaptation, value: true}
 """
 
@@ -137,8 +137,7 @@ branches:
           tol_stability: 1.0e-7
       discretization:
           method: trapezoid
-          parameters:
-              - {name: mesh_intervals, value: 250}
+          mesh_intervals: 250
 """
 
 cont_trap = Continuation.from_string(po_trapezoid)
@@ -172,14 +171,14 @@ branches:
           tol_stability: 1.0e-4
       discretization:
           method: shooting
+          n_sections: 15
           ode_solver:
-              method: Vern9
-              abs_tol: 1e-12
-              rel_tol: 1e-10
+              method: Rodas5
+              abs_tol: 1e-11
+              rel_tol: 1e-9
           linear_solver:
               method: MatrixBLS
           parameters:
-              - {name: n_sections, value: 15}
               - {name: parallel, value: true}
       parameters:
           - {name: max_norm_bound, value: 10}
@@ -187,6 +186,7 @@ branches:
 
 cont_shoot = Continuation.from_string(po_shooting)
 exp_shoot = SimulationExperiment(dynamics=model, continuations=[cont_shoot])
+print(exp_shoot.render_code('bifurcationkit.jl'))
 result_shoot = exp_shoot.run('bifurcationkit.jl')
 result_shoot.plot()
 ```
@@ -218,14 +218,14 @@ branches:
           detect_bifurcation: 2
       discretization:
           method: poincare
+          n_sections: 5
           ode_solver:
               method: Rodas5
-              abs_tol: 1e-12
-              rel_tol: 1e-10
+              abs_tol: 1e-11
+              rel_tol: 1e-9
           linear_solver:
               method: MatrixBLS
           parameters:
-              - {name: n_sections, value: 5}
               - {name: parallel, value: true}
       parameters:
           - {name: max_norm_bound, value: 1.0}
@@ -233,6 +233,7 @@ branches:
 
 cont_poinc = Continuation.from_string(po_poincare)
 exp_poinc = SimulationExperiment(dynamics=model, continuations=[cont_poinc])
+print(exp_poinc.render_code('bifurcationkit.jl'))
 result_poinc = exp_poinc.run('bifurcationkit.jl')
 result_poinc.plot()
 ```
