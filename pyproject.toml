@@ -98,7 +98,7 @@ dependencies = [
     "dipy >=1.10.0",
     "h5py >=3.12.1",
     "pybtex >=0.24.0",
-    "librosa >=0.10.2.post1",
+    "librosa >=0.10.2.post1,<0.11.0",
     "lark >=1.2.2",
     "pypandoc >=1.15",
     # Documentation generation utilities
