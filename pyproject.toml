@@ -27,8 +27,8 @@ dependencies = [
     "rdflib>=7.1.1",
 
     # ML
-    "jax>=0.6.0",
-    "equinox>=0.11.12",
+    "jax >=0.4.28",
+    "equinox >=0.11.12",
 
     # Symbolic
     "sympy>=1.13.0",
