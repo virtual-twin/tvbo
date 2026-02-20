@@ -15,6 +15,12 @@
 pip install tvbo
 ```
 
+### Platform Notes
+
+**Intel Mac Users (x86_64):** Due to JAX dropping Intel Mac support in version 0.5.0+, you need Python 3.9-3.12. The package will automatically install JAX 0.4.28 which is the last version supporting Intel Macs.
+
+**Apple Silicon Mac Users:** Python ≥3.10 is supported. You'll get the latest compatible JAX version automatically.
+
 ## 📖 Quick Start
 
 ### Example: Lorenz Attractor Simulation
@@ -144,3 +150,6 @@ pip install tvbo[all]
 ## 📄 License
 
 Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
+
+## Funding
+P.R. acknowledges support by EU Horizon Europe program Horizon EBRAINS2.0 (101147319), VirtualBrainTwin(101137289), EBRAINS-PREP101079717, AISN101057655, EBRAIN-Health 101058516, EIC grant PHRASE 101058240, by the Digital Europe Programme TEF-Health (101100700), Shaiped (101195135), CoordinaTEF (101168074) German Research Foundation SFB 1436 (project ID 425899996); SFB 1315 (project ID 327654276); SFB 936 (project ID 178316478); SPP Computational Connectomics RI 2073/6-1, RI 2073/10-2, RI 2073/9-1; DFG Clinical Research Group BECAUSE-Y 504745852, Berlin University Alliance OpenMake, the Virtual Research Environment at the Charité Berlin and EBRAINS Health Data Cloud and the Berlin Institute of Health and Foundation Charité. P.R. and J.M. acknowledge additionally support by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) - Project-ID 424778381 - TRR 295.
