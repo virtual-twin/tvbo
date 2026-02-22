@@ -1,6 +1,6 @@
 <%page args="model, duration"/>
 ## ODEProblem setup (deterministic)
-using DifferentialEquations
+using OrdinaryDiffEqTsit5
 
 # Initial conditions (scalar state vector)
 u0 = [

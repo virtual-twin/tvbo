@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 ## SDEProblem setup (additive diagonal noise)
 <%page args="model, duration"/>
-using DifferentialEquations
+using StochasticDiffEq
 <%include file="/tvbo-julia-model.jl.mako" args="model=model" />
 
 # Initial conditions (scalar state vector)

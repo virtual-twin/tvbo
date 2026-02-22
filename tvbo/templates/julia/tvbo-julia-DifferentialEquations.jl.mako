@@ -11,9 +11,8 @@ if 'duration' not in context.keys():
     duration=1000
 if 'dt' not in context.keys():
     dt = 0.01
-if 'plot' not in context.keys():
-    # Provide a safe default so `%if plot:` blocks do not raise NameError
-    plot = False
+plot = context.get('plot', False)
+fout = context.get('fout', False)
 %>
 
 ## Decide problem type (ODE vs SDE) based on presence of any state variable noise intensity > 0
@@ -37,14 +36,12 @@ def has_noise(model):
 <%include file="/tvbo-julia-ODEProblem.jl.mako" args="model=model, duration=duration" />
 % endif
 
-# Solve either deterministic ODE or stochastic SDE.
-sol = if prob isa ODEProblem
-    solve(prob, Tsit5(); saveat=${dt})
-elseif prob isa SDEProblem
-    solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
-else
-    solve(prob; saveat=${dt})
-end
+# Solve
+% if has_noise(model):
+sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
+% else:
+sol = solve(prob, Tsit5(); saveat=${dt})
+% endif
 
 %if plot:
 # Plot the solution
