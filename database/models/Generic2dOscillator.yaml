@@ -134,6 +134,8 @@ coupling_terms:
     name: c_glob
   c_pop0:
     name: c_pop0
+  local_coupling:
+    name: local_coupling
 state_variables:
   V:
     name: V
