@@ -197,6 +197,8 @@ derived_variables:
 coupling_terms:
   c_pop0:
     name: c_pop0
+  local_coupling:
+    name: local_coupling
 state_variables:
   x1:
     name: x1

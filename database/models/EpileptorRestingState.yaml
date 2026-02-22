@@ -332,6 +332,8 @@ coupling_terms:
     name: c_pop1
   c_pop2:
     name: c_pop2
+  local_coupling:
+    name: local_coupling
 state_variables:
   g:
     name: g
