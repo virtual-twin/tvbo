@@ -49,7 +49,76 @@ PYRATES_REPL = {
     "O": "O_",
     "Q": "Q_",
     "epsilon": "epsilon_",
+    "y": "y_",
+    "dy": "dy_",
 }
+
+
+def _patch_pyrates_replace_in_expr():
+    """Monkey-patch PyRates' replace_in_expr to use xreplace.
+
+    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which
+    corrupts compound sub-expressions: when a ``Mul`` has two or more
+    ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs``
+    replaces the symbol *inside* the ``Add`` first, breaking the match for
+    the ``Add`` replacement key. ``xreplace`` matches top-down and avoids
+    this bug.
+    """
+    import pyrates.backend.parser as _pr_parser
+
+    def _replace_in_expr_fixed(expr, replacements):
+        return expr.xreplace(replacements)
+
+    _pr_parser.replace_in_expr = _replace_in_expr_fixed
+
+
+def _patch_pyrates_missing_funcs():
+    """Register additional math functions in PyRates' base backend.
+
+    PyRates' compute graph only supports functions listed in ``base_funcs``.
+    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy
+    but missing from PyRates' registry.  We inject them into the shared
+    ``base_funcs`` dict which is copied by every new backend instance.
+
+    Also patches the ExpressionParser to inject functions into already-
+    instantiated backends via their compute graph.
+    """
+    from pyrates.backend.base.base_funcs import base_funcs
+
+    _extra_funcs = {}
+    if "erfc" not in base_funcs:
+        _extra_funcs["erfc"] = {
+            "call": "erfc",
+            "func": __import__("scipy.special", fromlist=["erfc"]).erfc,
+            "imports": ["scipy.special.erfc"],
+        }
+    if "erf" not in base_funcs:
+        _extra_funcs["erf"] = {
+            "call": "erf",
+            "func": __import__("scipy.special", fromlist=["erf"]).erf,
+            "imports": ["scipy.special.erf"],
+        }
+    if "fmod" not in base_funcs:
+        _extra_funcs["fmod"] = {
+            "call": "fmod",
+            "func": np.fmod,
+            "imports": ["numpy.fmod"],
+        }
+    if _extra_funcs:
+        base_funcs.update(_extra_funcs)
+
+        # Also monkey-patch ExpressionParser.parse_expr to inject funcs
+        # into compute graph backends that were already instantiated.
+        import pyrates.backend.parser as _pr_parser
+        _orig_parse_expr = _pr_parser.ExpressionParser.parse_expr
+
+        def _patched_parse_expr(self):
+            for name, info in _extra_funcs.items():
+                if name not in self.cg.backend._funcs:
+                    self.cg.backend._funcs[name] = info
+            return _orig_parse_expr(self)
+
+        _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
 class PyRatesAdapter:
@@ -97,6 +166,12 @@ class PyRatesAdapter:
         from pyrates import clear
         from pyrates.frontend import CircuitTemplate
 
+        # Fix PyRates' broken replace_in_expr (subs vs xreplace bug)
+        _patch_pyrates_replace_in_expr()
+
+        # Register missing math functions (erfc, erf, fmod)
+        _patch_pyrates_missing_funcs()
+
         exp = self.experiment
         integration = getattr(exp, "integration", None)
 
@@ -125,6 +200,11 @@ class PyRatesAdapter:
                 outputs = self._build_outputs()
             if inputs is None:
                 inputs = self._build_inputs()
+
+            # Default vectorize=False: PyRates' vectorize=True makes
+            # scalar parameters into (1,) arrays which breaks single-node
+            # circuits. Users can override by passing vectorize=True.
+            kwargs.setdefault("vectorize", False)
 
             # Run simulation
             result = circuit.run(
