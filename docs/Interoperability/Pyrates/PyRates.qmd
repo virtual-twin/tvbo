@@ -91,7 +91,8 @@ results = model.run(
     simulation_time=T,
     outputs={'x': 'p/VanDerPol_op/x', 'z': 'p/VanDerPol_op/z'},
     solver='scipy',
-    method='RK45'
+    method='RK45',
+    vectorize=False,  # Required for single-node circuits (PyRates bug)
 )
 clear(model)
 shutil.rmtree('_pyrates_vdp')
@@ -365,6 +366,7 @@ pyrates_result = pyrates_model.run(
     simulation_time=T + dt,
     outputs={"x": "p/VdP_op/x", "z": "p/VdP_op/z"},
     solver="heun",  # Use same solver as TVBO
+    vectorize=False,  # Required for single-node circuits (PyRates bug)
 )
 clear(pyrates_model)
 shutil.rmtree("_compare")

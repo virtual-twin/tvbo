@@ -106,7 +106,6 @@ def class2metadata(ontoclass, metadata):
     functions = order_by_equations(
         ontology.get_model_functions(ontoclass), dependent_equations
     )
-    update_parameters(metadata, ontoclass)
 
     for k, v in state_variables.items():
         range = ontology.get_range(v)
@@ -154,6 +153,11 @@ def class2metadata(ontoclass, metadata):
 
             for attr, value in updates.items():
                 setattr(state_var, attr, value)
+
+    # Update parameters AFTER state_variables are populated so that
+    # update_parameters can parse their equations and determine which
+    # ontology parameters are actually used.
+    update_parameters(metadata, ontoclass)
 
     # Collect all free symbols from state variable equations
     # Build a local_dict to avoid sympy interpreting 'I' as imaginary unit, etc.

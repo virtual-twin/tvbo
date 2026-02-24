@@ -94,7 +94,7 @@ results, results_map = grid_search(
     sampling_step_size=dts,
     outputs={'x': 'p/VdP_op/x', 'z': 'p/VdP_op/z'},
     solver='scipy',
-    backend='default',
+    vectorize=False,  # Required for single-node circuits (PyRates bug)
     clear=True
 )
 
@@ -248,7 +248,7 @@ for i, a_val in enumerate(a_values):
         sampling_step_size=dts,
         outputs={'v': 'p/FHN_op/v'},
         solver='scipy',
-        backend='default',
+        vectorize=False,  # Required for single-node circuits (PyRates bug)
         clear=True
     )
 
@@ -341,7 +341,7 @@ results_qif, results_map_qif = grid_search(
     sampling_step_size=dts,
     outputs={'r': 'p/QIF_op/r'},
     solver='scipy',
-    backend='default',
+    vectorize=False,  # Required for single-node circuits (PyRates bug)
     clear=True
 )
 
@@ -429,7 +429,7 @@ results, results_map = grid_search(
     sampling_step_size=dts,
     outputs={'name': 'node/op/var'},
     solver='scipy',
-    backend='default'
+    vectorize=False,  # Required for single-node circuits
 )
 ```
 

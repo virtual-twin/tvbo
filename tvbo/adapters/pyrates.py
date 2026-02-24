@@ -54,6 +54,44 @@ PYRATES_REPL = {
 }
 
 
+def _patch_pyrates_networkx_backend():
+    """Fix networkx 3.4+ backend dispatch conflict with PyRates.
+
+    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In
+    networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with
+    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument
+    and tries to dispatch to a networkx graph backend.  PyRates passes
+    ``backend='default'`` (meaning *PyRates* compute backend, not a
+    networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
+    The decorator sees it and raises ``ImportError: 'default' backend is
+    not installed``.
+
+    Fix: replace ``ComputeGraph.__new__`` (and ``ComputeGraphBackProp``)
+    with plain ``object.__new__`` so the decorator is removed.
+    """
+    try:
+        from pyrates.backend.computegraph import ComputeGraph, ComputeGraphBackProp
+    except ImportError:
+        return
+
+    def _plain_new(cls, *_args, **_kwargs):
+        return object.__new__(cls)
+
+    if getattr(ComputeGraph.__new__, '_dispatchable', False) or 'argmap' in getattr(
+            ComputeGraph.__new__, '__qualname__', ''):
+        ComputeGraph.__new__ = _plain_new
+    # Also check inherited __new__ from networkx
+    try:
+        ComputeGraph(backend='default')
+    except (ImportError, TypeError):
+        ComputeGraph.__new__ = _plain_new
+
+    try:
+        ComputeGraphBackProp(backend='default')
+    except (ImportError, TypeError):
+        ComputeGraphBackProp.__new__ = _plain_new
+
+
 def _patch_pyrates_replace_in_expr():
     """Monkey-patch PyRates' replace_in_expr to use xreplace.
 
@@ -166,6 +204,9 @@ class PyRatesAdapter:
         from pyrates import clear
         from pyrates.frontend import CircuitTemplate
 
+        # Fix networkx 3.4+ backend dispatch conflict
+        _patch_pyrates_networkx_backend()
+
         # Fix PyRates' broken replace_in_expr (subs vs xreplace bug)
         _patch_pyrates_replace_in_expr()
 
@@ -201,10 +242,19 @@ class PyRatesAdapter:
             if inputs is None:
                 inputs = self._build_inputs()
 
-            # Default vectorize=False: PyRates' vectorize=True makes
-            # scalar parameters into (1,) arrays which breaks single-node
-            # circuits. Users can override by passing vectorize=True.
-            kwargs.setdefault("vectorize", False)
+            # PyRates vectorize=True (default) breaks for single-node circuits
+            # and heterogeneous multi-node circuits (different operators have
+            # incompatible parameter shapes). Only safe for homogeneous N>1.
+            if "vectorize" not in kwargs:
+                is_heterogeneous = self._is_heterogeneous()
+                if n_nodes <= 1 or is_heterogeneous:
+                    kwargs["vectorize"] = False
+
+            # Use a declarative file_name so parallel runs don't collide
+            # and stale pyrates_run.py files are avoided.
+            if "file_name" not in kwargs:
+                run_id = uuid.uuid4().hex[:8]
+                kwargs["file_name"] = f"pyrates_run_{pkg_name}_{run_id}"
 
             # Run simulation
             result = circuit.run(
@@ -256,6 +306,20 @@ class PyRatesAdapter:
         return getattr(network, "number_of_nodes", 0) or (
             len(network.nodes) if hasattr(network, "nodes") and network.nodes else 0
         )
+
+    def _is_heterogeneous(self) -> bool:
+        """Check if the experiment has heterogeneous dynamics (multiple models).
+
+        PyRates vectorize=True cannot handle circuits where different nodes
+        have different operators (different parameter counts / state variables).
+        """
+        exp = self.experiment
+        dynamics = getattr(exp, "dynamics", None)
+        if isinstance(dynamics, dict) and len(dynamics) > 1:
+            # Multiple distinct dynamics models
+            names = {getattr(d, "name", None) for d in dynamics.values() if d}
+            return len(names) > 1
+        return False
 
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
@@ -321,6 +385,10 @@ class PyRatesAdapter:
         for mod in modules_to_remove:
             del sys.modules[mod]
         shutil.rmtree(tmpdir, ignore_errors=True)
+        # Remove PyRates-generated .py files from cwd
+        import glob
+        for f in glob.glob(f"pyrates_run_{pkg_name}_*.py"):
+            os.remove(f)
 
     def _add_edges_from_matrix(self, circuit, network) -> None:
         """Add edges to circuit using weight matrix (efficient for large networks)."""

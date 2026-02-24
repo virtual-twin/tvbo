@@ -87,6 +87,42 @@ def _configure_jax_backend():
 _configure_jax_backend()
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# PyRates / networkx compatibility
+# ---------------------------------------------------------------------------
+def _patch_pyrates_networkx_backend():
+    """Fix networkx 3.4+ backend dispatch conflict with PyRates.
+
+    networkx ≥ 3.4 decorates ``MultiDiGraph.__new__`` with
+    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument.
+    PyRates' ``ComputeGraph(backend='default')`` triggers this and raises
+    ``ImportError: 'default' backend is not installed``.
+
+    We replace ``ComputeGraph.__new__`` with plain ``object.__new__`` so
+    the decorator is removed.  Applied at tvbo import time so that all
+    code paths (adapter, export, doc notebooks) benefit.
+    """
+    try:
+        from pyrates.backend.computegraph import (
+            ComputeGraph, ComputeGraphBackProp,
+        )
+    except ImportError:
+        return
+
+    def _plain_new(cls, *_args, **_kwargs):
+        return object.__new__(cls)
+
+    # Check if the __new__ is wrapped by networkx dispatch
+    for klass in (ComputeGraph, ComputeGraphBackProp):
+        try:
+            klass(backend='default')
+        except (ImportError, TypeError):
+            klass.__new__ = _plain_new
+
+
+_patch_pyrates_networkx_backend()
+# ---------------------------------------------------------------------------
+
 from .data import tvbo_data
 from .data.tvbo_data.connectomes import Connectome, Network
 from .data.tvbo_data.atlases import Atlas
