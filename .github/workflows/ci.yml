@@ -71,6 +71,7 @@ jobs:
               run: pytest -q --ignore=tests/test_docs.py
 
     # ─── Main only: container tests ────────────────────────────
+    # PRs use :dev image (built from latest dev push); pushes to main use :latest
     test-container:
         name: Container tests
         needs: lint
@@ -79,7 +80,7 @@ jobs:
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
         container:
-            image: ghcr.io/virtual-twin/tvbo:latest
+            image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
             - name: Install pytest-xdist
@@ -99,7 +100,7 @@ jobs:
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
         container:
-            image: ghcr.io/virtual-twin/tvbo:latest
+            image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
             - name: Install Quarto
@@ -123,7 +124,7 @@ jobs:
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
         container:
-            image: ghcr.io/virtual-twin/tvbo:latest
+            image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
             - name: Install pytest-xdist
