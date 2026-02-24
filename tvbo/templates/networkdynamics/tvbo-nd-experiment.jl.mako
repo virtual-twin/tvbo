@@ -34,10 +34,26 @@ is_static, parse_node_parameters, get_noise_sigmas, graph_generator_call"/>
 ## ── Packages ────────────────────────────────────────────────────────────────
 using Graphs
 using NetworkDynamics
+<%
+# Map solver names to their OrdinaryDiffEq sub-packages
+_SOLVER_PKG = {
+    'Tsit5': 'OrdinaryDiffEqTsit5',
+    'Heun': 'OrdinaryDiffEqLowOrderRK',
+    'Euler': 'OrdinaryDiffEqLowOrderRK',
+    'Midpoint': 'OrdinaryDiffEqLowOrderRK',
+    'RK4': 'OrdinaryDiffEqLowOrderRK',
+    'DP5': 'OrdinaryDiffEqTsit5',
+    'BS3': 'OrdinaryDiffEqLowOrderRK',
+    'Vern7': 'OrdinaryDiffEqVerner',
+    'Rodas5': 'OrdinaryDiffEqRosenbrock',
+    'TRBDF2': 'OrdinaryDiffEqSDIRK',
+}
+_ode_pkg = _SOLVER_PKG.get(str(solver_method), 'OrdinaryDiffEq')
+%>
 % if is_stochastic:
 using StochasticDiffEq
 % else:
-using OrdinaryDiffEqTsit5
+using ${_ode_pkg}
 % endif
 % if needs_stiff:
 using OrdinaryDiffEqSDIRK
@@ -73,7 +89,7 @@ vertex_${dyn.name} = VertexModel(;
 )
 
 % else:
-<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, all_couplings=all_couplings" />
+<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, all_couplings=all_couplings, outdim=outdim" />
 
 % endif
 % endfor
@@ -114,7 +130,28 @@ g = SimpleGraph(${n_nodes})
 add_edge!(g, ${e.source + 1}, ${e.target + 1})
     % endfor
 % else:
+% if n_nodes == 1:
+## Single-node: self-loop with zero edge to avoid coupling feedback
+g = SimpleDiGraph(1)
+add_edge!(g, 1, 1)
+## Zero-weight edge: outputs 0 so esum has no effect on single-node dynamics
+function _zero_edge_g!(e_dst, v_src, v_dst, p, t)
+% for _i in range(outdim):
+    e_dst[${_i + 1}] = 0.0
+% endfor
+    nothing
+end
+<%
+_zero_outsym = outsym_names[:outdim] if outsym_names else ['coupling']
+%>\
+edge_zero = EdgeModel(;
+    g = Directed(_zero_edge_g!),
+    outsym = [${", ".join(f':{s}' for s in _zero_outsym)}],
+    name = :zero_coupling,
+)
+% else:
 g = complete_graph(${n_nodes})
+% endif
 % endif
 
 ## ── Network ─────────────────────────────────────────────────────────────────
@@ -122,6 +159,8 @@ g = complete_graph(${n_nodes})
 default_coupling_name = next(iter(all_couplings.keys())) if all_couplings else coupling.name
 has_weight_param = weight_sym is not None
 needs_dealias = is_heterogeneous or has_events
+# For single-node self-loop, use the zero edge to avoid coupling feedback
+edge_var = 'edge_zero' if n_nodes == 1 else f'edge_{default_coupling_name}'
 %>
 % if is_heterogeneous:
 ## Heterogeneous network: different vertex models per node
@@ -132,11 +171,11 @@ vertex_array[${node.id + 1}] = vertex_${node_dynamics_map[node.id]}
 % endif
 % endfor
 
-nw = Network(g, vertex_array, edge_${default_coupling_name}; dealias=true)
+nw = Network(g, vertex_array, ${edge_var}; dealias=true)
 % elif needs_dealias:
-nw = Network(g, vertex_${model.name}, edge_${default_coupling_name}; dealias=true)
+nw = Network(g, vertex_${model.name}, ${edge_var}; dealias=true)
 % else:
-nw = Network(g, vertex_${model.name}, edge_${default_coupling_name})
+nw = Network(g, vertex_${model.name}, ${edge_var})
 % endif
 % if has_edge_matrix and has_weight_param:
 
