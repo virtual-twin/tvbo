@@ -60,8 +60,27 @@ def get_model_files():
     return model_files
 
 
+def _tvb_compatible(model_file):
+    """Return True if model can run on the TVB backend.
+
+    TVB's dfun has no explicit time argument (no non-autonomous support)
+    and only handles continuous ODE/SDE (no discrete maps).
+    """
+    import yaml
+    with open(model_file) as fh:
+        meta = yaml.safe_load(fh)
+    if meta.get('autonomous') is False:
+        return False
+    if meta.get('system_type') == 'discrete':
+        return False
+    return True
+
+
 MODEL_FILES = get_model_files()
 MODEL_IDS = [f.stem for f in MODEL_FILES]
+
+TVB_MODEL_FILES = [f for f in MODEL_FILES if _tvb_compatible(f)]
+TVB_MODEL_IDS = [f.stem for f in TVB_MODEL_FILES]
 
 
 # ---------------------------------------------------------------------------
@@ -164,18 +183,17 @@ class TestJAXBackendDetailed:
 
 @pytest.mark.skipif(not _HAVE_TVB, reason="tvb-library not installed")
 class TestTVBBackend:
-    """Single-node tests for The Virtual Brain backend."""
+    """Single-node tests for The Virtual Brain backend.
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    Non-autonomous and discrete models are excluded at collection time
+    via TVB_MODEL_FILES since TVB's dfun has no explicit time argument
+    and only supports continuous ODE/SDE.
+    """
+
+    @pytest.mark.parametrize("model_file", TVB_MODEL_FILES, ids=TVB_MODEL_IDS)
     def test_run_tvb(self, model_file):
         """Run single-node simulation with The Virtual Brain backend."""
         model = Dynamics.from_file(model_file)
-
-        if getattr(model, 'autonomous', True) is False:
-            pytest.skip("Non-autonomous model: TVB dfun has no explicit time argument")
-        if getattr(model, 'system_type', None) == 'discrete':
-            pytest.skip("Discrete model: TVB supports only continuous ODE/SDE")
-
         exp = SimulationExperiment(local_dynamics=model)
         result = exp.run('tvb')
         assert result is not None
