@@ -1,29 +1,19 @@
 using BifurcationKit
+using OrdinaryDiffEq
 <%
-if 'model' in context.keys():
-    model = context['model']
-
-vois = {i: k for i, k in enumerate(model.state_variables.keys())}
-p_min = context.get('p_min', model.parameters[ICS].domain.lo if model.parameters[ICS].domain else 0)
-p_max = context.get('p_max', model.parameters[ICS].domain.hi if model.parameters[ICS].domain else 1)
-# Periodic orbit tuning (lightweight defaults overridable from Python kwargs)
-po_all_hopf = context.get('po_all_hopf', False)
-po_mesh_intervals = context.get('po_mesh_intervals', 50)
-po_degree = context.get('po_degree', 4)
-po_meshadapt = context.get('po_meshadapt', True)
-po_max_steps = context.get('po_max_steps', 120)
-po_ds = context.get('po_ds', ds if ds else 0.001)
-po_dsmin = context.get('po_dsmin', dsmin if dsmin else 1e-4)
-po_dsmax = context.get('po_dsmax', dsmax if dsmax else 0.1)
-quiet = context.get('quiet', True)
-
+## All variables are pre-computed by BifurcationKitAdapter._prepare_context()
+## Template only places values — no processing.
+svs = list(model.state_variables.values())
 %>
 ##
 <%include file="/tvbo-julia-model.jl.mako" args="model=model" />
 ##
-# Initial conditions
+# Override continuation parameter to start within [p_min, p_max]
+p = merge(p, (${ICS} = ${float(p_start)},))
+
+# Initial conditions from model defaults
 x0 = [
-        % for sv in model.state_variables.values():
+        % for sv in svs:
         ${sv.initial_value if sv.initial_value != 0 else 0.1}, # Initial value for ${sv.name}
         % endfor
     ]
@@ -34,21 +24,41 @@ function ${model.name}_vf!(du, x, p)
     return du
 end
 
+# Find a steady state via time integration (more robust than raw Newton on x0)
+function _find_steady_state(f!, x0, p; T=${iss_duration})
+    function ode_f!(du, u, _p, t)
+        f!(du, u, p, t)
+    end
+    prob_ode = ODEProblem{true, SciMLBase.FullSpecialize}(ode_f!, x0, (0.0, T), p)
+<%
+    solve_kwargs = ['save_everystep=false']
+    if iss_atol is not None:
+        solve_kwargs.insert(0, f'abstol={iss_atol}')
+    if iss_rtol is not None:
+        solve_kwargs.insert(-1 if iss_atol else 0, f'reltol={iss_rtol}')
+    solve_kw_str = ', '.join(solve_kwargs)
+%>\
+% if iss_solver:
+    sol = solve(prob_ode, ${iss_solver}(); ${solve_kw_str})
+% else:
+    sol = solve(prob_ode; ${solve_kw_str})
+% endif
+    return sol[:, end]
+end
+
+x0_eq = _find_steady_state(${model.name}!, x0, p)
+
 ################################################################################
 
-# Bifurcation Problem (deterministic; ignores any stochastic noise definitions)
-prob = BifurcationProblem(${model.name}_vf!, x0, p, (@optic _.${ICS}))
+# Record named state variables for each continuation step
+record_from_sol = (x, p; k...) -> (${', '.join(f'{sv.name} = x[{i+1}]' for i, sv in enumerate(svs))},)
 
+# Bifurcation Problem
+prob = BifurcationProblem(${model.name}_vf!, x0_eq, p, (@optic _.${ICS});
+    record_from_solution = record_from_sol)
 
-# continuation options
-opts_br = ContinuationPar(
-    p_min=${float(p_min)}, p_max=${float(p_max)},
-    ds = ${float(ds) if ds else 0.002},
-    dsmin = ${float(dsmin) if dsmin else 5e-5},
-    dsmax = ${float(dsmax) if dsmax else 0.05},
-    max_steps = ${max_steps if max_steps else 120},
-    tol_stability=${tol_stability if tol_stability else 1e-8},
-    n_inversion=8, max_bisection_steps=60, nev=1)
+# ContinuationPar
+opts_br = ContinuationPar(${cp_args_str})
 
 % if quiet:
 using Logging
@@ -56,21 +66,27 @@ prev_logger = current_logger()
 global_logger(SimpleLogger(devnull, Logging.Error))
 % endif
 
-br = continuation(prob, PALC(), opts_br; normC=norminf, bothside=true)
+br = continuation(prob, ${alg_str}, opts_br; ${cont_call_kwargs_str})
 
-# Minimal export: pass raw continuation result only; Python side derives all arrays.
+% if quiet:
+global_logger(prev_logger)
+% endif
+
 bifurcation_result = br
 
 ########################################################################################################################
 
-## Periodic Orbits
-% if periodic_orbits:
+% if branches:
+<%
+br0 = branches[0]
+%>
+## Branches (periodic orbits, codim-2, etc.)
 
-# Branch of periodic orbits:
+# Record PO envelope (max/min per state variable)
 args_po = (	record_from_solution = (x, p; k...) -> begin
 		xtt = get_periodic_orbit(p.prob, x, p.p)
 		return (
-                % for i, sv in enumerate(model.metadata.state_variables.values()):
+                % for i, sv in enumerate(svs):
                 max_${sv.name} = maximum(xtt[${i+1},:]),
 				min_${sv.name} = minimum(xtt[${i+1},:]),
                 % endfor
@@ -79,54 +95,162 @@ args_po = (	record_from_solution = (x, p; k...) -> begin
 	plot_solution = (x, p; k...) -> begin
 		xtt = get_periodic_orbit(p.prob, x, p.p)
 		arg = (marker = :d, markersize = 1)
-        ${'\n\t'.join([f"plot!(xtt.t, xtt[{i+1},:]; label = \"{sv.name}\", arg..., k...)" for i, sv in enumerate(model.metadata.state_variables.values())])}
+        ${'\n\t'.join([f"plot!(xtt.t, xtt[{i+1},:]; label = \"{sv.name}\", arg..., k...)" for i, sv in enumerate(svs)])}
 		plot!(br; subplot = 1, putspecialptlegend = false)
 		end,
-	# we use the supremum norm
 	normC = norminf)
 
-# continuation parameters
-opts_po_cont = ContinuationPar(
-    opts_br,
-    dsmin = ${po_dsmin},
-    ds = ${po_ds},
-    dsmax = ${po_dsmax},
-    max_steps = ${po_max_steps},
-    tol_stability = ${tol_stability if tol_stability else 1e-5},
-)
-
-% if bif_point:
-hopf_indices = [${bif_point}]
+## PO ContinuationPar
+% if br0['po_cp_args_str']:
+opts_po_cont = ContinuationPar(opts_br, ${br0['po_cp_args_str']})
 % else:
+opts_po_cont = opts_br
+% endif
+
+## Source point selection
 hopf_indices = Int[]
 for (i, sp) in enumerate(br.specialpoint)
     sp.type == :hopf && push!(hopf_indices, i)
 end
-% if not po_all_hopf:
+% if br0['all_hopf']:
+# Using all Hopf points
+% elif br0['hopf_idx'] is not None:
 if !isempty(hopf_indices)
-    hopf_indices = [hopf_indices[end]]  # only last Hopf unless po_all_hopf requested
+% if br0['hopf_idx'] < 0:
+    hopf_indices = [hopf_indices[end${'+' + str(br0['hopf_idx'] + 1) if br0['hopf_idx'] != -1 else ''}]]
+% else:
+    hopf_indices = [hopf_indices[${br0['hopf_idx']}]]
+% endif
+end
+% else:
+if !isempty(hopf_indices)
+    hopf_indices = [hopf_indices[end]]
 end
 % endif
-% endif
 
-po_branches = Any[]  # store each periodic orbit branch
+## PO continuation
+po_branches = Any[]
 for hopf_idx in hopf_indices
-    br_po = continuation(
-        br, hopf_idx, opts_po_cont,
-        PeriodicOrbitOCollProblem(${po_mesh_intervals}, ${po_degree}; meshadapt = ${'true' if po_meshadapt else 'false'});
-        plot = ${'true' if plot else 'false'},
-        args_po...,
-        bothside = false,
-        verbosity = ${verbosity if verbosity else 0}
-    )
-    push!(po_branches, br_po)
+    try
+% if br0['method'] == 'collocation':
+<%
+    coll_kwargs = []
+    if br0['meshadapt'] is not None:
+        coll_kwargs.append(f"meshadapt = {'true' if br0['meshadapt'] else 'false'}")
+    if br0['jacobian'] is not None:
+        coll_kwargs.append(f"jacobian = BifurcationKit.{br0['jacobian']}()")
+    coll_kw_str = ', ' + ', '.join(coll_kwargs) if coll_kwargs else ''
+%>\
+        br_po = continuation(
+            br, hopf_idx, opts_po_cont,
+            PeriodicOrbitOCollProblem(${br0['mesh_intervals']}, ${br0['degree']}${coll_kw_str});
+            ${br0['po_kwargs_str']},
+        )
+% elif br0['method'] == 'trapezoid':
+        br_po = continuation(
+            br, hopf_idx, opts_po_cont,
+            PeriodicOrbitTrapProblem(M = ${br0['mesh_intervals']});
+            ${br0['po_kwargs_str']},
+        )
+% elif br0['method'] == 'shooting':
+<%
+    ode_kwargs = []
+    if br0['ode_abstol'] is not None:
+        ode_kwargs.append(f"abstol = {br0['ode_abstol']}")
+    if br0['ode_reltol'] is not None:
+        ode_kwargs.append(f"reltol = {br0['ode_reltol']}")
+    ode_kw_str = '; ' + ', '.join(ode_kwargs) if ode_kwargs else ''
+    shoot_kwargs = []
+    if br0['parallel'] is not None:
+        shoot_kwargs.append(f"parallel = {'true' if br0['parallel'] else 'false'}")
+    shoot_kw_str = ', ' + ', '.join(shoot_kwargs) if shoot_kwargs else ''
+%>\
+        prob_ode = ODEProblem(${model.name}!, copy(x0), (0.0, ${br0['ode_time_span']}), p${ode_kw_str})
+        br_po = continuation(
+            br, hopf_idx, opts_po_cont,
+            ShootingProblem(${br0['n_sections']}, prob_ode, OrdinaryDiffEq.${br0['ode_solver']}()${shoot_kw_str});
+            ${br0['po_kwargs_str']},
+        )
+% elif br0['method'] == 'poincare':
+<%
+    ode_kwargs_p = []
+    if br0['ode_abstol'] is not None:
+        ode_kwargs_p.append(f"abstol = {br0['ode_abstol']}")
+    if br0['ode_reltol'] is not None:
+        ode_kwargs_p.append(f"reltol = {br0['ode_reltol']}")
+    ode_kw_str_p = '; ' + ', '.join(ode_kwargs_p) if ode_kwargs_p else ''
+    poinc_kwargs = []
+    if br0['parallel'] is not None:
+        poinc_kwargs.append(f"parallel = {'true' if br0['parallel'] else 'false'}")
+    poinc_kw_str = ', ' + ', '.join(poinc_kwargs) if poinc_kwargs else ''
+%>\
+        prob_ode = ODEProblem(${model.name}!, copy(x0), (0.0, ${br0['ode_time_span']}), p${ode_kw_str_p})
+        br_po = continuation(
+            br, hopf_idx, opts_po_cont,
+            PoincareShootingProblem(${br0['n_sections']}, prob_ode, OrdinaryDiffEq.${br0['ode_solver']}()${poinc_kw_str});
+            ${br0['po_kwargs_str']},
+        )
+% endif
+        push!(po_branches, br_po)
+    catch e
+        @warn "PO continuation from Hopf $hopf_idx failed" exception=(e, catch_backtrace())
+    end
 end
 
 po_results = (hopf_indices = hopf_indices, branches = po_branches)
 
-% if quiet:
-global_logger(prev_logger)
 % endif
 
+% if codim2_branches:
+########################################################################################################################
+## Codim-2 continuation
+codim2_results = Any[]
 
+% for c2 in codim2_branches:
+<%
+src_type = c2['source_type']
+## In BifurcationKit.jl, fold points can be :bp or :fold.
+## Hopf points are :hopf.
+is_fold = src_type in ('fold', 'branch_point', 'bp')
+%>\
+# Codim-2 branch: ${c2['name']} (${src_type} → ${c2['ICS2']})
+begin
+    local _bif_indices = Int[]
+    for (i, sp) in enumerate(br.specialpoint)
+% if is_fold:
+        (sp.type == :bp || sp.type == :fold) && push!(_bif_indices, i)
+% else:
+        sp.type == :${src_type} && push!(_bif_indices, i)
+% endif
+    end
+
+% if c2['all_source']:
+    # All ${src_type} points
+% elif c2['source_idx_jl'] is not None:
+    if !isempty(_bif_indices)
+        _bif_indices = [_bif_indices[${c2['source_idx_jl']}]]
+    end
+% else:
+    if !isempty(_bif_indices)
+        _bif_indices = [_bif_indices[end]]
+    end
+% endif
+
+    local _opts_c2 = ContinuationPar(${c2['codim2_cp_str']})
+
+    for _bif_idx in _bif_indices
+        try
+            local _br_c2 = continuation(
+                br, _bif_idx, (@optic _.${c2['ICS2']}),
+                _opts_c2;
+                ${c2['codim2_kwargs_str']},
+            )
+            push!(codim2_results, _br_c2)
+        catch e
+            @warn "Codim-2 continuation from ${src_type} $_bif_idx failed" exception=(e, catch_backtrace())
+        end
+    end
+end
+
+% endfor
 % endif

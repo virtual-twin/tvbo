@@ -7,6 +7,7 @@
 #
 import re
 from os.path import join
+from typing import Any
 
 import black
 import numpy as np
@@ -22,9 +23,9 @@ exec_globals = {}
 TEMPLATES = templates.root
 
 
-def format_code(code, format="python", use_black=True, **kwargs):
+def format_code(code: str, format: str = "python", use_black: bool = True, **kwargs: Any) -> str:
     """Format code using black for Python variants.
-    
+
     Args:
         code: Source code string to format
         format: Language/variant (python, jax, numpy, scipy, tvboptim)

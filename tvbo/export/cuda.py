@@ -7,21 +7,26 @@ Run generated CUDA kernels using PyCUDA.
 
 Usage:
     from tvbo import SimulationExperiment
-    
+
     exp = SimulationExperiment.from_file("experiment.yaml")
     result = exp.run('cuda')
 """
+from __future__ import annotations
+
 import numpy as np
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tvbo.export.experiment import SimulationExperiment
 
 
-def compile_cuda(experiment):
+def compile_cuda(experiment: SimulationExperiment) -> Tuple[Any, Any]:
     """Compile CUDA kernel for experiment.
-    
+
     Args:
         experiment: SimulationExperiment instance
-        
+
     Returns:
         Tuple of (module, kernel_func)
     """
@@ -46,7 +51,7 @@ def compile_cuda(experiment):
 
 
 def run_cuda(
-    experiment,
+    experiment: SimulationExperiment,
     n_steps: Optional[int] = None,
     dt: Optional[float] = None,
     n_work_items: int = 1,
@@ -56,9 +61,9 @@ def run_cuda(
     swept_params: Optional[Dict[str, np.ndarray]] = None,
 ) -> Dict[str, np.ndarray]:
     """Run CUDA simulation for experiment.
-    
+
     All configuration comes from experiment metadata.
-    
+
     Args:
         experiment: SimulationExperiment instance
         n_steps: Number of integration steps (default from experiment.integration)
@@ -68,7 +73,7 @@ def run_cuda(
         global_coupling: Global coupling strength
         buffer_length: History buffer length (auto-calculated if None)
         swept_params: Dict mapping param names to arrays of values per work item
-    
+
     Returns:
         Dict with 'tavg', 'n_node', 'n_steps', 'dt'
     """
@@ -161,13 +166,13 @@ def run_cuda(
     }
 
 
-def save_cuda(experiment, path: str) -> str:
+def save_cuda(experiment: SimulationExperiment, path: str) -> str:
     """Save CUDA source to file.
-    
+
     Args:
         experiment: SimulationExperiment instance
         path: Output file path (.cu)
-        
+
     Returns:
         Path to saved file
     """

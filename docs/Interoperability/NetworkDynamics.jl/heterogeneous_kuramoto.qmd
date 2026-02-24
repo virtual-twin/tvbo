@@ -1,0 +1,45 @@
+---
+title: "Heterogeneous Kuramoto Network"
+subtitle: "Three vertex types on a ring: standard, static, and inertia"
+---
+
+Replicates the full [NetworkDynamics.jl Heterogeneous System tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/) — an 8-node ring network with three different vertex types:
+
+- **Kuramoto** (6 nodes): standard phase oscillator $\dot{\theta} = \omega_0 + \text{esum}$
+- **StaticNode** (1 node): no dynamics, outputs a fixed phase parameter
+- **KuramotoInertia** (1 node): second-order oscillator with angular velocity $\dot{\omega} = \omega_0 - \omega + \text{esum}$
+
+Per-node parameter overrides set heterogeneous natural frequencies.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/heterogeneous_kuramoto.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/heterogeneous_kuramoto.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/heterogeneous_kuramoto.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+ts = exp.run(format="networkdynamics")
+ts.plot()
+```

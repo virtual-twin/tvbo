@@ -43,6 +43,8 @@ if hasattr(opts, 'values'):
 else:
     optimizations = list(opts) if opts else []
 
+derivative_notation = context.get('derivative_notation', 'd')
+
 # Safe attribute access
 def _p(obj, name, default=None):
     return getattr(obj, name, default) if obj is not None else default
@@ -78,7 +80,10 @@ def deriv_latex(var_name, rhs, local_symbols=None):
     try:
         local_symbols = local_symbols or []
         rhs_parsed = parse_eq(rhs, parameters=local_symbols)
-        return f"\\frac{{d{var_name}}}{{dt}} = {latex(rhs_parsed, mul_symbol='dot')}"
+        var_latex = latex(Symbol(var_name))
+        if derivative_notation == 'dot':
+            return f"\\dot{{{var_latex}}} = {latex(rhs_parsed, mul_symbol='dot')}"
+        return f"\\frac{{d{var_latex}}}{{dt}} = {latex(rhs_parsed, mul_symbol='dot')}"
     except Exception:
         return f"d{var_name}/dt = {rhs}"
 

@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python packages
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo[julia] tvboptim
+    && pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo[julia,pyrates] tvboptim
 
 ENV AUTO_DIR=/auto-07p
 WORKDIR /app

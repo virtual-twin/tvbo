@@ -602,17 +602,12 @@ def get_integrator(integration_method="Heun") -> owlready2.ThingClass:
     av_int = intersection(search_res, available_integrators)
 
     if len(av_int) == 0:
-        print("No integrators found for method: ", integration_method)
-        print("Available integrators: ", available_integrators)
-        integrator = onto.IntegrationMethod()
+        return None
     if len(av_int) > 1:
         print("Multiple integrators found for method: ", integration_method)
         print("Available integrators: ", av_int)
         print("Using the first one: ", av_int[0])
-        integrator = av_int[0]
-    else:
-        integrator = av_int[0]
-    return integrator
+    return av_int[0]
 
 
 def get_coupling_functions() -> Dict[str, owlready2.ThingClass]:

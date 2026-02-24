@@ -64,9 +64,9 @@ elif model.coupling_terms:
     for ct_name in model.coupling_terms.keys():
         coupling_inputs_dict[ct_name] = 1
 
-# First coupling input key (for parameter access)
+# First coupling input key (for parameter access) - None for uncoupled models
 first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dict else None
-assert first_coupling_key, "Model must have at least one coupling_input or coupling_term"
+has_coupling = bool(coupling_inputs_dict)
 
 # Build all_couplings dict from network.coupling
 all_couplings = dict(network.coupling.items()) if network.coupling else {}
@@ -119,8 +119,8 @@ noise_sigma = noise_sigma_per_state if len(set(noise_sigma_per_state)) > 1 else 
 
 # Network metadata
 n_nodes = N_nodes = network.number_of_regions
-assert network.conduction_speed is not None, "network.conduction_speed required in YAML"
-conduction_speed = float(network.conduction_speed.value if hasattr(network.conduction_speed, 'value') else network.conduction_speed)
+_cs = getattr(network, 'conduction_speed', None)
+conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
 # Normalization (optional)
 _norm = getattr(network, 'normalization', None)
@@ -918,7 +918,7 @@ def compute_all_observations(result, state, result_transient=None):
 # Build a lookup dict for all known parameters (dynamics + coupling)
 all_dynamics_params = {str(p.name): p for p in optim_params}
 # For coupling params, store (param, coupling_key) so we know where to access them
-all_coupling_params = {str(p.name): (p, getattr(p, '_coupling_key', first_coupling_key)) for p in optim_coupling_params}
+all_coupling_params = {str(p.name): (p, getattr(p, '_coupling_key', first_coupling_key)) for p in optim_coupling_params} if first_coupling_key else {}
 %>
 
 def unwrap_all_parameters(state):
@@ -1360,8 +1360,8 @@ def run_experiment(
     # This is the starting point for optimization unless depends_on is specified
     initial_state = copy.deepcopy(state)
 
-    main_result = SimulationResult(result=result, observations=observations) if result is not None else None
-    transient_result = SimulationResult(result=transient) if transient is not None else None
+    main_result = SimulationResult(result=result, observations=observations, state_names=${state_names}) if result is not None else None
+    transient_result = SimulationResult(result=transient, state_names=${state_names}) if transient is not None else None
 
     results = Bunch(
         # Core simulation infrastructure (always present)
@@ -1911,7 +1911,7 @@ stage_lr = stage['learning_rate']
                 name='${stage_name}',
                 state=_fitted_${stage_name},
                 history=_history_${stage_name},
-                simulation=SimulationResult(result=_post_${stage_name}, observations=_post_${stage_name}_obs),
+                simulation=SimulationResult(result=_post_${stage_name}, observations=_post_${stage_name}_obs, state_names=${state_names}),
                 n_steps=kwargs.get('max_steps_${stage_name}', kwargs.get('max_steps', ${stage_max_iter})),
                 hyperparameters=_stage_hyperparams,
             )
@@ -1965,7 +1965,7 @@ stage_lr = stage['learning_rate']
                 name=_opt_name,
                 state=fitted_params,
                 history=fitting_data,
-                simulation=SimulationResult(result=post_optimization, observations=post_optimization_observations),
+                simulation=SimulationResult(result=post_optimization, observations=post_optimization_observations, state_names=${state_names}),
                 n_steps=kwargs.get('max_steps', ${max_steps}),
                 hyperparameters=_opt_hyperparams,
             )

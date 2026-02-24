@@ -1,0 +1,10 @@
+{
+  "Description": "Neural mass model equations - Dynamics",
+  "ModelType": "Dynamics",
+  "Format": "tvbo",
+  "GeneratedAt": "2026-02-24T19:38:46.853612",
+  "Parameters": {
+    "autonomous": true,
+    "number_of_modes": 1
+  }
+}

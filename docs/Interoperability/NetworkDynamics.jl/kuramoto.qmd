@@ -1,0 +1,58 @@
+---
+title: "Heterogeneous Kuramoto Oscillators"
+subtitle: "Phase oscillators with heterogeneous frequencies on a ring network"
+---
+
+Replicates the [NetworkDynamics.jl Heterogeneous System tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/) — Kuramoto phase oscillators on an 8-node ring with heterogeneous natural frequencies.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/kuramoto.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/kuramoto.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/kuramoto.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+ts = exp.run(format="networkdynamics")
+ts.plot()
+```
+
+## Results
+
+```{python}
+#| echo: false
+import numpy as np
+print(f"Shape: {ts.data.shape}")
+print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
+print(f"Final theta range: [{ts.data[-1, 0, :, 0].min():.3f}, {ts.data[-1, 0, :, 0].max():.3f}]")
+```
+
+## Animate
+
+```{python}
+ani = ts.animate("theta", format="dots")
+ani.save("kuramoto.gif", writer="pillow", fps=20)
+```
+
+![](kuramoto.gif)

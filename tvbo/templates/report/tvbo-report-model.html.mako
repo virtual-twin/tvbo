@@ -1,7 +1,32 @@
 <%
-from sympy import latex, Eq, symbols, sympify, pretty
+from sympy import latex, Eq, symbols, sympify, pretty, Symbol, Derivative
 import pydot
 import networkx as nx
+
+derivative_notation = context.get('derivative_notation', 'd')
+
+def _dot_lhs(deriv, mul_symbol='*'):
+    try:
+        t = Symbol("t")
+        order = sum(1 for v in deriv.variables if v == t)
+        base = deriv.expr
+        base_latex = latex(base, mul_symbol=mul_symbol)
+        if order == 1:
+            return f"\\dot{{{base_latex}}}"
+        if order == 2:
+            return f"\\ddot{{{base_latex}}}"
+        if order == 3:
+            return f"\\dddot{{{base_latex}}}"
+        return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
+    except Exception:
+        return latex(deriv, mul_symbol=mul_symbol)
+
+def latex_equation(eq, mul_symbol='*'):
+    if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
+        lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
+        rhs = latex(eq.rhs, mul_symbol=mul_symbol)
+        return f"{lhs} = {rhs}"
+    return latex(eq, mul_symbol=mul_symbol)
 
 state_equations = [eq for k, eq in model.equations.items() if k in model.metadata.state_variables]
 derived_variables = [eq for k, eq in model.equations.items() if k in model.metadata.derived_variables]
@@ -58,7 +83,7 @@ svg_content = pydot_graph.create_svg().decode("utf-8")
     <div class="equations">
         % for eq in derived_parameters:
         <div class="equation">
-            <p>$$ ${latex(eq, mul_symbol='*')} $$</p>
+            <p>$$ ${latex_equation(eq, mul_symbol='*')} $$</p>
         </div>
         % endfor
     </div>
@@ -69,7 +94,7 @@ svg_content = pydot_graph.create_svg().decode("utf-8")
     <div class="equations">
         % for eq in derived_variables:
         <div class="equation">
-            <p>$$ ${latex(eq, mul_symbol='*')} $$</p>
+            <p>$$ ${latex_equation(eq, mul_symbol='*')} $$</p>
         </div>
         % endfor
     </div>
@@ -79,7 +104,7 @@ svg_content = pydot_graph.create_svg().decode("utf-8")
     <div class="equations">
         % for eq in state_equations:
         <div class="equation">
-            <p>$$ ${latex(eq, mul_symbol='*')} $$</p>
+            <p>$$ ${latex_equation(eq, mul_symbol='*')} $$</p>
         </div>
         % endfor
     </div>
@@ -89,7 +114,7 @@ svg_content = pydot_graph.create_svg().decode("utf-8")
     <div class="equations">
         % for eq in output:
         <div class="equation">
-            <p>$$ ${latex(eq, mul_symbol='*')} $$</p>
+            <p>$$ ${latex_equation(eq, mul_symbol='*')} $$</p>
         </div>
         % endfor
     </div>

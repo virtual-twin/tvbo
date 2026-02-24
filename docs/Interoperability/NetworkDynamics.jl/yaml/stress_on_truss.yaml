@@ -1,0 +1,333 @@
+# =============================================================================
+# Stress on Truss
+# =============================================================================
+# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/
+#
+# 2D truss structure: point masses connected by stiff springs (beams).
+# Demonstrates:
+#   - Heterogeneous vertices: FreeVertex (4 SVs) + FixedVertex (0 SVs)
+#   - 2D coupling with insym/outsym
+#   - Observed function (obsf) for beam force magnitude
+#   - Per-edge parameters (beam rest lengths L)
+# =============================================================================
+
+id: 106
+label: "Stress on Truss"
+description: >
+    Time evolution of a 2D truss structure: point masses connected by
+    stiff springs. Free vertices have position (x, y) and velocity (vx, vy)
+    as state variables; fixed vertices output their constant position.
+    Beams exert forces proportional to deviation from rest length.
+    Recreates the NetworkDynamics.jl Stress on Truss tutorial.
+references:
+    - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/"
+
+# -- Default vertex dynamics (FreeVertex) --------------------------------------
+local_dynamics:
+    name: FreeVertex
+    label: "Free vertex (point mass)"
+    description: >
+        Point mass with position (x, y) and velocity (vx, vy).
+        dx/dt = vx, dy/dt = vy,
+        dvx/dt = (Fx_sum - γ·vx) / M,
+        dvy/dt = (Fy_sum - γ·vy) / M - g.
+    system_type: continuous
+    autonomous: true
+    parameters:
+        M:
+            label: "Mass"
+            symbol: "M"
+            value: 10.0
+            unit: "kg"
+            description: "Point mass"
+        gamma:
+            label: "Damping"
+            symbol: "γ"
+            value: 200.0
+            unit: "kg/s"
+            description: "Velocity damping coefficient"
+        g:
+            label: "Gravitational acceleration"
+            symbol: "g"
+            value: 9.81
+            unit: "m/s²"
+            description: "Gravitational acceleration"
+    coupling_terms:
+        c_Fx:
+            description: "Sum of horizontal beam forces"
+        c_Fy:
+            description: "Sum of vertical beam forces"
+    state_variables:
+        vx:
+            label: "Horizontal velocity"
+            symbol: "vx"
+            equation:
+                rhs: "(c_Fx - gamma * vx) / M"
+            initial_value: 0.0
+            unit: "m/s"
+            variable_of_interest: true
+        vy:
+            label: "Vertical velocity"
+            symbol: "vy"
+            equation:
+                rhs: "(c_Fy - gamma * vy) / M - g"
+            initial_value: 0.0
+            unit: "m/s"
+            variable_of_interest: true
+        x:
+            label: "Horizontal position"
+            symbol: "x"
+            equation:
+                rhs: "vx"
+            initial_value: 0.0
+            unit: "m"
+            coupling_variable: true
+            variable_of_interest: true
+        y:
+            label: "Vertical position"
+            symbol: "y"
+            equation:
+                rhs: "vy"
+            initial_value: 0.0
+            unit: "m"
+            coupling_variable: true
+            variable_of_interest: true
+
+# -- Additional vertex dynamics ------------------------------------------------
+dynamics:
+    FixedVertex:
+        name: FixedVertex
+        label: "Fixed vertex (support)"
+        description: >
+            Fixed support point. No internal dynamics, outputs constant
+            position (xfix, yfix) as coupling variables.
+            Uses NoFeedForward since it ignores edge inputs.
+        system_type: continuous
+        autonomous: true
+        parameters:
+            xfix:
+                label: "Fixed x position"
+                symbol: "xfix"
+                value: 0.0
+                unit: "m"
+            yfix:
+                label: "Fixed y position"
+                symbol: "yfix"
+                value: 0.0
+                unit: "m"
+        coupling_terms: {}
+        state_variables: {}
+
+# -- Network -------------------------------------------------------------------
+network:
+    label: "11-node truss structure"
+    description: >
+        2D truss: 5 bottom nodes, 5 top nodes (shifted), 1 hanging mass.
+        Bottom: (0,0), (1,0), (2,0), (3,0), (4,0).
+        Top: (1.2,1), (2.2,1), (3.2,1), (4.2,1), (5.2,1).
+        Hanging: (6,−1). Nodes 1 and 4 are fixed supports.
+        18 beams connecting adjacent nodes.
+    number_of_nodes: 11
+    number_of_regions: 11
+
+    nodes:
+        # Bottom row (nodes 1-5, indices 0-4)
+        - id: 0
+          label: "Bottom-left support"
+          dynamics: FixedVertex
+          parameters:
+              - name: xfix
+                value: 0.0
+              - name: yfix
+                value: 0.0
+        - id: 1
+          label: "Bottom 2"
+          initial_state: [0.0, 0.0, 1.0, 0.0]
+        - id: 2
+          label: "Bottom 3"
+          initial_state: [0.0, 0.0, 2.0, 0.0]
+        - id: 3
+          label: "Bottom-right support"
+          dynamics: FixedVertex
+          parameters:
+              - name: xfix
+                value: 3.0
+              - name: yfix
+                value: 0.0
+        - id: 4
+          label: "Bottom 5"
+          initial_state: [0.0, 0.0, 4.0, 0.0]
+        # Top row (nodes 6-10, indices 5-9)
+        - id: 5
+          label: "Top 1"
+          initial_state: [0.0, 0.0, 1.2, 1.0]
+        - id: 6
+          label: "Top 2"
+          initial_state: [0.0, 0.0, 2.2, 1.0]
+        - id: 7
+          label: "Top 3"
+          initial_state: [0.0, 0.0, 3.2, 1.0]
+        - id: 8
+          label: "Top 4"
+          initial_state: [0.0, 0.0, 4.2, 1.0]
+        - id: 9
+          label: "Top 5"
+          initial_state: [0.0, 0.0, 5.2, 1.0]
+        # Hanging mass (node 11, index 10)
+        - id: 10
+          label: "Hanging mass"
+          initial_state: [0.0, 0.0, 6.0, -1.0]
+          parameters:
+              - name: M
+                value: 200.0
+              - name: gamma
+                value: 100.0
+
+    edges:
+        # Vertical beams: bottom i ↔ top i+N (i=1..5)
+        - source: 0
+          target: 5
+          parameters:
+              - name: L
+                value: 1.562050
+        - source: 1
+          target: 6
+          parameters:
+              - name: L
+                value: 1.562050
+        - source: 2
+          target: 7
+          parameters:
+              - name: L
+                value: 1.562050
+        - source: 3
+          target: 8
+          parameters:
+              - name: L
+                value: 1.562050
+        - source: 4
+          target: 9
+          parameters:
+              - name: L
+                value: 1.562050
+        # Cross braces: bottom i+1 ↔ top i (i=1..4)
+        - source: 1
+          target: 5
+          parameters:
+              - name: L
+                value: 1.019804
+        - source: 2
+          target: 6
+          parameters:
+              - name: L
+                value: 1.019804
+        - source: 3
+          target: 7
+          parameters:
+              - name: L
+                value: 1.019804
+        - source: 4
+          target: 8
+          parameters:
+              - name: L
+                value: 1.019804
+        # Bottom horizontals: bottom i ↔ bottom i+1 (i=1..4)
+        - source: 0
+          target: 1
+          parameters:
+              - name: L
+                value: 1.0
+        - source: 1
+          target: 2
+          parameters:
+              - name: L
+                value: 1.0
+        - source: 2
+          target: 3
+          parameters:
+              - name: L
+                value: 1.0
+        - source: 3
+          target: 4
+          parameters:
+              - name: L
+                value: 1.0
+        # Top horizontals: top i ↔ top i+1 (i=1..4)
+        - source: 5
+          target: 6
+          parameters:
+              - name: L
+                value: 1.0
+        - source: 6
+          target: 7
+          parameters:
+              - name: L
+                value: 1.0
+        - source: 7
+          target: 8
+          parameters:
+              - name: L
+                value: 1.0
+        - source: 8
+          target: 9
+          parameters:
+              - name: L
+                value: 1.0
+        # Hanging beam: top 5 (index 9) ↔ hanging mass (index 10)
+        - source: 9
+          target: 10
+          parameters:
+              - name: L
+                value: 2.154066
+
+    coupling:
+        BeamForce:
+            name: BeamForce
+            label: "Stiff spring (beam)"
+            description: >
+                Antisymmetric beam force: F = K·(L - d) in the direction
+                of the beam. d = |pos_dst - pos_src|.
+                Outputs 2D force vector [Fx, Fy].
+                Has an observed function for absolute force |F|.
+            delayed: false
+            parameters:
+                K:
+                    label: "Spring stiffness"
+                    value: 0.5e6
+                    unit: "N/m"
+                    description: "Beam stiffness constant"
+                L:
+                    label: "Rest length"
+                    value: 1.0
+                    unit: "m"
+                    description: "Nominal beam length (set per-edge)"
+            pre_expression:
+                rhs: |
+                    dx = v_dst[1] - v_src[1]
+                    dy = v_dst[2] - v_src[2]
+                    d = sqrt(dx^2 + dy^2)
+                    Fabs = K * (L - d)
+                    e_dst[1] = Fabs * dx / d
+                    e_dst[2] = Fabs * dy / d
+                description: "2D beam force: K·(L - d)·[dx, dy]/d"
+            outsym:
+                - Fx
+                - Fy
+            observed:
+                - name: Fabs
+                  label: "Absolute beam force"
+                  description: "Magnitude of beam force: K·(L - d)"
+                  equation:
+                      rhs: |
+                          dx = v_dst[1] - v_src[1]
+                          dy = v_dst[2] - v_src[2]
+                          d = sqrt(dx^2 + dy^2)
+                          obsout[1] = K * (L - d)
+
+# -- Integration ---------------------------------------------------------------
+integration:
+    description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 12]"
+    method: Tsit5
+    step_size: 0.01
+    duration: 12.0
+    time_scale: "s"

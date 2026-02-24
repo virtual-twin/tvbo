@@ -23,6 +23,7 @@ from tvbo.datamodel import tvbo_datamodel
 from tvbo.export import templater
 from tvbo.export.templater import format_code
 from tvbo.knowledge import Coupling, Integrator
+from tvbo.knowledge.simulation.continuation import Continuation
 from tvbo.knowledge.simulation.localdynamics import Dynamics
 from tvbo.knowledge.simulation.network import Coupling, _Network
 from tvbo.parse import metadata
@@ -109,6 +110,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "network", None) and not isinstance(self.network, Network):
             self.network = _coerce(Network, self.network)
 
+        # Auto-upgrade continuations to runtime Continuation class
+        conts = getattr(self, "continuations", None)
+        if conts and isinstance(conts, dict):
+            for key, val in conts.items():
+                if val is not None and not isinstance(val, Continuation):
+                    conts[key] = _coerce(Continuation, val)
+
         # Mirror model/local_dynamics
         self.model = self.local_dynamics
 
@@ -118,6 +126,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ):
             ld = self.local_dynamics
             self.dynamics[ld.name] = ld
+
+        # Coerce all dynamics dict entries to the enhanced Dynamics class
+        if getattr(self, "dynamics", None) and isinstance(self.dynamics, dict):
+            for key, val in list(self.dynamics.items()):
+                if val is not None and not isinstance(val, Dynamics):
+                    self.dynamics[key] = _coerce(Dynamics, val)
 
         # If local_dynamics is empty but dynamics dict exists, use first entry
         # This enables backwards-compatible single-model workflows
@@ -872,8 +886,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["autodiff", "jax"]:
             jit = kwargs.get("jit", True)
             code = self.render_code(format=format, **kwargs)
-            namespace = templater.exec_globals
-            namespace.update({"TimeSeries": TimeSeries})
+            # Use a fresh namespace each time to avoid JAX tracer leaks
+            # between repeated executions (stale tracers in shared globals
+            # cause UnexpectedTracerError on re-runs).
+            namespace = {"TimeSeries": TimeSeries}
             exec(code, namespace)
             jax_model = namespace["kernel"]
             if jit:
@@ -1096,9 +1112,35 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() == "pyrates":
             return self._run_pyrates(**kwargs)
 
+        elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
+            return self._run_networkdynamics(**kwargs)
+
+        elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
+            return self._run_modelingtoolkit(**kwargs)
+
+        elif format.lower() in [
+            "bifurcationkit", "bifurcationkit.jl", "bifurcation",
+            "bifurcation-julia",
+        ]:
+            return self._run_bifurcation(**kwargs)
+
+        elif format.lower() in [
+            "pyrates-bifurcation", "pyrates-bif", "pycobi",
+            "bifurcation-pyrates", "auto", "auto-07p",
+        ]:
+            return self._run_pyrates_bifurcation(**kwargs)
+
+        elif format.lower() in [
+            "julia", "diffeq", "differentialequations",
+            "differentialequations.jl",
+        ]:
+            return self._run_julia(**kwargs)
+
         else:
             raise ValueError(
-                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates"
+                f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
+                "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl, "
+                "pyrates-bifurcation, julia"
             )
 
         return simulation_data
@@ -1143,6 +1185,41 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             **kwargs,
         )
 
+    def _run_networkdynamics(self, **kwargs) -> TimeSeries:
+        """Run simulation using NetworkDynamics.jl via pyjulia."""
+        from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
+
+        adapter = NetworkDynamicsAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_modelingtoolkit(self, **kwargs) -> TimeSeries:
+        """Run simulation using pure ModelingToolkit.jl via pyjulia."""
+        from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
+        adapter = ModelingToolkitAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_bifurcation(self, **kwargs):
+        """Run bifurcation analysis via BifurcationKit.jl."""
+        from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+
+        adapter = BifurcationKitAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_pyrates_bifurcation(self, **kwargs):
+        """Run bifurcation analysis via PyRates/PyCoBi (AUTO-07p)."""
+        from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
+
+        adapter = PyRatesBifurcationAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_julia(self, **kwargs) -> TimeSeries:
+        """Run simulation using DifferentialEquations.jl via juliacall."""
+        from tvbo.adapters.diffeq import DiffEqAdapter
+
+        adapter = DiffEqAdapter(self)
+        return adapter.run(**kwargs)
+
     def get_experiment_file_prefix(self):
         atlas = (
             f"_atlas-{self.network.parcellation.atlas.name}"
@@ -1171,7 +1248,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def collect_initial_conditions(self, random=False):
         history = []
-        n_modes = self.local_dynamics.metadata.number_of_modes
+        n_modes = getattr(self.local_dynamics, 'number_of_modes', 1) or 1
         n_nodes = self.network.number_of_regions
 
         if random:
@@ -1384,10 +1461,51 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 use_black=False,
             )
 
+        elif format.lower() == "julia":
+            template = templates.lookup.get_template(
+                "tvbo-julia-DifferentialEquations.jl.mako"
+            )
+            rendered_code = template.render(
+                experiment=self, model=self.local_dynamics, **kwargs
+            )
+
+        elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
+            from tvbo.adapters.base import BaseAdapter
+            adapter = BaseAdapter(self)
+            ctx = adapter.prepare_context()
+            ctx.update(kwargs)
+            template = templates.lookup.get_template(
+                "tvbo-nd-experiment.jl.mako"
+            )
+            rendered_code = template.render(**ctx)
+
+        elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
+            from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+            adapter = ModelingToolkitAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
+        elif format.lower() in [
+            "bifurcationkit", "bifurcationkit.jl", "bifurcation",
+            "bifurcation-julia",
+        ]:
+            from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+            adapter = BifurcationKitAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
+        elif format.lower() in [
+            "pyrates-bifurcation", "pyrates-bif", "pycobi",
+            "bifurcation-pyrates", "auto", "auto-07p",
+        ]:
+            from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
+            adapter = PyRatesBifurcationAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
         else:
             raise ValueError(
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
-                "rateml, rateml-python, rateml-cuda, cuda, rateml-driver"
+                "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
+                "julia, networkdynamics, nd, mtk, modelingtoolkit, "
+                "bifurcationkit.jl, pyrates-bifurcation"
             )
 
         return rendered_code
@@ -1422,6 +1540,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         format: str = "markdown",
         template_name: str = "tvbo-report-experiment",
         outputfile: str | None = None,
+        derivative_notation: str = "dot",
     ) -> str:
         """Render a human-readable report for this experiment.
 
@@ -1444,7 +1563,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("format must be one of: markdown, html, pdf")
 
         # Render with full experiment context; the template will include the model template
-        render = template.render(experiment=self)
+        render = template.render(
+            experiment=self, derivative_notation=derivative_notation
+        )
 
         # Persist if requested
         if outputfile:

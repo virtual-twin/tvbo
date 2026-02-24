@@ -12,8 +12,8 @@ QIF_op:
   base: OperatorTemplate
   description: "Quadratic Integrate-and-Fire (QIF) population mean-field model."
   equations:
-    - "r' = 2*r*v + Delta/(pi*tau)"
-    - "v' = eta + v**2 + J*r*tau - pi**2*r**2*tau**2"
+    - "r' = Delta/(pi*tau) + 2*r*v"
+    - "v' = J*r*tau + eta - pi**2*r**2*tau**2 + v**2"
   variables:
     r: variable(0.1)
     v: variable(-2.0)

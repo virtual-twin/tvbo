@@ -6,8 +6,14 @@ def get_callable_info(func):
 
 def get_parameters(func, pipeline_outputs):
     params = {}
-    for arg in func.arguments:
-        value = arg.value
+    args = func.arguments or []
+    # Handle dict-keyed arguments (from Function) or list (from FunctionCall)
+    if hasattr(args, 'values'):
+        args = args.values()
+    for arg in args:
+        value = getattr(arg, 'value', None)
+        if value is None:
+            continue
         # Quote string values that aren't numeric or pipeline references
         if isinstance(value, str):
             # Check if it's a number string or a pipeline reference (no quotes needed)
@@ -70,20 +76,41 @@ from tvbo.data.types import TimeSeries
 from ${jax_module} import ${name} as ${name}
 % endfor
 <%namespace name="jaxfunc" file="jax-function.py.mako"/>
-<%def name="create_observation_pipeline(observation, dt)" filter="trim">
+<%def name="create_observation_pipeline(observation, dt, functions=None)" filter="trim">
 <%
-    # Helper to get function name from FunctionCall (function ref or callable.name)
+    # Helper to get function name from FunctionCall or resolved Function
     def get_func_name(func):
         if hasattr(func, 'function') and func.function:
             return str(func.function)
+        if hasattr(func, 'name') and func.name:
+            return str(func.name)
         if hasattr(func, 'callable') and func.callable and hasattr(func.callable, 'name'):
             return str(func.callable.name)
         return None
 
-    func_name_to_output = {get_func_name(func): func.output for func in observation.pipeline if get_func_name(func)}
+    # Resolve function references: if a FunctionCall has only function: name,
+    # look up the actual Function definition from experiment.functions
+    resolved_pipeline = []
+    for fc in observation.pipeline:
+        fname = str(fc.function) if fc.function else None
+        if fname and functions and fname in functions:
+            # Use the resolved Function object for code generation,
+            # but carry over FunctionCall-specific fields (output, arguments, apply_on_dimension)
+            resolved = functions[fname]
+            # If FunctionCall specifies output, use it (override Function default)
+            if fc.output and not getattr(resolved, 'output', None):
+                resolved.output = fc.output
+            # If FunctionCall specifies arguments, merge them
+            if fc.arguments:
+                resolved._fc_arguments = fc.arguments
+            resolved_pipeline.append(resolved)
+        else:
+            resolved_pipeline.append(fc)
+
+    func_name_to_output = {get_func_name(func): func.output for func in resolved_pipeline if get_func_name(func)}
     # Collect imports for this observation
     obs_imports = set()
-    for func in observation.pipeline:
+    for func in resolved_pipeline:
         if func.callable:
             module, qualname = get_callable_info(func)
             obs_imports.add((module, qualname))
@@ -97,14 +124,14 @@ from ${jax_module} import ${name}
 % endfor
 
 # Generate all transform functions from schema
-% for func in observation.pipeline:
+% for func in resolved_pipeline:
 % if func.callable:
 _jax_${func.callable.name} = ${func.callable.name}  # Store reference to avoid recursion
 % endif
 % endfor
 
-% for func in observation.pipeline:
-${jaxfunc.generate_function(func, func.name)}
+% for func in resolved_pipeline:
+${jaxfunc.generate_function(func, get_func_name(func))}
 
 % endfor
 
@@ -114,22 +141,26 @@ def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" i
     if state is not None:
         ts = ts.get_state(state)
 
-% for func in observation.pipeline:
+% for i_step, func in enumerate(resolved_pipeline):
 <%
     # Check if input is from pipeline outputs or if it's another observation (needs to be called)
-    pipeline_outputs = set([f.output for f in observation.pipeline])
+    pipeline_outputs = set([f.output for f in resolved_pipeline if f.output])
+    _func_input = getattr(func, 'input', None)
 
-    if func.input:
+    if _func_input:
         # Check if input is from this pipeline's outputs
-        if func.input in pipeline_outputs or func.input in func_name_to_output.values():
-            input_name = func_name_to_output.get(func.input, func.input)
+        if _func_input in pipeline_outputs or _func_input in func_name_to_output.values():
+            input_name = func_name_to_output.get(_func_input, _func_input)
         # Check if input matches the observation's source_observation (cross-observation dependency)
-        elif hasattr(observation, 'source_observation') and func.input == observation.source_observation:
+        elif hasattr(observation, 'source_observation') and _func_input == observation.source_observation:
             # Need to call the source observation function
-            input_name = f"{func.input}(ts)"
+            input_name = f"{_func_input}(ts)"
         else:
             # Unknown input - use as variable name
-            input_name = func.input
+            input_name = _func_input
+    elif i_step > 0 and resolved_pipeline[i_step - 1].output:
+        # Auto-chain: use previous step's output
+        input_name = resolved_pipeline[i_step - 1].output
     else:
         input_name = 'ts'
 
@@ -140,9 +171,9 @@ def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" i
         args.append(f"{arg_name}={arg_value}")
     args_str = ', '.join(args)
 %>
-    ${func.output} = ${func.name}(${args_str})
+    ${func.output} = ${get_func_name(func)}(${args_str})
 % endfor
-    return ${observation.pipeline[-1].output}
+    return ${resolved_pipeline[-1].output}
 </%def>
 
 % if 'observation' in context.keys():
@@ -152,10 +183,11 @@ ${create_observation_pipeline(observation, dt if 'dt' in context.keys() else 0.1
 <%def name="create_all_observations(experiment)" filter="trim">
 <%
     dt = experiment.integration.step_size
+    exp_functions = getattr(experiment, 'functions', None) or {}
 %>
 % for name, obs in experiment.observations.items():
 
-${create_observation_pipeline(obs, dt)}
+${create_observation_pipeline(obs, dt, functions=exp_functions)}
 
 % endfor
 

@@ -132,6 +132,33 @@ enums:
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }
             none: { description: "No aggregation" }
+    EventType:
+        description: "Type of event triggering mechanism."
+        permissible_values:
+            continuous:
+                description: "Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback."
+            discrete:
+                description: "Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback."
+            preset_time:
+                description: "Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback."
+            stimulus:
+                description: "Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior."
+
+    StandardGraphType:
+        description: >
+            Well-known graph generator families with automatic backend mapping.
+            The type field on GraphGenerator is a free string; this enum lists
+            common types that get automatic code generation for Julia (Graphs.jl)
+            and Python (NetworkX).
+        permissible_values:
+            BarabasiAlbert: { description: "Barabasi-Albert preferential attachment (params: k)" }
+            WattsStrogatz: { description: "Watts-Strogatz small-world (params: k, p)" }
+            ErdosRenyi: { description: "Erdos-Renyi random graph (params: p)" }
+            Complete: { description: "Complete graph (all-to-all)" }
+            Cycle: { description: "Cycle graph (ring)" }
+            Star: { description: "Star graph" }
+            RandomRegular: { description: "Random regular graph (params: k)" }
+            Grid: { description: "Grid/lattice graph (params: dims)" }
     RequirementRole:
         permissible_values:
             engine: { description: "Primary simulation/processing engine" }
@@ -175,6 +202,44 @@ enums:
                 description: "Minimum value"
             none:
                 description: "No reduction (return per-element values)"
+
+    ContinuationAlgorithm:
+        description: >-
+            Predictor-corrector algorithm for numerical continuation.
+        permissible_values:
+            PALC:
+                description: "Pseudo-arclength continuation (default). Uses weighted dot product constraint."
+            MoorePenrose:
+                description: "Moore-Penrose continuation."
+            Natural:
+                description: "Natural parameter continuation. Simple parameter stepping, no arc-length constraint."
+
+    NumericalDiscretizationMethod:
+        description: >-
+            Numerical discretization method for boundary value problems
+            (periodic orbits, connecting orbits, quasi-periodic tori).
+        permissible_values:
+            collocation:
+                description: "Orthogonal collocation at Gauss points."
+            trapezoid:
+                description: "Trapezoidal rule discretization."
+            shooting:
+                description: "Standard multiple shooting."
+            poincare:
+                description: "Poincaré shooting."
+
+    InitialStateMethod:
+        description: >-
+            Strategy for obtaining the starting equilibrium or periodic orbit.
+        permissible_values:
+            time_integration:
+                description: "Integrate the ODE forward until convergence (robust, default)."
+            newton:
+                description: "Use Newton's method to find the nearest fixed point."
+            given:
+                description: "Use the model's default initial values directly."
+            from_branch:
+                description: "Start from a point on a previously computed branch."
 
 classes:
     Range:
@@ -255,6 +320,94 @@ classes:
                 multivalued: true
                 range: float
                 array: {}
+
+    Event:
+        description: >-
+            A discrete or continuous event that modifies the system during simulation.
+            Generalizes Stimulus: can represent external inputs (stimulus type),
+            threshold-triggered state changes (continuous/discrete type),
+            or time-scheduled interventions (preset_time type).
+            Attaches to components (nodes/edges) or to the experiment level.
+        slots:
+            - name
+            - label
+            - description
+            - parameters
+        attributes:
+            event_type:
+                range: EventType
+                ifabsent: "stimulus"
+                description: "Type of event trigger mechanism."
+            condition:
+                range: Equation
+                inlined: true
+                description: >-
+                    Condition function. For continuous events: triggers when
+                    expression crosses zero. For discrete events: triggers when
+                    expression evaluates to true. Not used for preset_time or
+                    stimulus types.
+            condition_states:
+                multivalued: true
+                range: string
+                description: >-
+                    State variable symbols accessible in the condition function.
+                    For edges, can include source/destination vertex outputs.
+            condition_parameters:
+                multivalued: true
+                range: string
+                description: "Parameter symbols accessible in the condition function."
+            affect:
+                range: Equation
+                inlined: true
+                description: >-
+                    Affect function: what happens when the event triggers.
+                    Can modify state variables and/or parameters.
+                    For stimulus type, this is the stimulus equation.
+            affect_states:
+                multivalued: true
+                range: string
+                description: "State variable symbols modifiable in the affect function."
+            affect_parameters:
+                multivalued: true
+                range: string
+                description: "Parameter symbols modifiable in the affect function."
+            affect_negative:
+                range: Equation
+                inlined: true
+                description: >-
+                    Affect on downcrossing (continuous events only).
+                    If not specified, uses the same affect for both crossings.
+            trigger_times:
+                multivalued: true
+                range: float
+                description: >-
+                    Predetermined trigger times for preset_time events.
+                    The solver will step exactly to these times.
+            target_component:
+                range: string
+                description: >-
+                    Component to attach this event to. Can be a node label,
+                    edge label, or 'all_edges'/'all_vertices' for broadcast.
+                    If not specified, event is experiment-level.
+            equation:
+                range: Equation
+                inlined: true
+                description: >-
+                    Stimulus equation for stimulus-type events.
+                    Legacy compatibility with Stimulus class.
+            regions:
+                multivalued: true
+                range: integer
+                array: {}
+                description: "Target regions for stimulus-type events."
+            weighting:
+                multivalued: true
+                range: float
+                array: {}
+                description: "Per-region weighting for stimulus-type events."
+            duration:
+                range: float
+                description: "Duration of stimulus-type events."
 
     TemporalApplicableEquation:
         is_a: Equation
@@ -427,6 +580,47 @@ classes:
                 range: File
                 multivalued: true
 
+            graph_generator:
+                range: GraphGenerator
+                inlined: true
+                description: >
+                    Graph generator specification.  When set, overrides explicit
+                    edges/nodes for graph construction.  The type field is a free
+                    string; StandardGraphType lists well-known types that get
+                    automatic code generation across backends.
+
+    GraphGenerator:
+        description: >
+            Backend-agnostic graph generator specification.  Captures the
+            mathematical family (type) and its parameters so that each backend
+            can emit the correct constructor call (Graphs.jl, NetworkX, etc.).
+            The number of nodes is always taken from Network.number_of_nodes.
+        slots:
+            - name
+            - description
+        attributes:
+            type:
+                range: string
+                required: true
+                description: >
+                    Graph family name.  Use a StandardGraphType value for
+                    automatic backend mapping, or any custom string for
+                    documentation purposes.
+            seed:
+                range: integer
+                description: "Random seed for reproducible graph generation."
+            directed:
+                range: boolean
+                ifabsent: boolean(false)
+                description: "Whether to generate a directed graph."
+            parameters:
+                range: Parameter
+                multivalued: true
+                inlined: true
+                description: >
+                    Generator parameters (e.g. k, p, dims).  Names are
+                    matched by the backend mapping to construct the call.
+
     File:
         slots:
             - name
@@ -445,6 +639,7 @@ classes:
         slots:
             - label
             - description
+            - parameters
         attributes:
             id:
                 range: integer
@@ -462,14 +657,15 @@ classes:
             region:
                 range: string
                 description: "Brain region or anatomical label"
-            parameters:
-                multivalued: true
-                range: Parameter
-                description: "Node-specific parameter overrides"
             initial_state:
                 multivalued: true
                 range: float
                 description: "Initial values for state variables"
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: "Events attached to this node (e.g., threshold-based state changes)."
 
     Edge:
         class_uri: tvbo:Edge
@@ -502,12 +698,29 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            dynamics:
+                range: Dynamics
+                required: false
+                inlined: false
+                description: >-
+                    Dynamics model for this edge. When specified, the edge has
+                    its own state variables and ODE (EdgeModel with f in ND.jl).
+                    Uses the same Dynamics class as nodes — state_variables define
+                    edge states, derived_variables define observables, output defines
+                    what is visible for plotting/analysis. The coupling_function on
+                    Coupling still defines how vertex outputs map to edge outputs
+                    for aggregation at vertices.
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: "Events attached to this edge (e.g., threshold-based line tripping)."
 
     Observation:
         description: >-
             Unified class for all observation/measurement specifications.
             Covers monitors (BOLD, EEG), tuning observables, and derived quantities.
-            Pipeline is a sequence of Functions with input → output flow.
+            Pipeline is a sequence of Functions with input -> output flow.
         class_uri: tvbo:Observation
         slots:
             - name
@@ -567,9 +780,9 @@ classes:
                 range: integer
                 description: "Number of samples for windowed aggregation"
 
-            # Processing pipeline (sequence of Functions with input → output flow)
+            # Processing pipeline (sequence of Functions with input -> output flow)
             pipeline:
-                description: "Ordered sequence of Functions. Each Function transforms input → output."
+                description: "Ordered sequence of Functions. Each Function transforms input -> output."
                 multivalued: true
                 inlined_as_list: true
                 range: FunctionCall
@@ -586,7 +799,7 @@ classes:
                 inlined: true
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
-    # Function now handles input → process → output flow directly
+    # Function now handles input -> process -> output flow directly
 
     DerivedObservation:
         description: >-
@@ -682,6 +895,17 @@ classes:
                 range: boolean
                 ifabsent: "true"
                 description: "Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t)."
+            observed:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+                description: >-
+                    Observable functions computed from states, inputs, and parameters
+                    after simulation. Unlike derived_variables (which are intermediate
+                    algebraic expressions used within the ODE), observed variables
+                    are post-hoc quantities recoverable from the solution.
+                    Maps to obsf/obssym in ND.jl EdgeModel/VertexModel.
+                    Example: absolute force magnitude computed from force components.
 
     StateVariable:
         class_uri: tvbo:StateVariable
@@ -701,6 +925,22 @@ classes:
             coupling_variable:
                 range: boolean
                 ifabsent: false
+            equation_type:
+                range: string
+                ifabsent: "string(differential)"
+                description: >-
+                    Type of equation: 'differential' (default) means dx/dt = rhs,
+                    'algebraic' means 0 = rhs or x ~ rhs (DAE constraint).
+                    Algebraic equations are used by ModelingToolkit.jl backend.
+            equation_order:
+                range: integer
+                ifabsent: int(1)
+                description: >-
+                    Order of the time derivative on the LHS. Default 1 means
+                    dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs
+                    (second-order ODE), etc. Higher-order ODEs are automatically
+                    lowered to coupled first-order systems by backends like
+                    ModelingToolkit.jl via mtkcompile.
             noise:
                 range: Noise
                 inlined: true
@@ -712,21 +952,45 @@ classes:
             initial_value:
                 range: float
                 ifabsent: float(0.1)
+            derivative_initial_value:
+                range: float
+                description: >-
+                    Initial value for the first time derivative, used when
+                    equation_order > 1. For a second-order ODE d²x/dt² = f,
+                    this sets dx/dt(0). Required by ModelingToolkit.jl to
+                    fully specify higher-order initial value problems.
+            distribution:
+                range: Distribution
+                inlined: true
+                description: "Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean."
             history:
                 range: TimeSeries
                 inlined: true
 
     Distribution:
+        description: >-
+            A probability distribution for sampling parameters or initial conditions.
+            Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
+            Custom distributions use a Function for the PDF/sampling rule.
+            Default name is Uniform when only domain is given.
         slots:
             - name
-            - equation
             - parameters
+        slot_usage:
+            name:
+                ifabsent: string(Uniform)
         attributes:
-            dependencies:
-                multivalued: true
-                range: Parameter
+            domain:
+                range: Range
                 inlined: true
-
+                description: "Support of the distribution (sampling bounds). For Uniform this fully defines the distribution."
+            function:
+                range: Function
+                inlined: true
+                description: "Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions."
+            seed:
+                range: integer
+                description: "Random seed for reproducible sampling."
             correlation:
                 range: Matrix
                 inlined: true
@@ -750,6 +1014,10 @@ classes:
                 range: string
             heterogeneous:
                 range: boolean
+            distribution:
+                range: Distribution
+                inlined: true
+                description: "Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true."
             free:
                 range: boolean
             shape:
@@ -800,7 +1068,7 @@ classes:
     Function:
         class_uri: tvbo:Function
         description: >-
-            A function with explicit input → transformation → output flow.
+            A function with explicit input -> transformation -> output flow.
             Can be equation-based (symbolic) or software-based (callable).
             In a pipeline, functions are chained: output of one becomes input of next.
         slots:
@@ -1376,7 +1644,336 @@ classes:
                 range: Algorithm
                 description: Other algorithms that must run first (e.g., EIB depends on FIC)
 
+    # =============================================================================
+    # Continuation & Bifurcation Analysis
+    # =============================================================================
+    # Abstract metadata — toolkit-agnostic. All attributes must apply to any
+    # continuation engine (BifurcationKit, AUTO-07p, MatCont, COCO, …).
+    # Toolkit-specific string options go in the `options` slot.
+    # =============================================================================
+
+    Option:
+        description: >-
+            A toolkit-specific key-value option (string name + string value).
+            Used for backend settings that are not universal numeric parameters
+            (e.g., solver name, tangent method, jacobian type).
+        attributes:
+            name:
+                range: string
+                required: true
+                identifier: true
+                description: "Option name (key)."
+            value:
+                range: string
+                required: true
+                description: "Option value."
+
+    Discretization:
+        description: >-
+            Discretization method for boundary value problems in continuation
+            (periodic orbits, connecting orbits, quasi-periodic tori).
+            Specifies the method; method-specific numerics go in parameters.
+        slots:
+            - parameters
+        attributes:
+            method:
+                range: NumericalDiscretizationMethod
+                ifabsent: string(collocation)
+                description: "Discretization method."
+            ode_solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    ODE solver for flow-based methods (shooting, poincaré).
+                    Specifies algorithm (e.g. Vern9, Rodas5) and tolerances.
+                    Not needed for collocation or trapezoid.
+            linear_solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    Linear solver for the Newton bordered system.
+                    E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).
+            mesh_intervals:
+                range: integer
+                ifabsent: int(50)
+                description: >-
+                    Number of mesh intervals (time slices) for collocation
+                    or trapezoid methods. Collocation: N in
+                    PeriodicOrbitOCollProblem(N, m). Trapezoid: M in
+                    PeriodicOrbitTrapProblem(M=...).
+            degree:
+                range: integer
+                ifabsent: int(4)
+                description: >-
+                    Polynomial degree per mesh interval for collocation.
+                    The m in PeriodicOrbitOCollProblem(N, m).
+            n_sections:
+                range: integer
+                ifabsent: int(3)
+                description: >-
+                    Number of shooting sections for shooting or Poincaré
+                    methods.
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: "Toolkit-specific string options (jacobian type, etc.)."
+
+    InitialState:
+        description: >-
+            How to obtain the starting equilibrium or periodic orbit for
+            continuation. Most robust: time-integrate to steady state.
+        attributes:
+            method:
+                range: InitialStateMethod
+                ifabsent: string(time_integration)
+                description: "Strategy for finding the initial state."
+            duration:
+                range: float
+                ifabsent: float(2000.0)
+                description: "Integration duration for time_integration method."
+            abs_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Absolute tolerance for ODE integration."
+            rel_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Relative tolerance for ODE integration."
+            solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    ODE solver for time_integration method.
+                    Specify method (e.g., Tsit5, Heun, RK4) and tolerances.
+            source_branch:
+                range: string
+                description: >-
+                    Name of a previously computed branch (for from_branch method).
+            source_point:
+                range: string
+                description: >-
+                    Which point on the source branch: 'endpoint', 'hopf:1',
+                    'fold:2', a step number, etc.
+
+    BranchSwitch:
+        description: >-
+            Specification for switching from a detected bifurcation point
+            to a new branch (periodic orbits from Hopf, fold continuation,
+            etc.). Each BranchSwitch says: "from which special point on the
+            parent branch, continue what kind of object, with what settings."
+            Override parent solver settings via the inline continuation field —
+            only explicitly set attributes take effect; everything else is
+            inherited from the parent Continuation.
+        slots:
+            - name
+            - description
+            - parameters
+        attributes:
+            # --- What to branch from ---
+            source_point:
+                range: string
+                description: >-
+                    Which bifurcation point to start from. Syntax:
+                    - 'hopf:-1' = last Hopf (default)
+                    - 'hopf:all' = all Hopf points
+                    - 'hopf:1' = first Hopf
+                    - 'fold:2' = second fold
+                    - integer = specific special point index
+
+            # --- Branching perturbation ---
+            delta_p:
+                range: float
+                description: >-
+                    Initial parameter offset from the bifurcation point.
+
+            # --- Solver overrides (same type as parent — only set fields override) ---
+            continuation:
+                range: Continuation
+                inlined: true
+                description: >-
+                    Override solver settings for this branch. Uses the same
+                    Continuation type — only explicitly set attributes
+                    override the parent's values.
+
+            # --- Discretization (for periodic orbits, connecting orbits, etc.) ---
+            discretization:
+                range: Discretization
+                inlined: true
+                description: >-
+                    Discretization method for the branch solution. Required
+                    for periodic orbit branches (Hopf → PO). Not needed for
+                    codim-2 branches (fold/Hopf continuation).
+
+            # --- Direction ---
+            bothside:
+                range: boolean
+                description: "Continue branch in both directions."
+
+            # --- Toolkit-specific options ---
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: >-
+                    Toolkit-specific string options for this branch
+                    (linear solver, etc.).
+
+    Continuation:
+        description: >-
+            Complete specification of a numerical continuation / bifurcation
+            analysis. All universal solver settings live directly here.
+            Toolkit-specific string options go in the options slot.
+            When used inside a BranchSwitch, only explicitly set attributes
+            override the parent's values.
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            # --- Dynamics reference ---
+            dynamics:
+                range: Dynamics
+                inlined: false
+                description: >-
+                    Reference to the dynamical system model (by name).
+                    Resolved from the experiment's dynamics dict at runtime.
+
+            # --- What to vary ---
+            free_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: >-
+                    Parameters to vary. First parameter is primary (codim-1);
+                    second enables codim-2 continuation. Each Parameter has
+                    name + domain (Range with lo/hi bounds).
+
+            # --- Step size control ---
+            ds:
+                range: float
+                description: "Initial arc-length step size."
+            ds_min:
+                range: float
+                description: "Minimum adaptive step size."
+            ds_max:
+                range: float
+                description: "Maximum adaptive step size."
+            max_steps:
+                range: integer
+                description: "Maximum continuation steps."
+
+            # --- Newton corrector ---
+            newton_tol:
+                range: float
+                description: "Absolute tolerance for Newton corrector convergence."
+            newton_max_iterations:
+                range: integer
+                description: "Maximum Newton corrector iterations per step."
+
+            # --- Eigenvalue / stability ---
+            nev:
+                range: integer
+                description: >-
+                    Number of eigenvalues to compute. Must be >= number of
+                    state variables for reliable Hopf detection.
+            tol_stability:
+                range: float
+                description: "Tolerance on real part of eigenvalue for stability boundary."
+
+            # --- Bifurcation detection ---
+            detect_bifurcation:
+                range: integer
+                description: >-
+                    Bifurcation detection level.
+                    0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.
+            detect_fold:
+                range: boolean
+                description: "Enable fold (limit point) detection."
+            n_inversion:
+                range: integer
+                description: >-
+                    Number of eigenvalue sign inversions to flag a bifurcation.
+                    Must be even. Higher = fewer false positives.
+            max_bisection_steps:
+                range: integer
+                description: "Maximum bisection steps for bifurcation point localization."
+
+            # --- Continuation algorithm ---
+            algorithm:
+                range: ContinuationAlgorithm
+                ifabsent: string(PALC)
+                description: "Predictor-corrector algorithm."
+
+            # --- Initial state ---
+            initial_state:
+                range: InitialState
+                inlined: true
+                description: >-
+                    How to obtain the initial equilibrium. Default: time
+                    integration to steady state.
+
+            # --- Child branches ---
+            branches:
+                multivalued: true
+                range: BranchSwitch
+                inlined: true
+                description: >-
+                    Child branches to continue from detected bifurcation
+                    points (PO from Hopf, fold continuation, etc.).
+
+            # --- Bidirectional ---
+            bothside:
+                range: boolean
+                description: "Continue in both directions from the starting point."
+
+            # --- Execution / backend ---
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Per-analysis execution configuration."
+            software:
+                range: SoftwareRequirement
+                inlined: true
+                description: "Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.)."
+
+            # --- Toolkit-specific options ---
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: >-
+                    Toolkit-specific string options (tangent method,
+                    solver name, etc.).
+
+    Solver:
+        description: >-
+            Lightweight specification of a numerical ODE solver / integrator.
+            Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in
+            shooting methods, initial-state integration, and other contexts
+            where only the algorithm and tolerances matter.
+        attributes:
+            method:
+                range: string
+                ifabsent: string(Tsit5)
+                description: >-
+                    Solver algorithm name (e.g., Vern9, Rodas5, Tsit5,
+                    euler, heun, rk4).
+            abs_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Absolute tolerance for adaptive solvers."
+            rel_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Relative tolerance for adaptive solvers."
+
     Integrator:
+        is_a: Solver
+        description: >-
+            Fixed-step or adaptive ODE integrator with TVB-specific extensions
+            (noise, transient time, etc.). Inherits abs_tol, rel_tol
+            from Solver. Overrides method default to 'euler'.
         slots:
             - time_scale
             - unit
@@ -1387,7 +1984,7 @@ classes:
             method:
                 range: string
                 ifabsent: string(euler)
-                description: Integration method (euler, heun, rk4, etc.)
+                description: "Integration method (euler, heun, rk4, etc.)"
             step_size:
                 range: float
                 ifabsent: float(0.01220703125)
@@ -1461,6 +2058,30 @@ classes:
                 range: boolean
                 ifabsent: true
                 description: "Whether coupling includes transmission delays"
+            symmetry:
+                range: string
+                ifabsent: "string(directed)"
+                description: >-
+                    Edge symmetry type for NetworkDynamics.jl EdgeModel:
+                    'directed' (default), 'antisymmetric', or 'symmetric'.
+                    AntiSymmetric edges flip sign for the reverse direction.
+            outsym:
+                multivalued: true
+                range: string
+                description: >-
+                    Output symbol names for the edge model.
+                    E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces.
+                    Maps directly to outsym in ND.jl EdgeModel.
+                    If not specified, derived from coupling variables of the
+                    connected vertex dynamics.
+            observed:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+                description: >-
+                    Observable functions computed from edge inputs and parameters
+                    after simulation. Maps to obsf/obssym in ND.jl EdgeModel.
+                    Example: absolute force magnitude computed from force components.
 
             # Hierarchical/subspace coupling attributes (optional)
             inner_coupling:
@@ -1538,6 +2159,13 @@ classes:
                 range: integer
                 ifabsent: integer(42)
                 description: "Base random seed for reproducibility"
+            find_fixpoint:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Whether to find a fixed point (steady state) before
+                    time integration. Used as initial condition for ODEProblem.
+                    Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
 
     SimulationExperiment:
         tree_root: true
@@ -1599,6 +2227,14 @@ classes:
             stimulation:
                 range: Stimulus
                 inlined: true
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: >-
+                    Events that apply at the experiment level.
+                    For component-level events, attach them to individual
+                    nodes or edges instead.
             field_dynamics:
                 range: PDE # Distributed, spatially resolved dynamics (PDE)
                 inlined: true
@@ -1617,6 +2253,14 @@ classes:
                 range: Algorithm
                 inlined: true
                 description: "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
+            continuations:
+                multivalued: true
+                range: Continuation
+                inlined: true
+                description: >-
+                    Numerical continuation and bifurcation analysis specifications.
+                    Each entry defines a continuation experiment (equilibrium branch,
+                    codim-2 curve, periodic orbit family, etc.).
             # Either reference a full reusable environment (preferred) or, for
             # legacy/simple cases, a single software requirement.
             environment:
@@ -1957,7 +2601,7 @@ classes:
             discretization:
                 range: DiscretizationMethod
             time_integrator:
-                description: "e.g., implicit Euler, Crank–Nicolson."
+                description: "e.g., implicit Euler, Crank-Nicolson."
                 range: string
             dt:
                 description: "Time step (s)."

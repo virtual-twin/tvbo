@@ -158,7 +158,7 @@ _cuda_printer = CUDACodePrinter()
 _numba_printer = NumbaPrinter()
 
 
-def cuda_code(expr, local_dict: Optional[Dict[str, Any]] = None) -> str:
+def cuda_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
     """Convert expression to CUDA code string.
 
     Args:
@@ -186,7 +186,7 @@ def cuda_code(expr, local_dict: Optional[Dict[str, Any]] = None) -> str:
     return _cuda_printer.doprint(expr)
 
 
-def python_code(expr, local_dict: Optional[Dict[str, Any]] = None) -> str:
+def python_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
     """Convert expression to Python/Numba code string.
 
     Args:

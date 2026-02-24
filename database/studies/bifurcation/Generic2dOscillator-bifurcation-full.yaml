@@ -1,0 +1,161 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Full-featured bifurcation analysis — Generic2dOscillator
+# Shows ALL available settings. See Generic2dOscillator-bifurcation.yaml for
+# the minimal (MVP) version.
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: eq_in_a_full
+label: "Equilibrium branch in a (full settings)"
+description: >-
+    Comprehensive bifurcation analysis of the Generic2dOscillator.
+    Continues the equilibrium branch as parameter a is varied, detects
+    fold and Hopf bifurcations, then branches to periodic orbits from
+    both Hopf points with fine-tuned solver settings.
+
+dynamics: Generic2dOscillator
+
+# ── Free parameters ──────────────────────────────────────────────────────────
+# Which parameter(s) to vary. The first entry is the primary continuation
+# parameter. Domain sets the range [lo, hi] for the bifurcation diagram.
+free_parameters:
+    - name: a
+      domain:
+          lo: "-20"
+          hi: "20"
+
+# ── Continuation algorithm ───────────────────────────────────────────────────
+# Predictor-corrector algorithm. Options: PALC | MoorePenrose | Natural
+algorithm: PALC
+
+# ── Step-size control ────────────────────────────────────────────────────────
+ds: 0.01             # Initial step size (sign = direction)
+ds_min: 1.0e-4       # Minimum adaptive step size
+ds_max: 0.1          # Maximum adaptive step size
+max_steps: 400       # Maximum continuation steps
+
+# ── Newton corrector ─────────────────────────────────────────────────────────
+newton_tol: 1.0e-12            # Convergence tolerance for Newton iterations
+newton_max_iterations: 25      # Maximum Newton iterations per step
+
+# ── Bifurcation detection ────────────────────────────────────────────────────
+detect_bifurcation: 3    # Detection level: 0=off, 1=basic, 2=locate, 3=locate+normal-form
+detect_fold: true         # Detect fold (saddle-node) bifurcations
+nev: 3                    # Number of eigenvalues to compute for stability
+tol_stability: 1.0e-10   # Tolerance: |Re(λ)| < tol → marginally stable
+n_inversion: 2            # Number of sign inversions to trigger bisection
+max_bisection_steps: 25   # Maximum bisection steps to locate bifurcation
+
+# ── Direction ────────────────────────────────────────────────────────────────
+bothside: true            # Continue in both directions from initial point
+
+# ── Initial state ────────────────────────────────────────────────────────────
+# How to find the starting equilibrium. Methods:
+#   time_integration — integrate ODE forward until transient decays (robust)
+#   newton           — Newton's method from model's default initial values
+#   given            — use model's initial values directly (fast but fragile)
+#   from_branch      — start from a point on a previously computed branch
+initial_state:
+    method: time_integration
+    duration: 2000.0       # Integration time (longer = more robust)
+    abs_tol: 1.0e-10       # Absolute tolerance for ODE solver
+    rel_tol: 1.0e-10       # Relative tolerance for ODE solver
+    solver:
+        method: Tsit5      # ODE solver (any DifferentialEquations.jl solver)
+
+# ── BifurcationKit-specific options ──────────────────────────────────────────
+# String-valued toolkit settings that don't map to universal schema fields.
+# These go into the `options` slot as name/value pairs.
+options:
+    - name: tangent
+      value: Secant        # Tangent predictor: Secant | Bordered
+
+# ── Branch switches ─────────────────────────────────────────────────────────
+# Define branches to compute from detected bifurcation points.
+# Each branch switches from a special point on the equilibrium curve to
+# a new family (periodic orbits, fold curve, etc.).
+branches:
+    # ── Periodic orbits from Hopf points ─────────────────────────────────
+    - name: po_from_hopf
+      description: >-
+          Continue periodic orbits emanating from all detected Hopf
+          bifurcation points. Uses orthogonal collocation on a mesh
+          of 20 intervals with degree-4 polynomials.
+
+      # Which special point(s) to branch from:
+      #   "hopf:-1"   → last Hopf only (default)
+      #   "hopf:all"  → every detected Hopf
+      #   "hopf:1"    → first Hopf
+      source_point: "hopf:all"
+
+      # Step in parameter from the Hopf point to seed the PO computation
+      delta_p: 0.01
+
+      # Continue orbits in both directions from the Hopf point.
+      # true → closed orbit envelope (bubble); false → one-sided only.
+      bothside: true
+
+      # ── Override solver settings for PO continuation ───────────────────
+      # Only explicitly set fields override the parent; everything else
+      # is inherited from the top-level Continuation.
+      continuation:
+          name: po_continuation
+          ds: 1.0e-4
+          ds_min: 1.0e-6
+          ds_max: 0.02
+          max_steps: 400
+          newton_tol: 1.0e-10
+          newton_max_iterations: 20
+          tol_stability: 1.0e-6
+          detect_bifurcation: 3
+          n_inversion: 8
+          nev: 3
+          algorithm: PALC
+          # PO-specific BK options
+          options:
+              - name: tangent
+                value: Bordered    # Bordered tangent is more robust for PO
+
+      # ── Discretization ─────────────────────────────────────────────────
+      # How to discretize the periodic orbit boundary value problem.
+      # Methods: collocation | trapezoid | shooting | poincare
+      discretization:
+          method: collocation
+          parameters:
+              - name: mesh_intervals
+                value: 20           # Number of mesh intervals
+              - name: degree
+                value: 4            # Polynomial degree per interval
+              - name: mesh_adaptation
+                value: false         # Adaptive mesh refinement
+          options:
+              - name: jacobian
+                value: DenseAnalyticalInplace   # Jacobian type for collocation:
+                    # DenseAnalytical | DenseAnalyticalInplace |
+                    # AutoDiffDense | AutoDiffDenseAnalytical
+
+      # ── Branch-specific toolkit parameters ─────────────────────────────
+      # Numeric parameters specific to this branch.
+      parameters:
+          - name: max_norm_bound
+            value: 1.0e+4    # cbMaxNorm callback: discard if ||x|| > this
+
+      # ── Branch-specific toolkit options ────────────────────────────────
+      # String options specific to this branch.
+      options:
+          - name: linear_solver
+            value: COPBLS     # Linear solver for PO: COPBLS | DefaultLS
+
+# ── Software requirement ─────────────────────────────────────────────────────
+# Declares which toolkit is needed. Informational; not used by the template.
+software:
+    name: BifurcationKit
+    version_spec: ">=0.4"
+    url: https://github.com/bifurcationkit/BifurcationKit.jl
+    license: MIT
+
+# ── Execution config ─────────────────────────────────────────────────────────
+# Computational settings (not yet used by the Julia template, but part of
+# the schema for future backends).
+execution:
+    precision: float64
+    random_seed: 42

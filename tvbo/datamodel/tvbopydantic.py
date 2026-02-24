@@ -21,6 +21,10 @@ from typing import (
     TypeVar,
     Union
 )
+from typing import (
+    TypeVar,
+    Union
+)
 
 from pydantic import (
     BaseModel,
@@ -32,6 +36,16 @@ from pydantic import (
     field_validator,
     model_serializer
 )
+
+if sys.version_info.minor >= 12:
+    from typing import TypeAliasType
+else:
+    from typing_extensions import TypeAliasType
+
+if sys.version_info.minor >= 12:
+    from typing import TypeAliasType
+else:
+    from typing_extensions import TypeAliasType
 
 if sys.version_info.minor >= 12:
     from typing import TypeAliasType
@@ -249,6 +263,67 @@ class AggregationType(str, Enum):
     """
 
 
+class EventType(str, Enum):
+    """
+    Type of event triggering mechanism.
+    """
+    continuous = "continuous"
+    """
+    Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback.
+    """
+    discrete = "discrete"
+    """
+    Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback.
+    """
+    preset_time = "preset_time"
+    """
+    Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback.
+    """
+    stimulus = "stimulus"
+    """
+    Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior.
+    """
+
+
+class StandardGraphType(str, Enum):
+    """
+    Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).
+
+    """
+    BarabasiAlbert = "BarabasiAlbert"
+    """
+    Barabasi-Albert preferential attachment (params: k)
+    """
+    WattsStrogatz = "WattsStrogatz"
+    """
+    Watts-Strogatz small-world (params: k, p)
+    """
+    ErdosRenyi = "ErdosRenyi"
+    """
+    Erdos-Renyi random graph (params: p)
+    """
+    Complete = "Complete"
+    """
+    Complete graph (all-to-all)
+    """
+    Cycle = "Cycle"
+    """
+    Cycle graph (ring)
+    """
+    Star = "Star"
+    """
+    Star graph
+    """
+    RandomRegular = "RandomRegular"
+    """
+    Random regular graph (params: k)
+    """
+    Grid = "Grid"
+    """
+    Grid/lattice graph (params: dims)
+    """
+
+
 class RequirementRole(str, Enum):
     engine = "engine"
     """
@@ -340,6 +415,68 @@ class ReductionType(str, Enum):
     """
 
 
+class ContinuationAlgorithm(str, Enum):
+    """
+    Predictor-corrector algorithm for numerical continuation.
+    """
+    PALC = "PALC"
+    """
+    Pseudo-arclength continuation (default). Uses weighted dot product constraint.
+    """
+    MoorePenrose = "MoorePenrose"
+    """
+    Moore-Penrose continuation.
+    """
+    Natural = "Natural"
+    """
+    Natural parameter continuation. Simple parameter stepping, no arc-length constraint.
+    """
+
+
+class NumericalDiscretizationMethod(str, Enum):
+    """
+    Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori).
+    """
+    collocation = "collocation"
+    """
+    Orthogonal collocation at Gauss points.
+    """
+    trapezoid = "trapezoid"
+    """
+    Trapezoidal rule discretization.
+    """
+    shooting = "shooting"
+    """
+    Standard multiple shooting.
+    """
+    poincare = "poincare"
+    """
+    Poincaré shooting.
+    """
+
+
+class InitialStateMethod(str, Enum):
+    """
+    Strategy for obtaining the starting equilibrium or periodic orbit.
+    """
+    time_integration = "time_integration"
+    """
+    Integrate the ODE forward until convergence (robust, default).
+    """
+    newton = "newton"
+    """
+    Use Newton's method to find the nearest fixed point.
+    """
+    given = "given"
+    """
+    Use the model's default initial values directly.
+    """
+    from_branch = "from_branch"
+    """
+    Start from a point on a previously computed branch.
+    """
+
+
 
 class Coordinate(ConfiguredBaseModel):
     """
@@ -367,7 +504,9 @@ class BrainAtlas(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -385,6 +524,9 @@ class BrainAtlas(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -413,7 +555,9 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -431,6 +575,9 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -473,7 +620,9 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -491,6 +640,9 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -517,6 +669,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -534,6 +687,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -576,6 +730,7 @@ class Dataset(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -593,6 +748,7 @@ class Dataset(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -678,6 +834,7 @@ class Contact(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -695,6 +852,7 @@ class Contact(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -739,7 +897,9 @@ class DBSProtocol(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -757,6 +917,9 @@ class DBSProtocol(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -781,7 +944,9 @@ class ClinicalScale(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -799,6 +964,9 @@ class ClinicalScale(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -807,6 +975,7 @@ class ClinicalScale(ConfiguredBaseModel):
     domain: Optional[str] = Field(default=None, description="""Overall clinical domain (e.g., motor, cognition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     reference: Optional[str] = Field(default=None, description="""DOI, PMID or persistent identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
@@ -825,7 +994,9 @@ class ClinicalScore(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -843,6 +1014,9 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -850,9 +1024,11 @@ class ClinicalScore(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -873,6 +1049,8 @@ class ClinicalScore(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -893,6 +1071,7 @@ class ClinicalScore(ConfiguredBaseModel):
     domain: Optional[str] = Field(default=None, description="""Domain assessed (e.g. motor, mood, pain)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     reference: Optional[str] = Field(default=None, description="""PubMed ID, DOI, or other reference to the score definition""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
@@ -952,6 +1131,7 @@ class Equation(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -969,6 +1149,7 @@ class Equation(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -991,7 +1172,9 @@ class Equation(ConfiguredBaseModel):
                        'DifferentialOperator']} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -999,15 +1182,19 @@ class Equation(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1028,6 +1215,8 @@ class Equation(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1059,7 +1248,7 @@ class ConditionalBlock(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    condition: Optional[str] = Field(default=None, description="""The condition for this block (e.g., t > onset).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Case']} })
+    condition: Optional[str] = Field(default=None, description="""The condition for this block (e.g., t > onset).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Event', 'Case']} })
     expression: Optional[str] = Field(default=None, description="""The equation to apply when the condition is met.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'DifferentialOperator']} })
 
 
@@ -1067,9 +1256,9 @@ class Stimulus(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -1081,7 +1270,9 @@ class Stimulus(ConfiguredBaseModel):
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -1089,15 +1280,19 @@ class Stimulus(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1118,6 +1313,8 @@ class Stimulus(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1145,12 +1342,14 @@ class Stimulus(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
-    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Integrator'], 'ifabsent': 'float(1000)'} })
+    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
+         'ifabsent': 'float(1000)'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1168,6 +1367,7 @@ class Stimulus(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1183,35 +1383,55 @@ class Stimulus(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    regions: Optional[AnyShapeArray[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus']} })
-    weighting: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus']} })
+    regions: Optional[AnyShapeArray[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    weighting: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
 
 
-class TemporalApplicableEquation(Equation):
+class Event(ConfiguredBaseModel):
+    """
+    A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level.
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'TemporalApplicableEquation',
-                       'Node',
-                       'Edge',
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
                        'Observation',
                        'Dynamics',
+                       'StateVariable',
                        'Distribution',
-                       'Noise',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
                        'Exploration',
-                       'Integrator',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
-                       'PDE']} })
-    time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
-                       'SpatialField',
-                       'BoundaryCondition'],
-         'ifabsent': 'False'} })
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1229,6 +1449,161 @@ class TemporalApplicableEquation(Equation):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    event_type: Optional[EventType] = Field(default=EventType.stimulus, description="""Type of event trigger mechanism.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event'], 'ifabsent': 'stimulus'} })
+    condition: Optional[Equation] = Field(default=None, description="""Condition function. For continuous events: triggers when expression crosses zero. For discrete events: triggers when expression evaluates to true. Not used for preset_time or stimulus types.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Event', 'Case']} })
+    condition_states: Optional[list[str]] = Field(default=[], description="""State variable symbols accessible in the condition function. For edges, can include source/destination vertex outputs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    condition_parameters: Optional[list[str]] = Field(default=[], description="""Parameter symbols accessible in the condition function.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    affect: Optional[Equation] = Field(default=None, description="""Affect function: what happens when the event triggers. Can modify state variables and/or parameters. For stimulus type, this is the stimulus equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    affect_states: Optional[list[str]] = Field(default=[], description="""State variable symbols modifiable in the affect function.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    affect_parameters: Optional[list[str]] = Field(default=[], description="""Parameter symbols modifiable in the affect function.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    affect_negative: Optional[Equation] = Field(default=None, description="""Affect on downcrossing (continuous events only). If not specified, uses the same affect for both crossings.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    trigger_times: Optional[list[float]] = Field(default=[], description="""Predetermined trigger times for preset_time events. The solver will step exactly to these times.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    target_component: Optional[str] = Field(default=None, description="""Component to attach this event to. Can be a node label, edge label, or 'all_edges'/'all_vertices' for broadcast. If not specified, event is experiment-level.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    equation: Optional[Equation] = Field(default=None, description="""Stimulus equation for stimulus-type events. Legacy compatibility with Stimulus class.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
+                       'Observation',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'Case',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Noise',
+                       'UpdateRule',
+                       'DifferentialOperator']} })
+    regions: Optional[AnyShapeArray[int]] = Field(default=None, description="""Target regions for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    weighting: Optional[AnyShapeArray[float]] = Field(default=None, description="""Per-region weighting for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    duration: Optional[float] = Field(default=None, description="""Duration of stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator']} })
+
+
+class TemporalApplicableEquation(Equation):
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
+                       'SpatialField',
+                       'BoundaryCondition'],
+         'ifabsent': 'False'} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1252,9 +1627,11 @@ class TemporalApplicableEquation(Equation):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1275,6 +1652,8 @@ class TemporalApplicableEquation(Equation):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1308,6 +1687,7 @@ class Parcellation(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1325,6 +1705,7 @@ class Parcellation(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1358,7 +1739,9 @@ class Tractogram(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -1376,6 +1759,9 @@ class Tractogram(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -1385,6 +1771,7 @@ class Tractogram(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1402,6 +1789,7 @@ class Tractogram(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1420,9 +1808,11 @@ class Tractogram(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1443,6 +1833,8 @@ class Tractogram(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1478,6 +1870,7 @@ class Matrix(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1495,6 +1888,7 @@ class Matrix(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1513,9 +1907,11 @@ class Matrix(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1536,6 +1932,8 @@ class Matrix(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1590,6 +1988,7 @@ class Network(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1607,6 +2006,7 @@ class Network(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1625,9 +2025,11 @@ class Network(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1648,6 +2050,8 @@ class Network(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1681,9 +2085,15 @@ class Network(ConfiguredBaseModel):
     distance_unit: Optional[str] = Field(default="mm", description="""Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(mm)'} })
     time_unit: Optional[str] = Field(default="ms", description="""Default time unit for the network (e.g., 'ms', 's')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(ms)'} })
     edge_matrix_files: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    graph_generator: Optional[GraphGenerator] = Field(default=None, description="""Graph generator specification.  When set, overrides explicit edges/nodes for graph construction.  The type field is a free string; StandardGraphType lists well-known types that get automatic code generation across backends.
+""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
 
 
-class File(ConfiguredBaseModel):
+class GraphGenerator(ConfiguredBaseModel):
+    """
+    Backend-agnostic graph generator specification.  Captures the mathematical family (type) and its parameters so that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.). The number of nodes is always taken from Network.number_of_nodes.
+
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
@@ -1692,7 +2102,9 @@ class File(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -1710,6 +2122,9 @@ class File(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -1717,9 +2132,11 @@ class File(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1740,6 +2157,8 @@ class File(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1757,7 +2176,122 @@ class File(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    type: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'Algorithm']} })
+    type: str = Field(default=..., description="""Graph family name.  Use a StandardGraphType value for automatic backend mapping, or any custom string for documentation purposes.
+""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
+                       'File',
+                       'Aggregation',
+                       'TuningObjective',
+                       'Algorithm']} })
+    seed: Optional[int] = Field(default=None, description="""Random seed for reproducible graph generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Distribution', 'Noise']} })
+    directed: Optional[bool] = Field(default=False, description="""Whether to generate a directed graph.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'boolean(false)'} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Generator parameters (e.g. k, p, dims).  Names are matched by the backend mapping to construct the call.
+""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+
+
+class File(ConfiguredBaseModel):
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    type: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
+                       'File',
+                       'Aggregation',
+                       'TuningObjective',
+                       'Algorithm']} })
     path: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'DataSource']} })
     extension: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File']} })
 
@@ -1773,6 +2307,7 @@ class Node(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -1790,6 +2325,7 @@ class Node(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -1808,9 +2344,11 @@ class Node(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -1831,112 +2369,8 @@ class Node(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
-                       'Integrator',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    id: int = Field(default=..., description="""Unique node identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
-    position: Optional[Coordinate] = Field(default=None, description="""Spatial coordinates (x, y, z) of the node""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
-    region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
-    parameters: Optional[list[str]] = Field(default=[], description="""Node-specific parameter overrides""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'TemporalApplicableEquation',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'Distribution',
-                       'Noise',
-                       'Exploration',
-                       'Integrator',
-                       'Coupling',
-                       'PDE']} })
-    initial_state: Optional[list[float]] = Field(default=[], description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
-
-
-class Edge(ConfiguredBaseModel):
-    """
-    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge', 'from_schema': 'https://w3id.org/tvbo'})
-
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Dataset',
-                       'Contact',
-                       'Equation',
-                       'Stimulus',
-                       'Parcellation',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'TuningObjective',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'DifferentialOperator',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Equation',
-                       'Stimulus',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'File',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'TuningObjective',
-                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -1956,7 +2390,9 @@ class Edge(ConfiguredBaseModel):
                        'PDE']} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -1964,57 +2400,31 @@ class Edge(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    source: int = Field(default=..., description="""Source node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
-    target: int = Field(default=..., description="""Target node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
-    directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'False'} })
+    id: int = Field(default=..., description="""Unique node identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
+    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    position: Optional[Coordinate] = Field(default=None, description="""Spatial coordinates (x, y, z) of the node""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
+    region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
+    initial_state: Optional[list[float]] = Field(default=[], description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
+    events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this node (e.g., threshold-based state changes).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
 
 
-class Observation(ConfiguredBaseModel):
+class Edge(ConfiguredBaseModel):
     """
-    Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input → output flow.
+    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Observation', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Tractogram',
-                       'File',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -2032,6 +2442,7 @@ class Observation(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2050,9 +2461,11 @@ class Observation(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2073,6 +2486,161 @@ class Observation(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    source: int = Field(default=..., description="""Source node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
+    target: int = Field(default=..., description="""Target node ID""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
+    directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'False'} })
+    dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this edge (e.g., threshold-based line tripping).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
+
+
+class Observation(ConfiguredBaseModel):
+    """
+    Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input -> output flow.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Observation', 'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Observation', 'Function']} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2091,9 +2659,9 @@ class Observation(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -2105,7 +2673,9 @@ class Observation(ConfiguredBaseModel):
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -2113,6 +2683,8 @@ class Observation(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2129,7 +2701,7 @@ class Observation(ConfiguredBaseModel):
     tail_samples: Optional[int] = Field(default=None, description="""Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:].""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     aggregation: Optional[AggregationType] = Field(default=None, description="""How to aggregate over time""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Coupling']} })
     window_size: Optional[int] = Field(default=None, description="""Number of samples for windowed aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    pipeline: Optional[list[FunctionCall]] = Field(default=[], description="""Ordered sequence of Functions. Each Function transforms input → output.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    pipeline: Optional[list[FunctionCall]] = Field(default=[], description="""Ordered sequence of Functions. Each Function transforms input -> output.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     class_reference: Optional[ClassReference] = Field(default=None, description="""Direct class reference (alternative to pipeline). Use for external library classes like tvboptim.Bold, custom monitors, or any callable class. The class is instantiated with constructor_args and called with call_args. Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period, value: 1000.0}]}""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
 
 
@@ -2146,7 +2718,9 @@ class DerivedObservation(Observation):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2164,6 +2738,9 @@ class DerivedObservation(Observation):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2174,6 +2751,7 @@ class DerivedObservation(Observation):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -2191,6 +2769,7 @@ class DerivedObservation(Observation):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2209,9 +2788,11 @@ class DerivedObservation(Observation):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2232,6 +2813,8 @@ class DerivedObservation(Observation):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2250,9 +2833,9 @@ class DerivedObservation(Observation):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -2264,7 +2847,9 @@ class DerivedObservation(Observation):
          'slot_uri': 'tvbo:Equation'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -2272,6 +2857,8 @@ class DerivedObservation(Observation):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -2288,7 +2875,7 @@ class DerivedObservation(Observation):
     tail_samples: Optional[int] = Field(default=None, description="""Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:].""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     aggregation: Optional[AggregationType] = Field(default=None, description="""How to aggregate over time""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Coupling']} })
     window_size: Optional[int] = Field(default=None, description="""Number of samples for windowed aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    pipeline: Optional[list[FunctionCall]] = Field(default=[], description="""Ordered sequence of Functions. Each Function transforms input → output.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    pipeline: Optional[list[FunctionCall]] = Field(default=[], description="""Ordered sequence of Functions. Each Function transforms input -> output.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     class_reference: Optional[ClassReference] = Field(default=None, description="""Direct class reference (alternative to pipeline). Use for external library classes like tvboptim.Bold, custom monitors, or any callable class. The class is instantiated with constructor_args and called with call_args. Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period, value: 1000.0}]}""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
 
 
@@ -2308,7 +2895,9 @@ class Dynamics(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2326,6 +2915,9 @@ class Dynamics(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2336,6 +2928,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -2353,6 +2946,7 @@ class Dynamics(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2371,7 +2965,9 @@ class Dynamics(ConfiguredBaseModel):
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function']} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -2379,15 +2975,19 @@ class Dynamics(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2408,6 +3008,8 @@ class Dynamics(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2442,6 +3044,7 @@ class Dynamics(ConfiguredBaseModel):
     modes: Optional[dict[str, Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
     autonomous: Optional[bool] = Field(default=True, description="""Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'true'} })
+    observed: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Observable functions computed from states, inputs, and parameters after simulation. Unlike derived_variables (which are intermediate algebraic expressions used within the ODE), observed variables are post-hoc quantities recoverable from the solution. Maps to obsf/obssym in ND.jl EdgeModel/VertexModel. Example: absolute force magnitude computed from force components.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Coupling']} })
 
 
 class StateVariable(ConfiguredBaseModel):
@@ -2453,7 +3056,9 @@ class StateVariable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2471,6 +3076,9 @@ class StateVariable(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2484,6 +3092,7 @@ class StateVariable(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -2501,6 +3110,7 @@ class StateVariable(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2524,14 +3134,17 @@ class StateVariable(ConfiguredBaseModel):
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2552,6 +3165,8 @@ class StateVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2570,9 +3185,9 @@ class StateVariable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -2594,23 +3209,33 @@ class StateVariable(ConfiguredBaseModel):
                        'SpatialField']} })
     variable_of_interest: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'True'} })
     coupling_variable: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
+    equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
+    equation_order: Optional[int] = Field(default=1, description="""Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'int(1)'} })
     noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
     stimulation_variable: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     boundaries: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     initial_value: Optional[float] = Field(default=0.1, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'SpatialField'], 'ifabsent': 'float(0.1)'} })
+    derivative_initial_value: Optional[float] = Field(default=None, description="""Initial value for the first time derivative, used when equation_order > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl to fully specify higher-order initial value problems.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
     history: Optional[TimeSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
 
 
 class Distribution(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    """
+    A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform when only domain is given.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'name': {'ifabsent': 'string(Uniform)', 'name': 'name'}}})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default="Uniform", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2628,26 +3253,19 @@ class Distribution(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'Observation',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'Function',
-                       'Case',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Noise',
-                       'UpdateRule',
-                       'DifferentialOperator'],
-         'slot_uri': 'tvbo:Equation'} })
+                       'SoftwarePackage'],
+         'ifabsent': 'string(Uniform)'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -2655,10 +3273,19 @@ class Distribution(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    dependencies: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution']} })
+    domain: Optional[Range] = Field(default=None, description="""Support of the distribution (sampling bounds). For Uniform this fully defines the distribution.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+                       'ClinicalScore',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'PDE']} })
+    function: Optional[Function] = Field(default=None, description="""Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
+    seed: Optional[int] = Field(default=None, description="""Random seed for reproducible sampling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Distribution', 'Noise']} })
     correlation: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution']} })
 
 
@@ -2671,7 +3298,9 @@ class Parameter(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2689,6 +3318,9 @@ class Parameter(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2698,6 +3330,7 @@ class Parameter(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -2715,6 +3348,7 @@ class Parameter(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -2739,20 +3373,23 @@ class Parameter(ConfiguredBaseModel):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     reported_optimum: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2773,6 +3410,8 @@ class Parameter(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2791,9 +3430,9 @@ class Parameter(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -2815,6 +3454,7 @@ class Parameter(ConfiguredBaseModel):
                        'SpatialField']} })
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
     free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
@@ -2832,7 +3472,9 @@ class CouplingInput(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2850,6 +3492,9 @@ class CouplingInput(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2857,9 +3502,11 @@ class CouplingInput(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2880,6 +3527,8 @@ class CouplingInput(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2913,7 +3562,9 @@ class Argument(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -2931,6 +3582,9 @@ class Argument(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -2938,9 +3592,11 @@ class Argument(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -2961,6 +3617,8 @@ class Argument(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -2979,7 +3637,7 @@ class Argument(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     value: Optional[Union[float, int, str]] = Field(default=None, description="""Argument value. Can be: - Literal: 1.0, \"string\", etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'integer'}, {'range': 'string'}],
-         'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+         'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
@@ -2994,7 +3652,7 @@ class Argument(ConfiguredBaseModel):
 
 class Function(ConfiguredBaseModel):
     """
-    A function with explicit input → transformation → output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
+    A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Function', 'from_schema': 'https://w3id.org/tvbo'})
 
@@ -3004,7 +3662,9 @@ class Function(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3022,6 +3682,9 @@ class Function(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3032,6 +3695,7 @@ class Function(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -3049,6 +3713,7 @@ class Function(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3065,9 +3730,9 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -3085,9 +3750,11 @@ class Function(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3108,6 +3775,8 @@ class Function(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3145,7 +3814,11 @@ class Aggregation(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     over: Optional[DimensionType] = Field(default=None, description="""Dimension to aggregate over (e.g., node, time, state)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Aggregation']} })
-    type: Optional[ReductionType] = Field(default=ReductionType.mean, description="""Aggregation operation (mean, sum, max, min, none)""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'Algorithm'],
+    type: Optional[ReductionType] = Field(default=ReductionType.mean, description="""Aggregation operation (mean, sum, max, min, none)""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
+                       'File',
+                       'Aggregation',
+                       'TuningObjective',
+                       'Algorithm'],
          'ifabsent': 'string(mean)'} })
 
 
@@ -3162,7 +3835,9 @@ class LossFunction(Function):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3180,6 +3855,9 @@ class LossFunction(Function):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3190,6 +3868,7 @@ class LossFunction(Function):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -3207,6 +3886,7 @@ class LossFunction(Function):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3223,9 +3903,9 @@ class LossFunction(Function):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -3243,9 +3923,11 @@ class LossFunction(Function):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3266,6 +3948,8 @@ class LossFunction(Function):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3301,7 +3985,7 @@ class FunctionCall(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    function: Optional[str] = Field(default=None, description="""Reference to a defined Function (by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall', 'Noise']} })
+    function: Optional[str] = Field(default=None, description="""Reference to a defined Function (by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     callable: Optional[Callable] = Field(default=None, description="""Direct callable specification (alternative to function reference)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     class_call: Optional[ClassReference] = Field(default=None, description="""Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim.""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this step's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
@@ -3319,7 +4003,9 @@ class Callable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3337,6 +4023,9 @@ class Callable(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3344,9 +4033,11 @@ class Callable(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3367,6 +4058,8 @@ class Callable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3385,7 +4078,7 @@ class Callable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
-    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
 
 
 class ClassReference(Callable):
@@ -3403,7 +4096,9 @@ class ClassReference(Callable):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3421,6 +4116,9 @@ class ClassReference(Callable):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3428,9 +4126,11 @@ class ClassReference(Callable):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3451,6 +4151,8 @@ class ClassReference(Callable):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3469,17 +4171,17 @@ class ClassReference(Callable):
                        'PDESolver',
                        'PDE']} })
     module: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable']} })
-    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
 
 
 class Case(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    condition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Case']} })
+    condition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Event', 'Case']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -3499,7 +4201,9 @@ class DerivedParameter(Parameter):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3517,6 +4221,9 @@ class DerivedParameter(Parameter):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3528,9 +4235,11 @@ class DerivedParameter(Parameter):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3551,6 +4260,8 @@ class DerivedParameter(Parameter):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3569,9 +4280,9 @@ class DerivedParameter(Parameter):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -3596,6 +4307,7 @@ class DerivedParameter(Parameter):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -3613,6 +4325,7 @@ class DerivedParameter(Parameter):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3633,16 +4346,18 @@ class DerivedParameter(Parameter):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     reported_optimum: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
     free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
@@ -3657,7 +4372,9 @@ class DerivedVariable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3675,6 +4392,9 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3684,6 +4404,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -3701,6 +4422,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3723,9 +4445,11 @@ class DerivedVariable(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3746,6 +4470,8 @@ class DerivedVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3764,9 +4490,9 @@ class DerivedVariable(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -3795,7 +4521,9 @@ class Noise(ConfiguredBaseModel):
 
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -3803,13 +4531,15 @@ class Noise(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -3823,10 +4553,11 @@ class Noise(ConfiguredBaseModel):
     correlated: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['Noise'], 'ifabsent': 'False'} })
     gaussian: Optional[bool] = Field(default=False, description="""Indicates whether the noise is Gaussian""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise'], 'ifabsent': 'False'} })
     additive: Optional[bool] = Field(default=True, description="""Indicates whether the noise is additive""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise'], 'ifabsent': 'True'} })
-    seed: Optional[int] = Field(default=42, json_schema_extra = { "linkml_meta": {'domain_of': ['Noise'], 'ifabsent': 'integer(42)'} })
+    seed: Optional[int] = Field(default=42, json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Distribution', 'Noise'],
+         'ifabsent': 'integer(42)'} })
     random_state: Optional[RandomStream] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
     intensity: Optional[Parameter] = Field(default=None, description="""Optional scalar or vector intensity parameter for noise.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
-    function: Optional[Function] = Field(default=None, description="""Optional functional form of the noise (callable specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall', 'Noise']} })
+    function: Optional[Function] = Field(default=None, description="""Optional functional form of the noise (callable specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     pycode: Optional[str] = Field(default=None, description="""Inline Python code representation of the noise process.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation', 'Noise']} })
     targets: Optional[dict[str, StateVariable]] = Field(default=None, description="""State variables this noise applies to; if omitted, applies globally.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
 
@@ -3839,6 +4570,7 @@ class RandomStream(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -3856,6 +4588,7 @@ class RandomStream(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -3874,9 +4607,11 @@ class RandomStream(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -3897,6 +4632,8 @@ class RandomStream(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -3938,7 +4675,9 @@ class DataSource(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -3956,6 +4695,9 @@ class DataSource(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -3965,6 +4707,7 @@ class DataSource(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -3982,6 +4725,7 @@ class DataSource(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4000,9 +4744,11 @@ class DataSource(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4023,6 +4769,8 @@ class DataSource(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4059,7 +4807,9 @@ class OptimizationStage(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -4077,6 +4827,9 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4086,6 +4839,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -4103,6 +4857,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4121,9 +4876,11 @@ class OptimizationStage(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4144,6 +4901,8 @@ class OptimizationStage(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4161,8 +4920,8 @@ class OptimizationStage(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude'],
+    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage'], 'ifabsent': 'integer(100)'} })
@@ -4180,6 +4939,7 @@ class Optimization(OptimizationStage):
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-optimization execution configuration (overrides experiment-level defaults). Useful for setting random_seed, precision, or hardware for optimization phase.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, description="""Integration settings for optimization simulations (overrides experiment defaults). If specified, creates a fresh model_fn and state with prepare() before optimization. Can specify different duration, step_size, method than the experiment. If not specified, uses experiment-level integration settings.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
@@ -4191,7 +4951,9 @@ class Optimization(OptimizationStage):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -4209,6 +4971,9 @@ class Optimization(OptimizationStage):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4218,6 +4983,7 @@ class Optimization(OptimizationStage):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -4235,6 +5001,7 @@ class Optimization(OptimizationStage):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4253,9 +5020,11 @@ class Optimization(OptimizationStage):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4276,6 +5045,8 @@ class Optimization(OptimizationStage):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4293,8 +5064,8 @@ class Optimization(OptimizationStage):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
-    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude'],
+    free_parameters: Optional[list[str]] = Field(default=[], description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
     max_iterations: Optional[int] = Field(default=100, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage'], 'ifabsent': 'integer(100)'} })
@@ -4315,7 +5086,9 @@ class Exploration(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -4333,6 +5106,9 @@ class Exploration(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4342,6 +5118,7 @@ class Exploration(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -4359,6 +5136,7 @@ class Exploration(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4377,9 +5155,11 @@ class Exploration(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4400,6 +5180,8 @@ class Exploration(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4420,10 +5202,13 @@ class Exploration(ConfiguredBaseModel):
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-exploration execution configuration (overrides experiment-level defaults). Useful for setting random_seed, n_workers for parallel grid search.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
     parameters: dict[str, Parameter] = Field(default=..., description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -4431,6 +5216,8 @@ class Exploration(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
@@ -4452,7 +5239,9 @@ class UpdateRule(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -4470,6 +5259,9 @@ class UpdateRule(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4477,9 +5269,11 @@ class UpdateRule(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4500,6 +5294,8 @@ class UpdateRule(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4519,9 +5315,9 @@ class UpdateRule(ConfiguredBaseModel):
                        'PDE']} })
     target_parameter: Parameter = Field(default=..., description="""The parameter to update (e.g., J_i, wLRE)""", json_schema_extra = { "linkml_meta": {'domain_of': ['UpdateRule']} })
     equation: Equation = Field(default=..., description="""Update equation (e.g., 'J_i + eta * delta'). Can use functions defined in experiment.functions section.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -4541,7 +5337,7 @@ class AlgorithmInclude(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude']} })
+    algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation']} })
     arguments: Optional[dict[str, Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
 
 
@@ -4556,6 +5352,7 @@ class TuningObjective(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -4573,6 +5370,7 @@ class TuningObjective(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4591,9 +5389,11 @@ class TuningObjective(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4614,6 +5414,8 @@ class TuningObjective(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4631,7 +5433,11 @@ class TuningObjective(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'Algorithm']} })
+    type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
+                       'File',
+                       'Aggregation',
+                       'TuningObjective',
+                       'Algorithm']} })
     target_variable: Optional[str] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     target_value: Optional[float] = Field(default=None, description="""Target value for activity objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     target_data: Optional[str] = Field(default=None, description="""Reference to empirical data observation for matching objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
@@ -4650,7 +5456,9 @@ class Algorithm(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -4668,6 +5476,9 @@ class Algorithm(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -4675,9 +5486,11 @@ class Algorithm(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4698,6 +5511,8 @@ class Algorithm(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4718,8 +5533,13 @@ class Algorithm(ConfiguredBaseModel):
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-algorithm execution configuration (overrides experiment-level defaults). Useful for setting random_seed per algorithm to ensure reproducibility.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
-    type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'Aggregation', 'TuningObjective', 'Algorithm']} })
+    type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
+                       'File',
+                       'Aggregation',
+                       'TuningObjective',
+                       'Algorithm']} })
     includes: Optional[list[AlgorithmInclude]] = Field(default=[], description="""Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     observations: Optional[list[str]] = Field(default=[], description="""References to observations defined in the observations section. Includes both simulated observations and external data (via data_source).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
@@ -4735,23 +5555,59 @@ class Algorithm(ConfiguredBaseModel):
     depends_on: Optional[list[str]] = Field(default=[], description="""Other algorithms that must run first (e.g., EIB depends on FIC)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
 
 
-class Integrator(ConfiguredBaseModel):
+class Option(ConfiguredBaseModel):
+    """
+    A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type).
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    name: str = Field(default=..., description="""Option name (key).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
+                       'CouplingInput',
                        'Argument',
+                       'Function',
+                       'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
-                       'Integrator',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialField']} })
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+
+
+class Discretization(ConfiguredBaseModel):
+    """
+    Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -4759,16 +5615,85 @@ class Integrator(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Integrator'], 'ifabsent': 'float(1000)'} })
+    method: Optional[NumericalDiscretizationMethod] = Field(default=NumericalDiscretizationMethod.collocation, description="""Discretization method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
+         'ifabsent': 'string(collocation)'} })
+    ode_solver: Optional[Solver] = Field(default=None, description="""ODE solver for flow-based methods (shooting, poincaré). Specifies algorithm (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or trapezoid.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization']} })
+    linear_solver: Optional[Solver] = Field(default=None, description="""Linear solver for the Newton bordered system. E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization']} })
+    mesh_intervals: Optional[int] = Field(default=50, description="""Number of mesh intervals (time slices) for collocation or trapezoid methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in PeriodicOrbitTrapProblem(M=...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(50)'} })
+    degree: Optional[int] = Field(default=4, description="""Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N, m).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(4)'} })
+    n_sections: Optional[int] = Field(default=3, description="""Number of shooting sections for shooting or Poincaré methods.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(3)'} })
+    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (jacobian type, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+
+
+class InitialState(ConfiguredBaseModel):
+    """
+    How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    method: Optional[InitialStateMethod] = Field(default=InitialStateMethod.time_integration, description="""Strategy for finding the initial state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
+         'ifabsent': 'string(time_integration)'} })
+    duration: Optional[float] = Field(default=2000.0, description="""Integration duration for time_integration method.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
+         'ifabsent': 'float(2000.0)'} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for ODE integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    solver: Optional[Solver] = Field(default=None, description="""ODE solver for time_integration method. Specify method (e.g., Tsit5, Heun, RK4) and tolerances.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'PDE']} })
+    source_branch: Optional[str] = Field(default=None, description="""Name of a previously computed branch (for from_branch method).""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState']} })
+    source_point: Optional[str] = Field(default=None, description="""Which point on the source branch: 'endpoint', 'hopf:1', 'fold:2', a step number, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch']} })
+
+
+class BranchSwitch(ConfiguredBaseModel):
+    """
+    Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: \"from which special point on the parent branch, continue what kind of object, with what settings.\" Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4789,6 +5714,8 @@ class Integrator(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4806,33 +5733,46 @@ class Integrator(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'string(euler)'} })
-    step_size: Optional[float] = Field(default=0.01220703125, json_schema_extra = { "linkml_meta": {'aliases': ['dt'],
-         'domain_of': ['Integrator'],
-         'ifabsent': 'float(0.01220703125)'} })
-    steps: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
-    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
-    state_wise_sigma: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
-    transient_time: Optional[float] = Field(default=0, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'float(0)'} })
-    scipy_ode_base: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'False'} })
-    number_of_stages: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'integer(1)'} })
-    intermediate_expressions: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
-    update_expression: Optional[DerivedVariable] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
-    delayed: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    source_point: Optional[str] = Field(default=None, description="""Which bifurcation point to start from. Syntax: - 'hopf:-1' = last Hopf (default) - 'hopf:all' = all Hopf points - 'hopf:1' = first Hopf - 'fold:2' = second fold - integer = specific special point index""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'BranchSwitch']} })
+    delta_p: Optional[float] = Field(default=None, description="""Initial parameter offset from the bifurcation point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch']} })
+    continuation: Optional[Continuation] = Field(default=None, description="""Override solver settings for this branch. Uses the same Continuation type — only explicitly set attributes override the parent's values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch']} })
+    discretization: Optional[Discretization] = Field(default=None, description="""Discretization method for the branch solution. Required for periodic orbit branches (Hopf → PO). Not needed for codim-2 branches (fold/Hopf continuation).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
+    bothside: Optional[bool] = Field(default=None, description="""Continue branch in both directions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
+    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options for this branch (linear solver, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 
-class Coupling(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Coupling',
-         'from_schema': 'https://w3id.org/tvbo',
-         'slot_usage': {'name': {'ifabsent': 'Linear', 'name': 'name'}}})
+class Continuation(ConfiguredBaseModel):
+    """
+    Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only explicitly set attributes override the parent's values.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default="Linear", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -4850,16 +5790,19 @@ class Coupling(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
-                       'SoftwarePackage'],
-         'ifabsent': 'Linear'} })
+                       'SoftwarePackage']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Dataset',
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -4877,6 +5820,7 @@ class Coupling(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -4892,25 +5836,14 @@ class Coupling(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'TemporalApplicableEquation',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'Distribution',
-                       'Noise',
-                       'Exploration',
-                       'Integrator',
-                       'Coupling',
-                       'PDE']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -4931,6 +5864,291 @@ class Coupling(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    dynamics: Optional[str] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    free_parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    ds: Optional[float] = Field(default=None, description="""Initial arc-length step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    ds_min: Optional[float] = Field(default=None, description="""Minimum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    ds_max: Optional[float] = Field(default=None, description="""Maximum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    max_steps: Optional[int] = Field(default=None, description="""Maximum continuation steps.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    newton_tol: Optional[float] = Field(default=None, description="""Absolute tolerance for Newton corrector convergence.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    newton_max_iterations: Optional[int] = Field(default=None, description="""Maximum Newton corrector iterations per step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    nev: Optional[int] = Field(default=None, description="""Number of eigenvalues to compute. Must be >= number of state variables for reliable Hopf detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    tol_stability: Optional[float] = Field(default=None, description="""Tolerance on real part of eigenvalue for stability boundary.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    detect_bifurcation: Optional[int] = Field(default=None, description="""Bifurcation detection level. 0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    detect_fold: Optional[bool] = Field(default=None, description="""Enable fold (limit point) detection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    n_inversion: Optional[int] = Field(default=None, description="""Number of eigenvalue sign inversions to flag a bifurcation. Must be even. Higher = fewer false positives.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    max_bisection_steps: Optional[int] = Field(default=None, description="""Maximum bisection steps for bifurcation point localization.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    algorithm: Optional[ContinuationAlgorithm] = Field(default=ContinuationAlgorithm.PALC, description="""Predictor-corrector algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
+         'ifabsent': 'string(PALC)'} })
+    initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
+    branches: Optional[dict[str, BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    bothside: Optional[bool] = Field(default=None, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
+    execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-analysis execution configuration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
+                       'Exploration',
+                       'Algorithm',
+                       'Continuation',
+                       'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, description="""Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
+    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (tangent method, solver name, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+
+
+class Solver(ConfiguredBaseModel):
+    """
+    Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    method: Optional[str] = Field(default="Tsit5", description="""Solver algorithm name (e.g., Vern9, Rodas5, Tsit5, euler, heun, rk4).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
+         'ifabsent': 'string(Tsit5)'} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+
+
+class Integrator(Solver):
+    """
+    Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
+    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+                       'StateVariable',
+                       'Parameter',
+                       'Argument',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'Integrator',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialField']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
+         'ifabsent': 'float(1000)'} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    method: Optional[str] = Field(default="euler", description="""Integration method (euler, heun, rk4, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
+         'ifabsent': 'string(euler)'} })
+    step_size: Optional[float] = Field(default=0.01220703125, json_schema_extra = { "linkml_meta": {'aliases': ['dt'],
+         'domain_of': ['Integrator'],
+         'ifabsent': 'float(0.01220703125)'} })
+    steps: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
+    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
+    state_wise_sigma: Optional[list[float]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
+    transient_time: Optional[float] = Field(default=0, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'float(0)'} })
+    scipy_ode_base: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'False'} })
+    number_of_stages: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'integer(1)'} })
+    intermediate_expressions: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
+    update_expression: Optional[DerivedVariable] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
+    delayed: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
+    abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+    rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+
+
+class Coupling(ConfiguredBaseModel):
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Coupling',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'name': {'ifabsent': 'Linear', 'name': 'name'}}})
+
+    name: str = Field(default="Linear", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage'],
+         'ifabsent': 'Linear'} })
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Dataset',
+                       'Contact',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'SoftwareEnvironment',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -4955,13 +6173,16 @@ class Coupling(ConfiguredBaseModel):
     incoming_states: Optional[list[str]] = Field(default=[], description="""References to state variables from connected nodes (source)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     local_states: Optional[list[str]] = Field(default=[], description="""References to state variables from local node (target)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     delayed: Optional[bool] = Field(default=True, description="""Whether coupling includes transmission delays""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
+    symmetry: Optional[str] = Field(default="directed", description="""Edge symmetry type for NetworkDynamics.jl EdgeModel: 'directed' (default), 'antisymmetric', or 'symmetric'. AntiSymmetric edges flip sign for the reverse direction.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'string(directed)'} })
+    outsym: Optional[list[str]] = Field(default=[], description="""Output symbol names for the edge model. E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel. If not specified, derived from coupling variables of the connected vertex dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
+    observed: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Observable functions computed from edge inputs and parameters after simulation. Maps to obsf/obssym in ND.jl EdgeModel. Example: absolute force magnitude computed from force components.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Coupling']} })
     inner_coupling: Optional[Coupling] = Field(default=None, description="""For hierarchical coupling: inner coupling applied at regional level""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     region_mapping: Optional[RegionMapping] = Field(default=None, description="""For hierarchical coupling: vertex-to-region mapping for aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     regional_connectivity: Optional[Network] = Field(default=None, description="""For hierarchical coupling: region-to-region connectivity with weights and delays""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     aggregation: Optional[str] = Field(default=None, description="""For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'string'}, {'range': 'Function'}],
          'domain_of': ['Observation', 'Coupling']} })
     distribution: Optional[str] = Field(default=None, description="""For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'string'}, {'range': 'Function'}],
-         'domain_of': ['Coupling']} })
+         'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
 
 
 class RegionMapping(ConfiguredBaseModel):
@@ -4975,6 +6196,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -4992,6 +6214,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5010,9 +6233,11 @@ class RegionMapping(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5033,6 +6258,8 @@ class RegionMapping(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5084,6 +6311,7 @@ class ExecutionConfig(ConfiguredBaseModel):
     accelerator: Optional[str] = Field(default="cpu", description="""Hardware accelerator: 'cpu', 'gpu', 'tpu'""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'string(cpu)'} })
     batch_size: Optional[int] = Field(default=None, description="""Batch size for vectorized operations (None = auto)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig']} })
     random_seed: Optional[int] = Field(default=42, description="""Base random seed for reproducibility""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'integer(42)'} })
+    find_fixpoint: Optional[bool] = Field(default=False, description="""Whether to find a fixed point (steady state) before time integration. Used as initial condition for ODEProblem. Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'False'} })
 
 
 class SimulationExperiment(ConfiguredBaseModel):
@@ -5096,9 +6324,11 @@ class SimulationExperiment(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5119,6 +6349,8 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5142,6 +6374,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5159,6 +6392,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5175,7 +6409,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     local_dynamics: Optional[Dynamics] = Field(default=None, description="""Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
+    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -5184,16 +6418,19 @@ class SimulationExperiment(ConfiguredBaseModel):
     derived_observations: Optional[dict[str, DerivedObservation]] = Field(default=None, description="""Observations derived from combining other observations. Computed after all regular observations are available. Examples: fc_corr (from fc, fc_target), rmse, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     functions: Optional[dict[str, Function]] = Field(default=None, description="""Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    events: Optional[dict[str, Event]] = Field(default=None, description="""Events that apply at the experiment level. For component-level events, attach them to individual nodes or edges instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     optimization: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     algorithms: Optional[dict[str, Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    continuations: Optional[dict[str, Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
                        'Algorithm',
+                       'Continuation',
                        'SimulationExperiment']} })
-    software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'SimulationExperiment']} })
+    software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
     references: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'SimulationExperiment']} })
 
 
@@ -5205,6 +6442,7 @@ class SimulationStudy(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5222,6 +6460,7 @@ class SimulationStudy(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5242,9 +6481,11 @@ class SimulationStudy(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5265,6 +6506,8 @@ class SimulationStudy(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5305,6 +6548,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5322,6 +6566,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5340,9 +6585,11 @@ class TimeSeries(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5363,6 +6610,8 @@ class TimeSeries(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5436,6 +6685,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5453,6 +6703,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5471,9 +6722,11 @@ class SoftwareEnvironment(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5494,6 +6747,8 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5527,7 +6782,9 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -5545,6 +6802,9 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -5573,7 +6833,9 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -5591,6 +6853,9 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -5598,9 +6863,11 @@ class SoftwareRequirement(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5621,6 +6888,8 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5676,7 +6945,9 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -5694,6 +6965,9 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -5701,9 +6975,11 @@ class SoftwarePackage(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5724,6 +7000,8 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5758,6 +7036,7 @@ class NDArray(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5775,6 +7054,7 @@ class NDArray(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5793,9 +7073,11 @@ class NDArray(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5816,6 +7098,8 @@ class NDArray(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5865,6 +7149,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5882,6 +7167,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5900,9 +7186,11 @@ class SpatialDomain(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -5923,6 +7211,8 @@ class SpatialDomain(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -5958,6 +7248,7 @@ class Mesh(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -5975,6 +7266,7 @@ class Mesh(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -5993,9 +7285,11 @@ class Mesh(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -6016,6 +7310,8 @@ class Mesh(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6062,6 +7358,7 @@ class SpatialField(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -6079,6 +7376,7 @@ class SpatialField(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6097,9 +7395,11 @@ class SpatialField(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -6120,6 +7420,8 @@ class SpatialField(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6166,6 +7468,7 @@ class FieldStateVariable(StateVariable):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -6183,6 +7486,7 @@ class FieldStateVariable(StateVariable):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6201,9 +7505,11 @@ class FieldStateVariable(StateVariable):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -6224,6 +7530,8 @@ class FieldStateVariable(StateVariable):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6249,7 +7557,9 @@ class FieldStateVariable(StateVariable):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'Event',
                        'Tractogram',
+                       'GraphGenerator',
                        'File',
                        'Observation',
                        'Dynamics',
@@ -6267,6 +7577,9 @@ class FieldStateVariable(StateVariable):
                        'Exploration',
                        'UpdateRule',
                        'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
                        'Coupling',
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
@@ -6283,12 +7596,13 @@ class FieldStateVariable(StateVariable):
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -6310,10 +7624,14 @@ class FieldStateVariable(StateVariable):
                        'SpatialField']} })
     variable_of_interest: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'True'} })
     coupling_variable: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
+    equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
+    equation_order: Optional[int] = Field(default=1, description="""Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'int(1)'} })
     noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
     stimulation_variable: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     boundaries: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     initial_value: Optional[float] = Field(default=0.1, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'SpatialField'], 'ifabsent': 'float(0.1)'} })
+    derivative_initial_value: Optional[float] = Field(default=None, description="""Initial value for the first time derivative, used when equation_order > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl to fully specify higher-order initial value problems.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
     history: Optional[TimeSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
 
 
@@ -6325,6 +7643,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -6342,6 +7661,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6363,9 +7683,9 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Function',
                        'DifferentialOperator']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
+                       'Event',
                        'Observation',
                        'StateVariable',
-                       'Distribution',
                        'Parameter',
                        'Function',
                        'Case',
@@ -6389,6 +7709,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -6406,6 +7727,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6424,9 +7746,11 @@ class BoundaryCondition(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -6447,6 +7771,8 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6466,7 +7792,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'PDE']} })
     bc_type: Optional[BoundaryConditionType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
     on_region: Optional[str] = Field(default=None, description="""Mesh/atlas subset where BC applies.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
-    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'BoundaryCondition']} })
+    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
                        'SpatialField',
                        'BoundaryCondition'],
@@ -6481,6 +7807,7 @@ class PDESolver(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -6498,6 +7825,7 @@ class PDESolver(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6516,9 +7844,11 @@ class PDESolver(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -6539,6 +7869,8 @@ class PDESolver(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6558,8 +7890,8 @@ class PDESolver(ConfiguredBaseModel):
                        'PDE']} })
     requirements: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
-    discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
-    time_integrator: Optional[str] = Field(default=None, description="""e.g., implicit Euler, Crank–Nicolson.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
+    discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
+    time_integrator: Optional[str] = Field(default=None, description="""e.g., implicit Euler, Crank-Nicolson.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     step_size: Optional[float] = Field(default=None, description="""Time step (s).""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     tolerances: Optional[str] = Field(default=None, description="""Abs/rel tolerances.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     preconditioner: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
@@ -6576,6 +7908,7 @@ class PDE(ConfiguredBaseModel):
                        'Contact',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Parcellation',
                        'Tractogram',
                        'Matrix',
@@ -6593,6 +7926,7 @@ class PDE(ConfiguredBaseModel):
                        'OptimizationStage',
                        'Exploration',
                        'TuningObjective',
+                       'Continuation',
                        'Coupling',
                        'RegionMapping',
                        'SimulationExperiment',
@@ -6611,9 +7945,11 @@ class PDE(ConfiguredBaseModel):
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
                        'Equation',
                        'Stimulus',
+                       'Event',
                        'Tractogram',
                        'Matrix',
                        'Network',
+                       'GraphGenerator',
                        'File',
                        'Node',
                        'Edge',
@@ -6634,6 +7970,8 @@ class PDE(ConfiguredBaseModel):
                        'UpdateRule',
                        'TuningObjective',
                        'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
                        'Integrator',
                        'Coupling',
                        'RegionMapping',
@@ -6653,7 +7991,9 @@ class PDE(ConfiguredBaseModel):
                        'PDE']} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
+                       'Event',
                        'TemporalApplicableEquation',
+                       'GraphGenerator',
                        'Node',
                        'Edge',
                        'Observation',
@@ -6661,12 +8001,15 @@ class PDE(ConfiguredBaseModel):
                        'Distribution',
                        'Noise',
                        'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
                        'Integrator',
                        'Coupling',
                        'PDE']} })
     domain: Optional[SpatialDomain] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
+                       'Distribution',
                        'Parameter',
                        'PDE']} })
     mesh: Optional[Mesh] = Field(default=None, description="""Shared mesh for all field state variables in this PDE.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SpatialField', 'FieldStateVariable', 'PDE']} })
@@ -6675,7 +8018,7 @@ class PDE(ConfiguredBaseModel):
     operators: Optional[list[DifferentialOperator]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     sources: Optional[list[Equation]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     boundary_conditions: Optional[list[BoundaryCondition]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['FieldStateVariable', 'PDE']} })
-    solver: Optional[PDESolver] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
+    solver: Optional[PDESolver] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'PDE']} })
     derived_parameters: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     derived_variables: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     functions: Optional[list[str]] = Field(default=[], json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
@@ -6702,12 +8045,14 @@ Range.model_rebuild()
 Equation.model_rebuild()
 ConditionalBlock.model_rebuild()
 Stimulus.model_rebuild()
+Event.model_rebuild()
 TemporalApplicableEquation.model_rebuild()
 Parcellation.model_rebuild()
 Tractogram.model_rebuild()
 Matrix.model_rebuild()
 BrainRegionSeries.model_rebuild()
 Network.model_rebuild()
+GraphGenerator.model_rebuild()
 File.model_rebuild()
 Node.model_rebuild()
 Edge.model_rebuild()
@@ -6738,6 +8083,12 @@ UpdateRule.model_rebuild()
 AlgorithmInclude.model_rebuild()
 TuningObjective.model_rebuild()
 Algorithm.model_rebuild()
+Option.model_rebuild()
+Discretization.model_rebuild()
+InitialState.model_rebuild()
+BranchSwitch.model_rebuild()
+Continuation.model_rebuild()
+Solver.model_rebuild()
 Integrator.model_rebuild()
 Coupling.model_rebuild()
 RegionMapping.model_rebuild()

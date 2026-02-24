@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-09T14:03:39
+# Generation date: 2026-02-13T16:31:56
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -76,7 +76,15 @@ DEFAULT_ = TVBO
 # Types
 
 # Class references
+class EventName(extended_str):
+    pass
+
+
 class TractogramName(extended_str):
+    pass
+
+
+class GraphGeneratorName(extended_str):
     pass
 
 
@@ -161,6 +169,18 @@ class UpdateRuleName(extended_str):
 
 
 class AlgorithmName(extended_str):
+    pass
+
+
+class OptionName(extended_str):
+    pass
+
+
+class BranchSwitchName(extended_str):
+    pass
+
+
+class ContinuationName(extended_str):
     pass
 
 
@@ -363,6 +383,105 @@ class Stimulus(YAMLRoot):
         if not isinstance(self.weighting, list):
             self.weighting = [self.weighting] if self.weighting is not None else []
         self.weighting = [v if isinstance(v, float) else float(v) for v in self.weighting]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Event(YAMLRoot):
+    """
+    A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent
+    external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled
+    interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Event"]
+    class_class_curie: ClassVar[str] = "tvbo:Event"
+    class_name: ClassVar[str] = "Event"
+    class_model_uri: ClassVar[URIRef] = TVBO.Event
+
+    name: Union[str, EventName] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    event_type: Optional[Union[str, "EventType"]] = 'stimulus'
+    condition: Optional[Union[dict, Equation]] = None
+    condition_states: Optional[Union[str, list[str]]] = empty_list()
+    condition_parameters: Optional[Union[str, list[str]]] = empty_list()
+    affect: Optional[Union[dict, Equation]] = None
+    affect_states: Optional[Union[str, list[str]]] = empty_list()
+    affect_parameters: Optional[Union[str, list[str]]] = empty_list()
+    affect_negative: Optional[Union[dict, Equation]] = None
+    trigger_times: Optional[Union[float, list[float]]] = empty_list()
+    target_component: Optional[str] = None
+    equation: Optional[Union[dict, Equation]] = None
+    regions: Optional[Union[int, list[int]]] = empty_list()
+    weighting: Optional[Union[float, list[float]]] = empty_list()
+    duration: Optional[float] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, EventName):
+            self.name = EventName(self.name)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.event_type is not None and not isinstance(self.event_type, EventType):
+            self.event_type = getattr(EventType, self.event_type)
+
+        if self.condition is not None and not isinstance(self.condition, Equation):
+            self.condition = Equation(**as_dict(self.condition))
+
+        if not isinstance(self.condition_states, list):
+            self.condition_states = [self.condition_states] if self.condition_states is not None else []
+        self.condition_states = [v if isinstance(v, str) else str(v) for v in self.condition_states]
+
+        if not isinstance(self.condition_parameters, list):
+            self.condition_parameters = [self.condition_parameters] if self.condition_parameters is not None else []
+        self.condition_parameters = [v if isinstance(v, str) else str(v) for v in self.condition_parameters]
+
+        if self.affect is not None and not isinstance(self.affect, Equation):
+            self.affect = Equation(**as_dict(self.affect))
+
+        if not isinstance(self.affect_states, list):
+            self.affect_states = [self.affect_states] if self.affect_states is not None else []
+        self.affect_states = [v if isinstance(v, str) else str(v) for v in self.affect_states]
+
+        if not isinstance(self.affect_parameters, list):
+            self.affect_parameters = [self.affect_parameters] if self.affect_parameters is not None else []
+        self.affect_parameters = [v if isinstance(v, str) else str(v) for v in self.affect_parameters]
+
+        if self.affect_negative is not None and not isinstance(self.affect_negative, Equation):
+            self.affect_negative = Equation(**as_dict(self.affect_negative))
+
+        if not isinstance(self.trigger_times, list):
+            self.trigger_times = [self.trigger_times] if self.trigger_times is not None else []
+        self.trigger_times = [v if isinstance(v, float) else float(v) for v in self.trigger_times]
+
+        if self.target_component is not None and not isinstance(self.target_component, str):
+            self.target_component = str(self.target_component)
+
+        if self.equation is not None and not isinstance(self.equation, Equation):
+            self.equation = Equation(**as_dict(self.equation))
+
+        if not isinstance(self.regions, list):
+            self.regions = [self.regions] if self.regions is not None else []
+        self.regions = [v if isinstance(v, int) else int(v) for v in self.regions]
+
+        if not isinstance(self.weighting, list):
+            self.weighting = [self.weighting] if self.weighting is not None else []
+        self.weighting = [v if isinstance(v, float) else float(v) for v in self.weighting]
+
+        if self.duration is not None and not isinstance(self.duration, float):
+            self.duration = float(self.duration)
 
         super().__post_init__(**kwargs)
 
@@ -572,6 +691,7 @@ class Network(YAMLRoot):
     distance_unit: Optional[str] = "mm"
     time_unit: Optional[str] = "ms"
     edge_matrix_files: Optional[Union[Union[str, FileName], list[Union[str, FileName]]]] = empty_list()
+    graph_generator: Optional[Union[dict, "GraphGenerator"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -632,6 +752,55 @@ class Network(YAMLRoot):
             self.edge_matrix_files = [self.edge_matrix_files] if self.edge_matrix_files is not None else []
         self.edge_matrix_files = [v if isinstance(v, FileName) else FileName(v) for v in self.edge_matrix_files]
 
+        if self.graph_generator is not None and not isinstance(self.graph_generator, GraphGenerator):
+            self.graph_generator = GraphGenerator(**as_dict(self.graph_generator))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class GraphGenerator(YAMLRoot):
+    """
+    Backend-agnostic graph generator specification. Captures the mathematical family (type) and its parameters so that
+    each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.). The number of nodes is always
+    taken from Network.number_of_nodes.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["GraphGenerator"]
+    class_class_curie: ClassVar[str] = "tvbo:GraphGenerator"
+    class_name: ClassVar[str] = "GraphGenerator"
+    class_model_uri: ClassVar[URIRef] = TVBO.GraphGenerator
+
+    name: Union[str, GraphGeneratorName] = None
+    type: str = None
+    description: Optional[str] = None
+    seed: Optional[int] = None
+    directed: Optional[Union[bool, Bool]] = False
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, GraphGeneratorName):
+            self.name = GraphGeneratorName(self.name)
+
+        if self._is_empty(self.type):
+            self.MissingRequiredField("type")
+        if not isinstance(self.type, str):
+            self.type = str(self.type)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.seed is not None and not isinstance(self.seed, int):
+            self.seed = int(self.seed)
+
+        if self.directed is not None and not isinstance(self.directed, Bool):
+            self.directed = Bool(self.directed)
+
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
         super().__post_init__(**kwargs)
 
 
@@ -686,11 +855,12 @@ class Node(YAMLRoot):
     id: int = None
     label: Optional[str] = None
     description: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
-    parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
     initial_state: Optional[Union[float, list[float]]] = empty_list()
+    events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.id):
@@ -704,6 +874,8 @@ class Node(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
         if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
             self.dynamics = DynamicsName(self.dynamics)
 
@@ -713,13 +885,11 @@ class Node(YAMLRoot):
         if self.region is not None and not isinstance(self.region, str):
             self.region = str(self.region)
 
-        if not isinstance(self.parameters, list):
-            self.parameters = [self.parameters] if self.parameters is not None else []
-        self.parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.parameters]
-
         if not isinstance(self.initial_state, list):
             self.initial_state = [self.initial_state] if self.initial_state is not None else []
         self.initial_state = [v if isinstance(v, float) else float(v) for v in self.initial_state]
+
+        self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -746,6 +916,8 @@ class Edge(YAMLRoot):
     target_var: Optional[str] = None
     coupling: Optional[Union[str, CouplingName]] = None
     directed: Optional[Union[bool, Bool]] = False
+    dynamics: Optional[Union[str, DynamicsName]] = None
+    events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.source):
@@ -778,6 +950,11 @@ class Edge(YAMLRoot):
         if self.directed is not None and not isinstance(self.directed, Bool):
             self.directed = Bool(self.directed)
 
+        if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
+            self.dynamics = DynamicsName(self.dynamics)
+
+        self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
+
         super().__post_init__(**kwargs)
 
 
@@ -785,7 +962,7 @@ class Edge(YAMLRoot):
 class Observation(YAMLRoot):
     """
     Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and
-    derived quantities. Pipeline is a sequence of Functions with input → output flow.
+    derived quantities. Pipeline is a sequence of Functions with input -> output flow.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -949,6 +1126,7 @@ class Dynamics(YAMLRoot):
     modes: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     system_type: Optional[Union[str, "SystemType"]] = None
     autonomous: Optional[Union[bool, Bool]] = True
+    observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1016,6 +1194,8 @@ class Dynamics(YAMLRoot):
         if self.autonomous is not None and not isinstance(self.autonomous, Bool):
             self.autonomous = Bool(self.autonomous)
 
+        self._normalize_inlined_as_dict(slot_name="observed", slot_type=DerivedVariable, key_name="name", keyed=True)
+
         if self.system_type is not None and not isinstance(self.system_type, str):
             self.system_type = str(self.system_type)
 
@@ -1041,10 +1221,14 @@ class StateVariable(YAMLRoot):
     unit: Optional[str] = None
     variable_of_interest: Optional[Union[bool, Bool]] = True
     coupling_variable: Optional[Union[bool, Bool]] = False
+    equation_type: Optional[str] = "differential"
+    equation_order: Optional[int] = 1
     noise: Optional[Union[dict, "Noise"]] = None
     stimulation_variable: Optional[Union[bool, Bool]] = None
     boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
+    derivative_initial_value: Optional[float] = None
+    distribution: Optional[Union[dict, "Distribution"]] = None
     history: Optional[Union[dict, "TimeSeries"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1080,6 +1264,12 @@ class StateVariable(YAMLRoot):
         if self.coupling_variable is not None and not isinstance(self.coupling_variable, Bool):
             self.coupling_variable = Bool(self.coupling_variable)
 
+        if self.equation_type is not None and not isinstance(self.equation_type, str):
+            self.equation_type = str(self.equation_type)
+
+        if self.equation_order is not None and not isinstance(self.equation_order, int):
+            self.equation_order = int(self.equation_order)
+
         if self.noise is not None and not isinstance(self.noise, Noise):
             self.noise = Noise(**as_dict(self.noise))
 
@@ -1092,6 +1282,12 @@ class StateVariable(YAMLRoot):
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
 
+        if self.derivative_initial_value is not None and not isinstance(self.derivative_initial_value, float):
+            self.derivative_initial_value = float(self.derivative_initial_value)
+
+        if self.distribution is not None and not isinstance(self.distribution, Distribution):
+            self.distribution = Distribution(**as_dict(self.distribution))
+
         if self.history is not None and not isinstance(self.history, TimeSeries):
             self.history = TimeSeries(**as_dict(self.history))
 
@@ -1100,6 +1296,11 @@ class StateVariable(YAMLRoot):
 
 @dataclass(repr=False)
 class Distribution(YAMLRoot):
+    """
+    A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform,
+    Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling
+    rule. Default name is Uniform when only domain is given.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Distribution"]
@@ -1107,10 +1308,11 @@ class Distribution(YAMLRoot):
     class_name: ClassVar[str] = "Distribution"
     class_model_uri: ClassVar[URIRef] = TVBO.Distribution
 
-    name: Union[str, DistributionName] = None
-    equation: Optional[Union[dict, Equation]] = None
+    name: Union[str, DistributionName] = "Uniform"
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
-    dependencies: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    domain: Optional[Union[dict, Range]] = None
+    function: Optional[Union[dict, "Function"]] = None
+    seed: Optional[int] = None
     correlation: Optional[Union[dict, Matrix]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1119,12 +1321,16 @@ class Distribution(YAMLRoot):
         if not isinstance(self.name, DistributionName):
             self.name = DistributionName(self.name)
 
-        if self.equation is not None and not isinstance(self.equation, Equation):
-            self.equation = Equation(**as_dict(self.equation))
-
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="dependencies", slot_type=Parameter, key_name="name", keyed=True)
+        if self.domain is not None and not isinstance(self.domain, Range):
+            self.domain = Range(**as_dict(self.domain))
+
+        if self.function is not None and not isinstance(self.function, Function):
+            self.function = Function(**as_dict(self.function))
+
+        if self.seed is not None and not isinstance(self.seed, int):
+            self.seed = int(self.seed)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -1154,6 +1360,7 @@ class Parameter(YAMLRoot):
     unit: Optional[str] = None
     comment: Optional[str] = None
     heterogeneous: Optional[Union[bool, Bool]] = None
+    distribution: Optional[Union[dict, Distribution]] = None
     free: Optional[Union[bool, Bool]] = None
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
@@ -1199,6 +1406,9 @@ class Parameter(YAMLRoot):
 
         if self.heterogeneous is not None and not isinstance(self.heterogeneous, Bool):
             self.heterogeneous = Bool(self.heterogeneous)
+
+        if self.distribution is not None and not isinstance(self.distribution, Distribution):
+            self.distribution = Distribution(**as_dict(self.distribution))
 
         if self.free is not None and not isinstance(self.free, Bool):
             self.free = Bool(self.free)
@@ -1288,8 +1498,8 @@ class Argument(YAMLRoot):
 @dataclass(repr=False)
 class Function(YAMLRoot):
     """
-    A function with explicit input → transformation → output flow. Can be equation-based (symbolic) or software-based
-    (callable). In a pipeline, functions are chained: output of one becomes input of next.
+    A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or
+    software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -2157,7 +2367,336 @@ class Algorithm(YAMLRoot):
 
 
 @dataclass(repr=False)
-class Integrator(YAMLRoot):
+class Option(YAMLRoot):
+    """
+    A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal
+    numeric parameters (e.g., solver name, tangent method, jacobian type).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Option"]
+    class_class_curie: ClassVar[str] = "tvbo:Option"
+    class_name: ClassVar[str] = "Option"
+    class_model_uri: ClassVar[URIRef] = TVBO.Option
+
+    name: Union[str, OptionName] = None
+    value: str = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, OptionName):
+            self.name = OptionName(self.name)
+
+        if self._is_empty(self.value):
+            self.MissingRequiredField("value")
+        if not isinstance(self.value, str):
+            self.value = str(self.value)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Discretization(YAMLRoot):
+    """
+    Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits,
+    quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Discretization"]
+    class_class_curie: ClassVar[str] = "tvbo:Discretization"
+    class_name: ClassVar[str] = "Discretization"
+    class_model_uri: ClassVar[URIRef] = TVBO.Discretization
+
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    method: Optional[Union[str, "NumericalDiscretizationMethod"]] = 'collocation'
+    ode_solver: Optional[Union[dict, "Solver"]] = None
+    linear_solver: Optional[Union[dict, "Solver"]] = None
+    mesh_intervals: Optional[int] = 50
+    degree: Optional[int] = 4
+    n_sections: Optional[int] = 3
+    options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.method is not None and not isinstance(self.method, NumericalDiscretizationMethod):
+            self.method = getattr(NumericalDiscretizationMethod, self.method)
+
+        if self.ode_solver is not None and not isinstance(self.ode_solver, Solver):
+            self.ode_solver = Solver(**as_dict(self.ode_solver))
+
+        if self.linear_solver is not None and not isinstance(self.linear_solver, Solver):
+            self.linear_solver = Solver(**as_dict(self.linear_solver))
+
+        if self.mesh_intervals is not None and not isinstance(self.mesh_intervals, int):
+            self.mesh_intervals = int(self.mesh_intervals)
+
+        if self.degree is not None and not isinstance(self.degree, int):
+            self.degree = int(self.degree)
+
+        if self.n_sections is not None and not isinstance(self.n_sections, int):
+            self.n_sections = int(self.n_sections)
+
+        self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class InitialState(YAMLRoot):
+    """
+    How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady
+    state.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["InitialState"]
+    class_class_curie: ClassVar[str] = "tvbo:InitialState"
+    class_name: ClassVar[str] = "InitialState"
+    class_model_uri: ClassVar[URIRef] = TVBO.InitialState
+
+    method: Optional[Union[str, "InitialStateMethod"]] = 'time_integration'
+    duration: Optional[float] = 2000.0
+    abs_tol: Optional[float] = 1e-10
+    rel_tol: Optional[float] = 1e-10
+    solver: Optional[Union[dict, "Solver"]] = None
+    source_branch: Optional[str] = None
+    source_point: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.method is not None and not isinstance(self.method, InitialStateMethod):
+            self.method = getattr(InitialStateMethod, self.method)
+
+        if self.duration is not None and not isinstance(self.duration, float):
+            self.duration = float(self.duration)
+
+        if self.abs_tol is not None and not isinstance(self.abs_tol, float):
+            self.abs_tol = float(self.abs_tol)
+
+        if self.rel_tol is not None and not isinstance(self.rel_tol, float):
+            self.rel_tol = float(self.rel_tol)
+
+        if self.solver is not None and not isinstance(self.solver, Solver):
+            self.solver = Solver(**as_dict(self.solver))
+
+        if self.source_branch is not None and not isinstance(self.source_branch, str):
+            self.source_branch = str(self.source_branch)
+
+        if self.source_point is not None and not isinstance(self.source_point, str):
+            self.source_point = str(self.source_point)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class BranchSwitch(YAMLRoot):
+    """
+    Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold
+    continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of
+    object, with what settings." Override parent solver settings via the inline continuation field — only explicitly
+    set attributes take effect; everything else is inherited from the parent Continuation.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["BranchSwitch"]
+    class_class_curie: ClassVar[str] = "tvbo:BranchSwitch"
+    class_name: ClassVar[str] = "BranchSwitch"
+    class_model_uri: ClassVar[URIRef] = TVBO.BranchSwitch
+
+    name: Union[str, BranchSwitchName] = None
+    description: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    source_point: Optional[str] = None
+    delta_p: Optional[float] = None
+    continuation: Optional[Union[dict, "Continuation"]] = None
+    discretization: Optional[Union[dict, Discretization]] = None
+    bothside: Optional[Union[bool, Bool]] = None
+    options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, BranchSwitchName):
+            self.name = BranchSwitchName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.source_point is not None and not isinstance(self.source_point, str):
+            self.source_point = str(self.source_point)
+
+        if self.delta_p is not None and not isinstance(self.delta_p, float):
+            self.delta_p = float(self.delta_p)
+
+        if self.continuation is not None and not isinstance(self.continuation, Continuation):
+            self.continuation = Continuation(**as_dict(self.continuation))
+
+        if self.discretization is not None and not isinstance(self.discretization, Discretization):
+            self.discretization = Discretization(**as_dict(self.discretization))
+
+        if self.bothside is not None and not isinstance(self.bothside, Bool):
+            self.bothside = Bool(self.bothside)
+
+        self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Continuation(YAMLRoot):
+    """
+    Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live
+    directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only
+    explicitly set attributes override the parent's values.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Continuation"]
+    class_class_curie: ClassVar[str] = "tvbo:Continuation"
+    class_name: ClassVar[str] = "Continuation"
+    class_model_uri: ClassVar[URIRef] = TVBO.Continuation
+
+    name: Union[str, ContinuationName] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    dynamics: Optional[Union[str, DynamicsName]] = None
+    free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    ds: Optional[float] = None
+    ds_min: Optional[float] = None
+    ds_max: Optional[float] = None
+    max_steps: Optional[int] = None
+    newton_tol: Optional[float] = None
+    newton_max_iterations: Optional[int] = None
+    nev: Optional[int] = None
+    tol_stability: Optional[float] = None
+    detect_bifurcation: Optional[int] = None
+    detect_fold: Optional[Union[bool, Bool]] = None
+    n_inversion: Optional[int] = None
+    max_bisection_steps: Optional[int] = None
+    algorithm: Optional[Union[str, "ContinuationAlgorithm"]] = 'PALC'
+    initial_state: Optional[Union[dict, InitialState]] = None
+    branches: Optional[Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]] = empty_dict()
+    bothside: Optional[Union[bool, Bool]] = None
+    execution: Optional[Union[dict, "ExecutionConfig"]] = None
+    software: Optional[Union[dict, "SoftwareRequirement"]] = None
+    options: Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, ContinuationName):
+            self.name = ContinuationName(self.name)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
+            self.dynamics = DynamicsName(self.dynamics)
+
+        self._normalize_inlined_as_dict(slot_name="free_parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.ds is not None and not isinstance(self.ds, float):
+            self.ds = float(self.ds)
+
+        if self.ds_min is not None and not isinstance(self.ds_min, float):
+            self.ds_min = float(self.ds_min)
+
+        if self.ds_max is not None and not isinstance(self.ds_max, float):
+            self.ds_max = float(self.ds_max)
+
+        if self.max_steps is not None and not isinstance(self.max_steps, int):
+            self.max_steps = int(self.max_steps)
+
+        if self.newton_tol is not None and not isinstance(self.newton_tol, float):
+            self.newton_tol = float(self.newton_tol)
+
+        if self.newton_max_iterations is not None and not isinstance(self.newton_max_iterations, int):
+            self.newton_max_iterations = int(self.newton_max_iterations)
+
+        if self.nev is not None and not isinstance(self.nev, int):
+            self.nev = int(self.nev)
+
+        if self.tol_stability is not None and not isinstance(self.tol_stability, float):
+            self.tol_stability = float(self.tol_stability)
+
+        if self.detect_bifurcation is not None and not isinstance(self.detect_bifurcation, int):
+            self.detect_bifurcation = int(self.detect_bifurcation)
+
+        if self.detect_fold is not None and not isinstance(self.detect_fold, Bool):
+            self.detect_fold = Bool(self.detect_fold)
+
+        if self.n_inversion is not None and not isinstance(self.n_inversion, int):
+            self.n_inversion = int(self.n_inversion)
+
+        if self.max_bisection_steps is not None and not isinstance(self.max_bisection_steps, int):
+            self.max_bisection_steps = int(self.max_bisection_steps)
+
+        if self.algorithm is not None and not isinstance(self.algorithm, ContinuationAlgorithm):
+            self.algorithm = getattr(ContinuationAlgorithm, self.algorithm)
+
+        if self.initial_state is not None and not isinstance(self.initial_state, InitialState):
+            self.initial_state = InitialState(**as_dict(self.initial_state))
+
+        self._normalize_inlined_as_dict(slot_name="branches", slot_type=BranchSwitch, key_name="name", keyed=True)
+
+        if self.bothside is not None and not isinstance(self.bothside, Bool):
+            self.bothside = Bool(self.bothside)
+
+        if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
+            self.execution = ExecutionConfig(**as_dict(self.execution))
+
+        if self.software is not None and not isinstance(self.software, SoftwareRequirement):
+            self.software = SoftwareRequirement(**as_dict(self.software))
+
+        self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Solver(YAMLRoot):
+    """
+    Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5,
+    etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and
+    tolerances matter.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Solver"]
+    class_class_curie: ClassVar[str] = "tvbo:Solver"
+    class_name: ClassVar[str] = "Solver"
+    class_model_uri: ClassVar[URIRef] = TVBO.Solver
+
+    method: Optional[str] = "Tsit5"
+    abs_tol: Optional[float] = 1e-10
+    rel_tol: Optional[float] = 1e-10
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.method is not None and not isinstance(self.method, str):
+            self.method = str(self.method)
+
+        if self.abs_tol is not None and not isinstance(self.abs_tol, float):
+            self.abs_tol = float(self.abs_tol)
+
+        if self.rel_tol is not None and not isinstance(self.rel_tol, float):
+            self.rel_tol = float(self.rel_tol)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Integrator(Solver):
+    """
+    Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits
+    abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Integrator"]
@@ -2253,6 +2792,9 @@ class Coupling(YAMLRoot):
     incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
+    symmetry: Optional[str] = "directed"
+    outsym: Optional[Union[str, list[str]]] = empty_list()
+    observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
     inner_coupling: Optional[Union[dict, "Coupling"]] = None
     region_mapping: Optional[Union[dict, "RegionMapping"]] = None
     regional_connectivity: Optional[Union[dict, Network]] = None
@@ -2295,6 +2837,15 @@ class Coupling(YAMLRoot):
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
+
+        if self.symmetry is not None and not isinstance(self.symmetry, str):
+            self.symmetry = str(self.symmetry)
+
+        if not isinstance(self.outsym, list):
+            self.outsym = [self.outsym] if self.outsym is not None else []
+        self.outsym = [v if isinstance(v, str) else str(v) for v in self.outsym]
+
+        self._normalize_inlined_as_dict(slot_name="observed", slot_type=DerivedVariable, key_name="name", keyed=True)
 
         if self.inner_coupling is not None and not isinstance(self.inner_coupling, Coupling):
             self.inner_coupling = Coupling(**as_dict(self.inner_coupling))
@@ -2397,6 +2948,7 @@ class ExecutionConfig(YAMLRoot):
     accelerator: Optional[str] = "cpu"
     batch_size: Optional[int] = None
     random_seed: Optional[int] = 42
+    find_fixpoint: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.n_workers is not None and not isinstance(self.n_workers, int):
@@ -2416,6 +2968,9 @@ class ExecutionConfig(YAMLRoot):
 
         if self.random_seed is not None and not isinstance(self.random_seed, int):
             self.random_seed = int(self.random_seed)
+
+        if self.find_fixpoint is not None and not isinstance(self.find_fixpoint, Bool):
+            self.find_fixpoint = Bool(self.find_fixpoint)
 
         super().__post_init__(**kwargs)
 
@@ -2444,10 +2999,12 @@ class SimulationExperiment(YAMLRoot):
     derived_observations: Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]] = empty_dict()
     functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]] = empty_dict()
     stimulation: Optional[Union[dict, Stimulus]] = None
+    events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
     field_dynamics: Optional[Union[dict, "PDE"]] = None
     optimization: Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]] = empty_dict()
     explorations: Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]] = empty_dict()
     algorithms: Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]] = empty_dict()
+    continuations: Optional[Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     execution: Optional[Union[dict, ExecutionConfig]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
@@ -2498,6 +3055,8 @@ class SimulationExperiment(YAMLRoot):
         if self.stimulation is not None and not isinstance(self.stimulation, Stimulus):
             self.stimulation = Stimulus(**as_dict(self.stimulation))
 
+        self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
+
         if self.field_dynamics is not None and not isinstance(self.field_dynamics, PDE):
             self.field_dynamics = PDE(**as_dict(self.field_dynamics))
 
@@ -2506,6 +3065,8 @@ class SimulationExperiment(YAMLRoot):
         self._normalize_inlined_as_dict(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="algorithms", slot_type=Algorithm, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="continuations", slot_type=Continuation, key_name="name", keyed=True)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -4060,6 +4621,64 @@ class AggregationType(EnumDefinitionImpl):
         description="How to aggregate time series data",
     )
 
+class EventType(EnumDefinitionImpl):
+    """
+    Type of event triggering mechanism.
+    """
+    continuous = PermissibleValue(
+        text="continuous",
+        description="""Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback.""")
+    discrete = PermissibleValue(
+        text="discrete",
+        description="""Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback.""")
+    preset_time = PermissibleValue(
+        text="preset_time",
+        description="""Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback.""")
+    stimulus = PermissibleValue(
+        text="stimulus",
+        description="Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior.")
+
+    _defn = EnumDefinition(
+        name="EventType",
+        description="Type of event triggering mechanism.",
+    )
+
+class StandardGraphType(EnumDefinitionImpl):
+    """
+    Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free
+    string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python
+    (NetworkX).
+    """
+    BarabasiAlbert = PermissibleValue(
+        text="BarabasiAlbert",
+        description="Barabasi-Albert preferential attachment (params: k)")
+    WattsStrogatz = PermissibleValue(
+        text="WattsStrogatz",
+        description="Watts-Strogatz small-world (params: k, p)")
+    ErdosRenyi = PermissibleValue(
+        text="ErdosRenyi",
+        description="Erdos-Renyi random graph (params: p)")
+    Complete = PermissibleValue(
+        text="Complete",
+        description="Complete graph (all-to-all)")
+    Cycle = PermissibleValue(
+        text="Cycle",
+        description="Cycle graph (ring)")
+    Star = PermissibleValue(
+        text="Star",
+        description="Star graph")
+    RandomRegular = PermissibleValue(
+        text="RandomRegular",
+        description="Random regular graph (params: k)")
+    Grid = PermissibleValue(
+        text="Grid",
+        description="Grid/lattice graph (params: dims)")
+
+    _defn = EnumDefinition(
+        name="StandardGraphType",
+        description="""Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).""",
+    )
+
 class RequirementRole(EnumDefinitionImpl):
 
     engine = PermissibleValue(
@@ -4147,6 +4766,70 @@ class ReductionType(EnumDefinitionImpl):
     _defn = EnumDefinition(
         name="ReductionType",
         description="Operations for reducing/aggregating values across dimensions",
+    )
+
+class ContinuationAlgorithm(EnumDefinitionImpl):
+    """
+    Predictor-corrector algorithm for numerical continuation.
+    """
+    PALC = PermissibleValue(
+        text="PALC",
+        description="Pseudo-arclength continuation (default). Uses weighted dot product constraint.")
+    MoorePenrose = PermissibleValue(
+        text="MoorePenrose",
+        description="Moore-Penrose continuation.")
+    Natural = PermissibleValue(
+        text="Natural",
+        description="Natural parameter continuation. Simple parameter stepping, no arc-length constraint.")
+
+    _defn = EnumDefinition(
+        name="ContinuationAlgorithm",
+        description="Predictor-corrector algorithm for numerical continuation.",
+    )
+
+class NumericalDiscretizationMethod(EnumDefinitionImpl):
+    """
+    Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic
+    tori).
+    """
+    collocation = PermissibleValue(
+        text="collocation",
+        description="Orthogonal collocation at Gauss points.")
+    trapezoid = PermissibleValue(
+        text="trapezoid",
+        description="Trapezoidal rule discretization.")
+    shooting = PermissibleValue(
+        text="shooting",
+        description="Standard multiple shooting.")
+    poincare = PermissibleValue(
+        text="poincare",
+        description="Poincaré shooting.")
+
+    _defn = EnumDefinition(
+        name="NumericalDiscretizationMethod",
+        description="""Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori).""",
+    )
+
+class InitialStateMethod(EnumDefinitionImpl):
+    """
+    Strategy for obtaining the starting equilibrium or periodic orbit.
+    """
+    time_integration = PermissibleValue(
+        text="time_integration",
+        description="Integrate the ODE forward until convergence (robust, default).")
+    newton = PermissibleValue(
+        text="newton",
+        description="Use Newton's method to find the nearest fixed point.")
+    given = PermissibleValue(
+        text="given",
+        description="Use the model's default initial values directly.")
+    from_branch = PermissibleValue(
+        text="from_branch",
+        description="Start from a point on a previously computed branch.")
+
+    _defn = EnumDefinition(
+        name="InitialStateMethod",
+        description="Strategy for obtaining the starting equilibrium or periodic orbit.",
     )
 
 class SpecimenEnum(EnumDefinitionImpl):
@@ -4336,6 +5019,48 @@ slots.stimulus__regions = Slot(uri=TVBO.regions, name="stimulus__regions", curie
 slots.stimulus__weighting = Slot(uri=TVBO.weighting, name="stimulus__weighting", curie=TVBO.curie('weighting'),
                    model_uri=TVBO.stimulus__weighting, domain=None, range=Optional[Union[float, list[float]]])
 
+slots.event__event_type = Slot(uri=TVBO.event_type, name="event__event_type", curie=TVBO.curie('event_type'),
+                   model_uri=TVBO.event__event_type, domain=None, range=Optional[Union[str, "EventType"]])
+
+slots.event__condition = Slot(uri=TVBO.condition, name="event__condition", curie=TVBO.curie('condition'),
+                   model_uri=TVBO.event__condition, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__condition_states = Slot(uri=TVBO.condition_states, name="event__condition_states", curie=TVBO.curie('condition_states'),
+                   model_uri=TVBO.event__condition_states, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__condition_parameters = Slot(uri=TVBO.condition_parameters, name="event__condition_parameters", curie=TVBO.curie('condition_parameters'),
+                   model_uri=TVBO.event__condition_parameters, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__affect = Slot(uri=TVBO.affect, name="event__affect", curie=TVBO.curie('affect'),
+                   model_uri=TVBO.event__affect, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__affect_states = Slot(uri=TVBO.affect_states, name="event__affect_states", curie=TVBO.curie('affect_states'),
+                   model_uri=TVBO.event__affect_states, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__affect_parameters = Slot(uri=TVBO.affect_parameters, name="event__affect_parameters", curie=TVBO.curie('affect_parameters'),
+                   model_uri=TVBO.event__affect_parameters, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__affect_negative = Slot(uri=TVBO.affect_negative, name="event__affect_negative", curie=TVBO.curie('affect_negative'),
+                   model_uri=TVBO.event__affect_negative, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__trigger_times = Slot(uri=TVBO.trigger_times, name="event__trigger_times", curie=TVBO.curie('trigger_times'),
+                   model_uri=TVBO.event__trigger_times, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.event__target_component = Slot(uri=TVBO.target_component, name="event__target_component", curie=TVBO.curie('target_component'),
+                   model_uri=TVBO.event__target_component, domain=None, range=Optional[str])
+
+slots.event__equation = Slot(uri=TVBO.equation, name="event__equation", curie=TVBO.curie('equation'),
+                   model_uri=TVBO.event__equation, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__regions = Slot(uri=TVBO.regions, name="event__regions", curie=TVBO.curie('regions'),
+                   model_uri=TVBO.event__regions, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.event__weighting = Slot(uri=TVBO.weighting, name="event__weighting", curie=TVBO.curie('weighting'),
+                   model_uri=TVBO.event__weighting, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.event__duration = Slot(uri=TVBO.duration, name="event__duration", curie=TVBO.curie('duration'),
+                   model_uri=TVBO.event__duration, domain=None, range=Optional[float])
+
 slots.temporalApplicableEquation__time_dependent = Slot(uri=TVBO.time_dependent, name="temporalApplicableEquation__time_dependent", curie=TVBO.curie('time_dependent'),
                    model_uri=TVBO.temporalApplicableEquation__time_dependent, domain=None, range=Optional[Union[bool, Bool]])
 
@@ -4426,6 +5151,21 @@ slots.network__time_unit = Slot(uri=TVBO.time_unit, name="network__time_unit", c
 slots.network__edge_matrix_files = Slot(uri=TVBO.edge_matrix_files, name="network__edge_matrix_files", curie=TVBO.curie('edge_matrix_files'),
                    model_uri=TVBO.network__edge_matrix_files, domain=None, range=Optional[Union[Union[str, FileName], list[Union[str, FileName]]]])
 
+slots.network__graph_generator = Slot(uri=TVBO.graph_generator, name="network__graph_generator", curie=TVBO.curie('graph_generator'),
+                   model_uri=TVBO.network__graph_generator, domain=None, range=Optional[Union[dict, GraphGenerator]])
+
+slots.graphGenerator__type = Slot(uri=TVBO.type, name="graphGenerator__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.graphGenerator__type, domain=None, range=str)
+
+slots.graphGenerator__seed = Slot(uri=TVBO.seed, name="graphGenerator__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.graphGenerator__seed, domain=None, range=Optional[int])
+
+slots.graphGenerator__directed = Slot(uri=TVBO.directed, name="graphGenerator__directed", curie=TVBO.curie('directed'),
+                   model_uri=TVBO.graphGenerator__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.graphGenerator__parameters = Slot(uri=TVBO.parameters, name="graphGenerator__parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
 slots.file__type = Slot(uri=TVBO.type, name="file__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.file__type, domain=None, range=Optional[str])
 
@@ -4447,11 +5187,11 @@ slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO
 slots.node__region = Slot(uri=TVBO.region, name="node__region", curie=TVBO.curie('region'),
                    model_uri=TVBO.node__region, domain=None, range=Optional[str])
 
-slots.node__parameters = Slot(uri=TVBO.parameters, name="node__parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.node__parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
-
 slots.node__initial_state = Slot(uri=TVBO.initial_state, name="node__initial_state", curie=TVBO.curie('initial_state'),
                    model_uri=TVBO.node__initial_state, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.node__events = Slot(uri=TVBO.events, name="node__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.node__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
 slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie('source'),
                    model_uri=TVBO.edge__source, domain=None, range=int)
@@ -4470,6 +5210,12 @@ slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO
 
 slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
                    model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__dynamics = Slot(uri=TVBO.dynamics, name="edge__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.edge__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.edge__events = Slot(uri=TVBO.events, name="edge__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.edge__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
 slots.observation__source = Slot(uri=TVBO.source, name="observation__source", curie=TVBO.curie('source'),
                    model_uri=TVBO.observation__source, domain=None, range=Optional[Union[str, StateVariableName]])
@@ -4558,11 +5304,20 @@ slots.dynamics__system_type = Slot(uri=TVBO.system_type, name="dynamics__system_
 slots.dynamics__autonomous = Slot(uri=TVBO.autonomous, name="dynamics__autonomous", curie=TVBO.curie('autonomous'),
                    model_uri=TVBO.dynamics__autonomous, domain=None, range=Optional[Union[bool, Bool]])
 
+slots.dynamics__observed = Slot(uri=TVBO.observed, name="dynamics__observed", curie=TVBO.curie('observed'),
+                   model_uri=TVBO.dynamics__observed, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
 slots.stateVariable__variable_of_interest = Slot(uri=TVBO.variable_of_interest, name="stateVariable__variable_of_interest", curie=TVBO.curie('variable_of_interest'),
                    model_uri=TVBO.stateVariable__variable_of_interest, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.stateVariable__coupling_variable = Slot(uri=TVBO.coupling_variable, name="stateVariable__coupling_variable", curie=TVBO.curie('coupling_variable'),
                    model_uri=TVBO.stateVariable__coupling_variable, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.stateVariable__equation_type = Slot(uri=TVBO.equation_type, name="stateVariable__equation_type", curie=TVBO.curie('equation_type'),
+                   model_uri=TVBO.stateVariable__equation_type, domain=None, range=Optional[str])
+
+slots.stateVariable__equation_order = Slot(uri=TVBO.equation_order, name="stateVariable__equation_order", curie=TVBO.curie('equation_order'),
+                   model_uri=TVBO.stateVariable__equation_order, domain=None, range=Optional[int])
 
 slots.stateVariable__noise = Slot(uri=TVBO.noise, name="stateVariable__noise", curie=TVBO.curie('noise'),
                    model_uri=TVBO.stateVariable__noise, domain=None, range=Optional[Union[dict, Noise]])
@@ -4576,11 +5331,23 @@ slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable_
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
 
+slots.stateVariable__derivative_initial_value = Slot(uri=TVBO.derivative_initial_value, name="stateVariable__derivative_initial_value", curie=TVBO.curie('derivative_initial_value'),
+                   model_uri=TVBO.stateVariable__derivative_initial_value, domain=None, range=Optional[float])
+
+slots.stateVariable__distribution = Slot(uri=TVBO.distribution, name="stateVariable__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.stateVariable__distribution, domain=None, range=Optional[Union[dict, Distribution]])
+
 slots.stateVariable__history = Slot(uri=TVBO.history, name="stateVariable__history", curie=TVBO.curie('history'),
                    model_uri=TVBO.stateVariable__history, domain=None, range=Optional[Union[dict, TimeSeries]])
 
-slots.distribution__dependencies = Slot(uri=TVBO.dependencies, name="distribution__dependencies", curie=TVBO.curie('dependencies'),
-                   model_uri=TVBO.distribution__dependencies, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+slots.distribution__domain = Slot(uri=TVBO.domain, name="distribution__domain", curie=TVBO.curie('domain'),
+                   model_uri=TVBO.distribution__domain, domain=None, range=Optional[Union[dict, Range]])
+
+slots.distribution__function = Slot(uri=TVBO.function, name="distribution__function", curie=TVBO.curie('function'),
+                   model_uri=TVBO.distribution__function, domain=None, range=Optional[Union[dict, Function]])
+
+slots.distribution__seed = Slot(uri=TVBO.seed, name="distribution__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.distribution__seed, domain=None, range=Optional[int])
 
 slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
                    model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])
@@ -4590,6 +5357,9 @@ slots.parameter__comment = Slot(uri=TVBO.comment, name="parameter__comment", cur
 
 slots.parameter__heterogeneous = Slot(uri=TVBO.heterogeneous, name="parameter__heterogeneous", curie=TVBO.curie('heterogeneous'),
                    model_uri=TVBO.parameter__heterogeneous, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.parameter__distribution = Slot(uri=TVBO.distribution, name="parameter__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.parameter__distribution, domain=None, range=Optional[Union[dict, Distribution]])
 
 slots.parameter__free = Slot(uri=TVBO.free, name="parameter__free", curie=TVBO.curie('free'),
                    model_uri=TVBO.parameter__free, domain=None, range=Optional[Union[bool, Bool]])
@@ -4876,6 +5646,144 @@ slots.algorithm__functions = Slot(uri=TVBO.functions, name="algorithm__functions
 slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
                    model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])
 
+slots.option__name = Slot(uri=TVBO.name, name="option__name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.option__name, domain=None, range=URIRef)
+
+slots.option__value = Slot(uri=TVBO.value, name="option__value", curie=TVBO.curie('value'),
+                   model_uri=TVBO.option__value, domain=None, range=str)
+
+slots.discretization__method = Slot(uri=TVBO.method, name="discretization__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.discretization__method, domain=None, range=Optional[Union[str, "NumericalDiscretizationMethod"]])
+
+slots.discretization__ode_solver = Slot(uri=TVBO.ode_solver, name="discretization__ode_solver", curie=TVBO.curie('ode_solver'),
+                   model_uri=TVBO.discretization__ode_solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.discretization__linear_solver = Slot(uri=TVBO.linear_solver, name="discretization__linear_solver", curie=TVBO.curie('linear_solver'),
+                   model_uri=TVBO.discretization__linear_solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.discretization__mesh_intervals = Slot(uri=TVBO.mesh_intervals, name="discretization__mesh_intervals", curie=TVBO.curie('mesh_intervals'),
+                   model_uri=TVBO.discretization__mesh_intervals, domain=None, range=Optional[int])
+
+slots.discretization__degree = Slot(uri=TVBO.degree, name="discretization__degree", curie=TVBO.curie('degree'),
+                   model_uri=TVBO.discretization__degree, domain=None, range=Optional[int])
+
+slots.discretization__n_sections = Slot(uri=TVBO.n_sections, name="discretization__n_sections", curie=TVBO.curie('n_sections'),
+                   model_uri=TVBO.discretization__n_sections, domain=None, range=Optional[int])
+
+slots.discretization__options = Slot(uri=TVBO.options, name="discretization__options", curie=TVBO.curie('options'),
+                   model_uri=TVBO.discretization__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.initialState__method = Slot(uri=TVBO.method, name="initialState__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.initialState__method, domain=None, range=Optional[Union[str, "InitialStateMethod"]])
+
+slots.initialState__duration = Slot(uri=TVBO.duration, name="initialState__duration", curie=TVBO.curie('duration'),
+                   model_uri=TVBO.initialState__duration, domain=None, range=Optional[float])
+
+slots.initialState__abs_tol = Slot(uri=TVBO.abs_tol, name="initialState__abs_tol", curie=TVBO.curie('abs_tol'),
+                   model_uri=TVBO.initialState__abs_tol, domain=None, range=Optional[float])
+
+slots.initialState__rel_tol = Slot(uri=TVBO.rel_tol, name="initialState__rel_tol", curie=TVBO.curie('rel_tol'),
+                   model_uri=TVBO.initialState__rel_tol, domain=None, range=Optional[float])
+
+slots.initialState__solver = Slot(uri=TVBO.solver, name="initialState__solver", curie=TVBO.curie('solver'),
+                   model_uri=TVBO.initialState__solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.initialState__source_branch = Slot(uri=TVBO.source_branch, name="initialState__source_branch", curie=TVBO.curie('source_branch'),
+                   model_uri=TVBO.initialState__source_branch, domain=None, range=Optional[str])
+
+slots.initialState__source_point = Slot(uri=TVBO.source_point, name="initialState__source_point", curie=TVBO.curie('source_point'),
+                   model_uri=TVBO.initialState__source_point, domain=None, range=Optional[str])
+
+slots.branchSwitch__source_point = Slot(uri=TVBO.source_point, name="branchSwitch__source_point", curie=TVBO.curie('source_point'),
+                   model_uri=TVBO.branchSwitch__source_point, domain=None, range=Optional[str])
+
+slots.branchSwitch__delta_p = Slot(uri=TVBO.delta_p, name="branchSwitch__delta_p", curie=TVBO.curie('delta_p'),
+                   model_uri=TVBO.branchSwitch__delta_p, domain=None, range=Optional[float])
+
+slots.branchSwitch__continuation = Slot(uri=TVBO.continuation, name="branchSwitch__continuation", curie=TVBO.curie('continuation'),
+                   model_uri=TVBO.branchSwitch__continuation, domain=None, range=Optional[Union[dict, Continuation]])
+
+slots.branchSwitch__discretization = Slot(uri=TVBO.discretization, name="branchSwitch__discretization", curie=TVBO.curie('discretization'),
+                   model_uri=TVBO.branchSwitch__discretization, domain=None, range=Optional[Union[dict, Discretization]])
+
+slots.branchSwitch__bothside = Slot(uri=TVBO.bothside, name="branchSwitch__bothside", curie=TVBO.curie('bothside'),
+                   model_uri=TVBO.branchSwitch__bothside, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.branchSwitch__options = Slot(uri=TVBO.options, name="branchSwitch__options", curie=TVBO.curie('options'),
+                   model_uri=TVBO.branchSwitch__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.continuation__dynamics = Slot(uri=TVBO.dynamics, name="continuation__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.continuation__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.continuation__free_parameters = Slot(uri=TVBO.free_parameters, name="continuation__free_parameters", curie=TVBO.curie('free_parameters'),
+                   model_uri=TVBO.continuation__free_parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.continuation__ds = Slot(uri=TVBO.ds, name="continuation__ds", curie=TVBO.curie('ds'),
+                   model_uri=TVBO.continuation__ds, domain=None, range=Optional[float])
+
+slots.continuation__ds_min = Slot(uri=TVBO.ds_min, name="continuation__ds_min", curie=TVBO.curie('ds_min'),
+                   model_uri=TVBO.continuation__ds_min, domain=None, range=Optional[float])
+
+slots.continuation__ds_max = Slot(uri=TVBO.ds_max, name="continuation__ds_max", curie=TVBO.curie('ds_max'),
+                   model_uri=TVBO.continuation__ds_max, domain=None, range=Optional[float])
+
+slots.continuation__max_steps = Slot(uri=TVBO.max_steps, name="continuation__max_steps", curie=TVBO.curie('max_steps'),
+                   model_uri=TVBO.continuation__max_steps, domain=None, range=Optional[int])
+
+slots.continuation__newton_tol = Slot(uri=TVBO.newton_tol, name="continuation__newton_tol", curie=TVBO.curie('newton_tol'),
+                   model_uri=TVBO.continuation__newton_tol, domain=None, range=Optional[float])
+
+slots.continuation__newton_max_iterations = Slot(uri=TVBO.newton_max_iterations, name="continuation__newton_max_iterations", curie=TVBO.curie('newton_max_iterations'),
+                   model_uri=TVBO.continuation__newton_max_iterations, domain=None, range=Optional[int])
+
+slots.continuation__nev = Slot(uri=TVBO.nev, name="continuation__nev", curie=TVBO.curie('nev'),
+                   model_uri=TVBO.continuation__nev, domain=None, range=Optional[int])
+
+slots.continuation__tol_stability = Slot(uri=TVBO.tol_stability, name="continuation__tol_stability", curie=TVBO.curie('tol_stability'),
+                   model_uri=TVBO.continuation__tol_stability, domain=None, range=Optional[float])
+
+slots.continuation__detect_bifurcation = Slot(uri=TVBO.detect_bifurcation, name="continuation__detect_bifurcation", curie=TVBO.curie('detect_bifurcation'),
+                   model_uri=TVBO.continuation__detect_bifurcation, domain=None, range=Optional[int])
+
+slots.continuation__detect_fold = Slot(uri=TVBO.detect_fold, name="continuation__detect_fold", curie=TVBO.curie('detect_fold'),
+                   model_uri=TVBO.continuation__detect_fold, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.continuation__n_inversion = Slot(uri=TVBO.n_inversion, name="continuation__n_inversion", curie=TVBO.curie('n_inversion'),
+                   model_uri=TVBO.continuation__n_inversion, domain=None, range=Optional[int])
+
+slots.continuation__max_bisection_steps = Slot(uri=TVBO.max_bisection_steps, name="continuation__max_bisection_steps", curie=TVBO.curie('max_bisection_steps'),
+                   model_uri=TVBO.continuation__max_bisection_steps, domain=None, range=Optional[int])
+
+slots.continuation__algorithm = Slot(uri=TVBO.algorithm, name="continuation__algorithm", curie=TVBO.curie('algorithm'),
+                   model_uri=TVBO.continuation__algorithm, domain=None, range=Optional[Union[str, "ContinuationAlgorithm"]])
+
+slots.continuation__initial_state = Slot(uri=TVBO.initial_state, name="continuation__initial_state", curie=TVBO.curie('initial_state'),
+                   model_uri=TVBO.continuation__initial_state, domain=None, range=Optional[Union[dict, InitialState]])
+
+slots.continuation__branches = Slot(uri=TVBO.branches, name="continuation__branches", curie=TVBO.curie('branches'),
+                   model_uri=TVBO.continuation__branches, domain=None, range=Optional[Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]])
+
+slots.continuation__bothside = Slot(uri=TVBO.bothside, name="continuation__bothside", curie=TVBO.curie('bothside'),
+                   model_uri=TVBO.continuation__bothside, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.continuation__execution = Slot(uri=TVBO.execution, name="continuation__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.continuation__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.continuation__software = Slot(uri=TVBO.software, name="continuation__software", curie=TVBO.curie('software'),
+                   model_uri=TVBO.continuation__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
+
+slots.continuation__options = Slot(uri=TVBO.options, name="continuation__options", curie=TVBO.curie('options'),
+                   model_uri=TVBO.continuation__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.solver__method = Slot(uri=TVBO.method, name="solver__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.solver__method, domain=None, range=Optional[str])
+
+slots.solver__abs_tol = Slot(uri=TVBO.abs_tol, name="solver__abs_tol", curie=TVBO.curie('abs_tol'),
+                   model_uri=TVBO.solver__abs_tol, domain=None, range=Optional[float])
+
+slots.solver__rel_tol = Slot(uri=TVBO.rel_tol, name="solver__rel_tol", curie=TVBO.curie('rel_tol'),
+                   model_uri=TVBO.solver__rel_tol, domain=None, range=Optional[float])
+
 slots.integrator__method = Slot(uri=TVBO.method, name="integrator__method", curie=TVBO.curie('method'),
                    model_uri=TVBO.integrator__method, domain=None, range=Optional[str])
 
@@ -4930,6 +5838,15 @@ slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
 
+slots.coupling__symmetry = Slot(uri=TVBO.symmetry, name="coupling__symmetry", curie=TVBO.curie('symmetry'),
+                   model_uri=TVBO.coupling__symmetry, domain=None, range=Optional[str])
+
+slots.coupling__outsym = Slot(uri=TVBO.outsym, name="coupling__outsym", curie=TVBO.curie('outsym'),
+                   model_uri=TVBO.coupling__outsym, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.coupling__observed = Slot(uri=TVBO.observed, name="coupling__observed", curie=TVBO.curie('observed'),
+                   model_uri=TVBO.coupling__observed, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
 slots.coupling__inner_coupling = Slot(uri=TVBO.inner_coupling, name="coupling__inner_coupling", curie=TVBO.curie('inner_coupling'),
                    model_uri=TVBO.coupling__inner_coupling, domain=None, range=Optional[Union[dict, Coupling]])
 
@@ -4978,6 +5895,9 @@ slots.executionConfig__batch_size = Slot(uri=TVBO.batch_size, name="executionCon
 slots.executionConfig__random_seed = Slot(uri=TVBO.random_seed, name="executionConfig__random_seed", curie=TVBO.curie('random_seed'),
                    model_uri=TVBO.executionConfig__random_seed, domain=None, range=Optional[int])
 
+slots.executionConfig__find_fixpoint = Slot(uri=TVBO.find_fixpoint, name="executionConfig__find_fixpoint", curie=TVBO.curie('find_fixpoint'),
+                   model_uri=TVBO.executionConfig__find_fixpoint, domain=None, range=Optional[Union[bool, Bool]])
+
 slots.simulationExperiment__id = Slot(uri=TVBO.id, name="simulationExperiment__id", curie=TVBO.curie('id'),
                    model_uri=TVBO.simulationExperiment__id, domain=None, range=URIRef)
 
@@ -5020,6 +5940,9 @@ slots.simulationExperiment__functions = Slot(uri=TVBO.functions, name="simulatio
 slots.simulationExperiment__stimulation = Slot(uri=TVBO.stimulation, name="simulationExperiment__stimulation", curie=TVBO.curie('stimulation'),
                    model_uri=TVBO.simulationExperiment__stimulation, domain=None, range=Optional[Union[dict, Stimulus]])
 
+slots.simulationExperiment__events = Slot(uri=TVBO.events, name="simulationExperiment__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.simulationExperiment__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
+
 slots.simulationExperiment__field_dynamics = Slot(uri=TVBO.field_dynamics, name="simulationExperiment__field_dynamics", curie=TVBO.curie('field_dynamics'),
                    model_uri=TVBO.simulationExperiment__field_dynamics, domain=None, range=Optional[Union[dict, PDE]])
 
@@ -5031,6 +5954,9 @@ slots.simulationExperiment__explorations = Slot(uri=TVBO.explorations, name="sim
 
 slots.simulationExperiment__algorithms = Slot(uri=TVBO.algorithms, name="simulationExperiment__algorithms", curie=TVBO.curie('algorithms'),
                    model_uri=TVBO.simulationExperiment__algorithms, domain=None, range=Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]])
+
+slots.simulationExperiment__continuations = Slot(uri=TVBO.continuations, name="simulationExperiment__continuations", curie=TVBO.curie('continuations'),
+                   model_uri=TVBO.simulationExperiment__continuations, domain=None, range=Optional[Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]])
 
 slots.simulationExperiment__environment = Slot(uri=TVBO.environment, name="simulationExperiment__environment", curie=TVBO.curie('environment'),
                    model_uri=TVBO.simulationExperiment__environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
@@ -5541,6 +6467,9 @@ slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie
 
 slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.Dynamics_system_type, domain=Dynamics, range=Optional[str])
+
+slots.Distribution_name = Slot(uri=TVBO.name, name="Distribution_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Distribution_name, domain=Distribution, range=Union[str, DistributionName])
 
 slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])

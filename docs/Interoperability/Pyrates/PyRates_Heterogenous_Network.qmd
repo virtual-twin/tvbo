@@ -222,6 +222,7 @@ result = circuit.run(
         "relaxation": "Relaxation/Relaxation_op/x",
     },
     solver="heun",
+    vectorize=False,  # Required for heterogeneous circuits (PyRates bug)
 )
 clear(circuit)
 shutil.rmtree("_net")
@@ -623,6 +624,7 @@ result_plasticity = circuit.run(
         "post": "PostSynaptic/RateNeuron_op/r",
     },
     solver="heun",
+    vectorize=False,  # Required for heterogeneous circuits (PyRates bug)
 )
 clear(circuit)
 shutil.rmtree("_plasticity")
