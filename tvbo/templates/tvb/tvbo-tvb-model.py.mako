@@ -43,7 +43,7 @@ class ${model.name}(Model):
         label=r":math:`${p.symbol or p.name}`",
         default=np.array([${p.value}]),
         % if p.domain:
-        domain=Range(lo=${p.domain.lo}, hi=${p.domain.hi}, step=${p.domain.step}),
+        domain=Range(lo=${p.domain.lo}, hi=${p.domain.hi}, step=${p.domain.step if p.domain.step is not None else 1.0}),
         % endif
         % if p.description:
         doc="""${p.description}"""

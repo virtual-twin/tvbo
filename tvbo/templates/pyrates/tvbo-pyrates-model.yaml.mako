@@ -41,11 +41,94 @@
         "O": "O_",
         "Q": "Q_",
         "epsilon": "epsilon_",
+        "y": "y_",
+        "dy": "dy_",
     }
 
     # Get model name
     name = m.name or "tvbo_model"
     _op_name = op_name or f"{name}_op"
+
+    # --- PyRates-compatibility helpers ---
+    # PyRates does not support Piecewise or Abs in equations.
+    # Convert Piecewise((a, cond), (b, True)) -> (a+b)/2 + (a-b)/2 * sign(cond_expr)
+    # Convert Abs(x) -> sign(x)*x
+    import sympy
+    from tvbo.knowledge.simulation.equations import sympify as tvbo_sympify
+
+    def _pyrates_compat(eq_str):
+        """Post-process a rendered equation string for PyRates compatibility."""
+        expr = tvbo_sympify(eq_str)
+        expr = _piecewise_to_sign(expr)
+        expr = _abs_to_sign(expr)
+        expr = _mod_to_fmod(expr)
+        return str(expr)
+
+    def _piecewise_to_sign(expr):
+        """Recursively replace Piecewise with sign-based arithmetic."""
+        if not expr.args:
+            return expr
+        # First recurse into children
+        new_args = [_piecewise_to_sign(a) for a in expr.args]
+        expr = expr.func(*new_args) if new_args != list(expr.args) else expr
+        if isinstance(expr, sympy.Piecewise):
+            return _convert_piecewise(expr)
+        return expr
+
+    def _convert_piecewise(pw):
+        """Convert a 2-branch Piecewise to sign-based expression.
+
+        Piecewise((a, x > c), (b, True))
+          -> (a + b)/2 + (a - b)/2 * sign(x - c)
+
+        For Piecewise((a, x < c), (b, True))
+          -> (a + b)/2 - (a - b)/2 * sign(x - c)
+
+        Multi-branch: nest from last to first.
+        """
+        pieces = list(pw.args)
+        # Start with default (last piece, condition=True)
+        result = pieces[-1][0]
+        for val, cond in reversed(pieces[:-1]):
+            # Extract comparison: cond is a relational like x > c or x < c
+            sign_arg, negate = _extract_sign_arg(cond)
+            if sign_arg is not None:
+                s = sympy.Function('sign')(sign_arg)
+                if negate:
+                    s = -s
+                # result = old_default; new = (val + result)/2 + (val - result)/2 * s
+                result = (val + result) / 2 + (val - result) / 2 * s
+            else:
+                # Fallback: cannot convert, keep as-is (will likely fail in PyRates)
+                return pw
+        return result
+
+    def _extract_sign_arg(cond):
+        """Extract sign argument from a relational condition.
+
+        Returns (sign_arg, negate) where:
+        - sign(sign_arg) is positive when condition is True
+        - negate=True means we should flip the sign
+        """
+        if isinstance(cond, (sympy.StrictGreaterThan, sympy.GreaterThan)):  # x > c
+            return cond.lhs - cond.rhs, False
+        elif isinstance(cond, (sympy.StrictLessThan, sympy.LessThan)):  # x < c
+            return cond.lhs - cond.rhs, True
+        return None, False
+
+    def _abs_to_sign(expr):
+        """Replace Abs(x) with sign(x)*x throughout expression."""
+        return expr.replace(
+            lambda e: isinstance(e, sympy.Abs),
+            lambda e: sympy.Function('sign')(e.args[0]) * e.args[0]
+        )
+
+    def _mod_to_fmod(expr):
+        """Replace Mod(a, b) with fmod(a, b) for numpy compatibility."""
+        return expr.replace(
+            lambda e: isinstance(e, sympy.Mod),
+            lambda e: sympy.Function('fmod')(e.args[0], e.args[1])
+        )
 
     # Collect equations and variables
     equations = []
@@ -64,13 +147,15 @@
     # Add derived variables (algebraic equations) — apply repl to keys too
     for k, dv in m.derived_variables.items():
         display_k = repl.get(k, k)
-        equations.append(f"{display_k} = {m.render_equation(dv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
+        raw_eq = m.render_equation(dv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
+        equations.append(f"{display_k} = {_pyrates_compat(raw_eq)}")
         variables[display_k] = "variable"
 
     # Add state variable equations (differential equations) — apply repl to keys/LHS
     for k, sv in (m.state_variables or {}).items():
         display_k = repl.get(k, k)
-        equations.append(f"{display_k}' = {m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)}")
+        raw_eq = m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
+        equations.append(f"{display_k}' = {_pyrates_compat(raw_eq)}")
         iv = sv.initial_value
         variables[display_k] = f"variable({iv})"
 
@@ -97,11 +182,11 @@
     for ct_name in (m.coupling_terms or {}).keys():
         variables[ct_name] = "input"
 
-    description = m.description or f"TVBO model: {name}"
+    description = (m.description or f"TVBO model: {name}").replace('\\', '\\\\').replace('"', "'")
 %>\
 ${_op_name}:
   base: OperatorTemplate
-  description: "${description.replace('"', "'")}"
+  description: "${description}"
 % if len(equations) == 1:
   equations: "${equations[0]}"
 % else:
