@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -81,12 +82,45 @@ class Network(tvbo_datamodel.Network):
         elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
             kwargs["number_of_regions"] = kwargs["number_of_nodes"]
 
-        # Check if nodes/edges are already provided
+        # Check if nodes/edges or edge_matrix_files are already provided
         has_nodes = "nodes" in kwargs and kwargs["nodes"]
         has_edges = "edges" in kwargs and kwargs["edges"]
+        has_edge_files = "edge_matrix_files" in kwargs and kwargs["edge_matrix_files"]
 
-        # Load normative data if parcellation/atlas specified and no nodes/edges
-        if not has_nodes and not has_edges:
+        # Load edge_matrix_files into edges
+        if has_edge_files and not has_edges:
+            edge_files = kwargs["edge_matrix_files"]
+            # Resolve file path relative to YAML source
+            from tvbo.export.experiment import SimulationExperiment
+            source_dir = None
+            pending = getattr(SimulationExperiment, '_pending_source_file', None)
+            if pending:
+                source_dir = os.path.dirname(pending)
+
+            emf = edge_files[0]
+            fpath = str(emf)
+            if source_dir and not os.path.isabs(fpath):
+                fpath = os.path.join(source_dir, fpath)
+
+            w_arr = np.loadtxt(fpath, delimiter=',')
+            n_nodes = w_arr.shape[0]
+            edges = []
+            for i in range(n_nodes):
+                for j in range(n_nodes):
+                    if w_arr[i, j] != 0:
+                        edges.append(tvbo_datamodel.Edge(
+                            source=i, target=j, directed=True,
+                            parameters=[tvbo_datamodel.Parameter(
+                                name="weight", value=float(w_arr[i, j])
+                            )],
+                        ))
+            kwargs["edges"] = edges
+            kwargs["number_of_nodes"] = n_nodes
+            kwargs["number_of_regions"] = n_nodes
+            has_edges = True
+
+        # Load normative data if parcellation/atlas specified and no explicit connectivity
+        if not has_nodes and not has_edges and not has_edge_files:
             if kwargs.get("parcellation"):
                 if isinstance(kwargs["parcellation"], str):
                     kwargs["parcellation"] = tvbo_datamodel.Parcellation(
@@ -782,14 +816,14 @@ class Network(tvbo_datamodel.Network):
             # Fallback to zeros if properties return None
             n = self.number_of_regions or 1
             if weights_arr is None:
-                weights_arr = jnp.zeros((n, n))
+                weights_arr = np.zeros((n, n))
             else:
-                weights_arr = jnp.asarray(weights_arr)
+                weights_arr = np.asarray(weights_arr)
 
             if lengths_arr is None:
-                lengths_arr = jnp.zeros((n, n))
+                lengths_arr = np.zeros((n, n))
             else:
-                lengths_arr = jnp.asarray(lengths_arr)
+                lengths_arr = np.asarray(lengths_arr)
 
         children = (weights_arr, lengths_arr)
 
@@ -1013,7 +1047,7 @@ class Network(tvbo_datamodel.Network):
         format = "jax"
 
         if len(self.nodes) == 1:
-            return jnp.zeros((1, 1))
+            return np.zeros((1, 1))
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
@@ -1083,7 +1117,7 @@ class Network(tvbo_datamodel.Network):
         ```
         """
         if len(self.nodes) == 1:
-            return jnp.zeros((1, 1))
+            return np.zeros((1, 1))
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]

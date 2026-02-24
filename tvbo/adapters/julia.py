@@ -1,77 +1,45 @@
-from importlib import import_module
-import re
+"""Python ↔ Julia bridge using juliacall (PythonCall.jl).
 
-_julia_instance = None
+Replaces the legacy pyjulia (``julia`` package) which is unmaintained
+and emits spurious MainInclude warnings on Julia ≥ 1.3.
+"""
+
+import re
+from typing import Any, Optional
+
 _julia_main = None
 _installed_packages = set()
 
-# tvbo/adapters/julia.py
 
-def install():
-    import julia
-    julia.install()
+def get_julia(compiled_modules=True):
+    """Return the Julia Main module (lazily initialized).
 
-def get_julia(compiled_modules=False):
-    """Initialize Julia runtime. Use compiled_modules=False by default for stability."""
-    global _julia_instance, _julia_main
-    if _julia_instance is None or _julia_main is None:
+    Parameters
+    ----------
+    compiled_modules : bool
+        Ignored (kept for API compatibility). juliacall always uses
+        precompiled modules.
+
+    Returns
+    -------
+    (None, Main)
+        Tuple of ``(None, Main)`` for backward compatibility.
+        The first element was the pyjulia ``Julia`` instance;
+        with juliacall it is not needed.
+    """
+    global _julia_main
+    if _julia_main is None:
         try:
-            jl = import_module("julia")
+            from juliacall import Main
         except ImportError:
-            raise ImportError("PyJulia (julia) package not installed. Run: pip install julia")
-
-        # Silence Julia warnings during startup
-        import os
-        os.environ['JULIA_NUM_THREADS'] = '1'
-
-        try:
-            # Use minimal Julia configuration for stability
-            _julia_instance = jl.Julia(
-                compiled_modules=compiled_modules,
-                debug=False,
-                init_julia=True,
-                runtime='/opt/homebrew/Cellar/julia/1.12.2/bin/julia'  # explicit path for macOS homebrew
+            raise ImportError(
+                "juliacall package not installed. Run: pip install juliacall"
             )
-        except jl.UnsupportedPythonError:
-            # PyJulia is not configured for this Python environment, configure it now
-            print("Configuring PyJulia for the current Python environment...")
-            try:
-                jl.install()
-            except Exception as install_err:
-                print(f"Julia install failed: {install_err}")
-                print("Trying alternative initialization...")
-            # Retry after installation
-            _julia_instance = jl.Julia(
-                compiled_modules=compiled_modules,
-                debug=False,
-                init_julia=True
-            )
-        except FileNotFoundError:
-            # Julia binary not found, try without explicit path
-            _julia_instance = jl.Julia(
-                compiled_modules=compiled_modules,
-                debug=False,
-                init_julia=True
-            )
-        except Exception as e:
-            print(f"Error initializing Julia: {e}")
-            print("Retrying with minimal configuration...")
-            try:
-                _julia_instance = jl.Julia(compiled_modules=False, debug=False)
-            except Exception as retry_err:
-                raise RuntimeError(
-                    f"Failed to initialize Julia: {retry_err}. "
-                    "Try restarting the kernel or reinstalling: pip install julia && python -c 'import julia; julia.install()'"
-                )
+        _julia_main = Main
+    return None, _julia_main
 
-        try:
-            _julia_main = import_module("julia.Main")
-        except Exception as e:
-            raise RuntimeError(f"Failed to import julia.Main: {e}")
 
-    return _julia_instance, _julia_main
-
-def install_julia_package(package_name: str, Main=None, update: bool = False):
+def install_julia_package(package_name: str, Main: Optional[Any] = None, update: bool = False):
     """Install a Julia package if not already installed.
 
     Args:
@@ -88,14 +56,15 @@ def install_julia_package(package_name: str, Main=None, update: bool = False):
     print(f"{'Updating' if update else 'Installing'} Julia package: {package_name}...")
     try:
         if update:
-            Main.eval(f'import Pkg; Pkg.update("{package_name}")')
+            Main.seval(f'import Pkg; Pkg.update("{package_name}")')
         else:
-            Main.eval(f'import Pkg; Pkg.add("{package_name}")')
+            Main.seval(f'import Pkg; Pkg.add("{package_name}")')
         _installed_packages.add(package_name)
         print(f"Successfully {'updated' if update else 'installed'} {package_name}")
     except Exception as e:
         print(f"Warning: Failed to {'update' if update else 'install'} {package_name}: {e}")
         raise
+
 
 def eval_with_auto_install(code, max_retries=3):
     """Evaluate Julia code, automatically installing missing packages if needed."""
@@ -103,7 +72,7 @@ def eval_with_auto_install(code, max_retries=3):
 
     for attempt in range(max_retries):
         try:
-            return Main.eval(code)
+            return Main.seval(code)
         except Exception as e:
             error_msg = str(e)
             # Check if it's a missing package error

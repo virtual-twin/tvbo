@@ -1,9 +1,34 @@
 <%
-from sympy import latex, Eq, symbols, sympify, Symbol, Function
+from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
 from tvbo.export import report
 
+derivative_notation = context.get('derivative_notation', 'd')
+
+def _dot_lhs(deriv, mul_symbol='dot'):
+    try:
+        t = Symbol("t")
+        order = sum(1 for v in deriv.variables if v == t)
+        base = deriv.expr
+        base_latex = latex(base, mul_symbol=mul_symbol)
+        if order == 1:
+            return f"\\dot{{{base_latex}}}"
+        if order == 2:
+            return f"\\ddot{{{base_latex}}}"
+        if order == 3:
+            return f"\\dddot{{{base_latex}}}"
+        return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
+    except Exception:
+        return latex(deriv, mul_symbol=mul_symbol)
+
+def latex_equation(eq, mul_symbol='dot'):
+    if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
+        lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
+        rhs = latex(eq.rhs, mul_symbol=mul_symbol)
+        return f"{lhs} = {rhs}"
+    return latex(eq, mul_symbol=mul_symbol)
+
 def format_aligned_equations(equations):
-    lines = [latex(eq, mul_symbol='dot').replace('=', '&=') for eq in equations]
+    lines = [latex_equation(eq, mul_symbol='dot').replace('=', '&=') for eq in equations]
     joined = ' \\\\\n'.join(lines)
     return f"$$\n\\begin{{aligned}}\n{joined}\n\\end{{aligned}}\n$$"
 

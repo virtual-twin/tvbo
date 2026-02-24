@@ -9,26 +9,27 @@ TVBO provides seamless interoperability with various neuroimaging tools, optimiz
 
 ```{mermaid}
 %%| fig-width: 8
+%%| theme: neutral
 flowchart LR
     subgraph TVBO["TVBO Core"]
         D[Dynamics]
         S[SimulationExperiment]
         N[Network]
     end
-    
+
     subgraph Optimization["Optimization"]
         O[tvboptim]
     end
-    
+
     subgraph Analysis["Analysis"]
         P[PyRates]
     end
-    
+
     subgraph Standards["Standards"]
         B[BIDS]
         M[OpenMINDS]
     end
-    
+
     TVBO <--> O
     TVBO <--> P
     TVBO --> B

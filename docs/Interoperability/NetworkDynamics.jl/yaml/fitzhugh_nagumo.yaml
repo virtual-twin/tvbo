@@ -1,0 +1,138 @@
+# =============================================================================
+# FitzHugh-Nagumo on a Directed Weighted Brain Network
+# =============================================================================
+# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/
+#
+# FitzHugh-Nagumo relaxation oscillators coupled via electrical gap junctions
+# on a directed, weighted 90-region brain connectivity (AAL atlas).
+# =============================================================================
+
+id: 102
+label: "FitzHugh-Nagumo Brain Synchronization"
+description: >
+    Neurodynamic model of synchronization: FitzHugh-Nagumo oscillators
+    coupled through weighted, directed electrical gap junctions on a
+    90-region brain atlas (AAL, Tzourio-Mazoyer et al., 2002).
+    Recreates the NetworkDynamics.jl Directed and Weighted Graphs tutorial.
+references:
+    - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/"
+    - "FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. Biophysical Journal, 1(6), 445-466."
+    - "Nagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. Proceedings of the IRE, 50(10), 2061-2070."
+    - "Tzourio-Mazoyer, N., et al. (2002). Automated anatomical labeling of activations in SPM. Neuroimage, 15(1), 273-289."
+
+# -- Local Dynamics ------------------------------------------------------------
+local_dynamics:
+    name: FitzHughNagumo
+    label: "FitzHugh-Nagumo oscillator"
+    description: >
+        Two-variable relaxation oscillator. u is the fast excitatory
+        variable (membrane potential analogue), v is the slow inhibitory
+        recovery variable.
+        eps du/dt = u - u^3/3 - v + esum;  dv/dt = (u + a) eps
+    system_type: continuous
+    autonomous: true
+    has_reference: "FitzHugh1961"
+    parameters:
+        a:
+            label: "Control parameter"
+            symbol: "a"
+            value: 0.5
+            unit: "1"
+            description: "Excitability threshold; determines oscillatory vs excitable regime"
+        epsilon:
+            label: "Time-scale separation"
+            symbol: "epsilon"
+            value: 0.05
+            unit: "1"
+            description: "Ratio of fast (u) to slow (v) time scales"
+    coupling_terms:
+        c_electrical:
+            description: "Aggregated electrical gap-junction coupling (sum of incident edge outputs)"
+    state_variables:
+        u:
+            label: "Fast excitatory variable"
+            symbol: "u"
+            equation:
+                rhs: "u - u**3 / 3 - v + c_electrical"
+                description: "du/dt = u - u^3/3 - v + sum(edges)"
+            initial_value: 0.0
+            distribution:
+                name: Gaussian
+                seed: 42
+                domain: { lo: -15.0, hi: 15.0 }
+                parameters:
+                    mean: { name: mean, value: 0.0 }
+                    std: { name: std, value: 5.0 }
+            unit: "mV"
+            variable_of_interest: true
+            coupling_variable: true
+        v:
+            label: "Slow inhibitory variable"
+            symbol: "v"
+            equation:
+                rhs: "(u - a) * epsilon"
+                description: "dv/dt = (u - a) eps"
+            initial_value: 0.0
+            distribution:
+                name: Gaussian
+                seed: 42
+                domain: { lo: -15.0, hi: 15.0 }
+                parameters:
+                    mean: { name: mean, value: 0.0 }
+                    std: { name: std, value: 5.0 }
+            unit: "mV"
+            variable_of_interest: true
+
+# -- Network -------------------------------------------------------------------
+network:
+    label: "AAL-90 directed brain network"
+    description: >
+        Directed, weighted structural connectivity from diffusion tensor
+        imaging.  90 cortical regions from the Automated Anatomical Labeling
+        (AAL) atlas (Tzourio-Mazoyer et al., 2002).  Edge weights are set
+        at runtime from the Norm_G_DTI.txt matrix.
+    number_of_nodes: 90
+    number_of_regions: 90
+    edge_matrix_files:
+        - ../Norm_G_DTI.txt
+    parcellation:
+        label: "AAL-90"
+        atlas:
+            name: "AAL"
+    distance_unit: "mm"
+
+    coupling:
+        ElectricalCoupling:
+            name: ElectricalCoupling
+            label: "Weighted electrical gap-junction coupling"
+            description: >
+                Directed coupling: each edge computes w * sigma * (u_src - u_dst),
+                where w is the per-edge structural weight and sigma is a global
+                coupling strength parameter.
+            delayed: false
+            parameters:
+                w:
+                    label: "Edge weight"
+                    symbol: "w"
+                    value: 1.0
+                    unit: "1"
+                    description: "Structural connectivity weight (per-edge, from DTI)"
+                sigma:
+                    label: "Global coupling strength"
+                    symbol: "sigma"
+                    value: 0.5
+                    unit: "1"
+                    description: "Global scaling of electrical gap-junction coupling"
+            pre_expression:
+                rhs: "w * sigma * (x_j - x_i)"
+                description: "Directed weighted diffusive coupling"
+
+# -- Integration ---------------------------------------------------------------
+integration:
+    description: >
+        Automatic stiffness-detecting solver: Tsit5 with fallback to TRBDF2.
+        dt=0.1 over t in [0, 200].
+    method: AutoTsit5
+    step_size: 0.1
+    duration: 200.0
+    time_scale: "ms"

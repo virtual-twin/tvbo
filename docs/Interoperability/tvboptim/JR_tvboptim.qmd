@@ -20,7 +20,7 @@ import pandas as pd
 
 # Load experiment and network
 exp = SimulationExperiment.from_file(
-    "database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
+    "../../../database/experiments/JR_MEG_FrequencyGradient_Optimization.yaml"
 )
 print(exp.render_code('tvboptim'))
 ```
@@ -263,7 +263,7 @@ for bax, freqs, title in zip(
     ],
     ["Initial", "Target", "Fitted"],
 ):
-    bsplot.brain.glass_brain(
+    bsplot.glass_brain(
         nib.Nifti1Image(build_freq_map(freqs), dk.affine),
         cmap="cividis_r",
         view="horizontal",
@@ -283,5 +283,127 @@ plt.suptitle(
     y=1.05,
 )
 
+bsplot.style.format_fig(fig)
+```
+
+```{python}
+# | label: fig-surface-gradient
+# | fig-cap: "**Surface Frequency Gradients.** Target (left) and fitted (right) peak frequency maps projected onto the fsaverage cortical surface (DK parcellation)."
+# | fig-height: 5
+from nibabel.freesurfer.io import read_annot
+from bsplot.surface import plot_surf
+from bsplot.data.surface import get_surface_geometry
+
+# Load fsaverage parcellation annotations
+labels_lh, _, names_lh = read_annot(
+    "/Applications/freesurfer/7.4.1/subjects/fsaverage/label/lh.aparc.annot"
+)
+labels_rh, _, names_rh = read_annot(
+    "/Applications/freesurfer/7.4.1/subjects/fsaverage/label/rh.aparc.annot"
+)
+
+# TVB abbreviated labels → FreeSurfer aparc names
+sc_abbrev_to_aparc = {
+    "BSTS": "bankssts",
+    "CACG": "caudalanteriorcingulate",
+    "CMFG": "caudalmiddlefrontal",
+    "CU": "cuneus",
+    "EC": "entorhinal",
+    "FG": "fusiform",
+    "IPG": "inferiorparietal",
+    "ITG": "inferiortemporal",
+    "ICG": "isthmuscingulate",
+    "LOG": "lateraloccipital",
+    "LOFG": "lateralorbitofrontal",
+    "LG": "lingual",
+    "MOFG": "medialorbitofrontal",
+    "MTG": "middletemporal",
+    "PHIG": "parahippocampal",
+    "PaCG": "paracentral",
+    "POP": "parsopercularis",
+    "POR": "parsorbitalis",
+    "PTR": "parstriangularis",
+    "PCAL": "pericalcarine",
+    "PoCG": "postcentral",
+    "PCG": "posteriorcingulate",
+    "PrCG": "precentral",
+    "PCU": "precuneus",
+    "RACG": "rostralanteriorcingulate",
+    "RMFG": "rostralmiddlefrontal",
+    "SFG": "superiorfrontal",
+    "SPG": "superiorparietal",
+    "STG": "superiortemporal",
+    "SMG": "supramarginal",
+    "FP": "frontalpole",
+    "TP": "temporalpole",
+    "TTG": "transversetemporal",
+    "IN": "insula",
+}
+subcortical_abbrevs = {"CER", "TH", "CA", "PU", "PA", "HI", "AM", "AC"}
+
+# Build aparc name → label index lookup
+name_to_idx_lh = {
+    (n.decode() if isinstance(n, bytes) else str(n)): i for i, n in enumerate(names_lh)
+}
+name_to_idx_rh = {
+    (n.decode() if isinstance(n, bytes) else str(n)): i for i, n in enumerate(names_rh)
+}
+
+# Parse SC labels into (hemi, abbrev) and map to aparc indices
+vertices_lh, _ = get_surface_geometry(template="fsaverage", hemi="lh", density="164k")
+vertices_rh, _ = get_surface_geometry(template="fsaverage", hemi="rh", density="164k")
+
+
+def build_surface_overlay(freqs):
+    """Map per-region frequency values onto fsaverage vertex overlays."""
+    overlay_lh = np.full(len(vertices_lh), np.nan)
+    overlay_rh = np.full(len(vertices_rh), np.nan)
+    for i, name in enumerate(region_labels):
+        hemi, abbrev = str(name).split(".")
+        if abbrev in subcortical_abbrevs:
+            continue
+        aparc_name = sc_abbrev_to_aparc[abbrev]
+        if hemi == "L":
+            idx = name_to_idx_lh.get(aparc_name)
+            if idx is not None:
+                overlay_lh[labels_lh == idx] = freqs[i]
+        else:
+            idx = name_to_idx_rh.get(aparc_name)
+            if idx is not None:
+                overlay_rh[labels_rh == idx] = freqs[i]
+    return overlay_lh, overlay_rh
+
+
+fig, axes = plt.subplots(1, 2, layout="compressed")
+norm_surf = Normalize(vmin=6.5, vmax=11.5)
+
+fitted_freqs = (
+    results.optimization.spectral_gradient_fit.simulation.observations.peak_frequencies
+)
+
+for ax, freqs, title in zip(
+    axes,
+    [target_peak_freqs, fitted_freqs],
+    ["Target Gradient", "Fitted Gradient"],
+):
+    ol_lh, ol_rh = build_surface_overlay(freqs)
+    # Concatenate overlays for both hemispheres
+    overlay_both = np.concatenate([ol_lh, ol_rh])
+    plot_surf(
+        surface="fsaverage",
+        overlay=overlay_both,
+        hemi="both",
+        view="dorsal",
+        cmap="cividis_r",
+        norm=norm_surf,
+        parcellated=True,
+        threshold=0,
+        ax=ax,
+    )
+    ax.set_title(title)
+    ax.axis("off")
+
+sm = plt.cm.ScalarMappable(cmap="cividis_r", norm=norm_surf)
+fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.7, label="Peak Freq [Hz]")
 bsplot.style.format_fig(fig)
 ```

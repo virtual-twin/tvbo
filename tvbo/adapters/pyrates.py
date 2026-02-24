@@ -35,6 +35,129 @@ TVBO_TO_PYRATES_SOLVER = {
     "RK4": "scipy",
 }
 
+# Names that conflict with SymPy/PyRates built-ins and must be renamed.
+# Must match the repl dict in tvbo-pyrates-model.yaml.mako.
+PYRATES_REPL = {
+    "I": "I_",
+    "gamma": "gamma_",
+    "beta": "beta_",
+    "zeta": "zeta_",
+    "lambda": "lambda_",
+    "E": "E_",
+    "N": "N_",
+    "S": "S_",
+    "O": "O_",
+    "Q": "Q_",
+    "epsilon": "epsilon_",
+    "y": "y_",
+    "dy": "dy_",
+}
+
+
+def _patch_pyrates_networkx_backend():
+    """Fix networkx 3.4+ backend dispatch conflict with PyRates.
+
+    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In
+    networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with
+    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument
+    and tries to dispatch to a networkx graph backend.  PyRates passes
+    ``backend='default'`` (meaning *PyRates* compute backend, not a
+    networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
+    The decorator sees it and raises ``ImportError: 'default' backend is
+    not installed``.
+
+    Fix: replace ``ComputeGraph.__new__`` (and ``ComputeGraphBackProp``)
+    with plain ``object.__new__`` so the decorator is removed.
+    """
+    try:
+        from pyrates.backend.computegraph import ComputeGraph, ComputeGraphBackProp
+    except ImportError:
+        return
+
+    def _plain_new(cls, *_args, **_kwargs):
+        return object.__new__(cls)
+
+    if getattr(ComputeGraph.__new__, '_dispatchable', False) or 'argmap' in getattr(
+            ComputeGraph.__new__, '__qualname__', ''):
+        ComputeGraph.__new__ = _plain_new
+    # Also check inherited __new__ from networkx
+    try:
+        ComputeGraph(backend='default')
+    except (ImportError, TypeError):
+        ComputeGraph.__new__ = _plain_new
+
+    try:
+        ComputeGraphBackProp(backend='default')
+    except (ImportError, TypeError):
+        ComputeGraphBackProp.__new__ = _plain_new
+
+
+def _patch_pyrates_replace_in_expr():
+    """Monkey-patch PyRates' replace_in_expr to use xreplace.
+
+    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which
+    corrupts compound sub-expressions: when a ``Mul`` has two or more
+    ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs``
+    replaces the symbol *inside* the ``Add`` first, breaking the match for
+    the ``Add`` replacement key. ``xreplace`` matches top-down and avoids
+    this bug.
+    """
+    import pyrates.backend.parser as _pr_parser
+
+    def _replace_in_expr_fixed(expr, replacements):
+        return expr.xreplace(replacements)
+
+    _pr_parser.replace_in_expr = _replace_in_expr_fixed
+
+
+def _patch_pyrates_missing_funcs():
+    """Register additional math functions in PyRates' base backend.
+
+    PyRates' compute graph only supports functions listed in ``base_funcs``.
+    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy
+    but missing from PyRates' registry.  We inject them into the shared
+    ``base_funcs`` dict which is copied by every new backend instance.
+
+    Also patches the ExpressionParser to inject functions into already-
+    instantiated backends via their compute graph.
+    """
+    from pyrates.backend.base.base_funcs import base_funcs
+
+    _extra_funcs = {}
+    if "erfc" not in base_funcs:
+        _extra_funcs["erfc"] = {
+            "call": "erfc",
+            "func": __import__("scipy.special", fromlist=["erfc"]).erfc,
+            "imports": ["scipy.special.erfc"],
+        }
+    if "erf" not in base_funcs:
+        _extra_funcs["erf"] = {
+            "call": "erf",
+            "func": __import__("scipy.special", fromlist=["erf"]).erf,
+            "imports": ["scipy.special.erf"],
+        }
+    if "fmod" not in base_funcs:
+        _extra_funcs["fmod"] = {
+            "call": "fmod",
+            "func": np.fmod,
+            "imports": ["numpy.fmod"],
+        }
+    if _extra_funcs:
+        base_funcs.update(_extra_funcs)
+
+        # Also monkey-patch ExpressionParser.parse_expr to inject funcs
+        # into compute graph backends that were already instantiated.
+        import pyrates.backend.parser as _pr_parser
+        _orig_parse_expr = _pr_parser.ExpressionParser.parse_expr
+
+        def _patched_parse_expr(self):
+            for name, info in _extra_funcs.items():
+                if name not in self.cg.backend._funcs:
+                    self.cg.backend._funcs[name] = info
+            return _orig_parse_expr(self)
+
+        _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
+
 
 class PyRatesAdapter:
     """Adapter for running SimulationExperiment via PyRates backend."""
@@ -81,6 +204,15 @@ class PyRatesAdapter:
         from pyrates import clear
         from pyrates.frontend import CircuitTemplate
 
+        # Fix networkx 3.4+ backend dispatch conflict
+        _patch_pyrates_networkx_backend()
+
+        # Fix PyRates' broken replace_in_expr (subs vs xreplace bug)
+        _patch_pyrates_replace_in_expr()
+
+        # Register missing math functions (erfc, erf, fmod)
+        _patch_pyrates_missing_funcs()
+
         exp = self.experiment
         integration = getattr(exp, "integration", None)
 
@@ -109,6 +241,20 @@ class PyRatesAdapter:
                 outputs = self._build_outputs()
             if inputs is None:
                 inputs = self._build_inputs()
+
+            # PyRates vectorize=True (default) breaks for single-node circuits
+            # and heterogeneous multi-node circuits (different operators have
+            # incompatible parameter shapes). Only safe for homogeneous N>1.
+            if "vectorize" not in kwargs:
+                is_heterogeneous = self._is_heterogeneous()
+                if n_nodes <= 1 or is_heterogeneous:
+                    kwargs["vectorize"] = False
+
+            # Use a declarative file_name so parallel runs don't collide
+            # and stale pyrates_run.py files are avoided.
+            if "file_name" not in kwargs:
+                run_id = uuid.uuid4().hex[:8]
+                kwargs["file_name"] = f"pyrates_run_{pkg_name}_{run_id}"
 
             # Run simulation
             result = circuit.run(
@@ -160,6 +306,20 @@ class PyRatesAdapter:
         return getattr(network, "number_of_nodes", 0) or (
             len(network.nodes) if hasattr(network, "nodes") and network.nodes else 0
         )
+
+    def _is_heterogeneous(self) -> bool:
+        """Check if the experiment has heterogeneous dynamics (multiple models).
+
+        PyRates vectorize=True cannot handle circuits where different nodes
+        have different operators (different parameter counts / state variables).
+        """
+        exp = self.experiment
+        dynamics = getattr(exp, "dynamics", None)
+        if isinstance(dynamics, dict) and len(dynamics) > 1:
+            # Multiple distinct dynamics models
+            names = {getattr(d, "name", None) for d in dynamics.values() if d}
+            return len(names) > 1
+        return False
 
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
@@ -225,6 +385,10 @@ class PyRatesAdapter:
         for mod in modules_to_remove:
             del sys.modules[mod]
         shutil.rmtree(tmpdir, ignore_errors=True)
+        # Remove PyRates-generated .py files from cwd
+        import glob
+        for f in glob.glob(f"pyrates_run_{pkg_name}_*.py"):
+            os.remove(f)
 
     def _add_edges_from_matrix(self, circuit, network) -> None:
         """Add edges to circuit using weight matrix (efficient for large networks)."""
@@ -312,8 +476,10 @@ class PyRatesAdapter:
                 return
             node_id = prefix.rstrip("_") or "node_0"
             for sv_name in (dyn.state_variables or {}).keys():
+                # Apply same renaming as the PyRates YAML template
+                pyrates_sv_name = PYRATES_REPL.get(sv_name, sv_name)
                 key = f"{prefix}{sv_name}" if prefix else sv_name
-                outputs[key] = f"{node_id}/{op_name}/{sv_name}"
+                outputs[key] = f"{node_id}/{op_name}/{pyrates_sv_name}"
 
         network = getattr(exp, "network", None)
         if network is not None and hasattr(network, "nodes") and network.nodes:

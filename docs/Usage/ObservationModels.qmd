@@ -1,0 +1,112 @@
+---
+title: Observation Models
+sidebar: usage
+jupyter: python3
+---
+
+Observation models define what to measure from a simulation — BOLD signals, functional connectivity, power spectral density, and custom pipelines. Everything is defined in YAML: functions are declared in the `functions:` section and referenced by name in the observation `pipeline:`.
+
+## BOLD Signal
+
+The Balloon-Windkessel hemodynamic model transforms neural activity into a BOLD fMRI signal. The pipeline is defined entirely in YAML — each function is specified with its equation, callable, or time range, then chained together:
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp_yaml = """\
+dynamics:
+    name: ReducedWongWang
+    parameters:
+        a: {value: 0.27}
+        b: {value: 0.108}
+        d: {value: 0.154}
+        gamma: {value: 0.641}
+        tau_s: {value: 100}
+        w: {value: 0.6}
+        J_N: {value: 0.2609}
+        I_o: {value: 0.3}
+    state_variables:
+        S:
+            equation: {rhs: "-S/tau_s + (1 - S) * gamma * d * (a*J_N*w*S + I_o + c_in) / (1 + exp(-1*(a*(J_N*w*S + I_o + c_in) - b)/d))"}
+            initial_value: 0.5
+    coupling_terms:
+        c_in: {}
+integration:
+    step_size: 0.1
+    duration: 50000
+functions:
+    hrf_kernel:
+        description: Hemodynamic response function (Volterra kernel)
+        time_range:
+            lo: 0
+            hi: duration
+            step: input.sample_period
+        equation:
+            rhs: "(1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f - 1/(4*tau_s**2))"
+            parameters:
+                tau_s: {value: 0.8}
+                tau_f: {value: 0.4}
+        arguments:
+            - {name: duration, value: 20000.0}
+        output: hrf_kernel_ts
+    volterra_transform:
+        description: Volterra nonlinear BOLD transformation
+        equation:
+            rhs: "(X - 1.0) * k_1 * V_0"
+            parameters:
+                k_1: {value: 5.6}
+                V_0: {value: 0.02}
+        output: bold_volterra
+    subsample_bold:
+        description: Subsample to BOLD TR
+        equation:
+            rhs: "X[::stepsize]"
+        arguments:
+            - {name: stepsize, value: 10000}
+        apply_on_dimension: time
+        output: bold_subsampled
+observations:
+    - name: bold
+      source: S
+      pipeline:
+          - function: hrf_kernel
+          - callable:
+                module: scipy.signal
+                name: fftconvolve
+            output: bold_conv
+            arguments:
+                - {name: in2, value: hrf_kernel_ts}
+                - {name: mode, value: full}
+          - function: volterra_transform
+          - function: subsample_bold
+"""
+
+exp = SimulationExperiment.from_string(exp_yaml)
+print(exp.render_code('jax')[-1500:])
+```
+
+The generated code shows each function definition followed by the pipeline composition. No Python functions are hardcoded — everything is generated from the YAML specification.
+
+## Pipeline Architecture
+
+Observation pipelines chain functions sequentially. Each step's output becomes the next step's input automatically. Steps can be:
+
+| Type | YAML Field | Description |
+|------|-----------|-------------|
+| **Equation** | `equation.rhs` | Symbolic math expression, rendered to JAX |
+| **Callable** | `callable: {module, name}` | Reference to an external library function |
+| **Kernel** | `time_range` + `equation` | Generates a TimeSeries over a time range |
+
+## Available Observation Models
+
+Pre-defined observation models in `database/observation_models/`:
+
+| Model | File | Description |
+|-------|------|-------------|
+| BOLD (TVB) | `bold_tvb.yaml` | Balloon-Windkessel HRF with downsampling |
+| FC | `FC.yaml` | Pearson correlation matrix |
+
+## See Also
+
+- [Model Fitting](ModelFitting.qmd) — use observations as targets for optimization
+- [Parameter Exploration](ParameterExploration.qmd) — sweep parameters with observation-based metrics

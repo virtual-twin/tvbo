@@ -1,0 +1,131 @@
+---
+title: "Stress on Truss"
+subtitle: "2D truss structure with stiff springs and observed forces"
+---
+
+Replicates the [NetworkDynamics.jl Stress on Truss tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) — a 2D truss of point masses connected by stiff beams. Free vertices move under gravity and spring forces; fixed vertices act as supports. Demonstrates heterogeneous vertex types, 2D coupling (`insym`/`outsym`), observed functions (`obsf`), and per-edge parameters.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/stress_on_truss.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/stress_on_truss.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Animate
+
+```{python}
+ts = exp.run(format="networkdynamics")
+```
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.collections import LineCollection
+from IPython.display import HTML
+
+# All spatial data is extracted automatically from the YAML metadata
+x_all = ts.node_positions[:, :, 0]  # (n_t, n_nodes)
+y_all = ts.node_positions[:, :, 1]  # (n_t, n_nodes)
+n_t = len(ts.time)
+n_nodes = x_all.shape[1]
+
+# Edge list from experiment metadata
+edges = [
+    (e.source, e.target)
+    for e in sorted(
+        exp.network.edges,
+        key=lambda e: (min(e.source, e.target), max(e.source, e.target)),
+    )
+]
+
+# Edge force magnitudes (extracted automatically from observed functions)
+has_fabs = "Fabs" in ts.edge_data
+if has_fabs:
+    fabs = ts.edge_data["Fabs"]
+    fmax = np.max(np.abs(fabs)) * 0.3
+
+# Node styling from metadata
+fixed = ts.fixed_nodes
+sizes = [
+    80 if n in fixed else (400 if ts.node_metadata[n]["params"].get("M") else 40)
+    for n in range(n_nodes)
+]
+colors_n = [
+    (
+        "red"
+        if n in fixed
+        else ("black" if ts.node_metadata[n]["params"].get("M") else "steelblue")
+    )
+    for n in range(n_nodes)
+]
+
+# Create animation
+fig, ax = plt.subplots(figsize=(10, 5), layout="compressed")
+
+if has_fabs:
+    norm = plt.Normalize(-fmax, fmax)
+    cmap = plt.get_cmap("coolwarm")
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    fig.colorbar(sm, ax=ax, label="|F|")
+
+
+def draw_frame(frame_idx):
+    ax.clear()
+    xi, yi = x_all[frame_idx], y_all[frame_idx]
+
+    # Draw edges colored by force
+    segments = [[(xi[s], yi[s]), (xi[t], yi[t])] for s, t in edges]
+    if has_fabs:
+        lc = LineCollection(segments, linewidths=3, cmap=cmap, norm=norm)
+        lc.set_array(fabs[frame_idx])
+    else:
+        lc = LineCollection(segments, linewidths=3, colors="steelblue")
+    ax.add_collection(lc)
+
+    # Draw nodes
+    ax.scatter(
+        xi, yi, s=sizes, c=colors_n, zorder=5, edgecolors="black", linewidths=0.5
+    )
+    for n in fixed:
+        ax.plot(xi[n], yi[n] - 0.08, "^", color="red", markersize=12, zorder=6)
+
+    ax.set_xlim(-0.5, 7.0)
+    ax.set_ylim(-2.5, 1.5)
+    ax.set_aspect("equal")
+    ax.set_title(f"Stress on Truss (t = {ts.time[frame_idx]:.2f} s)", fontsize=14)
+    ax.grid(True, alpha=0.2)
+
+
+# Subsample frames for animation
+n_frames = min(200, n_t)
+frame_indices = np.linspace(0, n_t - 1, n_frames, dtype=int)
+anim = FuncAnimation(
+    fig,
+    lambda i: draw_frame(frame_indices[i]),
+    frames=n_frames,
+    interval=50,
+    blit=False,
+)
+plt.close(fig)
+anim.save("_output/stress_on_truss.gif", writer="pillow", fps=20)
+```
+![](_output/stress_on_truss.gif)

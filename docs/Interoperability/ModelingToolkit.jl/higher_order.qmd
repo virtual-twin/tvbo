@@ -1,0 +1,105 @@
+---
+title: "Automatic Higher-Order ODE Lowering"
+subtitle: "Symbolic round-trip between SymPy and ModelingToolkit.jl"
+execute:
+  eval: false
+---
+
+## Why this matters
+
+Many dynamical systems are naturally expressed as higher-order ODEs, but most simulation backends only support first-order systems. Manually rewriting $\ddot{x} = f(x)$ into a first-order system is tedious and error-prone — you need to introduce auxiliary variables, track extra initial conditions, and keep everything consistent.
+
+`tvbo` automates this by round-tripping through ModelingToolkit.jl: send a higher-order system to Julia, let MTK's compiler do the structural transformation, and get back clean first-order symbolic equations ready for any backend.
+
+$$
+\ddot{x} = \sigma(y - x) \quad \Longrightarrow \quad \begin{cases} \dot{x} = x_t \\ \dot{x_t} = \sigma(y - x) \end{cases}
+$$
+
+## The YAML Specification
+
+Mark a state variable with `equation_order: 2` to declare its equation as second-order. Provide the derivative initial condition separately with`derivative_initial_value: 2.0`:
+
+```yaml
+state_variables:
+  x:
+    name: x
+    initial_value: 1.0
+    derivative_initial_value: 2.0
+    equation_order: 2
+    equation:
+      rhs: sigma * (y - x)
+```
+
+
+## Step 1: Load and Inspect the SymPy Equations
+
+```{python}
+from tvbo import SimulationExperiment
+from IPython.display import Markdown
+exp = SimulationExperiment.from_file(
+    "yaml/lorenz_higher_order.yaml"
+)
+Markdown(exp.local_dynamics.generate_report(derivative_notation='dot'))
+```
+
+tvbo correctly represents the second-order derivative
+
+## Step 2: Render MTK Code
+
+```{python}
+code = exp.render_code("mtk")
+print(code)
+```
+
+The template generates `Dt(Dt(x))` — MTK's notation for $\frac{d^2 x}{dt^2}$
+
+
+The derivative initial condition is passed via:
+
+```julia
+u0 = [Dt(sys.x) => 2.0]
+```
+
+## Step 3: Symbolic Round-Trip — Get Lowered Equations
+
+Here is the key feature: we send the higher-order system to Julia, let MTK's `mtkcompile` do the structural transformation, and extract the lowered first-order equations back as SymPy.
+
+```{python}
+from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
+adapter = ModelingToolkitAdapter()
+firstoder_ODE = adapter.lower(exp.local_dynamics)
+Markdown(firstoder_ODE.generate_report())
+```
+
+To run the lowered system with backends that only support first-order ODEs:
+
+```{python}
+lowered_exp = adapter.lower(exp)
+lowered_exp.integration.method='Heun'
+result = lowered_exp.run("tvboptim")
+result.integration.main.to_timeseries().get_state(["x", "y"]).plot(type="statespace")
+```
+
+MTK introduced `x_t` (written as `xˍt` in Julia) and produced four first-order equations:
+
+The returned SymPy equations are standard `sympy.Eq` objects — they can be used for further symbolic analysis, code generation to other backends, or substitution.
+
+## Step 4: Run the Simulation
+
+```{python}
+result = exp.run("mtk")
+result.get_state(["x", "y"]).plot(type="statespace")
+```
+
+This matches the original MTK tutorial’s $x$-$y$ state-space plot.
+
+## Summary
+
+| Step | What happens |
+|------|-------------|
+| YAML | Define `equation_order: 2` on the state variable |
+| tvbo → MTK | Generates `Dt(Dt(x)) ~ sigma * (y - x)` |
+| MTK compiles | Introduces $x_t$, produces first-order system |
+| MTK → tvbo | Extracts lowered equations as SymPy |
+| Run anywhere | Lowered system works with `tvboptim`, `JAX`, `TVB`, ... |

@@ -1,0 +1,93 @@
+# =============================================================================
+# 2D Network Diffusion - Getting Started with NetworkDynamics.jl (Part 2)
+# =============================================================================
+# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/
+#
+# Extension of 1D diffusion to two coupled state variables (x, phi).
+# Both variables diffuse independently on the same network.
+# Vertex dynamics: dx = esum; edge: e_dst = v_src - v_dst (broadcasting).
+# =============================================================================
+
+id: 103
+label: "2D Network Diffusion"
+description: >
+    Two-dimensional diffusion on an undirected network.  Each node has two
+    state variables (x, phi) that diffuse independently via the same
+    antisymmetric edge function.  The edge function broadcasts over both
+    dimensions: e_dst .= v_src .- v_dst.
+    Recreates the second part of the NetworkDynamics.jl Getting Started tutorial.
+references:
+    - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/"
+
+# -- Local Dynamics ------------------------------------------------------------
+local_dynamics:
+    name: Diffusion2D
+    label: "2D Diffusion vertex"
+    description: >
+        Two-variable diffusion node: dx/dt = esum_x, dphi/dt = esum_phi.
+        Both state variables are coupling variables, meaning the vertex
+        outputs both to edges and the edge function operates on 2D vectors.
+    system_type: continuous
+    autonomous: true
+    parameters: {}
+    coupling_terms:
+        c_flow:
+            description: "Aggregated edge flow into this vertex (2D vector: flow_x, flow_phi)"
+    state_variables:
+        x:
+            label: "Diffusion state x"
+            description: "First quantity diffusing on the network"
+            equation:
+                rhs: "c_flow"
+            initial_value: 0.0
+            distribution:
+                name: SquaredGaussian
+                seed: 1
+                domain: { lo: -3.0, hi: 3.0 }
+            coupling_variable: true
+            variable_of_interest: true
+        phi:
+            label: "Diffusion state phi"
+            description: "Second quantity diffusing on the network"
+            equation:
+                rhs: "c_flow"
+            initial_value: 0.0
+            distribution:
+                name: Gaussian
+                seed: 1
+                domain: { lo: -3.0, hi: 3.0 }
+            coupling_variable: true
+            variable_of_interest: true
+
+# -- Network -------------------------------------------------------------------
+network:
+    label: "10-node Barabasi-Albert network"
+    description: >
+        Undirected Barabasi-Albert scale-free random graph with 10 nodes
+        and attachment parameter k=4.  Matches the 2D tutorial section.
+    number_of_nodes: 10
+    number_of_regions: 10
+    graph_generator:
+        name: barabasi_albert
+        type: BarabasiAlbert
+        parameters:
+            k: { name: k, value: 4 }
+    coupling:
+        DiffusiveCoupling2D:
+            name: DiffusiveCoupling2D
+            label: "2D Diffusive Coupling"
+            description: >
+                Broadcasting antisymmetric edge: e_dst .= v_src .- v_dst.
+                Operates element-wise on 2D state vectors, producing
+                flow_x and flow_phi outputs.
+            delayed: false
+            pre_expression:
+                rhs: "x_j - x_i"
+                description: "Broadcasting diffusive gradient: v_src - v_dst (per dimension)"
+
+# -- Integration ---------------------------------------------------------------
+integration:
+    description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 3]"
+    method: Tsit5
+    step_size: 0.01
+    duration: 3.0

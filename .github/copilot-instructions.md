@@ -201,31 +201,45 @@ L = Sum(1 - corr(x[i], y[i]), (i, 0, N-1)) / N  # NOT a custom Mean() function
 
 ## Quick Reference Commands
 
+> **CRITICAL — Always use the venv + uv.**
+> The project venv lives at `/Users/leonmartin_bih/tools/tvbo/.venv`.
+> This project uses **`uv`** as the package manager — always use `uv pip install`,
+> never plain `pip install` (plain `pip` is not on PATH in this environment).
+> Every terminal command that invokes `python`, `pytest`, `uv`, or `flake8`
+> **must** be run inside the activated venv:
+> ```bash
+> source /Users/leonmartin_bih/tools/tvbo/.venv/bin/activate
+> ```
+> Never use the system Python or a different interpreter.
+> **Exception:** GitHub Actions CI uses plain `pip` because `uv` is not pre-installed there — do not change CI workflow `pip` calls to `uv`.
+
 ### Environment Setup (ALWAYS do first)
 ```bash
-cd /path/to/tvbo
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .                    # Minimal install
-pip install -e ".[all]"             # Full install with all extras
-pip install flake8 pytest           # Test dependencies
+cd /Users/leonmartin_bih/tools/tvbo
+source .venv/bin/activate            # ALWAYS activate venv first
+uv pip install -e .                  # Minimal install
+uv pip install -e ".[all]"           # Full install with all extras
+uv pip install flake8 pytest pytest-xdist  # Test dependencies
 ```
 
 ### Testing
 ```bash
-pytest -q                           # Run all tests (~22s)
-pytest tests/test_model_loading.py  # Test model YAML loading
-pytest tests/functional/            # Functional tests only
+source .venv/bin/activate            # ensure venv is active
+pytest -q                            # Run all tests (~22s)
+pytest tests/test_model_loading.py   # Test model YAML loading
+pytest tests/functional/             # Functional tests only
 ```
 
 ### Linting (CI uses these exact commands)
 ```bash
+source .venv/bin/activate
 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics    # Syntax errors only
 flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics  # Full lint
 ```
 
 ### Build & Package
 ```bash
+source .venv/bin/activate
 python -m build                     # Build sdist and wheel
 python -m twine check dist/*        # Verify package metadata
 ```
@@ -277,11 +291,22 @@ tvbo/
 
 ## CI/CD Workflows
 
-### `ci.yml` - Python Package (runs on push/PR to main)
-1. Tests on Python 3.10, 3.11, 3.12
-2. Installs: `pip install flake8 pytest nbformat && pip install .[all]`
-3. Runs flake8 lint (syntax errors are blocking)
-4. Runs `pytest -q`
+### `ci.yml` - Two-tier CI (runs on push/PR to main and dev)
+
+**Feature → dev (PRs to dev, pushes to dev):**
+1. **Lint** — flake8 syntax errors (blocking) + style warnings (non-blocking)
+2. **Compat** — Python 3.11/3.12/3.13 with `pip install -e .` + core tests
+3. **Native tests** — `pip install -e ".[all]"` + full pytest (no doc tests, no container)
+
+**dev → main (PRs to main, pushes to main):**
+1. **Lint** + **Compat** (same as above)
+2. **Container tests** — full pytest in Docker (`ghcr.io/virtual-twin/tvbo:latest`)
+3. **Doc tests** — Quarto + `pytest tests/test_docs.py -m docs` in container
+4. **Strict gate** — runs all tests in container and **fails if any test is skipped, xfailed, or errored**. This ensures everything passes cleanly before release.
+5. **Package** — builds sdist + wheel (on push to main only)
+
+### `docker.yml` - Container Build (pushes to main/dev, tags)
+Builds multi-arch Docker image → GHCR + DockerHub.
 
 ### `publish-pypi.yml` - PyPI Release (on GitHub release)
 1. Tests on Python 3.12, 3.13
@@ -327,8 +352,8 @@ print(exp.render_code('jax'))
 
 ## Validation Checklist
 
-Before submitting changes:
-1. ✅ `pip install -e .` succeeds
+Before submitting changes (always activate the venv first: `source .venv/bin/activate`):
+1. ✅ `uv pip install -e .` succeeds
 2. ✅ `flake8 . --select=E9,F63,F7,F82` returns 0 (no syntax errors)
 3. ✅ `pytest -q tests/functional/` passes
 4. ✅ If schema changed: `make gen-linkml` and commit generated files

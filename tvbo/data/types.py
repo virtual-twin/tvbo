@@ -26,22 +26,88 @@ class SimulationResult(Bunch):
     Mirrors the YAML structure by attaching observations to the simulation
     they derive from. This provides consistent access regardless of mode.
 
+    Supports TimeSeries-like access via get_state() and plot(), converting
+    the raw 3D data (time, state, nodes) to a full TimeSeries on demand.
+
     Attributes
     ----------
     data : jnp.ndarray
         Raw simulation data (time, state, nodes)
     time : jnp.ndarray
         Time vector
+    state_names : list[str]
+        Names of state variables (e.g., ['x', 'y'])
     observations : Bunch
         Computed observations from this simulation (bold, fc, etc.)
     """
 
-    def __init__(self, result=None, observations=None, **kwargs):
+    def __init__(self, result=None, observations=None, state_names=None, **kwargs):
         super().__init__(**kwargs)
         if result is not None:
             self.data = result.data if hasattr(result, 'data') else result
             self.time = result.ts if hasattr(result, 'ts') else None
+        self.state_names = state_names or []
         self.observations = observations or Bunch()
+
+    def to_timeseries(self):
+        """Convert to a full TimeSeries object for plotting and analysis.
+
+        Returns
+        -------
+        TimeSeries
+            4D time series (Time, State Variable, Space, Mode)
+        """
+        data = self.data
+        if data is None:
+            raise ValueError("No simulation data to convert")
+
+        time = self.time
+        if time is None:
+            time = np.arange(data.shape[0])
+
+        # tvboptim data shape: (n_timesteps, n_states, n_nodes)
+        # TimeSeries expects: (Time, State Variable, Space, Mode)
+        if data.ndim == 3:
+            data_4d = np.expand_dims(np.asarray(data), -1)  # add Mode dimension
+        elif data.ndim == 4:
+            data_4d = np.asarray(data)
+        else:
+            data_4d = np.asarray(data)
+
+        labels_dimensions = {}
+        if self.state_names:
+            labels_dimensions['State Variable'] = list(self.state_names)
+
+        dt = float(time[1] - time[0]) if len(time) > 1 else 1.0
+
+        return TimeSeries(
+            time=np.asarray(time),
+            data=data_4d,
+            sample_period=dt,
+            labels_dimensions=labels_dimensions,
+        )
+
+    def get_state(self, sv_label):
+        """Get state variable(s) as a TimeSeries, supporting plotting.
+
+        Parameters
+        ----------
+        sv_label : str or list[str]
+            State variable name(s) to extract.
+
+        Returns
+        -------
+        TimeSeries
+            Subset time series for the requested state variables.
+        """
+        return self.to_timeseries().get_state(sv_label)
+
+    def plot(self, **kwargs):
+        """Plot the simulation result as a TimeSeries.
+
+        Supports all TimeSeries plot types (timeseries, statespace, etc.).
+        """
+        return self.to_timeseries().plot(**kwargs)
 
     def __repr__(self):
         n_obs = len(self.observations.keys()) if self.observations else 0
@@ -80,7 +146,8 @@ class AlgorithmResult(Bunch):
 
     def __init__(self, name: str = None, state=None, history=None,
                  pre_tuning=None, post_tuning=None, post_tuning_observations=None,
-                 n_iterations: int = None, hyperparameters=None, **kwargs):
+                 n_iterations: int = None, hyperparameters=None,
+                 state_names=None, **kwargs):
         super().__init__(**kwargs)
         self.name = name
         self.state = state
@@ -88,14 +155,15 @@ class AlgorithmResult(Bunch):
 
         # Wrap simulations in SimulationResult for consistent access
         if pre_tuning is not None and not isinstance(pre_tuning, SimulationResult):
-            self.pre_tuning = SimulationResult(result=pre_tuning)
+            self.pre_tuning = SimulationResult(result=pre_tuning, state_names=state_names)
         else:
             self.pre_tuning = pre_tuning
 
         if post_tuning is not None and not isinstance(post_tuning, SimulationResult):
             self.post_tuning = SimulationResult(
                 result=post_tuning,
-                observations=post_tuning_observations or Bunch()
+                observations=post_tuning_observations or Bunch(),
+                state_names=state_names,
             )
         else:
             self.post_tuning = post_tuning
@@ -463,19 +531,27 @@ class BaseTimeSeries:
     """
 
     def tree_flatten(self):
-        # Keep network as a child (not metadata) to avoid non-hashable/array metadata
-        # Store labels_dimensions and units in aux to preserve metadata across JAX transforms
-        return (self.time, self.data, self.network), (
+        # Keep network as a child (not metadata) to avoid non-hashable/array metadata.
+        # sample_period must also be a child because it can be a JAX-traced value
+        # (e.g. state.dt inside jit); putting tracers in aux_data causes
+        # UnexpectedTracerError on repeated JIT calls.
+        children = (self.time, self.data, self.network, self.sample_period)
+        aux_data = (
             self.title,
-            self.sample_period,
             self.labels_dimensions,
             self.units,
         )
+        return children, aux_data
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        # aux_data matches (__init__): title, sample_period, labels_dimensions, units
-        return cls(*children, *aux_data)
+        time, data, network, sample_period = children
+        title, labels_dimensions, units = aux_data
+        return cls(
+            time, data, network=network, title=title,
+            sample_period=sample_period,
+            labels_dimensions=labels_dimensions, units=units,
+        )
 
     def __init__(
         self,
@@ -607,9 +683,16 @@ class BaseTimeSeries:
         return sv_index
 
     def get_state(self, sv_label):
-        sv_data = self.data[:, self._get_index_of_state_variable(sv_label), :, :]
+        if isinstance(sv_label, (list, tuple, np.ndarray)):
+            indices = [self._get_index_of_state_variable(s) for s in sv_label]
+            sv_data = self.data[:, indices, :, :]
+            sv_labels = list(sv_label)
+        else:
+            sv_data = self.data[:, self._get_index_of_state_variable(sv_label), :, :]
+            sv_labels = [sv_label]
+
         subspace_labels_dimensions = deepcopy(self.labels_dimensions)
-        subspace_labels_dimensions[self.labels_ordering[1]] = [sv_label]
+        subspace_labels_dimensions[self.labels_ordering[1]] = sv_labels
         if sv_data.ndim == 3:
             sv_data = np.expand_dims(sv_data, 1)
         return self.duplicate(
@@ -760,6 +843,8 @@ class BaseTimeSeries:
 @register_pytree_node_class
 class TimeSeries(BaseTimeSeries):
     def get_state_variable(self, sv_label):
+        if isinstance(sv_label, (list, tuple, np.ndarray)):
+            return self.get_state(sv_label)
         import math
 
         import sympy as sp
@@ -779,6 +864,7 @@ class TimeSeries(BaseTimeSeries):
         )
 
     def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
+        plot_type = kwargs.pop("type", "timeseries")
         if not ax:
             fig, ax = plt.subplots()
             return_fig = True
@@ -787,6 +873,66 @@ class TimeSeries(BaseTimeSeries):
 
         if title:
             ax.set_title(title)
+
+        if plot_type in {
+            "statespace",
+            "state-space",
+            "phase",
+            "phase_space",
+            "trajectory",
+        }:
+            region = kwargs.pop("region", 0)
+            mode = kwargs.pop("mode", 0)
+            sv_labels = (
+                kwargs.pop("state_variables", None)
+                or kwargs.pop("state_variables_labels", None)
+            )
+
+            n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
+            if sv_labels:
+                if isinstance(sv_labels, str):
+                    sv_labels = [sv_labels]
+                indices = [self._get_index_of_state_variable(s) for s in sv_labels]
+            else:
+                indices = list(range(min(2, n_svar)))
+                sv_labels = (
+                    self.labels_dimensions.get("State Variable", None)
+                    if isinstance(self.labels_dimensions, dict)
+                    else None
+                )
+                if sv_labels:
+                    sv_labels = [sv_labels[i] for i in indices]
+
+            if len(indices) < 2:
+                raise ValueError(
+                    "State-space plot requires at least two state variables"
+                )
+
+            data = self.data
+            if data.ndim == 4:
+                x = data[:, indices[0], region, mode]
+                y = data[:, indices[1], region, mode]
+            elif data.ndim == 3:
+                x = data[:, indices[0], region]
+                y = data[:, indices[1], region]
+            elif data.ndim == 2:
+                x = data[:, indices[0]]
+                y = data[:, indices[1]]
+            else:
+                raise ValueError("Unsupported data shape for state-space plot")
+            ax.plot(x, y, **kwargs)
+
+            if sv_labels and len(sv_labels) >= 2:
+                ax.set_xlabel(str(sv_labels[0]))
+                ax.set_ylabel(str(sv_labels[1]))
+            else:
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+
+            if return_fig:
+                plt.close()
+                return fig
+            return None
 
 
         n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
@@ -845,6 +991,128 @@ class TimeSeries(BaseTimeSeries):
         if return_fig:
             plt.close()
             return fig
+
+    def animate(
+        self,
+        state=0,
+        format="dots",
+        interval=50,
+        cmap="viridis",
+        node_size=120,
+        figsize=(10, 4),
+    ):
+        """Animate timeseries on a graph layout.
+
+        Each node is a dot positioned by the graph layout; its color
+        reflects the timeseries value of the selected state variable
+        over time.
+
+        Parameters
+        ----------
+        state : int or str
+            State variable index or name to animate.
+        format : str
+            Animation format.  Currently only ``'dots'`` is supported.
+        interval : int
+            Milliseconds between frames.
+        cmap : str
+            Matplotlib colormap name.
+        node_size : int
+            Scatter point size.
+        figsize : tuple
+            Figure size ``(width, height)``.
+
+        Returns
+        -------
+        matplotlib.animation.FuncAnimation
+            The animation object (render with ``HTML(ani.to_jshtml())``
+            in Jupyter, or ``ani.save(...)``).
+        """
+        from matplotlib.animation import FuncAnimation
+
+        graph = getattr(self, "graph", None)
+        if graph is None:
+            raise ValueError(
+                "No graph data attached.  Run with format='networkdynamics' "
+                "to get graph positions."
+            )
+        pos = graph["positions"]
+        adj = graph["adjacency"]
+
+        # Resolve state index
+        if isinstance(state, str):
+            sv_list = list(
+                self.labels_dimensions.get("State Variable", [])
+            )
+            state = sv_list.index(state)
+
+        # Data: (time, nodes) for selected state
+        vals = self.data[:, state, :, 0]  # (T, N)
+        vmin, vmax = float(vals.min()), float(vals.max())
+        x, y = pos[:, 0], pos[:, 1]
+
+        fig, (ax_graph, ax_ts) = plt.subplots(
+            1, 2, figsize=figsize,
+            gridspec_kw={"width_ratios": [1, 1.2]},
+        )
+
+        # Draw edges
+        for i in range(adj.shape[0]):
+            for j in range(adj.shape[1]):
+                if adj[i, j] != 0:
+                    ax_graph.plot(
+                        [x[i], x[j]], [y[i], y[j]],
+                        color="lightgray", linewidth=0.5, zorder=0,
+                    )
+
+        sc = ax_graph.scatter(
+            x, y, c=vals[0], cmap=cmap, s=node_size,
+            vmin=vmin, vmax=vmax, zorder=2, edgecolors="k", linewidths=0.5,
+        )
+        ax_graph.set_aspect("equal")
+        ax_graph.set_title(f"t = {self.time[0]:.2f}")
+        ax_graph.axis("off")
+        fig.colorbar(sc, ax=ax_graph, shrink=0.7)
+
+        # Time-series panel: all nodes
+        n_nodes = vals.shape[1]
+        cm = plt.get_cmap(cmap)
+        norm = plt.Normalize(vmin=0, vmax=n_nodes - 1)
+        lines = []
+        for i in range(n_nodes):
+            ln, = ax_ts.plot(
+                [], [], color=cm(norm(i)), linewidth=0.5, alpha=0.6,
+            )
+            lines.append(ln)
+        avg_ln, = ax_ts.plot([], [], color="k", linewidth=1.5, label="mean")
+        ax_ts.set_xlim(self.time[0], self.time[-1])
+        ax_ts.set_ylim(vmin - 0.05 * abs(vmax - vmin), vmax + 0.05 * abs(vmax - vmin))
+        sv_labels = list(self.labels_dimensions.get("State Variable", []))
+        sv_name = sv_labels[state] if state < len(sv_labels) else f"state {state}"
+        ax_ts.set_xlabel("time")
+        ax_ts.set_ylabel(sv_name)
+        ax_ts.legend(loc="upper right", fontsize="small")
+        fig.tight_layout()
+
+        # Subsample for performance
+        step = max(1, len(self.time) // 200)
+        frames = list(range(0, len(self.time), step))
+
+        def update(frame):
+            sc.set_array(vals[frame])
+            ax_graph.set_title(f"t = {self.time[frame]:.2f}")
+            for i, ln in enumerate(lines):
+                ln.set_data(self.time[:frame + 1], vals[:frame + 1, i])
+            avg_ln.set_data(
+                self.time[:frame + 1], vals[:frame + 1].mean(axis=1),
+            )
+            return [sc] + lines + [avg_ln]
+
+        ani = FuncAnimation(
+            fig, update, frames=frames, interval=interval, blit=False,
+        )
+        plt.close(fig)
+        return ani
 
     def plot_eeg(
         self,

@@ -1,0 +1,7 @@
+---
+title: Parameter Exploration
+sidebar: usage
+jupyter: python3
+---
+
+Systematically explore how parameters affect simulation dynamics using grid sweeps and parallel execution.

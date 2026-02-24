@@ -1,35 +1,103 @@
-"""Test running all models with different simulation backends (JAX, TVB, PyRates)."""
+"""Test single-node simulation across all backends.
+
+Goal: verify that a single YAML specification file drives complete, correct
+single-node simulations for every supported backend.
+
+Planned split (TODO):
+    1. Single-node (this file) — SimulationExperiment(local_dynamics=model)
+    2. Multi-node — SimulationExperiment.from_file(...) with full network YAML
+
+Backends covered
+----------------
+Core (always available):
+    - jax          : JAX / autodiff backend
+Python optional (importorskip):
+    - tvb          : The Virtual Brain simulator
+    - pyrates      : PyRates rate-equations backend
+    - tvboptim     : tvboptim JAX network dynamics backend
+Julia optional (importorskip "juliacall"):
+    - julia        : DifferentialEquations.jl via juliacall
+    - networkdynamics : NetworkDynamics.jl via juliacall
+    - mtk          : ModelingToolkit.jl via juliacall
+"""
 import pytest
 import os
+import importlib
 from pathlib import Path
 
 from tvbo.knowledge.simulation.localdynamics import Dynamics
 from tvbo.export.experiment import SimulationExperiment
 
 
-# Collect all model YAML files
+def _has(package: str) -> bool:
+    """Return True if *package* can be imported."""
+    return importlib.util.find_spec(package) is not None
+
+
+# Evaluate once at collection time so parametrized tests are skipped in bulk
+# rather than triggering 63 individual importorskip calls.
+_HAVE_TVB = _has("tvb.simulator")
+_HAVE_PYRATES = _has("pyrates")
+_HAVE_TVBOPTIM = _has("tvboptim")
+_HAVE_JULIACALL = _has("juliacall")
+
+
+# ---------------------------------------------------------------------------
+# Collect model YAML files
+# ---------------------------------------------------------------------------
 DATABASE_MODELS_DIR = Path(__file__).parent.parent.parent / "database" / "models"
 JULIA_MODELS_DIR = DATABASE_MODELS_DIR / "julia"
+
 
 def get_model_files():
     """Collect all model YAML files from database/models and database/models/julia."""
     model_files = []
-
-    # Main models directory
     for f in DATABASE_MODELS_DIR.glob("*.yaml"):
         model_files.append(f)
-
-    # Julia models directory
     if JULIA_MODELS_DIR.exists():
         for f in JULIA_MODELS_DIR.glob("*.yaml"):
             model_files.append(f)
-
     return model_files
+
+
+def _tvb_compatible(model_file):
+    """Return True if model can run on the TVB backend.
+
+    TVB's dfun has no explicit time argument (no non-autonomous support)
+    and only handles continuous ODE/SDE (no discrete maps).
+    """
+    import yaml
+    with open(model_file) as fh:
+        meta = yaml.safe_load(fh)
+    if meta.get('autonomous') is False:
+        return False
+    if meta.get('system_type') == 'discrete':
+        return False
+    return True
 
 
 MODEL_FILES = get_model_files()
 MODEL_IDS = [f.stem for f in MODEL_FILES]
 
+TVB_MODEL_FILES = [f for f in MODEL_FILES if _tvb_compatible(f)]
+TVB_MODEL_IDS = [f.stem for f in TVB_MODEL_FILES]
+
+
+# ---------------------------------------------------------------------------
+# Helper
+# ---------------------------------------------------------------------------
+
+def _assert_timeseries(result, model):
+    """Shared assertions for any TimeSeries result."""
+    assert result is not None
+    assert hasattr(result, 'data')
+    assert hasattr(result, 'time')
+    assert result.data.shape[0] > 0
+
+
+# ---------------------------------------------------------------------------
+# Core: model loading & experiment creation
+# ---------------------------------------------------------------------------
 
 class TestSimulationBackends:
     """Test simulation backends for all models."""
@@ -67,22 +135,14 @@ class TestSimulationBackends:
 
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_run_jax(self, model_file):
-        """Test running simulation with JAX backend."""
+        """Test running simulation with JAX backend (single-node)."""
         model = Dynamics.from_file(model_file)
         exp = SimulationExperiment(local_dynamics=model)
 
-        try:
-            result = exp.run('jax')
-        except (NameError, KeyError, AttributeError, ValueError) as e:
-            # Known issues with some models (missing symbols, parameters, etc.)
-            pytest.xfail(f"Model has known issues: {type(e).__name__}: {e}")
+        result = exp.run('jax')
 
-        assert result is not None
-        assert hasattr(result, 'data')
-        assert hasattr(result, 'time')
-        assert result.data.shape[0] > 0  # Has time points
+        _assert_timeseries(result, model)
 
-        # If output is specified, check it matches
         if model.output:
             expected_n_vars = len(model.output)
         else:
@@ -92,78 +152,132 @@ class TestSimulationBackends:
             f"Expected {expected_n_vars} output variables, got {result.data.shape[1]}"
 
 
+# ---------------------------------------------------------------------------
+# JAX output-label detail
+# ---------------------------------------------------------------------------
+
 class TestJAXBackendDetailed:
     """Detailed tests for JAX backend with output verification."""
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES[:5], ids=MODEL_IDS[:5])  # First 5 models
+    @pytest.mark.parametrize("model_file", MODEL_FILES[:5], ids=MODEL_IDS[:5])
     def test_output_variables_match(self, model_file):
         """Test that output labels match the model's output specification."""
         model = Dynamics.from_file(model_file)
         exp = SimulationExperiment(local_dynamics=model)
-
         result = exp.run('jax')
 
         if hasattr(result, 'labels_dimensions') and result.labels_dimensions:
             output_labels = result.labels_dimensions.get("State Variable", [])
-
             if model.output:
                 assert output_labels == list(model.output), \
                     f"Labels {output_labels} don't match output spec {model.output}"
             else:
-                # Should have all state variables
                 expected = list(model.state_variables.keys())
                 assert output_labels == expected, \
                     f"Labels {output_labels} don't match state variables {expected}"
 
 
-# Optional: Tests for other backends (may not be available)
-class TestOptionalBackends:
-    """Tests for optional backends that may not be installed."""
+# ---------------------------------------------------------------------------
+# Optional Python backends — each class skipped as a unit if pkg missing
+# ---------------------------------------------------------------------------
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+@pytest.mark.skipif(not _HAVE_TVB, reason="tvb-library not installed")
+class TestTVBBackend:
+    """Single-node tests for The Virtual Brain backend.
+
+    Non-autonomous and discrete models are excluded at collection time
+    via TVB_MODEL_FILES since TVB's dfun has no explicit time argument
+    and only supports continuous ODE/SDE.
+    """
+
+    @pytest.mark.parametrize("model_file", TVB_MODEL_FILES, ids=TVB_MODEL_IDS)
     def test_run_tvb(self, model_file):
-        """Test running simulation with TVB backend (if available)."""
-        pytest.importorskip("tvb.simulator")
-
+        """Run single-node simulation with The Virtual Brain backend."""
         model = Dynamics.from_file(model_file)
-
-        # Skip non-autonomous models — TVB dfun has no time argument
-        if getattr(model, 'autonomous', True) is False:
-            pytest.skip("Non-autonomous model: TVB dfun does not support explicit time dependence")
-
-        # Skip discrete models — TVB only supports continuous ODE/SDE
-        if getattr(model, 'system_type', None) == 'discrete':
-            pytest.skip("Discrete model: TVB only supports continuous dynamics")
-
         exp = SimulationExperiment(local_dynamics=model)
+        result = exp.run('tvb')
+        assert result is not None
 
-        try:
-            result = exp.run('tvb')
-            assert result is not None
-        except NotImplementedError:
-            pytest.skip("TVB backend not implemented for this model")
-        except Exception as e:
-            if "tvb" in str(e).lower() or "not implemented" in str(e).lower():
-                pytest.skip(f"TVB backend issue: {e}")
-            raise
+
+@pytest.mark.skipif(not _HAVE_PYRATES, reason="pyrates not installed")
+class TestPyRatesBackend:
+    """Single-node tests for the PyRates backend."""
 
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_run_pyrates(self, model_file):
-        """Test running simulation with PyRates backend (if available)."""
-        pytest.importorskip("pyrates")
+        """Run single-node simulation with PyRates backend."""
+        model = Dynamics.from_file(model_file)
+        exp = SimulationExperiment(local_dynamics=model)
+        result = exp.run('pyrates')
+        assert result is not None
 
+
+@pytest.mark.skipif(not _HAVE_TVBOPTIM, reason="tvboptim not installed")
+class TestTvboptimBackend:
+    """Single-node tests for the tvboptim JAX backend."""
+
+    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    def test_run_tvboptim(self, model_file):
+        """Run single-node simulation with tvboptim JAX backend."""
+        model = Dynamics.from_file(model_file)
+        exp = SimulationExperiment(local_dynamics=model)
+        result = exp.run('tvboptim')
+        assert result is not None
+
+
+# ---------------------------------------------------------------------------
+# Optional Julia backends
+# ---------------------------------------------------------------------------
+
+@pytest.mark.xdist_group("julia")  # all Julia tests run on the same worker
+@pytest.mark.skipif(not _HAVE_JULIACALL, reason="juliacall not installed")
+class TestJuliaBackends:
+    """Single-node tests for Julia-based simulation backends.
+
+    juliacall only supports one Julia runtime per OS process. The
+    xdist_group("julia") marker ensures all tests in this class are sent to
+    the same xdist worker, so Julia is initialised exactly once.  All other
+    backend tests still run on the remaining workers in parallel.
+
+    The class-level skipif deselects all 3×N parametrized tests in one step
+    when juliacall is absent, instead of generating N individual skip records.
+    """
+
+    # ------------------------------------------------------------------
+    # julia — DifferentialEquations.jl
+    # ------------------------------------------------------------------
+    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    def test_run_julia(self, model_file):
+        """Run single-node simulation via DifferentialEquations.jl."""
         model = Dynamics.from_file(model_file)
         exp = SimulationExperiment(local_dynamics=model)
 
-        try:
-            result = exp.run('pyrates')
-            assert result is not None
-        except NotImplementedError:
-            pytest.skip("PyRates backend not implemented for this model")
-        except Exception as e:
-            if "pyrates" in str(e).lower() or "not implemented" in str(e).lower():
-                pytest.skip(f"PyRates backend issue: {e}")
-            raise
+        result = exp.run('julia')
+        _assert_timeseries(result, model)
+
+    # ------------------------------------------------------------------
+    # NetworkDynamics.jl
+    # ------------------------------------------------------------------
+    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    def test_run_networkdynamics(self, model_file):
+        """Run single-node simulation via NetworkDynamics.jl."""
+        model = Dynamics.from_file(model_file)
+        exp = SimulationExperiment(local_dynamics=model)
+
+        result = exp.run('networkdynamics')
+        _assert_timeseries(result, model)
+
+    # ------------------------------------------------------------------
+    # ModelingToolkit.jl
+    # ------------------------------------------------------------------
+    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    def test_run_mtk(self, model_file):
+        """Run single-node simulation via ModelingToolkit.jl."""
+        model = Dynamics.from_file(model_file)
+        exp = SimulationExperiment(local_dynamics=model)
+
+        result = exp.run('mtk')
+        _assert_timeseries(result, model)
 
 
 # Standalone test for quick verification

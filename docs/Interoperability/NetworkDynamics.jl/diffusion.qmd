@@ -1,0 +1,59 @@
+---
+title: "Network Diffusion"
+subtitle: "Getting started with NetworkDynamics.jl via tvbo"
+---
+
+Replicates the [NetworkDynamics.jl Getting Started tutorial](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) — diffusion on an undirected network with 20 nodes. A single scalar state per node, antisymmetric diffusive coupling, and convergence to equilibrium.
+
+## YAML Specification
+
+```{python}
+#| echo: false
+from IPython.display import Code, Markdown
+Code(filename="yaml/diffusion.yaml", language="yaml")
+```
+
+## Model Report
+
+```{python}
+#| echo: false
+#| output: asis
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/diffusion.yaml")
+Markdown(exp.generate_report())
+```
+
+## Generated Julia Code
+
+```{python}
+from tvbo import SimulationExperiment
+exp = SimulationExperiment.from_file("yaml/diffusion.yaml")
+Code(exp.render_code("networkdynamics"), language='julia')
+```
+
+## Run & Plot
+
+```{python}
+ts = exp.run(format="networkdynamics")
+ts.plot()
+```
+
+## Results
+
+```{python}
+#| echo: false
+import numpy as np
+print(f"Shape: {ts.data.shape}")
+print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
+print(f"Final state std: {np.std(ts.data[-1, 0, :, 0]):.6f}")
+print(f"(Should converge to ~0 as all nodes reach equilibrium)")
+```
+
+## Animate
+
+```{python}
+ani = ts.animate("v", format="dots")
+ani.save("_output/diffusion.gif", writer="pillow", fps=20)
+```
+
+![](_output/diffusion.gif)

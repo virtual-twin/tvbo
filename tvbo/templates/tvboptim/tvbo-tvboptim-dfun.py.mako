@@ -14,6 +14,7 @@ Output:
 </%doc>
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
+import textwrap
 from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import get_param_info
 
@@ -152,7 +153,11 @@ class ${class_name}(AbstractDynamics):
 
         % if model.functions:
         % for f in model.functions.values():
-        ${fn.function_def(f, format='jax', render_func=jaxcode_obj) | trim,n}
+<%
+    _fdef = capture(fn.function_def, f, format='jax', render_func=jaxcode_obj).strip()
+    _fdef = textwrap.indent(textwrap.dedent(_fdef), '        ')
+%>\
+${_fdef}
         % endfor
         % endif
 
@@ -173,7 +178,7 @@ class ${class_name}(AbstractDynamics):
         ])
 
         % if aux_names:
-        auxiliaries = jnp.array([${', '.join(aux_names)}])
+        auxiliaries = jnp.array([jnp.broadcast_to(jnp.asarray(a), state[0].shape) for a in [${', '.join(aux_names)}]])
         % else:
         auxiliaries = jnp.array([])
         % endif

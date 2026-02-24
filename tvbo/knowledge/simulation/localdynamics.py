@@ -24,7 +24,7 @@ from tvbo.analysis import BifurcationResult
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.datamodel import tvbopydantic as _pdm
-from tvbo.datamodel.tvbo_datamodel import Case, DerivedVariable, Equation
+from tvbo.datamodel.tvbo_datamodel import Case, ConditionalBlock, DerivedVariable, Equation
 from tvbo.export import report, templater
 from tvbo.knowledge import ontology, query, simulation
 from tvbo.knowledge.simulation import equations
@@ -42,6 +42,34 @@ available_neural_mass_models = set(ontology.get_models().values())
 def clean_code(code):
     cleaned_code = re.sub(r"∞", "inf", code)
     return cleaned_code
+
+
+def _normalize_conditionals(model):
+    """Ensure dv.equation.conditionals is populated for all conditional DVs.
+
+    If dv.cases is populated but dv.equation.conditionals is empty,
+    copy the cases into equation.conditionals as ConditionalBlock objects
+    and build the Piecewise rhs string. This makes dv.equation.conditionals
+    the single canonical location for conditional data.
+
+    dv.cases is deprecated — new models should define conditionals
+    directly on the equation.
+    """
+    for dv in model.derived_variables.values():
+        cases = getattr(dv, 'cases', None)
+        if not cases:
+            continue
+        # Already normalized — skip
+        if getattr(dv.equation, 'conditionals', None) and len(dv.equation.conditionals) > 0:
+            continue
+        # Populate equation.conditionals from dv.cases
+        dv.equation.conditionals = [
+            ConditionalBlock(condition=case.condition, expression=case.equation.rhs)
+            for case in cases
+        ]
+        # Mark the DV as conditional if not already
+        if not getattr(dv, 'conditional', False):
+            dv.conditional = True
 
 
 def order_by_equations(derived_variables, dependent_equations):
@@ -78,7 +106,6 @@ def class2metadata(ontoclass, metadata):
     functions = order_by_equations(
         ontology.get_model_functions(ontoclass), dependent_equations
     )
-    update_parameters(metadata, ontoclass)
 
     for k, v in state_variables.items():
         range = ontology.get_range(v)
@@ -126,6 +153,11 @@ def class2metadata(ontoclass, metadata):
 
             for attr, value in updates.items():
                 setattr(state_var, attr, value)
+
+    # Update parameters AFTER state_variables are populated so that
+    # update_parameters can parse their equations and determine which
+    # ontology parameters are actually used.
+    update_parameters(metadata, ontoclass)
 
     # Collect all free symbols from state variable equations
     # Build a local_dict to avoid sympy interpreting 'I' as imaginary unit, etc.
@@ -229,7 +261,7 @@ def class2metadata(ontoclass, metadata):
 def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
     """
     Update parameters from ontology.
-    
+
     Parameters
     ----------
     metadata : Dynamics
@@ -509,7 +541,8 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
 
 
 class Dynamics(tvbo_datamodel.Dynamics):
-    def __init__(self, name="Dynamics", _skip_ontology: bool = False, **kwargs):
+    def __init__(self, name="Dynamics", _skip_ontology: bool = False,
+                 use_ontology: bool = False, **kwargs):
         if name is not None:
             kwargs["name"] = str(name)
 
@@ -519,13 +552,22 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
 
+        # Explicit ontology class reference — only set by from_ontology(),
+        # use_ontology=True, or enrich_from_ontology().  The ``ontology``
+        # *property* still auto-discovers by name for read-only informational
+        # access, but backfill only happens when this attribute is set.
+        if not hasattr(self, '_ontology_class'):
+            self._ontology_class = None
+
         # Skip ontology lookup when model is fully specified (e.g., from PyRates import)
         if _skip_ontology:
             return
 
         # Auto-populate only when a name was provided; keep default Dynamics() empty
         if name != "Dynamics":
-            # Backfill from ontology by name when available
+            # Opt-in: resolve ontology class by name and backfill missing fields
+            if use_ontology:
+                self._resolve_and_store_ontology_class()
             self._populate_from_ontology_if_available()
 
             # Finalize metadata/equations
@@ -534,12 +576,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     # Factory constructors
     @classmethod
-    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics):
-        inst = cls(**model_meta._as_dict)
-        # Ensure ontology backfill happened (in __init__), but double-check
-        inst._populate_from_ontology_if_available()
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
+    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics,
+                       use_ontology: bool = False):
+        inst = cls(use_ontology=use_ontology, **model_meta._as_dict)
         return inst
 
     @classmethod
@@ -550,23 +589,31 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 ontoclass, root_class="NeuralMassModel", exact_match=["label"]
             )[0]
         inst = cls(name=ontoclass.name, **kwargs)
+        # Explicitly store the ontology class for backfill
+        inst._ontology_class = ontoclass
         inst._populate_from_ontology(ontoclass, **kwargs)
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Dynamics":
+    def from_file(cls, path: str | os.PathLike,
+                  use_ontology: bool = False) -> "Dynamics":
         inst = yaml_loader.load(str(path), cls)
-        inst._populate_from_ontology_if_available()
+        if use_ontology:
+            inst._resolve_and_store_ontology_class()
+            inst._populate_from_ontology_if_available()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
 
     @classmethod
-    def from_string(cls, str: str) -> "Dynamics":
+    def from_string(cls, str: str,
+                    use_ontology: bool = False) -> "Dynamics":
         inst = yaml_loader.loads(str, cls)
-        inst._populate_from_ontology_if_available()
+        if use_ontology:
+            inst._resolve_and_store_ontology_class()
+            inst._populate_from_ontology_if_available()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
@@ -605,13 +652,47 @@ class Dynamics(tvbo_datamodel.Dynamics):
             inst.calculate_derived_parameters()
         return inst
 
+    # -------  Ontology enrichment  -------
+
+    def enrich_from_ontology(self):
+        """Explicitly enrich this model from the ontology by name.
+
+        Looks up the model name in the TVB ontology and backfills missing
+        parameter values, descriptions, ranges, state-variable metadata, and
+        derived variables.  Useful when you define a partial model spec and
+        want the ontology to fill in the gaps.
+
+        Example
+        -------
+        >>> d = Dynamics.from_string(partial_spec)
+        >>> d.enrich_from_ontology()  # fill in defaults from the knowledge base
+        """
+        self._resolve_and_store_ontology_class()
+        self._populate_from_ontology_if_available()
+        self.update_metadata()
+        self.calculate_derived_parameters()
+        return self
+
     # Internal helpers
+    def _resolve_and_store_ontology_class(self):
+        """Resolve the ontology class by model name and store it for backfill."""
+        if self._ontology_class is not None:
+            return  # already resolved
+        oc = self.ontology  # auto-discover by name (read-only property)
+        if oc is not None:
+            self._ontology_class = oc
+
     def _populate_from_ontology_if_available(self):
-        """Populate from ontology ONLY if already set. No automatic import."""
-        oc = self.ontology
+        """Populate from ontology ONLY if an explicit ontology class was stored.
+
+        This does NOT auto-discover by name.  Only ``from_ontology()``,
+        ``use_ontology=True``, or ``enrich_from_ontology()`` triggers backfill,
+        preventing user-defined models from being contaminated by ontology data
+        just because they share a name with an ontology model.
+        """
+        oc = self._ontology_class
         if oc is not None:
             self._populate_from_ontology(oc)
-        # Skip automatic YAML->ontology import. Use from_ontology() explicitly if needed.
 
     def _populate_from_ontology(self, oc, **kwargs):
         # Fill schema fields from ontology, without persisting runtime-only state
@@ -732,17 +813,32 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return scope
 
     def update_metadata(self):
+        # Normalize dv.cases → dv.equation.conditionals (dv.cases is deprecated)
+        _normalize_conditionals(self)
+
         # Pre-compute coupling term symbols for fast set intersection
         coupling_symbols = set(symbols(list(self.coupling_terms.keys())))
+
+        # If any state variable already has coupling_variable=True (from YAML),
+        # respect explicit assignments and skip auto-detection
+        has_explicit_cvars = any(
+            getattr(sv, 'coupling_variable', False)
+            for sv in self.state_variables.values()
+        )
 
         for v, eq in update_equations(self).items():
             equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=str(eq.rhs))
             if v in self.state_variables:
                 self.state_variables[v].equation = equation
-                # Check if any coupling term appears in the equation's free symbols
-                if coupling_symbols & eq.rhs.free_symbols:
-                    self.state_variables[v].coupling_variable = True
+                # Auto-detect coupling variables only if none were explicitly set
+                if not has_explicit_cvars:
+                    if coupling_symbols & eq.rhs.free_symbols:
+                        self.state_variables[v].coupling_variable = True
             elif v in self.derived_variables:
+                # Preserve conditionals through the equation update
+                old_conds = getattr(self.derived_variables[v].equation, 'conditionals', None)
+                if old_conds:
+                    equation.conditionals = old_conds
                 self.derived_variables[v].equation = equation
         # Build dependency order without storing state
         _ = self.get_dependency_tree()
@@ -795,14 +891,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return _pdm.Dynamics.model_validate(self._as_dict)
 
     @classmethod
-    def from_pydantic(cls, pyd_obj):
+    def from_pydantic(cls, pyd_obj, use_ontology: bool = False):
         """Create a Dynamics from a tvbopydantic.Dynamics (or dict-like)."""
         data = pyd_obj.model_dump() if hasattr(pyd_obj, "model_dump") else dict(pyd_obj)
-        inst = cls(**data)
-        # Keep behavior consistent with other constructors
-        inst._populate_from_ontology_if_available()
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
+        inst = cls(use_ontology=use_ontology, **data)
         return inst
 
     # Parameters
@@ -1109,8 +1201,18 @@ class Dynamics(tvbo_datamodel.Dynamics):
             # Don't emit function names as user_functions if we're inlining them
             uf = {}
 
+        # For conditional derived variables, use conditionals2piecewise
+        # which reads from dv.equation.conditionals (canonical location).
+        eq_to_render = obj.equation
+        if getattr(obj, 'conditional', False) and getattr(obj.equation, 'conditionals', None):
+            eq_rhs_str = str(obj.equation.rhs) if obj.equation.rhs else ''
+            if 'Piecewise' not in eq_rhs_str:
+                pw = equations.conditionals2piecewise(obj.equation)
+                from types import SimpleNamespace
+                eq_to_render = SimpleNamespace(rhs=str(pw))
+
         return render_equation(
-            obj.equation,
+            eq_to_render,
             local_dict=scope,
             format=format,
             user_functions=uf,
@@ -1145,11 +1247,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         equations["derived-variables"] = []
         for k, dv in self.derived_variables.items():
-            # Prefer conditionals on the Equation if present; fallback to rhs parsing
+            # Use equation.conditionals (canonical location for conditional data)
             has_conditionals = bool(getattr(dv.equation, "conditionals", None)) and (
                 len(getattr(dv.equation, "conditionals", [])) > 0
             )
-            if getattr(dv, "conditional", False) or has_conditionals:
+            if getattr(dv, "conditional", False) and has_conditionals:
                 expression = simulation.equations.conditionals2piecewise(dv.equation)
             else:
                 expression = parse_eq(dv.equation, local_dict=scope)
@@ -1169,7 +1271,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
             else:
                 expression = parse_eq(sv.equation, local_dict=scope)
 
-            lhs_expr = sv_symbol if discrete else Derivative(sv_symbol, t)
+            order = int(getattr(sv, 'equation_order', 1) or 1)
+            if discrete:
+                lhs_expr = sv_symbol
+            elif order > 1:
+                lhs_expr = Derivative(sv_symbol, *([t] * order))
+            else:
+                lhs_expr = Derivative(sv_symbol, t)
             equations["state-equations"].append(Eq(lhs=lhs_expr, rhs=expression))
 
         if format == "state-equations":
@@ -1416,9 +1524,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 "tvbo-julia-DifferentialEquations.jl.mako"
             )
         elif format == "bifurcation-julia":
+            from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+            continuation = kwargs.pop("continuation", None)
+            ctx = BifurcationKitAdapter._prepare_context(
+                self, continuation, **kwargs
+            )
             template = templates.lookup.get_template(
                 "tvbo-julia-BifurcationKit.jl.mako"
             )
+            rendered_code = template.render(**ctx)
+            return templater.format_code(rendered_code, format=format)
         elif format == "bifurcation-numcont":
             template = templates.lookup.get_template("tvbo-numcont.py.mako")
         elif format == "bifurcation-auto7p":
@@ -1754,41 +1869,50 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.adapters.julia import eval_with_auto_install, get_julia
+            from tvbo.run.julia import (
+                extract_bifurcation_result,
+                extract_ode_solution,
+                run_julia_code,
+            )
 
-            jl, Main = get_julia(compiled_modules=False)
-            eval_with_auto_install(code)
+            run_julia_code(code)
             if format == "julia":
-                t = eval_with_auto_install("Array(sol.t)")
-                u_mat = eval_with_auto_install("Array(hcat(sol.u...))")  # states x time
-                import numpy as _np
-
-                t_arr = _np.array(t, dtype=float)
-                data = _np.array(u_mat, dtype=float).T  # time x states
+                t, u_raw, sol = extract_ode_solution()
+                # Single-node ODE: u_raw is (n_sv, n_t), hcat(sol.u...) gives states×time
+                data = u_raw.T  # time x states
                 data4 = data[:, :, None, None]
                 labels_dimensions = {
                     "State Variable": list(self.state_variables.keys()),
                     "Region": ["Region0"],
                 }
                 return TimeSeries(
-                    time=t_arr,
+                    time=t,
                     data=data4,
                     title=self.name,
-                    sample_period=(t_arr[1] - t_arr[0]) if t_arr.size > 1 else None,
+                    sample_period=(t[1] - t[0]) if t.size > 1 else None,
                     labels_dimensions=labels_dimensions,
                 )
             elif format == "bifurcation-julia":
-                import numpy as _np
-
-                br_obj = eval_with_auto_install("bifurcation_result")
+                br_obj = extract_bifurcation_result()
                 bif_res = BifurcationResult(br=br_obj, model=self, **kwargs)
-                if "periodic_orbits" in kwargs and kwargs["periodic_orbits"]:
-                    po = eval_with_auto_install("po_results")
-
-                    bif_res.periodic_orbits = [
-                        BifurcationResult(br=p, model=self, **kwargs)
-                        for p in po.branches
-                    ]
+                # Auto-detect PO branches from continuation object or explicit kwarg
+                cont = kwargs.get("continuation", None)
+                _has_branches = (
+                    ("periodic_orbits" in kwargs and kwargs["periodic_orbits"])
+                    or (cont and getattr(cont, "branches", None))
+                )
+                if _has_branches:
+                    from tvbo.adapters.julia import eval_with_auto_install
+                    try:
+                        po = eval_with_auto_install("po_results")
+                        bif_res.periodic_orbits = [
+                            BifurcationResult(br=p, model=self, **kwargs)
+                            for p in po.branches
+                        ]
+                    except Exception as e:
+                        import warnings
+                        warnings.warn(f"Periodic orbit extraction failed: {e}")
+                        bif_res.periodic_orbits = []
                 return bif_res
 
         elif "python" == format:
@@ -1978,7 +2102,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         y0, y1 = ax1.get_ylim()
 
         # Parameter sweep across continuation parameter range inferred from result
-        p_min, p_max = bif.parameter.min(), bif.parameter.max()
+        p_min, p_max = bif.df["param"].min(), bif.df["param"].max()
         a_values = np.linspace(p_min, p_max, n_runs)
 
         for i, p in enumerate(a_values):
@@ -2075,7 +2199,11 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
             f.write(self.render_code())
 
     def generate_report(
-        self, format="markdown", template_name="tvbo-report-model", outputfile=None
+        self,
+        format="markdown",
+        template_name="tvbo-report-model",
+        outputfile=None,
+        derivative_notation: str = "dot",
     ):
         self.update_metadata()
         if format in ["markdown", "pdf"]:
@@ -2084,7 +2212,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
             template = templates.lookup.get_template(f"{template_name}.html.mako")
 
         render = (
-            template.render(model=self)
+            template.render(model=self, derivative_notation=derivative_notation)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )

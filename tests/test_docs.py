@@ -13,8 +13,6 @@ import os
 import re
 import glob
 import subprocess
-import tempfile
-import shutil
 import pytest
 from pathlib import Path
 
@@ -55,33 +53,35 @@ test_params = [(path, get_doc_name(path)) for path in qmd_files]
 def test_doc_executes(qmd_path, doc_name):
     """Test that a documentation notebook executes without errors."""
     qmd_path = Path(qmd_path)
+    doc_dir = qmd_path.parent  # Original doc directory for relative path resolution
 
-    # Create temp directory for conversion
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Copy qmd to temp dir to avoid polluting docs/
-        tmp_qmd = Path(tmpdir) / qmd_path.name
-        shutil.copy(qmd_path, tmp_qmd)
-
-        # Convert qmd to ipynb
-        ipynb_path = tmp_qmd.with_suffix(".ipynb")
+    # Convert qmd to ipynb in the doc's own directory (clean up after)
+    ipynb_path = qmd_path.with_suffix(".ipynb")
+    try:
         result = subprocess.run(
-            ["quarto", "convert", str(tmp_qmd), "--output", str(ipynb_path)],
+            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)],
             capture_output=True,
             text=True,
-            cwd=tmpdir
+            cwd=str(doc_dir)
         )
         assert result.returncode == 0, f"quarto convert failed: {result.stderr}"
         assert ipynb_path.exists(), f"Notebook not created: {ipynb_path}"
 
-        # Execute the notebook
+        # Ensure _output directory exists (some docs write files there)
+        (doc_dir / "_output").mkdir(exist_ok=True)
+
+        # Execute the notebook with cwd = doc's directory
+        # so relative paths (yaml/, _output/, ../../../database/) resolve correctly
         env = os.environ.copy()
         env["MPLBACKEND"] = "Agg"  # Non-interactive matplotlib backend
+        # Ensure repo root is on PYTHONPATH for imports
+        env["PYTHONPATH"] = str(REPO_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
 
         result = subprocess.run(
             ["jupyter", "execute", str(ipynb_path)],
             capture_output=True,
             text=True,
-            cwd=str(REPO_ROOT),  # Run from repo root for correct imports
+            cwd=str(doc_dir),  # Run from doc's directory for correct relative paths
             env=env
         )
 
@@ -90,6 +90,10 @@ def test_doc_executes(qmd_path, doc_name):
             # Try to extract meaningful error message
             error_msg = result.stderr.strip().split("\n")[-1] if result.stderr else "Unknown error"
             pytest.fail(f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}")
+    finally:
+        # Clean up generated notebook
+        if ipynb_path.exists():
+            ipynb_path.unlink()
 
 
 # Allow running docs tests separately
