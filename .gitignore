@@ -97,3 +97,5 @@ Manifest.toml
 Project.toml
 _test_*
 _check_*
+docs/Interoperability/Pyrates/_*
+uv.lock
