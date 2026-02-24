@@ -24,7 +24,7 @@ from tvbo.analysis import BifurcationResult
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.datamodel import tvbopydantic as _pdm
-from tvbo.datamodel.tvbo_datamodel import Case, DerivedVariable, Equation
+from tvbo.datamodel.tvbo_datamodel import Case, ConditionalBlock, DerivedVariable, Equation
 from tvbo.export import report, templater
 from tvbo.knowledge import ontology, query, simulation
 from tvbo.knowledge.simulation import equations
@@ -42,6 +42,34 @@ available_neural_mass_models = set(ontology.get_models().values())
 def clean_code(code):
     cleaned_code = re.sub(r"∞", "inf", code)
     return cleaned_code
+
+
+def _normalize_conditionals(model):
+    """Ensure dv.equation.conditionals is populated for all conditional DVs.
+
+    If dv.cases is populated but dv.equation.conditionals is empty,
+    copy the cases into equation.conditionals as ConditionalBlock objects
+    and build the Piecewise rhs string. This makes dv.equation.conditionals
+    the single canonical location for conditional data.
+
+    dv.cases is deprecated — new models should define conditionals
+    directly on the equation.
+    """
+    for dv in model.derived_variables.values():
+        cases = getattr(dv, 'cases', None)
+        if not cases:
+            continue
+        # Already normalized — skip
+        if getattr(dv.equation, 'conditionals', None) and len(dv.equation.conditionals) > 0:
+            continue
+        # Populate equation.conditionals from dv.cases
+        dv.equation.conditionals = [
+            ConditionalBlock(condition=case.condition, expression=case.equation.rhs)
+            for case in cases
+        ]
+        # Mark the DV as conditional if not already
+        if not getattr(dv, 'conditional', False):
+            dv.conditional = True
 
 
 def order_by_equations(derived_variables, dependent_equations):
@@ -509,7 +537,8 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
 
 
 class Dynamics(tvbo_datamodel.Dynamics):
-    def __init__(self, name="Dynamics", _skip_ontology: bool = False, **kwargs):
+    def __init__(self, name="Dynamics", _skip_ontology: bool = False,
+                 use_ontology: bool = False, **kwargs):
         if name is not None:
             kwargs["name"] = str(name)
 
@@ -519,13 +548,22 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
 
+        # Explicit ontology class reference — only set by from_ontology(),
+        # use_ontology=True, or enrich_from_ontology().  The ``ontology``
+        # *property* still auto-discovers by name for read-only informational
+        # access, but backfill only happens when this attribute is set.
+        if not hasattr(self, '_ontology_class'):
+            self._ontology_class = None
+
         # Skip ontology lookup when model is fully specified (e.g., from PyRates import)
         if _skip_ontology:
             return
 
         # Auto-populate only when a name was provided; keep default Dynamics() empty
         if name != "Dynamics":
-            # Backfill from ontology by name when available
+            # Opt-in: resolve ontology class by name and backfill missing fields
+            if use_ontology:
+                self._resolve_and_store_ontology_class()
             self._populate_from_ontology_if_available()
 
             # Finalize metadata/equations
@@ -534,12 +572,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     # Factory constructors
     @classmethod
-    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics):
-        inst = cls(**model_meta._as_dict)
-        # Ensure ontology backfill happened (in __init__), but double-check
-        inst._populate_from_ontology_if_available()
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
+    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics,
+                       use_ontology: bool = False):
+        inst = cls(use_ontology=use_ontology, **model_meta._as_dict)
         return inst
 
     @classmethod
@@ -550,23 +585,31 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 ontoclass, root_class="NeuralMassModel", exact_match=["label"]
             )[0]
         inst = cls(name=ontoclass.name, **kwargs)
+        # Explicitly store the ontology class for backfill
+        inst._ontology_class = ontoclass
         inst._populate_from_ontology(ontoclass, **kwargs)
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Dynamics":
+    def from_file(cls, path: str | os.PathLike,
+                  use_ontology: bool = False) -> "Dynamics":
         inst = yaml_loader.load(str(path), cls)
-        inst._populate_from_ontology_if_available()
+        if use_ontology:
+            inst._resolve_and_store_ontology_class()
+            inst._populate_from_ontology_if_available()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
 
     @classmethod
-    def from_string(cls, str: str) -> "Dynamics":
+    def from_string(cls, str: str,
+                    use_ontology: bool = False) -> "Dynamics":
         inst = yaml_loader.loads(str, cls)
-        inst._populate_from_ontology_if_available()
+        if use_ontology:
+            inst._resolve_and_store_ontology_class()
+            inst._populate_from_ontology_if_available()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
@@ -605,13 +648,47 @@ class Dynamics(tvbo_datamodel.Dynamics):
             inst.calculate_derived_parameters()
         return inst
 
+    # -------  Ontology enrichment  -------
+
+    def enrich_from_ontology(self):
+        """Explicitly enrich this model from the ontology by name.
+
+        Looks up the model name in the TVB ontology and backfills missing
+        parameter values, descriptions, ranges, state-variable metadata, and
+        derived variables.  Useful when you define a partial model spec and
+        want the ontology to fill in the gaps.
+
+        Example
+        -------
+        >>> d = Dynamics.from_string(partial_spec)
+        >>> d.enrich_from_ontology()  # fill in defaults from the knowledge base
+        """
+        self._resolve_and_store_ontology_class()
+        self._populate_from_ontology_if_available()
+        self.update_metadata()
+        self.calculate_derived_parameters()
+        return self
+
     # Internal helpers
+    def _resolve_and_store_ontology_class(self):
+        """Resolve the ontology class by model name and store it for backfill."""
+        if self._ontology_class is not None:
+            return  # already resolved
+        oc = self.ontology  # auto-discover by name (read-only property)
+        if oc is not None:
+            self._ontology_class = oc
+
     def _populate_from_ontology_if_available(self):
-        """Populate from ontology ONLY if already set. No automatic import."""
-        oc = self.ontology
+        """Populate from ontology ONLY if an explicit ontology class was stored.
+
+        This does NOT auto-discover by name.  Only ``from_ontology()``,
+        ``use_ontology=True``, or ``enrich_from_ontology()`` triggers backfill,
+        preventing user-defined models from being contaminated by ontology data
+        just because they share a name with an ontology model.
+        """
+        oc = self._ontology_class
         if oc is not None:
             self._populate_from_ontology(oc)
-        # Skip automatic YAML->ontology import. Use from_ontology() explicitly if needed.
 
     def _populate_from_ontology(self, oc, **kwargs):
         # Fill schema fields from ontology, without persisting runtime-only state
@@ -732,6 +809,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return scope
 
     def update_metadata(self):
+        # Normalize dv.cases → dv.equation.conditionals (dv.cases is deprecated)
+        _normalize_conditionals(self)
+
         # Pre-compute coupling term symbols for fast set intersection
         coupling_symbols = set(symbols(list(self.coupling_terms.keys())))
 
@@ -751,6 +831,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     if coupling_symbols & eq.rhs.free_symbols:
                         self.state_variables[v].coupling_variable = True
             elif v in self.derived_variables:
+                # Preserve conditionals through the equation update
+                old_conds = getattr(self.derived_variables[v].equation, 'conditionals', None)
+                if old_conds:
+                    equation.conditionals = old_conds
                 self.derived_variables[v].equation = equation
         # Build dependency order without storing state
         _ = self.get_dependency_tree()
@@ -803,14 +887,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return _pdm.Dynamics.model_validate(self._as_dict)
 
     @classmethod
-    def from_pydantic(cls, pyd_obj):
+    def from_pydantic(cls, pyd_obj, use_ontology: bool = False):
         """Create a Dynamics from a tvbopydantic.Dynamics (or dict-like)."""
         data = pyd_obj.model_dump() if hasattr(pyd_obj, "model_dump") else dict(pyd_obj)
-        inst = cls(**data)
-        # Keep behavior consistent with other constructors
-        inst._populate_from_ontology_if_available()
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
+        inst = cls(use_ontology=use_ontology, **data)
         return inst
 
     # Parameters
@@ -1117,8 +1197,18 @@ class Dynamics(tvbo_datamodel.Dynamics):
             # Don't emit function names as user_functions if we're inlining them
             uf = {}
 
+        # For conditional derived variables, use conditionals2piecewise
+        # which reads from dv.equation.conditionals (canonical location).
+        eq_to_render = obj.equation
+        if getattr(obj, 'conditional', False) and getattr(obj.equation, 'conditionals', None):
+            eq_rhs_str = str(obj.equation.rhs) if obj.equation.rhs else ''
+            if 'Piecewise' not in eq_rhs_str:
+                pw = equations.conditionals2piecewise(obj.equation)
+                from types import SimpleNamespace
+                eq_to_render = SimpleNamespace(rhs=str(pw))
+
         return render_equation(
-            obj.equation,
+            eq_to_render,
             local_dict=scope,
             format=format,
             user_functions=uf,
@@ -1153,11 +1243,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         equations["derived-variables"] = []
         for k, dv in self.derived_variables.items():
-            # Prefer conditionals on the Equation if present; fallback to rhs parsing
+            # Use equation.conditionals (canonical location for conditional data)
             has_conditionals = bool(getattr(dv.equation, "conditionals", None)) and (
                 len(getattr(dv.equation, "conditionals", [])) > 0
             )
-            if getattr(dv, "conditional", False) or has_conditionals:
+            if getattr(dv, "conditional", False) and has_conditionals:
                 expression = simulation.equations.conditionals2piecewise(dv.equation)
             else:
                 expression = parse_eq(dv.equation, local_dict=scope)
