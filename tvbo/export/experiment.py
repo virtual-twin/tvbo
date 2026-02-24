@@ -880,8 +880,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["autodiff", "jax"]:
             jit = kwargs.get("jit", True)
             code = self.render_code(format=format, **kwargs)
-            namespace = templater.exec_globals
-            namespace.update({"TimeSeries": TimeSeries})
+            # Use a fresh namespace each time to avoid JAX tracer leaks
+            # between repeated executions (stale tracers in shared globals
+            # cause UnexpectedTracerError on re-runs).
+            namespace = {"TimeSeries": TimeSeries}
             exec(code, namespace)
             jax_model = namespace["kernel"]
             if jit:
@@ -1122,11 +1124,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ]:
             return self._run_pyrates_bifurcation(**kwargs)
 
+        elif format.lower() in [
+            "julia", "diffeq", "differentialequations",
+            "differentialequations.jl",
+        ]:
+            return self._run_julia(**kwargs)
+
         else:
             raise ValueError(
                 f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
                 "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl, "
-                "pyrates-bifurcation"
+                "pyrates-bifurcation, julia"
             )
 
         return simulation_data
@@ -1197,6 +1205,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
 
         adapter = PyRatesBifurcationAdapter(self)
+        return adapter.run(**kwargs)
+
+    def _run_julia(self, **kwargs) -> TimeSeries:
+        """Run simulation using DifferentialEquations.jl via juliacall."""
+        from tvbo.adapters.diffeq import DiffEqAdapter
+
+        adapter = DiffEqAdapter(self)
         return adapter.run(**kwargs)
 
     def get_experiment_file_prefix(self):

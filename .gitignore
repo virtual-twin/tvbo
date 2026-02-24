@@ -99,3 +99,4 @@ _test_*
 _check_*
 docs/Interoperability/Pyrates/_*
 uv.lock
+pyrates_run.py

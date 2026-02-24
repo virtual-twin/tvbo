@@ -1,4 +1,4 @@
-# Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
+# Copyright © Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -68,16 +68,19 @@ audio = ["librosa>=0.10.2"]
 
 # Documentation & reports
 docs = [
+    "quarto",
+    "jupyter",
     "pypandoc>=1.15",
     "pybtex>=0.24.0",
     "pypdf>=5.1.0",
     "black>=25.9.0",
-    "pyrates>=1.0.0",
-    "pycobi>=0.8.0",
-    "bsplot @ git+https://github.com/leon-k-martin/bsplot.git",
+    # "bsplot @ git+https://github.com/leon-k-martin/bsplot.git",
     "jupyter",
     "nbclient>=0.10.0",
 ]
+
+# PyRates dynamical systems modeling + continuation
+pyrates = ["pyrates>=1.0.0", "pycobi>=0.8.0"]
 
 # Julia integration
 julia = ["juliacall>=0.9.20"]
@@ -92,7 +95,7 @@ tvb = ["tvb-library", "tvb-framework", "tvb-data"]
 tvboptim = ["tvboptim @ git+https://github.com/virtual-twin/tvboptim.git"]
 
 # Full install (all features except docs which requires private repos)
-all = ["tvbo[neuroml,data,knowledge,audio,api,tvb,tvboptim]"]
+all = ["tvbo[neuroml,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
 
 [project.urls]
 homepage = "https://virtual-twin.github.io/tvbo/"
@@ -114,12 +117,16 @@ dependencies = [
     "flake8",
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
+    "pytest-timeout",
     "mypy",
     "nbformat>=5.10.0",
     "nbclient>=0.10.0",
 ]
 
 [tool.pytest.ini_options]
+addopts = "-n auto --dist=loadscope"
 markers = [
     "docs: mark test as documentation test (tests that execute .qmd notebooks)",
+    "julia: mark test as requiring a Julia runtime via juliacall",
 ]

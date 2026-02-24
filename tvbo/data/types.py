@@ -531,19 +531,27 @@ class BaseTimeSeries:
     """
 
     def tree_flatten(self):
-        # Keep network as a child (not metadata) to avoid non-hashable/array metadata
-        # Store labels_dimensions and units in aux to preserve metadata across JAX transforms
-        return (self.time, self.data, self.network), (
+        # Keep network as a child (not metadata) to avoid non-hashable/array metadata.
+        # sample_period must also be a child because it can be a JAX-traced value
+        # (e.g. state.dt inside jit); putting tracers in aux_data causes
+        # UnexpectedTracerError on repeated JIT calls.
+        children = (self.time, self.data, self.network, self.sample_period)
+        aux_data = (
             self.title,
-            self.sample_period,
             self.labels_dimensions,
             self.units,
         )
+        return children, aux_data
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        # aux_data matches (__init__): title, sample_period, labels_dimensions, units
-        return cls(*children, *aux_data)
+        time, data, network, sample_period = children
+        title, labels_dimensions, units = aux_data
+        return cls(
+            time, data, network=network, title=title,
+            sample_period=sample_period,
+            labels_dimensions=labels_dimensions, units=units,
+        )
 
     def __init__(
         self,
