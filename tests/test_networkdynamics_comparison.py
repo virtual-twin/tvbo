@@ -509,8 +509,8 @@ class TestNumericalComparison:
 
     @pytest.fixture(autouse=True)
     def _require_julia(self):
-        """Skip entire class if pyjulia is not available."""
-        pytest.importorskip("julia", reason="pyjulia not installed")
+        """Skip entire class if juliacall is not available."""
+        pytest.importorskip("juliacall", reason="juliacall not installed")
         from tvbo.run.julia import run_julia_code
         try:
             run_julia_code("1+1")

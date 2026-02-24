@@ -29,7 +29,7 @@ from tvbo.export.code import render_expression
                     if isinstance(value, str) and not value.replace('.','').replace('-','').isdigit():
                         value = f"'{value}'"
                     params[arg.name] = value
-    if func.equation and hasattr(func.equation, 'parameters') and func.equation.parameters:
+    if getattr(func, 'equation', None) and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for name, param in func.equation.parameters.items():
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
@@ -122,7 +122,8 @@ def ${func_name}(ts, ${param_args}):
 % else:
 <%
     # Check if equation contains array slicing (e.g., X[::stepsize])
-    rhs = func.equation.rhs if func.equation else ''
+    _eq = getattr(func, 'equation', None)
+    rhs = _eq.rhs if _eq else ''
     if '[' in rhs and ']' in rhs:
         # Direct Python code - use as is
         jax_code = rhs

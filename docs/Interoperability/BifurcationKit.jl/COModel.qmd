@@ -77,8 +77,10 @@ branches:
       delta_p: 0.00025
       bothside: true
       continuation:
-          ds: 0.02
+          name: po_from_hopf_cont
+          ds: 0.01
           ds_min: 1.0e-6
+          ds_max: 0.05
           max_steps: 300
           newton_tol: 1.0e-9
           detect_bifurcation: 0

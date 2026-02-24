@@ -127,6 +127,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ld = self.local_dynamics
             self.dynamics[ld.name] = ld
 
+        # Coerce all dynamics dict entries to the enhanced Dynamics class
+        if getattr(self, "dynamics", None) and isinstance(self.dynamics, dict):
+            for key, val in list(self.dynamics.items()):
+                if val is not None and not isinstance(val, Dynamics):
+                    self.dynamics[key] = _coerce(Dynamics, val)
+
         # If local_dynamics is empty but dynamics dict exists, use first entry
         # This enables backwards-compatible single-model workflows
         if not getattr(self, "local_dynamics", None) and getattr(
@@ -1242,7 +1248,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def collect_initial_conditions(self, random=False):
         history = []
-        n_modes = self.local_dynamics.metadata.number_of_modes
+        n_modes = getattr(self.local_dynamics, 'number_of_modes', 1) or 1
         n_nodes = self.network.number_of_regions
 
         if random:

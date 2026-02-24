@@ -60,6 +60,38 @@ if TYPE_CHECKING:
     from tvbo.knowledge.simulation.localdynamics import Dynamics
     from tvbo.data.tvbo_data.connectomes import Network
 
+# Reverse mapping: PyRates-safe names back to original TVBO names.
+# Must mirror PYRATES_REPL in tvbo/adapters/pyrates.py and the repl dict
+# in tvbo-pyrates-model.yaml.mako.
+_PYRATES_REPL_REVERSE = {
+    "I_": "I",
+    "gamma_": "gamma",
+    "beta_": "beta",
+    "zeta_": "zeta",
+    "lambda_": "lambda",
+    "E_": "E",
+    "N_": "N",
+    "S_": "S",
+    "O_": "O",
+    "Q_": "Q",
+    "epsilon_": "epsilon",
+    "y_": "y",
+    "dy_": "dy",
+}
+
+
+def _unrename_pyrates(name: str) -> str:
+    """Reverse PYRATES_REPL: restore original TVBO name from PyRates-safe name."""
+    return _PYRATES_REPL_REVERSE.get(name, name)
+
+
+def _unrename_expr(expr_str: str) -> str:
+    """Reverse PYRATES_REPL in an expression string (whole-word replacement)."""
+    for pyrates_name, orig_name in _PYRATES_REPL_REVERSE.items():
+        # Word-boundary replacement to avoid partial matches
+        expr_str = re.sub(r'\b' + re.escape(pyrates_name) + r'\b', orig_name, expr_str)
+    return expr_str
+
 
 def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> str:
     """Export a Dynamics model to PyRates OperatorTemplate YAML (model only).
@@ -366,7 +398,12 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
 
 
 def _parse_single_operator(template_name: str, template_def: dict) -> dict:
-    """Parse a single OperatorTemplate into a Dynamics-compatible dict."""
+    """Parse a single OperatorTemplate into a Dynamics-compatible dict.
+
+    Automatically reverses PYRATES_REPL renames (e.g. ``y_`` -> ``y``,
+    ``gamma_`` -> ``gamma``) so that round-tripped models recover the
+    original TVBO variable names.
+    """
     state_variables = {}
     parameters = {}
     derived_variables = {}
@@ -397,11 +434,14 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
 
         if match_prime or match_ddt:
             match = match_prime or match_ddt
-            var_name = match.group(1)
-            rhs = _pyrates_to_python_expr(match.group(2))
+            raw_var = match.group(1)
+            raw_rhs = _pyrates_to_python_expr(match.group(2))
+            # Reverse PYRATES_REPL renames
+            var_name = _unrename_pyrates(raw_var)
+            rhs = _unrename_expr(raw_rhs)
 
             initial_value = None
-            var_spec = variables.get(var_name)
+            var_spec = variables.get(raw_var)  # YAML uses renamed key
             if isinstance(var_spec, str):
                 # Handle variable(value) syntax
                 if "variable(" in var_spec:
@@ -422,10 +462,12 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
         else:
             match = re.match(r"(\w+)\s*=\s*(.+)", eq)
             if match:
-                var_name = match.group(1)
-                rhs = _pyrates_to_python_expr(match.group(2))
+                raw_var = match.group(1)
+                raw_rhs = _pyrates_to_python_expr(match.group(2))
+                var_name = _unrename_pyrates(raw_var)
+                rhs = _unrename_expr(raw_rhs)
 
-                var_spec = variables.get(var_name)
+                var_spec = variables.get(raw_var)
                 # All non-differential equations go to derived_variables
                 derived_variables[var_name] = {
                     "name": var_name,
@@ -436,9 +478,19 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
                     output.append(var_name)
 
     # Parse variables that are not state/derived/output
-    for var_name, var_spec in variables.items():
-        if var_name in state_variables or var_name in derived_variables or var_name in output:
+    # Track which raw names were already consumed (as state vars or derived)
+    _consumed_raw = set()
+    for eq in equations:
+        eq = str(eq).strip()
+        m = re.match(r"(\w+)'\s*=\s*", eq) or re.match(r"d/dt\s*\*\s*(\w+)\s*=\s*", eq) or re.match(r"(\w+)\s*=\s*", eq)
+        if m:
+            _consumed_raw.add(m.group(1))
+
+    for raw_var, var_spec in variables.items():
+        if raw_var in _consumed_raw:
             continue
+        # Also skip if unrenamed version was consumed
+        var_name = _unrename_pyrates(raw_var)
 
         if isinstance(var_spec, (int, float)):
             parameters[var_name] = {
@@ -446,6 +498,8 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
                 "value": float(var_spec),
             }
         elif isinstance(var_spec, str):
+            if var_spec.startswith("variable") or var_spec == "variable":
+                continue  # Already handled as state variable
             # Handle input(value) syntax - treat as parameter with default value
             input_match = re.match(r"input\(([\d.e+-]+)\)", var_spec)
             if input_match:
