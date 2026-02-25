@@ -101,3 +101,5 @@ docs/Interoperability/Pyrates/_*
 uv.lock
 pyrates_run.py
 pyrates_run_*.py
+database/studies/**/*.md
+database/studies/**/*.png
