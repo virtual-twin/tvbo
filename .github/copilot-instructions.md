@@ -291,22 +291,26 @@ tvbo/
 
 ## CI/CD Workflows
 
-### `ci.yml` - Two-tier CI (runs on push/PR to main and dev)
+### `ci.yml` - Lightweight CI (runs on push/PR to main and dev)
 
-**Feature → dev (PRs to dev, pushes to dev):**
+**All triggers:**
 1. **Lint** — flake8 syntax errors (blocking) + style warnings (non-blocking)
 2. **Compat** — Python 3.11/3.12/3.13 with `pip install -e .` + core tests
 3. **Native tests** — `pip install -e ".[all]"` + full pytest (no doc tests, no container)
 
-**dev → main (PRs to main, pushes to main):**
-1. **Lint** + **Compat** (same as above)
-2. **Container tests** — full pytest in Docker (`ghcr.io/virtual-twin/tvbo:latest`)
-3. **Doc tests** — Quarto + `pytest tests/test_docs.py -m docs` in container
-4. **Strict gate** — runs all tests in container and **fails if any test is skipped, xfailed, or errored**. This ensures everything passes cleanly before release.
-5. **Package** — builds sdist + wheel (on push to main only)
-
 ### `docker.yml` - Container Build (pushes to main/dev, tags)
 Builds multi-arch Docker image → GHCR + DockerHub.
+
+### `ci-container.yml` - Container CI (waits for Docker build)
+
+**On push to main:** triggers via `workflow_run` after `docker.yml` completes, ensuring
+container tests always use the freshly built image.
+
+**On PRs to main:** triggers directly via `pull_request` (uses existing `dev` image).
+
+1. **Container tests** — full pytest in Docker (`ghcr.io/virtual-twin/tvbo:latest`)
+2. **Doc tests** — Quarto + `pytest tests/test_docs.py -m docs` in container
+3. **Release-ready** — builds sdist + wheel, verifies metadata, uploads artifacts
 
 ### `publish-pypi.yml` - PyPI Release (on GitHub release)
 1. Tests on Python 3.12, 3.13
