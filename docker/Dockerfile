@@ -1,13 +1,8 @@
 # Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 
-FROM julia:latest AS julia
 FROM python:3.13-slim
 
 LABEL maintainer="Leon Martin <leon.martin@bih-charite.de>"
-
-# Copy Julia from official image
-COPY --from=julia /usr/local/julia /usr/local/julia
-ENV PATH="/usr/local/julia/bin:$PATH"
 
 # System deps: compilers (f2py/PyRates Fortran), cairo (bsplot SVG), curl/wget (Quarto install)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -25,23 +20,31 @@ RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/
     && wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb" \
     && dpkg -i quarto.deb && rm quarto.deb
 
-# Install Python packages
+# Install Python packages (juliacall is included via tvbo[julia] and downloads
+# its own compatible Julia via juliapkg — no system Julia installation needed)
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo[julia,pyrates] tvboptim
 
-# Julia depot in a fixed location (not HOME-dependent)
-# so pre-installed packages are found regardless of runtime HOME
+# Julia depot in a fixed, world-readable location so packages pre-compiled
+# here are found regardless of runtime HOME or user.
 ENV JULIA_DEPOT_PATH="/opt/julia-depot"
 
-# Pre-install Julia packages for NetworkDynamics, BifurcationKit, ModelingToolkit docs
-RUN mkdir -p /opt/julia-depot && julia -e '\
-    using Pkg; \
-    pkgs = ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5", \
-            "OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq", \
-            "BifurcationKit","ModelingToolkit","Plots"]; \
-    for p in pkgs; Pkg.add(p); end; \
-    Pkg.precompile()' \
-    && chmod -R a+rw /opt/julia-depot
+# Pre-warm juliacall: triggers juliapkg to download a compatible Julia binary
+# and pre-installs all required Julia packages so CI/runtime has zero download cost.
+RUN mkdir -p /opt/julia-depot && python - <<'EOF'
+from juliacall import Main as jl
+jl.seval("""
+import Pkg
+pkgs = ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5",
+        "OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq",
+        "BifurcationKit","ModelingToolkit","Plots"]
+for p in pkgs
+    Pkg.add(p)
+end
+Pkg.precompile()
+""")
+EOF
+RUN chmod -R a+rw /opt/julia-depot
 
 ENV AUTO_DIR=/auto-07p
 WORKDIR /app
