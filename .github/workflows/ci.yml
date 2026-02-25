@@ -110,7 +110,7 @@ jobs:
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies
-              run: pip install ".[docs,pyrates]"
+              run: pip install ".[docs,pyrates]" pytest-xdist
             - name: Run doc tests
               env:
                   JAX_PLATFORMS: cpu
