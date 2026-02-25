@@ -211,21 +211,46 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Copy all already-normalized state from the datamodel instance
         obj.__dict__.update(dm.__dict__)
 
-        # Set convenience aliases that __init__ normally creates
+        # Upgrade datamodel.Dynamics → knowledge.Dynamics (enhanced class)
         dyn = getattr(obj, "dynamics", None)
         if isinstance(dyn, dict) and dyn:
-            first = next(iter(dyn.values()))
+            upgraded = {}
+            for k, v in dyn.items():
+                if isinstance(v, Dynamics):
+                    upgraded[k] = v
+                elif isinstance(v, tvbo_datamodel.Dynamics):
+                    upgraded[k] = Dynamics.from_datamodel(v)
+                else:
+                    upgraded[k] = v
+            obj.__dict__["dynamics"] = upgraded
+            first = next(iter(upgraded.values()))
             obj.__dict__["local_dynamics"] = first
             obj.__dict__["model"] = first
         else:
             obj.__dict__.setdefault("local_dynamics", None)
 
-        if not getattr(obj, "network", None):
-            obj.__dict__["network"] = Network()
+        # Upgrade Integrator: copy state then populate from ontology
+        integ = getattr(obj, "integration", None)
+        if integ is not None and not isinstance(integ, Integrator):
+            up = Integrator.__new__(Integrator)
+            up.__dict__.update(integ.__dict__)
+            up._populate_from_ontology()
+            obj.__dict__["integration"] = up
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
+
+        # Upgrade Coupling: copy state then populate from ontology
+        coup = getattr(obj, "coupling", None)
+        if coup is not None and not isinstance(coup, Coupling):
+            up = Coupling.__new__(Coupling)
+            up.__dict__.update(coup.__dict__)
+            up._populate_from_ontology()
+            obj.__dict__["coupling"] = up
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
+
+        if not getattr(obj, "network", None):
+            obj.__dict__["network"] = Network()
         obj.__dict__["_source_file"] = None
         return obj
 
