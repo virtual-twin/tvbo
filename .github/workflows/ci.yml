@@ -120,7 +120,7 @@ jobs:
         steps:
             - uses: actions/checkout@v6
             - name: Install system deps for Quarto setup
-              run: apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo
+              run: apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo libcairo2-dev
             - name: Install Quarto
               uses: quarto-dev/quarto-actions/setup@v2
             - name: Configure git for private repos
