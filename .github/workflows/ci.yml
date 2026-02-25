@@ -83,8 +83,8 @@ jobs:
             image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
-            - name: Install pytest-xdist
-              run: pip install pytest-xdist
+            - name: Install dev code + test deps
+              run: pip install -e ".[all]" pytest-xdist
             - name: Run tests (no doc tests)
               env:
                   JAX_PLATFORMS: cpu
@@ -129,8 +129,8 @@ jobs:
             image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
-            - name: Install pytest-xdist
-              run: pip install pytest-xdist
+            - name: Install dev code + test deps
+              run: pip install -e ".[all]" pytest-xdist
             - name: Run all tests strictly (fail on skip)
               env:
                   JAX_PLATFORMS: cpu
