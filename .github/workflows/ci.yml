@@ -119,6 +119,16 @@ jobs:
                 password: ${{ secrets.GITHUB_TOKEN }}
         steps:
             - uses: actions/checkout@v6
+            - name: Ensure Quarto is available
+              run: |
+                  if ! command -v quarto &>/dev/null; then
+                    apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo
+                    QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP '"tag_name": "v\K[^"]+')
+                    ARCH=$(dpkg --print-architecture)
+                    wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb"
+                    dpkg -i quarto.deb && rm quarto.deb
+                  fi
+                  quarto --version
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies

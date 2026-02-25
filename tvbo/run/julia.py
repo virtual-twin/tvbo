@@ -25,9 +25,8 @@ def ensure_packages(*packages: str) -> None:
         Package names to ensure are available.
     """
     for pkg in packages:
-        eval_with_auto_install(
-            f'try using {pkg} catch; import Pkg; Pkg.add("{pkg}"); using {pkg} end'
-        )
+        # Just try to load — eval_with_auto_install handles missing packages
+        eval_with_auto_install(f"using {pkg}")
 
 
 def run_julia_code(code: str, compiled_modules: bool = True):
