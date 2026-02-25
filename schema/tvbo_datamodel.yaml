@@ -2184,6 +2184,7 @@ classes:
             label:
                 range: string
             local_dynamics:
+                alias: dynamics
                 range: Dynamics # Lumped, per-node dynamics (ODE/SDE/DDE/SDDE)
                 inlined: true
                 description: "Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)"
@@ -2298,6 +2299,7 @@ classes:
             sample:
                 range: Sample
             simulation_experiments:
+                alias: experiments
                 multivalued: true
                 inlined_as_list: true
                 range: SimulationExperiment

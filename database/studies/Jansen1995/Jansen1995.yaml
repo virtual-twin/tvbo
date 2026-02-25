@@ -127,12 +127,6 @@ simulation_experiments:
           sigma:
             name: sigma
             value: 1e-5
-    monitors:
-      - name: Raw
-        period: 1.0
-        imaging_modality: EEG
-        # select_variable:
-        #   name: v_pyr
 
   # Alternate operating point (low-frequency/quasi-periodic)
   - id: 2
@@ -155,12 +149,6 @@ simulation_experiments:
           sigma:
             name: sigma
             value: 1e-5
-    monitors:
-      - name: Raw
-        period: 1.0
-        imaging_modality: EEG
-        # select_variable:
-        #   name: v_pyr
 
   # Fig. 5: two identical columns, zero-delay coupling (symmetric behavior)
   - id: 3
@@ -224,12 +212,6 @@ simulation_experiments:
             sigma:
               name: sigma
               value: 1e-5
-    monitors:
-      - name: Raw
-        period: 1.0
-        imaging_modality: EEG
-        # select_variable:
-        #   name: v_pyr
 
   # Fig. 6, 11 & VEPs: two different columns, delayed inter-column synaptic filtering + flash stimulus
   - id: 4
@@ -371,12 +353,6 @@ simulation_experiments:
           sigma:
             name: sigma
             value: 5e-6
-    monitors:
-      - name: Raw
-        period: 1.0
-        imaging_modality: EEG
-        # select_variable:
-        #   name: v_pyr
     # Note: To replicate Fig. 8-11, run 20-40 trials with different noise seeds and average v_pyr offline.
 
   # Canonical alpha regime using s^-1 units (unit check)
@@ -398,9 +374,3 @@ simulation_experiments:
     integration:
       method: RungeKutta4thOrder
       duration: 1000
-    monitors:
-      - name: Raw
-        period: 1.0
-        imaging_modality: EEG
-        # select_variable:
-        #   name: v_pyr
