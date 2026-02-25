@@ -303,10 +303,10 @@ Builds multi-arch Docker image → GHCR + DockerHub.
 
 ### `ci-container.yml` - Container CI (waits for Docker build)
 
-**On push to main:** triggers via `workflow_run` after `docker.yml` completes, ensuring
-container tests always use the freshly built image.
+**On push to main/dev:** triggers via `workflow_run` after `docker.yml` completes, ensuring
+container tests always use the freshly built image (`:latest` for main, `:dev` for dev).
 
-**On PRs to main:** triggers directly via `pull_request` (uses existing `dev` image).
+**On PRs to main/dev:** triggers directly via `pull_request` (uses existing `dev` image).
 
 1. **Container tests** — full pytest in Docker (`ghcr.io/virtual-twin/tvbo:latest`)
 2. **Doc tests** — Quarto + `pytest tests/test_docs.py -m docs` in container
