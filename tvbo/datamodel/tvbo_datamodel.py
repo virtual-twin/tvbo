@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-13T16:31:56
+# Generation date: 2026-02-25T20:31:42
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -700,13 +700,9 @@ class Network(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if not isinstance(self.nodes, list):
-            self.nodes = [self.nodes] if self.nodes is not None else []
-        self.nodes = [v if isinstance(v, Node) else Node(**as_dict(v)) for v in self.nodes]
+        self._normalize_inlined_as_list(slot_name="nodes", slot_type=Node, key_name="id", keyed=False)
 
-        if not isinstance(self.edges, list):
-            self.edges = [self.edges] if self.edges is not None else []
-        self.edges = [v if isinstance(v, Edge) else Edge(**as_dict(v)) for v in self.edges]
+        self._normalize_inlined_as_list(slot_name="edges", slot_type=Edge, key_name="source", keyed=False)
 
         self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
 
@@ -2989,8 +2985,7 @@ class SimulationExperiment(YAMLRoot):
     description: Optional[str] = None
     additional_equations: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     label: Optional[str] = None
-    local_dynamics: Optional[Union[dict, Dynamics]] = None
-    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]] = empty_dict()
+    dynamics: Optional[Union[dict, Dynamics]] = None
     integration: Optional[Union[dict, Integrator]] = None
     connectivity: Optional[Union[dict, Network]] = None
     network: Optional[Union[dict, Network]] = None
@@ -3029,8 +3024,8 @@ class SimulationExperiment(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        if self.local_dynamics is not None and not isinstance(self.local_dynamics, Dynamics):
-            self.local_dynamics = Dynamics(**as_dict(self.local_dynamics))
+        if self.dynamics is not None and not isinstance(self.dynamics, Dynamics):
+            self.dynamics = Dynamics(**as_dict(self.dynamics))
 
         self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
@@ -5910,7 +5905,7 @@ slots.simulationExperiment__additional_equations = Slot(uri=TVBO.additional_equa
 slots.simulationExperiment__label = Slot(uri=TVBO.label, name="simulationExperiment__label", curie=TVBO.curie('label'),
                    model_uri=TVBO.simulationExperiment__label, domain=None, range=Optional[str])
 
-slots.simulationExperiment__local_dynamics = Slot(uri=TVBO.local_dynamics, name="simulationExperiment__local_dynamics", curie=TVBO.curie('local_dynamics'),
+slots.simulationExperiment__local_dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__local_dynamics", curie=TVBO.curie('dynamics'),
                    model_uri=TVBO.simulationExperiment__local_dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
 
 slots.simulationExperiment__dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__dynamics", curie=TVBO.curie('dynamics'),
