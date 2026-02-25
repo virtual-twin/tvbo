@@ -1,6 +1,7 @@
 ---
 title: Parameter Continuation and Bifurcation Detection with TVBO
 jupyter: python3
+test-skip: requires AUTO-07p system dependency
 ---
 
 In this tutorial, you will learn how to perform a 1D numerical parameter continuation with automatic fold bifurcation detection using TVBO for model specification and PyRates/PyCoBi for the continuation analysis.
