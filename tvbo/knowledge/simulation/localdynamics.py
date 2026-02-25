@@ -578,7 +578,17 @@ class Dynamics(tvbo_datamodel.Dynamics):
     @classmethod
     def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics,
                        use_ontology: bool = False):
-        inst = cls(use_ontology=use_ontology, **model_meta._as_dict)
+        """Create from a datamodel Dynamics instance by copying its
+        already-normalized state (avoids ``_as_dict`` re-init crash on
+        ``inlined_as_dict`` fields)."""
+        inst = cls.__new__(cls)
+        inst.__dict__.update(model_meta.__dict__)
+        inst._ontology_class = None
+        if use_ontology:
+            inst._resolve_and_store_ontology_class()
+            inst._populate_from_ontology_if_available()
+        inst.update_metadata()
+        inst.calculate_derived_parameters()
         return inst
 
     @classmethod
