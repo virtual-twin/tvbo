@@ -35,6 +35,8 @@ def _load_reference(name):
     """Load reference data from HDF5."""
     import h5py
     path = os.path.join(REF_DIR, f"{name}_reference.h5")
+    if not os.path.exists(path):
+        pytest.skip(f"Reference data not found: {path}")
     with h5py.File(path, "r") as f:
         data = {
             "t": f["t"][:],
