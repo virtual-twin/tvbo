@@ -36,6 +36,15 @@ state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
+# Model output variables (from model.output attribute)
+# These are the variables the model defines as its primary output (e.g., v_pyr = y1 - y2)
+model_output_vars = getattr(model, 'output', None) or []
+if isinstance(model_output_vars, str):
+    model_output_vars = [model_output_vars]
+model_derived_outputs = [v for v in model_output_vars if v in (model.derived_variables or {})]
+model_state_outputs = [v for v in model_output_vars if v in state_names]
+has_model_output = bool(model_output_vars)
+
 # Extract state variable bounds (for BoundedSolver)
 # Collect lo/hi from state_variable.domain if present
 state_bounds_lo = []
@@ -87,7 +96,7 @@ for ck, cobj in all_couplings.items():
                 all_coupling_param_shapes[(ck, p.name)] = str(p.shape)
 
 # Integration metadata
-SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4'}
+SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}
 method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
@@ -116,6 +125,10 @@ if not any(s > 0 for s in noise_sigma_per_state) and integration.noise and integ
 
 has_noise = any(s > 0 for s in noise_sigma_per_state)
 noise_sigma = noise_sigma_per_state if len(set(noise_sigma_per_state)) > 1 else [noise_sigma_per_state[0]] if noise_sigma_per_state else [0.0]
+# For targeted noise (apply_to), extract the sigma for the targeted states only
+# AdditiveNoise takes a single scalar sigma, so all targeted states share the same sigma
+noise_sigma_targeted = [s for s in noise_sigma_per_state if s > 0]
+noise_sigma_value = noise_sigma_targeted[0] if noise_sigma_targeted else 0.0
 
 # Network metadata
 n_nodes = N_nodes = network.number_of_regions
@@ -354,10 +367,8 @@ for expl in exploration_list:
     assert params, f"exploration.parameters required in YAML for {expl.name}"
     for param in params.values():
         domain = param.domain
-        assert domain, f"exploration parameter domain required for {param.name}"
-        assert domain.lo is not None, f"domain.lo required for {param.name}"
-        assert domain.hi is not None, f"domain.hi required for {param.name}"
-        assert domain.n, f"domain.n required for {param.name}"
+        explored_values = param.explored_values
+        assert domain or explored_values, f"exploration parameter requires domain or explored_values for {param.name}"
         pname = str(param.name)
         # Check for dotted notation: ClassName.param_name
         # If prefix matches a coupling key → coupling param, else dynamics param
@@ -367,15 +378,29 @@ for expl in exploration_list:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = prefix in all_couplings
             source_key = prefix
-        exp_info['axes'].append({
-            'name': pname,
-            'lo': float(domain.lo),
-            'hi': float(domain.hi),
-            'n': int(domain.n),
-            'is_coupling': is_coupling_param,
-            'coupling_key': source_key if is_coupling_param else None,
-            'dynamics_key': source_key if not is_coupling_param and source_key else None,
-        })
+        if explored_values:
+            vals = [float(v) for v in explored_values]
+            exp_info['axes'].append({
+                'name': pname,
+                'values': vals,
+                'n': len(vals),
+                'is_coupling': is_coupling_param,
+                'coupling_key': source_key if is_coupling_param else None,
+                'dynamics_key': source_key if not is_coupling_param and source_key else None,
+            })
+        else:
+            assert domain.lo is not None, f"domain.lo required for {param.name}"
+            assert domain.hi is not None, f"domain.hi required for {param.name}"
+            n = int(domain.n) if domain.n else 50
+            exp_info['axes'].append({
+                'name': pname,
+                'lo': float(domain.lo),
+                'hi': float(domain.hi),
+                'n': n,
+                'is_coupling': is_coupling_param,
+                'coupling_key': source_key if is_coupling_param else None,
+                'dynamics_key': source_key if not is_coupling_param and source_key else None,
+            })
     observable = expl.observable
     if observable:
         # FunctionCall: function attribute references the function
@@ -469,7 +494,7 @@ from tvboptim.optim.optax import OptaxOptimizer
 from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback, SavingParametersCallback
 % endif
 % if has_explorations:
-from tvboptim.types import Space, GridAxis
+from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution
 % endif
 % for mod in derived_obs_modules:
@@ -504,7 +529,7 @@ def create_network(
     region_labels: list = None,
     dynamics_params: dict = None,
     coupling_params: dict = None,
-    noise_sigma: float = ${noise_sigma[0]},
+    noise_sigma: float = ${noise_sigma_value},
 ) -> Network:
 % if has_normalization:
     # Normalization: ${_norm.rhs}
@@ -596,6 +621,15 @@ def run_simulation(
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+
+    % if has_transient:
+    # Initialize state variables from end of transient (settled dynamics)
+    if result_transient is not None:
+        _final = result_transient.data[-1]  # (n_states,) or (n_states, n_nodes)
+        % for i, sv_name in enumerate(state_names):
+        state.dynamics.${sv_name} = _final[${i}]
+        % endfor
+    % endif
 
     result = None
     observations = None
@@ -1116,12 +1150,42 @@ def run_optimization(
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
     """${expl['label']} - Grid: ${grid_desc} = ${total_points} points."""
+% if has_transient:
+    # Per-grid-point transient: each point needs its own settling
+    # because explored parameters change the dynamics regime.
+    # We prepare a new model_fn with extended duration (transient + recording)
+    # so that noise samples and time steps are correctly sized.
+    _t_transient = kwargs.get('t_transient', ${transient_time})
+    _n_transient = int(_t_transient / ${dt})
+    _t_total = ${t1_default} + _t_transient
+    _network = kwargs.get('network')
+    if _network is not None:
+        _solver = get_solver()
+        _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
+    else:
+        _expl_model_fn = model_fn
+        _expl_state = state
+        _n_transient = 0
+    # Use the extended state as grid base (has correct noise samples, time steps)
+    grid_state = copy.deepcopy(_expl_state)
+% else:
+    _expl_model_fn = model_fn
+    _n_transient = 0
     grid_state = copy.deepcopy(state)
+% endif
     % for ax in expl['axes']:
     % if ax.get('is_coupling'):
+    % if 'values' in ax:
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(${ax['values']})
+    % else:
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    % endif
+    % else:
+    % if 'values' in ax:
+    grid_state.dynamics.${ax['name']} = DataAxis(${ax['values']})
     % else:
     grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    % endif
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
@@ -1183,10 +1247,45 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % else:
 <%
     # Check if this is a derived observation (no class exists - computed from other obs)
-    is_derived_obs = obs_name in derived_observation_names
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+    is_derived_obs = obs_name in derived_observation_names if obs_name else False
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
-% if is_derived_obs:
+% if not obs_name:
+% if has_model_output:
+    # Model output: ${', '.join(model_output_vars)}
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        ## Unpack parameters (may be needed by derived variable equations)
+        % for name in param_names:
+        ${name} = s.dynamics.${name}
+        % endfor
+        % if derived_param_names:
+        % for dp in model.derived_parameters.values():
+        ${dp.name} = ${jaxcode_obj(dp)}
+        % endfor
+        % endif
+        ## Unpack state variables from simulation result — trim transient
+        % for i, sv_name in enumerate(state_names):
+        ${sv_name} = result.data[_n_transient:, ${i}]
+        % endfor
+        ## Compute derived output variables
+        % for dv_name in model_derived_outputs:
+        ${dv_name} = ${jaxcode_obj(model.derived_variables[dv_name])}
+        % endfor
+        % if len(model_output_vars) == 1:
+        return ${model_output_vars[0]}
+        % else:
+        return jnp.stack([${', '.join(model_output_vars)}], axis=-1)
+        % endif
+% else:
+    # No observable specified, no model output - return raw simulation data
+    @jax.jit
+    def observable_fn(s):
+        result = model_fn(s)
+        return result.data
+% endif
+% elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
     @jax.jit
     def observable_fn(s):
@@ -1227,10 +1326,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % for ax in expl['axes']:
         Bunch(
             name='${ax['name']}',
+% if 'values' in ax:
+            values=jnp.array(${ax['values']}),
+% else:
             lo=${ax['lo']},
             hi=${ax['hi']},
-            n=${ax['n']},
             values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
+% endif
+            n=${ax['n']},
 % if ax.get('is_coupling'):
             is_coupling=True,
             coupling_key='${ax['coupling_key']}',
@@ -1244,7 +1347,10 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         grid=grid,
         results=jnp.stack(results),
         axes=_axes_info,
-        observable='${obs_name if obs_name else obs_func}',
+<% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
+        observable='${_obs_label}',
+        dt=${dt},
+        output_names=${model_output_vars if has_model_output and not obs_name else []},
     )
 
 
@@ -1274,9 +1380,9 @@ def run_experiment(
 
     % if has_delay:
     delays = jnp.array(distances) / ${conduction_speed} if distances is not None else jnp.zeros_like(weights)
-    network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma[0]})
+    network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma[0]})
+    network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Determine if we need to run main simulation or just transient
@@ -1390,6 +1496,7 @@ def run_experiment(
         exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             result_transient=transient,
+            network=network,
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
         % endfor

@@ -67,7 +67,7 @@ for sv_name, sv in model.state_variables.items():
 has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
 
 # Integration metadata
-SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4'}
+SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}
 method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method, 'Euler')
 dt = float(integration.step_size) if integration.step_size else 0.1

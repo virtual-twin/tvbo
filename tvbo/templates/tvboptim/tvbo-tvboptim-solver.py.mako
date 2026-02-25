@@ -29,6 +29,7 @@ SOLVER_MAP = {
     'runge_kutta': 'RungeKutta4',
     'rungekutta': 'RungeKutta4',
     'rk4': 'RungeKutta4',
+    'rungekutta4thorder': 'RungeKutta4',
     'dopri5': 'DiffraxSolver',
     'tsit5': 'DiffraxSolver',
     'adaptive': 'DiffraxSolver',
