@@ -174,7 +174,6 @@ For data with multiple dimensions (e.g., parameter sweeps, modes), use HDF5:
 
 ```{python}
 #| label: export-hdf5
-#| eval: false
 # HDF5 preserves full dimensionality without splitting by state variable
 # Ideal for: (sweep, time, state, region, mode) or other multi-dimensional data
 output_path_h5 = ts.to_bids(

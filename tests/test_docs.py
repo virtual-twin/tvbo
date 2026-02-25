@@ -5,9 +5,6 @@ This test discovers all .qmd files with Python code cells in docs/,
 converts them to notebooks, and executes them to ensure documentation
 examples remain functional.
 
-Docs with ``execute: eval: false`` in their YAML frontmatter are excluded
-from collection (Quarto itself would not execute them).
-
 Run with: pytest tests/test_docs.py -v
 Run single doc: pytest tests/test_docs.py -k "Network" -v
 """
@@ -17,28 +14,10 @@ import re
 import glob
 import subprocess
 import pytest
-import yaml
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
-
-
-def parse_frontmatter(qmd_path: str) -> dict:
-    """Parse YAML frontmatter from a .qmd file."""
-    with open(qmd_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    match = re.match(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return {}
-    return yaml.safe_load(match.group(1)) or {}
-
-
-def is_eval_disabled(qmd_path: str) -> bool:
-    """Return True if the doc has execute.eval: false in frontmatter."""
-    fm = parse_frontmatter(qmd_path)
-    execute = fm.get("execute", {})
-    return isinstance(execute, dict) and execute.get("eval") is False
 
 
 def get_all_qmd_files():
@@ -60,11 +39,8 @@ def get_doc_name(path: str) -> str:
     return str(rel_path.with_suffix(""))
 
 
-# Discover all testable qmd files (exclude eval:false docs at collection time)
-qmd_files = [
-    f for f in get_all_qmd_files()
-    if has_python_cells(f) and not is_eval_disabled(f)
-]
+# Discover all testable qmd files
+qmd_files = [f for f in get_all_qmd_files() if has_python_cells(f)]
 test_params = [(path, get_doc_name(path)) for path in qmd_files]
 
 
