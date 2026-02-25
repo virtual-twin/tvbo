@@ -19,9 +19,10 @@ RUN git clone --depth 1 https://github.com/auto-07p/auto-07p /auto-07p \
     && cd /auto-07p && ./configure && make && pip install . \
     && rm -rf /auto-07p/.git /auto-07p/doc /auto-07p/demos
 
-# Install Quarto
+# Install Quarto (multi-arch: detect amd64 vs arm64)
 RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP '"tag_name": "v\K[^"]+') \
-    && wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb" \
+    && ARCH=$(dpkg --print-architecture) \
+    && wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb" \
     && dpkg -i quarto.deb && rm quarto.deb
 
 # Install Python packages
