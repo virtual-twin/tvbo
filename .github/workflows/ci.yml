@@ -83,8 +83,12 @@ jobs:
             image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
+            - name: Configure git for private repos
+              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install dev code + test deps
               run: pip install -e ".[all]" pytest-xdist
+            - name: Generate reference data
+              run: julia tests/reference_data/generate_nd_references.jl
             - name: Run tests (no doc tests)
               env:
                   JAX_PLATFORMS: cpu
@@ -110,7 +114,7 @@ jobs:
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies
-              run: pip install ".[docs,pyrates]" pytest-xdist
+              run: pip install -e ".[all]" pytest-xdist
             - name: Run doc tests
               env:
                   JAX_PLATFORMS: cpu
@@ -129,8 +133,12 @@ jobs:
             image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
         steps:
             - uses: actions/checkout@v6
+            - name: Configure git for private repos
+              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install dev code + test deps
               run: pip install -e ".[all]" pytest-xdist
+            - name: Generate reference data
+              run: julia tests/reference_data/generate_nd_references.jl
             - name: Run all tests strictly (fail on skip)
               env:
                   JAX_PLATFORMS: cpu
