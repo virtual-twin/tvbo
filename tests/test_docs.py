@@ -5,6 +5,10 @@ This test discovers all .qmd files with Python code cells in docs/,
 converts them to notebooks, and executes them to ensure documentation
 examples remain functional.
 
+Docs are skipped when:
+- YAML frontmatter contains ``execute: eval: false``
+- YAML frontmatter contains ``test-skip: true``
+
 Run with: pytest tests/test_docs.py -v
 Run single doc: pytest tests/test_docs.py -k "Network" -v
 """
@@ -14,10 +18,34 @@ import re
 import glob
 import subprocess
 import pytest
+import yaml
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
+
+
+def parse_frontmatter(qmd_path: str) -> dict:
+    """Parse YAML frontmatter from a .qmd file."""
+    with open(qmd_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    match = re.match(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
+    if not match:
+        return {}
+    return yaml.safe_load(match.group(1)) or {}
+
+
+def should_skip(qmd_path: str) -> str | None:
+    """Return a skip reason if the doc should not be executed, else None."""
+    fm = parse_frontmatter(qmd_path)
+    # Document-level eval: false
+    execute = fm.get("execute", {})
+    if isinstance(execute, dict) and execute.get("eval") is False:
+        return "frontmatter has execute.eval: false"
+    # Explicit test-skip flag
+    if fm.get("test-skip"):
+        return f"frontmatter has test-skip: {fm['test-skip']}"
+    return None
 
 
 def get_all_qmd_files():
@@ -52,6 +80,10 @@ test_params = [(path, get_doc_name(path)) for path in qmd_files]
 )
 def test_doc_executes(qmd_path, doc_name):
     """Test that a documentation notebook executes without errors."""
+    skip_reason = should_skip(qmd_path)
+    if skip_reason:
+        pytest.skip(skip_reason)
+
     qmd_path = Path(qmd_path)
     doc_dir = qmd_path.parent  # Original doc directory for relative path resolution
 

@@ -7,8 +7,21 @@ on:
         branches: ["main", "dev"]
     workflow_dispatch:
 
-# Reusable condition: true when the target (or push ref) is main
-# Use: ${{ github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
+# Cancel redundant runs: same branch/PR triggers supersede previous runs
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+# Least-privilege: read-only by default; jobs opt-in to more
+permissions:
+    contents: read
+
+# Shared environment variables for all jobs
+env:
+    JAX_PLATFORMS: cpu
+    XLA_FLAGS: "--xla_force_host_platform_device_count=8"
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    PIP_NO_WARN_SCRIPT_LOCATION: "1"
 
 jobs:
     # ─── Always: lint ──────────────────────────────────────────
@@ -42,19 +55,17 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
                   cache: "pip"
-            - run: pip install -e . && pip install pytest pytest-xdist
+            - run: pip install -e . pytest pytest-xdist
             - name: Core tests
-              env:
-                  JAX_PLATFORMS: cpu
               run: pytest -q -n auto --dist=loadscope tests/test_model_loading.py tests/test_graph.py tests/functional/test_dynamics_basic.py
 
-    # ─── Dev only: native test (no container) ──────────────────
+    # ─── All PRs + push to main: native tests (no container) ──
     test-native:
         name: Native tests
         needs: lint
         if: >-
-            (github.event_name == 'pull_request' && github.base_ref == 'dev')
-            || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+            github.event_name == 'pull_request'
+            || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
@@ -63,15 +74,11 @@ jobs:
                   python-version: "3.12"
                   cache: "pip"
             - name: Install with all extras
-              run: pip install -e ".[all]" && pip install pytest pytest-xdist
+              run: pip install -e ".[all]" pytest pytest-xdist
             - name: Run tests (no doc tests)
-              env:
-                  JAX_PLATFORMS: cpu
-                  XLA_FLAGS: "--xla_force_host_platform_device_count=8"
               run: pytest -q --ignore=tests/test_docs.py
 
     # ─── Main only: container tests ────────────────────────────
-    # PRs use :dev image (built from latest dev push); pushes to main use :latest
     test-container:
         name: Container tests
         needs: lint
@@ -90,9 +97,6 @@ jobs:
             - name: Generate reference data
               run: julia tests/reference_data/generate_nd_references.jl
             - name: Run tests (no doc tests)
-              env:
-                  JAX_PLATFORMS: cpu
-                  XLA_FLAGS: "--xla_force_host_platform_device_count=8"
               run: pytest -q --ignore=tests/test_docs.py
 
     # ─── Main only: doc tests ──────────────────────────────────
@@ -116,9 +120,6 @@ jobs:
             - name: Install doc dependencies
               run: pip install -e ".[all]" pytest-xdist
             - name: Run doc tests
-              env:
-                  JAX_PLATFORMS: cpu
-                  XLA_FLAGS: "--xla_force_host_platform_device_count=8"
               run: pytest tests/test_docs.py -v -m docs
 
     # ─── Main only: strict gate — zero skips before release ────
@@ -140,27 +141,25 @@ jobs:
             - name: Generate reference data
               run: julia tests/reference_data/generate_nd_references.jl
             - name: Run all tests strictly (fail on skip)
-              env:
-                  JAX_PLATFORMS: cpu
-                  XLA_FLAGS: "--xla_force_host_platform_device_count=8"
               run: pytest --ignore=tests/test_docs.py --no-header -p no:randomly -rN --override-ini="addopts=" -n auto --dist=loadscope 2>&1 | tee pytest_output.txt
             - name: Verify no tests were skipped
               run: |
-                  # Extract the summary line, e.g. "42 passed, 3 skipped"
                   SUMMARY=$(tail -1 pytest_output.txt)
                   echo "Test summary: $SUMMARY"
                   if echo "$SUMMARY" | grep -qiE 'skip|xfail|error|no tests ran'; then
-                    echo "::error::Strict gate FAILED — tests were skipped, xfailed, or errored. All tests must pass before merging to main."
+                    echo "::error::Strict gate FAILED — tests were skipped, xfailed, or errored."
                     echo "$SUMMARY"
                     exit 1
                   fi
                   echo "All tests passed with no skips."
 
-    # ─── Main only: build package ──────────────────────────────
-    package:
-        name: Build package
-        needs: [compat, test-container]
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # ─── Main only: release-ready check ────────────────────────
+    release-ready:
+        name: Release-ready check
+        needs: [compat, test-native, test-container, test-docs, strict-gate]
+        if: >-
+            (github.event_name == 'pull_request' && github.base_ref == 'main')
+            || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
@@ -169,12 +168,38 @@ jobs:
                   python-version: "3.12"
                   cache: "pip"
 
-            - name: Build sdist and wheel
-              run: |
-                  pip install build
-                  python -m build
+            - name: Install build tools
+              run: pip install build twine check-wheel-contents
 
-            - uses: actions/upload-artifact@v6
+            - name: Build sdist and wheel
+              run: python -m build
+
+            - name: Verify package metadata (twine --strict)
+              run: python -m twine check --strict dist/*
+
+            - name: Verify wheel contents
+              run: check-wheel-contents dist/*.whl
+
+            - name: Verify version consistency
+              run: |
+                  PKG_VERSION=$(python -c "import tvbo; print(tvbo.__version__)")
+                  WHL_NAME=$(ls dist/*.whl | head -1)
+                  echo "Package version: $PKG_VERSION"
+                  echo "Wheel: $WHL_NAME"
+                  if ! echo "$WHL_NAME" | grep -q "$PKG_VERSION"; then
+                    echo "::error::Version mismatch between tvbo/__init__.py ($PKG_VERSION) and wheel ($WHL_NAME)"
+                    exit 1
+                  fi
+                  echo "Version $PKG_VERSION is consistent."
+
+            - name: Verify package installs cleanly from wheel
+              run: |
+                  pip install dist/*.whl
+                  python -c "from tvbo import Dynamics, SimulationExperiment; print('Import OK')"
+
+            - name: Upload release-ready artifacts
+              uses: actions/upload-artifact@v6
               with:
                   name: tvbo-dist
                   path: dist/*
+                  retention-days: 30
