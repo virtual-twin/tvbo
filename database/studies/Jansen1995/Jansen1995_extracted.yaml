@@ -177,6 +177,17 @@ experiments:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_intercolumn) - 2*a*y4 - a**2*y1
           unit: mV/s
           coupling_variable: true
+          noise:
+            # md:L187 — "random white noise input p(t) ... between 120 and 320 pulses per second"
+            # p(t) ~ U(120, 320): std(p) = 200/sqrt(12) ≈ 57.74
+            # Enters dy4/dt as A*a*p, so effective noise = A*a*std(p)*dt per step
+            # Gaussian equiv sigma: A*a*std(p)*sqrt(dt) = 325*57.74*sqrt(0.002) ≈ 839
+            noise_type: additive
+            additive: true
+            parameters:
+              sigma:
+                name: sigma
+                value: 839
         y2:
           name: y2
           equation:
@@ -200,8 +211,9 @@ experiments:
     integration: &integration_2s
       method: RungeKutta4thOrder
       # md:L103 — "Fehlberg fourth-fifth order Runge-Kutta method"
-      duration: 2000          # 2 seconds in ms
-      step_size: 1.0          # ~1 ms (not explicitly stated; typical for RK45)
+      duration: 2.0            # 2 seconds (equations use s⁻¹ time constants)
+      step_size: 0.002         # 2 ms = 0.002 s (500 samples/s per paper: "500 units = 1 second")
+      transient_time: 0.5      # 0.5 s settling before recording (transient finishes ~0.25 s)
       noise: &noise_uniform
         # md:L187 — "random white noise input p(t) ... between 120 and 320 pulses per second"
         noise_type: uniform
@@ -271,6 +283,7 @@ experiments:
             domain:
               lo: "2.6"
               hi: "9.75"
+              n: 20
           # md:L216 — "B ranged from 17.6 to 110 mV"
           B:
             name: B
@@ -278,12 +291,17 @@ experiments:
             domain:
               lo: "17.6"
               hi: "110"
+              n: 20
           # md:L217 — "C from 108 to 675"
+          # Paper Fig. 4 shows these 5 specific C values as rows
           C:
             name: C
-            domain:
-              lo: "108"
-              hi: "675"
+            explored_values:
+              - 108
+              - 135
+              - 143
+              - 405
+              - 675
           # md:L217 — "v0 was either 3.12, 5.52, or 6.0 mV"
           v0:
             name: v0
@@ -772,9 +790,9 @@ experiments:
     integration: &integration_vep
       method: RungeKutta4thOrder
       # md:L300 — "models were run for 6 s before the stimulus was applied"
-      duration: 7000            # 7 seconds total (6s settling + 1s response)
-      step_size: 1.0
-      transient_time: 6000      # ignore first 6s for ensemble averaging
+      duration: 7.0             # 7 seconds total (6s settling + 1s response)
+      step_size: 0.002          # 2 ms = 0.002 s
+      transient_time: 6.0       # ignore first 6s for ensemble averaging
       noise: *noise_uniform
     execution:
       random_seed: 42

@@ -20,6 +20,7 @@ import jax.numpy as jnp
 # Result Classes for Simulation Experiments
 # =============================================================================
 
+
 class SimulationResult(Bunch):
     """Wrapper for simulation result with attached observations.
 
@@ -44,8 +45,8 @@ class SimulationResult(Bunch):
     def __init__(self, result=None, observations=None, state_names=None, **kwargs):
         super().__init__(**kwargs)
         if result is not None:
-            self.data = result.data if hasattr(result, 'data') else result
-            self.time = result.ts if hasattr(result, 'ts') else None
+            self.data = result.data if hasattr(result, "data") else result
+            self.time = result.ts if hasattr(result, "ts") else None
         self.state_names = state_names or []
         self.observations = observations or Bunch()
 
@@ -76,7 +77,7 @@ class SimulationResult(Bunch):
 
         labels_dimensions = {}
         if self.state_names:
-            labels_dimensions['State Variable'] = list(self.state_names)
+            labels_dimensions["State Variable"] = list(self.state_names)
 
         dt = float(time[1] - time[0]) if len(time) > 1 else 1.0
 
@@ -111,7 +112,7 @@ class SimulationResult(Bunch):
 
     def __repr__(self):
         n_obs = len(self.observations.keys()) if self.observations else 0
-        shape = getattr(self, 'data', None)
+        shape = getattr(self, "data", None)
         shape_str = f"{tuple(shape.shape)}" if shape is not None else "empty"
         obs_str = f", {n_obs} observations" if n_obs > 0 else ""
         return f"SimulationResult{shape_str}{obs_str}"
@@ -144,10 +145,19 @@ class AlgorithmResult(Bunch):
         Convergence metrics (final values, deltas, etc.)
     """
 
-    def __init__(self, name: str = None, state=None, history=None,
-                 pre_tuning=None, post_tuning=None, post_tuning_observations=None,
-                 n_iterations: int = None, hyperparameters=None,
-                 state_names=None, **kwargs):
+    def __init__(
+        self,
+        name: str = None,
+        state=None,
+        history=None,
+        pre_tuning=None,
+        post_tuning=None,
+        post_tuning_observations=None,
+        n_iterations: int = None,
+        hyperparameters=None,
+        state_names=None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.name = name
         self.state = state
@@ -155,7 +165,9 @@ class AlgorithmResult(Bunch):
 
         # Wrap simulations in SimulationResult for consistent access
         if pre_tuning is not None and not isinstance(pre_tuning, SimulationResult):
-            self.pre_tuning = SimulationResult(result=pre_tuning, state_names=state_names)
+            self.pre_tuning = SimulationResult(
+                result=pre_tuning, state_names=state_names
+            )
         else:
             self.pre_tuning = pre_tuning
 
@@ -179,16 +191,20 @@ class AlgorithmResult(Bunch):
         conv = Bunch()
         if self.history:
             for key, vals in self.history.items():
-                if hasattr(vals, '__len__') and len(vals) > 0:
+                if hasattr(vals, "__len__") and len(vals) > 0:
                     # Store final value
-                    conv[f'{key}_final'] = vals[-1] if hasattr(vals, '__getitem__') else vals
+                    conv[f"{key}_final"] = (
+                        vals[-1] if hasattr(vals, "__getitem__") else vals
+                    )
                     # Store delta (change from first to last)
                     if len(vals) > 1:
-                        conv[f'{key}_delta'] = vals[-1] - vals[0]
+                        conv[f"{key}_delta"] = vals[-1] - vals[0]
         return conv
 
     def __repr__(self):
-        n_iter = self.n_iterations or (len(next(iter(self.history.values()))) if self.history else 0)
+        n_iter = self.n_iterations or (
+            len(next(iter(self.history.values()))) if self.history else 0
+        )
         return f"AlgorithmResult(name='{self.name}', n_iterations={n_iter})"
 
 
@@ -219,9 +235,16 @@ class OptimizationResult(Bunch):
         Optimizer settings (learning_rate, algorithm, etc.)
     """
 
-    def __init__(self, name: str = None, state=None, history=None,
-                 simulation=None, n_steps: int = None,
-                 hyperparameters=None, **kwargs):
+    def __init__(
+        self,
+        name: str = None,
+        state=None,
+        history=None,
+        simulation=None,
+        n_steps: int = None,
+        hyperparameters=None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.name = name
         self.state = state
@@ -244,11 +267,11 @@ class OptimizationResult(Bunch):
     def _extract_metrics(self):
         """Extract convenience metrics from history."""
         # Loss trajectory
-        if self.history and hasattr(self.history, 'loss'):
+        if self.history and hasattr(self.history, "loss"):
             loss_data = self.history.loss
-            if hasattr(loss_data, 'save'):
+            if hasattr(loss_data, "save"):
                 self.loss_trajectory = loss_data.save
-            elif hasattr(loss_data, 'array'):
+            elif hasattr(loss_data, "array"):
                 self.loss_trajectory = loss_data.array
             else:
                 self.loss_trajectory = loss_data
@@ -262,23 +285,29 @@ class OptimizationResult(Bunch):
             self.final_loss = None
 
         # State trajectory (from SavingParametersCallback)
-        if self.history and 'parameters' in self.history:
-            params_data = self.history['parameters']
-            if hasattr(params_data, 'save'):
+        if self.history and "parameters" in self.history:
+            params_data = self.history["parameters"]
+            if hasattr(params_data, "save"):
                 traj = params_data.save
                 # Convert pandas Series to list if needed
-                if hasattr(traj, 'tolist'):
+                if hasattr(traj, "tolist"):
                     self.state_trajectory = traj.tolist()
                 else:
-                    self.state_trajectory = list(traj) if hasattr(traj, '__iter__') else traj
+                    self.state_trajectory = (
+                        list(traj) if hasattr(traj, "__iter__") else traj
+                    )
             else:
                 self.state_trajectory = params_data
         else:
             self.state_trajectory = None
 
     def __repr__(self):
-        loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
-        return f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
+        loss_str = (
+            f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
+        )
+        return (
+            f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
+        )
 
 
 class ExplorationResult(Bunch):
@@ -288,9 +317,16 @@ class ExplorationResult(Bunch):
     - Access to raw results (flat or grid-shaped)
     - Axis information for parameter values
     - Utility methods for finding optimal points and slicing
+    - Time series plotting for parameter sweeps (when observable returns time series)
 
     Designed to work with tvboptim's Space and ParallelResult directly,
     while also supporting other exploration backends.
+
+    Supports two result types:
+    - **Scalar results**: Each grid point produces a scalar (e.g., loss function).
+      Stored flat, reshaped via ``as_grid()``, with ``optimal`` point tracking.
+    - **Time series results**: Each grid point produces a time series (e.g., model
+      output). Stored as ``(n_grid, n_time, ...)``, with ``plot()`` support.
 
     Attributes
     ----------
@@ -299,38 +335,64 @@ class ExplorationResult(Bunch):
     grid : Space
         Parameter grid specification (tvboptim Space object)
     results : jnp.ndarray
-        Observable values at each grid point (flat or grid-shaped)
+        Observable values at each grid point (flat for scalars, multi-dim for time series)
     axes : list
         List of axis info (Bunch with name, lo, hi, n, values)
     observable : str
         Name of observable computed
     optimal : Bunch
-        Best point found (parameters, value, index)
+        Best point found (parameters, value, index) — only for scalar results
     shape : tuple
         Grid shape derived from axes
+    is_timeseries : bool
+        True if results contain time series per grid point
+    dt : float
+        Time step for time series results (optional)
+    output_names : list[str]
+        Names of output variables (e.g., ['v_pyr']) for time series results
     """
 
-    def __init__(self, name: str = None, grid=None, results=None,
-                 axes=None, observable: str = None, **kwargs):
+    def __init__(
+        self,
+        name: str = None,
+        grid=None,
+        results=None,
+        axes=None,
+        observable: str = None,
+        dt: float = None,
+        output_names: list = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.name = name
         self.grid = grid
         self.axes = axes or []
         self.observable = observable
+        self.dt = dt
+        self.output_names = output_names or []
 
         # Compute expected grid shape from axes
         self._grid_shape = tuple(
-            ax.get('n', getattr(ax, 'n', None))
+            ax.get("n", getattr(ax, "n", None))
             for ax in self.axes
-            if (isinstance(ax, dict) and 'n' in ax) or hasattr(ax, 'n')
+            if (isinstance(ax, dict) and "n" in ax) or hasattr(ax, "n")
         )
 
-        # Store results as-is (don't reshape automatically)
-        # User can call .as_grid() to get grid-shaped array
+        # Detect whether results are time series or scalar per grid point
         if results is not None:
-            self.results = jnp.asarray(results).flatten()  # Always store flat
+            results_arr = jnp.asarray(results)
+            n_grid_dims = len(self._grid_shape) if self._grid_shape else 1
+            if results_arr.ndim > n_grid_dims:
+                # Time series: shape (n_grid, n_time, ...) — preserve structure
+                self.results = results_arr
+                self.is_timeseries = True
+            else:
+                # Scalar: flatten for backward compatibility
+                self.results = results_arr.flatten()
+                self.is_timeseries = False
         else:
             self.results = None
+            self.is_timeseries = False
 
         # Shape is the expected grid shape from axes
         self.shape = self._grid_shape
@@ -342,10 +404,13 @@ class ExplorationResult(Bunch):
         Returns
         -------
         jnp.ndarray
-            Results reshaped to (n_axis1, n_axis2, ...) matching axes order
+            Results reshaped to (n_axis1, n_axis2, ...) matching axes order.
+            For time series, returns (n_axis1, ..., n_time, ...) as-is.
         """
         if self.results is None:
             return None
+        if self.is_timeseries:
+            return self.results  # Already structured
         if not self._grid_shape:
             return self.results
         expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
@@ -355,33 +420,138 @@ class ExplorationResult(Bunch):
         return self.results
 
     def _find_optimal(self):
-        """Find optimal point in the grid."""
+        """Find optimal point in the grid (scalar results only)."""
         self.optimal = Bunch()
-        if self.results is not None and self.results.size > 0:
-            # Find argmin in flat results (assumes lower is better for loss functions)
-            flat_idx = int(jnp.argmin(self.results))
-            self.optimal.flat_index = flat_idx
-            self.optimal.value = float(self.results[flat_idx])
+        if self.is_timeseries or self.results is None or self.results.size == 0:
+            return
+        # Find argmin in flat results (assumes lower is better for loss functions)
+        flat = self.results.flatten()
+        flat_idx = int(jnp.argmin(flat))
+        self.optimal.flat_index = flat_idx
+        self.optimal.value = float(flat[flat_idx])
 
-            # Compute grid index if we have valid grid shape
-            if self._grid_shape and len(self._grid_shape) > 0:
-                expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
-                if self.results.size == expected_size:
-                    self.optimal.index = tuple(int(i) for i in jnp.unravel_index(flat_idx, self._grid_shape))
-                else:
-                    self.optimal.index = (flat_idx,)  # Fallback to flat index
+        # Compute grid index if we have valid grid shape
+        if self._grid_shape and len(self._grid_shape) > 0:
+            expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
+            if flat.size == expected_size:
+                self.optimal.index = tuple(
+                    int(i) for i in jnp.unravel_index(flat_idx, self._grid_shape)
+                )
             else:
                 self.optimal.index = (flat_idx,)
+        else:
+            self.optimal.index = (flat_idx,)
 
-            # Extract parameter values at optimal point
-            self.optimal.parameters = Bunch()
-            for i, ax in enumerate(self.axes):
-                ax_name = ax.get('name', getattr(ax, 'name', None)) if isinstance(ax, dict) else getattr(ax, 'name', None)
-                ax_values = ax.get('values', getattr(ax, 'values', None)) if isinstance(ax, dict) else getattr(ax, 'values', None)
-                if ax_name and ax_values is not None and i < len(self.optimal.index):
-                    idx = self.optimal.index[i]
-                    if idx < len(ax_values):
-                        self.optimal.parameters[ax_name] = float(ax_values[idx])
+        # Extract parameter values at optimal point
+        self.optimal.parameters = Bunch()
+        for i, ax in enumerate(self.axes):
+            ax_name = (
+                ax.get("name", getattr(ax, "name", None))
+                if isinstance(ax, dict)
+                else getattr(ax, "name", None)
+            )
+            ax_values = (
+                ax.get("values", getattr(ax, "values", None))
+                if isinstance(ax, dict)
+                else getattr(ax, "values", None)
+            )
+            if ax_name and ax_values is not None and i < len(self.optimal.index):
+                idx = self.optimal.index[i]
+                if idx < len(ax_values):
+                    self.optimal.parameters[ax_name] = float(ax_values[idx])
+
+    def _get_time_axis(self):
+        """Reconstruct time vector from dt and n_time."""
+        if self.results is None or not self.is_timeseries:
+            return None
+        n_time = self.results.shape[1]  # (n_grid, n_time, ...)
+        if self.dt:
+            return np.arange(n_time) * self.dt
+        return np.arange(n_time)
+
+    def plot(self, figsize=None, sharex=True, **kwargs):
+        """Plot exploration results.
+
+        For time series results: subplots for each parameter value.
+        For scalar results: line plot or heatmap over parameter space.
+        """
+        if not self.is_timeseries:
+            return self._plot_scalar(figsize=figsize, **kwargs)
+        return self._plot_timeseries(figsize=figsize, sharex=sharex, **kwargs)
+
+    def _plot_timeseries(self, figsize=None, sharex=True, **kwargs):
+        """Plot time series for each parameter value as subplots."""
+        if self.results is None:
+            return None
+
+        ax_info = self.axes[0] if self.axes else None
+        n = int(ax_info.n) if ax_info else self.results.shape[0]
+        time = self._get_time_axis()
+        output_label = self.observable or ", ".join(self.output_names) or "output"
+
+        fig, axes = plt.subplots(
+            n,
+            1,
+            figsize=figsize or (12, 2 * n),
+            sharex=sharex,
+        )
+        if n == 1:
+            axes = [axes]
+
+        ax_values = np.asarray(ax_info["values"]) if ax_info else None
+
+        for i, ax in enumerate(axes):
+            data = np.asarray(self.results[i])  # (n_time, ...) or (n_time,)
+            # Squeeze trailing singleton dimensions (e.g., single node)
+            data = data.squeeze()
+            if data.ndim > 1:
+                # Multi-node: plot each node
+                for node_idx in range(data.shape[-1]):
+                    ax.plot(time, data[:, node_idx], alpha=0.7, **kwargs)
+            else:
+                ax.plot(time, data, **kwargs)
+
+            if ax_values is not None:
+                val = float(ax_values[i])
+                ax.set_ylabel(f"{ax_info.name}={val:.4g}")
+
+        axes[-1].set_xlabel("Time" + (f" (dt={self.dt})" if self.dt else " (steps)"))
+        fig.suptitle(f"{self.name}: {output_label}" if self.name else output_label)
+        plt.tight_layout()
+        plt.close()
+        return fig
+
+    def _plot_scalar(self, figsize=None, **kwargs):
+        """Plot scalar results as line plot (1D) or heatmap (2D)."""
+        if self.results is None:
+            return None
+        grid = self.as_grid()
+        if grid is None:
+            return None
+
+        if len(self._grid_shape) == 1:
+            ax_info = self.axes[0]
+            values = (
+                np.asarray(ax_info["values"])
+                if "values" in ax_info
+                else np.arange(self._grid_shape[0])
+            )
+            fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            ax.plot(values, np.asarray(grid), "o-", **kwargs)
+            ax.set_xlabel(getattr(ax_info, "name", "param"))
+            ax.set_ylabel(self.observable or "value")
+            ax.set_title(self.name or "Exploration")
+            plt.close()
+            return fig
+        elif len(self._grid_shape) == 2:
+            fig, ax = plt.subplots(figsize=figsize or (8, 6))
+            ax.imshow(np.asarray(grid).T, aspect="auto", origin="lower")
+            ax.set_xlabel(getattr(self.axes[0], "name", "axis 0"))
+            ax.set_ylabel(getattr(self.axes[1], "name", "axis 1"))
+            ax.set_title(self.name or "Exploration")
+            plt.close()
+            return fig
+        return None
 
     def slice(self, **fixed_params):
         """Get a slice of results with some parameters fixed.
@@ -396,8 +566,16 @@ class ExplorationResult(Bunch):
         indices = [slice(None)] * len(self.axes)
         for param_name, param_value in fixed_params.items():
             for i, ax in enumerate(self.axes):
-                ax_name = ax.get('name', getattr(ax, 'name', None)) if isinstance(ax, dict) else getattr(ax, 'name', None)
-                ax_values = ax.get('values', getattr(ax, 'values', None)) if isinstance(ax, dict) else getattr(ax, 'values', None)
+                ax_name = (
+                    ax.get("name", getattr(ax, "name", None))
+                    if isinstance(ax, dict)
+                    else getattr(ax, "name", None)
+                )
+                ax_values = (
+                    ax.get("values", getattr(ax, "values", None))
+                    if isinstance(ax, dict)
+                    else getattr(ax, "values", None)
+                )
                 if ax_name == param_name and ax_values is not None:
                     # Find closest index
                     idx = int(jnp.argmin(jnp.abs(jnp.array(ax_values) - param_value)))
@@ -405,8 +583,15 @@ class ExplorationResult(Bunch):
         return grid_results[tuple(indices)]
 
     def __repr__(self):
-        shape_str = 'x'.join(str(s) for s in self.shape) if self.shape else 'empty'
-        opt_str = f", optimal={self.optimal.value:.4f}" if hasattr(self.optimal, 'value') else ""
+        shape_str = "x".join(str(s) for s in self.shape) if self.shape else "empty"
+        if self.is_timeseries:
+            ts_shape = tuple(self.results.shape) if self.results is not None else ()
+            return f"ExplorationResult(name='{self.name}', grid={shape_str}, timeseries={ts_shape})"
+        opt_str = (
+            f", optimal={self.optimal.value:.4f}"
+            if hasattr(self.optimal, "value")
+            else ""
+        )
         return f"ExplorationResult(name='{self.name}', shape={shape_str}{opt_str})"
 
 
@@ -420,12 +605,12 @@ class ObservationResult(Bunch):
     @property
     def data(self):
         """Primary data output (alias for ys)."""
-        return getattr(self, 'ys', None)
+        return getattr(self, "ys", None)
 
     @property
     def time(self):
         """Time array (alias for ts)."""
-        return getattr(self, 'ts', None)
+        return getattr(self, "ts", None)
 
 
 class ExperimentResult(Bunch):
@@ -437,13 +622,13 @@ class ExperimentResult(Bunch):
     """
 
     # Keys that represent actual outputs (not inputs/metadata)
-    _output_sections = {'integration', 'algorithms', 'optimization', 'exploration'}
+    _output_sections = {"integration", "algorithms", "optimization", "exploration"}
 
     def __init__(self, results=None, experiment_name=None, **kwargs):
         super().__init__(**kwargs)
         self._experiment_name = experiment_name
         if results is not None:
-            for key in results.keys() if hasattr(results, 'keys') else []:
+            for key in results.keys() if hasattr(results, "keys") else []:
                 self[key] = results[key]
 
     def __repr__(self):
@@ -453,19 +638,19 @@ class ExperimentResult(Bunch):
         output_keys = [k for k in self.keys() if k in self._output_sections]
 
         for i, section in enumerate(output_keys):
-            is_last_section = (i == len(output_keys) - 1)
-            sec_conn = '└── ' if is_last_section else '├── '
-            sec_ext = '    ' if is_last_section else '│   '
+            is_last_section = i == len(output_keys) - 1
+            sec_conn = "└── " if is_last_section else "├── "
+            sec_ext = "    " if is_last_section else "│   "
 
             val = self[section]
             lines.append(f"{sec_conn}{section}")
 
-            if hasattr(val, 'keys'):
-                child_keys = [k for k in val.keys() if not str(k).startswith('_')]
+            if hasattr(val, "keys"):
+                child_keys = [k for k in val.keys() if not str(k).startswith("_")]
                 for j, child_key in enumerate(child_keys):
-                    is_last_child = (j == len(child_keys) - 1)
-                    child_conn = '└── ' if is_last_child else '├── '
-                    child_ext = '    ' if is_last_child else '│   '
+                    is_last_child = j == len(child_keys) - 1
+                    child_conn = "└── " if is_last_child else "├── "
+                    child_ext = "    " if is_last_child else "│   "
                     child_val = val[child_key]
 
                     # Format based on result type
@@ -473,14 +658,18 @@ class ExperimentResult(Bunch):
                     detail_lines = self._format_details(child_val, sec_ext + child_ext)
                     lines.extend(detail_lines)
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _format_details(self, val, prefix):
         """Format details of a result object."""
         details = []
 
         if isinstance(val, SimulationResult):
-            shape = tuple(val.data.shape) if hasattr(val, 'data') and val.data is not None else None
+            shape = (
+                tuple(val.data.shape)
+                if hasattr(val, "data") and val.data is not None
+                else None
+            )
             if shape:
                 details.append(f"{prefix}data: {shape}")
             if val.observations:
@@ -490,7 +679,9 @@ class ExperimentResult(Bunch):
         elif isinstance(val, AlgorithmResult):
             details.append(f"{prefix}n_iterations: {val.n_iterations}")
             if val.history:
-                hist_keys = [k for k in val.history.keys() if not str(k).startswith('_')]
+                hist_keys = [
+                    k for k in val.history.keys() if not str(k).startswith("_")
+                ]
                 details.append(f"{prefix}history: {hist_keys}")
 
         elif isinstance(val, OptimizationResult):
@@ -498,7 +689,9 @@ class ExperimentResult(Bunch):
             if val.final_loss is not None:
                 details.append(f"{prefix}final_loss: {val.final_loss:.4f}")
             if val.history:
-                hist_keys = [k for k in val.history.keys() if not str(k).startswith('_')]
+                hist_keys = [
+                    k for k in val.history.keys() if not str(k).startswith("_")
+                ]
                 details.append(f"{prefix}history: {hist_keys}")
             if val.simulation and val.simulation.observations:
                 obs_keys = list(val.simulation.observations.keys())
@@ -506,7 +699,14 @@ class ExperimentResult(Bunch):
 
         elif isinstance(val, ExplorationResult):
             if val.axes:
-                axis_names = [ax.get('name', ax.name) if hasattr(ax, 'get') else getattr(ax, 'name', '?') for ax in val.axes]
+                axis_names = [
+                    (
+                        ax.get("name", ax.name)
+                        if hasattr(ax, "get")
+                        else getattr(ax, "name", "?")
+                    )
+                    for ax in val.axes
+                ]
                 details.append(f"{prefix}axes: {axis_names}")
             if val.shape:
                 details.append(f"{prefix}shape: {val.shape}")
@@ -523,6 +723,7 @@ class ExperimentResult(Bunch):
 # =============================================================================
 # Time Series Classes
 # =============================================================================
+
 
 @register_pytree_node_class
 class BaseTimeSeries:
@@ -548,9 +749,13 @@ class BaseTimeSeries:
         time, data, network, sample_period = children
         title, labels_dimensions, units = aux_data
         return cls(
-            time, data, network=network, title=title,
+            time,
+            data,
+            network=network,
+            title=title,
             sample_period=sample_period,
-            labels_dimensions=labels_dimensions, units=units,
+            labels_dimensions=labels_dimensions,
+            units=units,
         )
 
     def __init__(
@@ -883,9 +1088,8 @@ class TimeSeries(BaseTimeSeries):
         }:
             region = kwargs.pop("region", 0)
             mode = kwargs.pop("mode", 0)
-            sv_labels = (
-                kwargs.pop("state_variables", None)
-                or kwargs.pop("state_variables_labels", None)
+            sv_labels = kwargs.pop("state_variables", None) or kwargs.pop(
+                "state_variables_labels", None
             )
 
             n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
@@ -933,7 +1137,6 @@ class TimeSeries(BaseTimeSeries):
                 plt.close()
                 return fig
             return None
-
 
         n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
         uses_modes = len(self.data.shape) > 3 and self.data.shape[3] > 1
@@ -1041,9 +1244,7 @@ class TimeSeries(BaseTimeSeries):
 
         # Resolve state index
         if isinstance(state, str):
-            sv_list = list(
-                self.labels_dimensions.get("State Variable", [])
-            )
+            sv_list = list(self.labels_dimensions.get("State Variable", []))
             state = sv_list.index(state)
 
         # Data: (time, nodes) for selected state
@@ -1052,7 +1253,9 @@ class TimeSeries(BaseTimeSeries):
         x, y = pos[:, 0], pos[:, 1]
 
         fig, (ax_graph, ax_ts) = plt.subplots(
-            1, 2, figsize=figsize,
+            1,
+            2,
+            figsize=figsize,
             gridspec_kw={"width_ratios": [1, 1.2]},
         )
 
@@ -1061,13 +1264,24 @@ class TimeSeries(BaseTimeSeries):
             for j in range(adj.shape[1]):
                 if adj[i, j] != 0:
                     ax_graph.plot(
-                        [x[i], x[j]], [y[i], y[j]],
-                        color="lightgray", linewidth=0.5, zorder=0,
+                        [x[i], x[j]],
+                        [y[i], y[j]],
+                        color="lightgray",
+                        linewidth=0.5,
+                        zorder=0,
                     )
 
         sc = ax_graph.scatter(
-            x, y, c=vals[0], cmap=cmap, s=node_size,
-            vmin=vmin, vmax=vmax, zorder=2, edgecolors="k", linewidths=0.5,
+            x,
+            y,
+            c=vals[0],
+            cmap=cmap,
+            s=node_size,
+            vmin=vmin,
+            vmax=vmax,
+            zorder=2,
+            edgecolors="k",
+            linewidths=0.5,
         )
         ax_graph.set_aspect("equal")
         ax_graph.set_title(f"t = {self.time[0]:.2f}")
@@ -1080,11 +1294,15 @@ class TimeSeries(BaseTimeSeries):
         norm = plt.Normalize(vmin=0, vmax=n_nodes - 1)
         lines = []
         for i in range(n_nodes):
-            ln, = ax_ts.plot(
-                [], [], color=cm(norm(i)), linewidth=0.5, alpha=0.6,
+            (ln,) = ax_ts.plot(
+                [],
+                [],
+                color=cm(norm(i)),
+                linewidth=0.5,
+                alpha=0.6,
             )
             lines.append(ln)
-        avg_ln, = ax_ts.plot([], [], color="k", linewidth=1.5, label="mean")
+        (avg_ln,) = ax_ts.plot([], [], color="k", linewidth=1.5, label="mean")
         ax_ts.set_xlim(self.time[0], self.time[-1])
         ax_ts.set_ylim(vmin - 0.05 * abs(vmax - vmin), vmax + 0.05 * abs(vmax - vmin))
         sv_labels = list(self.labels_dimensions.get("State Variable", []))
@@ -1102,14 +1320,19 @@ class TimeSeries(BaseTimeSeries):
             sc.set_array(vals[frame])
             ax_graph.set_title(f"t = {self.time[frame]:.2f}")
             for i, ln in enumerate(lines):
-                ln.set_data(self.time[:frame + 1], vals[:frame + 1, i])
+                ln.set_data(self.time[: frame + 1], vals[: frame + 1, i])
             avg_ln.set_data(
-                self.time[:frame + 1], vals[:frame + 1].mean(axis=1),
+                self.time[: frame + 1],
+                vals[: frame + 1].mean(axis=1),
             )
             return [sc] + lines + [avg_ln]
 
         ani = FuncAnimation(
-            fig, update, frames=frames, interval=interval, blit=False,
+            fig,
+            update,
+            frames=frames,
+            interval=interval,
+            blit=False,
         )
         plt.close(fig)
         return ani
@@ -2141,6 +2364,7 @@ class TimeSeries(BaseTimeSeries):
 
 class LegacySimulationResult(Bunch):
     """Legacy simulation result class. Use SimulationResult instead."""
+
     def __init__(self):
         self.monitors = []
 
