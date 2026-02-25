@@ -1,8 +1,6 @@
 ---
 title: "Automatic Higher-Order ODE Lowering"
 subtitle: "Symbolic round-trip between SymPy and ModelingToolkit.jl"
-execute:
-  eval: false
 ---
 
 ## Why this matters
