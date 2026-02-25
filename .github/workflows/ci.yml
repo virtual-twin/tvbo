@@ -78,7 +78,7 @@ jobs:
             - name: Install with all extras
               run: pip install -e ".[all]" pytest pytest-xdist
             - name: Run tests (no doc tests)
-              run: pytest -x -q --ignore=tests/test_docs.py
+              run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
 
     # ─── Main only: container tests ────────────────────────────
     test-container:
@@ -129,6 +129,11 @@ jobs:
                     dpkg -i quarto.deb && rm quarto.deb
                   fi
                   quarto --version
+            - name: Ensure system libs
+              run: |
+                  if ! ldconfig -p | grep -q libcairo.so.2; then
+                    apt-get update && apt-get install -y --no-install-recommends libcairo2-dev
+                  fi
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies
