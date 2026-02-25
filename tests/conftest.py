@@ -7,4 +7,5 @@
 import os
 
 os.environ.setdefault("JAX_PLATFORMS", "cpu")
-os.environ.setdefault("XLA_FLAGS", "--xla_force_host_platform_device_count=8")
+n_devices = min(os.cpu_count() or 2, 8)
+os.environ.setdefault("XLA_FLAGS", f"--xla_force_host_platform_device_count={n_devices}")
