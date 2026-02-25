@@ -20,7 +20,6 @@ permissions:
 # Shared environment variables for all jobs
 env:
     JAX_PLATFORMS: cpu
-    XLA_FLAGS: "--xla_force_host_platform_device_count=8"
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_NO_WARN_SCRIPT_LOCATION: "1"
 
@@ -79,7 +78,7 @@ jobs:
             - name: Install with all extras
               run: pip install -e ".[all]" pytest pytest-xdist
             - name: Run tests (no doc tests)
-              run: pytest -q --ignore=tests/test_docs.py
+              run: pytest -x -q --ignore=tests/test_docs.py
 
     # ─── Main only: container tests ────────────────────────────
     test-container:
@@ -103,7 +102,7 @@ jobs:
             - name: Generate reference data
               run: julia tests/reference_data/generate_nd_references.jl
             - name: Run tests (no doc tests)
-              run: pytest -q --ignore=tests/test_docs.py
+              run: pytest -x -q --ignore=tests/test_docs.py
 
     # ─── Main only: doc tests ──────────────────────────────────
     test-docs:
@@ -128,10 +127,19 @@ jobs:
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies
               run: pip install -e ".[all]" pytest-xdist
-            - name: Install Julia packages for NetworkDynamics.jl docs
-              run: julia -e 'using Pkg; for p in ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5","OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq"]; haskey(Pkg.project().dependencies,p) || Pkg.add(p); end'
+            - name: Install Julia packages for docs
+              run: |
+                  julia -e '
+                    using Pkg
+                    pkgs = ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5",
+                            "OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq",
+                            "BifurcationKit","ModelingToolkit","Plots"]
+                    for p in pkgs
+                      haskey(Pkg.project().dependencies, p) || Pkg.add(p)
+                    end
+                  '
             - name: Run doc tests
-              run: pytest tests/test_docs.py -v -m docs
+              run: pytest tests/test_docs.py -x -v --tb=long -m docs --override-ini="addopts="
 
     # ─── Main only: strict gate — zero skips before release ────
     strict-gate:
