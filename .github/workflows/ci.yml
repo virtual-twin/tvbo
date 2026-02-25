@@ -119,25 +119,10 @@ jobs:
                 password: ${{ secrets.GITHUB_TOKEN }}
         steps:
             - uses: actions/checkout@v6
-            - name: Install system deps for Quarto setup
-              run: apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo libcairo2-dev
-            - name: Install Quarto
-              uses: quarto-dev/quarto-actions/setup@v2
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies
               run: pip install -e ".[all]" pytest-xdist
-            - name: Install Julia packages for docs
-              run: |
-                  julia -e '
-                    using Pkg
-                    pkgs = ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5",
-                            "OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq",
-                            "BifurcationKit","ModelingToolkit","Plots"]
-                    for p in pkgs
-                      haskey(Pkg.project().dependencies, p) || Pkg.add(p)
-                    end
-                  '
             - name: Run doc tests
               run: pytest tests/test_docs.py -x -v --tb=long -m docs --override-ini="addopts="
 
