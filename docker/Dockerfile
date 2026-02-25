@@ -31,20 +31,11 @@ ENV JULIA_DEPOT_PATH="/opt/julia-depot"
 
 # Pre-warm juliacall: triggers juliapkg to download a compatible Julia binary
 # and pre-installs all required Julia packages so CI/runtime has zero download cost.
-RUN mkdir -p /opt/julia-depot && python - <<'EOF'
-from juliacall import Main as jl
-jl.seval("""
-import Pkg
-pkgs = ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5",
-        "OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq",
-        "BifurcationKit","ModelingToolkit","Plots"]
-for p in pkgs
-    Pkg.add(p)
-end
-Pkg.precompile()
-""")
-EOF
-RUN chmod -R a+rw /opt/julia-depot
+COPY prewarm_julia.py /tmp/prewarm_julia.py
+RUN mkdir -p /opt/julia-depot \
+    && python3 /tmp/prewarm_julia.py \
+    && chmod -R a+rw /opt/julia-depot \
+    && rm /tmp/prewarm_julia.py
 
 ENV AUTO_DIR=/auto-07p
 WORKDIR /app
