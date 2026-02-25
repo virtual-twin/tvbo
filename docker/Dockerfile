@@ -29,14 +29,19 @@ RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo[julia,pyrates] tvboptim
 
+# Julia depot in a fixed location (not HOME-dependent)
+# so pre-installed packages are found regardless of runtime HOME
+ENV JULIA_DEPOT_PATH="/opt/julia-depot"
+
 # Pre-install Julia packages for NetworkDynamics, BifurcationKit, ModelingToolkit docs
-RUN julia -e '\
+RUN mkdir -p /opt/julia-depot && julia -e '\
     using Pkg; \
     pkgs = ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5", \
             "OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq", \
             "BifurcationKit","ModelingToolkit","Plots"]; \
     for p in pkgs; Pkg.add(p); end; \
-    Pkg.precompile()'
+    Pkg.precompile()' \
+    && chmod -R a+rw /opt/julia-depot
 
 ENV AUTO_DIR=/auto-07p
 WORKDIR /app
