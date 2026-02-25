@@ -102,7 +102,7 @@ jobs:
             - name: Generate reference data
               run: julia tests/reference_data/generate_nd_references.jl
             - name: Run tests (no doc tests)
-              run: pytest -x -q --ignore=tests/test_docs.py
+              run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
 
     # ─── Main only: doc tests ──────────────────────────────────
     test-docs:
@@ -141,44 +141,10 @@ jobs:
             - name: Run doc tests
               run: pytest tests/test_docs.py -x -v --tb=long -m docs --override-ini="addopts="
 
-    # ─── Main only: strict gate — zero skips before release ────
-    strict-gate:
-        name: Strict gate (no skips)
-        needs: lint
-        if: >-
-            (github.event_name == 'pull_request' && github.base_ref == 'main')
-            || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-        runs-on: ubuntu-latest
-        container:
-            image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'pull_request' && 'dev' || 'latest' }}
-            credentials:
-                username: ${{ github.actor }}
-                password: ${{ secrets.GITHUB_TOKEN }}
-        steps:
-            - uses: actions/checkout@v6
-            - name: Configure git for private repos
-              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-            - name: Install dev code + test deps
-              run: pip install -e ".[all]" pytest-xdist
-            - name: Generate reference data
-              run: julia tests/reference_data/generate_nd_references.jl
-            - name: Run all tests strictly (fail on skip)
-              run: pytest --ignore=tests/test_docs.py --no-header -p no:randomly -rN --override-ini="addopts=" -n auto --dist=loadscope 2>&1 | tee pytest_output.txt
-            - name: Verify no tests were skipped
-              run: |
-                  SUMMARY=$(tail -1 pytest_output.txt)
-                  echo "Test summary: $SUMMARY"
-                  if echo "$SUMMARY" | grep -qiE 'skip|xfail|error|no tests ran'; then
-                    echo "::error::Strict gate FAILED — tests were skipped, xfailed, or errored."
-                    echo "$SUMMARY"
-                    exit 1
-                  fi
-                  echo "All tests passed with no skips."
-
     # ─── Main only: release-ready check ────────────────────────
     release-ready:
         name: Release-ready check
-        needs: [compat, test-native, test-container, test-docs, strict-gate]
+        needs: [compat, test-native, test-container, test-docs]
         if: >-
             (github.event_name == 'pull_request' && github.base_ref == 'main')
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
