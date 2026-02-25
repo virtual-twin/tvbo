@@ -6517,7 +6517,7 @@ class SimulationStudy(ConfiguredBaseModel):
     year: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
     doi: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy', 'SoftwarePackage']} })
     sample: Optional[Sample] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
-    simulation_experiments: Optional[list[SimulationExperiment]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
+    experiments: Optional[list[SimulationExperiment]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
 
 
 class TimeSeries(ConfiguredBaseModel):

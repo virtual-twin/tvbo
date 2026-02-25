@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-25T20:31:42
+# Generation date: 2026-02-25T22:17:24
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -3097,7 +3097,7 @@ class SimulationStudy(YAMLRoot):
     year: Optional[int] = None
     doi: Optional[str] = None
     sample: Optional[Union[dict, Sample]] = None
-    simulation_experiments: Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]] = empty_dict()
+    experiments: Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -3127,7 +3127,7 @@ class SimulationStudy(YAMLRoot):
         if self.sample is not None and not isinstance(self.sample, Sample):
             self.sample = Sample(**as_dict(self.sample))
 
-        self._normalize_inlined_as_list(slot_name="simulation_experiments", slot_type=SimulationExperiment, key_name="id", keyed=True)
+        self._normalize_inlined_as_list(slot_name="experiments", slot_type=SimulationExperiment, key_name="id", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -5980,7 +5980,7 @@ slots.simulationStudy__doi = Slot(uri=TVBO.doi, name="simulationStudy__doi", cur
 slots.simulationStudy__sample = Slot(uri=TVBO.sample, name="simulationStudy__sample", curie=TVBO.curie('sample'),
                    model_uri=TVBO.simulationStudy__sample, domain=None, range=Optional[Union[dict, Sample]])
 
-slots.simulationStudy__simulation_experiments = Slot(uri=TVBO.simulation_experiments, name="simulationStudy__simulation_experiments", curie=TVBO.curie('simulation_experiments'),
+slots.simulationStudy__simulation_experiments = Slot(uri=TVBO.experiments, name="simulationStudy__simulation_experiments", curie=TVBO.curie('experiments'),
                    model_uri=TVBO.simulationStudy__simulation_experiments, domain=None, range=Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]])
 
 slots.timeSeries__data = Slot(uri=TVBO.data, name="timeSeries__data", curie=TVBO.curie('data'),

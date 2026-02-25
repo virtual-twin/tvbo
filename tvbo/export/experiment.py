@@ -118,14 +118,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     conts[key] = _coerce(Continuation, val)
 
         # Mirror model/local_dynamics
-        self.model = self.local_dynamics
+        self.model = getattr(self, "local_dynamics", None)
 
         # If dynamics dict is empty, populate from local_dynamics
-        if not getattr(self, "dynamics", None) and getattr(
-            self, "local_dynamics", None
-        ):
-            ld = self.local_dynamics
-            self.dynamics[ld.name] = ld
+        _ld = getattr(self, "local_dynamics", None)
+        if not getattr(self, "dynamics", None) and _ld:
+            self.dynamics[_ld.name] = _ld
 
         # Coerce all dynamics dict entries to the enhanced Dynamics class
         if getattr(self, "dynamics", None) and isinstance(self.dynamics, dict):
@@ -160,8 +158,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if not getattr(self, "coupling", None):
             self.coupling = Coupling(name="Linear")
 
-        if self.local_dynamics and not self.dynamics:
-            self.dynamics[self.local_dynamics.name] = self.local_dyanmics
+        _ld = getattr(self, "local_dynamics", None)
+        if _ld and not self.dynamics:
+            self.dynamics[_ld.name] = _ld
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
@@ -199,8 +198,36 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_datamodel(
         cls, dm: tvbo_datamodel.SimulationExperiment
     ) -> "SimulationExperiment":
-        # Leverage the unified initializer
-        return cls(**dm._as_dict)
+        """Create from a datamodel instance by copying its already-normalized
+        state.
+
+        This avoids the ``_as_dict`` → re-init round-trip which breaks on
+        ``inlined_as_dict`` fields (the keyed dict is not valid ``**kwargs``
+        for the inner class constructor).  Instead we directly copy the
+        ``__dict__`` from the fully-normalised LinkML object and then set
+        the convenience aliases that ``__init__`` would normally provide.
+        """
+        obj = cls.__new__(cls)
+        # Copy all already-normalized state from the datamodel instance
+        obj.__dict__.update(dm.__dict__)
+
+        # Set convenience aliases that __init__ normally creates
+        dyn = getattr(obj, "dynamics", None)
+        if isinstance(dyn, dict) and dyn:
+            first = next(iter(dyn.values()))
+            obj.__dict__["local_dynamics"] = first
+            obj.__dict__["model"] = first
+        else:
+            obj.__dict__.setdefault("local_dynamics", None)
+
+        if not getattr(obj, "network", None):
+            obj.__dict__["network"] = Network()
+        if not getattr(obj, "integration", None):
+            obj.__dict__["integration"] = Integrator(method="Heun")
+        if not getattr(obj, "coupling", None):
+            obj.__dict__["coupling"] = Coupling(name="Linear")
+        obj.__dict__["_source_file"] = None
+        return obj
 
     @classmethod
     def from_pyrates(cls, filepath: str) -> "SimulationExperiment":
