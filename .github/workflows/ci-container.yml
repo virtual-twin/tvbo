@@ -53,7 +53,7 @@ jobs:
             - name: Install dev code + test deps
               run: pip install -e ".[all]" pytest-xdist
             - name: Generate reference data
-              run: python -c "import subprocess, juliapkg; subprocess.run([juliapkg.executable(), 'tests/reference_data/generate_nd_references.jl'], check=True)"
+              run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
             - name: Run tests (no doc tests)
               run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
 
@@ -90,7 +90,7 @@ jobs:
                   fi
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-            - name: Install doc dependencies
+            - name: Install dev code + test deps
               run: pip install -e ".[all]" pytest-xdist
             - name: Run doc tests
               run: pytest tests/test_docs.py -x -v --tb=long -m docs --override-ini="addopts="
