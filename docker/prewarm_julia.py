@@ -1,24 +1,22 @@
 """Pre-warm juliacall during Docker build.
 
-juliapkg downloads a compatible Julia binary on first import of juliacall
-and sets up an isolated project environment. This script triggers that
-full initialization so the Julia binary + all scientific packages are baked
-into the image layer — avoiding re-download/re-compilation on every CI run.
+The Dockerfile installs tvbo from PyPI, which does not yet carry
+tvbo/juliapkg.json. This script explicitly adds all Julia packages
+into the juliacall-managed environment so they are baked into the
+image layer — avoiding re-download and re-compilation at run time.
 
-Without a juliapkg.json in tvbo, scientific packages (NetworkDynamics etc.)
-are not auto-declared, so we add them explicitly here.
+At run time (CI / user install from source), tvbo/juliapkg.json
+declares the same packages declaratively and juliapkg resolves them
+against the already-precompiled depot.
 """
 
-from juliacall import Main as jl  # bootstraps Julia binary + PythonCall via juliapkg
+from juliacall import Main as jl  # bootstraps Julia binary via juliapkg
 
-# Install all scientific packages used by tvbo Julia backends into the
-# active juliapkg-managed environment, then precompile.
 jl.seval("""
 import Pkg
-pkgs = ["Graphs", "NetworkDynamics", "OrdinaryDiffEqTsit5",
-        "OrdinaryDiffEqSDIRK", "SimpleWeightedGraphs", "StochasticDiffEq",
-        "BifurcationKit", "ModelingToolkit", "Plots"]
-for p in pkgs
+for p in ["BifurcationKit", "DiffEqCallbacks", "Graphs", "ModelingToolkit",
+          "NetworkDynamics", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqTsit5",
+          "Plots", "SimpleWeightedGraphs", "StochasticDiffEq"]
     Pkg.add(p)
 end
 Pkg.precompile()
