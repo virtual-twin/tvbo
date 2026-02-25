@@ -128,6 +128,8 @@ jobs:
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install doc dependencies
               run: pip install -e ".[all]" pytest-xdist
+            - name: Install Julia packages for NetworkDynamics.jl docs
+              run: julia -e 'using Pkg; for p in ["Graphs","NetworkDynamics","OrdinaryDiffEqTsit5","OrdinaryDiffEqSDIRK","SimpleWeightedGraphs","StochasticDiffEq"]; haskey(Pkg.project().dependencies,p) || Pkg.add(p); end'
             - name: Run doc tests
               run: pytest tests/test_docs.py -v -m docs
 

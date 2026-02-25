@@ -5,9 +5,8 @@ This test discovers all .qmd files with Python code cells in docs/,
 converts them to notebooks, and executes them to ensure documentation
 examples remain functional.
 
-Docs are skipped when:
-- YAML frontmatter contains ``execute: eval: false``
-- YAML frontmatter contains ``test-skip: true``
+Docs with ``execute: eval: false`` in their YAML frontmatter are excluded
+from collection (Quarto itself would not execute them).
 
 Run with: pytest tests/test_docs.py -v
 Run single doc: pytest tests/test_docs.py -k "Network" -v
@@ -35,17 +34,11 @@ def parse_frontmatter(qmd_path: str) -> dict:
     return yaml.safe_load(match.group(1)) or {}
 
 
-def should_skip(qmd_path: str) -> str | None:
-    """Return a skip reason if the doc should not be executed, else None."""
+def is_eval_disabled(qmd_path: str) -> bool:
+    """Return True if the doc has execute.eval: false in frontmatter."""
     fm = parse_frontmatter(qmd_path)
-    # Document-level eval: false
     execute = fm.get("execute", {})
-    if isinstance(execute, dict) and execute.get("eval") is False:
-        return "frontmatter has execute.eval: false"
-    # Explicit test-skip flag
-    if fm.get("test-skip"):
-        return f"frontmatter has test-skip: {fm['test-skip']}"
-    return None
+    return isinstance(execute, dict) and execute.get("eval") is False
 
 
 def get_all_qmd_files():
@@ -67,8 +60,11 @@ def get_doc_name(path: str) -> str:
     return str(rel_path.with_suffix(""))
 
 
-# Discover all testable qmd files
-qmd_files = [f for f in get_all_qmd_files() if has_python_cells(f)]
+# Discover all testable qmd files (exclude eval:false docs at collection time)
+qmd_files = [
+    f for f in get_all_qmd_files()
+    if has_python_cells(f) and not is_eval_disabled(f)
+]
 test_params = [(path, get_doc_name(path)) for path in qmd_files]
 
 
@@ -80,10 +76,6 @@ test_params = [(path, get_doc_name(path)) for path in qmd_files]
 )
 def test_doc_executes(qmd_path, doc_name):
     """Test that a documentation notebook executes without errors."""
-    skip_reason = should_skip(qmd_path)
-    if skip_reason:
-        pytest.skip(skip_reason)
-
     qmd_path = Path(qmd_path)
     doc_dir = qmd_path.parent  # Original doc directory for relative path resolution
 
