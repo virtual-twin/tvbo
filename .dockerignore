@@ -1,0 +1,12 @@
+.git
+.venv
+.tox
+__pycache__
+*.pyc
+*.egg-info
+dist
+build
+.pytest_cache
+docs/_output
+docs/_freeze
+*.h5

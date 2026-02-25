@@ -20,27 +20,26 @@ RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/
     && wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb" \
     && dpkg -i quarto.deb && rm quarto.deb
 
-# Install Python packages (juliacall is included via tvbo[julia] and downloads
-# its own compatible Julia via juliapkg — no system Julia installation needed)
+# Install tvbo from source so tvbo/juliapkg.json is available for juliacall.
+# juliacall reads juliapkg.json to know which Julia packages to resolve.
+COPY . /app
+WORKDIR /app
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir jupyterlab uvicorn fastapi tvbo[julia,pyrates] tvboptim
+    && pip install --no-cache-dir jupyterlab uvicorn fastapi ".[julia,pyrates]" tvboptim
 
 # Julia depot in a fixed, world-readable location so packages pre-compiled
 # here are found regardless of runtime HOME or user.
 ENV JULIA_DEPOT_PATH="/opt/julia-depot"
 
-# Pre-warm juliacall: triggers juliapkg to download a compatible Julia binary
-# and pre-installs all required Julia packages so CI/runtime has zero download cost.
-COPY prewarm_julia.py /tmp/prewarm_julia.py
+# Pre-warm juliacall: importing Main triggers juliapkg to download a compatible
+# Julia binary and resolve all packages declared in tvbo/juliapkg.json.
 RUN mkdir -p /opt/julia-depot \
-    && python3 /tmp/prewarm_julia.py \
-    && chmod -R a+rw /opt/julia-depot \
-    && rm /tmp/prewarm_julia.py
+    && python3 -c "from juliacall import Main" \
+    && chmod -R a+rw /opt/julia-depot
 
 ENV AUTO_DIR=/auto-07p
-WORKDIR /app
 EXPOSE 8000 8888
 
-COPY entrypoint.sh /entrypoint.sh
+COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
