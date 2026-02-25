@@ -40,6 +40,6 @@ RUN mkdir -p /opt/julia-depot \
 ENV AUTO_DIR=/auto-07p
 EXPOSE 8000 8888
 
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# entrypoint.sh was already copied with COPY . /app above
+RUN cp docker/entrypoint.sh /entrypoint.sh && chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
