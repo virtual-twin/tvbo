@@ -1,18 +1,13 @@
 # Container-based CI that waits for the Docker image build to finish.
-# On push to main/dev: triggers via workflow_run after Docker workflow completes,
-#   ensuring container tests always use the freshly built image.
-# On PRs to main: triggers directly (uses existing 'dev' image).
+# Triggers via workflow_run after Docker workflow completes, ensuring
+# container tests always use the freshly built image.
 name: CI (Container)
 
 on:
-    # Wait for Docker image build before running container tests
     workflow_run:
         workflows: ["Docker"]
         types: [completed]
         branches: [main, dev]
-    # PRs to main use existing dev image (Docker doesn't rebuild on PRs)
-    pull_request:
-        branches: ["main"]
     workflow_dispatch:
 
 concurrency:
@@ -30,8 +25,7 @@ env:
 
 jobs:
     # ─── Container tests ──────────────────────────────────────
-    # Resolve image tag: :latest for main pushes, :dev for everything else
-    # (dev pushes, PRs to main/dev all use :dev)
+    # Image tag: :latest for main, :dev for dev branch
     test-container:
         name: Container tests
         # Skip if Docker workflow failed (workflow_run fires for any conclusion)
@@ -40,7 +34,7 @@ jobs:
             || github.event.workflow_run.conclusion == 'success'
         runs-on: ubuntu-latest
         container:
-            image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && 'latest' || 'dev' }}
+            image: ghcr.io/virtual-twin/tvbo:${{ github.event.workflow_run.head_branch == 'main' && 'latest' || 'dev' }}
             credentials:
                 username: ${{ github.actor }}
                 password: ${{ secrets.GITHUB_TOKEN }}
@@ -65,7 +59,7 @@ jobs:
             || github.event.workflow_run.conclusion == 'success'
         runs-on: ubuntu-latest
         container:
-            image: ghcr.io/virtual-twin/tvbo:${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && 'latest' || 'dev' }}
+            image: ghcr.io/virtual-twin/tvbo:${{ github.event.workflow_run.head_branch == 'main' && 'latest' || 'dev' }}
             credentials:
                 username: ${{ github.actor }}
                 password: ${{ secrets.GITHUB_TOKEN }}
@@ -100,10 +94,9 @@ jobs:
         name: Release-ready check
         needs: [test-container, test-docs]
         if: >-
-            (github.event_name == 'pull_request' && github.base_ref == 'main')
-            || (github.event_name == 'workflow_run'
-                && github.event.workflow_run.conclusion == 'success'
-                && github.event.workflow_run.head_branch == 'main')
+            github.event_name == 'workflow_run'
+            && github.event.workflow_run.conclusion == 'success'
+            && github.event.workflow_run.head_branch == 'main'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
