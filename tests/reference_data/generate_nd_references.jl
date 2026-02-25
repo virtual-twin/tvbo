@@ -15,7 +15,7 @@ that TVBO-generated code produces time-series on the exact same grid.
 using Pkg
 for pkg in ["NetworkDynamics", "Graphs", "OrdinaryDiffEqTsit5",
             "OrdinaryDiffEqSDIRK", "SimpleWeightedGraphs", "StableRNGs",
-            "HDF5", "DelimitedFiles"]
+            "HDF5", "DelimitedFiles", "DiffEqCallbacks"]
     if !haskey(Pkg.project().dependencies, pkg)
         Pkg.add(pkg)
     end
