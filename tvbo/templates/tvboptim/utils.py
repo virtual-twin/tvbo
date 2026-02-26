@@ -80,6 +80,60 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     return param_names, param_defaults, param_shapes
 
 
+def get_node_param_overrides(
+    network, n_nodes: int, dyn_param_defaults: Dict[str, float]
+) -> Dict[str, List[float]]:
+    """Scan network.nodes for per-node parameter overrides.
+
+    When nodes define parameters that differ from the dynamics defaults,
+    build per-node arrays. Only parameters that differ on at least one
+    node are returned.
+
+    Args:
+        network: Network object with .nodes list
+        n_nodes: number of nodes
+        dyn_param_defaults: dict of param_name -> scalar default from dynamics
+
+    Returns:
+        dict of param_name -> list of per-node values (length n_nodes)
+    """
+    if not network or not getattr(network, 'nodes', None):
+        return {}
+
+    nodes = list(network.nodes) if not isinstance(network.nodes, list) else network.nodes
+    if len(nodes) != n_nodes:
+        return {}
+
+    # Collect per-node values for all parameters defined on any node
+    node_params = {}  # param_name -> {node_id: value}
+    for node in nodes:
+        node_id = int(node.id)
+        if not getattr(node, 'parameters', None):
+            continue
+        params = node.parameters
+        if hasattr(params, 'values'):
+            params = params.values()
+        for p in params:
+            pname = str(p.name)
+            val = float(p.value) if p.value is not None else None
+            if val is not None:
+                node_params.setdefault(pname, {})[node_id] = val
+
+    # Build per-node arrays using dynamics defaults as base
+    overrides = {}
+    for pname, node_vals in node_params.items():
+        base = dyn_param_defaults.get(pname, 1.0)
+        arr = [base] * n_nodes
+        for node_id, val in node_vals.items():
+            if 0 <= node_id < n_nodes:
+                arr[node_id] = val
+        # Only include if at least one node differs from default
+        if any(v != base for v in arr):
+            overrides[pname] = arr
+
+    return overrides
+
+
 def to_numeric(val: Any) -> Union[int, float, Any]:
     """Convert string to numeric if possible."""
     if isinstance(val, (int, float)):

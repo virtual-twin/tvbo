@@ -7,7 +7,7 @@ from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
-    parse_exploration, get_param_info
+    parse_exploration, get_param_info, get_node_param_overrides
 )
 import numpy as np
 
@@ -166,6 +166,13 @@ dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else
 
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
+
+# Per-node parameter overrides from network.nodes[].parameters
+# If nodes define e.g. B=17.6 on node 1, auto-promote B to heterogeneous array
+node_param_overrides = get_node_param_overrides(network, n_nodes, dyn_param_defaults)
+for _np_name in node_param_overrides:
+    if _np_name not in dyn_param_shapes:
+        dyn_param_shapes[_np_name] = '(n_nodes,)'
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
 # time-varying inputs pre-generated as arrays and indexed per integration step.
@@ -641,7 +648,9 @@ def create_network(
 
     _dynamics_params = {
         % for name in dyn_param_names:
-        % if name in dyn_param_shapes:
+        % if name in node_param_overrides:
+        '${name}': jnp.array([${', '.join(str(v) for v in node_param_overrides[name])}]),
+        % elif name in dyn_param_shapes:
         '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
         '${name}': ${dyn_param_defaults.get(name, 1.0)},
