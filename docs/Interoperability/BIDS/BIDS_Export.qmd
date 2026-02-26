@@ -487,7 +487,7 @@ loaded_exp, loaded_ts = SimulationExperiment.from_bids(
 
 print(f"Original shape:  {ts.shape}")
 print(f"Loaded shape:    {loaded_ts.shape}")
-print(f"Model: {loaded_exp.local_dynamics.name}")
+print(f"Model: {loaded_exp.dynamics.name}")
 ```
 
 ## Verifying Reproducibility with `np.isclose`

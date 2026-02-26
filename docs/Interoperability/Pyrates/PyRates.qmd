@@ -143,7 +143,7 @@ from IPython.display import Markdown, display
 
 # Run the loaded model in TVBO
 exp = SimulationExperiment(
-    local_dynamics=loaded,
+    dynamics=loaded,
 )
 exp.integration.duration=100
 
@@ -214,7 +214,7 @@ from IPython.display import Markdown, display
 
 # Run the modified model in TVBO
 exp = SimulationExperiment(
-    local_dynamics=vdp_imported,
+    dynamics=vdp_imported,
 )
 exp.integration.duration=100
 
@@ -282,7 +282,7 @@ print(tsodyks.render_code(format="python"))
 
 # Create experiment
 synapse_exp = SimulationExperiment(
-    local_dynamics=tsodyks
+    dynamics=tsodyks
 )
 
 # Display experiment configuration
@@ -349,7 +349,7 @@ vdp_compare.add_state_variable("z", equation="mu*(1 - x**2)*z - x", initial_valu
 display(Markdown(vdp_compare.generate_report(format="markdown")))
 
 # Run in TVBO (uses Heun by default)
-exp_compare = SimulationExperiment(local_dynamics=vdp_compare)
+exp_compare = SimulationExperiment(dynamics=vdp_compare)
 exp_compare.integration.duration = T
 exp_compare.integration.step_size = dt
 tvbo_result = exp_compare.run()

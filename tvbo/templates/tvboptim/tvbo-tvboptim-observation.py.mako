@@ -4,7 +4,7 @@
 from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import get_attr, to_numeric
 
-model = experiment.local_dynamics
+model = experiment.dynamics
 state_names = list(model.state_variables.keys()) if model else ['x']
 dt = experiment.integration.step_size if experiment.integration else 0.1
 

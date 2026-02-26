@@ -164,7 +164,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         dynamics_dict = self.build_dynamics_dict()
         node_dynamics_map = self.build_node_dynamics_map()
         nodes = list(self.experiment.network.nodes)
-        default_model = self.experiment.local_dynamics
+        default_model = self.experiment.dynamics
 
         # Determine coupling var indices from the default (free) model
         coupling_vars = self.get_coupling_vars(default_model)

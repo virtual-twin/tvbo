@@ -20,7 +20,7 @@ Output:
 </%doc>
 <%
 # Get experiment info
-model = experiment.local_dynamics
+model = experiment.dynamics
 network = experiment.network
 coupling = experiment.coupling
 n_nodes = N_nodes = network.number_of_regions if network else 1

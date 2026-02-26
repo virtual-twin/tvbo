@@ -23,7 +23,7 @@ references:
     - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/"
 
 # -- Default vertex dynamics (FreeVertex) --------------------------------------
-local_dynamics:
+dynamics:
     name: FreeVertex
     label: "Free vertex (point mass)"
     description: >

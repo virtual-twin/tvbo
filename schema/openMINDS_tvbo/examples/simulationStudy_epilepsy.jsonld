@@ -37,7 +37,7 @@
       "label": "Patient 001 - Baseline Seizure Simulation",
       "description": "Baseline simulation reproducing spontaneous seizure dynamics in Patient 001 before virtual resection.",
 
-      "local_dynamics": {
+      "dynamics": {
         "@type": "tvbo:Dynamics",
         "name": "Epileptor",
         "label": "Epileptor Neural Mass Model",
@@ -373,7 +373,7 @@
       "label": "Patient 001 - Virtual Resection Simulation",
       "description": "Simulation after virtual resection of left hippocampus and amygdala to predict seizure freedom.",
 
-      "local_dynamics": {
+      "dynamics": {
         "@type": "tvbo:Dynamics",
         "@id": "https://example.org/models/epileptor"
       },
@@ -439,7 +439,7 @@
       "label": "Patient 001 - Alternative Resection Strategy",
       "description": "Testing alternative surgical strategy with selective hippocampectomy only.",
 
-      "local_dynamics": {
+      "dynamics": {
         "@type": "tvbo:Dynamics",
         "@id": "https://example.org/models/epileptor"
       },

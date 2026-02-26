@@ -43,15 +43,16 @@ class BaseAdapter:
         """Build an ordered dict of all unique Dynamics models.
 
         Always includes the default model first, then any additional dynamics
-        from the experiment's dynamics library.
+        from the network's dynamics library (for heterogeneous networks).
         """
         exp = self.experiment
-        model = exp.local_dynamics
+        model = exp.dynamics
         d = OrderedDict()
         if model:
             d[model.name] = model
-        if hasattr(exp, 'dynamics') and isinstance(exp.dynamics, dict):
-            for name, dyn in exp.dynamics.items():
+        net_dynamics = getattr(exp.network, 'dynamics', None) if exp.network else None
+        if isinstance(net_dynamics, dict):
+            for name, dyn in net_dynamics.items():
                 if name not in d:
                     d[name] = dyn
         return d
@@ -65,7 +66,7 @@ class BaseAdapter:
         Returns {node_id: dynamics_name}.
         """
         exp = self.experiment
-        model = exp.local_dynamics
+        model = exp.dynamics
         default_name = model.name if model else None
         nodes = getattr(exp.network, 'nodes', None) or []
         mapping = {}
@@ -377,7 +378,7 @@ class BaseAdapter:
         doing metadata processing themselves.
         """
         exp = self.experiment
-        model = exp.local_dynamics
+        model = exp.dynamics
 
         dynamics_dict = self.build_dynamics_dict()
         node_dynamics_map = self.build_node_dynamics_map()

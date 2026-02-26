@@ -1,7 +1,7 @@
 <%
 from tvbo.export import report
 exp = experiment
-model = getattr(exp, 'local_dynamics', None)
+model = getattr(exp, 'dynamics', None)
 integ = getattr(exp, 'integration', None)
 net = getattr(exp, 'network', None) or getattr(exp, 'connectivity', None)
 cpl = getattr(exp, 'coupling', None)

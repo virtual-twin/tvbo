@@ -6,7 +6,7 @@ from sympy import Symbol
 
 if 'experiment' in context.keys():
     integration = experiment.integration
-    model = experiment.local_dynamics
+    model = experiment.dynamics
 elif 'integration' in context.keys():
     integration = context['integration']
     model = context['model']

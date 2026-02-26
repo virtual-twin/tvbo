@@ -313,13 +313,8 @@ class PyRatesAdapter:
         PyRates vectorize=True cannot handle circuits where different nodes
         have different operators (different parameter counts / state variables).
         """
-        exp = self.experiment
-        dynamics = getattr(exp, "dynamics", None)
-        if isinstance(dynamics, dict) and len(dynamics) > 1:
-            # Multiple distinct dynamics models
-            names = {getattr(d, "name", None) for d in dynamics.values() if d}
-            return len(names) > 1
-        return False
+        dynamics_dict = self.build_dynamics_dict()
+        return len(dynamics_dict) > 1
 
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
@@ -355,7 +350,7 @@ class PyRatesAdapter:
 
         # Get circuit name
         network = getattr(exp, "network", None)
-        dynamics = getattr(exp, "local_dynamics", None) or getattr(exp, "dynamics", None)
+        dynamics = getattr(exp, "dynamics", None)
 
         if network is not None:
             circuit_name = (
@@ -393,9 +388,7 @@ class PyRatesAdapter:
     def _add_edges_from_matrix(self, circuit, network) -> None:
         """Add edges to circuit using weight matrix (efficient for large networks)."""
         exp = self.experiment
-        dynamics_dict = exp.dynamics
-        if not isinstance(dynamics_dict, dict):
-            dynamics_dict = {d.name: d for d in (dynamics_dict or [])}
+        dynamics_dict = self.build_dynamics_dict()
 
         # Get node labels
         node_labels = []
@@ -465,9 +458,7 @@ class PyRatesAdapter:
         exp = self.experiment
         outputs = {}
 
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        dynamics = self.build_dynamics_dict()
 
         default_dyn = next(iter(dynamics.values())) if dynamics else None
 
@@ -514,9 +505,7 @@ class PyRatesAdapter:
         import sympy as sp
 
         exp = self.experiment
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        dynamics = self.build_dynamics_dict()
 
         if not dynamics:
             return result

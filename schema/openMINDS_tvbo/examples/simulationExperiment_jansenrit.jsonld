@@ -12,7 +12,7 @@
   "label": "Jansen-Rit Resting State Simulation",
   "description": "Whole-brain resting state simulation using the Jansen-Rit neural mass model on the Desikan-Killiany parcellation with linear diffusive coupling.",
 
-  "local_dynamics": {
+  "dynamics": {
     "@type": "tvbo:Dynamics",
     "name": "JansenRit",
     "label": "Jansen-Rit Neural Mass Model",

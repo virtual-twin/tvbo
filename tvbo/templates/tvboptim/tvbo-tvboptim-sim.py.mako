@@ -19,7 +19,7 @@ import numpy as np
 # Must have experiment
 assert 'experiment' in context.keys(), "experiment required for simulation template"
 
-model = experiment.local_dynamics
+model = experiment.dynamics
 coupling = experiment.coupling
 integration = experiment.integration
 network = experiment.network

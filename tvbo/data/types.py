@@ -1835,8 +1835,8 @@ class TimeSeries(BaseTimeSeries):
 
         # Auto-detect description from model name if not provided
         if description is None and experiment is not None:
-            if hasattr(experiment, "local_dynamics"):
-                description = type(experiment.local_dynamics).__name__.lower()
+            if hasattr(experiment, "dynamics"):
+                description = type(experiment.dynamics).__name__.lower()
             else:
                 description = "simulation"
         elif description is None:
@@ -1971,8 +1971,8 @@ class TimeSeries(BaseTimeSeries):
         if experiment is not None:
             provenance = SimulationProvenance(
                 Model=(
-                    str(experiment.local_dynamics)
-                    if hasattr(experiment, "local_dynamics")
+                    str(experiment.dynamics)
+                    if hasattr(experiment, "dynamics")
                     else None
                 ),
                 Integrator=(
@@ -2059,8 +2059,8 @@ class TimeSeries(BaseTimeSeries):
             metadata = {
                 "source": "tvbo simulation",
                 "model": (
-                    str(experiment.local_dynamics)
-                    if experiment and hasattr(experiment, "local_dynamics")
+                    str(experiment.dynamics)
+                    if experiment and hasattr(experiment, "dynamics")
                     else None
                 ),
             }
@@ -2156,13 +2156,13 @@ class TimeSeries(BaseTimeSeries):
         # =====================================================================
         if include_model and experiment is not None:
             model_name = "unknown"
-            if hasattr(experiment, "local_dynamics"):
-                model_name = type(experiment.local_dynamics).__name__
+            if hasattr(experiment, "dynamics"):
+                model_name = type(experiment.dynamics).__name__
 
             # Extract model parameters
             params = None
-            if hasattr(experiment, "local_dynamics"):
-                model = experiment.local_dynamics
+            if hasattr(experiment, "dynamics"):
+                model = experiment.dynamics
                 params = {}
                 for attr in dir(model):
                     if not attr.startswith("_"):

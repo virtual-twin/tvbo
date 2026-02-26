@@ -2074,6 +2074,11 @@ class Network(ConfiguredBaseModel):
     nodes: Optional[list[Node]] = Field(default=None, description="""List of nodes with individual dynamics (optional, for heterogeneous networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     edges: Optional[list[Edge]] = Field(default=None, description="""List of directed edges with coupling references (optional, for explicit edge definition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     coupling: Optional[dict[str, Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
+    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+                       'Node',
+                       'Edge',
+                       'Continuation',
+                       'SimulationExperiment']} })
     number_of_regions: Optional[int] = Field(default=1, description="""Number of regions (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
     number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
     parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
@@ -2408,7 +2413,11 @@ class Node(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     id: int = Field(default=..., description="""Unique node identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+                       'Node',
+                       'Edge',
+                       'Continuation',
+                       'SimulationExperiment']} })
     position: Optional[Coordinate] = Field(default=None, description="""Spatial coordinates (x, y, z) of the node""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
     initial_state: Optional[list[float]] = Field(default=None, description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
@@ -2530,7 +2539,11 @@ class Edge(ConfiguredBaseModel):
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'False'} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+                       'Node',
+                       'Edge',
+                       'Continuation',
+                       'SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this edge (e.g., threshold-based line tripping).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
 
 
@@ -5886,7 +5899,11 @@ class Continuation(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    dynamics: Optional[str] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    dynamics: Optional[str] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+                       'Node',
+                       'Edge',
+                       'Continuation',
+                       'SimulationExperiment']} })
     free_parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
     ds: Optional[float] = Field(default=None, description="""Initial arc-length step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     ds_min: Optional[float] = Field(default=None, description="""Minimum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
@@ -6411,7 +6428,11 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Continuation', 'SimulationExperiment']} })
+    dynamics: Optional[Dynamics] = Field(default=None, description="""Default dynamics model for all nodes. For heterogeneous networks with multiple dynamics, use network.dynamics instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+                       'Node',
+                       'Edge',
+                       'Continuation',
+                       'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })

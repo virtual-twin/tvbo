@@ -43,19 +43,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         global sessionid
 
-        if "dynamics" in kwargs and not isinstance(kwargs["dynamics"], dict):
-            # Convert list of Dynamics to dict keyed by name
-            dynamics_input = kwargs["dynamics"]
-            if isinstance(dynamics_input, list):
-                dynamics_dict = {}
-                for dyn in dynamics_input:
-                    if dyn is not None and hasattr(dyn, "name"):
-                        dynamics_dict[dyn.name] = dyn
-                kwargs["dynamics"] = dynamics_dict
-            elif hasattr(dynamics_input, "name"):
-                # Single Dynamics instance - wrap in dict
-                kwargs["dynamics"] = {dynamics_input.name: dynamics_input}
-
         # Ensure an id exists (the datamodel requires it in __post_init__)
         if kwargs.get("id") is None:
             kwargs["id"] = sessionid
@@ -85,15 +72,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return cls(**obj)
             return obj
 
-        # Prefer `model` when `local_dynamics` is missing
-        if getattr(self, "model", None) and not getattr(self, "local_dynamics", None):
-            self.local_dynamics = self.model
+        # Prefer `model` (name string) when `dynamics` is missing
+        if getattr(self, "model", None) and not getattr(self, "dynamics", None):
+            self.dynamics = Dynamics(name=self.model)
 
-        # Ensure proper types
-        if getattr(self, "local_dynamics", None) and not isinstance(
-            self.local_dynamics, Dynamics
-        ):
-            self.local_dynamics = _coerce(Dynamics, self.local_dynamics)
+        # Coerce dynamics to enhanced Dynamics class
+        if getattr(self, "dynamics", None) and not isinstance(self.dynamics, Dynamics):
+            if isinstance(self.dynamics, tvbo_datamodel.Dynamics):
+                self.dynamics = Dynamics.from_datamodel(self.dynamics)
+            else:
+                self.dynamics = _coerce(Dynamics, self.dynamics)
+
+        # Mirror dynamics → model
+        if getattr(self, "dynamics", None):
+            self.model = self.dynamics
 
         if getattr(self, "coupling", None) and not isinstance(self.coupling, Coupling):
             self.coupling = _coerce(Coupling, self.coupling)
@@ -117,31 +109,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if val is not None and not isinstance(val, Continuation):
                     conts[key] = _coerce(Continuation, val)
 
-        # Mirror model/local_dynamics
-        self.model = getattr(self, "local_dynamics", None)
-
-        # If dynamics dict is empty, populate from local_dynamics
-        _ld = getattr(self, "local_dynamics", None)
-        if not getattr(self, "dynamics", None) and _ld:
-            self.dynamics[_ld.name] = _ld
-
-        # Coerce all dynamics dict entries to the enhanced Dynamics class
-        if getattr(self, "dynamics", None) and isinstance(self.dynamics, dict):
-            for key, val in list(self.dynamics.items()):
-                if val is not None and not isinstance(val, Dynamics):
-                    self.dynamics[key] = _coerce(Dynamics, val)
-
-        # If local_dynamics is empty but dynamics dict exists, use first entry
-        # This enables backwards-compatible single-model workflows
-        if not getattr(self, "local_dynamics", None) and getattr(
-            self, "dynamics", None
-        ):
-            dynamics_dict = self.dynamics
-            if isinstance(dynamics_dict, dict) and dynamics_dict:
-                first_key = next(iter(dynamics_dict))
-                self.local_dynamics = dynamics_dict[first_key]
-                self.model = self.local_dynamics
-
         if not getattr(self, "network", None):
             self.network = Network()
 
@@ -157,10 +124,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "coupling", None):
             self.coupling = Coupling(name="Linear")
-
-        _ld = getattr(self, "local_dynamics", None)
-        if _ld and not self.dynamics:
-            self.dynamics[_ld.name] = _ld
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
@@ -224,10 +187,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     upgraded[k] = v
             obj.__dict__["dynamics"] = upgraded
             first = next(iter(upgraded.values()))
-            obj.__dict__["local_dynamics"] = first
+            obj.__dict__["dynamics"] = first
             obj.__dict__["model"] = first
+        elif isinstance(dyn, Dynamics):
+            # Already the correct enhanced class
+            obj.__dict__["model"] = dyn
+        elif isinstance(dyn, tvbo_datamodel.Dynamics):
+            # Single datamodel Dynamics instance — upgrade it
+            upgraded = Dynamics.from_datamodel(dyn)
+            obj.__dict__["dynamics"] = upgraded
+            obj.__dict__["model"] = upgraded
         else:
-            obj.__dict__.setdefault("local_dynamics", None)
+            obj.__dict__.setdefault("dynamics", None)
 
         # Upgrade Integrator: copy state then populate from ontology
         integ = getattr(obj, "integration", None)
@@ -269,12 +240,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Returns
         -------
         SimulationExperiment
-            New instance with dynamics dict populated from PyRates templates.
+            New instance with primary dynamics and network.dynamics for
+            multi-operator files.
 
         Example
         -------
         >>> exp = SimulationExperiment.from_pyrates("synaptic_plasticity.yaml")
-        >>> print(exp.dynamics.keys())  # ['tsodyks', 'depression', 'facilitation']
+        >>> print(exp.dynamics.name)  # 'tsodyks'
+        >>> print(list(exp.network.dynamics.keys()))  # ['tsodyks', 'depression', 'facilitation']
         """
         from tvbo.export.pyrates import from_pyrates_yaml_all
 
@@ -287,15 +260,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             dyn = Dynamics(_skip_ontology=True, **dyn_dict)
             dynamics[name] = dyn
 
-        # Use the first dynamics as local_dynamics if available
-        local_dynamics = None
+        # Use the first dynamics as the primary model
+        primary_dyn = None
         if dynamics:
             first_key = next(iter(dynamics))
-            local_dynamics = dynamics[first_key]
+            primary_dyn = dynamics[first_key]
+
+        # Store all dynamics in network.dynamics for heterogeneous support
+        network_kwargs = {}
+        if len(dynamics) > 1:
+            network_kwargs["dynamics"] = dynamics
 
         return cls(
-            dynamics=dynamics,
-            local_dynamics=local_dynamics,
+            dynamics=primary_dyn,
+            network=Network(**network_kwargs) if network_kwargs else None,
         )
 
     @classmethod
@@ -357,7 +335,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         >>> exp = SimulationExperiment.from_string('''
         ... id: 1
         ... label: My Experiment
-        ... local_dynamics:
+        ... dynamics:
         ...   name: JansenRit
         ...   parameters:
         ...     A: {value: 3.25}
@@ -417,7 +395,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ... )
 
         >>> # Access the experiment settings
-        >>> print(exp.local_dynamics.name)
+        >>> print(exp.dynamics.name)
         'Generic2dOscillator'
 
         Notes
@@ -465,7 +443,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # =====================================================================
         # 2. Reconstruct Dynamics model
         # =====================================================================
-        local_dynamics = None
+        dynamics = None
         if bids_data["equations"] is not None:
             eq_data = bids_data["equations"]
             model_type = eq_data.get("model_type", "Generic2dOscillator")
@@ -473,20 +451,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Try to load from ontology by name
             try:
-                local_dynamics = Dynamics.from_ontology(model_type)
+                dynamics = Dynamics.from_ontology(model_type)
                 # Apply stored parameters
                 for param_name, param_value in params.items():
                     if (
-                        hasattr(local_dynamics, "parameters")
-                        and param_name in local_dynamics.parameters
+                        hasattr(dynamics, "parameters")
+                        and param_name in dynamics.parameters
                     ):
-                        local_dynamics.parameters[param_name].value = param_value
+                        dynamics.parameters[param_name].value = param_value
             except Exception:
                 # Fallback: create minimal Dynamics
-                local_dynamics = Dynamics(name=model_type)
+                dynamics = Dynamics(name=model_type)
         else:
             # Default dynamics
-            local_dynamics = Dynamics.from_ontology("Generic2dOscillator")
+            dynamics = Dynamics.from_ontology("Generic2dOscillator")
 
         # =====================================================================
         # 3. Reconstruct Integration settings from sidecar provenance
@@ -560,7 +538,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         experiment = cls(
             label=f"Loaded from BIDS: sub-{subject}",
             description=f"Experiment reconstructed from BIDS dataset at {bids_dir}",
-            local_dynamics=local_dynamics,
+            dynamics=dynamics,
             network=network,
             integration=integration,
             coupling=Coupling(name="Linear"),  # Default coupling
@@ -618,7 +596,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         sigmas: list[float] = []
 
-        for sv in self.local_dynamics.state_variables.values():
+        for sv in self.dynamics.state_variables.values():
             sigma = 0.0
             if sv.noise:
                 try:
@@ -725,47 +703,35 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Get network
             network = getattr(self, "network", None)
 
-            # Handle dynamics based on whether we have a network or single model
-            if network is not None:
-                # Network case: pass dynamics as dict for heterogeneous networks
-                dynamics = self.dynamics
-                if dynamics is None:
-                    dynamics = {}
-                elif not isinstance(dynamics, dict):
-                    # Convert list to dict keyed by name
-                    if isinstance(dynamics, list):
-                        dynamics = {d.name: d for d in dynamics if d is not None}
-                    else:
-                        # Single model - wrap in dict
-                        dynamics = {dynamics.name: dynamics} if dynamics else {}
+            # Build dynamics dict: primary model + any network dynamics
+            dynamics = self.dynamics
 
-                # Convert all datamodel Dynamics to full Dynamics class with methods
-                dynamics_converted = {}
-                for name, dyn in dynamics.items():
-                    if dyn is not None and not hasattr(dyn, "render_equation"):
-                        dynamics_converted[name] = DynamicsClass.from_datamodel(dyn)
-                    else:
-                        dynamics_converted[name] = dyn
+            # Convert datamodel Dynamics to full Dynamics class with methods
+            if dynamics is not None and not hasattr(dynamics, "render_equation"):
+                dynamics = DynamicsClass.from_datamodel(dynamics)
+
+            # For network case, build full dynamics dict
+            if network is not None:
+                dynamics_dict = {}
+                if dynamics:
+                    dynamics_dict[dynamics.name] = dynamics
+
+                # Add any additional dynamics from network.dynamics
+                net_dynamics = getattr(network, 'dynamics', None)
+                if isinstance(net_dynamics, dict):
+                    for name, dyn in net_dynamics.items():
+                        if name not in dynamics_dict:
+                            if dyn is not None and not hasattr(dyn, "render_equation"):
+                                dynamics_dict[name] = DynamicsClass.from_datamodel(dyn)
+                            else:
+                                dynamics_dict[name] = dyn
 
                 return to_pyrates_yaml_string(
-                    dynamics=dynamics_converted,
+                    dynamics=dynamics_dict,
                     network=network,
                     filepath=filepath,
                 )
             else:
-                # Single model case (no network)
-                dynamics = getattr(self, "local_dynamics", None)
-                if dynamics is None:
-                    dynamics = self.dynamics
-                    if isinstance(dynamics, list) and len(dynamics) == 1:
-                        dynamics = dynamics[0]
-                    elif isinstance(dynamics, dict) and len(dynamics) == 1:
-                        dynamics = list(dynamics.values())[0]
-
-                # Convert datamodel Dynamics to full Dynamics class with methods
-                if dynamics is not None and not hasattr(dynamics, "render_equation"):
-                    dynamics = DynamicsClass.from_datamodel(dynamics)
-
                 return to_pyrates_yaml_string(
                     dynamics=dynamics,
                     network=network,
@@ -873,7 +839,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         # Attach state variable names for ergonomic noise setters
         try:
-            state._svar_names = list(self.local_dynamics.state_variables.keys())
+            state._svar_names = list(self.dynamics.state_variables.keys())
         except Exception:
             pass
         return state
@@ -1059,7 +1025,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ts = jax_model(state)
             # simulation_data = Bunch()
             # ts.labels_dimensions = {
-            #     "State Variable": list(self.local_dynamics.state_variables.keys()),
+            #     "State Variable": list(self.dynamics.state_variables.keys()),
             #     "Region": self.network.labels,
             # }
             # ts.sample_period = self.integration.step_size
@@ -1076,7 +1042,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format.lower() == "python":
             bnm = _Network(Network(self.network))
-            bnm.add_local_model(self.local_dynamics)
+            bnm.add_local_model(self.dynamics)
             bnm.add_coupling(self.coupling)
 
             ts = bnm.run(
@@ -1278,7 +1244,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if self.network and self.network.parcellation
             else ""
         )
-        return f"ses-{self.id}_desc-{self.local_dynamics.label}"
+        return f"ses-{self.id}_desc-{self.dynamics.label}"
 
     @property
     def max_delay(self) -> float:
@@ -1300,15 +1266,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def collect_initial_conditions(self, random=False):
         history = []
-        n_modes = getattr(self.local_dynamics, 'number_of_modes', 1) or 1
+        n_modes = getattr(self.dynamics, 'number_of_modes', 1) or 1
         n_nodes = self.network.number_of_regions
 
         if random:
             history.append(
-                self.local_dynamics.get_initial_values(random=True, N=n_nodes)
+                self.dynamics.get_initial_values(random=True, N=n_nodes)
             )
         else:
-            for sv in self.local_dynamics.state_variables.values():
+            for sv in self.dynamics.state_variables.values():
                 history.append(np.repeat(sv.initial_value, n_nodes).astype(float))
 
         history = np.vstack(history)
@@ -1338,7 +1304,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from lems.model.component import Text
         from lems.model.simulation import DataWriter, Run
 
-        model = self.local_dynamics.to_lems(initial_conditions=initial_conditions)
+        model = self.dynamics.to_lems(initial_conditions=initial_conditions)
 
         base_local_ct = next(iter(model.component_types), None)
         local_comp = next(iter(model.components), None)
@@ -1352,7 +1318,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if local_comp is not None:
                 local_comp.type = local_ct.name
 
-        sv_names = list(self.local_dynamics.state_variables.keys())
+        sv_names = list(self.dynamics.state_variables.keys())
         target_sv = sv_names[0] if sv_names else "V"
         coupling_ct = lems.ComponentType(name="Coupling")
         coupling_ct.add(lems.Parameter(name="global_coupling", dimension="none"))
@@ -1487,7 +1453,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "rateml/tvbo-rateml-python.py.mako"
             )
             rendered_code = format_code(
-                template.render(model=self.local_dynamics, experiment=self, **kwargs),
+                template.render(model=self.dynamics, experiment=self, **kwargs),
                 use_black=False,
             )
 
@@ -1497,7 +1463,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "rateml/tvbo-rateml-cuda.c.mako"
             )
             rendered_code = template.render(
-                model=self.local_dynamics,
+                model=self.dynamics,
                 experiment=self,
                 coupling=self.coupling,
                 **kwargs
@@ -1509,7 +1475,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "rateml/tvbo-rateml-driver.py.mako"
             )
             rendered_code = format_code(
-                template.render(model=self.local_dynamics, experiment=self, **kwargs),
+                template.render(model=self.dynamics, experiment=self, **kwargs),
                 use_black=False,
             )
 
@@ -1518,7 +1484,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "tvbo-julia-DifferentialEquations.jl.mako"
             )
             rendered_code = template.render(
-                experiment=self, model=self.local_dynamics, **kwargs
+                experiment=self, model=self.dynamics, **kwargs
             )
 
         elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:

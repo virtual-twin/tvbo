@@ -13,10 +13,10 @@ experiment = context['experiment'].metadata
 initial_conditions = np.array([
     np.full((experiment.network.number_of_regions,), v.initial_value)
     if np.isscalar(v.initial_value) else v.initial_value
-    for k, v in experiment.local_dynamics.state_variables.items()
+    for k, v in experiment.dynamics.state_variables.items()
 ]).reshape(
     1,
-    len(experiment.local_dynamics.state_variables),
+    len(experiment.dynamics.state_variables),
     experiment.network.number_of_regions,
     1
 )
@@ -38,7 +38,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
     %endif
 %endif
     simulator = Simulator(
-        model=${experiment.local_dynamics.name}(**model_kwargs),
+        model=${experiment.dynamics.name}(**model_kwargs),
         connectivity=connectivity,
         coupling=${experiment.coupling.name}(**coupling_kwargs),
         conduction_speed=${experiment.network.conduction_speed.value},

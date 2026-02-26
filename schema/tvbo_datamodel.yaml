@@ -529,6 +529,11 @@ classes:
                 range: Coupling
                 description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
                 inlined: true
+            dynamics:
+                multivalued: true
+                range: Dynamics
+                inlined: true
+                description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
 
             # Network metadata
             number_of_regions:
@@ -655,7 +660,7 @@ classes:
             dynamics:
                 range: Dynamics
                 required: false
-                description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's local_dynamics."
+                description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics."
                 inlined: false
             position:
                 range: Coordinate
@@ -2194,17 +2199,10 @@ classes:
                 range: Equation
             label:
                 range: string
-            local_dynamics:
-                alias: dynamics
-                range: Dynamics # Lumped, per-node dynamics (ODE/SDE/DDE/SDDE)
-                inlined: true
-                description: "Default dynamics model for all nodes (used when node.dynamics not specified or as fallback)"
             dynamics:
-                multivalued: true
                 range: Dynamics
                 inlined: true
-                inlined_as_list: false
-                description: "Dictionary of dynamics models keyed by name. Nodes reference these by name."
+                description: "Default dynamics model for all nodes. For heterogeneous networks with multiple dynamics, use network.dynamics instead."
             integration:
                 range: Integrator
                 inlined: true

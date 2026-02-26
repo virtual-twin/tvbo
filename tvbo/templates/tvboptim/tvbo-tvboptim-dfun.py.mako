@@ -20,7 +20,7 @@ from tvbo.templates.tvboptim.utils import get_param_info
 
 # Get model from context
 if 'experiment' in context.keys():
-    model = experiment.local_dynamics
+    model = experiment.dynamics
     # Also collect experiment-level functions if available
     _exp_functions = getattr(experiment, 'functions', None) or {}
 else:

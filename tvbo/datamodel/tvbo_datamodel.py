@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-26T01:41:38
+# Generation date: 2026-02-26T16:01:13
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -678,6 +678,7 @@ class Network(YAMLRoot):
     nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
+    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     number_of_regions: Optional[int] = 1
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
@@ -705,6 +706,8 @@ class Network(YAMLRoot):
         self._normalize_inlined_as_list(slot_name="edges", slot_type=Edge, key_name="source", keyed=False)
 
         self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
         if self.number_of_regions is not None and not isinstance(self.number_of_regions, int):
             self.number_of_regions = int(self.number_of_regions)
@@ -3031,8 +3034,6 @@ class SimulationExperiment(YAMLRoot):
         if self.dynamics is not None and not isinstance(self.dynamics, Dynamics):
             self.dynamics = Dynamics(**as_dict(self.dynamics))
 
-        self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
-
         if self.integration is not None and not isinstance(self.integration, Integrator):
             self.integration = Integrator(**as_dict(self.integration))
 
@@ -5127,6 +5128,9 @@ slots.network__edges = Slot(uri=TVBO.edges, name="network__edges", curie=TVBO.cu
 slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.network__coupling, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])
 
+slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.network__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+
 slots.network__number_of_regions = Slot(uri=TVBO.number_of_regions, name="network__number_of_regions", curie=TVBO.curie('number_of_regions'),
                    model_uri=TVBO.network__number_of_regions, domain=None, range=Optional[int])
 
@@ -5928,11 +5932,8 @@ slots.simulationExperiment__additional_equations = Slot(uri=TVBO.additional_equa
 slots.simulationExperiment__label = Slot(uri=TVBO.label, name="simulationExperiment__label", curie=TVBO.curie('label'),
                    model_uri=TVBO.simulationExperiment__label, domain=None, range=Optional[str])
 
-slots.simulationExperiment__local_dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__local_dynamics", curie=TVBO.curie('dynamics'),
-                   model_uri=TVBO.simulationExperiment__local_dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
-
 slots.simulationExperiment__dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__dynamics", curie=TVBO.curie('dynamics'),
-                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
 
 slots.simulationExperiment__integration = Slot(uri=TVBO.integration, name="simulationExperiment__integration", curie=TVBO.curie('integration'),
                    model_uri=TVBO.simulationExperiment__integration, domain=None, range=Optional[Union[dict, Integrator]])

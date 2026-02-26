@@ -18,7 +18,7 @@ description: >
 # =============================================================================
 # LOCAL DYNAMICS: Two-Population Reduced Wong-Wang with E-I Balance
 # =============================================================================
-local_dynamics:
+dynamics:
     name: ReducedWongWangEIB
     label: "Two-Population Reduced Wong-Wang Model"
     description: >
