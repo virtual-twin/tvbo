@@ -120,7 +120,7 @@ for algo in algorithms_list:
     })
 
 # Extract state variable names from model (structural, not a default value)
-model = experiment.local_dynamics
+model = experiment.dynamics
 if hasattr(model, 'state_variables') and model.state_variables:
     state_var_names = list(model.state_variables.keys())
 else:

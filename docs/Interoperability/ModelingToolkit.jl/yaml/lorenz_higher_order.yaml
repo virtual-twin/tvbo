@@ -7,7 +7,7 @@ description: >-
     MTK's mtkcompile introduces an auxiliary variable xˍt and produces
     a coupled first-order system.
 
-local_dynamics:
+dynamics:
     name: Lorenz63_HigherOrder
     description: >-
         Second-order Lorenz variant from the MTK documentation.

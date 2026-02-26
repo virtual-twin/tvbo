@@ -378,20 +378,24 @@ op2:
 
             exp = SimulationExperiment.from_pyrates(temp_path)
 
-            # Should have dict with two operators
-            assert isinstance(exp.dynamics, dict)
-            assert len(exp.dynamics) == 2
-            assert "op1" in exp.dynamics
-            assert "op2" in exp.dynamics
+            # Primary dynamics is the first operator
+            assert exp.dynamics is not None
+            assert exp.dynamics.name == "op1"
+            assert "x" in exp.dynamics.state_variables
+            assert "a" in exp.dynamics.parameters
+            assert exp.dynamics.parameters["a"].value == 2.0
 
-            # Verify each operator
-            assert "x" in exp.dynamics["op1"].state_variables
-            assert "a" in exp.dynamics["op1"].parameters
-            assert exp.dynamics["op1"].parameters["a"].value == 2.0
+            # Additional dynamics stored in network.dynamics
+            net_dyn = exp.network.dynamics
+            assert isinstance(net_dyn, dict)
+            assert len(net_dyn) == 2
+            assert "op1" in net_dyn
+            assert "op2" in net_dyn
 
-            assert "y" in exp.dynamics["op2"].state_variables
-            assert "b" in exp.dynamics["op2"].parameters
-            assert exp.dynamics["op2"].parameters["b"].value == -1.0
+            # Verify second operator via network.dynamics
+            assert "y" in net_dyn["op2"].state_variables
+            assert "b" in net_dyn["op2"].parameters
+            assert net_dyn["op2"].parameters["b"].value == -1.0
         finally:
             os.unlink(temp_path)
 

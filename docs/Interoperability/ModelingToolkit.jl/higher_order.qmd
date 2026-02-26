@@ -37,7 +37,7 @@ from IPython.display import Markdown
 exp = SimulationExperiment.from_file(
     "yaml/lorenz_higher_order.yaml"
 )
-Markdown(exp.local_dynamics.generate_report(derivative_notation='dot'))
+Markdown(exp.dynamics.generate_report(derivative_notation='dot'))
 ```
 
 tvbo correctly represents the second-order derivative
@@ -66,7 +66,7 @@ Here is the key feature: we send the higher-order system to Julia, let MTK's `mt
 from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
 adapter = ModelingToolkitAdapter()
-firstoder_ODE = adapter.lower(exp.local_dynamics)
+firstoder_ODE = adapter.lower(exp.dynamics)
 Markdown(firstoder_ODE.generate_report())
 ```
 

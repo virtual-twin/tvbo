@@ -20,7 +20,7 @@ references:
     - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/"
 
 # -- Local Dynamics ------------------------------------------------------------
-local_dynamics:
+dynamics:
     name: Diffusion2D
     label: "2D Diffusion vertex"
     description: >

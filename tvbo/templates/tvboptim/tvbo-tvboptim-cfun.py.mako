@@ -10,7 +10,7 @@ Context Variables:
 
 Each entry in network.coupling generates a coupling class.
 The key in network.coupling becomes the key used in Network(coupling={key: instance}).
-The key must also exist in local_dynamics.coupling_inputs for dimension/keys info.
+The key must also exist in dynamics.coupling_inputs for dimension/keys info.
 
 Output:
 - Python class(es) inheriting from InstantaneousCoupling or DelayedCoupling
@@ -22,7 +22,7 @@ from tvbo.templates.tvboptim.utils import get_param_info
 # Get network and model from experiment
 assert 'experiment' in context.keys(), "experiment required for cfun template"
 network = experiment.network
-model = experiment.local_dynamics
+model = experiment.dynamics
 
 # Build coupling_inputs lookup: key -> {dimension, keys}
 coupling_inputs_info = {}

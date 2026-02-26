@@ -435,7 +435,7 @@ dynamics:
 # =============================================================================
 # LOCAL DYNAMICS: Default for network nodes
 # =============================================================================
-local_dynamics:
+dynamics:
     name: ReducedWongWangEI
     label: "Two-Population Reduced Wong-Wang (E/I Balance)"
     description: >

@@ -38,7 +38,7 @@ SOLVER_MAP = {
 # Get integration and model from context
 if 'experiment' in context.keys():
     integration = experiment.integration
-    model = experiment.local_dynamics
+    model = experiment.dynamics
 else:
     integration = context.get('integration')
     model = context.get('model', None)

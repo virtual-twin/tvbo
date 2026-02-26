@@ -124,12 +124,12 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
             logger.warning(f"Could not generate to_yaml(): {yaml_err}")
 
         # Debug: Log key components
-        logger.info(f"local_dynamics type: {type(experiment.local_dynamics)}")
-        logger.info(f"local_dynamics: {experiment.local_dynamics}")
-        if experiment.local_dynamics:
-            logger.info(f"  - name: {experiment.local_dynamics.name}")
-            logger.info(f"  - state_variables: {experiment.local_dynamics.state_variables}")
-            logger.info(f"  - parameters: {experiment.local_dynamics.parameters}")
+        logger.info(f"dynamics type: {type(experiment.dynamics)}")
+        logger.info(f"dynamics: {experiment.dynamics}")
+        if experiment.dynamics:
+            logger.info(f"  - name: {experiment.dynamics.name}")
+            logger.info(f"  - state_variables: {experiment.dynamics.state_variables}")
+            logger.info(f"  - parameters: {experiment.dynamics.parameters}")
         logger.info(f"network type: {type(experiment.network)}")
         logger.info(f"network: {experiment.network}")
         if experiment.network:
@@ -148,7 +148,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         logger.info(f"time_arr length: {len(time_arr)}")
         logger.info(f"data_arr type: {type(data_arr)}, length: {len(data_arr) if isinstance(data_arr, list) else 'N/A'}")
 
-        state_vars = list(experiment.local_dynamics.state_variables.keys()) if experiment.local_dynamics and experiment.local_dynamics.state_variables else ['V']
+        state_vars = list(experiment.dynamics.state_variables.keys()) if experiment.dynamics and experiment.dynamics.state_variables else ['V']
         logger.info(f"state_variables: {state_vars}")
 
         region_labels = []

@@ -4,7 +4,7 @@ Goal: verify that a single YAML specification file drives complete, correct
 single-node simulations for every supported backend.
 
 Planned split (TODO):
-    1. Single-node (this file) — SimulationExperiment(local_dynamics=model)
+    1. Single-node (this file) — SimulationExperiment(dynamics=model)
     2. Multi-node — SimulationExperiment.from_file(...) with full network YAML
 
 Backends covered
@@ -126,10 +126,10 @@ class TestSimulationBackends:
     def test_experiment_creation(self, model_file):
         """Test that each model can be wrapped in a SimulationExperiment."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
 
         assert exp is not None
-        assert exp.local_dynamics is not None
+        assert exp.dynamics is not None
         assert exp.integration is not None
         assert exp.coupling is not None
 
@@ -137,7 +137,7 @@ class TestSimulationBackends:
     def test_run_jax(self, model_file):
         """Test running simulation with JAX backend (single-node)."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
 
         result = exp.run('jax')
 
@@ -163,7 +163,7 @@ class TestJAXBackendDetailed:
     def test_output_variables_match(self, model_file):
         """Test that output labels match the model's output specification."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
         result = exp.run('jax')
 
         if hasattr(result, 'labels_dimensions') and result.labels_dimensions:
@@ -194,7 +194,7 @@ class TestTVBBackend:
     def test_run_tvb(self, model_file):
         """Run single-node simulation with The Virtual Brain backend."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
         result = exp.run('tvb')
         assert result is not None
 
@@ -207,7 +207,7 @@ class TestPyRatesBackend:
     def test_run_pyrates(self, model_file):
         """Run single-node simulation with PyRates backend."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
         result = exp.run('pyrates')
         assert result is not None
 
@@ -220,7 +220,7 @@ class TestTvboptimBackend:
     def test_run_tvboptim(self, model_file):
         """Run single-node simulation with tvboptim JAX backend."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
         result = exp.run('tvboptim')
         assert result is not None
 
@@ -250,7 +250,7 @@ class TestJuliaBackends:
     def test_run_julia(self, model_file):
         """Run single-node simulation via DifferentialEquations.jl."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
 
         result = exp.run('julia')
         _assert_timeseries(result, model)
@@ -262,7 +262,7 @@ class TestJuliaBackends:
     def test_run_networkdynamics(self, model_file):
         """Run single-node simulation via NetworkDynamics.jl."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
 
         result = exp.run('networkdynamics')
         _assert_timeseries(result, model)
@@ -274,7 +274,7 @@ class TestJuliaBackends:
     def test_run_mtk(self, model_file):
         """Run single-node simulation via ModelingToolkit.jl."""
         model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
 
         result = exp.run('mtk')
         _assert_timeseries(result, model)
@@ -288,7 +288,7 @@ def test_basic_jax_simulation():
         model_file = next(DATABASE_MODELS_DIR.glob("*.yaml"))
 
     model = Dynamics.from_file(model_file)
-    exp = SimulationExperiment(local_dynamics=model)
+    exp = SimulationExperiment(dynamics=model)
     result = exp.run('jax')
 
     assert result is not None
@@ -324,7 +324,7 @@ state_variables:
         model = Dynamics.from_file(temp_path)
         assert model.output == [], "Model should have empty output"
 
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
         result = exp.run('jax')
 
         # Should have all 3 state variables
@@ -374,7 +374,7 @@ output:
         model = Dynamics.from_file(temp_path)
         assert model.output == ['x', 'sum_xy']
 
-        exp = SimulationExperiment(local_dynamics=model)
+        exp = SimulationExperiment(dynamics=model)
         result = exp.run('jax')
 
         # Should have only 2 output variables (x and sum_xy)

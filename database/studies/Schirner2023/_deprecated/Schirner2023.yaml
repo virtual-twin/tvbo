@@ -9,7 +9,7 @@ doi: "10.1016/j.patter.2023.100787"
 simulation_experiments:
     - id: 1
       label: "EIB full brain network model"
-      local_dynamics:
+      dynamics:
           name: EIB_ReducedWongWangExcInh
           system_type: continuous
 

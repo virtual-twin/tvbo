@@ -5,7 +5,7 @@ description: >
     Two-stage optimization: global parameters first, then regional heterogeneity.
     Based on tvboptim RWW.qmd tutorial.
 
-local_dynamics:
+dynamics:
     name: ReducedWongWang
     label: "Reduced Wong-Wang Model"
     description: >

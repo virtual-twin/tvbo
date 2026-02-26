@@ -423,7 +423,7 @@ class TestYAMLSpecs:
         from tvbo import SimulationExperiment
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
-        svs = exp.local_dynamics.state_variables
+        svs = exp.dynamics.state_variables
         # du/dt = u - u^3/3 - v + coupling  (NOT divided by epsilon)
         u_rhs = svs["u"].equation.rhs
         assert "/ epsilon" not in u_rhs, \
@@ -440,7 +440,7 @@ class TestYAMLSpecs:
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 10
         assert exp.integration.duration == 3.0
-        svs = exp.local_dynamics.state_variables
+        svs = exp.dynamics.state_variables
         assert len(svs) == 2
         assert "x" in svs and "phi" in svs
         for sv in svs.values():
@@ -454,7 +454,7 @@ class TestYAMLSpecs:
         assert exp.network.number_of_nodes == 8
         assert exp.integration.duration == 10.0
         # Default dynamics is Kuramoto
-        assert exp.local_dynamics.name == "Kuramoto"
+        assert exp.dynamics.name == "Kuramoto"
         # Additional dynamics in library
         assert "StaticNode" in exp.dynamics
         assert "KuramotoInertia" in exp.dynamics
@@ -473,7 +473,7 @@ class TestYAMLSpecs:
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 5
         assert exp.integration.duration == 6.0
-        assert exp.local_dynamics.name == "SwingEquation"
+        assert exp.dynamics.name == "SwingEquation"
         # Has events
         events = getattr(exp, 'events', [])
         assert len(events) >= 2
@@ -489,14 +489,14 @@ class TestYAMLSpecs:
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 11
         assert exp.integration.duration == 12.0
-        assert exp.local_dynamics.name == "FreeVertex"
+        assert exp.dynamics.name == "FreeVertex"
         # Has FixedVertex in dynamics library
         assert "FixedVertex" in exp.dynamics
         # Edges
         edges = exp.network.edges
         assert len(edges) == 18
         # FreeVertex has coupling_variables x and y
-        svs = exp.local_dynamics.state_variables
+        svs = exp.dynamics.state_variables
         assert svs["x"].coupling_variable is True
         assert svs["y"].coupling_variable is True
         assert getattr(svs["vx"], "coupling_variable", False) is not True

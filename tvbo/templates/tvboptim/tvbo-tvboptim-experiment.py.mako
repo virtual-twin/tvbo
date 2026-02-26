@@ -15,7 +15,7 @@ import numpy as np
 assert 'experiment' in context.keys(), "experiment required for experiment template"
 
 # Direct references to experiment components (LinkML guarantees these exist)
-model = experiment.local_dynamics
+model = experiment.dynamics
 integration = experiment.integration
 network = experiment.network
 

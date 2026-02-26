@@ -263,15 +263,15 @@ experiments:
             name: A
             unit: mV
             domain:
-              lo: 0
-              hi: 10
+              lo: 2.6
+              hi: 9.75
               n: 50
           # md:L216 — "B ranged from 17.6 to 110 mV"
           B:
             name: B
             unit: mV
             domain:
-              lo: 0
+              lo: 17.6
               hi: 110
               n: 50
           # md:L217 — "C from 108 to 675"

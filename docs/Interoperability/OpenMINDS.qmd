@@ -41,7 +41,7 @@ description: >
   Demonstrates round-trip conversion to/from OpenMINDS JSON-LD.
 
 # Custom oscillator model (avoids ontology lookup)
-local_dynamics:
+dynamics:
   name: TEST_Oscillator
   label: Damped Harmonic Oscillator
   description: Simple 2D oscillator for testing

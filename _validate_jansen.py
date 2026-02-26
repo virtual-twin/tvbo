@@ -26,7 +26,7 @@ for exp in study.simulation_experiments:
         if n.coupling:
             parts.append("    Coupling: %s" % list(n.coupling.keys()))
     if exp.dynamics:
-        parts.append("    Dynamics: %s" % list(exp.dynamics.keys()))
+        parts.append("    Dynamics: %s" % exp.dynamics.name)
     if exp.stimulation:
         parts.append("    Stimulation: %s" % exp.stimulation.label)
     print("\n".join(parts))
