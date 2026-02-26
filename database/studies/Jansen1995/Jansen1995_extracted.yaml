@@ -265,7 +265,7 @@ experiments:
             domain:
               lo: 0
               hi: 10
-              n: 100
+              n: 50
           # md:L216 — "B ranged from 17.6 to 110 mV"
           B:
             name: B
@@ -273,7 +273,7 @@ experiments:
             domain:
               lo: 0
               hi: 110
-              n: 100
+              n: 50
           # md:L217 — "C from 108 to 675"
           # Paper Fig. 4 shows these 5 specific C values as rows
           C:
