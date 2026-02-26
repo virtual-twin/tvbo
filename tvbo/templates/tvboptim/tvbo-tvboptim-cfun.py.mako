@@ -85,6 +85,23 @@ def parse_list_elements(rhs_str):
     pre_expr = coupling.pre_expression if hasattr(coupling, 'pre_expression') and coupling.pre_expression else None
     post_expr = coupling.post_expression if hasattr(coupling, 'post_expression') and coupling.post_expression else None
 
+    # Infer incoming_states from pre_expression if not explicitly given
+    # Match state variable names referenced in the expression against model svars
+    if not incoming_states and not local_states and pre_expr:
+        svar_names = set()
+        if hasattr(model, 'state_variables') and model.state_variables:
+            svar_names = {sv if isinstance(sv, str) else getattr(sv, 'name', str(sv))
+                          for sv in (model.state_variables.keys()
+                                     if hasattr(model.state_variables, 'keys')
+                                     else model.state_variables)}
+        pre_rhs = str(pre_expr.rhs) if pre_expr else ''
+        for sv in svar_names:
+            if sv in pre_rhs:
+                incoming_states.append(sv)
+        if not incoming_states:
+            # Fallback: use the pre_expression rhs itself as an incoming state name
+            incoming_states = [pre_rhs.strip()]
+
     # Vectorized mode: returns local_states from pre() for matmul optimization
     vectorized = getattr(coupling, 'vectorized', False)
     if not vectorized and local_states and not incoming_states:

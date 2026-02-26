@@ -2209,6 +2209,7 @@ classes:
             connectivity:
                 range: Network
                 inlined: true
+                deprecated: "Use 'network' instead. 'connectivity' is kept for backward compatibility only and will be removed in a future version."
             network:
                 range: Network
                 inlined: true

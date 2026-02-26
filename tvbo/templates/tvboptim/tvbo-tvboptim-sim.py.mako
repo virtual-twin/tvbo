@@ -244,7 +244,7 @@ def run_experiment(weights, distances=None, region_labels=None):
 
     weights = jnp.array(weights)
     % if has_delay:
-    delays = jnp.array(distances) / CONDUCTION_SPEED if distances is not None else jnp.zeros_like(weights)
+    delays = jnp.array(distances) / CONDUCTION_SPEED if (distances is not None and CONDUCTION_SPEED > 0) else jnp.zeros_like(weights)
     network = create_network(weights, delays, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
     % else:
     network = create_network(weights, region_labels=region_labels, noise_sigma=NOISE_SIGMA)

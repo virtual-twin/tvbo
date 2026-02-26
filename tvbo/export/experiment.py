@@ -95,13 +95,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ):
             self.integration = _coerce(Integrator, self.integration)
 
-        # Backward-compat aliasing for connectivity/network
-        if getattr(self, "connectivity", None) and not getattr(self, "network", None):
-            self.network = self.connectivity
-
-        if getattr(self, "network", None) and not isinstance(self.network, Network):
-            self.network = _coerce(Network, self.network)
-
         # Auto-upgrade continuations to runtime Continuation class
         conts = getattr(self, "continuations", None)
         if conts and isinstance(conts, dict):
@@ -111,6 +104,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "network", None):
             self.network = Network()
+        else:
+            self.network.__class__ = Network
+
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, '_pending_source_file', None)
@@ -174,54 +170,61 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Copy all already-normalized state from the datamodel instance
         obj.__dict__.update(dm.__dict__)
 
-        # Upgrade datamodel.Dynamics → knowledge.Dynamics (enhanced class)
+        # -- Upgrade Dynamics via __class__ reassignment --
         dyn = getattr(obj, "dynamics", None)
         if isinstance(dyn, dict) and dyn:
-            upgraded = {}
-            for k, v in dyn.items():
-                if isinstance(v, Dynamics):
-                    upgraded[k] = v
-                elif isinstance(v, tvbo_datamodel.Dynamics):
-                    upgraded[k] = Dynamics.from_datamodel(v)
-                else:
-                    upgraded[k] = v
-            obj.__dict__["dynamics"] = upgraded
-            first = next(iter(upgraded.values()))
+            for v in dyn.values():
+                if isinstance(v, tvbo_datamodel.Dynamics) \
+                        and not isinstance(v, Dynamics):
+                    v.__class__ = Dynamics
+                    v._ontology_class = None
+                    v.update_metadata()
+                    v.calculate_derived_parameters()
+            first = next(iter(dyn.values()))
             obj.__dict__["dynamics"] = first
             obj.__dict__["model"] = first
-        elif isinstance(dyn, Dynamics):
-            # Already the correct enhanced class
-            obj.__dict__["model"] = dyn
         elif isinstance(dyn, tvbo_datamodel.Dynamics):
-            # Single datamodel Dynamics instance — upgrade it
-            upgraded = Dynamics.from_datamodel(dyn)
-            obj.__dict__["dynamics"] = upgraded
-            obj.__dict__["model"] = upgraded
+            if not isinstance(dyn, Dynamics):
+                dyn.__class__ = Dynamics
+                dyn._ontology_class = None
+                dyn.update_metadata()
+                dyn.calculate_derived_parameters()
+            obj.__dict__["model"] = dyn
         else:
             obj.__dict__.setdefault("dynamics", None)
 
-        # Upgrade Integrator: copy state then populate from ontology
+        # -- Upgrade Integrator via __class__ reassignment --
         integ = getattr(obj, "integration", None)
         if integ is not None and not isinstance(integ, Integrator):
-            up = Integrator.__new__(Integrator)
-            up.__dict__.update(integ.__dict__)
-            up._populate_from_ontology()
-            obj.__dict__["integration"] = up
+            integ.__class__ = Integrator
+            integ._populate_from_ontology()
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
 
-        # Upgrade Coupling: copy state then populate from ontology
+        # -- Upgrade Coupling via __class__ reassignment --
         coup = getattr(obj, "coupling", None)
         if coup is not None and not isinstance(coup, Coupling):
-            up = Coupling.__new__(Coupling)
-            up.__dict__.update(coup.__dict__)
-            up._populate_from_ontology()
-            obj.__dict__["coupling"] = up
+            coup.__class__ = Coupling
+            coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
 
+        # -- Upgrade Network via __class__ reassignment --
+        net = getattr(obj, "network", None)
+        if net is not None and not isinstance(net, Network):
+            net.__class__ = Network
+            # Sync number_of_nodes from nodes list
+            if net.nodes and getattr(net, "number_of_nodes", 0) != len(net.nodes):
+                net.number_of_nodes = len(net.nodes)
+                net.number_of_regions = len(net.nodes)
+            if not getattr(net, "conduction_speed", None):
+                net.conduction_speed = tvbo_datamodel.Parameter(
+                    name="conduction_speed", label="v",
+                    value=3.0, unit="mm/ms",
+                )
         if not getattr(obj, "network", None):
             obj.__dict__["network"] = Network()
+
         obj.__dict__["_source_file"] = None
         return obj
 
@@ -925,7 +928,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 f"Format {format} not supported. Valid formats: tvb, tvboptim, jax."
             )
 
-    def run(self, format="jax", initial_conditions=None, **kwargs):
+    def run(self, format="tvboptim", initial_conditions=None, **kwargs):
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 
