@@ -1445,7 +1445,7 @@ def run_experiment(
     print("=" * 60)
 
     % if has_delay:
-    delays = jnp.array(distances) / ${conduction_speed} if distances is not None else jnp.zeros_like(weights)
+    delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
     network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})

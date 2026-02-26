@@ -312,7 +312,7 @@ experiments:
       - "Fig. 5"
     dynamics: *base_dynamics
     # --- Network with 2 identical nodes, linear coupling ---
-    connectivity:
+    network:
       number_of_regions: 2
       number_of_nodes: 2
       label: "Two identical visual cortex columns"
@@ -351,16 +351,18 @@ experiments:
       # Linear coupling: v_pyr of source column applied directly as PSP
       # md:L112-113 — "the output of the other column is fed as input"
       coupling:
-        Linear:
-          name: Linear
+        c_intercolumn:
           label: "Linear coupling via v_pyr"
           description: >-
             Output v_pyr of one column is scaled by connectivity weight K
             and added to the excitatory input of the other column. Since
             v_pyr is already a PSP, no firing-rate conversion is needed.
+          incoming_states:
+            - y1
+            - y2
           pre_expression:
             lhs: pre
-            rhs: v_pyr
+            rhs: y1 - y2
           post_expression:
             lhs: c_intercolumn
             rhs: gx
@@ -561,7 +563,7 @@ experiments:
       output:
         - v_pyr
     # --- Network: 2 different columns with delay ---
-    connectivity:
+    network:
       number_of_regions: 2
       number_of_nodes: 2
       label: "Visual cortex (col 1) ↔ Prefrontal cortex (col 2)"
@@ -603,8 +605,8 @@ experiments:
               # Swept in exploration
       # Sigmoidal coupling anchor defined here (first use), reused by experiment 6
       coupling: &sigmoidal_coupling
-        SigmoidalJansenRit:
-          name: SigmoidalJansenRit
+        c_intercolumn:
+          name: c_intercolumn
           label: "Sigmoidal coupling with delayed EPSP filtering"
           description: >-
             Pre-synaptic signal is Sigm(v_pyr) = 2*e0/(1+exp(r*(v0-v_pyr))).
@@ -612,9 +614,12 @@ experiments:
             with a_d = 30 s⁻¹, Eq. 7) before reaching the target column (Eq. 8).
             This coupling type is used because the delay filter requires a firing
             rate input, not a PSP.
+          incoming_states:
+            - y1
+            - y2
           pre_expression:
             lhs: pre
-            rhs: 2*e0 / (1 + exp(r*(v0 - v_pyr)))
+            rhs: 2*e0 / (1 + exp(r*(v0 - (y1 - y2))))
           post_expression:
             lhs: c_intercolumn
             rhs: gx
@@ -690,7 +695,7 @@ experiments:
       - "Fig. 10"
     dynamics: *base_dynamics
     # --- Network: 2 identical nodes, linear coupling ---
-    connectivity:
+    network:
       number_of_regions: 2
       number_of_nodes: 2
       label: "Two identical visual cortex columns (no delay)"
@@ -721,12 +726,15 @@ experiments:
               name: weight
               description: "K2: Column 2 → Column 1"
       coupling:
-        Linear:
-          name: Linear
+        c_intercolumn:
+          name: c_intercolumn
           label: "Linear coupling via v_pyr"
+          incoming_states:
+            - y1
+            - y2
           pre_expression:
             lhs: pre
-            rhs: v_pyr
+            rhs: y1 - y2
           post_expression:
             lhs: c_intercolumn
             rhs: gx
@@ -848,7 +856,7 @@ experiments:
     # --- Delayed model (same as experiment 4) ---
     dynamics: *delayed_dynamics
     # --- Network: 2 different columns with delay ---
-    connectivity:
+    network:
       number_of_regions: 2
       number_of_nodes: 2
       label: "Visual cortex (col 1) ↔ Prefrontal cortex (col 2) with delay"

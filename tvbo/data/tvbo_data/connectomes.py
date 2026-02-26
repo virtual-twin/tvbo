@@ -919,6 +919,8 @@ class Network(tvbo_datamodel.Network):
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
                 w = self._get_edge_param(edge, "weight")
+                if w is None:
+                    w = 1.0  # edge exists → default unit weight
                 W[i, j] = w
                 # Mirror for undirected edges (symmetric)
                 if not getattr(edge, "directed", False):
@@ -2245,4 +2247,14 @@ class Network(tvbo_datamodel.Network):
 
 @register_pytree_node_class
 class Connectome(Network):
-    pass
+    """Deprecated alias for Network. Use Network instead."""
+
+    def __init__(self, *args, **kwargs):
+        import warnings
+        warnings.warn(
+            "Connectome is deprecated and will be removed in a future version. "
+            "Use tvbo.data.tvbo_data.connectomes.Network instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
