@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-25T22:17:24
+# Generation date: 2026-02-26T01:41:38
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1309,6 +1309,7 @@ class Distribution(YAMLRoot):
     domain: Optional[Union[dict, Range]] = None
     function: Optional[Union[dict, "Function"]] = None
     seed: Optional[int] = None
+    axis: Optional[Union[str, "SamplingAxis"]] = 'space'
     correlation: Optional[Union[dict, Matrix]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1327,6 +1328,9 @@ class Distribution(YAMLRoot):
 
         if self.seed is not None and not isinstance(self.seed, int):
             self.seed = int(self.seed)
+
+        if self.axis is not None and not isinstance(self.axis, SamplingAxis):
+            self.axis = getattr(SamplingAxis, self.axis)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -4580,6 +4584,22 @@ class OperatorType(EnumDefinitionImpl):
         name="OperatorType",
     )
 
+class SamplingAxis(EnumDefinitionImpl):
+    """
+    Dimension along which a distribution is sampled.
+    """
+    space = PermissibleValue(
+        text="space",
+        description="Sample once per node (heterogeneous parameter or spatially varying IC).")
+    time = PermissibleValue(
+        text="time",
+        description="Resample every integration timestep (stochastic time-varying input).")
+
+    _defn = EnumDefinition(
+        name="SamplingAxis",
+        description="Dimension along which a distribution is sampled.",
+    )
+
 class NoiseType(EnumDefinitionImpl):
 
     gaussian = PermissibleValue(text="gaussian")
@@ -5343,6 +5363,9 @@ slots.distribution__function = Slot(uri=TVBO.function, name="distribution__funct
 
 slots.distribution__seed = Slot(uri=TVBO.seed, name="distribution__seed", curie=TVBO.curie('seed'),
                    model_uri=TVBO.distribution__seed, domain=None, range=Optional[int])
+
+slots.distribution__axis = Slot(uri=TVBO.axis, name="distribution__axis", curie=TVBO.curie('axis'),
+                   model_uri=TVBO.distribution__axis, domain=None, range=Optional[Union[str, "SamplingAxis"]])
 
 slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
                    model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])

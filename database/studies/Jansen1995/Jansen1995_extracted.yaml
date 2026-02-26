@@ -122,6 +122,13 @@ experiments:
           value: 220
           unit: s^-1
           description: "Mean external input (afferent pulse density)"
+          distribution: &dist_p_uniform
+            # md:L187 — "random white noise input p(t) ... between 120 and 320 pulses per second"
+            name: Uniform
+            domain:
+              lo: "120"
+              hi: "320"
+            axis: time
       derived_parameters:
         C1:
           name: C1
@@ -177,17 +184,6 @@ experiments:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_intercolumn) - 2*a*y4 - a**2*y1
           unit: mV/s
           coupling_variable: true
-          noise:
-            # md:L187 — "random white noise input p(t) ... between 120 and 320 pulses per second"
-            # p(t) ~ U(120, 320): std(p) = 200/sqrt(12) ≈ 57.74
-            # Enters dy4/dt as A*a*p, so effective noise = A*a*std(p)*dt per step
-            # Gaussian equiv sigma: A*a*std(p)*sqrt(dt) = 325*57.74*sqrt(0.002) ≈ 839
-            noise_type: additive
-            additive: true
-            parameters:
-              sigma:
-                name: sigma
-                value: 839
         y2:
           name: y2
           equation:
@@ -214,20 +210,6 @@ experiments:
       duration: 2.0            # 2 seconds (equations use s⁻¹ time constants)
       step_size: 0.002         # 2 ms = 0.002 s (500 samples/s per paper: "500 units = 1 second")
       transient_time: 0.5      # 0.5 s settling before recording (transient finishes ~0.25 s)
-      noise: &noise_uniform
-        # md:L187 — "random white noise input p(t) ... between 120 and 320 pulses per second"
-        noise_type: uniform
-        additive: true
-        correlated: false
-        parameters:
-          lo:
-            name: lo
-            value: 120
-            unit: s^-1
-          hi:
-            name: hi
-            value: 320
-            unit: s^-1
     explorations:
       C_sweep_fig3:
         name: C_sweep_fig3
@@ -281,17 +263,17 @@ experiments:
             name: A
             unit: mV
             domain:
-              lo: 2.6
-              hi: 9.75
-              n: 50
+              lo: 0
+              hi: 10
+              n: 100
           # md:L216 — "B ranged from 17.6 to 110 mV"
           B:
             name: B
             unit: mV
             domain:
-              lo: 17.6
-              hi: 110.0
-              n: 50
+              lo: 0
+              hi: 110
+              n: 100
           # md:L217 — "C from 108 to 675"
           # Paper Fig. 4 shows these 5 specific C values as rows
           C:
@@ -485,6 +467,7 @@ experiments:
           value: 220
           unit: s^-1
           description: "Mean external input (afferent pulse density)"
+          distribution: *dist_p_uniform
         a_d:
           name: a_d
           value: 30
@@ -793,7 +776,6 @@ experiments:
       duration: 7.0             # 7 seconds total (6s settling + 1s response)
       step_size: 0.002          # 2 ms = 0.002 s
       transient_time: 6.0       # ignore first 6s for ensemble averaging
-      noise: *noise_uniform
     execution:
       random_seed: 42
     # Explorations for the three figures
