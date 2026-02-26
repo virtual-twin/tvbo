@@ -167,6 +167,30 @@ dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
 
+# Detect parameters with distribution.axis == 'time' — these are stochastic
+# time-varying inputs pre-generated as arrays and indexed per integration step.
+# Not regular params: excluded from DEFAULT_PARAMS, trajectories injected after prepare().
+stochastic_param_names = set()
+stochastic_param_info = {}  # name -> {dist, lo, hi, seed, default}
+for pname in list(dyn_param_names):
+    p_obj = model.parameters.get(pname) if model.parameters else None
+    if p_obj and getattr(p_obj, 'distribution', None):
+        dist = p_obj.distribution
+        axis = str(getattr(dist, 'axis', 'space'))
+        if axis == 'time' or 'time' in axis:
+            stochastic_param_names.add(pname)
+            domain = getattr(dist, 'domain', None)
+            dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+            stochastic_param_info[pname] = {
+                'dist': dist_name,
+                'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
+                'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
+                'default': float(p_obj.value) if p_obj.value is not None else 0.0,
+                'seed': int(getattr(dist, 'seed', None) or 42),
+            }
+# Remove stochastic params from dynamics params (trajectories injected after prepare)
+dyn_param_names = [p for p in dyn_param_names if p not in stochastic_param_names]
+
 # === Optimization metadata ===
 # Schema: experiment.optimization is multivalued dict, opt.stages is inlined_as_list
 optim_list = list(experiment.optimization.values()) if experiment.optimization else []
@@ -487,6 +511,7 @@ from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, Boun
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
+
 % if has_optimization:
 import optax
 from tvboptim.types import Parameter, BoundedParameter
@@ -504,6 +529,34 @@ import ${mod}
 # Result classes from tvbo
 from tvbo.data.types import SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult
 
+% if stochastic_param_info:
+
+def _inject_stochastic_trajectories(state, t1, dt, key=None):
+    """Pre-generate stochastic parameter trajectories and inject into state.dynamics.
+
+    Pre-generated arrays are indexed per integration step inside dynamics(),
+    avoiding per-step RNG calls. Pure jnp.ndarray — safe for vmap/pmap.
+    """
+    if key is None:
+        key = jax.random.key(0)
+    n_steps = int(t1 / dt) + 2  # +2 for rounding safety
+    % for sp_name, sp_info in stochastic_param_info.items():
+    key, _subkey = jax.random.split(key)
+    % if sp_info['dist'] == 'uniform':
+    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, (n_steps,), minval=${sp_info['lo']}, maxval=${sp_info['hi']})
+    % elif sp_info['dist'] in ('gaussian', 'normal'):
+    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * jax.random.normal(_subkey, (n_steps,))
+    % elif sp_info['dist'] in ('truncated_normal', 'truncatednormal'):
+    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, upper=${(sp_info['hi'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, shape=(n_steps,))
+    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * _raw
+    % else:
+    # Unsupported distribution '${sp_info['dist']}', using uniform fallback
+    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, (n_steps,), minval=${sp_info['lo']}, maxval=${sp_info['hi']})
+    % endif
+    % endfor
+    return state
+
+% endif
 
 def get_solver():
     base_solver = ${solver_class}()
@@ -520,6 +573,7 @@ def get_solver():
 <%include file="tvbo-tvboptim-dfun.py.mako" />
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
+
 
 def create_network(
     weights: jnp.ndarray,
@@ -616,11 +670,17 @@ def run_simulation(
     # Run transient simulation to settle network dynamics
     if t_transient > 0:
         model_fn_init, state_init = prepare(network, solver, t0=t0, t1=t_transient, dt=dt)
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
         result_transient = model_fn_init(state_init)
         network.update_history(result_transient)
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    % if stochastic_param_info:
+    _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+    % endif
 
     % if has_transient:
     # Initialize state variables from end of transient (settled dynamics)
@@ -1162,6 +1222,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     if _network is not None:
         _solver = get_solver()
         _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(_expl_state, _t_total, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
     else:
         _expl_model_fn = model_fn
         _expl_state = state
@@ -1257,8 +1320,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     def observable_fn(s):
         result = _expl_model_fn(s)
         ## Unpack parameters (may be needed by derived variable equations)
-        % for name in param_names:
+        % for name in dyn_param_names:
         ${name} = s.dynamics.${name}
+        % endfor
+        % for sp_name in stochastic_param_names:
+        ${sp_name} = ${dyn_param_defaults.get(sp_name, 0.0)}  # stochastic time-varying param (default for derived computation)
         % endfor
         % if derived_param_names:
         % for dp in model.derived_parameters.values():

@@ -63,6 +63,36 @@ else:
 param_names, param_defaults, param_shapes = get_param_info(model.parameters)
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
+# Detect parameters with distribution.axis == 'time' — these are stochastic
+# time-varying inputs pre-generated as arrays and indexed per integration step.
+# This avoids per-step RNG calls (fast) and works with vmap/pmap (pure arrays).
+stochastic_params = {}
+regular_param_names = []
+# Get dt from experiment context (available when included from experiment template)
+if 'experiment' in context.keys():
+    _stoch_dt = float(experiment.integration.step_size)
+else:
+    _stoch_dt = 0.001  # fallback for standalone dfun rendering
+_stoch_inv_dt = 1.0 / _stoch_dt
+for pname in param_names:
+    p_obj = model.parameters.get(pname) if model.parameters else None
+    if p_obj and getattr(p_obj, 'distribution', None):
+        dist = p_obj.distribution
+        axis = str(getattr(dist, 'axis', 'space'))
+        if axis == 'time' or 'time' in axis:
+            domain = getattr(dist, 'domain', None)
+            dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+            stochastic_params[pname] = {
+                'dist': dist_name,
+                'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
+                'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
+                'default': float(p_obj.value) if p_obj.value is not None else 0.0,
+                'seed': int(getattr(dist, 'seed', None) or 42),
+            }
+            continue
+    regular_param_names.append(pname)
+param_names = regular_param_names
+
 # Build COUPLING_INPUTS from coupling_inputs
 # Pattern: each coupling_input name → its dimension (default 1)
 # If dimension > 1 and keys provided, keys are used as variable names
@@ -126,6 +156,10 @@ class ${class_name}(AbstractDynamics):
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         % for name in param_names:
         ${name} = params.${name}
+        % endfor
+        % for sp_name, sp_info in stochastic_params.items():
+        # ${sp_name} ~ ${sp_info['dist'].capitalize()}(${sp_info['lo']}, ${sp_info['hi']}), pre-generated array indexed per step
+        ${sp_name} = params._stoch_${sp_name}[jnp.int32(jnp.clip(t * ${_stoch_inv_dt}, 0, params._stoch_${sp_name}.shape[0] - 1))]
         % endfor
 
         % if derived_param_names:

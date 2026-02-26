@@ -118,6 +118,13 @@ enums:
             divergence: {}
             laplacian: {}
             curl: {}
+    SamplingAxis:
+        description: "Dimension along which a distribution is sampled."
+        permissible_values:
+            space:
+                description: "Sample once per node (heterogeneous parameter or spatially varying IC)."
+            time:
+                description: "Resample every integration timestep (stochastic time-varying input)."
     NoiseType:
         permissible_values:
             gaussian:
@@ -991,6 +998,10 @@ classes:
             seed:
                 range: integer
                 description: "Random seed for reproducible sampling."
+            axis:
+                range: SamplingAxis
+                ifabsent: "space"
+                description: "Dimension along which the distribution is sampled. 'space' = per-node (default), 'time' = per-timestep (stochastic input)."
             correlation:
                 range: Matrix
                 inlined: true

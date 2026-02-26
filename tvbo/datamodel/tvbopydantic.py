@@ -218,6 +218,20 @@ class OperatorType(str, Enum):
     curl = "curl"
 
 
+class SamplingAxis(str, Enum):
+    """
+    Dimension along which a distribution is sampled.
+    """
+    space = "space"
+    """
+    Sample once per node (heterogeneous parameter or spatially varying IC).
+    """
+    time = "time"
+    """
+    Resample every integration timestep (stochastic time-varying input).
+    """
+
+
 class NoiseType(str, Enum):
     gaussian = "gaussian"
     white = "white"
@@ -3274,6 +3288,7 @@ class Distribution(ConfiguredBaseModel):
                        'PDE']} })
     function: Optional[Function] = Field(default=None, description="""Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     seed: Optional[int] = Field(default=None, description="""Random seed for reproducible sampling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Distribution', 'Noise']} })
+    axis: Optional[SamplingAxis] = Field(default=SamplingAxis.space, description="""Dimension along which the distribution is sampled. 'space' = per-node (default), 'time' = per-timestep (stochastic input).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution'], 'ifabsent': 'space'} })
     correlation: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution']} })
 
 
