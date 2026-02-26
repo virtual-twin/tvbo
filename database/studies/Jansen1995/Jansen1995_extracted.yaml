@@ -129,6 +129,12 @@ experiments:
               lo: "120"
               hi: "320"
             axis: time
+        K:
+          name: K
+          value: 0
+          description: "Per-node coupling strength scaling (K[i] scales coupling received by node i)"
+          heterogeneous: true
+          shape: "(n_nodes,)"
       derived_parameters:
         C1:
           name: C1
@@ -181,7 +187,7 @@ experiments:
         y4:
           name: y4
           equation:
-            rhs: A*a*(p + C2*Sigm(C1*y0) + c_intercolumn) - 2*a*y4 - a**2*y1
+            rhs: A*a*(p + C2*Sigm(C1*y0) + K*c_intercolumn) - 2*a*y4 - a**2*y1
           unit: mV/s
           coupling_variable: true
         y2:
@@ -338,31 +344,46 @@ experiments:
           parameters:
             weight:
               name: weight
-              description: "K1: Column 1 → Column 2 coupling strength"
-              # Weight is swept in exploration
+              value: 1
+              description: "Connectivity (K scaling via dynamics parameter)"
         - source: 1
           target: 0
           label: "Col2 → Col1"
           parameters:
             weight:
               name: weight
-              description: "K2: Column 2 → Column 1 coupling strength"
-              # Weight is swept in exploration
+              value: 1
+              description: "Connectivity (K scaling via dynamics parameter)"
       # Linear coupling: v_pyr of source column applied directly as PSP
       # md:L112-113 — "the output of the other column is fed as input"
       coupling:
         c_intercolumn:
-          label: "Linear coupling via v_pyr"
+          label: "Sigmoidal coupling via column output Sigm(v_pyr)"
+          delayed: false
           description: >-
-            Output v_pyr of one column is scaled by connectivity weight K
-            and added to the excitatory input of the other column. Since
-            v_pyr is already a PSP, no firing-rate conversion is needed.
+            Each column's output is Sigm(y1-y2) — the sigmoid-transformed
+            firing rate of the pyramidal population. This bounded firing rate
+            (0 to 2*e0=5) is scaled by K and added to excitatory input of the
+            receiving column. Sigmoid parameters must match model Sigm().
+          parameters:
+            e0:
+              name: e0
+              value: 2.5
+              description: "Half max firing rate (matches model Sigm)"
+            r:
+              name: r
+              value: 0.56
+              description: "Sigmoid steepness (matches model Sigm)"
+            v0:
+              name: v0
+              value: 6.0
+              description: "Sigmoid midpoint (matches model Sigm)"
           incoming_states:
             - y1
             - y2
           pre_expression:
             lhs: pre
-            rhs: y1 - y2
+            rhs: 2*e0 / (1 + exp(r*(v0 - (y1 - y2))))
           post_expression:
             lhs: c_intercolumn
             rhs: gx
@@ -378,16 +399,9 @@ experiments:
           identical K values → symmetric output).
         mode: product
         parameters:
-          K1:
-            name: K1
-            label: "Column 1 → Column 2 coupling strength"
-            domain:
-              lo: "0"
-              hi: "120"
-              step: "10"
-          K2:
-            name: K2
-            label: "Column 2 → Column 1 coupling strength"
+          K:
+            name: K
+            label: "Per-node coupling strength (auto-expanded for heterogeneous)"
             domain:
               lo: "0"
               hi: "120"

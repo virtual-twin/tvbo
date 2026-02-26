@@ -389,6 +389,13 @@ for expl in exploration_list:
     # Schema: parameters is multivalued dict
     params = expl.parameters
     assert params, f"exploration.parameters required in YAML for {expl.name}"
+    def _resolve_n(domain):
+        """Compute n from domain: prefer n, else compute from step, else default 50."""
+        if domain.n:
+            return int(domain.n)
+        if domain.step and domain.lo is not None and domain.hi is not None:
+            return int(round((float(domain.hi) - float(domain.lo)) / float(domain.step))) + 1
+        return 50
     for param in params.values():
         domain = param.domain
         explored_values = param.explored_values
@@ -402,29 +409,59 @@ for expl in exploration_list:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = prefix in all_couplings
             source_key = prefix
-        if explored_values:
-            vals = [float(v) for v in explored_values]
-            exp_info['axes'].append({
-                'name': pname,
-                'values': vals,
-                'n': len(vals),
-                'is_coupling': is_coupling_param,
-                'coupling_key': source_key if is_coupling_param else None,
-                'dynamics_key': source_key if not is_coupling_param and source_key else None,
-            })
+        # Auto-expand heterogeneous parameters: if pname matches a dynamics param
+        # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
+        # e.g., K with shape "(n_nodes,)" → K_el0, K_el1, ... K_el(n_nodes-1)
+        is_hetero_param = (not is_coupling_param and pname in dyn_param_shapes
+                           and 'n_nodes' in dyn_param_shapes[pname])
+        if is_hetero_param:
+            _n = n_nodes
+            for _ei in range(_n):
+                ax_entry = {
+                    'name': pname,
+                    'is_coupling': False,
+                    'coupling_key': None,
+                    'dynamics_key': source_key if source_key else None,
+                    'element_idx': _ei,
+                }
+                if explored_values:
+                    vals = [float(v) for v in explored_values]
+                    ax_entry['values'] = vals
+                    ax_entry['n'] = len(vals)
+                else:
+                    assert domain.lo is not None, f"domain.lo required for {param.name}"
+                    assert domain.hi is not None, f"domain.hi required for {param.name}"
+                    n = _resolve_n(domain)
+                    ax_entry['lo'] = float(domain.lo)
+                    ax_entry['hi'] = float(domain.hi)
+                    ax_entry['n'] = n
+                exp_info['axes'].append(ax_entry)
         else:
-            assert domain.lo is not None, f"domain.lo required for {param.name}"
-            assert domain.hi is not None, f"domain.hi required for {param.name}"
-            n = int(domain.n) if domain.n else 50
-            exp_info['axes'].append({
-                'name': pname,
-                'lo': float(domain.lo),
-                'hi': float(domain.hi),
-                'n': n,
-                'is_coupling': is_coupling_param,
-                'coupling_key': source_key if is_coupling_param else None,
-                'dynamics_key': source_key if not is_coupling_param and source_key else None,
-            })
+            if explored_values:
+                vals = [float(v) for v in explored_values]
+                exp_info['axes'].append({
+                    'name': pname,
+                    'values': vals,
+                    'n': len(vals),
+                    'is_coupling': is_coupling_param,
+                    'coupling_key': source_key if is_coupling_param else None,
+                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                    'element_idx': None,
+                })
+            else:
+                assert domain.lo is not None, f"domain.lo required for {param.name}"
+                assert domain.hi is not None, f"domain.hi required for {param.name}"
+                n = _resolve_n(domain)
+                exp_info['axes'].append({
+                    'name': pname,
+                    'lo': float(domain.lo),
+                    'hi': float(domain.hi),
+                    'n': n,
+                    'is_coupling': is_coupling_param,
+                    'coupling_key': source_key if is_coupling_param else None,
+                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                    'element_idx': None,
+                })
     observable = expl.observable
     if observable:
         # FunctionCall: function attribute references the function
@@ -1237,7 +1274,15 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     grid_state = copy.deepcopy(state)
 % endif
     % for ax in expl['axes']:
-    % if ax.get('is_coupling'):
+    % if ax.get('element_idx') is not None:
+    ## Element-indexed parameter: create dummy scalar slot for Space discovery
+    ## e.g., K[0] → grid_state.dynamics._K_el0 = GridAxis(...)
+    % if 'values' in ax:
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = DataAxis(${ax['values']})
+    % else:
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}_${ax['element_idx']}', ${ax['n']}))
+    % endif
+    % elif ax.get('is_coupling'):
     % if 'values' in ax:
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(${ax['values']})
     % else:
@@ -1384,6 +1429,21 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endif
 % endif
 
+<%
+    element_axes = [ax for ax in expl['axes'] if ax.get('element_idx') is not None]
+%>
+% if element_axes:
+    ## Wrap observable_fn to reconstruct array parameters from element slots.
+    ## Space sweeps dummy scalar slots (_K_el0, _K_el1), which we pack back
+    ## into the original array parameter before running the simulation.
+    _element_base_fn = observable_fn
+    def observable_fn(s):
+        % for ax in element_axes:
+        s.dynamics.${ax['name']} = s.dynamics.${ax['name']}.at[${ax['element_idx']}].set(s.dynamics._${ax['name']}_el${ax['element_idx']})
+        % endfor
+        return _element_base_fn(s)
+% endif
+
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     results = exec_runner.run()
 
@@ -1391,7 +1451,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     _axes_info = [
 % for ax in expl['axes']:
         Bunch(
+% if ax.get('element_idx') is not None:
+            name='${ax['name']}[${ax['element_idx']}]',
+% else:
             name='${ax['name']}',
+% endif
 % if 'values' in ax:
             values=jnp.array(${ax['values']}),
 % else:
@@ -1403,6 +1467,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % if ax.get('is_coupling'):
             is_coupling=True,
             coupling_key='${ax['coupling_key']}',
+% endif
+% if ax.get('element_idx') is not None:
+            element_idx=${ax['element_idx']},
 % endif
         ),
 % endfor
