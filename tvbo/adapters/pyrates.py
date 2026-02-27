@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from tvbo.adapters.base import BaseAdapter
+
 if TYPE_CHECKING:
     import pandas as pd
     from tvbo.data.types import TimeSeries
@@ -159,7 +161,7 @@ def _patch_pyrates_missing_funcs():
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
-class PyRatesAdapter:
+class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
     def __init__(self, experiment: "SimulationExperiment"):
@@ -170,7 +172,7 @@ class PyRatesAdapter:
         experiment : SimulationExperiment
             The experiment to run.
         """
-        self.experiment = experiment
+        super().__init__(experiment)
 
     def run(
         self,

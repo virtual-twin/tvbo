@@ -150,14 +150,14 @@ exp.integration.duration=100
 # Display experiment report
 display(Markdown(exp.generate_report(format="markdown")))
 
-result = exp.run()
+result = exp.run().integration.main
 
 # Plot TVBO simulation
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
 time = result.time
-x = result.data[:, 0, 0, 0]
-z = result.data[:, 1, 0, 0]
+x = result.data[:, 0, 0]
+z = result.data[:, 1, 0]
 
 axes[0].plot(time, x, label="x")
 axes[0].plot(time, z, label="z", alpha=0.8)
@@ -224,7 +224,7 @@ Markdown(exp.generate_report(format="markdown"))
 
 
 ```{python}
-result = exp.run()
+result = exp.run().integration.main
 result.plot()
 ```
 
@@ -259,7 +259,7 @@ plasticity_path = os.path.join(os.path.dirname(model_templates.__file__), "neura
 exp_multi = SimulationExperiment.from_pyrates(plasticity_path)
 
 # Display each operator using generate_report
-for name, dyn in exp_multi.dynamics.items():
+for name, dyn in exp_multi.network.dynamics.items():
     print(f"\n=== Operator: {name} ===")
     display(Markdown(dyn.generate_report(format="markdown")))
 ```
@@ -270,7 +270,7 @@ for name, dyn in exp_multi.dynamics.items():
 from IPython.display import Markdown, display
 
 # Run the Tsodyks-Markram model with constant presynaptic input
-tsodyks = exp_multi.dynamics["tsodyks"]
+tsodyks = exp_multi.network.dynamics["tsodyks"]
 
 # Set presynaptic firing rate (r_in is now a parameter since we loaded it)
 if "r_in" in tsodyks.parameters:
@@ -288,14 +288,14 @@ synapse_exp = SimulationExperiment(
 # Display experiment configuration
 display(Markdown(synapse_exp.generate_report(format="markdown")))
 
-result = synapse_exp.run()
+result = synapse_exp.run().integration.main
 
 # Plot synaptic dynamics
 fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 
 time = result.time
-x = result.data[:, 0, 0, 0]  # synaptic resources
-u = result.data[:, 1, 0, 0]  # utilization factor
+x = result.data[:, 0, 0]  # synaptic resources
+u = result.data[:, 1, 0]  # utilization factor
 
 axes[0].plot(time, x)
 axes[0].set_xlabel("Time (ms)")
@@ -352,7 +352,7 @@ display(Markdown(vdp_compare.generate_report(format="markdown")))
 exp_compare = SimulationExperiment(dynamics=vdp_compare)
 exp_compare.integration.duration = T
 exp_compare.integration.step_size = dt
-tvbo_result = exp_compare.run()
+tvbo_result = exp_compare.run().integration.main
 
 # Run in PyRates with same solver (heun)
 os.makedirs("_compare", exist_ok=True)
@@ -372,8 +372,8 @@ clear(pyrates_model)
 shutil.rmtree("_compare")
 
 # Compare
-tvbo_x = tvbo_result.data[:, 0, 0, 0]
-tvbo_z = tvbo_result.data[:, 1, 0, 0]
+tvbo_x = tvbo_result.data[:, 0, 0]
+tvbo_z = tvbo_result.data[:, 1, 0]
 
 fig, axes = plt.subplots(1, 2, layout='compressed')
 
