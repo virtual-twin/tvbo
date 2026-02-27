@@ -146,13 +146,12 @@ edges:
 # Parse network from YAML
 network = Network.from_string(network_yaml)
 
+network.dynamics["SlowDriver"] = driver
+network.dynamics["Excitable"] = fhn
+network.dynamics["Relaxation"] = vdp
+
 # Create experiment with dynamics library and network
 exp = SimulationExperiment(
-    dynamics={
-        "SlowDriver": driver,
-        "Excitable": fhn,
-        "Relaxation": vdp,
-    },
     network=network,
 )
 
@@ -555,15 +554,17 @@ edges:
 """
 
 # Parse network and create experiment with all components
-network_plasticity = Network(**yaml.safe_load(network_yaml))
-
-exp_plasticity = SimulationExperiment(
+network_plasticity = Network(
     dynamics={
         "RateNeuron": rate_neuron,
         "Depression": depression,
         "Facilitation": facilitation,
         "TsodyksMarkram": tsodyks,
     },
+    **yaml.safe_load(network_yaml),
+)
+
+exp_plasticity = SimulationExperiment(
     network=network_plasticity,
 )
 

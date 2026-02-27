@@ -93,33 +93,32 @@ dynamics:
             coupling_variable: true
             variable_of_interest: true
 
-# -- Additional vertex dynamics ------------------------------------------------
-dynamics:
-    FixedVertex:
-        name: FixedVertex
-        label: "Fixed vertex (support)"
-        description: >
-            Fixed support point. No internal dynamics, outputs constant
-            position (xfix, yfix) as coupling variables.
-            Uses NoFeedForward since it ignores edge inputs.
-        system_type: continuous
-        autonomous: true
-        parameters:
-            xfix:
-                label: "Fixed x position"
-                symbol: "xfix"
-                value: 0.0
-                unit: "m"
-            yfix:
-                label: "Fixed y position"
-                symbol: "yfix"
-                value: 0.0
-                unit: "m"
-        coupling_terms: {}
-        state_variables: {}
-
 # -- Network -------------------------------------------------------------------
 network:
+    dynamics:
+        FixedVertex:
+            name: FixedVertex
+            label: "Fixed vertex (support)"
+            description: >
+                Fixed support point. No internal dynamics, outputs constant
+                position (xfix, yfix) as coupling variables.
+                Uses NoFeedForward since it ignores edge inputs.
+            system_type: continuous
+            autonomous: true
+            parameters:
+                xfix:
+                    label: "Fixed x position"
+                    symbol: "xfix"
+                    value: 0.0
+                    unit: "m"
+                yfix:
+                    label: "Fixed y position"
+                    symbol: "yfix"
+                    value: 0.0
+                    unit: "m"
+            coupling_terms: {}
+            state_variables: {}
+
     label: "11-node truss structure"
     description: >
         2D truss: 5 bottom nodes, 5 top nodes (shifted), 1 hanging mass.
