@@ -122,6 +122,7 @@ experiments:
           value: 220
           unit: s^-1
           description: "Mean external input (afferent pulse density)"
+          shape: "(n_nodes,)"
           distribution: &dist_p_uniform
             # md:L187 — "random white noise input p(t) ... between 120 and 320 pulses per second"
             name: Uniform
@@ -483,6 +484,7 @@ experiments:
           value: 220
           unit: s^-1
           description: "Mean external input (afferent pulse density)"
+          shape: "(n_nodes,)"
           distribution: *dist_p_uniform
         a_d:
           name: a_d
@@ -680,10 +682,19 @@ experiments:
             name: K
             label: "Inter-column coupling strength (heterogeneous, per-node)"
             domain:
-              lo: "0"
-              hi: "8000"
-              n: "50"
-            description: "Auto-expands: K_el0=K1 (0-8000), K_el1=K2 (0-8000)"
+              lo: 0
+              hi: 8000
+              n: 100
+            element_domains:
+              - element: 0
+                lo: 0
+                hi: 1500
+                n: 100
+              - element: 1
+                lo: 0
+                hi: 8000
+                n: 100
+            description: "Auto-expands: K_el0=K2 (0-1500, prefrontal→visual), K_el1=K1 (0-8000, visual→prefrontal)"
             # md:L267-268 — K1 varied 0-8000, K2 varied 0-1500
 
   # ===========================================================================

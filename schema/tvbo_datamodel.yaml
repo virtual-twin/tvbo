@@ -269,6 +269,13 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether to use logarithmic spacing."
+            element:
+                range: integer
+                description: >-
+                    Element/node index this range applies to. Used in element_domains
+                    to explicitly link a domain to a specific element of a heterogeneous
+                    parameter (e.g., element: 0 for node 0). Required when used in
+                    element_domains to avoid ambiguous positional indexing.
 
     Equation:
         slots:
@@ -1042,6 +1049,16 @@ classes:
                 multivalued: true
                 range: float
                 array: {}
+            element_domains:
+                multivalued: true
+                range: Range
+                inlined_as_list: true
+                description: >-
+                    Per-element domain overrides for heterogeneous parameters.
+                    When specified, element_domains[i] overrides domain for element i
+                    during exploration auto-expansion. Length must match parameter shape
+                    (e.g., n_nodes for shape "(n_nodes,)"). If not set, all elements
+                    share the same domain.
 
     CouplingInput:
         description: "Specification of a coupling input channel for multi-coupling dynamics"

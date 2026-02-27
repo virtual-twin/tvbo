@@ -88,6 +88,7 @@ for pname in param_names:
                 'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
                 'seed': int(getattr(dist, 'seed', None) or 42),
+                'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
             continue
     regular_param_names.append(pname)
