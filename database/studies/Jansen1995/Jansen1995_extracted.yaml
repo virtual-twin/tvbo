@@ -489,6 +489,11 @@ experiments:
           value: 30
           unit: s^-1
           description: "Delay filter rate constant (≈ a/3, 3-synapse pathway, Eq. 7)"
+        K:
+          name: K
+          value: 0
+          description: "Inter-column coupling weight (heterogeneous, per-node)"
+          shape: "(n_nodes,)"
       derived_parameters:
         C1:
           name: C1
@@ -565,7 +570,7 @@ experiments:
           name: z1
           label: "Delayed-branch EPSP velocity"
           equation:
-            rhs: A*a_d*c_intercolumn - 2*a_d*z1 - a_d**2*z0
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a_d**2*z0
           unit: mV/s
       derived_variables:
         v_pyr:
@@ -665,27 +670,21 @@ experiments:
         name: K_sweep_asymmetric_fig6
         label: "Asymmetric K1×K2 sweep with delay (Fig. 6)"
         description: >-
-          K1 (visual→prefrontal) varied 0-8000, K2 (prefrontal→visual)
-          varied 0-1500. K1 roughly one order of magnitude larger than K2
+          K is heterogeneous (per-node). Auto-expands to K_el0 (K1, visual→prefrontal)
+          and K_el1 (K2, prefrontal→visual). K1 varied 0-8000, K2 varied 0-1500.
+          K1 roughly one order of magnitude larger than K2
           (anatomically justified: feed-forward > feedback, Pandya & Yeterian 1990).
         mode: product
         parameters:
-          K1:
-            name: K1
-            label: "Visual → Prefrontal coupling (feed-forward)"
+          K:
+            name: K
+            label: "Inter-column coupling strength (heterogeneous, per-node)"
             domain:
               lo: "0"
               hi: "8000"
-            description: "Variable step size: 50 to 4000 units"
-            # md:L267 — "K1 was varied between 0 and 8000 in steps increasing from 50 to 4000"
-          K2:
-            name: K2
-            label: "Prefrontal → Visual coupling (feedback)"
-            domain:
-              lo: "0"
-              hi: "1500"
-            description: "Step sizes between 100 and 500 units"
-            # md:L268 — "K2 was varied from 0 to 1500 in steps of 100 to 500"
+              n: "50"
+            description: "Auto-expands: K_el0=K1 (0-8000), K_el1=K2 (0-8000)"
+            # md:L267-268 — K1 varied 0-8000, K2 varied 0-1500
 
   # ===========================================================================
   # EXPERIMENT 5: VEP — identical columns, zero delay (Figs. 8, 9, 10)
