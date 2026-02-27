@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-26T16:01:13
+# Generation date: 2026-02-27T18:07:57
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -241,6 +241,7 @@ class Range(YAMLRoot):
     step: Optional[str] = None
     n: Optional[int] = None
     log_scale: Optional[Union[bool, Bool]] = False
+    element: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.lo is not None and not isinstance(self.lo, str):
@@ -257,6 +258,9 @@ class Range(YAMLRoot):
 
         if self.log_scale is not None and not isinstance(self.log_scale, Bool):
             self.log_scale = Bool(self.log_scale)
+
+        if self.element is not None and not isinstance(self.element, int):
+            self.element = int(self.element)
 
         super().__post_init__(**kwargs)
 
@@ -1367,6 +1371,7 @@ class Parameter(YAMLRoot):
     free: Optional[Union[bool, Bool]] = None
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
+    element_domains: Optional[Union[Union[dict, Range], list[Union[dict, Range]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1422,6 +1427,10 @@ class Parameter(YAMLRoot):
         if not isinstance(self.explored_values, list):
             self.explored_values = [self.explored_values] if self.explored_values is not None else []
         self.explored_values = [v if isinstance(v, float) else float(v) for v in self.explored_values]
+
+        if not isinstance(self.element_domains, list):
+            self.element_domains = [self.element_domains] if self.element_domains is not None else []
+        self.element_domains = [v if isinstance(v, Range) else Range(**as_dict(v)) for v in self.element_domains]
 
         super().__post_init__(**kwargs)
 
@@ -5005,6 +5014,9 @@ slots.range__n = Slot(uri=TVBO.n, name="range__n", curie=TVBO.curie('n'),
 slots.range__log_scale = Slot(uri=TVBO.log_scale, name="range__log_scale", curie=TVBO.curie('log_scale'),
                    model_uri=TVBO.range__log_scale, domain=None, range=Optional[Union[bool, Bool]])
 
+slots.range__element = Slot(uri=TVBO.element, name="range__element", curie=TVBO.curie('element'),
+                   model_uri=TVBO.range__element, domain=None, range=Optional[int])
+
 slots.equation__lefthandside = Slot(uri=TVBO.lhs, name="equation__lefthandside", curie=TVBO.curie('lhs'),
                    model_uri=TVBO.equation__lefthandside, domain=None, range=Optional[str])
 
@@ -5391,6 +5403,9 @@ slots.parameter__shape = Slot(uri=TVBO.shape, name="parameter__shape", curie=TVB
 
 slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="parameter__explored_values", curie=TVBO.curie('explored_values'),
                    model_uri=TVBO.parameter__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.parameter__element_domains = Slot(uri=TVBO.element_domains, name="parameter__element_domains", curie=TVBO.curie('element_domains'),
+                   model_uri=TVBO.parameter__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
 
 slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__dimension", curie=TVBO.curie('dimension'),
                    model_uri=TVBO.couplingInput__dimension, domain=None, range=Optional[int])

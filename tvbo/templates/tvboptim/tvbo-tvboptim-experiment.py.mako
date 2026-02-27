@@ -194,6 +194,7 @@ for pname in list(dyn_param_names):
                 'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
                 'seed': int(getattr(dist, 'seed', None) or 42),
+                'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
 # Remove stochastic params from dynamics params (trajectories injected after prepare)
 dyn_param_names = [p for p in dyn_param_names if p not in stochastic_param_names]
@@ -423,6 +424,13 @@ for expl in exploration_list:
                            and 'n_nodes' in dyn_param_shapes[pname])
         if is_hetero_param:
             _n = n_nodes
+            _el_domains = getattr(param, 'element_domains', None) or []
+            # Build element→domain lookup: keyed by Range.element if set, else positional
+            _el_dom_map = {}
+            for _edi, _ed in enumerate(_el_domains):
+                _ek = getattr(_ed, 'element', None)
+                _ek = _ek if _ek is not None else _edi
+                _el_dom_map[_ek] = _ed
             for _ei in range(_n):
                 ax_entry = {
                     'name': pname,
@@ -436,11 +444,13 @@ for expl in exploration_list:
                     ax_entry['values'] = vals
                     ax_entry['n'] = len(vals)
                 else:
-                    assert domain.lo is not None, f"domain.lo required for {param.name}"
-                    assert domain.hi is not None, f"domain.hi required for {param.name}"
-                    n = _resolve_n(domain)
-                    ax_entry['lo'] = float(domain.lo)
-                    ax_entry['hi'] = float(domain.hi)
+                    # Use per-element domain if available (by element key), else shared domain
+                    _dom = _el_dom_map.get(_ei, domain)
+                    assert _dom.lo is not None, f"domain.lo required for {param.name}[{_ei}]"
+                    assert _dom.hi is not None, f"domain.hi required for {param.name}[{_ei}]"
+                    n = _resolve_n(_dom)
+                    ax_entry['lo'] = float(_dom.lo)
+                    ax_entry['hi'] = float(_dom.hi)
                     ax_entry['n'] = n
                 exp_info['axes'].append(ax_entry)
         else:
@@ -585,17 +595,25 @@ def _inject_stochastic_trajectories(state, t1, dt, key=None):
         key = jax.random.key(0)
     n_steps = int(t1 / dt) + 2  # +2 for rounding safety
     % for sp_name, sp_info in stochastic_param_info.items():
+<%
+    # Determine noise shape: (n_steps,) for scalar, (n_steps, n_nodes) for per-node
+    _sp_shape = sp_info.get('shape', '')
+    if _sp_shape and 'n_nodes' in _sp_shape:
+        _noise_shape = '(n_steps, n_nodes)'
+    else:
+        _noise_shape = '(n_steps,)'
+%>\
     key, _subkey = jax.random.split(key)
     % if sp_info['dist'] == 'uniform':
-    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, (n_steps,), minval=${sp_info['lo']}, maxval=${sp_info['hi']})
+    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
     % elif sp_info['dist'] in ('gaussian', 'normal'):
-    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * jax.random.normal(_subkey, (n_steps,))
+    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * jax.random.normal(_subkey, ${_noise_shape})
     % elif sp_info['dist'] in ('truncated_normal', 'truncatednormal'):
-    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, upper=${(sp_info['hi'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, shape=(n_steps,))
+    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, upper=${(sp_info['hi'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, shape=${_noise_shape})
     state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * _raw
     % else:
     # Unsupported distribution '${sp_info['dist']}', using uniform fallback
-    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, (n_steps,), minval=${sp_info['lo']}, maxval=${sp_info['hi']})
+    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
     % endif
     % endfor
     return state
