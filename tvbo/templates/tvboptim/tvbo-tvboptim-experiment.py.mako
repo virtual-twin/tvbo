@@ -620,17 +620,46 @@ def _inject_stochastic_trajectories(state, t1, dt, key=None):
 
 % endif
 
+% if stochastic_param_info:
+def _freeze_step_time(solver):
+    """Patch solver to freeze t for all sub-evaluations within a step.
+
+    Multi-stage solvers (RK4, Heun) evaluate dynamics at sub-step times
+    (t, t+dt/2, t+dt). Time-indexed stochastic inputs (pre-generated arrays
+    indexed by t) should be constant per integration step — the input is
+    sampled once per step, not interpolated across sub-steps.
+
+    This patches the solver's step method so all dynamics evaluations within
+    a single step see the same time value (the step-start time t), preventing
+    the k4 evaluation at t+dt from reading the next noise sample.
+    """
+    _original_step = solver.step
+
+    def _frozen_step(dynamics_fn, t, state, dt, params, noise_sample=0.0):
+        def frozen_dynamics(t_sub, state_sub, params_sub):
+            return dynamics_fn(t, state_sub, params_sub)
+        return _original_step(frozen_dynamics, t, state, dt, params, noise_sample)
+
+    solver.step = _frozen_step
+    return solver
+
+% endif
+
 def get_solver():
     base_solver = ${solver_class}()
 % if has_state_bounds:
-    return BoundedSolver(
+    solver = BoundedSolver(
         base_solver,
         low=jnp.array(${state_bounds_lo})[:, None],
         high=jnp.array(${state_bounds_hi})[:, None]
     )
 % else:
-    return base_solver
+    solver = base_solver
 % endif
+% if stochastic_param_info:
+    solver = _freeze_step_time(solver)
+% endif
+    return solver
 
 <%include file="tvbo-tvboptim-dfun.py.mako" />
 
