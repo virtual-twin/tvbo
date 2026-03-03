@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from scipy.signal import welch, hilbert, find_peaks
+from scipy.ndimage import gaussian_filter
 from sympy import IndexedBase, Symbol, latex as sympy_latex
 
 
@@ -404,12 +405,16 @@ def classify_regimes(data, dt, v0):
         if is_noise[idx]:
             # Fixed point: small amplitude + flat spectrum
             regimes[idx] = 4 if mean_arr[idx] > v0_val else 0
-        elif ptp_arr[idx] > 30 and f_peak[idx] < 8:
+        elif ptp_arr[idx] > 20 and f_peak[idx] < 8:
             regimes[idx] = 1  # large-amplitude sporadic
         elif f_peak[idx] >= 8:
             regimes[idx] = 2 if env_cv[idx] < env_cv_thresh else 3
         elif f_peak[idx] > 1:
-            regimes[idx] = 1  # sub-alpha oscillation
+            # Sub-alpha with small ptp: noise, not genuine sporadic.
+            # In the coupled system (Fig 6) sub-alpha signals arise from
+            # mean shift pushing the sigmoid toward saturation, not from
+            # epileptiform discharges.  True R1 has ptp > 20 mV.
+            regimes[idx] = 4 if mean_arr[idx] > v0_val else 0
         else:
             regimes[idx] = 4 if mean_arr[idx] > v0_val else 0
 
@@ -577,14 +582,22 @@ def plot_fig4(res):
             transform=ax_leg.transAxes,
         )
 
-    # Timeseries per regime — one representative trace each (as in original)
+    # Timeseries per regime — pick the most representative trace.
+    # For oscillatory regimes (1-3), choose the signal with highest amplitude
+    # (clearest visual example, avoids edge-case noise-like traces).
+    # For noise regimes (0, 4), choose maximally distinct from oscillatory
+    # (lowest amplitude = flattest trace).
     t = _time_axis(n_time, dt)
-    rng = np.random.default_rng(42)
+    amp = np.std(data, axis=-1)
     for i, regime_id in enumerate(display_order):
         ax_ts = axd[f"ts{i}"]
         idx_list = np.argwhere(regimes == regime_id)
         if len(idx_list) > 0:
-            pick = rng.choice(len(idx_list))
+            amps = np.array([amp[tuple(ix)] for ix in idx_list])
+            if regime_id in (0, 4):
+                pick = np.argmin(amps)  # flattest for noise
+            else:
+                pick = np.argmax(amps)  # clearest for oscillatory
             ts = data[tuple(idx_list[pick])]
             ax_ts.plot(t, ts)
         ax_ts.set_ylabel("mV", fontsize=FS_LABEL)
@@ -838,27 +851,52 @@ def plot_fig6(res, experiment):
     regimes_n0 = classify_regimes(grid[:, :, :, 0], dt, v0)
     regimes_n1 = classify_regimes(grid[:, :, :, 1], dt, v0)
 
+    # Resample regime fields to a grid uniform in visual coordinates.
+    # The raw data is linear in K-space, but the visual axes are non-linear
+    # (especially Y: ratio 80:1 between tightest/widest spacing).
+    # Without resampling, contours are jagged in the low-K1 region where
+    # only a few data points span multiple visual tick intervals.
+    from scipy.interpolate import RegularGridInterpolator
+    n_vis = 200  # uniform visual grid resolution
+    xv_uniform = np.linspace(x_vis[0], x_vis[-1], n_vis)
+    yv_uniform = np.linspace(y_vis[0], y_vis[-1], n_vis)
+    Xv, Yv = np.meshgrid(xv_uniform, yv_uniform, indexing="ij")
+
+    def _resample_regime(regimes_raw):
+        """Interpolate regime field from data grid to uniform visual grid."""
+        interp = RegularGridInterpolator(
+            (ax0w, ax1w), regimes_raw.astype(float),
+            method="nearest", bounds_error=False, fill_value=None,
+        )
+        resampled = interp(np.stack([Xv.ravel(), Yv.ravel()], axis=-1))
+        return resampled.reshape(n_vis, n_vis)
+
+    vis_n0 = gaussian_filter(_resample_regime(regimes_n0), sigma=3)
+    vis_n1 = gaussian_filter(_resample_regime(regimes_n1), sigma=3)
+
     # Contours at regime boundaries (0.5, 1.5, ..., 3.5)
     regime_levels = [0.5, 1.5, 2.5, 3.5]
 
     # Column 1 (solid)
     ax.contour(
-        ax0w,
-        ax1w,
-        regimes_n0.astype(float).T,
+        xv_uniform,
+        yv_uniform,
+        vis_n0.T,
         levels=regime_levels,
         linestyles="solid",
         colors="black",
+        linewidths=1.5,
     )
 
     # Column 2 (dashed)
     ax.contour(
-        ax0w,
-        ax1w,
-        regimes_n1.astype(float).T,
+        xv_uniform,
+        yv_uniform,
+        vis_n1.T,
         levels=regime_levels,
         linestyles="dashed",
         colors="black",
+        linewidths=1.5,
     )
 
     # Markers — column 1
