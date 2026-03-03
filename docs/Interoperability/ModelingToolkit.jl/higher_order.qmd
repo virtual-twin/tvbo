@@ -76,7 +76,7 @@ To run the lowered system with backends that only support first-order ODEs:
 lowered_exp = adapter.lower(exp)
 lowered_exp.integration.method='Heun'
 result = lowered_exp.run("tvboptim")
-result.integration.main.to_timeseries().get_state(["x", "y"]).plot(type="statespace")
+result.integration.to_timeseries().get_state(["x", "y"]).plot(type="statespace")
 ```
 
 MTK introduced `x_t` (written as `xˍt` in Julia) and produced four first-order equations:

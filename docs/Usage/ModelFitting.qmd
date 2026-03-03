@@ -91,7 +91,7 @@ result.optimization.loss_history
 result.optimization.fitted_params
 
 # Compare fitted vs empirical FC
-result.integration.main.observations.fc
+result.integration.observations.fc
 ```
 
 ## See Also

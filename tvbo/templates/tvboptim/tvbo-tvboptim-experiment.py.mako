@@ -1777,8 +1777,8 @@ def run_experiment(
         _aux_names = list(model.derived_variables.keys())
     result_var_names = state_names + _aux_names
 %>
-    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}) if result is not None else None
     transient_result = SimulationResult(result=transient, state_names=${result_var_names}) if transient is not None else None
+    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, transient=transient_result) if result is not None else None
 
     results = Bunch(
         # Core simulation infrastructure (always present)
@@ -1786,11 +1786,9 @@ def run_experiment(
         state=state,
         network=network,
 
-        # Integration results (mirrors integration section in YAML)
-        integration=Bunch(
-            main=main_result,
-            transient=transient_result,
-        ),
+        # Integration result (mirrors integration section in YAML)
+        # Access: results.integration.get_state(...), results.integration.transient
+        integration=main_result,
 
     )
     print("  Simulation complete.")

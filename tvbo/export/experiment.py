@@ -78,17 +78,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Pydantic v1
                 kwargs["network"] = net.dict(exclude_none=True)
 
+        # Allow coupling to be specified as a plain string name (e.g. "KuramotoCoupling")
+        # This implies "load from ontology/database", so we flag it for use_ontology
+        _coupling_from_name = False
+        if "coupling" in kwargs and isinstance(kwargs["coupling"], str):
+            kwargs["coupling"] = {"name": kwargs["coupling"]}
+            _coupling_from_name = True
+
         # Delegate to the parent dataclass initializer for normalization
         super().__init__(**kwargs)
 
         # Normalize and coerce fields while preserving original conditions
-        def _coerce(cls, obj):
+        def _coerce(cls, obj, **extra):
             if isinstance(obj, cls):
                 return obj
             if hasattr(obj, "_as_dict"):
-                return cls(**obj._as_dict)
+                return cls(**obj._as_dict, **extra)
             if isinstance(obj, dict):
-                return cls(**obj)
+                return cls(**obj, **extra)
             return obj
 
         # Prefer `model` (name string) when `dynamics` is missing
@@ -107,7 +114,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.model = self.dynamics
 
         if getattr(self, "coupling", None) and not isinstance(self.coupling, Coupling):
-            self.coupling = _coerce(Coupling, self.coupling)
+            self.coupling = _coerce(
+                Coupling, self.coupling, use_ontology=_coupling_from_name
+            )
 
         if getattr(self, "integration", None) and not isinstance(
             self.integration, Integrator
@@ -140,7 +149,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.integration = Integrator(method="Heun")
 
         if not getattr(self, "coupling", None):
-            self.coupling = Coupling(name="Linear")
+            self.coupling = Coupling(name="Linear", use_ontology=True)
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
@@ -226,9 +235,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         coup = getattr(obj, "coupling", None)
         if coup is not None and not isinstance(coup, Coupling):
             coup.__class__ = Coupling
-            coup._populate_from_ontology()
+            # Only fill from ontology if coupling has name but no expressions
+            # (i.e. it's a name-only reference, not a fully-specified coupling)
+            if getattr(coup, "name", None) and not getattr(coup, "pre_expression", None):
+                coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
-            obj.__dict__["coupling"] = Coupling(name="Linear")
+            obj.__dict__["coupling"] = Coupling(name="Linear", use_ontology=True)
 
         # -- Upgrade Network via __class__ reassignment --
         net = getattr(obj, "network", None)
@@ -562,7 +574,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             dynamics=dynamics,
             network=network,
             integration=integration,
-            coupling=Coupling(name="Linear"),  # Default coupling
+            coupling=Coupling(name="Linear", use_ontology=True),  # Default coupling
         )
 
         # Store BIDS source info
