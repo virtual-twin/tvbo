@@ -16,6 +16,39 @@ from scipy.signal import welch, hilbert, find_peaks
 from sympy import IndexedBase, Symbol, latex as sympy_latex
 
 
+# ── Consistent sizing ────────────────────────────────────────────────────────
+# All figures share the same width so text at a given point-size renders
+# identically across figures.  Heights derived from the original paper
+# figure pixel extents (measured from scanned PNGs in img/).
+
+FIG_WIDTH = 7.0  # inches
+
+_ORIG_PX = {
+    3: (675, 703),
+    4: (673, 753),
+    5: (672, 743),
+    6: (673, 1145),
+    8: (668, 937),
+    9: (672, 485),
+    10: (670, 1018),
+    11: (648, 720),
+}
+
+
+def _figsize(fig_num):
+    """Return (width, height) in inches matching the original aspect ratio."""
+    w, h = _ORIG_PX[fig_num]
+    return (FIG_WIDTH, round(FIG_WIDTH * h / w, 1))
+
+
+# Font sizes in points — uniform across every figure
+FS_SUPTITLE = 12
+FS_TITLE = 12
+FS_LABEL = 11
+FS_TICK = 10
+FS_ANNOT = 10
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -94,7 +127,7 @@ def _add_k_legend(ax, er, values, fmt=".0f", **kwargs):
     text = "\n".join(f"${l}$" for l in lines)
     kw = dict(
         transform=ax.transAxes,
-        fontsize="small",
+        fontsize=FS_ANNOT,
         fontweight="bold",
         ha="right",
         va="bottom",
@@ -122,7 +155,7 @@ def _annotate_neg_peaks(ax, t, trace, t0, n=2, **text_kw):
     order = np.argsort(props["prominences"])[::-1]
     peaks = peaks[order[:n]]
     peaks = np.sort(peaks)  # re-order chronologically
-    kw = dict(fontsize="small", fontweight="bold", ha="center", va="top")
+    kw = dict(fontsize=FS_ANNOT, fontweight="bold", ha="center", va="top")
     kw.update(text_kw)
     for i, pk in enumerate(peaks):
         idx = post[pk]
@@ -137,7 +170,7 @@ def _annotate_neg_peaks(ax, t, trace, t0, n=2, **text_kw):
 
 def _set_column_title(ax, node):
     """Set a harmonized 'Column N' title on a VEP axis."""
-    ax.set_title(f"Column {node + 1}", fontweight="bold", fontsize="small")
+    ax.set_title(f"Column {node + 1}", fontweight="bold", fontsize=FS_TITLE)
 
 
 def _mark_stim_onset(ax, t0):
@@ -183,17 +216,107 @@ def _time_axis(n_time, dt):
 # ── Fig. 3: C sweep ──────────────────────────────────────────────────────────
 
 
-def plot_fig3(res):
+def plot_fig3(res, axes=None):
     """Fig. 3 — Effect of connectivity constant C on column output.
-
-    Uses the built-in ExplorationResult.plot() method.
 
     Parameters
     ----------
     res : ExperimentResult
         Result from experiment 1 (single column, C sweep).
+    axes : Axes, array-like of Axes, or None
+        - ``None`` — create a new figure with one subplot per sweep value.
+        - A single ``matplotlib.axes.Axes`` — plot all sweep traces on that
+          one axis (overlaid, with a legend).
+        - A list / array of ``Axes`` whose length equals the number of sweep
+          values — one trace per axis (same layout as the default figure but
+          drawn on the caller's axes).
+
+    Returns
+    -------
+    fig : Figure or None
+        The created Figure when *axes* is ``None``; otherwise ``None``
+        (the caller owns the figure).
     """
-    return res.exploration.C_sweep_fig3.plot()
+    er = res.exploration.C_sweep_fig3
+    if er.results is None:
+        return None
+
+    ax_info = er.axes[0] if er.axes else None
+    n = int(ax_info.n) if ax_info else er.results.shape[0]
+    time = er._get_time_axis()
+    ax_values = np.asarray(ax_info["values"]) if ax_info else None
+    ax_name = ax_info.name if ax_info else "param"
+    output_label = er.observable or ", ".join(er.output_names) or "output"
+
+    created_fig = False
+
+    if axes is None:
+        # Default: create new figure with n subplots
+        fig, ax_arr = plt.subplots(
+            n,
+            1,
+            figsize=_figsize(3),
+            sharex=True,
+        )
+        if n == 1:
+            ax_arr = [ax_arr]
+        created_fig = True
+    elif hasattr(axes, "__len__") and not isinstance(axes, plt.Axes):
+        # Caller provided a sequence of axes
+        ax_arr = list(axes)
+        if len(ax_arr) != n:
+            raise ValueError(
+                f"Expected {n} axes for {n} sweep values, got {len(ax_arr)}"
+            )
+        fig = None
+    else:
+        # Single axis — overlay all traces
+        ax_arr = None
+        fig = None
+
+    if ax_arr is not None:
+        # One subplot per sweep value
+        for i, ax in enumerate(ax_arr):
+            data = np.asarray(er.results[i]).squeeze()
+            if data.ndim > 1:
+                for node_idx in range(data.shape[-1]):
+                    ax.plot(time, data[:, node_idx], alpha=0.7)
+            else:
+                ax.plot(time, data)
+            if ax_values is not None:
+                val = float(ax_values[i])
+                ax.set_ylabel(f"${_axis_latex(ax_name)}={val:.4g}$", fontsize=FS_LABEL)
+            ax.tick_params(labelsize=FS_TICK)
+        ax_arr[-1].set_xlabel("s", fontsize=FS_LABEL)
+        if created_fig:
+            # fig.suptitle(
+            #     f"Fig. 3 — {output_label}",
+            #     fontsize=FS_SUPTITLE,
+            # )
+            fig.tight_layout()
+            plt.close()
+    else:
+        # Single axis: overlay all traces with legend
+        ax = axes
+        for i in range(n):
+            data = np.asarray(er.results[i]).squeeze()
+            label = (
+                f"${_axis_latex(ax_name)}={float(ax_values[i]):.4g}$"
+                if ax_values is not None
+                else f"#{i}"
+            )
+            if data.ndim > 1:
+                for node_idx in range(data.shape[-1]):
+                    ax.plot(time, data[:, node_idx], alpha=0.7, label=label)
+                    label = None  # only label first node trace
+            else:
+                ax.plot(time, data, alpha=0.7, label=label)
+        ax.legend(fontsize=FS_TICK)
+        ax.set_xlabel("s", fontsize=FS_LABEL)
+        ax.set_ylabel(output_label, fontsize=FS_LABEL)
+        ax.tick_params(labelsize=FS_TICK)
+
+    return fig
 
 
 # ── Fig. 4: Parameter space exploration ───────────────────────────────────────
@@ -201,6 +324,12 @@ def plot_fig3(res):
 
 def classify_regimes(data, dt, v0):
     """Classify time series into Jansen & Rit regimes.
+
+    Two-pass approach: first compute spectral features for all grid points,
+    then classify using adaptive thresholds. The envelope-CV threshold for
+    distinguishing sinusoidal alpha (regime 2) from waxing-waning (regime 3)
+    adapts to the data range so that the same function works for both
+    single-column (Fig 4) and coupled-column (Fig 6) sweeps.
 
     Parameters
     ----------
@@ -216,37 +345,73 @@ def classify_regimes(data, dt, v0):
     grid_shape = data.shape[:-1]
     fs = 1.0 / dt
     n_time = data.shape[-1]
-    regimes = np.zeros(grid_shape, dtype=int)
     v0_scalar = np.isscalar(v0) or (isinstance(v0, np.ndarray) and v0.ndim == 0)
+
+    # Bulk statistics
+    amp = np.std(data, axis=-1)
+    ptp_arr = np.ptp(data, axis=-1)
+    mean_arr = np.mean(data, axis=-1)
+
+    # Two-criterion noise floor: amplitude AND spectral flatness.
+    # The JR model band-pass filters even stochastic input, so amplitude
+    # alone can't cleanly separate small oscillations from noise.
+    # Spectral flatness (Wiener entropy = gmean/amean of PSD) measures
+    # how tone-like vs noise-like a spectrum is:
+    #   flat → 1  (noise, uniform spectral energy)
+    #   flat → 0  (tonal, energy concentrated at harmonics)
+    # Noise signals: flatness ≈ 0.006, oscillatory: flatness < 0.001.
+    # A signal is "noise" only if BOTH amplitude is small AND spectrum flat.
+    amp_noise_ceil = max(0.2, 0.03 * float(np.max(amp)))
+    spec_flat_thresh = 0.005  # above = truly flat noise, below = has spectral structure
+
+    # Per-signal spectral features (welch, hilbert, spectral flatness)
+    f_peak = np.zeros(grid_shape)
+    snr = np.zeros(grid_shape)
+    env_cv = np.zeros(grid_shape)
+    spec_flatness = np.ones(grid_shape)  # default 1 = flat
 
     for idx in np.ndindex(grid_shape):
         ts = data[idx]
-        amp = np.std(ts)
-        ptp_val = np.ptp(ts)
-        mean_val = np.mean(ts)
-
         freqs, psd = welch(ts, fs=fs, nperseg=min(256, n_time))
         mask = freqs > 1.0
         if mask.any() and psd[mask].max() > 0:
-            f_peak = freqs[mask][np.argmax(psd[mask])]
-        else:
-            f_peak = 0
+            psd_pos = psd[mask]
+            f_peak[idx] = freqs[mask][np.argmax(psd_pos)]
+            snr[idx] = psd_pos.max() / (np.median(psd_pos) + 1e-10)
+            # Spectral flatness (geometric mean / arithmetic mean)
+            log_psd = np.log(psd_pos + 1e-30)
+            spec_flatness[idx] = np.exp(np.mean(log_psd)) / np.mean(psd_pos)
+        analytic = hilbert(ts - mean_arr[idx])
+        envelope = np.abs(analytic)
+        env_cv[idx] = np.std(envelope) / (np.mean(envelope) + 1e-10)
 
+    # Noise mask: small amplitude AND spectrally flat
+    is_noise = (amp < amp_noise_ceil) & (spec_flatness > spec_flat_thresh)
+
+    # Adaptive envelope-CV threshold for alpha regime subdivision
+    alpha_mask = (f_peak >= 8) & ~is_noise
+    if alpha_mask.any():
+        alpha_cvs = env_cv[alpha_mask]
+        env_cv_thresh = np.median(alpha_cvs) if alpha_cvs.min() > 0.3 else 0.3
+    else:
+        env_cv_thresh = 0.3
+
+    # Classification
+    regimes = np.zeros(grid_shape, dtype=int)
+    for idx in np.ndindex(grid_shape):
         v0_val = float(v0) if v0_scalar else v0[idx[-1]]
 
-        if amp < 1.5:
-            regimes[idx] = 4 if mean_val > v0_val else 0
-        elif ptp_val > 30 and f_peak < 8:
-            regimes[idx] = 1
-        elif f_peak >= 8:
-            analytic = hilbert(ts - mean_val)
-            envelope = np.abs(analytic)
-            env_cv = np.std(envelope) / (np.mean(envelope) + 1e-10)
-            regimes[idx] = 2 if env_cv < 0.3 else 3
-        elif f_peak > 1 and amp > 2:
-            regimes[idx] = 1
+        if is_noise[idx]:
+            # Fixed point: small amplitude + flat spectrum
+            regimes[idx] = 4 if mean_arr[idx] > v0_val else 0
+        elif ptp_arr[idx] > 30 and f_peak[idx] < 8:
+            regimes[idx] = 1  # large-amplitude sporadic
+        elif f_peak[idx] >= 8:
+            regimes[idx] = 2 if env_cv[idx] < env_cv_thresh else 3
+        elif f_peak[idx] > 1:
+            regimes[idx] = 1  # sub-alpha oscillation
         else:
-            regimes[idx] = 0
+            regimes[idx] = 4 if mean_arr[idx] > v0_val else 0
 
     return regimes
 
@@ -322,7 +487,7 @@ def plot_fig4(res):
     layout = expl_rows + ts_rows
 
     fig, axd = plt.subplot_mosaic(
-        layout, figsize=(8, 10), height_ratios=[1] * nC + [1] * 5
+        layout, figsize=_figsize(4), height_ratios=[1] * nC + [1] * 5
     )
 
     # Exploration heatmaps
@@ -346,7 +511,7 @@ def plot_fig4(res):
                 ax.plot([bp, bp], [-0.12, 0], clip_on=False)
                 if row == nC - 1:
                     ax.text(
-                        bp, -0.35, f"{bl:g}", ha="center", va="top", fontsize="x-small"
+                        bp, -0.35, f"{bl:g}", ha="center", va="top", fontsize=FS_TICK/2
                     )
 
             for ap, al in zip(a_vis, a_ticks):
@@ -362,7 +527,7 @@ def plot_fig4(res):
                         f"{al:g}",
                         ha="right",
                         va="center",
-                        fontsize="x-small",
+                        fontsize=FS_TICK/2,
                     )
 
             ax.set_xlim(X.min() - 0.5, X.max() + 0.15)
@@ -379,15 +544,19 @@ def plot_fig4(res):
                     ha="right",
                     va="center",
                     rotation=90,
-                    fontsize="small",
+                    fontsize=FS_LABEL,
                 )
             if row == 0:
                 ax.set_title(
-                    f"{axis_names[3]} = {v0_vals[vi]}", fontsize="medium", pad=2
+                    f"{axis_names[3]} = {v0_vals[vi]}", fontsize=FS_TITLE, pad=2
                 )
 
+    # Display order: light→dark (top→bottom), matching the original paper.
+    # regime 4 = Hyperactive noise (lightest) … regime 0 = Hypoactive noise (darkest)
+    display_order = [4, 3, 2, 1, 0]
+
     # Legend
-    for i, (label, color) in enumerate(zip(regime_labels, colors)):
+    for i, rid in enumerate(display_order):
         ax_leg = axd[f"leg{i+1}"]
         ax_leg.axis("off")
         ax_leg.add_patch(
@@ -395,34 +564,39 @@ def plot_fig4(res):
                 (0.05, 0.35),
                 0.2,
                 0.4,
-                facecolor=color,
+                facecolor=colors[rid],
                 transform=ax_leg.transAxes,
             )
         )
         ax_leg.text(
-            0.3, 0.5, label, va="center", fontsize="small", transform=ax_leg.transAxes
+            0.3,
+            0.5,
+            regime_labels[rid],
+            va="center",
+            fontsize=FS_ANNOT/1.5,
+            transform=ax_leg.transAxes,
         )
 
     # Timeseries per regime — one representative trace each (as in original)
     t = _time_axis(n_time, dt)
     rng = np.random.default_rng(42)
-    for regime_id in range(5):
-        ax_ts = axd[f"ts{regime_id}"]
+    for i, regime_id in enumerate(display_order):
+        ax_ts = axd[f"ts{i}"]
         idx_list = np.argwhere(regimes == regime_id)
         if len(idx_list) > 0:
             pick = rng.choice(len(idx_list))
             ts = data[tuple(idx_list[pick])]
             ax_ts.plot(t, ts)
-        ax_ts.set_ylabel("mV", fontsize="small")
+        ax_ts.set_ylabel("mV", fontsize=FS_LABEL)
         ax_ts.set_xlim(t[0], t[-1])
-        if regime_id < 4:
+        if i < 4:
             ax_ts.set_xticklabels([])
         else:
-            ax_ts.set_xlabel("s", fontsize="small")
+            ax_ts.set_xlabel("s", fontsize=FS_LABEL)
 
-    fig.suptitle(
-        "Fig. 4: Parameter space exploration + Classification", fontsize="large", y=0.91
-    )
+    # fig.suptitle(
+    #     "Fig. 4: Parameter space exploration + Classification", fontsize=FS_SUPTITLE, y=0.91
+    # )
     plt.close()
     return fig
 
@@ -481,7 +655,10 @@ def plot_fig5(res, experiment):
         ["r3n2", "r3n2", "r4n2", "r4n2"],
     ]
     fig, axd = plt.subplot_mosaic(
-        layout, height_ratios=[1, 1, 0.3, 0.3, 0.3, 0.3], layout="tight", figsize=(9, 9)
+        layout,
+        height_ratios=[1, 1, 0.3, 0.3, 0.3, 0.3],
+        layout="tight",
+        figsize=_figsize(5),
     )
 
     ax_heat = axd["heat"]
@@ -493,8 +670,8 @@ def plot_fig5(res, experiment):
         cmap="Greys_r",
         interpolation="none",
     )
-    ax_heat.set_xlabel(f"${ax1_latex}$", fontsize="medium")
-    ax_heat.set_ylabel(f"${ax0_latex}$", fontsize="medium")
+    ax_heat.set_xlabel(f"${ax1_latex}$", fontsize=FS_LABEL)
+    ax_heat.set_ylabel(f"${ax0_latex}$", fontsize=FS_LABEL)
 
     for ri, (k0, k1) in enumerate(regimes, 1):
         ax_heat.plot(
@@ -510,7 +687,7 @@ def plot_fig5(res, experiment):
         ax_heat.annotate(
             str(ri),
             (k1, k0),
-            fontsize="x-small",
+            fontsize=FS_TICK,
             fontweight="bold",
             ha="center",
             va="center",
@@ -527,11 +704,11 @@ def plot_fig5(res, experiment):
             key = f"r{panel_num}n{ni + 1}"
             ax_ts = axd[key]
             ax_ts.plot(t, ts[:, ni])
-            ax_ts.tick_params(labelsize="x-small")
+            ax_ts.tick_params(labelsize=FS_TICK)
             if panel_num in (1, 3):
-                ax_ts.set_ylabel("mV", fontsize="x-small")
+                ax_ts.set_ylabel("mV", fontsize=FS_TICK)
             if panel_num in (3, 4) and ni == n_nodes - 1:
-                ax_ts.set_xlabel("s", fontsize="x-small")
+                ax_ts.set_xlabel("s", fontsize=FS_TICK)
             else:
                 ax_ts.tick_params(labelbottom=False)
             if ni == 0:
@@ -540,7 +717,7 @@ def plot_fig5(res, experiment):
                     0.92,
                     f"{panel_num}  {regime_label}",
                     transform=ax_ts.transAxes,
-                    fontsize="x-small",
+                    fontsize=FS_TICK,
                     va="top",
                     ha="left",
                     fontweight="bold",
@@ -551,7 +728,7 @@ def plot_fig5(res, experiment):
                     ),
                 )
 
-    fig.suptitle("Fig. 5 — Symmetric K sweep", fontweight="bold")
+    # fig.suptitle("Fig. 5 — Symmetric K sweep", fontweight="bold", fontsize=FS_SUPTITLE)
     plt.close()
     return fig
 
@@ -619,7 +796,7 @@ def plot_fig6(res, experiment):
     fig, axd = plt.subplot_mosaic(
         layout,
         height_ratios=[1, 1] + [0.3] * n_ts,
-        figsize=(5, 10),
+        figsize=_figsize(6),
         layout="compressed",
     )
 
@@ -642,9 +819,9 @@ def plot_fig6(res, experiment):
     ax.set_xlabel(f"${ax0_latex}$")
     ax.set_ylabel(f"${ax1_latex}$")
     ax.set_xticks(x_vis)
-    ax.set_xticklabels([f"{int(v)}" for v in x_ticks], fontsize="x-small")
+    ax.set_xticklabels([f"{int(v)}" for v in x_ticks], fontsize=FS_TICK)
     ax.set_yticks(y_vis)
-    ax.set_yticklabels([f"{int(v)}" for v in y_ticks], fontsize="x-small")
+    ax.set_yticklabels([f"{int(v)}" for v in y_ticks], fontsize=FS_TICK)
     ax.set_xlim(x_vis[0], x_vis[-1])
     ax.set_ylim(y_vis[0], y_vis[-1])
     ax.set_box_aspect(0.7)
@@ -657,7 +834,7 @@ def plot_fig6(res, experiment):
         return np.interp(v, y_ticks, y_vis)
 
     # Regime classification per node using same classifier as Fig 4
-    v0 = float(experiment.model.parameters['v0'].value)
+    v0 = float(experiment.model.parameters["v0"].value)
     regimes_n0 = classify_regimes(grid[:, :, :, 0], dt, v0)
     regimes_n1 = classify_regimes(grid[:, :, :, 1], dt, v0)
 
@@ -700,7 +877,7 @@ def plot_fig6(res, experiment):
         ax.annotate(
             str(ri),
             (wx(k0), wy(k1)),
-            fontsize="x-small",
+            fontsize=FS_TICK,
             fontweight="bold",
             ha="center",
             va="center",
@@ -724,7 +901,7 @@ def plot_fig6(res, experiment):
         ax.annotate(
             lab,
             (wx(k0), wy(k1)),
-            fontsize="x-small",
+            fontsize=FS_TICK,
             fontweight="bold",
             ha="center",
             va="center",
@@ -737,21 +914,21 @@ def plot_fig6(res, experiment):
         k0, k1 = float(ax0_vals[i]), float(ax1_vals[j])
         ax_ts = axd[f"c1_{ri+1}"]
         ax_ts.plot(t, grid[i, j, :, 0])
-        ax_ts.tick_params(labelsize="x-small")
-        ax_ts.set_ylabel("mV", fontsize="x-small")
+        ax_ts.tick_params(labelsize=FS_TICK)
+        ax_ts.set_ylabel("mV", fontsize=FS_TICK)
         if ri < len(col1_pts) - 1:
             ax_ts.tick_params(labelbottom=False)
         else:
-            ax_ts.set_xlabel("s", fontsize="x-small")
+            ax_ts.set_xlabel("s", fontsize=FS_TICK)
         if ri == 0:
-            ax_ts.set_title("Column 1", fontsize="small", fontweight="bold")
+            ax_ts.set_title("Column 1", fontsize=FS_TITLE, fontweight="bold")
         pt_label = f"${_point_label(er, [k0, k1])}$"
         ax_ts.text(
             0.02,
             0.92,
             f"{ri+1}  {pt_label}",
             transform=ax_ts.transAxes,
-            fontsize="x-small",
+            fontsize=FS_TICK,
             va="top",
             ha="left",
             fontweight="bold",
@@ -768,21 +945,21 @@ def plot_fig6(res, experiment):
         k0, k1 = float(ax0_vals[i]), float(ax1_vals[j])
         ax_ts = axd[f"c2_{col2_labels[li]}"]
         ax_ts.plot(t, grid[i, j, :, 1])
-        ax_ts.tick_params(labelsize="x-small")
-        ax_ts.set_ylabel("mV", fontsize="x-small")
+        ax_ts.tick_params(labelsize=FS_TICK)
+        ax_ts.set_ylabel("mV", fontsize=FS_TICK)
         if li < len(col2_pts) - 1:
             ax_ts.tick_params(labelbottom=False)
         else:
-            ax_ts.set_xlabel("s", fontsize="x-small")
+            ax_ts.set_xlabel("s", fontsize=FS_TICK)
         if li == 0:
-            ax_ts.set_title("Column 2", fontsize="small", fontweight="bold")
+            ax_ts.set_title("Column 2", fontsize=FS_TITLE, fontweight="bold")
         pt_label = f"${_point_label(er, [k0, k1])}$"
         ax_ts.text(
             0.02,
             0.92,
             f"{col2_labels[li]}  {pt_label}",
             transform=ax_ts.transAxes,
-            fontsize="x-small",
+            fontsize=FS_TICK,
             va="top",
             ha="left",
             fontweight="bold",
@@ -795,7 +972,7 @@ def plot_fig6(res, experiment):
             ),
         )
 
-    fig.suptitle("Fig. 6 — Asymmetric K sweep", fontweight="bold")
+    # fig.suptitle("Fig. 6 — Asymmetric K sweep", fontweight="bold", fontsize=FS_SUPTITLE)
     plt.close()
     return fig
 
@@ -830,7 +1007,7 @@ def plot_fig8(res, experiment):
     n_cols = 2
     n_per_col = (n_K + 1) // n_cols
     n_rows = n_per_col * n_nodes
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5, 9))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=_figsize(8))
     if axes.ndim == 1:
         axes = axes.reshape(-1, 1)
 
@@ -849,14 +1026,14 @@ def plot_fig8(res, experiment):
         # K label under bottom panel of each pair
         ax0_latex = _axis_latex(_get_axis_name(er.axes[0]))
         axes[row_base + n_nodes - 1, col].set_xlabel(
-            f"${ax0_latex} = {int(K_vals[panel_idx])}$", fontsize="small"
+            f"${ax0_latex} = {int(K_vals[panel_idx])}$", fontsize=FS_LABEL
         )
 
     for r in range(n_rows):
         axes[r, 0].set_ylabel("mV")
 
     n_trials_str = f" ({meta['n_trials']} trials)" if meta["n_trials"] > 1 else ""
-    fig.suptitle(f"Fig. 8 — VEP: symmetric K{n_trials_str}", y=0.98)
+    # fig.suptitle(f"Fig. 8 — VEP: symmetric K{n_trials_str}", fontsize=FS_SUPTITLE, y=0.98)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     plt.close()
     return fig
@@ -897,7 +1074,7 @@ def plot_fig9(res, experiment):
     fig, axes = plt.subplots(
         n_nodes,
         n_pairs,
-        figsize=(8, 5),
+        figsize=_figsize(9),
         sharex=True,
         sharey=True,
         gridspec_kw={"hspace": 0.3, "wspace": 0.15},
@@ -919,13 +1096,16 @@ def plot_fig9(res, experiment):
             if node == n_nodes - 1:
                 _add_k_legend(ax, er, [ax0_vals[pi], ax1_vals[pi]])
 
+            ax.set_yticks([0, 5, 10, 15, 20, 25, 30])
+
     n_trials = meta["n_trials"]
-    fig.suptitle(
-        f"Fig. 9 — Average VEP ({n_trials} trials), "
-        f"${ax0_latex} \\neq {ax1_latex}$",
-        fontweight="bold",
-        y=1.02,
-    )
+    # fig.suptitle(
+    #     f"Fig. 9 — Average VEP ({n_trials} trials), "
+    #     f"${ax0_latex} \\neq {ax1_latex}$",
+    #     fontweight="bold",
+    #     fontsize=FS_SUPTITLE,
+    #     y=1.02,
+    # )
     plt.close()
     return fig
 
@@ -962,7 +1142,7 @@ def plot_fig10(res, experiment):
     t0_stim = _get_stim_onset(experiment)
 
     fig, axes = plt.subplots(
-        n_nodes, 1, figsize=(6, 5), sharex=True, gridspec_kw={"hspace": 0.3}
+        n_nodes, 1, figsize=_figsize(10), sharex=True, gridspec_kw={"hspace": 0.3}
     )
     if not hasattr(axes, "__len__"):
         axes = [axes]
@@ -970,14 +1150,15 @@ def plot_fig10(res, experiment):
     for node in range(n_nodes):
         ax = axes[node]
         for trial in range(n_trials):
-            ax.plot(t_s, trials[trial, :, node], alpha=0.8, color='C0')
+            ax.plot(t_s, trials[trial, :, node], alpha=0.8, color="C0")
         _mark_stim_onset(ax, t0_stim)
         _set_column_title(ax, node)
         ax.set_ylabel("mV")
+        ax.set_yticks([0, 5, 10, 15, 20, 25, 30])
 
     axes[-1].set_xlabel("s")
     _add_k_legend(axes[-1], er, [ax0_vals[0], ax1_vals[0]])
-    fig.suptitle(f"Fig. 10 — {n_trials} single VEP trials", fontweight="bold", y=1.02)
+    # fig.suptitle(f"Fig. 10 — {n_trials} single VEP trials", fontweight="bold", fontsize=FS_SUPTITLE, y=1.02)
 
     plt.close()
     return fig
@@ -1018,7 +1199,7 @@ def plot_fig11(res, experiment):
 
     n_rows = n_configs * n_nodes
     fig, axes = plt.subplots(
-        n_rows, 1, figsize=(7, 2 * n_rows), sharex=True, gridspec_kw={"hspace": 0.4}
+        n_rows, 1, figsize=_figsize(11), sharex=True, gridspec_kw={"hspace": 0.4}
     )
 
     # Build row indices: (config_idx, node_idx)
@@ -1048,10 +1229,11 @@ def plot_fig11(res, experiment):
 
     axes[-1].set_xlabel("s")
     n_trials = meta["n_trials"]
-    fig.suptitle(
-        f"Fig. 11 — Average VEP ({n_trials} trials), " "different columns with delay",
-        fontweight="bold",
-        y=0.94,
-    )
+    # fig.suptitle(
+    #     f"Fig. 11 — Average VEP ({n_trials} trials), " "different columns with delay",
+    #     fontweight="bold",
+    #     fontsize=FS_SUPTITLE,
+    #     y=0.94,
+    # )
     plt.close()
     return fig
