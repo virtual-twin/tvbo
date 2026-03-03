@@ -1067,7 +1067,7 @@ experiments:
         z1:
           name: z1
           equation:
-            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a**2*z0
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a_d**2*z0
       derived_variables:
         v_pyr:
           name: v_pyr
@@ -1134,14 +1134,19 @@ experiments:
           (2) K1=4000, K2=100 → high N1, low N2, slow-wave in prefrontal column.
           40 trials averaged per configuration.
         mode: zip
+        n_trials: 40
+        average: trials
         parameters:
-          K1:
-            name: K1
-            explored_values:
-              - 1000        # md:L324 — "relatively low values of K1 and K2 (1000 and 300)"
-              - 4000        # md:L326 — "different values (such as 4000 and 100)"
-          K2:
-            name: K2
-            explored_values:
-              - 300         # paired with K1=1000
-              - 100         # paired with K1=4000
+          K:
+            name: K
+            label: "Per-node coupling (K[0]=K2, K[1]=K1)"
+            description: "Heterogeneous K with per-element explored values"
+            element_domains:
+              - element: 0     # K[0] = K2 (col2→col1, received by col1)
+                explored_values:
+                  - 300         # paired with K1=1000
+                  - 100         # paired with K1=4000
+              - element: 1     # K[1] = K1 (col1→col2, received by col2)
+                explored_values:
+                  - 1000        # md:L324 — "relatively low values of K1 and K2 (1000 and 300)"
+                  - 4000        # md:L326 — "different values (such as 4000 and 100)"
