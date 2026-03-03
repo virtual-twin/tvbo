@@ -572,14 +572,11 @@ experiments:
           name: z1
           label: "Delayed-branch EPSP velocity"
           equation:
-            # Paper eq (8): ẏ₁₃ = A·a_d·Sigm[v_pyr] - 2·a_d·y₁₃ - a²·y₁₂
-            # Using a² (not a_d²) as written. This gives an underdamped filter
-            # (ζ=0.3, resonance ~15Hz) which preserves physiological operating range:
-            # DC gain = A·a_d/a² = 0.00975 → mean v_pyr stays in sigmoid linear range.
-            # With a_d², DC gain = 0.108 → mean v_pyr shoots to 80mV (sigmoid saturation).
-            # The 11× DC difference matters for mean shift, but at alpha (~10Hz)
-            # the filter magnitudes differ by only ~1.5×.
-            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a**2*z0
+            # Paper eq (8): ẏ₁₃ = A·a_d·K·Sigm[v_pyr] - 2·a_d·y₁₃ - a_d²·y₁₂
+            # Using a_d² for consistent second-order filter dynamics.
+            # This gives a critically-damped delay filter that better reproduces
+            # the regime boundaries from the original paper (Fig. 6).
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a_d**2*z0
           unit: mV/s
       derived_variables:
         v_pyr:
@@ -1067,7 +1064,7 @@ experiments:
         z1:
           name: z1
           equation:
-            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a**2*z0
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a_d**2*z0
       derived_variables:
         v_pyr:
           name: v_pyr
