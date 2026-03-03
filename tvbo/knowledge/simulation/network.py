@@ -108,14 +108,22 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
 class Coupling(tvbo_datamodel.Coupling):
     """Runtime Coupling that is also a direct instance of tvbo_datamodel.Coupling.
 
-    - If a name matches an ontology Coupling, missing fields are populated from ontology.
+    - If a name matches an ontology/database Coupling and ``use_ontology=True``,
+      missing fields are populated from the knowledge base.
     - Backward compatibility:  returns self so existing code keeps working.
+
+    Parameters
+    ----------
+    use_ontology : bool
+        If True, fill missing fields from ontology/database by name lookup.
+        Default False — only explicitly constructed or ``from_ontology()``
+        couplings get populated.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, use_ontology: bool = False, **kwargs):
         super().__init__(**kwargs)
-        # Auto-populate from ontology without overwriting existing fields
-        self._populate_from_ontology()
+        if use_ontology:
+            self._populate_from_ontology()
 
     def _populate_from_ontology(self):
         """Fill missing metadata fields from ontology based on `name`.

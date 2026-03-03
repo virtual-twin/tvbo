@@ -150,7 +150,7 @@ exp.integration.duration=100
 # Display experiment report
 display(Markdown(exp.generate_report(format="markdown")))
 
-result = exp.run().integration.main
+result = exp.run().integration
 
 # Plot TVBO simulation
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -224,7 +224,7 @@ Markdown(exp.generate_report(format="markdown"))
 
 
 ```{python}
-result = exp.run().integration.main
+result = exp.run().integration
 result.plot()
 ```
 
@@ -288,7 +288,7 @@ synapse_exp = SimulationExperiment(
 # Display experiment configuration
 display(Markdown(synapse_exp.generate_report(format="markdown")))
 
-result = synapse_exp.run().integration.main
+result = synapse_exp.run().integration
 
 # Plot synaptic dynamics
 fig, axes = plt.subplots(1, 3, figsize=(14, 4))
@@ -352,7 +352,7 @@ display(Markdown(vdp_compare.generate_report(format="markdown")))
 exp_compare = SimulationExperiment(dynamics=vdp_compare)
 exp_compare.integration.duration = T
 exp_compare.integration.step_size = dt
-tvbo_result = exp_compare.run().integration.main
+tvbo_result = exp_compare.run().integration
 
 # Run in PyRates with same solver (heun)
 os.makedirs("_compare", exist_ok=True)

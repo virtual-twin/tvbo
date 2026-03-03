@@ -40,15 +40,18 @@ class SimulationResult(Bunch):
         Names of state variables (e.g., ['x', 'y'])
     observations : Bunch
         Computed observations from this simulation (bold, fc, etc.)
+    transient : SimulationResult or None
+        Transient (warm-up) simulation result, if available.
     """
 
-    def __init__(self, result=None, observations=None, state_names=None, **kwargs):
+    def __init__(self, result=None, observations=None, state_names=None, transient=None, **kwargs):
         super().__init__(**kwargs)
         if result is not None:
             self.data = result.data if hasattr(result, "data") else result
             self.time = result.ts if hasattr(result, "ts") else None
         self.state_names = state_names or []
         self.observations = observations or Bunch()
+        self.transient = transient
 
     def to_timeseries(self):
         """Convert to a full TimeSeries object for plotting and analysis.
@@ -618,7 +621,7 @@ class ExperimentResult(Bunch):
 
     Wraps the raw results from code execution and provides:
     - Tree-structured view showing outputs with their contents
-    - Schema-aligned access (results.integration.main, results.algorithms.fic, etc.)
+    - Schema-aligned access (results.integration.get_state(...), results.algorithms.fic, etc.)
     """
 
     # Keys that represent actual outputs (not inputs/metadata)
@@ -645,7 +648,11 @@ class ExperimentResult(Bunch):
             val = self[section]
             lines.append(f"{sec_conn}{section}")
 
-            if hasattr(val, "keys"):
+            # If the section value is itself a result type, format it directly
+            if isinstance(val, (SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult)):
+                detail_lines = self._format_details(val, sec_ext + "    ")
+                lines.extend(detail_lines)
+            elif hasattr(val, "keys"):
                 child_keys = [k for k in val.keys() if not str(k).startswith("_")]
                 for j, child_key in enumerate(child_keys):
                     is_last_child = j == len(child_keys) - 1
