@@ -1062,6 +1062,9 @@ class Network(tvbo_datamodel.Network):
             W = self._weights_from_edges()
 
         if W is None:
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
+            if n > 0:
+                return np.zeros((n, n), dtype=np.float64)
             return None
 
         # Apply normalization if defined
@@ -1129,7 +1132,12 @@ class Network(tvbo_datamodel.Network):
             return self._cached_lengths
 
         # Compute from edges (fallback for networks built from explicit edges)
-        return self._lengths_from_edges()
+        L = self._lengths_from_edges()
+        if L is None:
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
+            if n > 0:
+                return np.zeros((n, n), dtype=np.float64)
+        return L
 
     @property
     def lengths(self):

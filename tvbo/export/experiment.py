@@ -32,6 +32,25 @@ from tvbo.utils import Bunch
 sessionid = 1
 
 
+def _sync_network_node_count(net):
+    """Sync number_of_nodes/number_of_regions from the nodes list.
+
+    When Network is created via LinkML deserialization + __class__ patching,
+    Network.__init__ never runs. This ensures node count is consistent.
+    """
+    if net.nodes:
+        n = len(net.nodes)
+        net.number_of_nodes = n
+        net.number_of_regions = n
+    elif (net.number_of_nodes or 0) > 1 and not net.nodes:
+        # number_of_nodes set but no nodes list — create default nodes
+        net.nodes = [
+            tvbo_datamodel.Node(id=i, label=f"node_{i}")
+            for i in range(net.number_of_nodes)
+        ]
+        net.number_of_regions = net.number_of_nodes
+
+
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def __init__(self, **kwargs):
         """Initialize like the datamodel, but auto-assign an id when missing.
@@ -106,6 +125,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.network = Network()
         else:
             self.network.__class__ = Network
+            # Network.__init__ doesn't run when class is patched, so sync here
+            _sync_network_node_count(self.network)
 
 
         # Get source file path if loading from file (set by from_file classmethod)
@@ -213,10 +234,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         net = getattr(obj, "network", None)
         if net is not None and not isinstance(net, Network):
             net.__class__ = Network
-            # Sync number_of_nodes from nodes list
-            if net.nodes and getattr(net, "number_of_nodes", 0) != len(net.nodes):
-                net.number_of_nodes = len(net.nodes)
-                net.number_of_regions = len(net.nodes)
+            _sync_network_node_count(net)
             if not getattr(net, "conduction_speed", None):
                 net.conduction_speed = tvbo_datamodel.Parameter(
                     name="conduction_speed", label="v",
