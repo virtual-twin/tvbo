@@ -863,7 +863,7 @@ experiments:
             # md:L299 — "q = 0.5"
           t0:
             name: t0
-            value: 1.0
+            value: .5
             unit: s
             description: "Onset time: 1s into recording (after transient settling)"
             # md:L300 — "models were run for 6 s before the stimulus was applied"
@@ -875,7 +875,7 @@ experiments:
     integration: &integration_vep
       method: RungeKutta4thOrder
       # md:L300 — "models were run for 6 s before the stimulus was applied"
-      duration: 3.0             # 3 seconds recording (transient handled separately)
+      duration: 1.5             # 3 seconds recording (transient handled separately)
       step_size: 0.002          # 2 ms = 0.002 s
       transient_time: 6.0       # 6s settling before recording
     execution:
@@ -1067,7 +1067,7 @@ experiments:
         z1:
           name: z1
           equation:
-            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a_d**2*z0
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a**2*z0
       derived_variables:
         v_pyr:
           name: v_pyr

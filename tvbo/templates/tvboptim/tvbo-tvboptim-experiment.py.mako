@@ -806,7 +806,11 @@ def run_simulation(
         _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
         result_transient = model_fn_init(state_init)
-        network.update_history(result_transient)
+        # update_history expects states-only (no auxiliaries).
+        # When VARIABLES_OF_INTEREST records all (states+aux), slice to states only.
+        _n_states = ${len(state_names)}
+        _hist = Bunch(ts=result_transient.ts, ys=result_transient.ys[:, :_n_states, :])
+        network.update_history(_hist)
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
@@ -1764,8 +1768,17 @@ def run_experiment(
     # This is the starting point for optimization unless depends_on is specified
     initial_state = copy.deepcopy(state)
 
-    main_result = SimulationResult(result=result, observations=observations, state_names=${state_names}) if result is not None else None
-    transient_result = SimulationResult(result=transient, state_names=${state_names}) if transient is not None else None
+<%
+    # Result labels must match what the solver records.
+    # When auxiliaries exist, VARIABLES_OF_INTEREST records all (states + aux),
+    # so labels must include both state_names and aux_names.
+    _aux_names = [v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()]
+    if not _aux_names and model.derived_variables:
+        _aux_names = list(model.derived_variables.keys())
+    result_var_names = state_names + _aux_names
+%>
+    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}) if result is not None else None
+    transient_result = SimulationResult(result=transient, state_names=${result_var_names}) if transient is not None else None
 
     results = Bunch(
         # Core simulation infrastructure (always present)
