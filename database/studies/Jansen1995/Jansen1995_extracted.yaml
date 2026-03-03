@@ -77,7 +77,7 @@ experiments:
         pyramidal cells, excitatory interneurons, and inhibitory interneurons.
         Each population is modeled by a PSP block (2nd-order linear filter) and
         a sigmoidal potential-to-firing-rate transformation.
-      parameters:
+      parameters: &jr_params
         A:
           name: A
           value: 3.25
@@ -136,7 +136,7 @@ experiments:
           description: "Per-node coupling strength scaling (K[i] scales coupling received by node i)"
           heterogeneous: true
           shape: "(n_nodes,)"
-      derived_parameters:
+      derived_parameters: &jr_derived_params
         C1:
           name: C1
           equation:
@@ -157,7 +157,7 @@ experiments:
           equation:
             rhs: 0.25*C
           description: "Inhibitory interneuron → pyramidal connectivity"
-      functions:
+      functions: &jr_functions
         Sigm:
           name: Sigm
           definition: "Sigmoid potential-to-firing-rate transformation (Eq. 3)"
@@ -165,7 +165,7 @@ experiments:
             - v
           equation:
             rhs: 2*e0 / (1 + exp(r*(v0 - v)))
-      coupling_terms:
+      coupling_terms: &jr_coupling_terms
         c_intercolumn:
           name: c_intercolumn
           description: "Inter-column coupling input to excitatory population"
@@ -572,7 +572,14 @@ experiments:
           name: z1
           label: "Delayed-branch EPSP velocity"
           equation:
-            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a_d**2*z0
+            # Paper eq (8): ẏ₁₃ = A·a_d·Sigm[v_pyr] - 2·a_d·y₁₃ - a²·y₁₂
+            # Using a² (not a_d²) as written. This gives an underdamped filter
+            # (ζ=0.3, resonance ~15Hz) which preserves physiological operating range:
+            # DC gain = A·a_d/a² = 0.00975 → mean v_pyr stays in sigmoid linear range.
+            # With a_d², DC gain = 0.108 → mean v_pyr shoots to 80mV (sigmoid saturation).
+            # The 11× DC difference matters for mean shift, but at alpha (~10Hz)
+            # the filter magnitudes differ by only ~1.5×.
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a**2*z0
           unit: mV/s
       derived_variables:
         v_pyr:
@@ -721,10 +728,50 @@ experiments:
       - "Fig. 8"
       - "Fig. 9"
       - "Fig. 10"
-    dynamics: *base_dynamics
+    # --- VEP dynamics: base model with external stimulus P in y4 equation ---
+    dynamics: &vep_dynamics
+      name: JansenRit1995_VEP
+      label: "Jansen-Rit with external stimulus input P"
+      parameters: *jr_params
+      derived_parameters: *jr_derived_params
+      functions: *jr_functions
+      coupling_terms: *jr_coupling_terms
+      state_variables:
+        y0:
+          name: y0
+          equation:
+            rhs: y3
+        y3:
+          name: y3
+          equation:
+            rhs: A*a*Sigm(y1 - y2) - 2*a*y3 - a**2*y0
+        y1:
+          name: y1
+          equation:
+            rhs: y4
+        y4:
+          name: y4
+          equation:
+            # P is the external stimulus input (defined in events)
+            rhs: A*a*(p + P + C2*Sigm(C1*y0) + K*c_intercolumn) - 2*a*y4 - a**2*y1
+        y2:
+          name: y2
+          equation:
+            rhs: y5
+        y5:
+          name: y5
+          equation:
+            rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
+      derived_variables:
+        v_pyr:
+          name: v_pyr
+          equation:
+            rhs: y1 - y2
+          description: "Aggregate pyramidal PSP (EEG-like output)"
+      output:
+        - v_pyr
     # --- Network: 2 identical nodes, linear coupling ---
     network:
-      number_of_regions: 2
       number_of_nodes: 2
       label: "Two identical visual cortex columns (no delay)"
       conduction_speed:
@@ -756,62 +803,81 @@ experiments:
       coupling:
         c_intercolumn:
           name: c_intercolumn
-          label: "Linear coupling via v_pyr"
+          label: "Sigmoidal coupling via v_pyr (Eq. 15-17)"
+          description: >-
+            Inter-column coupling passes through sigmoid S(v_pyr) before
+            weighting, matching paper Eq. 15-17: input = K * S(y1_j - y2_j).
           incoming_states:
             - y1
             - y2
+          parameters:
+            e0:
+              name: e0
+              value: 2.5
+              description: "Half of maximum firing rate (sigmoid param)"
+            r:
+              name: r
+              value: 0.56
+              description: "Steepness of sigmoid (mV^-1)"
+            v0:
+              name: v0
+              value: 6
+              description: "PSP for 50% firing rate (mV)"
           pre_expression:
             lhs: pre
-            rhs: y1 - y2
+            rhs: 2*e0 / (1 + exp(r*(v0 - (y1 - y2))))
           post_expression:
             lhs: c_intercolumn
             rhs: gx
-    # Flash stimulus anchor defined here (first use), reused by experiment 6
+    # Flash stimulus event: defines P(t) available in dynamics equations
     # md:L296-299 — Eq. 18: P(t) = q·(t/w)^n·exp(-t/w)
-    stimulation: &flash_stimulus
-      label: "Flash visual stimulus (Eq. 18)"
-      # md:L296-298 — "a brief visual input (a flash)"
-      description: >-
-        Transient representing impulse density from brief visual flash.
-        Applied to column 1 only. Same form as Jansen et al. (1992).
-        P(t) = q·(t/w)^n·exp(-t/w), with onset shifted by t0.
-      equation:
-        # md:L296 — "P(t) = q(t/w)^n exp(-t/w)"
-        rhs: "(t >= t0) * q * ((t - t0)/w)**n * exp(-(t - t0)/w)"
-      parameters:
-        n:
-          name: n
-          value: 7
-          description: "Shape parameter (gamma-like pulse)"
-          # md:L299 — "n = 7"
-        w:
-          name: w
-          value: 0.005
-          unit: s
-          description: "Width parameter"
-          # md:L299 — "w = 0.005 (if t is in seconds)"
-        q:
-          name: q
-          value: 0.5
-          description: "Amplitude scaling"
-          # md:L299 — "q = 0.5"
-        t0:
-          name: t0
-          value: 6.0
-          unit: s
-          description: "Onset time: stimulus applied after 6s settling"
-          # md:L300 — "models were run for 6 s before the stimulus was applied"
-      regions:
-        - 0           # column 1 only (0-indexed)
-      weighting:
-        - 1.0
+    events: &flash_events
+      P:
+        name: P
+        event_type: stimulus
+        label: "Flash visual stimulus (Eq. 18)"
+        # md:L296-298 — "a brief visual input (a flash)"
+        description: >-
+          Transient representing impulse density from brief visual flash.
+          Applied to column 1 only. Same form as Jansen et al. (1992).
+          P(t) = q·(t/w)^n·exp(-t/w), with onset shifted by t0.
+        equation:
+          # md:L296 — "P(t) = q(t/w)^n exp(-t/w)"
+          rhs: "Piecewise((q * ((t - t0)/w)**n * exp(-(t - t0)/w), t >= t0), (0, True))"
+        parameters:
+          n:
+            name: n
+            value: 7
+            description: "Shape parameter (gamma-like pulse)"
+            # md:L299 — "n = 7"
+          w:
+            name: w
+            value: 0.005
+            unit: s
+            description: "Width parameter"
+            # md:L299 — "w = 0.005 (if t is in seconds)"
+          q:
+            name: q
+            value: 0.5
+            description: "Amplitude scaling"
+            # md:L299 — "q = 0.5"
+          t0:
+            name: t0
+            value: 1.0
+            unit: s
+            description: "Onset time: 1s into recording (after transient settling)"
+            # md:L300 — "models were run for 6 s before the stimulus was applied"
+        regions:
+          - 0           # column 1 only (0-indexed)
+        weighting:
+          - 1.0
     # VEP integration anchor defined here (first use), reused by experiment 6
     integration: &integration_vep
       method: RungeKutta4thOrder
       # md:L300 — "models were run for 6 s before the stimulus was applied"
-      duration: 7.0             # 7 seconds total (6s settling + 1s response)
+      duration: 3.0             # 3 seconds recording (transient handled separately)
       step_size: 0.002          # 2 ms = 0.002 s
-      transient_time: 6.0       # ignore first 6s for ensemble averaging
+      transient_time: 6.0       # 6s settling before recording
     execution:
       random_seed: 42
     # Explorations for the three figures
@@ -823,12 +889,20 @@ experiments:
         description: >-
           K=K1=K2 varied. Low K (<10): multicomponent W-shape around 100ms.
           High K (>100): response resembles input stimulus shape. 20 trials averaged.
+        mode: zip
+        n_trials: 20
+        average: trials
         parameters:
           K:
             name: K
             label: "Symmetric coupling K1=K2=K"
             description: "Specific values explored include K<10, K=10, K=70, K>100"
-            # md:L304 — "K = K1 = K2"
+            # md:L253 — "K = K1 = K2"; K=10 (alpha attenuation), K=70 (distortion), K>100 (input shape)
+            explored_values:
+              - 1           # low K (<10): multicomponent W-shape
+              - 10          # md:L265 — alpha attenuation 100-200ms
+              - 70          # md:L265 — distortion in poststimulus alpha
+              - 120         # Fig. 8 panel: K > 100, response resembles input shape
       # md:L308-310 — Fig. 9: K1≠K2
       VEP_asymmetric_K_fig9:
         name: VEP_asymmetric_K_fig9
@@ -837,15 +911,24 @@ experiments:
           K1 about one order of magnitude larger than K2. Column 2 shows
           damped sinusoidal response. Suggests phase reorganization
           (synchronization) of ongoing activity upon stimulus.
+          K is heterogeneous: K[0]=K2 (received by col1), K[1]=K1 (received by col2).
+        mode: zip
+        n_trials: 20
+        average: trials
         parameters:
-          K1:
-            name: K1
-            label: "Column 1 → Column 2"
-            description: "Large values (K1 >> K2)"
-          K2:
-            name: K2
-            label: "Column 2 → Column 1"
-            description: "Small values"
+          K:
+            name: K
+            label: "Per-node coupling (K[0]=K2, K[1]=K1)"
+            description: "Heterogeneous K with per-element explored values"
+            element_domains:
+              - element: 0     # K[0] = K2 (col2→col1, received by col1)
+                explored_values:
+                  - 10          # Fig. 9 left panel
+                  - 40          # Fig. 9 right panel
+              - element: 1     # K[1] = K1 (col1→col2, received by col2)
+                explored_values:
+                  - 120         # Fig. 9 left panel
+                  - 200         # Fig. 9 right panel
       # md:L311-313 — Fig. 10: K1=120, K2=10 single trials
       VEP_single_trials_fig10:
         name: VEP_single_trials_fig10
@@ -854,13 +937,19 @@ experiments:
           Five single trials (not averaged) for K1=120, K2=10.
           Shows ringing effect and phase synchronization within 50ms
           of stimulus, desynchronization ~50ms later.
+          K[0]=K2=10 (received by col1), K[1]=K1=120 (received by col2).
+        mode: zip
+        n_trials: 5
         parameters:
-          K1:
-            name: K1
-            value: 120
-          K2:
-            name: K2
-            value: 10
+          K:
+            name: K
+            element_domains:
+              - element: 0     # K[0] = K2 = 10
+                explored_values:
+                  - 10
+              - element: 1     # K[1] = K1 = 120
+                explored_values:
+                  - 120
 
   # ===========================================================================
   # EXPERIMENT 6: VEP — different columns, with delay (Fig. 11)
@@ -881,8 +970,112 @@ experiments:
       occurs in the column that does NOT receive the primary visual stimulus.
     references:
       - "Fig. 11"
-    # --- Delayed model (same as experiment 4) ---
-    dynamics: *delayed_dynamics
+    # --- VEP delayed model: adds P to y4 equation ---
+    dynamics:
+      name: JansenRit1995_Delayed_VEP
+      label: "Jansen-Rit delayed with external stimulus input P"
+      parameters:
+        A:
+          name: A
+          value: 3.25
+          unit: mV
+          description: "Maximum amplitude of excitatory PSP (EPSP)"
+        B:
+          name: B
+          value: 22
+          unit: mV
+          description: "Maximum amplitude of inhibitory PSP (IPSP)"
+        C:
+          name: C
+          value: 135
+          description: "Lumped connectivity constant (C = C1)"
+        a:
+          name: a
+          value: 100
+          unit: s^-1
+          description: "Reciprocal of EPSP time constant"
+        b:
+          name: b
+          value: 50
+          unit: s^-1
+          description: "Reciprocal of IPSP time constant"
+        v0:
+          name: v0
+          value: 6
+          unit: mV
+          description: "PSP for 50% firing rate (sigmoid midpoint)"
+        e0:
+          name: e0
+          value: 2.5
+          unit: s^-1
+          description: "Half of maximum firing rate"
+        r:
+          name: r
+          value: 0.56
+          unit: mV^-1
+          description: "Steepness of sigmoid transformation"
+        p:
+          name: p
+          value: 220
+          unit: s^-1
+          description: "Mean external input (afferent pulse density)"
+          shape: "(n_nodes,)"
+          distribution: *dist_p_uniform
+        a_d:
+          name: a_d
+          value: 30
+          unit: s^-1
+          description: "Delay filter rate constant (≈ a/3, Eq. 7)"
+        K:
+          name: K
+          value: 0
+          description: "Inter-column coupling weight (heterogeneous, per-node)"
+          shape: "(n_nodes,)"
+      derived_parameters: *jr_derived_params
+      functions: *jr_functions
+      coupling_terms: *jr_coupling_terms
+      state_variables:
+        y0:
+          name: y0
+          equation:
+            rhs: y3
+        y3:
+          name: y3
+          equation:
+            rhs: A*a*Sigm(y1 - y2) - 2*a*y3 - a**2*y0
+        y1:
+          name: y1
+          equation:
+            rhs: y4
+        y4:
+          name: y4
+          equation:
+            # P is the external stimulus; z0 is delayed coupling
+            rhs: A*a*(p + P + C2*Sigm(C1*y0) + z0) - 2*a*y4 - a**2*y1
+        y2:
+          name: y2
+          equation:
+            rhs: y5
+        y5:
+          name: y5
+          equation:
+            rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
+        z0:
+          name: z0
+          equation:
+            rhs: z1
+        z1:
+          name: z1
+          equation:
+            rhs: A*a_d*K*c_intercolumn - 2*a_d*z1 - a**2*z0
+      derived_variables:
+        v_pyr:
+          name: v_pyr
+          equation:
+            rhs: y1 - y2
+          description: "Aggregate pyramidal PSP (EEG-like output)"
+      output:
+        - v_pyr
     # --- Network: 2 different columns with delay ---
     network:
       number_of_regions: 2
@@ -890,7 +1083,8 @@ experiments:
       label: "Visual cortex (col 1) ↔ Prefrontal cortex (col 2) with delay"
       conduction_speed:
         name: conduction_speed
-        description: "Delay via h_d(t) with a_d = 30 s⁻¹ (Eq. 7)"
+        value: 0
+        description: "Delay via h_d(t) with a_d = 30 s⁻¹ (Eq. 7), not modeled via conduction_speed"
       nodes:
         - id: 0
           label: "Column 1 (visual cortex, stimulus target)"
@@ -925,7 +1119,7 @@ experiments:
       # Sigmoidal coupling for delayed experiments
       coupling: *sigmoidal_coupling
     # Flash stimulus (same as experiment 5)
-    stimulation: *flash_stimulus
+    events: *flash_events
     integration: *integration_vep
     execution:
       random_seed: 42

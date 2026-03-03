@@ -131,7 +131,7 @@ noise_sigma_targeted = [s for s in noise_sigma_per_state if s > 0]
 noise_sigma_value = noise_sigma_targeted[0] if noise_sigma_targeted else 0.0
 
 # Network metadata
-n_nodes = N_nodes = network.number_of_regions
+n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
@@ -198,6 +198,13 @@ for pname in list(dyn_param_names):
             }
 # Remove stochastic params from dynamics params (trajectories injected after prepare)
 dyn_param_names = [p for p in dyn_param_names if p not in stochastic_param_names]
+
+# === Events metadata (stimuli and other time-dependent inputs) ===
+# Schema: experiment.events is multivalued dict of Event objects
+# Each stimulus-type event becomes an AbstractExternalInput, available as a variable in dfun
+events_list = list(experiment.events.values()) if experiment.events else []
+stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+has_stimulus_events = len(stimulus_events) > 0
 
 # === Optimization metadata ===
 # Schema: experiment.optimization is multivalued dict, opt.stages is inlined_as_list
@@ -392,6 +399,10 @@ for expl in exploration_list:
         'mode': expl.mode or 'product',
         # n_parallel has schema ifabsent: integer(1)
         'n_parallel': int(expl.n_parallel) if expl.n_parallel is not None else 1,
+        # n_trials has schema ifabsent: integer(1)
+        'n_trials': int(expl.n_trials) if expl.n_trials is not None else 1,
+        # average: 'trials' to average over n_trials, None for individual results
+        'average': str(expl.average) if expl.average else None,
         'axes': [],
     }
     # Schema: parameters is multivalued dict
@@ -407,7 +418,9 @@ for expl in exploration_list:
     for param in params.values():
         domain = param.domain
         explored_values = param.explored_values
-        assert domain or explored_values, f"exploration parameter requires domain or explored_values for {param.name}"
+        _el_domains = getattr(param, 'element_domains', None) or []
+        _has_el_ev = any(getattr(ed, 'explored_values', None) for ed in _el_domains)
+        assert domain or explored_values or _has_el_ev, f"exploration parameter requires domain, explored_values, or element_domains with explored_values for {param.name}"
         pname = str(param.name)
         # Check for dotted notation: ClassName.param_name
         # If prefix matches a coupling key → coupling param, else dynamics param
@@ -439,7 +452,14 @@ for expl in exploration_list:
                     'dynamics_key': source_key if source_key else None,
                     'element_idx': _ei,
                 }
-                if explored_values:
+                # Per-element explored_values from element_domains override shared ones
+                _dom_ei = _el_dom_map.get(_ei, None)
+                _el_ev = getattr(_dom_ei, 'explored_values', None) if _dom_ei else None
+                if _el_ev:
+                    vals = [float(v) for v in _el_ev]
+                    ax_entry['values'] = vals
+                    ax_entry['n'] = len(vals)
+                elif explored_values:
                     vals = [float(v) for v in explored_values]
                     ax_entry['values'] = vals
                     ax_entry['n'] = len(vals)
@@ -553,9 +573,13 @@ import numpy as np
 from typing import Tuple, Dict, Any, Optional, Callable, List
 
 from tvboptim.experimental.network_dynamics import Network, prepare, solve
+from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
 from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling, DelayedCoupling
+% if has_stimulus_events:
+from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
+% endif
 % if has_delay:
 from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 % else:
@@ -665,6 +689,10 @@ def get_solver():
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
 
+% if has_stimulus_events:
+<%include file="tvbo-tvboptim-stimulus.py.mako" />
+% endif
+
 
 def create_network(
     weights: jnp.ndarray,
@@ -740,11 +768,22 @@ def create_network(
     noise = None
     % endif
 
+    % if has_stimulus_events:
+    external_input = {
+        % for ev in stimulus_events:
+        '${ev.name}': ${ev.name}Input(),
+        % endfor
+    }
+    % endif
+
     return Network(
         dynamics=dynamics,
         coupling=coupling_dict,
         graph=graph,
         noise=noise,
+        % if has_stimulus_events:
+        external_input=external_input,
+        % endif
     )
 
 def run_simulation(
@@ -1303,32 +1342,41 @@ def run_optimization(
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
     """${expl['label']} - Grid: ${grid_desc} = ${total_points} points."""
-% if has_transient:
-    # Per-grid-point transient: each point needs its own settling
-    # because explored parameters change the dynamics regime.
-    # We prepare a new model_fn with extended duration (transient + recording)
-    # so that noise samples and time steps are correctly sized.
-    _t_transient = kwargs.get('t_transient', ${transient_time})
-    _n_transient = int(_t_transient / ${dt})
-    _t_total = ${t1_default} + _t_transient
     _network = kwargs.get('network')
     if _network is not None:
         _solver = get_solver()
-        _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
+% if has_transient:
+        # Each grid point runs its own transient + main simulation.
+        # This ensures each parameter combination settles to its own steady state.
+        _t_transient = ${transient_time}
+        _t_total = _t_transient + ${t1_default}
+        _n_transient = int(_t_transient / ${dt})
+        _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
+        _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_expl_state, _t_total, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
+        % if has_stimulus_events:
+        # Offset event t0 by transient time (events are defined relative to main sim)
+        for _ext_key in list(_expl_state.external.keys()):
+            if hasattr(_expl_state.external[_ext_key], 't0'):
+                _expl_state.external[_ext_key].t0 = _expl_state.external[_ext_key].t0 + _t_transient
+        % endif
+        # Wrap model_fn to trim transient — downstream observable code sees main sim only
+        def _expl_model_fn(s):
+            result = _expl_model_fn_raw(s)
+            return NativeSolution(result.ts[_n_transient:], result.data[_n_transient:], dt=${dt})
+% else:
+        _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=${t1_default}, dt=${dt})
+        _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(_expl_state, ${t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
+% endif
     else:
         _expl_model_fn = model_fn
         _expl_state = state
-        _n_transient = 0
-    # Use the extended state as grid base (has correct noise samples, time steps)
     grid_state = copy.deepcopy(_expl_state)
-% else:
-    _expl_model_fn = model_fn
-    _n_transient = 0
-    grid_state = copy.deepcopy(state)
-% endif
     % for ax in expl['axes']:
     % if ax.get('element_idx') is not None:
     ## Element-indexed parameter: create dummy scalar slot for Space discovery
@@ -1378,7 +1426,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
 % for obs in sorted(simulated_obs):
         _${obs} = _${obs}_monitor(result)
 % endfor
@@ -1432,9 +1480,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         ${dp.name} = ${jaxcode_obj(dp)}
         % endfor
         % endif
-        ## Unpack state variables from simulation result — trim transient
+        ## Unpack state variables from simulation result
         % for i, sv_name in enumerate(state_names):
-        ${sv_name} = result.data[_n_transient:, ${i}]
+        ${sv_name} = result.data[:, ${i}]
         % endfor
         ## Compute derived output variables
         % for dv_name in model_derived_outputs:
@@ -1449,14 +1497,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     # No observable specified, no model output - return raw simulation data
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
         return result.data
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
         all_obs = compute_all_observations(result, s, result_transient)
 % if output_key:
         obs_result = getattr(all_obs, '${obs_name}', None)
@@ -1475,7 +1523,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
         obs_result = _${obs_name}_monitor(result)
 % if output_key:
         return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result.data
@@ -1498,6 +1546,61 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         s.dynamics.${ax['name']} = s.dynamics.${ax['name']}.at[${ax['element_idx']}].set(s.dynamics._${ax['name']}_el${ax['element_idx']})
         % endfor
         return _element_base_fn(s)
+% endif
+
+% if expl.get('n_trials', 1) > 1 and stochastic_param_info:
+<%
+    _sp_names = list(stochastic_param_info.keys())
+    _n_sp = len(_sp_names)
+%>\
+    # === Trial parallelization: ${expl['n_trials']} trials via jax.vmap ===
+    # Each trial uses a different random noise realization for stochastic parameters.
+    # vmap maps the observable over all trials in parallel on the same device.
+    _n_trials = ${expl['n_trials']}
+    % if has_transient:
+    _n_steps_stoch = int(_t_total / ${dt}) + 2
+    % else:
+    _n_steps_stoch = int(${t1_default} / ${dt}) + 2
+    % endif
+    _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
+    % for _sp_idx, _sp_name in enumerate(_sp_names):
+<%
+    _sp_info = stochastic_param_info[_sp_name]
+    _sp_shape = _sp_info.get('shape', '')
+    if _sp_shape and 'n_nodes' in _sp_shape:
+        _trial_noise_shape = f'(_n_steps_stoch, {n_nodes})'
+    else:
+        _trial_noise_shape = '(_n_steps_stoch,)'
+    # Distribution-specific noise generation
+    if _sp_info['dist'] in ('gaussian', 'normal'):
+        _mean = _sp_info['default']
+        _std = (_sp_info['hi'] - _sp_info['lo']) / 4.0
+        _noise_gen = f'{_mean} + {_std} * jax.random.normal(k, {_trial_noise_shape})'
+    else:
+        # Default: uniform
+        _noise_gen = f"jax.random.uniform(k, {_trial_noise_shape}, minval={_sp_info['lo']}, maxval={_sp_info['hi']})"
+    # For multiple stochastic params, split each trial key for independent sub-keys
+    if _n_sp > 1:
+        _noise_gen = _noise_gen.replace('(k,', f"(jax.random.split(k, {_n_sp + 1})[{_sp_idx + 1}],")
+%>\
+    _trial_noises_${_sp_name} = jax.vmap(lambda k: ${_noise_gen})(_trial_keys)
+    % endfor
+
+    _base_trial_observable = observable_fn
+
+    @jax.jit
+    def observable_fn(s):
+        def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
+    % for _sp_name in _sp_names:
+            s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
+    % endfor
+            return _base_trial_observable(s)
+        trial_results = jax.vmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
+    % if expl.get('average') == 'trials':
+        return jnp.mean(trial_results, axis=0)
+    % else:
+        return trial_results
+    % endif
 % endif
 
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
@@ -1540,6 +1643,12 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         observable='${_obs_label}',
         dt=${dt},
         output_names=${model_output_vars if has_model_output and not obs_name else []},
+% if expl.get('n_trials', 1) > 1:
+        n_trials=${expl['n_trials']},
+% if expl.get('average'):
+        average='${expl["average"]}',
+% endif
+% endif
     )
 
 

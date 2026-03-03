@@ -179,7 +179,7 @@ ${exp.description}
 % if net:
 <%
 s = sec()
-n_regions = _p(net, 'number_of_regions', None) or _p(net, 'number_of_nodes', None)
+n_regions = _p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', None)
 cond_speed = _p(net, 'conduction_speed', None)
 gcs = _p(net, 'global_coupling_strength', None)
 norm = _p(net, 'normalization', None)

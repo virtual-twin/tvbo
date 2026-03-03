@@ -75,7 +75,7 @@ has_noise = integration.noise is not None
 noise_sigma = np.asarray(experiment.noise_sigma_array).flatten().tolist() if hasattr(experiment, 'noise_sigma_array') else [0.1]
 
 # Network metadata
-n_nodes = N_nodes = network.number_of_regions
+n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs else 3.0
 
@@ -84,6 +84,11 @@ t1_default = float(integration.duration) if hasattr(integration, 'duration') and
 
 # Class names
 dynamics_class = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
+
+# Events metadata (stimuli and other time-dependent inputs)
+events_list = list(experiment.events.values()) if experiment.events else []
+stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+has_stimulus_events = len(stimulus_events) > 0
 %>
 """
 ${dynamics_class} tvboptim Network Dynamics Simulation
@@ -111,6 +116,9 @@ from typing import Tuple
 from tvboptim.experimental.network_dynamics import Network, prepare, solve
 from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+% if has_stimulus_events:
+from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
+% endif
 % if has_delay:
 from tvboptim.experimental.network_dynamics.coupling.base import DelayedCoupling
 from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
@@ -145,6 +153,15 @@ model = None
 # =============================================================================
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
+
+% if has_stimulus_events:
+
+# =============================================================================
+# External Inputs (Events)
+# =============================================================================
+
+<%include file="tvbo-tvboptim-stimulus.py.mako" />
+% endif
 
 
 # =============================================================================
@@ -199,11 +216,22 @@ def create_network(
     % endfor
     }
 
+    % if has_stimulus_events:
+    external_input = {
+        % for ev in stimulus_events:
+        '${ev.name}': ${ev.name}Input(),
+        % endfor
+    }
+    % endif
+
     return Network(
         dynamics=dynamics,
         coupling=coupling_dict,
         graph=graph,
         noise=noise,
+        % if has_stimulus_events:
+        external_input=external_input,
+        % endif
     )
 
 

@@ -51,7 +51,7 @@ if isinstance(mons, dict):
     <li>Delayed coupling: ${_p(cpl, 'delayed', False)}</li>
     <li>Delayed integration: ${_p(integ, 'delayed', False)}</li>
     % if net is not None:
-    <li>Regions: ${_p(net, 'number_of_regions', 'N/A')}</li>
+    <li>Nodes: ${_p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', 'N/A')}</li>
     <li>Nodes: ${_p(net, 'number_of_nodes', 'N/A')}</li>
       % if getattr(net, 'parcellation', None) and getattr(net.parcellation, 'atlas', None):
       <li>Atlas: ${_p(net.parcellation.atlas, 'name', 'N/A')}</li>

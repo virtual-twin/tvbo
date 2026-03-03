@@ -122,6 +122,16 @@ elif hasattr(model, 'coupling_terms') and model.coupling_terms:
         coupling_inputs_dict[ct_name] = 1
 
 class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
+
+# Build EXTERNAL_INPUTS from experiment.events (stimulus-type events)
+# Each stimulus event name → dimension 1 (scalar signal per node)
+external_inputs_dict = {}  # event_name -> dimension
+if 'experiment' in context.keys():
+    _events = list(experiment.events.values()) if experiment.events else []
+    for ev in _events:
+        ev_type = str(getattr(ev, 'event_type', 'stimulus'))
+        if 'stimulus' in ev_type:
+            external_inputs_dict[str(ev.name)] = 1
 %>
 
 class ${class_name}(AbstractDynamics):
@@ -146,6 +156,14 @@ class ${class_name}(AbstractDynamics):
         '${ci_name}': ${ci_dim},
         % endfor
     }
+
+    % if external_inputs_dict:
+    EXTERNAL_INPUTS = {
+        % for ei_name, ei_dim in external_inputs_dict.items():
+        '${ei_name}': ${ei_dim},
+        % endfor
+    }
+    % endif
 
     def dynamics(
         self,
@@ -184,6 +202,10 @@ class ${class_name}(AbstractDynamics):
         % else:
         ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})
         % endif
+        % endfor
+
+        % for ei_name in external_inputs_dict:
+        ${ei_name} = external.${ei_name}[0] if hasattr(external, '${ei_name}') else 0.0
         % endfor
 
         % if model.functions:
