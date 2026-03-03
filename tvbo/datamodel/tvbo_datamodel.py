@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-27T18:07:57
+# Generation date: 2026-03-03T12:16:17
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -241,6 +241,7 @@ class Range(YAMLRoot):
     step: Optional[str] = None
     n: Optional[int] = None
     log_scale: Optional[Union[bool, Bool]] = False
+    explored_values: Optional[Union[float, list[float]]] = empty_list()
     element: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -258,6 +259,10 @@ class Range(YAMLRoot):
 
         if self.log_scale is not None and not isinstance(self.log_scale, Bool):
             self.log_scale = Bool(self.log_scale)
+
+        if not isinstance(self.explored_values, list):
+            self.explored_values = [self.explored_values] if self.explored_values is not None else []
+        self.explored_values = [v if isinstance(v, float) else float(v) for v in self.explored_values]
 
         if self.element is not None and not isinstance(self.element, int):
             self.element = int(self.element)
@@ -2131,6 +2136,8 @@ class Exploration(YAMLRoot):
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
+    n_trials: Optional[int] = 1
+    average: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2159,6 +2166,12 @@ class Exploration(YAMLRoot):
 
         if self.n_parallel is not None and not isinstance(self.n_parallel, int):
             self.n_parallel = int(self.n_parallel)
+
+        if self.n_trials is not None and not isinstance(self.n_trials, int):
+            self.n_trials = int(self.n_trials)
+
+        if self.average is not None and not isinstance(self.average, str):
+            self.average = str(self.average)
 
         super().__post_init__(**kwargs)
 
@@ -5014,6 +5027,9 @@ slots.range__n = Slot(uri=TVBO.n, name="range__n", curie=TVBO.curie('n'),
 slots.range__log_scale = Slot(uri=TVBO.log_scale, name="range__log_scale", curie=TVBO.curie('log_scale'),
                    model_uri=TVBO.range__log_scale, domain=None, range=Optional[Union[bool, Bool]])
 
+slots.range__explored_values = Slot(uri=TVBO.explored_values, name="range__explored_values", curie=TVBO.curie('explored_values'),
+                   model_uri=TVBO.range__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
 slots.range__element = Slot(uri=TVBO.element, name="range__element", curie=TVBO.curie('element'),
                    model_uri=TVBO.range__element, domain=None, range=Optional[int])
 
@@ -5601,6 +5617,12 @@ slots.exploration__observable = Slot(uri=TVBO.observable, name="exploration__obs
 
 slots.exploration__n_parallel = Slot(uri=TVBO.n_parallel, name="exploration__n_parallel", curie=TVBO.curie('n_parallel'),
                    model_uri=TVBO.exploration__n_parallel, domain=None, range=Optional[int])
+
+slots.exploration__n_trials = Slot(uri=TVBO.n_trials, name="exploration__n_trials", curie=TVBO.curie('n_trials'),
+                   model_uri=TVBO.exploration__n_trials, domain=None, range=Optional[int])
+
+slots.exploration__average = Slot(uri=TVBO.average, name="exploration__average", curie=TVBO.curie('average'),
+                   model_uri=TVBO.exploration__average, domain=None, range=Optional[str])
 
 slots.updateRule__target_parameter = Slot(uri=TVBO.target_parameter, name="updateRule__target_parameter", curie=TVBO.curie('target_parameter'),
                    model_uri=TVBO.updateRule__target_parameter, domain=None, range=Union[dict, Parameter])

@@ -147,7 +147,7 @@ c_vars = ${utils.array_input(np.array(cvar))}.astype(jnp.int32)
 ## TODO: provide def kernel_n(state, noise) for explicitly providing noise, ...
 def kernel(state):
     # problem dimensions
-    n_nodes = ${experiment.network.number_of_regions}
+    n_nodes = ${getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions}
     n_svar = ${len(experiment.dynamics.state_variables)}
     n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.dynamics.state_variables)}
     n_modes = ${experiment.dynamics.number_of_modes}
@@ -321,7 +321,7 @@ def kernel(state):
     labels_dimensions = {
         "Time": None,
         "State Variable": ${output_labels},
-        "Space": ${list(experiment.network.parcellation.region_labels) if getattr(experiment.network.parcellation, 'region_labels', None) else [str(i) for i in range(experiment.network.number_of_regions)]},
+        "Space": ${list(experiment.network.parcellation.region_labels) if getattr(experiment.network.parcellation, 'region_labels', None) else [str(i) for i in range(getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions)]},
         "Mode": ${[f"m{i}" for i in range(experiment.dynamics.number_of_modes)]},
     }
     return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw", sample_period=dt, labels_dimensions=labels_dimensions)
