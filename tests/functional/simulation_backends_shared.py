@@ -1,0 +1,58 @@
+"""Shared fixtures/utilities for simulation backend functional tests."""
+
+import importlib
+from pathlib import Path
+
+
+def _has(package: str) -> bool:
+    """Return True if *package* can be imported."""
+    return importlib.util.find_spec(package) is not None
+
+
+_HAVE_TVB = _has("tvb.simulator")
+_HAVE_PYRATES = _has("pyrates")
+_HAVE_TVBOPTIM = _has("tvboptim")
+_HAVE_JULIACALL = _has("juliacall")
+
+
+DATABASE_MODELS_DIR = Path(__file__).parent.parent.parent / "database" / "models"
+JULIA_MODELS_DIR = DATABASE_MODELS_DIR / "julia"
+
+
+def get_model_files():
+    """Collect all model YAML files from database/models and database/models/julia."""
+    model_files = []
+    for filepath in DATABASE_MODELS_DIR.glob("*.yaml"):
+        model_files.append(filepath)
+    if JULIA_MODELS_DIR.exists():
+        for filepath in JULIA_MODELS_DIR.glob("*.yaml"):
+            model_files.append(filepath)
+    return model_files
+
+
+def _tvb_compatible(model_file):
+    """Return True if model can run on the TVB backend."""
+    import yaml
+
+    with open(model_file) as fh:
+        meta = yaml.safe_load(fh)
+    if meta.get("autonomous") is False:
+        return False
+    if meta.get("system_type") == "discrete":
+        return False
+    return True
+
+
+MODEL_FILES = get_model_files()
+MODEL_IDS = [filepath.stem for filepath in MODEL_FILES]
+
+TVB_MODEL_FILES = [filepath for filepath in MODEL_FILES if _tvb_compatible(filepath)]
+TVB_MODEL_IDS = [filepath.stem for filepath in TVB_MODEL_FILES]
+
+
+def _assert_timeseries(result, model):
+    """Shared assertions for any TimeSeries result."""
+    assert result is not None
+    assert hasattr(result, "data")
+    assert hasattr(result, "time")
+    assert result.data.shape[0] > 0
