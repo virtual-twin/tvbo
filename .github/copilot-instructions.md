@@ -83,18 +83,17 @@ Both Odoo models and Pydantic models are generated from the same LinkML schema. 
 
 **Data access should mirror YAML schema structure.** Users access results using the same path as the YAML definition:
 
-1. **Schema-Aligned Access:** Result structure mirrors YAML sections. E.g., `results.integration.main`, `results.algorithms.fic`, `results.optimization.loss_fc`.
+1. **Schema-Aligned Access:** Result structure mirrors YAML sections. E.g., `results.integration`, `results.algorithms.fic`, `results.optimization.loss_fc`.
 2. **No Implementation Details:** Never expose internal mechanisms via underscore prefixes (e.g., `._raw`). Users access `.data`, `.observations`, not internal representations.
 3. **Wrap at Boundaries:** Internal functions use raw data types; only final user-facing returns wrap in result classes (`SimulationResult`, `AlgorithmResult`, etc.).
-4. **Consistent Nesting:** `results.integration.main.observations.bold` - observations attached to the simulation that produced them.
+4. **Consistent Nesting:** `results.integration.observations.bold` - observations attached to the simulation that produced them.
 5. **Convenience Aliases:** For common access patterns, provide both nested and flat access: `results.algorithms.fic` and `results.fic`.
 
 Example - YAML to Python access:
 ```yaml
 # YAML
 integration:
-  main:
-    duration: 600000
+  duration: 600000
 algorithms:
   fic:
     n_iterations: 100
@@ -102,10 +101,11 @@ algorithms:
 
 ```python
 # Python - mirrors YAML structure
-results.integration.main.data        # Simulation data
-results.integration.main.observations.bold  # BOLD from main simulation
-results.algorithms.fic.state         # FIC tuned state
-results.algorithms.fic.history       # Per-iteration tracking
+results.integration.data              # Simulation data
+results.integration.observations.bold # BOLD from main simulation
+results.integration.transient         # Transient (warm-up) simulation
+results.algorithms.fic.state          # FIC tuned state
+results.algorithms.fic.history        # Per-iteration tracking
 ```
 
 ## Template & Code Generation Principles

@@ -515,6 +515,7 @@ class BrainAtlas(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -566,6 +567,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -631,6 +633,7 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -908,6 +911,7 @@ class DBSProtocol(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -955,6 +959,7 @@ class ClinicalScale(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -1005,6 +1010,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -1412,6 +1418,7 @@ class Event(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -1752,6 +1759,7 @@ class Tractogram(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -2120,6 +2128,7 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -2231,6 +2240,7 @@ class File(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -2427,8 +2437,55 @@ class Node(ConfiguredBaseModel):
                        'SimulationExperiment']} })
     position: Optional[Coordinate] = Field(default=None, description="""Spatial coordinates (x, y, z) of the node""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
-    initial_state: Optional[list[float]] = Field(default=None, description="""Initial values for state variables""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
+    state: Optional[dict[str, Union[float, StateValue]]] = Field(default=None, description="""Per-node initial state variable values, keyed by state variable name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this node (e.g., threshold-based state changes).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'SimulationExperiment']} })
+
+
+class StateValue(ConfiguredBaseModel):
+    """
+    A named state variable value for per-node initialization.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:StateValue', 'from_schema': 'https://w3id.org/tvbo'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling',
+                       'SoftwareEnvironment',
+                       'SoftwareRequirement',
+                       'SoftwarePackage']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+                       'Parameter',
+                       'Argument',
+                       'Option',
+                       'BoundaryCondition']} })
 
 
 class Edge(ConfiguredBaseModel):
@@ -2570,6 +2627,7 @@ class Observation(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -2744,6 +2802,7 @@ class DerivedObservation(Observation):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -2921,6 +2980,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3082,6 +3142,7 @@ class StateVariable(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3259,6 +3320,7 @@ class Distribution(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3325,6 +3387,7 @@ class Parameter(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3396,7 +3459,11 @@ class Parameter(ConfiguredBaseModel):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+                       'Parameter',
+                       'Argument',
+                       'Option',
+                       'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -3500,6 +3567,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3590,6 +3658,7 @@ class Argument(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3661,7 +3730,11 @@ class Argument(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     value: Optional[Union[float, int, str]] = Field(default=None, description="""Argument value. Can be: - Literal: 1.0, \"string\", etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'integer'}, {'range': 'string'}],
-         'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+         'domain_of': ['StateValue',
+                       'Parameter',
+                       'Argument',
+                       'Option',
+                       'BoundaryCondition']} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'StateVariable',
                        'Parameter',
@@ -3690,6 +3763,7 @@ class Function(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -3863,6 +3937,7 @@ class LossFunction(Function):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4031,6 +4106,7 @@ class Callable(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4124,6 +4200,7 @@ class ClassReference(Callable):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4229,6 +4306,7 @@ class DerivedParameter(Parameter):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4370,7 +4448,11 @@ class DerivedParameter(Parameter):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+                       'Parameter',
+                       'Argument',
+                       'Option',
+                       'BoundaryCondition']} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -4401,6 +4483,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4704,6 +4787,7 @@ class DataSource(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4836,6 +4920,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -4980,6 +5065,7 @@ class Optimization(OptimizationStage):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5115,6 +5201,7 @@ class Exploration(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5270,6 +5357,7 @@ class UpdateRule(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5487,6 +5575,7 @@ class Algorithm(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5598,6 +5687,7 @@ class Option(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5621,7 +5711,11 @@ class Option(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
-    value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+    value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+                       'Parameter',
+                       'Argument',
+                       'Option',
+                       'BoundaryCondition']} })
 
 
 class Discretization(ConfiguredBaseModel):
@@ -5690,6 +5784,7 @@ class BranchSwitch(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5801,6 +5896,7 @@ class Continuation(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -5930,7 +6026,7 @@ class Continuation(ConfiguredBaseModel):
     max_bisection_steps: Optional[int] = Field(default=None, description="""Maximum bisection steps for bifurcation point localization.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     algorithm: Optional[ContinuationAlgorithm] = Field(default=ContinuationAlgorithm.PALC, description="""Predictor-corrector algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(PALC)'} })
-    initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Continuation']} })
+    initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     branches: Optional[dict[str, BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     bothside: Optional[bool] = Field(default=None, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-analysis execution configuration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
@@ -6070,6 +6166,7 @@ class Coupling(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -6822,6 +6919,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -6873,6 +6971,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -6985,6 +7084,7 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -7597,6 +7697,7 @@ class FieldStateVariable(StateVariable):
                        'Tractogram',
                        'GraphGenerator',
                        'File',
+                       'StateValue',
                        'Observation',
                        'Dynamics',
                        'StateVariable',
@@ -7828,7 +7929,11 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'PDE']} })
     bc_type: Optional[BoundaryConditionType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
     on_region: Optional[str] = Field(default=None, description="""Mesh/atlas subset where BC applies.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BoundaryCondition']} })
-    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'Argument', 'Option', 'BoundaryCondition']} })
+    value: Optional[Equation] = Field(default=None, description="""Constant, parameter, or equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+                       'Parameter',
+                       'Argument',
+                       'Option',
+                       'BoundaryCondition']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
                        'SpatialField',
                        'BoundaryCondition'],
@@ -8091,6 +8196,7 @@ Network.model_rebuild()
 GraphGenerator.model_rebuild()
 File.model_rebuild()
 Node.model_rebuild()
+StateValue.model_rebuild()
 Edge.model_rebuild()
 Observation.model_rebuild()
 DerivedObservation.model_rebuild()

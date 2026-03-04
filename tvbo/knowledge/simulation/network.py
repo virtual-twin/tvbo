@@ -15,6 +15,7 @@ TVB-O wrapper for Coupling functions
 
 """
 import copy
+import os
 from os.path import join
 
 import networkx as nx
@@ -33,6 +34,70 @@ from tvbo.parse import metadata as metadata_mod
 from tvbo.run import compgraph
 
 TEMPLATES = templates.root
+
+# Path to database coupling function YAML files
+_COUPLING_DB_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    '..', '..', 'database', 'coupling_functions'
+)
+
+
+def _load_coupling_from_database(name, coupling):
+    """Fill coupling metadata from a database YAML file.
+
+    Looks for ``database/coupling_functions/<name>.yaml`` and fills
+    missing ``pre_expression``, ``post_expression``, ``parameters``,
+    and ``delayed`` on the coupling instance.
+
+    Parameters
+    ----------
+    name : str
+        Coupling function name (e.g. ``"KuramotoCoupling"``).
+    coupling : tvbo_datamodel.Coupling
+        Coupling instance to fill (modified in-place).
+
+    Returns
+    -------
+    bool
+        True if a database file was found and applied.
+    """
+    import yaml as _yaml
+
+    db_file = os.path.join(_COUPLING_DB_DIR, f'{name}.yaml')
+    if not os.path.exists(db_file):
+        return False
+
+    with open(db_file) as f:
+        data = _yaml.safe_load(f)
+
+    if 'pre_expression' in data and not getattr(coupling, 'pre_expression', None):
+        pe = data['pre_expression']
+        coupling.pre_expression = tvbo_datamodel.Equation(
+            **(pe if isinstance(pe, dict) else {'rhs': pe})
+        )
+    if 'post_expression' in data and not getattr(coupling, 'post_expression', None):
+        pe = data['post_expression']
+        coupling.post_expression = tvbo_datamodel.Equation(
+            **(pe if isinstance(pe, dict) else {'rhs': pe})
+        )
+    if 'parameters' in data:
+        if not getattr(coupling, 'parameters', None):
+            coupling.parameters = {}
+        for pname, pval in data['parameters'].items():
+            if pname not in coupling.parameters:
+                if isinstance(pval, dict):
+                    if 'name' not in pval:
+                        pval['name'] = pname
+                    coupling.parameters[pname] = tvbo_datamodel.Parameter(**pval)
+                else:
+                    coupling.parameters[pname] = tvbo_datamodel.Parameter(
+                        name=pname, value=pval
+                    )
+    if 'delayed' in data and data['delayed'] is not None:
+        if getattr(coupling, 'delayed', None) is None:
+            coupling.delayed = data['delayed']
+
+    return True
 
 
 def get_parameters(CF):
@@ -125,14 +190,33 @@ class Coupling(tvbo_datamodel.Coupling):
         if use_ontology:
             self._populate_from_ontology()
 
-    def _populate_from_ontology(self):
-        """Fill missing metadata fields from ontology based on `name`.
+    def _populate_from_ontology(self, lookup_name=None):
+        """Fill missing metadata fields from ontology/database.
 
-        Only empties are set: name (if missing), pre_expression/post_expression
-        (if missing), and parameters (add new or fill missing value/description).
+        Parameters
+        ----------
+        lookup_name : str, optional
+            Name or CURIE to look up. If None, uses ``self.name``.
+            Supports plain names (``KuramotoCoupling``) and CURIEs
+            (``tvbo:KuramotoCoupling``).
         """
+        if lookup_name:
+            # Strip CURIE prefix if present
+            lookup = lookup_name.split(':', 1)[-1] if ':' in lookup_name else lookup_name
+        else:
+            lookup = None
+
+        # Try database YAML first (fast, no ontology deps needed)
+        if lookup and _load_coupling_from_database(lookup, self):
+            return
+
+        # Fallback: ontology lookup
         try:
-            oc = self.ontoclass
+            if lookup:
+                hits = query.label_search(lookup, root_class="Coupling")
+                oc = hits[0] if hits else None
+            else:
+                oc = self.ontoclass
         except Exception:
             oc = None
         if not oc:
@@ -140,6 +224,45 @@ class Coupling(tvbo_datamodel.Coupling):
 
         # Reuse shared helper; non-destructive fill
         coupling_class2metadata(oc, self, overwrite=False)
+
+    def populate_from_type(self, type_ref):
+        """Fill missing pre/post expressions and parameters from a type reference.
+
+        This is used when ``network.coupling`` entries specify a ``type`` field
+        to reference a known coupling function (e.g. ``KuramotoCoupling`` or
+        ``tvbo:KuramotoCoupling``).
+
+        Parameters
+        ----------
+        type_ref : str
+            Coupling function name or CURIE (e.g. ``"KuramotoCoupling"``
+            or ``"tvbo:KuramotoCoupling"``).
+        """
+        self._coupling_type = type_ref
+        self._populate_from_ontology(lookup_name=type_ref)
+        self._resolve_xi_xj()
+
+    def _resolve_xi_xj(self):
+        """Auto-populate local_states/incoming_states from x_i/x_j in expression.
+
+        Coupling database equations use generic placeholders ``x_i`` (local
+        node state) and ``x_j`` (source node state).  When the user has
+        declared ``incoming_states`` (the actual state variable names to
+        pull from connected nodes) but not ``local_states``, and the
+        expression references ``x_i``, we mirror ``incoming_states`` into
+        ``local_states`` so the template can generate correct assignments.
+        """
+        pre_rhs = str(self.pre_expression.rhs) if getattr(self, 'pre_expression', None) else ''
+        incoming = getattr(self, 'incoming_states', None) or []
+        local = getattr(self, 'local_states', None) or []
+
+        if 'x_i' in pre_rhs and not local and incoming:
+            # x_i refers to local copy of the same states as incoming
+            self.local_states = list(incoming)
+
+        if 'x_j' in pre_rhs and not incoming and local:
+            # x_j refers to remote copy of the same states as local
+            self.incoming_states = list(local)
 
     @classmethod
     def from_ontology(cls, ontoclass):
@@ -252,6 +375,100 @@ class Coupling(tvbo_datamodel.Coupling):
             return equations.generate_global_coupling_function(pre, post)
         except Exception:
             return None
+
+    def symbolic(self, delays=False):
+        """Full symbolic coupling equation with proper indexed state variables.
+
+        Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``,
+        ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation
+        and wraps the pre-expression in a weighted summation over connected nodes.
+
+        Parameters
+        ----------
+        delays : bool
+            If True, incoming states carry an explicit time-delay index:
+            ``y1[j, t - tau[i, j]]`` instead of plain ``y1[j]``.
+
+        Returns
+        -------
+        sympy.Expr
+            E.g. ``Sum(w[i, j]*sin(theta[j] - theta[i]), (j, 0, N - 1))/N``
+        """
+        import sympy as sp
+        from sympy import IndexedBase, Symbol, symbols, Sum
+        from tvbo.parse.expression import parse_eq
+
+        i, j, N, gx = symbols("i j N gx")
+        w = IndexedBase("w")
+
+        # State variable names from coupling metadata
+        incoming = [str(s) for s in (self.incoming_states or [])]
+        local = [str(s) for s in (self.local_states or [])]
+
+        # Build IndexedBase per state and substitution map
+        state_bases = {}
+        subs_map = {}
+        for state_name in set(incoming + local):
+            state_bases[state_name] = IndexedBase(state_name)
+
+        # Index expressions: delayed adds a time argument to incoming states
+        if delays:
+            t = Symbol("t")
+            tau = IndexedBase("tau")
+            def _incoming(sn):
+                return state_bases[sn][j, t - tau[i, j]]
+        else:
+            def _incoming(sn):
+                return state_bases[sn][j]
+
+        def _local(sn):
+            return state_bases[sn][i]
+
+        # Bare state names: y1 → y1[j] (incoming), y1 → y1[i] (local)
+        # This handles expressions like "2*e0 / (1 + exp(r*(v0 - (y1 - y2))))"
+        for sn in incoming:
+            subs_map[Symbol(sn)] = _incoming(sn)
+        for sn in local:
+            subs_map[Symbol(sn)] = _local(sn)
+
+        # State-subscript aliases: theta_j → theta[j], theta_i → theta[i]
+        for sn in incoming:
+            subs_map[Symbol(f"{sn}_j")] = _incoming(sn)
+        for sn in local:
+            subs_map[Symbol(f"{sn}_i")] = _local(sn)
+
+        # x_j / x_i fallback → first state
+        if incoming:
+            subs_map[Symbol("x_j")] = _incoming(incoming[0])
+        if local:
+            subs_map[Symbol("x_i")] = _local(local[0])
+
+        # Literal incoming_states / local_states → first state
+        if incoming:
+            subs_map[Symbol("incoming_states")] = _incoming(incoming[0])
+        if local:
+            subs_map[Symbol("local_states")] = _local(local[0])
+
+        # local_dict for parse_eq: ensure alias tokens parse as Symbols
+        local_dict = {str(k): k for k in subs_map}
+        local_dict["gx"] = gx
+        local_dict["N"] = N
+        for pname in (self.parameters or {}):
+            local_dict[str(pname)] = Symbol(str(pname))
+
+        # Parse and substitute inside evaluate=False to prevent:
+        #  - sin.eval() sign canonicalization (Function.__new__, L301)
+        #  - Add.flatten() alphabetical reordering (AssocOp.__new__, L95)
+        # Parsing must also be inside the block so that e.g.
+        # v0 - (y1 - y2) isn't flattened to v0 - y1 + y2 before subs.
+        with sp.evaluate(False):
+            pre_expr = parse_eq(self.pre_expression, local_dict=local_dict)
+            post_expr = parse_eq(self.post_expression, local_dict=local_dict)
+            pre_indexed = pre_expr.subs(subs_map)
+
+        # Full coupling: Sum(w[i,j] * pre, (j, 0, N-1)), substituted into post
+        gx_sum = Sum(w[i, j] * pre_indexed, (j, 0, N - 1))
+        return post_expr.subs({gx: gx_sum})
 
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         import matplotlib.pyplot as plt

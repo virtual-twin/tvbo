@@ -7,7 +7,8 @@ from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
-    parse_exploration, get_param_info, get_node_param_overrides
+    parse_exploration, get_param_info, get_node_param_overrides,
+    get_node_state_overrides
 )
 import numpy as np
 
@@ -173,6 +174,12 @@ node_param_overrides = get_node_param_overrides(network, n_nodes, dyn_param_defa
 for _np_name in node_param_overrides:
     if _np_name not in dyn_param_shapes:
         dyn_param_shapes[_np_name] = '(n_nodes,)'
+
+# Per-node initial state overrides from node ``state:`` entries
+# e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
+_default_init = [float(sv.initial_value) if sv.initial_value is not None else 0.0
+                 for sv in model.state_variables.values()]
+node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _default_init)
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
 # time-varying inputs pre-generated as arrays and indexed per integration step.
@@ -802,6 +809,12 @@ def run_simulation(
     # Run transient simulation to settle network dynamics
     if t_transient > 0:
         model_fn_init, state_init = prepare(network, solver, t0=t0, t1=t_transient, dt=dt)
+        % if node_state_overrides:
+        # Per-node initial state overrides for transient
+        % for sv_name, sv_vals in node_state_overrides.items():
+        state_init.initial_state.dynamics = state_init.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
+        % endfor
+        % endif
         % if stochastic_param_info:
         _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
@@ -814,6 +827,13 @@ def run_simulation(
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    % if node_state_overrides:
+    # Per-node initial state overrides (from node ``state:`` YAML entries)
+    # initial_state.dynamics is [n_states, n_nodes] — set per-state row
+    % for sv_name, sv_vals in node_state_overrides.items():
+    state.initial_state.dynamics = state.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
+    % endfor
+    % endif
     % if stochastic_param_info:
     _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
     % endif

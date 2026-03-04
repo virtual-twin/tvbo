@@ -80,6 +80,49 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     return param_names, param_defaults, param_shapes
 
 
+def get_node_state_overrides(
+    network, n_nodes: int, state_names: List[str],
+    default_initial_state: List[float]
+) -> Dict[str, List[float]]:
+    """Scan network.nodes for per-node initial state overrides.
+
+    When nodes define ``state: {theta: {value: 0.8}}`` in the YAML, build
+    per-node arrays for state variables that differ across nodes.
+
+    Args:
+        network: Network object with .nodes list
+        n_nodes: number of nodes
+        state_names: ordered list of state variable names
+        default_initial_state: default initial value per state variable
+
+    Returns:
+        dict of sv_name -> list of per-node values (length n_nodes)
+    """
+    if not network or not getattr(network, 'nodes', None):
+        return {}
+
+    nodes = list(network.nodes) if not isinstance(network.nodes, list) else network.nodes
+    if len(nodes) != n_nodes:
+        return {}
+
+    overrides = {}
+    for i, sv_name in enumerate(state_names):
+        default = default_initial_state[i]
+        arr = [default] * n_nodes
+        has_override = False
+        for node in nodes:
+            node_state = getattr(node, 'state', None)
+            if node_state and sv_name in node_state:
+                sv_obj = node_state[sv_name]
+                val = float(sv_obj.value) if hasattr(sv_obj, 'value') else float(sv_obj)
+                arr[int(node.id)] = val
+                has_override = True
+        if has_override:
+            overrides[sv_name] = arr
+
+    return overrides
+
+
 def get_node_param_overrides(
     network, n_nodes: int, dyn_param_defaults: Dict[str, float]
 ) -> Dict[str, List[float]]:
