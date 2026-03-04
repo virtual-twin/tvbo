@@ -59,7 +59,7 @@ simulation_experiments:
           equation:
             lhs: \dot{Z}
             rhs: X * Y - beta * Z
-      coupling_terms:
+      coupling_inputs:
         c_glob:
           description: "Global excitatory coupling"
         c_inhibition:

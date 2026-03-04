@@ -730,17 +730,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Start from local dynamics
         dyn_sym = self.dynamics.symbolic
 
-        # Collect coupling term → Coupling object mapping
+        # Collect coupling input → Coupling object mapping
         coupling_map = {}
         net_coup = getattr(self.network, "coupling", {}) or {}
-        dyn_ct = getattr(self.dynamics, "coupling_terms", {}) or {}
+        dyn_ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
 
-        for ct_name in dyn_ct:
-            if ct_name in net_coup:
-                coupling_map[ct_name] = net_coup[ct_name]
+        for ci_name in dyn_ci:
+            if ci_name in net_coup:
+                coupling_map[ci_name] = net_coup[ci_name]
             elif self.coupling and str(getattr(self.coupling, "name", "")) != "Linear":
-                # Fallback: single experiment-level coupling for any term
-                coupling_map[ct_name] = self.coupling
+                # Fallback: single experiment-level coupling for any input
+                coupling_map[ci_name] = self.coupling
 
         # If no coupling to resolve, return dynamics as-is
         if not coupling_map:
@@ -795,6 +795,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             "parameters": dyn_sym["parameters"],
         }
 
+    @property
     def noise_sigma_array(self) -> np.ndarray:
         """Per-state-variable noise sigma values.
 
@@ -1027,7 +1028,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             keys_to_exclude=[
                 "derived_parameters",
                 "conduction_speed",
-                "coupling_terms",
+                "coupling_inputs",
             ]
         )
         # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
@@ -1750,7 +1751,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def get_parameters_collection(self, **kwargs):
         if keys_to_exclude := kwargs.get("keys_to_exclude", []):
-            keys_to_exclude = keys_to_exclude + ["connectivity", "coupling_terms"]
+            keys_to_exclude = keys_to_exclude + ["connectivity", "coupling_inputs"]
         parameters = Bunch()
         metadata.traverse_metadata(
             self,

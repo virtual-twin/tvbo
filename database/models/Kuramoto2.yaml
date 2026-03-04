@@ -43,7 +43,7 @@ derived_variables:
         equation:
             rhs: sin(theta)
 
-coupling_terms:
+coupling_inputs:
     c_glob:
         name: c_glob
     local_coupling:

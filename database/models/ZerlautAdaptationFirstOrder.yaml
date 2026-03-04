@@ -694,7 +694,7 @@ derived_variables:
       rhs: erfc(sqrt(2)*(V_thre_i - mu_V_i)/(2*sigma_V_i))/(2*T_V_i)
       latex: false
     conditional: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   local_coupling:

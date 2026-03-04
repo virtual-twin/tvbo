@@ -259,7 +259,7 @@ derived_variables:
       rhs: x_i/(1 - exp(-d_i*x_i))
       latex: false
     conditional: false
-coupling_terms:
+coupling_inputs:
   c_glob:
     name: c_glob
   local_coupling:

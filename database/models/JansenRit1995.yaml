@@ -131,7 +131,7 @@ functions:
 # ---------------------------------------------------------------------------
 # Coupling input port — unified for all experiments
 # ---------------------------------------------------------------------------
-coupling_terms:
+coupling_inputs:
   c_intercolumn:
     name: c_intercolumn
     description: >-

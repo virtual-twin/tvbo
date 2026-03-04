@@ -300,7 +300,7 @@ derived_variables:
         1.0)
       latex: false
     conditional: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   local_coupling:

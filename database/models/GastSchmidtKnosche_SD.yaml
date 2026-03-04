@@ -96,7 +96,7 @@ description: "4D model describing the Ott-Antonsen reduction of infinite all-to-
   \ 32(9), 1615-1634."
 references:
 - Gast2020
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   c_pop1:
