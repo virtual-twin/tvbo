@@ -765,6 +765,116 @@ class Dynamics(tvbo_datamodel.Dynamics):
             Symbol(p.name): p.value for p in getattr(self, "parameters", {}).values()
         }
 
+    @property
+    def symbolic(self):
+        """Full symbolic ODE system using proper SymPy conventions.
+
+        State variables are represented as ``Function(name)(t)`` so that
+        ``Derivative(theta(t), t)`` stays unevaluated.  Derived variables
+        and derived parameters are included as algebraic equations.
+
+        Returns
+        -------
+        dict
+            ``{'state': [...], 'derived': [...], 'parameters': {...}}``
+            where each list contains ``sympy.Eq`` objects and parameters
+            maps ``Symbol → value``.
+
+        Example
+        -------
+        >>> model.symbolic['state']
+        [Eq(Derivative(theta(t), t), I + omega)]
+        >>> model.symbolic['derived']
+        [Eq(signal(t), sin(theta(t)))]
+        """
+        import sympy as sp
+        from tvbo.parse.expression import parse_eq
+
+        t = Symbol("t")
+
+        # Build scope: state variables as Function(name)(t),
+        # everything else as Symbol
+        scope = {}
+        sv_funcs = {}
+        for name in self.state_variables:
+            f = Function(str(name))
+            sv_funcs[name] = f
+            scope[str(name)] = f(t)
+
+        for p in self.parameters.values():
+            scope[str(p.name)] = Symbol(str(p.name))
+        for ct in self.coupling_terms:
+            scope[str(ct)] = Symbol(str(ct))
+        for ci in getattr(self, "coupling_inputs", {}).keys():
+            scope[str(ci)] = Symbol(str(ci))
+        for name in getattr(self, "derived_parameters", {}):
+            scope[str(name)] = Symbol(str(name))
+        for name in getattr(self, "derived_variables", {}):
+            # Derived variables that appear in state equations
+            # should resolve to their Function(t) form
+            scope[str(name)] = Function(str(name))(t)
+        for fname, f in getattr(self, "functions", {}).items():
+            scope[str(fname)] = Function(str(fname))
+            for arg in getattr(f, "arguments", []):
+                scope[str(arg.name)] = Symbol(str(arg.name))
+        scope["t"] = t
+        if "e" not in scope:
+            scope["e"] = sp.E
+
+        # Wrap all parsing in evaluate=False to preserve expression order
+        # (prevents SymPy from rewriting e.g. sin(v0-v) → -sin(v-v0))
+        with sp.evaluate(False):
+            # State equations: Eq(d/dt state(t), rhs)
+            state_eqs = []
+            for name, sv in self.state_variables.items():
+                rhs = parse_eq(sv.equation, local_dict=scope)
+                order = int(getattr(sv, 'equation_order', 1) or 1)
+                discrete = getattr(self, "system_type", "continuous") == "discrete"
+                if discrete:
+                    lhs = sv_funcs[name](t)
+                else:
+                    lhs = sp.Derivative(sv_funcs[name](t), *([t] * order))
+                state_eqs.append(sp.Eq(lhs, rhs))
+
+            # Derived parameter equations
+            dp_eqs = []
+            for name, dp in getattr(self, "derived_parameters", {}).items():
+                rhs = parse_eq(dp.equation, local_dict=scope)
+                dp_eqs.append(sp.Eq(Symbol(str(name)), rhs))
+
+            # Derived variable equations
+            dv_eqs = []
+            for name, dv in getattr(self, "derived_variables", {}).items():
+                has_conds = bool(getattr(dv.equation, "conditionals", None)) and \
+                    len(getattr(dv.equation, "conditionals", [])) > 0
+                if getattr(dv, "conditional", False) and has_conds:
+                    rhs = simulation.equations.conditionals2piecewise(dv.equation)
+                else:
+                    rhs = parse_eq(dv.equation, local_dict=scope)
+                dv_eqs.append(sp.Eq(Function(str(name))(t), rhs))
+
+            # Function definitions: Eq(Sigm(v), 2*e0/(1+exp(r*(v0-v))))
+            func_eqs = []
+            for fname, f in getattr(self, "functions", {}).items():
+                arguments = [Symbol(str(arg.name)) for arg in f.arguments]
+                lhs = Function(str(fname))(*arguments)
+                rhs = parse_eq(f.equation, local_dict=scope)
+                func_eqs.append(sp.Eq(lhs, rhs))
+
+        # Parameters: Symbol → numeric value
+        params = {
+            Symbol(str(p.name)): p.value
+            for p in self.parameters.values()
+        }
+
+        return {
+            'state': state_eqs,
+            'functions': func_eqs,
+            'derived_parameters': dp_eqs,
+            'derived': dv_eqs,
+            'parameters': params,
+        }
+
     def get_symbolic_elements(self, include_time_symbol: bool = True):
         """Build a unified local_dict for parsing model expressions.
 
@@ -2216,20 +2326,22 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
         derivative_notation: str = "dot",
     ):
         self.update_metadata()
-        if format in ["markdown", "pdf"]:
-            template = templates.lookup.get_template(f"{template_name}.md.mako")
-        elif format == "html":
-            template = templates.lookup.get_template(f"{template_name}.html.mako")
+        normalized_format = format.lower() if isinstance(format, str) else "markdown"
+        if normalized_format not in ["markdown", "md", "pdf"]:
+            raise ValueError("format must be one of: markdown, pdf")
 
-        render = (
-            template.render(model=self, derivative_notation=derivative_notation)
+        md_template = templates.lookup.get_template(f"{template_name}.md.mako")
+        md_render = (
+            md_template.render(model=self, derivative_notation=derivative_notation)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )
 
+        render = md_render
+
         if outputfile:
-            if format == "pdf":
-                report.to_pdf(render, outputfile)
+            if normalized_format == "pdf":
+                report.to_pdf(md_render, outputfile)
             else:
                 with open(outputfile, "w") as f:
                     f.write(render)

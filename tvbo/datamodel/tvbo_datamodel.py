@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-03T12:16:17
+# Generation date: 2026-03-03T20:29:30
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -89,6 +89,10 @@ class GraphGeneratorName(extended_str):
 
 
 class FileName(extended_str):
+    pass
+
+
+class StateValueName(extended_str):
     pass
 
 
@@ -867,7 +871,7 @@ class Node(YAMLRoot):
     dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
-    initial_state: Optional[Union[float, list[float]]] = empty_list()
+    state: Optional[Union[dict[Union[str, StateValueName], Union[dict, "StateValue"]], list[Union[dict, "StateValue"]]]] = empty_dict()
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -893,11 +897,36 @@ class Node(YAMLRoot):
         if self.region is not None and not isinstance(self.region, str):
             self.region = str(self.region)
 
-        if not isinstance(self.initial_state, list):
-            self.initial_state = [self.initial_state] if self.initial_state is not None else []
-        self.initial_state = [v if isinstance(v, float) else float(v) for v in self.initial_state]
+        self._normalize_inlined_as_dict(slot_name="state", slot_type=StateValue, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class StateValue(YAMLRoot):
+    """
+    A named state variable value for per-node initialization.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["StateValue"]
+    class_class_curie: ClassVar[str] = "tvbo:StateValue"
+    class_name: ClassVar[str] = "StateValue"
+    class_model_uri: ClassVar[URIRef] = TVBO.StateValue
+
+    name: Union[str, StateValueName] = None
+    value: Optional[float] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, StateValueName):
+            self.name = StateValueName(self.name)
+
+        if self.value is not None and not isinstance(self.value, float):
+            self.value = float(self.value)
 
         super().__post_init__(**kwargs)
 
@@ -5234,8 +5263,8 @@ slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO
 slots.node__region = Slot(uri=TVBO.region, name="node__region", curie=TVBO.curie('region'),
                    model_uri=TVBO.node__region, domain=None, range=Optional[str])
 
-slots.node__initial_state = Slot(uri=TVBO.initial_state, name="node__initial_state", curie=TVBO.curie('initial_state'),
-                   model_uri=TVBO.node__initial_state, domain=None, range=Optional[Union[float, list[float]]])
+slots.node__state = Slot(uri=TVBO.state, name="node__state", curie=TVBO.curie('state'),
+                   model_uri=TVBO.node__state, domain=None, range=Optional[Union[dict[Union[str, StateValueName], Union[dict, StateValue]], list[Union[dict, StateValue]]]])
 
 slots.node__events = Slot(uri=TVBO.events, name="node__events", curie=TVBO.curie('events'),
                    model_uri=TVBO.node__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])

@@ -684,15 +684,23 @@ classes:
             region:
                 range: string
                 description: "Brain region or anatomical label"
-            initial_state:
+            state:
                 multivalued: true
-                range: float
-                description: "Initial values for state variables"
+                range: StateValue
+                inlined: true
+                description: "Per-node initial state variable values, keyed by state variable name."
             events:
                 multivalued: true
                 range: Event
                 inlined: true
                 description: "Events attached to this node (e.g., threshold-based state changes)."
+
+    StateValue:
+        class_uri: tvbo:StateValue
+        description: "A named state variable value for per-node initialization."
+        slots:
+            - name
+            - value
 
     Edge:
         class_uri: tvbo:Edge

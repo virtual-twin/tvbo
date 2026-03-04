@@ -51,6 +51,34 @@ def _sync_network_node_count(net):
         net.number_of_regions = net.number_of_nodes
 
 
+def _upgrade_network_couplings(network, coupling_types=None):
+    """Upgrade network.coupling entries to runtime Coupling instances and
+    apply ``type``-based database/ontology fill.
+
+    Parameters
+    ----------
+    network : Network
+        The network whose coupling entries should be upgraded.
+    coupling_types : dict, optional
+        Mapping ``{coupling_key: type_ref}`` extracted from the raw YAML
+        before LinkML deserialization.  ``type_ref`` is a coupling function
+        name or CURIE (e.g. ``"KuramotoCoupling"`` or
+        ``"tvbo:KuramotoCoupling"``).
+    """
+    coupling_types = coupling_types or {}
+    coup_dict = getattr(network, 'coupling', None)
+    if not coup_dict:
+        return
+
+    for key, coup in coup_dict.items():
+        # Upgrade __class__ to runtime Coupling (skip if already runtime)
+        if not isinstance(coup, Coupling):
+            coup.__class__ = Coupling
+        # Apply type-based fill if a type reference was specified
+        if key in coupling_types:
+            coup.populate_from_type(coupling_types[key])
+
+
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def __init__(self, **kwargs):
         """Initialize like the datamodel, but auto-assign an id when missing.
@@ -77,6 +105,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             elif hasattr(net, "dict") and not isinstance(net, dict):
                 # Pydantic v1
                 kwargs["network"] = net.dict(exclude_none=True)
+
+        # Extract non-schema fields from network sub-dicts before parent init.
+        # These are popped so the datamodel __init__ doesn't reject unknown kwargs.
+        _coupling_types = {}
+        net_kw = kwargs.get("network")
+        if isinstance(net_kw, dict):
+            # Extract `type` from network.coupling entries.
+            # `type` references a coupling function name/CURIE.
+            coup_dict = net_kw.get("coupling")
+            if isinstance(coup_dict, dict):
+                for key, val in coup_dict.items():
+                    if isinstance(val, dict) and "type" in val:
+                        _coupling_types[key] = val.pop("type")
 
         # Allow coupling to be specified as a plain string name (e.g. "KuramotoCoupling")
         # This implies "load from ontology/database", so we flag it for use_ontology
@@ -137,6 +178,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Network.__init__ doesn't run when class is patched, so sync here
             _sync_network_node_count(self.network)
 
+        # Upgrade network.coupling entries to runtime Coupling + apply type fills
+        _upgrade_network_couplings(self.network, _coupling_types)
+
+        # If network defines couplings and experiment has no explicit coupling,
+        # use the first network coupling as the experiment-level default.
+        # This ensures the JAX template (which reads experiment.coupling) picks
+        # up the right coupling function.
+        net_coup = getattr(self.network, 'coupling', None)
+        if net_coup and len(net_coup) > 0:
+            first_coup = next(iter(net_coup.values()))
+            exp_coup = getattr(self, 'coupling', None)
+            # Override only if experiment coupling is the auto-generated default
+            if exp_coup is None or (
+                isinstance(exp_coup, Coupling)
+                and str(getattr(exp_coup, 'name', '')) == 'Linear'
+                and not _coupling_from_name
+            ):
+                self.coupling = first_coup
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, '_pending_source_file', None)
@@ -254,6 +313,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
         if not getattr(obj, "network", None):
             obj.__dict__["network"] = Network()
+
+        # Upgrade network coupling entries (no type refs in from_datamodel path)
+        _upgrade_network_couplings(obj.network)
 
         obj.__dict__["_source_file"] = None
         return obj
@@ -616,7 +678,123 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def metadata(self):
         return self
 
-    @property
+    def symbolic(self, integrate=False, indexed=False, delays=False):
+        """Symbolic representation of the full experiment equations.
+
+        Produces different styles of mathematical output depending on the
+        combination of flags:
+
+        +----------+--------+-------+--------------------------------------------+
+        | integrate| indexed| delays| Description                                |
+        +==========+========+=======+============================================+
+        | False    | False  | False | Dynamics separated, coupling terms as free |
+        |          |        |       | symbols.  Coupling equations shown in      |
+        |          |        |       | ``'coupling'`` dict.                       |
+        +----------+--------+-------+--------------------------------------------+
+        | True     | False  | False | Coupling substituted into dynamics.        |
+        |          |        |       | State vars remain ``y0(t)``.               |
+        +----------+--------+-------+--------------------------------------------+
+        | False    | True   | False | State vars indexed ``y0_i(t)``.            |
+        |          |        |       | Coupling shown separately with ``[i],[j]``. |
+        +----------+--------+-------+--------------------------------------------+
+        | True     | True   | False | Fully integrated with node indices.        |
+        |          |        |       | Ready for network presentation.            |
+        +----------+--------+-------+--------------------------------------------+
+        | *        | (True) | True  | Like above but incoming states carry       |
+        |          |        |       | ``y1[j, t - tau[i,j]]`` time delay.        |
+        |          |        |       | ``delays=True`` implies ``indexed=True``.  |
+        +----------+--------+-------+--------------------------------------------+
+
+        Parameters
+        ----------
+        integrate : bool
+            Substitute coupling expressions into state equations.
+        indexed : bool
+            Add node index ``_i`` to state / derived variables.
+        delays : bool
+            Show time delays on incoming coupling states.
+            Implies ``indexed=True``.
+
+        Returns
+        -------
+        dict
+            Keys: ``'state'``, ``'coupling'``, ``'functions'``,
+            ``'derived_parameters'``, ``'derived'``, ``'parameters'``.
+        """
+        import sympy as sp
+        from sympy import Symbol, Function
+
+        if delays:
+            indexed = True
+
+        # Start from local dynamics
+        dyn_sym = self.dynamics.symbolic
+
+        # Collect coupling term → Coupling object mapping
+        coupling_map = {}
+        net_coup = getattr(self.network, "coupling", {}) or {}
+        dyn_ct = getattr(self.dynamics, "coupling_terms", {}) or {}
+
+        for ct_name in dyn_ct:
+            if ct_name in net_coup:
+                coupling_map[ct_name] = net_coup[ct_name]
+            elif self.coupling and str(getattr(self.coupling, "name", "")) != "Linear":
+                # Fallback: single experiment-level coupling for any term
+                coupling_map[ct_name] = self.coupling
+
+        # If no coupling to resolve, return dynamics as-is
+        if not coupling_map:
+            dyn_sym["coupling"] = {}
+            return dyn_sym
+
+        # Build coupling symbolic expressions
+        t = Symbol("t")
+        coupling_exprs = {}
+        for ct_name, coup in coupling_map.items():
+            coupling_exprs[ct_name] = coup.symbolic(delays=delays)
+
+        # Substitution maps (built conditionally)
+        subs_index = {}
+        subs_coupling = {}
+
+        # Node-index substitution: y0(t) → y0_i(t)
+        if indexed:
+            for sv_name in self.dynamics.state_variables:
+                old_f = Function(str(sv_name))
+                new_f = Function(str(sv_name) + "_i")
+                subs_index[old_f(t)] = new_f(t)
+            for dv_name in getattr(self.dynamics, "derived_variables", {}) or {}:
+                old_f = Function(str(dv_name))
+                new_f = Function(str(dv_name) + "_i")
+                subs_index[old_f(t)] = new_f(t)
+
+        # Coupling substitution: Symbol(ct_name) → Sum(...)
+        if integrate:
+            for ct_name, expr in coupling_exprs.items():
+                subs_coupling[Symbol(str(ct_name))] = expr
+
+        # Apply substitutions to all equation lists
+        with sp.evaluate(False):
+            def _apply_subs(eq):
+                """Apply node indexing + coupling substitution to an Eq."""
+                lhs = eq.lhs.subs(subs_index)
+                rhs = eq.rhs.subs(subs_index).subs(subs_coupling)
+                return sp.Eq(lhs, rhs)
+
+            state_eqs = [_apply_subs(eq) for eq in dyn_sym["state"]]
+            dv_eqs = [_apply_subs(eq) for eq in dyn_sym["derived"]]
+            dp_eqs = list(dyn_sym["derived_parameters"])  # no state vars here
+            func_eqs = list(dyn_sym["functions"])  # no state vars here
+
+        return {
+            "state": state_eqs,
+            "coupling": coupling_exprs,
+            "functions": func_eqs,
+            "derived_parameters": dp_eqs,
+            "derived": dv_eqs,
+            "parameters": dyn_sym["parameters"],
+        }
+
     def noise_sigma_array(self) -> np.ndarray:
         """Per-state-variable noise sigma values.
 
@@ -1586,9 +1764,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return self.get_parameters_collection()
 
     # ---- Reporting utilities (paralleling Dynamics) ----
-    def generate_report(
+    def report(
         self,
-        format: str = "markdown",
+        format: str | None = "markdown",
         template_name: str = "tvbo-report-experiment",
         outputfile: str | None = None,
         derivative_notation: str = "dot",
@@ -1599,58 +1777,64 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - Summarizes integration, network/connectome, coupling, monitors, stimulation, and software info.
 
         Parameters
-        - format: 'markdown', 'html', or 'pdf' (pdf via pandoc)
+        - format: optional explicit fallback format ('markdown' or 'pdf')
         - template_name: base name of the template without extension
-        - outputfile: optional path to write the rendered report
+        - outputfile: optional path to write the rendered report;
+            when provided, extension defines output format (.md or .pdf)
         """
-        # Choose template
-        if format in ["markdown", "md", "pdf"]:
-            template = templates.lookup.get_template(f"report/{template_name}.md.mako")
-        elif format in ["html", "htm"]:
-            template = templates.lookup.get_template(
-                f"report/{template_name}.html.mako"
-            )
-        else:
-            raise ValueError("format must be one of: markdown, html, pdf")
+        normalized_format = format.lower() if isinstance(format, str) else None
 
-        # Render with full experiment context; the template will include the model template
-        render = template.render(
+        if outputfile:
+            ext = os.path.splitext(outputfile)[1].lower()
+            ext_to_format = {
+                ".md": "markdown",
+                ".markdown": "markdown",
+                ".pdf": "pdf",
+            }
+            if ext not in ext_to_format:
+                raise ValueError(
+                    "outputfile extension must be one of: .md, .pdf"
+                )
+            normalized_format = ext_to_format[ext]
+
+        if normalized_format is None:
+            normalized_format = "markdown"
+
+        if normalized_format not in ["markdown", "md", "pdf"]:
+            raise ValueError("format must be one of: markdown, pdf")
+
+        md_template = templates.lookup.get_template(f"report/{template_name}.md.mako")
+        md_render = md_template.render(
             experiment=self, derivative_notation=derivative_notation
         )
 
+        render = md_render
+
         # Persist if requested
         if outputfile:
-            if format in ["pdf"]:
+            if normalized_format in ["pdf"]:
                 from tvbo.export import report as _report
 
-                _report.to_pdf(render, outputfile)
+                _report.to_pdf(md_render, outputfile)
             else:
                 with open(outputfile, "w", encoding="utf-8") as f:
                     f.write(render)
 
         return render
 
-    def save_report(
-        self, opath: str, format: str = "markdown", filename: str | None = None
-    ):
-        """Save the report to a file in the given directory.
-
-        If filename is not provided, uses a sensible default based on experiment id and label.
-        """
-        os.makedirs(opath, exist_ok=True)
-        if filename is None:
-            base = f"experiment_{self.id}"
-            if getattr(self, "label", None):
-                base += f"_{self.label}"
-            filename = base
-        ext = (
-            "md"
-            if format in ["markdown", "md"]
-            else ("html" if format in ["html", "htm"] else "pdf")
-        )
-        fpath = join(opath, f"{filename}.{ext}")
-        self.generate_report(
-            format=format if format != "md" else "markdown", outputfile=fpath
+    def generate_report(
+        self,
+        format: str | None = "markdown",
+        template_name: str = "tvbo-report-experiment",
+        outputfile: str | None = None,
+        derivative_notation: str = "dot",
+    ) -> str:
+        """Backward-compatible alias for :meth:`report`."""
+        return self.report(
+            format=format,
+            template_name=template_name,
+            outputfile=outputfile,
+            derivative_notation=derivative_notation,
         )
 
     def to_bids(
