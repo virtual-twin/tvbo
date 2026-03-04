@@ -108,7 +108,7 @@ dynamics:
           rhs: "((-1.0 / tau_I) * W) + (tmp_H_I * gamma_I)"
         variable_of_interest: true
         coupling_variable: false
-    coupling_terms:
+    coupling_inputs:
       c_pop0: {}
 
   BalloonWindkessel:

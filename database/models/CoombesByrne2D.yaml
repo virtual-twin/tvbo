@@ -41,7 +41,7 @@ parameters:
 description: ''
 references:
 - Byrne2020
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
 state_variables:

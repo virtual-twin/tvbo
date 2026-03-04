@@ -165,7 +165,7 @@ experiments:
             - v
           equation:
             rhs: 2*e0 / (1 + exp(r*(v0 - v)))
-      coupling_terms: &jr_coupling_terms
+      coupling_inputs: &jr_coupling_inputs
         c_intercolumn:
           name: c_intercolumn
           description: "Inter-column coupling input to excitatory population"
@@ -525,7 +525,7 @@ experiments:
             - v
           equation:
             rhs: 2*e0 / (1 + exp(r*(v0 - v)))
-      coupling_terms:
+      coupling_inputs:
         c_intercolumn:
           name: c_intercolumn
           description: "Sigmoidal coupling input (firing rate) for delayed EPSP filter"
@@ -731,7 +731,7 @@ experiments:
       parameters: *jr_params
       derived_parameters: *jr_derived_params
       functions: *jr_functions
-      coupling_terms: *jr_coupling_terms
+      coupling_inputs: *jr_coupling_inputs
       state_variables:
         y0:
           name: y0
@@ -1029,7 +1029,7 @@ experiments:
           shape: "(n_nodes,)"
       derived_parameters: *jr_derived_params
       functions: *jr_functions
-      coupling_terms: *jr_coupling_terms
+      coupling_inputs: *jr_coupling_inputs
       state_variables:
         y0:
           name: y0

@@ -81,7 +81,7 @@ model:
             equation:
                 rhs: b*(c*I+alpha_exc*V)
 
-    coupling_terms:
+    coupling_inputs:
         c_glob:
 
 simulation_experiments:

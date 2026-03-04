@@ -414,9 +414,10 @@ class PyRatesAdapter(BaseAdapter):
         else:
             src_var = f"{dyn_name}_op/x"
 
-        # Target: coupling term
-        if first_dyn.coupling_terms:
-            tgt_var = f"{dyn_name}_op/{list(first_dyn.coupling_terms.keys())[0]}"
+        # Target: coupling input
+        ci = getattr(first_dyn, 'coupling_inputs', None) or getattr(first_dyn, 'coupling_terms', None)
+        if ci:
+            tgt_var = f"{dyn_name}_op/{list(ci.keys())[0]}"
         else:
             tgt_var = src_var
 

@@ -72,6 +72,41 @@ def _normalize_conditionals(model):
             dv.conditional = True
 
 
+def _migrate_coupling_terms(model):
+    """Bidirectional sync between coupling_terms and coupling_inputs.
+
+    coupling_terms (dict[str, Parameter]) is deprecated in favor of
+    coupling_inputs (dict[str, CouplingInput]).  This function:
+    1. Copies coupling_terms entries into coupling_inputs (forward migration)
+    2. Copies coupling_inputs entries back into coupling_terms as Parameters
+       (backward compat for templates that still read coupling_terms)
+    """
+    ct = getattr(model, 'coupling_terms', None) or {}
+    ci = getattr(model, 'coupling_inputs', None) or {}
+
+    # Forward: coupling_terms → coupling_inputs
+    if ct:
+        if model.coupling_inputs is None:
+            model.coupling_inputs = {}
+        for name, param in ct.items():
+            if name not in model.coupling_inputs:
+                model.coupling_inputs[name] = tvbo_datamodel.CouplingInput(
+                    name=str(name),
+                    description=getattr(param, 'description', None),
+                )
+
+    # Backward: coupling_inputs → coupling_terms (for template compat)
+    if model.coupling_inputs:
+        if model.coupling_terms is None:
+            model.coupling_terms = {}
+        for name, ci_obj in model.coupling_inputs.items():
+            if name not in model.coupling_terms:
+                model.coupling_terms[name] = tvbo_datamodel.Parameter(
+                    name=str(name),
+                    description=getattr(ci_obj, 'description', None),
+                )
+
+
 def order_by_equations(derived_variables, dependent_equations):
     """
     Orders the `derived_variables` dictionary based on the key order of the `dependent_equations` dictionary.
@@ -243,15 +278,15 @@ def class2metadata(ontoclass, metadata):
 
     # Only add ontology coupling terms if they are required in state equations
     # (onto_coupling_terms was fetched earlier for building local_dict)
+    # Store them in coupling_inputs (canonical) with fallback to coupling_terms
+    # for backward compat until coupling_terms is fully removed from schema.
+    ci_dict = metadata.coupling_inputs if metadata.coupling_inputs is not None else {}
+    ct_dict = metadata.coupling_terms if metadata.coupling_terms is not None else {}
     for k, v in onto_coupling_terms.items():
-        if k in required_symbols and k not in metadata.coupling_terms:
-            metadata.coupling_terms.update(
-                {
-                    k: tvbo_datamodel.Parameter(
-                        name=k,
-                    ),
-                }
-            )
+        if k in required_symbols and k not in ci_dict and k not in ct_dict:
+            if metadata.coupling_inputs is None:
+                metadata.coupling_inputs = {}
+            metadata.coupling_inputs[k] = tvbo_datamodel.CouplingInput(name=k)
 
     for r in ontoclass.has_reference:
         if r.name not in metadata.references:
@@ -803,8 +838,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         for p in self.parameters.values():
             scope[str(p.name)] = Symbol(str(p.name))
-        for ct in self.coupling_terms:
-            scope[str(ct)] = Symbol(str(ct))
         for ci in getattr(self, "coupling_inputs", {}).keys():
             scope[str(ci)] = Symbol(str(ci))
         for name in getattr(self, "derived_parameters", {}):
@@ -897,10 +930,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
         for p in getattr(self, "parameters", {}).values():
             scope[str(p.name)] = Symbol(str(p.name))
 
-        # Coupling terms (only those explicitly defined in the model)
-        for ct in getattr(self, "coupling_terms", {}).keys():
-            scope[str(ct)] = Symbol(str(ct))
-
         # Coupling inputs (named inputs from coupling function)
         for ci in getattr(self, "coupling_inputs", {}).keys():
             scope[str(ci)] = Symbol(str(ci))
@@ -936,8 +965,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Normalize dv.cases → dv.equation.conditionals (dv.cases is deprecated)
         _normalize_conditionals(self)
 
-        # Pre-compute coupling term symbols for fast set intersection
-        coupling_symbols = set(symbols(list(self.coupling_terms.keys())))
+        # Migrate coupling_terms → coupling_inputs (coupling_terms is deprecated)
+        _migrate_coupling_terms(self)
+
+        # Pre-compute coupling input symbols for fast set intersection
+        coupling_symbols = set(symbols(list(self.coupling_inputs.keys())))
 
         # If any state variable already has coupling_variable=True (from YAML),
         # respect explicit assignments and skip auto-detection
@@ -1227,12 +1259,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return self
 
     # Coupling and Output transforms
-    def add_coupling_term(
-        self, name: str, description: str | None = None, unit: str | None = None
+    def add_coupling_input(
+        self, name: str, description: str | None = None, unit: str | None = None,
+        dimension: int = 1, keys: list[str] | None = None,
     ):
         key = str(name)
-        self.coupling_terms[key] = tvbo_datamodel.Parameter(
-            name=key, description=description, unit=unit
+        if self.coupling_inputs is None:
+            self.coupling_inputs = {}
+        self.coupling_inputs[key] = tvbo_datamodel.CouplingInput(
+            name=key, description=description, dimension=dimension,
+            keys=keys or [],
         )
         # Keep parameters clean: remove any parameter with same name
         if key in self.parameters:
@@ -1248,6 +1284,15 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     self.state_variables[sv_name].coupling_variable = True
 
         return self
+
+    def add_coupling_term(self, name, description=None, unit=None):
+        """Deprecated. Use add_coupling_input() instead."""
+        import warnings
+        warnings.warn(
+            "add_coupling_term() is deprecated. Use add_coupling_input() instead.",
+            DeprecationWarning, stacklevel=2,
+        )
+        return self.add_coupling_input(name=name, description=description)
 
     def add_output(
         self,
@@ -1454,9 +1499,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Substitute parameters and defaults into equations (useful for fixed-point search)
         sub = self.keyed_parameters
         sub.update(kwargs)
-        # Set all coupling terms to 0 for fixed-point analysis
-        for ct in self.coupling_terms.keys():
-            sub[ct] = 0
+        # Set all coupling inputs to 0 for fixed-point analysis
+        for ci in getattr(self, 'coupling_inputs', {}).keys():
+            sub[ci] = 0
         return [eq.subs(sub) for eq in self.get_equations().values()]
 
     def calculate_derived_parameters(self):
@@ -1497,8 +1542,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         symbol_onto_mapping = {}
         onto_symbol_mapping = {}
-        # Coupling terms don't have model-specific suffixes in ontology
-        coupling_term_names = set(self.coupling_terms.keys())
+        # Coupling inputs don't have model-specific suffixes in ontology
+        coupling_term_names = set(getattr(self, 'coupling_inputs', {}).keys())
         for n in G.nodes:
             suffix = (
                 ontology.get_model_suffix(self.ontology or self.name)
@@ -1702,7 +1747,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 ) from e
 
             params = self.keyed_parameters
-            params.update({Symbol(str(cterm)): 0.0 for cterm in self.coupling_terms})
+            params.update({Symbol(str(ci)): 0.0 for ci in getattr(self, 'coupling_inputs', {})})
             params.update({Symbol("local_coupling"): 0.0})
 
             scope = self.get_symbolic_elements()
@@ -1906,7 +1951,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             )
             # Base derivative from ontology
             base_expr = str(equations.sympify_value(deriv)).replace("**", "^")
-            # Do not inject extra inputs here; global coupling is represented via coupling_terms (e.g., c_pop0)
+            # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_pop0)
 
             local_ct.dynamics.add(
                 lems.TimeDerivative(

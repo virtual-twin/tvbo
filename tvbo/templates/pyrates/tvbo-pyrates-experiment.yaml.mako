@@ -133,7 +133,8 @@ if is_network:
                     src_var = list(src_dyn.state_variables.keys())[0]
                 else:
                     src_var = "x"
-                tgt_var = list(tgt_dyn.coupling_terms.keys())[0] if tgt_dyn and tgt_dyn.coupling_terms else src_var
+                _tgt_ci = getattr(tgt_dyn, 'coupling_inputs', None) or getattr(tgt_dyn, 'coupling_terms', None) or {}
+                tgt_var = list(_tgt_ci.keys())[0] if tgt_dyn and _tgt_ci else src_var
 
                 edges.append({
                     'src': src_label,
@@ -182,7 +183,8 @@ if is_network:
                 src_var = list(src_m.state_variables.keys())[0]
             else:
                 src_var = "x"
-            tgt_var = list(tgt_m.coupling_terms.keys())[0] if tgt_m and tgt_m.coupling_terms else src_var
+            _tgt_ci2 = getattr(tgt_m, 'coupling_inputs', None) or getattr(tgt_m, 'coupling_terms', None) or {}
+            tgt_var = list(_tgt_ci2.keys())[0] if tgt_m and _tgt_ci2 else src_var
 
             edges.append({
                 'src': src,
@@ -224,8 +226,9 @@ if is_network:
             if base_model:
                 if base_model.state_variables:
                     src_var = list(base_model.state_variables.keys())[0]
-                if base_model.coupling_terms:
-                    tgt_var = list(base_model.coupling_terms.keys())[0]
+                _base_ci = getattr(base_model, 'coupling_inputs', None) or getattr(base_model, 'coupling_terms', None) or {}
+                if _base_ci:
+                    tgt_var = list(_base_ci.keys())[0]
 
             for i in range(n_nodes):
                 for j in range(n_nodes):
