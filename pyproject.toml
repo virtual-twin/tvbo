@@ -127,6 +127,15 @@ dependencies = [
 [tool.pytest.ini_options]
 addopts = "-n auto --dist=loadscope"
 markers = [
+    "backend_core: core backend-agnostic simulation tests",
+    "backend_jax: JAX backend tests",
+    "backend_tvb: TVB backend tests",
+    "backend_pyrates: PyRates backend tests",
+    "backend_tvboptim: tvboptim backend tests",
+    "backend_julia: Julia-backed simulation tests (class-level)",
+    "backend_julia_diffeq: DifferentialEquations.jl backend tests",
+    "backend_networkdynamics: NetworkDynamics.jl backend tests",
+    "backend_mtk: ModelingToolkit.jl backend tests",
     "docs: mark test as documentation test (tests that execute .qmd notebooks)",
     "julia: mark test as requiring a Julia runtime via juliacall",
 ]
