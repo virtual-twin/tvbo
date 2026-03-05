@@ -154,7 +154,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
     def get_initial_positions(self) -> np.ndarray:
         """Extract initial (x, y, …) positions for ALL nodes from YAML.
 
-        For free (dynamic) nodes: positions come from ``initial_state``
+        For free (dynamic) nodes: positions come from per-node ``state``
+        overrides (legacy ``initial_state`` arrays are also supported),
         at the indices marked ``coupling_variable=True``.
         For static (fixed) nodes: positions come from node parameter
         values (in parameter-definition order).
@@ -186,13 +187,31 @@ class NetworkDynamicsAdapter(BaseAdapter):
                         float(v) for v in vals[:n_cv]
                     ]
             else:
-                # Dynamic node: positions from initial_state at cv indices
-                init = getattr(node, 'initial_state', None)
-                if init:
-                    init_vals = [float(v) for v in init]
-                    for j, idx in enumerate(cv_indices):
-                        if idx < len(init_vals):
-                            positions[node.id, j] = init_vals[idx]
+                # Dynamic node: positions from per-node state at cv indices
+                node_state = getattr(node, 'state', None)
+                init_vals = []
+                if node_state:
+                    state_values = node_state.values() if isinstance(node_state, dict) else node_state
+                    state_map = {}
+                    for state_entry in state_values:
+                        if isinstance(state_entry, dict):
+                            sv_name = state_entry.get('name')
+                            sv_value = state_entry.get('value')
+                        else:
+                            sv_name = getattr(state_entry, 'name', None)
+                            sv_value = getattr(state_entry, 'value', None)
+                        if sv_name is not None and sv_value is not None:
+                            state_map[str(sv_name)] = float(sv_value)
+                    init_vals = [state_map.get(name, None) for name in sv_names]
+
+                if not init_vals:
+                    legacy_init = getattr(node, 'initial_state', None)
+                    if legacy_init:
+                        init_vals = [float(v) for v in legacy_init]
+
+                for j, idx in enumerate(cv_indices):
+                    if idx < len(init_vals) and init_vals[idx] is not None:
+                        positions[node.id, j] = init_vals[idx]
         return positions
 
     def get_fixed_nodes(self) -> set[int]:

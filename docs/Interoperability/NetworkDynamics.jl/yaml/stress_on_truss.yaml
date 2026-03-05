@@ -141,10 +141,26 @@ network:
                 value: 0.0
         - id: 1
           label: "Bottom 2"
-          initial_state: [0.0, 0.0, 1.0, 0.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 1.0
+              y:
+                  value: 0.0
         - id: 2
           label: "Bottom 3"
-          initial_state: [0.0, 0.0, 2.0, 0.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 2.0
+              y:
+                  value: 0.0
         - id: 3
           label: "Bottom-right support"
           dynamics: FixedVertex
@@ -155,27 +171,83 @@ network:
                 value: 0.0
         - id: 4
           label: "Bottom 5"
-          initial_state: [0.0, 0.0, 4.0, 0.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 4.0
+              y:
+                  value: 0.0
         # Top row (nodes 6-10, indices 5-9)
         - id: 5
           label: "Top 1"
-          initial_state: [0.0, 0.0, 1.2, 1.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 1.2
+              y:
+                  value: 1.0
         - id: 6
           label: "Top 2"
-          initial_state: [0.0, 0.0, 2.2, 1.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 2.2
+              y:
+                  value: 1.0
         - id: 7
           label: "Top 3"
-          initial_state: [0.0, 0.0, 3.2, 1.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 3.2
+              y:
+                  value: 1.0
         - id: 8
           label: "Top 4"
-          initial_state: [0.0, 0.0, 4.2, 1.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 4.2
+              y:
+                  value: 1.0
         - id: 9
           label: "Top 5"
-          initial_state: [0.0, 0.0, 5.2, 1.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 5.2
+              y:
+                  value: 1.0
         # Hanging mass (node 11, index 10)
         - id: 10
           label: "Hanging mass"
-          initial_state: [0.0, 0.0, 6.0, -1.0]
+          state:
+              vx:
+                  value: 0.0
+              vy:
+                  value: 0.0
+              x:
+                  value: 6.0
+              y:
+                  value: -1.0
           parameters:
               - name: M
                 value: 200.0

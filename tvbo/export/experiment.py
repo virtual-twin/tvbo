@@ -396,13 +396,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def from_file(cls, filepath: str):
-        from linkml_runtime.loaders import yaml_loader
         from pathlib import Path
+        from linkml_runtime.loaders import yaml_loader
+        import yaml
 
         # Store source file path BEFORE loading so __init__ can use it
         cls._pending_source_file = str(Path(filepath).resolve())
         try:
-            exp = yaml_loader.load(filepath, target_class=cls)
+            with open(filepath) as file_handle:
+                data_as_dict = yaml.safe_load(file_handle) or {}
+            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
             exp._source_file = cls._pending_source_file
         finally:
             cls._pending_source_file = None
@@ -437,8 +440,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ... ''')
         """
         from linkml_runtime.loaders import yaml_loader
+        import yaml
 
-        return yaml_loader.loads(yaml_string, target_class=cls)
+        data_as_dict = yaml.safe_load(yaml_string) or {}
+        return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
 
     @classmethod
     def from_bids(
