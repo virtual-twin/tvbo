@@ -53,18 +53,8 @@ incoming_states = list(getattr(coupling, 'incoming_states', None) or [])
 local_states = list(getattr(coupling, 'local_states', None) or [])
 
 # Extract state variable bounds (for BoundedSolver)
-state_bounds_lo = []
-state_bounds_hi = []
-for sv_name, sv in model.state_variables.items():
-    lo, hi = None, None
-    if hasattr(sv, 'domain') and sv.domain:
-        lo = getattr(sv.domain, 'lo', None)
-        hi = getattr(sv.domain, 'hi', None)
-    state_bounds_lo.append(float(lo) if lo is not None else float('-inf'))
-    state_bounds_hi.append(float(hi) if hi is not None else float('inf'))
-
-# Check if any state has finite bounds (needs BoundedSolver)
-has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
+from tvbo.templates.tvboptim.utils import get_state_bounds
+state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 
 # Integration metadata
 SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}

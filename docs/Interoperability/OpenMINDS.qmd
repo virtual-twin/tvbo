@@ -141,7 +141,7 @@ Markdown(experiment.generate_report())
 ```
 
 ```{python}
-experiment.run().plot()
+experiment.run().integration.plot()
 ```
 
 ## Export to OpenMINDS JSON-LD
@@ -159,7 +159,7 @@ print(json.dumps(jsonld, indent=2, default=str)[:1500])
 
 ```{python}
 reconstructed = SimulationExperiment.from_openminds(jsonld)
-reconstructed.run().plot()
+reconstructed.run().integration.plot()
 ```
 
 ## Convert Back to YAML

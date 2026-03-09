@@ -22,7 +22,7 @@ res_det = exp_det.run()
 exp_noise = SimulationExperiment(dynamics=model)
 exp_noise.integration.duration = 500
 exp_noise.integration.noise = Noise(
-    **{"noise_type": "gaussian", "parameters": {"nsig": {"value": 0.01}}}
+    **{"noise_type": "gaussian", "parameters": {"sigma": {"value": 0.01}}}
 )
 res_noise = exp_noise.run()
 ```
@@ -34,7 +34,9 @@ fig, axes = plt.subplots(1, 2, figsize=(10, 3), sharey=True)
 axes[0].plot(res_det.integration.time, res_det.integration.data[:, 0, 0], lw=0.5)
 axes[0].set_title("Deterministic")
 axes[1].plot(res_noise.integration.time, res_noise.integration.data[:, 0, 0], lw=0.5)
-axes[1].set_title("With noise (σ=0.01)")
+axes[1].set_title(
+    f"With noise ({exp_noise.integration.noise.parameters['sigma'].name} =  {exp_noise.integration.noise.parameters['sigma'].value})"
+)
 for ax in axes:
     ax.set_xlabel("Time (ms)")
 plt.tight_layout()
