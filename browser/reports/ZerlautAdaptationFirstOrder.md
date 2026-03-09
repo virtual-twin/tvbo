@@ -198,6 +198,6 @@ $$
 
 
 ## References
-Citation key 'diVolo2019' not found.
-
 Citation key 'Zerlaut2018' not found.
+
+Citation key 'diVolo2019' not found.

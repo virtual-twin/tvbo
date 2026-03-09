@@ -216,18 +216,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
+<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
 <td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
 <td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
+<td>Adjacency matrix of a network</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -251,7 +256,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>Domain Of</td>
-<td><a href="../../datamodel/classes/Parameter.html">Parameter</a>, <a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td><a href="../../datamodel/classes/Matrix.html">Matrix</a>, <a href="../../datamodel/classes/Parameter.html">Parameter</a>, <a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
 </tr>
 </tbody>
 </table>
@@ -300,9 +305,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> shape</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">alias</span><span class="kw">:</span><span class="at"> shape</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Parameter</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> NDArray</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Matrix</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Parameter</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> NDArray</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 

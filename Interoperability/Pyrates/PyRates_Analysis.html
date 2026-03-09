@@ -563,7 +563,7 @@ window.Quarto = {
 </section>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="7139650e" class="cell" data-execution_count="1">
+<div id="7139650e" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -577,7 +577,7 @@ window.Quarto = {
 <p>Explore how the damping parameter μ affects oscillation behavior.</p>
 <section id="define-model-in-tvbo" class="level3">
 <h3 class="anchored">Define Model in TVBO</h3>
-<div id="73172db0" class="cell" data-execution_count="2">
+<div id="73172db0" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -630,7 +630,7 @@ window.Quarto = {
 </section>
 <section id="export-to-pyrates" class="level3">
 <h3 class="anchored" data-anchor-id="export-to-pyrates">Export to PyRates</h3>
-<div id="8c2337ea" class="cell" data-execution_count="3">
+<div id="8c2337ea" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create module directory</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_sweep_vdp'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_sweep_vdp/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
@@ -647,7 +647,7 @@ window.Quarto = {
 </section>
 <section id="run-parameter-sweep" class="level3">
 <h3 class="anchored" data-anchor-id="run-parameter-sweep">Run Parameter Sweep</h3>
-<div id="0547a243" class="cell" data-execution_count="4">
+<div id="0547a243" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameter grid</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>mu_values <span class="op">=</span> [<span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>, <span class="fl">5.0</span>, <span class="fl">10.0</span>]</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>param_grid <span class="op">=</span> {<span class="st">'mu'</span>: mu_values}</span>
@@ -710,7 +710,7 @@ VdP_circuit_5  10.0</code></pre>
 </section>
 <section id="visualize-results" class="level3">
 <h3 class="anchored" data-anchor-id="visualize-results">Visualize Results</h3>
-<div id="d890bc02" class="cell" data-execution_count="5">
+<div id="d890bc02" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time series for different μ values</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
@@ -750,7 +750,7 @@ VdP_circuit_5  10.0</code></pre>
 </section>
 <section id="phase-space-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="phase-space-analysis">Phase Space Analysis</h3>
-<div id="9a978b12" class="cell" data-execution_count="6">
+<div id="9a978b12" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Phase portraits for different μ values</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
@@ -794,7 +794,7 @@ VdP_circuit_5  10.0</code></pre>
 <p>Explore two parameters simultaneously.</p>
 <section id="define-fitzhugh-nagumo-model" class="level3">
 <h3 class="anchored">Define FitzHugh-Nagumo Model</h3>
-<div id="8f9105e9" class="cell" data-execution_count="7">
+<div id="8f9105e9" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -900,7 +900,7 @@ def FHN(
 <section id="d-grid-search-via-sequential-sweeps" class="level3">
 <h3 class="anchored" data-anchor-id="d-grid-search-via-sequential-sweeps">2D Grid Search via Sequential Sweeps</h3>
 <p>PyRates <code>grid_search</code> performs 1D sweeps efficiently. For 2D parameter exploration, we run sequential sweeps, varying one parameter while fixing the other.</p>
-<div id="be52ffdd" class="cell" data-execution_count="8">
+<div id="be52ffdd" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export model</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_sweep_fhn'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_sweep_fhn/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
@@ -1054,7 +1054,7 @@ Simulation Progress
 </section>
 <section id="amplitude-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="amplitude-analysis">Amplitude Analysis</h3>
-<div id="2114ad60" class="cell" data-execution_count="9">
+<div id="2114ad60" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot heatmap</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> ax.imshow(amplitudes, origin<span class="op">=</span><span class="st">'lower'</span>, aspect<span class="op">=</span><span class="st">'auto'</span>,</span>
@@ -1084,7 +1084,7 @@ Simulation Progress
 <p>Detect qualitative changes in dynamics across parameter range.</p>
 <section id="qif-neural-mass-model" class="level3">
 <h3 class="anchored">QIF Neural Mass Model</h3>
-<div id="0a0f3e79" class="cell" data-execution_count="10">
+<div id="0a0f3e79" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1158,7 +1158,7 @@ Simulation Progress
 </section>
 <section id="sweep-over-η-background-drive" class="level3">
 <h3 class="anchored" data-anchor-id="sweep-over-η-background-drive">Sweep Over η (Background Drive)</h3>
-<div id="b0c67ef5" class="cell" data-execution_count="11">
+<div id="b0c67ef5" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_sweep_qif'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_sweep_qif/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
@@ -1215,7 +1215,7 @@ Sweep complete! Results shape: (5000, 30)</code></pre>
 </section>
 <section id="bifurcation-like-diagram" class="level3">
 <h3 class="anchored" data-anchor-id="bifurcation-like-diagram">Bifurcation-like Diagram</h3>
-<div id="57553688" class="cell" data-execution_count="12">
+<div id="57553688" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Get all r columns</span></span>

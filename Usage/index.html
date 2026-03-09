@@ -147,7 +147,7 @@ ul.task-list li input[type="checkbox"] {
   </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="sidebar-menu-container"> 
@@ -175,7 +175,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../Usage/DefineNetworks.qmd" class="sidebar-item-text sidebar-link">
+  <a href="../Usage/Network.qmd" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Defining Networks</span></a>
   </div>
 </li>
@@ -190,12 +190,29 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
- <span class="menu-text">Observation &amp; Analysis</span></a>
+ <span class="menu-text">Code Generation &amp; Export</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/CodeGeneration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Code Generation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Observation &amp; Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/ObservationModels.html" class="sidebar-item-text sidebar-link">
@@ -230,13 +247,13 @@ ul.task-list li input[type="checkbox"] {
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
  <span class="menu-text">Simulation Features</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/Events.html" class="sidebar-item-text sidebar-link">
@@ -249,23 +266,17 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Noise &amp; Stochastic Integration</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../Usage/CodeGeneration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Code Generation &amp; Export</span></a>
-  </div>
-</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
  <span class="menu-text">Advanced</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -297,20 +308,11 @@ ul.task-list li input[type="checkbox"] {
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#fundamentals" id="toc-fundamentals" class="nav-link active" data-scroll-target="#fundamentals">Fundamentals</a></li>
-  <li><a href="#observation-analysis" id="toc-observation-analysis" class="nav-link" data-scroll-target="#observation-analysis">Observation &amp; Analysis</a></li>
-  <li><a href="#simulation-features" id="toc-simulation-features" class="nav-link" data-scroll-target="#simulation-features">Simulation Features</a></li>
-  <li><a href="#advanced" id="toc-advanced" class="nav-link" data-scroll-target="#advanced">Advanced</a></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
+<main class="content column-page-right" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -319,7 +321,7 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<div class="quarto-title-meta">
+<div class="quarto-title-meta column-page-right">
 
     
   
@@ -332,120 +334,343 @@ ul.task-list li input[type="checkbox"] {
 
 
 <p>Learn how to use TVBO for defining, simulating, and analyzing brain network models.</p>
-<section id="fundamentals" class="level2">
-<h2 class="anchored" data-anchor-id="fundamentals">Fundamentals</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Guide</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="../Usage/DefineDynamicalSystem.html">Defining Dynamical Systems</a></td>
-<td>Create neural mass models from YAML, Python, or the ontology</td>
-</tr>
-<tr class="even">
-<td><a href="DefineNetworks.qmd">Defining Networks</a></td>
-<td>Build brain networks from matrices, YAML, connectome databases, or BIDS</td>
-</tr>
-<tr class="odd">
-<td><a href="../Usage/SimulationExperiments.html">Simulation Experiments</a></td>
-<td>Combine components, run on multiple backends, inspect results</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="observation-analysis" class="level2">
-<h2 class="anchored" data-anchor-id="observation-analysis">Observation &amp; Analysis</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Guide</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="../Usage/ObservationModels.html">Observation Models</a></td>
-<td>BOLD, FC, PSD — define what to measure from simulations</td>
-</tr>
-<tr class="even">
-<td><a href="../Usage/ParameterExploration.html">Parameter Exploration</a></td>
-<td>Systematic parameter sweeps and grid search</td>
-</tr>
-<tr class="odd">
-<td><a href="../Usage/ModelFitting.html">Model Fitting</a></td>
-<td>Loss functions and gradient-based optimization</td>
-</tr>
-<tr class="even">
-<td><a href="Algorithms.qmd">Algorithms</a></td>
-<td>Built-in tuning algorithms (FIC, EIB)</td>
-</tr>
-<tr class="odd">
-<td><a href="../Usage/BifurcationAnalysis.html">Bifurcation Analysis</a></td>
-<td>Stability analysis and bifurcation diagrams</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="simulation-features" class="level2">
-<h2 class="anchored" data-anchor-id="simulation-features">Simulation Features</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Guide</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="../Usage/Events.html">Events &amp; Stimulation</a></td>
-<td>External stimuli, per-region input, time-varying parameters</td>
-</tr>
-<tr class="even">
-<td><a href="../Usage/Noise.html">Noise &amp; Stochastic Integration</a></td>
-<td>Additive and multiplicative noise, Ornstein-Uhlenbeck processes</td>
-</tr>
-<tr class="odd">
-<td><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></td>
-<td>Generate standalone code, export to YAML/BIDS/NeuroML/OpenMINDS</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="advanced" class="level2">
-<h2 class="anchored" data-anchor-id="advanced">Advanced</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Guide</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="../Usage/PDESimulation.html">PDE Simulation</a></td>
-<td>Surface-based PDE solving with finite elements (scikit-fem)</td>
-</tr>
-<tr class="even">
-<td><a href="../Usage/HeterogeneousNodes.html">Heterogeneous Node Dynamics</a></td>
-<td>Different dynamics per network node</td>
-</tr>
-<tr class="odd">
-<td><a href="../Usage/HeterogeneousEdges.html">Heterogeneous Edge Dynamics</a></td>
-<td>Synaptic plasticity and edge-level dynamics</td>
-</tr>
-<tr class="even">
-<td><a href="../Usage/UnitValidation.html">Unit-Aware Computations</a></td>
-<td>Physical units across simulation components</td>
-</tr>
-</tbody>
-</table>
+<style>
+.usage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.usage-filters button {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid #aaa;
+  border-radius: 2rem;
+  background: #f8f8f8;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+.usage-filters button.active,
+.usage-filters button:hover {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2.5rem;
+}
+.usage-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.usage-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.usage-card a { text-decoration: none; color: inherit; }
+.usage-card .card-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  object-position: center;
+  background: #f0f0f0;
+  display: block;
+}
+.usage-card .card-img-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  color: #fff;
+}
+.usage-card .card-body {
+  padding: 0.8rem 1rem;
+  flex: 1;
+}
+.usage-card .card-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+.usage-card .card-desc {
+  font-size: 0.82rem;
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+.usage-card .card-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.usage-card .cat-tag {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  background: #eef0f8;
+  color: #444;
+  cursor: pointer;
+}
+.usage-card.hidden { display: none; }
+.section-header {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2rem 0 0.8rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+</style>
+
+<div class="usage-filters" id="usage-filters">
+  <button class="active" data-cat="all">All</button>
+</div>
+
+<div id="usage-gallery"></div>
+
+<script>
+const PAGES = [
+  // ── Fundamentals ──
+  { title: "Defining Dynamical Systems",
+    href: "DefineDynamicalSystem.html",
+    desc: "Create neural mass models from YAML, Python, or the ontology.",
+    cats: ["fundamentals","dynamics","YAML"],
+    icon: "fa-solid fa-wave-square",
+    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    img: "" },
+  { title: "Defining Networks",
+    href: "Network.html",
+    desc: "Build brain networks from matrices, YAML, connectome databases, or BIDS.",
+    cats: ["fundamentals","networks","connectome"],
+    icon: "fa-solid fa-diagram-project",
+    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    img: "" },
+  { title: "Simulation Experiments",
+    href: "SimulationExperiments.html",
+    desc: "Combine components, run on multiple backends, and inspect results.",
+    cats: ["fundamentals","simulation","backends"],
+    icon: "fa-solid fa-flask",
+    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    img: "" },
+
+  // ── Code Generation ──
+  { title: "Code Generation & Export",
+    href: "CodeGeneration.html",
+    desc: "Generate standalone simulation code in JAX, Python, Julia, CUDA, and export to YAML/BIDS/OpenMINDS.",
+    cats: ["codegen","JAX","Julia","export"],
+    icon: "fa-solid fa-code",
+    gradient: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+    img: "" },
+
+  // ── Observation & Analysis ──
+  { title: "Observation Models",
+    href: "ObservationModels.html",
+    desc: "BOLD, FC, PSD — define what to measure from simulations.",
+    cats: ["analysis","observation","BOLD"],
+    icon: "fa-solid fa-eye",
+    gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+    img: "" },
+  { title: "Parameter Exploration",
+    href: "ParameterExploration.html",
+    desc: "Systematic parameter sweeps and grid search across state spaces.",
+    cats: ["analysis","optimization","sweeps"],
+    icon: "fa-solid fa-magnifying-glass-chart",
+    gradient: "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)",
+    img: "" },
+  { title: "Model Fitting",
+    href: "ModelFitting.html",
+    desc: "Loss functions and gradient-based optimization for empirical data.",
+    cats: ["analysis","optimization","fitting"],
+    icon: "fa-solid fa-chart-line",
+    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    img: "" },
+  { title: "Algorithms",
+    href: "Algorithms.html",
+    desc: "Built-in tuning algorithms (FIC, EIB) for balanced network states.",
+    cats: ["analysis","algorithms","FIC"],
+    icon: "fa-solid fa-gears",
+    gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    img: "" },
+  { title: "Bifurcation Analysis",
+    href: "BifurcationAnalysis.html",
+    desc: "Stability analysis and bifurcation diagrams for dynamical systems.",
+    cats: ["analysis","bifurcation","stability"],
+    icon: "fa-solid fa-code-branch",
+    gradient: "linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)",
+    img: "" },
+
+  // ── Simulation Features ──
+  { title: "Events & Stimulation",
+    href: "Events.html",
+    desc: "External stimuli, per-region input, and time-varying parameters.",
+    cats: ["simulation","stimulation","events"],
+    icon: "fa-solid fa-bolt",
+    gradient: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+    img: "" },
+  { title: "Noise & Stochastic Integration",
+    href: "Noise.html",
+    desc: "Additive and multiplicative noise, Ornstein-Uhlenbeck processes.",
+    cats: ["simulation","noise","stochastic"],
+    icon: "fa-solid fa-shuffle",
+    gradient: "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
+    img: "" },
+
+  // ── Advanced ──
+  { title: "PDE Simulation",
+    href: "PDESimulation.html",
+    desc: "Surface-based PDE solving with finite elements (scikit-fem).",
+    cats: ["advanced","PDE","surface"],
+    icon: "fa-solid fa-border-all",
+    gradient: "linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)",
+    img: "" },
+  { title: "Heterogeneous Node Dynamics",
+    href: "HeterogeneousNodes.html",
+    desc: "Different dynamics at each network node for multi-population models.",
+    cats: ["advanced","heterogeneous","networks"],
+    icon: "fa-solid fa-circle-nodes",
+    gradient: "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
+    img: "" },
+  { title: "Heterogeneous Edge Dynamics",
+    href: "HeterogeneousEdges.html",
+    desc: "Synaptic plasticity and edge-level dynamics on network connections.",
+    cats: ["advanced","heterogeneous","plasticity"],
+    icon: "fa-solid fa-arrow-right-arrow-left",
+    gradient: "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
+    img: "" },
+  { title: "Unit-Aware Computations",
+    href: "UnitValidation.html",
+    desc: "Physical units across simulation components for dimensionally consistent models.",
+    cats: ["advanced","units","validation"],
+    icon: "fa-solid fa-ruler-combined",
+    gradient: "linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)",
+    img: "" },
+];
+
+// ── build filter buttons ──
+const allCats = [...new Set(PAGES.flatMap(p => p.cats))].sort();
+const filterBar = document.getElementById('usage-filters');
+allCats.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.textContent = cat;
+  btn.dataset.cat = cat;
+  btn.addEventListener('click', () => setFilter(cat));
+  filterBar.appendChild(btn);
+});
+
+// ── build gallery sections ──
+const sections = [
+  { label: "Fundamentals",          cats: new Set(["fundamentals"]) },
+  { label: "Code Generation",       cats: new Set(["codegen"]) },
+  { label: "Observation & Analysis", cats: new Set(["analysis","observation","optimization","bifurcation","algorithms"]) },
+  { label: "Simulation Features",   cats: new Set(["simulation","stimulation","noise","stochastic","events"]) },
+  { label: "Advanced",              cats: new Set(["advanced"]) },
+];
+
+const gallery = document.getElementById('usage-gallery');
+
+sections.forEach(sec => {
+  const pages = PAGES.filter(p => p.cats.some(c => sec.cats.has(c)));
+  if (!pages.length) return;
+
+  const h = document.createElement('div');
+  h.className = 'section-header';
+  h.textContent = sec.label;
+  h.dataset.section = sec.label;
+  gallery.appendChild(h);
+
+  const grid = document.createElement('div');
+  grid.className = 'usage-grid';
+  grid.dataset.section = sec.label;
+  gallery.appendChild(grid);
+
+  pages.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'usage-card';
+    card.dataset.cats = JSON.stringify(p.cats);
+
+    // image or icon placeholder
+    const imgWrap = document.createElement('a');
+    imgWrap.href = p.href;
+
+    if (p.img) {
+      const img = document.createElement('img');
+      img.className = 'card-img';
+      img.loading = 'lazy';
+      img.alt = p.title;
+      img.src = p.img;
+      img.onerror = function () { makePlaceholder(this, p); };
+      imgWrap.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'card-img-placeholder';
+      ph.style.background = p.gradient;
+      ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+      imgWrap.appendChild(ph);
+    }
+    card.appendChild(imgWrap);
+
+    // body
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    const title = document.createElement('a');
+    title.href = p.href;
+    title.innerHTML = `<div class="card-title">${p.title}</div>`;
+    body.appendChild(title);
+    const desc = document.createElement('div');
+    desc.className = 'card-desc';
+    desc.textContent = p.desc;
+    body.appendChild(desc);
+    const cats = document.createElement('div');
+    cats.className = 'card-cats';
+    p.cats.forEach(c => {
+      const tag = document.createElement('span');
+      tag.className = 'cat-tag';
+      tag.textContent = c;
+      tag.addEventListener('click', () => setFilter(c));
+      cats.appendChild(tag);
+    });
+    body.appendChild(cats);
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+});
+
+function makePlaceholder(el, p) {
+  const ph = document.createElement('div');
+  ph.className = 'card-img-placeholder';
+  ph.style.background = p.gradient;
+  ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+  el.replaceWith(ph);
+}
+
+// ── filter logic ──
+let activeFilter = 'all';
+
+function setFilter(cat) {
+  activeFilter = cat;
+  document.querySelectorAll('.usage-filters button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  document.querySelectorAll('.usage-card').forEach(card => {
+    const cardCats = JSON.parse(card.dataset.cats);
+    card.classList.toggle('hidden', cat !== 'all' && !cardCats.includes(cat));
+  });
+  document.querySelectorAll('.section-header').forEach(h => {
+    const grid = h.nextElementSibling;
+    const visible = [...grid.querySelectorAll('.usage-card')].some(c => !c.classList.contains('hidden'));
+    h.style.display = visible ? '' : 'none';
+    grid.style.display = visible ? '' : 'none';
+  });
+}
+</script>
 
 
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -847,7 +1072,7 @@ ul.task-list li input[type="checkbox"] {
     }
   });
   </script>
-<nav class="page-navigation">
+<nav class="page-navigation column-page-right">
   <div class="nav-page nav-page-previous">
   </div>
   <div class="nav-page nav-page-next">
@@ -864,7 +1089,7 @@ ul.task-list li input[type="checkbox"] {
     </div>   
     <div class="nav-footer-center">
 <p>© 2025 Charité - Universitätsmedizin Berlin</p>
-<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item compact">

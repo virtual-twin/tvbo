@@ -530,7 +530,7 @@ window.Quarto = {
 
 
 <p>In this tutorial, you will learn how to perform a 1D numerical parameter continuation with automatic fold bifurcation detection using TVBO for model specification and PyRates/PyCoBi for the continuation analysis.</p>
-<div id="08d425eb" class="cell" data-execution_count="1">
+<div id="08d425eb" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -637,7 +637,7 @@ window.Quarto = {
 </section>
 </section>
 </div>
-<div id="2cdb0c9e" class="cell" data-execution_count="2">
+<div id="2cdb0c9e" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export to PyRates YAML format</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_qif_model'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_qif_model/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
@@ -652,7 +652,7 @@ window.Quarto = {
 <section id="step-2-generate-fortran-routines-for-auto-07p" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-generate-fortran-routines-for-auto-07p">Step 2: Generate Fortran Routines for AUTO-07p</h3>
 <p>Next, we translate the model into a Fortran file containing all subroutines required by AUTO-07p. This requires using the Fortran backend of PyRates with <code>vectorize=False</code>:</p>
-<div id="2cb14e19" class="cell" data-execution_count="3">
+<div id="2cb14e19" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the TVBO-exported model into PyRates</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>qif <span class="op">=</span> CircuitTemplate.from_yaml(<span class="st">"_qif_model.qif.QIF_circuit"</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -699,7 +699,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Calling <code>get_run_func</code> with <code>auto=True</code> creates two files. The first is a <code>.f90</code> file containing the Fortran subroutines:</p>
-<div id="49ba723d" class="cell" data-execution_count="4">
+<div id="49ba723d" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="bu">open</span>(<span class="st">'qif.f90'</span>, <span class="st">'r'</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f.read())</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>f.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -789,7 +789,7 @@ end subroutine pvls
 </div>
 </div>
 <p>The second file contains the AUTO-07p parameters that determine how it performs parameter continuations:</p>
-<div id="2b3a6575" class="cell" data-execution_count="5">
+<div id="2b3a6575" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="bu">open</span>(<span class="st">'c.ivp'</span>, <span class="st">'r'</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f.read())</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>f.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -834,7 +834,7 @@ STOP = {}</code></pre>
 <section id="step-3-generate-a-pycobi-instance" class="level3">
 <h3 class="anchored" data-anchor-id="step-3-generate-a-pycobi-instance">Step 3: Generate a PyCoBi Instance</h3>
 <p>Now that the model equations are compiled, we generate an instance of <code>pycobi.ODESystem</code>, which provides an interface to AUTO-07p:</p>
-<div id="cb91a667" class="cell" data-execution_count="6">
+<div id="cb91a667" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>qif_auto <span class="op">=</span> ODESystem(eq_file<span class="op">=</span><span class="st">"qif"</span>, working_dir<span class="op">=</span><span class="va">None</span>, init_cont<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -852,7 +852,7 @@ This is probably because Tkinter is not enabled in your Python installation.
 <section id="step-1-time-continuation" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-time-continuation">Step 1: Time Continuation</h3>
 <p>In parameter continuations, we must start from an equilibrium or periodic orbit. We run a time continuation to let the system converge to an equilibrium:</p>
-<div id="8eb9b4eb" class="cell" data-execution_count="7">
+<div id="8eb9b4eb" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time continuation: integrate until system converges to equilibrium</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>t_sols, t_cont <span class="op">=</span> qif_auto.run(</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    c<span class="op">=</span><span class="st">'ivp'</span>, name<span class="op">=</span><span class="st">'time'</span>,</span>
@@ -930,7 +930,7 @@ qif ... done</code></pre>
 <section id="step-2-continuation-of-bareta" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-continuation-of-bareta">Step 2: Continuation of <span class="math inline">\(\bar\eta\)</span></h3>
 <p>Now we perform the parameter continuation in <span class="math inline">\(\bar\eta\)</span>:</p>
-<div id="89552416" class="cell" data-execution_count="8">
+<div id="89552416" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter continuation in eta (parameter 4)</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>eta_sols, eta_cont <span class="op">=</span> qif_auto.run(</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    origin<span class="op">=</span>t_cont, starting_point<span class="op">=</span><span class="st">'UZ1'</span>, name<span class="op">=</span><span class="st">'eta'</span>,</span>
@@ -1078,7 +1078,7 @@ Merge done</code></pre>
 <section id="part-3-bifurcation-diagram" class="level2">
 <h2 class="anchored" data-anchor-id="part-3-bifurcation-diagram">Part 3: Bifurcation Diagram</h2>
 <p>We can visualize the full bifurcation diagram:</p>
-<div id="10489a39" class="cell" data-execution_count="9">
+<div id="10489a39" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot bifurcation diagram</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, layout<span class="op">=</span><span class="st">"compressed"</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1113,7 +1113,7 @@ Merge done</code></pre>
 <li><strong>Triangles (LP)</strong>: Fold (limit point) bifurcations</li>
 </ul>
 <p>At a fold bifurcation, the critical eigenvalue of the vector field crosses the imaginary axis (its real part changes sign), indicating a change of stability. A stable and unstable equilibrium approach and annihilate each other.</p>
-<div id="f66abf9e" class="cell" data-execution_count="10">
+<div id="f66abf9e" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up temporary files</span></span>

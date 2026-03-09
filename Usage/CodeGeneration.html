@@ -65,8 +65,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../Usage/PDESimulation.html" rel="next">
-<link href="../Usage/Noise.html" rel="prev">
+<link href="../Usage/ObservationModels.html" rel="next">
+<link href="../Usage/SimulationExperiments.html" rel="prev">
 <link href="../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -205,7 +205,7 @@ window.Quarto = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/Events.html">Simulation Features</a></li><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></li><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -240,7 +240,7 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../Usage/DefineNetworks.qmd" class="sidebar-item-text sidebar-link">
+  <a href="../Usage/Network.qmd" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Defining Networks</span></a>
   </div>
 </li>
@@ -255,12 +255,29 @@ window.Quarto = {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
- <span class="menu-text">Observation &amp; Analysis</span></a>
+ <span class="menu-text">Code Generation &amp; Export</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/CodeGeneration.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Code Generation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Observation &amp; Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/ObservationModels.html" class="sidebar-item-text sidebar-link">
@@ -295,13 +312,13 @@ window.Quarto = {
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
  <span class="menu-text">Simulation Features</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/Events.html" class="sidebar-item-text sidebar-link">
@@ -314,23 +331,17 @@ window.Quarto = {
  <span class="menu-text">Noise &amp; Stochastic Integration</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../Usage/CodeGeneration.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Code Generation &amp; Export</span></a>
-  </div>
-</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
  <span class="menu-text">Advanced</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -392,7 +403,7 @@ window.Quarto = {
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/Events.html">Simulation Features</a></li><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></li><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">Code Generation &amp; Export</h1>
 </div>
@@ -415,7 +426,7 @@ window.Quarto = {
 <section id="code-generation" class="level2">
 <h2 class="anchored" data-anchor-id="code-generation">Code Generation</h2>
 <p>View the generated source code for any backend:</p>
-<div id="e5aec208" class="cell" data-execution_count="1">
+<div id="e5aec208" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Dynamics.from_file(<span class="st">"../../database/models/Generic2dOscillator.yaml"</span>)</span>
@@ -427,7 +438,7 @@ window.Quarto = {
 </div>
 <section id="jax" class="level3">
 <h3 class="anchored" data-anchor-id="jax">JAX</h3>
-<div id="89f0e2b1" class="cell" data-execution_count="2">
+<div id="89f0e2b1" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(exp.render_code(<span class="st">'jax'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -653,7 +664,7 @@ def kernel(state):
 </section>
 <section id="python-scipy" class="level3">
 <h3 class="anchored" data-anchor-id="python-scipy">Python (SciPy)</h3>
-<div id="f713b0de" class="cell" data-execution_count="3">
+<div id="f713b0de" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.render_code(<span class="st">'python'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>import numpy as np
@@ -711,7 +722,7 @@ def Generic2dOscillator(
 </section>
 <section id="julia" class="level3">
 <h3 class="anchored" data-anchor-id="julia">Julia</h3>
-<div id="15e2a1d8" class="cell" data-execution_count="4">
+<div id="15e2a1d8" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.render_code(<span class="st">'julia'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -861,7 +872,7 @@ sol = solve(prob, Tsit5(); saveat=0.01)
 <h2 class="anchored" data-anchor-id="export-formats">Export Formats</h2>
 <section id="yaml" class="level3">
 <h3 class="anchored" data-anchor-id="yaml">YAML</h3>
-<div id="d6358738" class="cell" data-execution_count="5">
+<div id="d6358738" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> exp.to_yaml()</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(yaml_str[:<span class="dv">300</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -895,7 +906,7 @@ model:
 <section id="model-reports" class="level2">
 <h2 class="anchored" data-anchor-id="model-reports">Model Reports</h2>
 <p>Generate formatted documentation of a model:</p>
-<div id="031a20ae" class="cell" data-execution_count="6">
+<div id="031a20ae" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>report <span class="op">=</span> model.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>Markdown(report)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1426,13 +1437,13 @@ model:
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../Usage/Noise.html" class="pagination-link" aria-label="Noise &amp; Stochastic Integration">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Noise &amp; Stochastic Integration</span>
+      <a href="../Usage/SimulationExperiments.html" class="pagination-link" aria-label="Simulation Experiments">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Simulation Experiments</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../Usage/PDESimulation.html" class="pagination-link" aria-label="PDE Simulation">
-        <span class="nav-page-text">PDE Simulation</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../Usage/ObservationModels.html" class="pagination-link" aria-label="Observation Models">
+        <span class="nav-page-text">Observation Models</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

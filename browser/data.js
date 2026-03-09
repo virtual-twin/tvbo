@@ -649,6 +649,10 @@ window.searchData = [
     "slots.source": {
       "range": "string"
     },
+    "slots.dataset_path": {
+      "range": "string",
+      "description": "Dataset path for array-valued parameters. When set, the parameter value is stored in the binary companion file (HDF5 or Zarr) at this path. The value slot is omitted."
+    },
     "enums.ImagingModality": {
       "permissible_values": {
         "BOLD": {
@@ -922,6 +926,19 @@ window.searchData = [
         }
       }
     },
+    "enums.SparseFormat": {
+      "permissible_values": {
+        "dense": {
+          "description": "Dense N×N array with gzip compression"
+        },
+        "csr": {
+          "description": "Compressed Sparse Row (data, indices, indptr)"
+        },
+        "coo": {
+          "description": "Coordinate list (data, row, col)"
+        }
+      }
+    },
     "classes.Range": {
       "description": "Specifies a range for array generation, parameter bounds, or grid exploration.",
       "attributes": {
@@ -1130,14 +1147,6 @@ window.searchData = [
         "label"
       ],
       "attributes": {
-        "region_labels": {
-          "multivalued": true,
-          "range": "string"
-        },
-        "center_coordinates": {
-          "multivalued": true,
-          "range": "float"
-        },
         "data_source": {
           "range": "string"
         },
@@ -1190,6 +1199,21 @@ window.searchData = [
         "values": {
           "multivalued": true,
           "range": "float"
+        },
+        "format": {
+          "range": "SparseFormat",
+          "ifabsent": "string(dense)",
+          "description": "Storage format in binary companion (dense, csr, coo)"
+        },
+        "shape": {
+          "multivalued": true,
+          "range": "integer",
+          "description": "Matrix dimensions [N, M]"
+        },
+        "dtype": {
+          "range": "string",
+          "ifabsent": "string(float32)",
+          "description": "Data type for matrix values"
         }
       },
       "description": "Adjacency matrix of a network.",
@@ -1208,6 +1232,27 @@ window.searchData = [
         }
       }
     },
+    "classes.Provenance": {
+      "class_uri": "prov:Entity",
+      "description": "W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).",
+      "slots": [
+        "derived_from",
+        "references"
+      ],
+      "attributes": {
+        "date_created": {
+          "range": "string",
+          "description": "ISO 8601 (prov:generatedAtTime)"
+        },
+        "license": {
+          "range": "string"
+        },
+        "generated_by": {
+          "range": "string",
+          "description": "Software/agent identifier (prov:wasGeneratedBy)"
+        }
+      }
+    },
     "classes.Network": {
       "class_uri": "tvbo:Network",
       "aliases": [
@@ -1218,7 +1263,8 @@ window.searchData = [
       "description": "Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility).",
       "slots": [
         "label",
-        "description"
+        "description",
+        "parameters"
       ],
       "attributes": {
         "nodes": {
@@ -1261,7 +1307,8 @@ window.searchData = [
           "inlined": true
         },
         "tractogram": {
-          "range": "string",
+          "range": "Tractogram",
+          "inlined": true,
           "description": "Reference to tractography data"
         },
         "normalization": {
@@ -1269,15 +1316,9 @@ window.searchData = [
           "description": "Normalization equation for connectivity weights",
           "inlined": true
         },
-        "global_coupling_strength": {
-          "range": "Parameter",
-          "description": "Global scaling factor for all coupling weights",
-          "inlined": true
-        },
-        "conduction_speed": {
-          "range": "Parameter",
-          "description": "Conduction speed for computing delays from distances",
-          "inlined": true
+        "data_file": {
+          "range": "string",
+          "description": "Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix). Null if no companion data needed."
         },
         "descriptor": {
           "range": "string",
@@ -1296,6 +1337,19 @@ window.searchData = [
           "range": "string",
           "multivalued": true,
           "description": "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
+        },
+        "provenance": {
+          "range": "Provenance",
+          "inlined": true,
+          "description": "W3C PROV-O aligned provenance"
+        },
+        "parent_network": {
+          "range": "string",
+          "description": "Path/URI to parent (coarser) Network. When set, this network is a refinement where each node maps to exactly one parent node via node_mapping."
+        },
+        "node_mapping": {
+          "range": "string",
+          "description": "HDF5 dataset path for node-to-parent mapping. Int32 array of shape (N,) where entry i is the parent node ID. Required when parent_network is set."
         },
         "distance_unit": {
           "range": "string",
@@ -1417,8 +1471,9 @@ window.searchData = [
     },
     "classes.Edge": {
       "class_uri": "tvbo:Edge",
-      "description": "A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.",
+      "description": "An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.",
       "slots": [
+        "name",
         "label",
         "description",
         "parameters"
@@ -1426,13 +1481,37 @@ window.searchData = [
       "attributes": {
         "source": {
           "range": "integer",
-          "required": true,
-          "description": "Source node ID"
+          "required": false,
+          "description": "Source node ID (set for explicit edges, absent for template edges)"
         },
         "target": {
           "range": "integer",
-          "required": true,
-          "description": "Target node ID"
+          "required": false,
+          "description": "Target node ID (set for explicit edges, absent for template edges)"
+        },
+        "unit": {
+          "range": "string",
+          "description": "Unit for matrix values (template edges only)"
+        },
+        "format": {
+          "range": "SparseFormat",
+          "ifabsent": "string(dense)",
+          "description": "Storage format in HDF5 (template edges only)"
+        },
+        "weighted": {
+          "range": "boolean",
+          "ifabsent": "boolean(true)",
+          "description": "Matrix entries carry weights (not just 0/1)"
+        },
+        "valid_diagonal": {
+          "range": "boolean",
+          "ifabsent": "boolean(false)",
+          "description": "Self-connections are meaningful"
+        },
+        "non_negative": {
+          "range": "boolean",
+          "ifabsent": "boolean(true)",
+          "description": "All values >= 0"
         },
         "source_var": {
           "range": "string",
@@ -1766,7 +1845,8 @@ window.searchData = [
         "reported_optimum",
         "description",
         "equation",
-        "unit"
+        "unit",
+        "dataset_path"
       ],
       "attributes": {
         "comment": {
@@ -3551,8 +3631,8 @@ window.searchData = [
     },
     "type": "schema",
     "file": "schema/tvbo_datamodel.yaml",
-    "n_slots": 24,
-    "n_classes": 69
+    "n_slots": 25,
+    "n_classes": 70
   },
   {
     "name": "CoombesByrne2D",
@@ -7480,7 +7560,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Epileptor5D.yaml",
-    "report_md": "\n\n## Epileptor5D\nEpilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: \n- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. \n- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.\n\nNote: \n------\n- Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### State Equations\n$$\n\\dot{g} = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\dot{x_{1}} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\dot{x_{2}} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\dot{y_{1}} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\dot{y_{2}} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\dot{z} = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population |\n| $Iext$ | 3.1 | N/A | External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al |\n| $Kf$ | 0.0 | N/A | Correspond to the coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state variable |\n| $aa$ | 6.0 | N/A | Linear coefficient in fifth state variable |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state variabel |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in fourth state variable |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E5D uses a nonlinear influence on z_E5D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state variable,         called :math:`1/\\tau_{0}` in Jirsa paper |\n| $s$ | 4.0 | N/A | Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state variable |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in fifth state variable |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor5D |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity Parameter |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nCitation key 'Proix2014' not found.\n\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n",
+    "report_md": "\n\n## Epileptor5D\nEpilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: \n- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. \n- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.\n\nNote: \n------\n- Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### State Equations\n$$\n\\dot{g} = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\dot{x_{1}} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\dot{x_{2}} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\dot{y_{1}} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\dot{y_{2}} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\dot{z} = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population |\n| $Iext$ | 3.1 | N/A | External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al |\n| $Kf$ | 0.0 | N/A | Correspond to the coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state variable |\n| $aa$ | 6.0 | N/A | Linear coefficient in fifth state variable |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state variabel |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in fourth state variable |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E5D uses a nonlinear influence on z_E5D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state variable,         called :math:`1/\\tau_{0}` in Jirsa paper |\n| $s$ | 4.0 | N/A | Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state variable |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in fifth state variable |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor5D |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity Parameter |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n\nCitation key 'Proix2014' not found.\n",
     "thumbnail": "browser/imgs/models/Epileptor5D.png",
     "parameter_names": [
       "Iext2",
@@ -8858,7 +8938,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Epileptor2D.yaml",
-    "report_md": "\n\n## Epileptor2D\nEpileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).\n\nNote: \n------\n- Equations and default parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### State Equations\n$$\n\\dot{x_{1}} = tt*\\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\\right)\n$$\n$$\n\\dot{z} = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext$ | 3.1 | N/A | External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E2D uses a nonlinear influence on z_E2D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor) |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor2D |\n| $x_{0}$ | -1.6 | N/A | Degree of excitability or epileptogenicity in Epileptor2D (Proix et al |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx1cond = \\begin{cases} a*x_{1}^{2} + x_{1}*\\left(- b + d\\right) & \\text{for}\\: x_{1} < 0 \\\\d*x_{1} - slope - 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3.0}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1.0} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nCitation key 'Proix2017' not found.\n\nCitation key 'Proix2014' not found.\n",
+    "report_md": "\n\n## Epileptor2D\nEpileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).\n\nNote: \n------\n- Equations and default parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### State Equations\n$$\n\\dot{x_{1}} = tt*\\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\\right)\n$$\n$$\n\\dot{z} = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext$ | 3.1 | N/A | External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E2D uses a nonlinear influence on z_E2D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor) |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor2D |\n| $x_{0}$ | -1.6 | N/A | Degree of excitability or epileptogenicity in Epileptor2D (Proix et al |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx1cond = \\begin{cases} a*x_{1}^{2} + x_{1}*\\left(- b + d\\right) & \\text{for}\\: x_{1} < 0 \\\\d*x_{1} - slope - 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3.0}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1.0} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nCitation key 'Proix2014' not found.\n\nCitation key 'Proix2017' not found.\n",
     "thumbnail": "browser/imgs/models/Epileptor2D.png",
     "parameter_names": [
       "Iext",
@@ -10822,7 +10902,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/ZerlautAdaptationFirstOrder.yaml",
-    "report_md": "\n\n## ZerlautAdaptationFirstOrder\n\n\n### State Equations\n$$\n\\dot{E} = \\frac{f_{out e} - E}{T}\n$$\n$$\n\\dot{I} = \\frac{f_{out i} - I}{T}\n$$\n$$\n\\dot{W_{e}} = E*b_{e} - \\frac{W_{e}}{\\tau_{w e}} + \\frac{a_{e}*\\left(\\mu_{V e} - E_{L e}\\right)}{\\tau_{w e}}\n$$\n$$\n\\dot{W_{i}} = I*b_{i} - \\frac{W_{i}}{\\tau_{w i}} + \\frac{a_{i}*\\left(\\mu_{V i} - E_{L i}\\right)}{\\tau_{w i}}\n$$\n$$\n\\dot{ou_{drift}} = - \\frac{ou_{drift}}{\\tau_{OU}}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C_{m}$ | 200.0 | N/A | membrane capacitance [pF] |\n| $DTvN_{0}$ | 1.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DmuV_{0}$ | 10.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DsV_{0}$ | 6.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $E_{L e}$ | -65.0 | N/A | leak reversal potential for excitatory [mV] |\n| $E_{L i}$ | -65.0 | N/A | leak reversal potential for inhibitory [mV] |\n| $E_{e}$ | 0.0 | N/A | excitatory reversal potential [mV] |\n| $E_{i}$ | -80.0 | N/A | inhibitory reversal potential [mV] |\n| $K_{ext e}$ | 400.0 | N/A | Number of excitatory connexions from external population |\n| $K_{ext i}$ | 0.0 | N/A | Number of inhibitory connexions from external population |\n| $N_{tot}$ | 10000.0 | N/A | cell number |\n| $P_{0 e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{0 i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{1 e}$ | 0.005063550882777035 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{1 i}$ | 0.004003689190271077 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{2 e}$ | -0.023470121807314552 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{2 i}$ | -0.008352013668528155 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{3 e}$ | 0.0022951513725067503 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{3 i}$ | 0.0002414237992765705 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{4 e}$ | -0.0004105302652029825 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{4 i}$ | -0.0005070645080016026 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{5 e}$ | 0.010547051343547399 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{5 i}$ | 0.0014345394104282397 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{6 e}$ | -0.03659252821136933 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{6 i}$ | -0.014686689498949967 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{7 e}$ | 0.007437487505797858 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{7 i}$ | 0.004502706285435741 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{8 e}$ | 0.001265064721846073 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{8 i}$ | 0.0028472190352532454 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{9 e}$ | -0.04072161294490446 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{9 i}$ | -0.015357804594594548 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $Q_{e}$ | 1.5 | N/A | excitatory quantal conductance [nS] |\n| $Q_{i}$ | 5.0 | N/A | inhibitory quantal conductance [nS] |\n| $S_{i}$ | 1.0 | N/A | Scaling of the remote input for the inhibitory population with         respect to the excitatory population |\n| $T$ | 20.0 | N/A | Time scale of describing network activity |\n| $TvN_{0}$ | 0.5 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $a_{e}$ | 4.0 | N/A | Excitatory adaptation conductance [nS] |\n| $a_{i}$ | 0.0 | N/A | Inhibitory adaptation conductance [nS] |\n| $b_{e}$ | 60.0 | N/A | Excitatory adaptation current increment [pA] |\n| $b_{i}$ | 0.0 | N/A | Inhibitory adaptation current increment [pA] |\n| $external_{input ex ex}$ | 0.0 | N/A | external drive |\n| $external_{input ex in}$ | 0.0 | N/A | external drive |\n| $external_{input in ex}$ | 0.0 | N/A | external drive |\n| $external_{input in in}$ | 0.0 | N/A | external drive |\n| $g_{L}$ | 10.0 | N/A | leak conductance [nS] |\n| $g$ | 0.2 | N/A | fraction of inhibitory cells |\n| $muV_{0}$ | -60.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $p_{connect e}$ | 0.05 | N/A | connectivity probability |\n| $p_{connect i}$ | 0.05 | N/A | connectivity probability |\n| $sV_{0}$ | 4.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $\\tau_{OU}$ | 5.0 | N/A | time constant noise |\n| $\\tau_{e}$ | 5.0 | N/A | excitatory decay [ms] |\n| $\\tau_{i}$ | 5.0 | N/A | inhibitory decay [ms] |\n| $\\tau_{w e}$ | 500.0 | N/A | Adaptation time constant of excitatory neurons [ms] |\n| $\\tau_{w i}$ | 1.0 | N/A | Adaptation time constant of inhibitory neurons [ms] |\n| $weight_{noise}$ | 10.5 | N/A | weight noise |\n\n### Derived Quantities\n#### Derived Variables\n$$\nlc_{E} = E*c_{local}\n$$\n$$\nlc_{I} = I*c_{local}\n$$\n$$\nFe_{ext} = \\begin{cases} 0 & \\text{for}\\: K_{ext e}*\\left(c_{global} + lc_{E} + ou_{drift}*weight_{noise}\\right) < 0 \\\\c_{global} + lc_{E} + ou_{drift}*weight_{noise} & \\text{otherwise} \\end{cases}\n$$\n$$\nFi_{ext} = lc_{I}\n$$\n$$\nfe_{e} = K_{ext e}*\\left(Fe_{ext} + external_{input ex ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfe_{i} = K_{ext e}*\\left(Fe_{ext} + external_{input in ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfi_{e} = K_{ext i}*\\left(Fi_{ext} + external_{input ex in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\nfi_{i} = K_{ext i}*\\left(Fi_{ext} + external_{input in in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\n\\mu_{Ge e} = Q_{e}*fe_{e}*\\tau_{e}\n$$\n$$\n\\mu_{Ge i} = Q_{e}*fe_{i}*\\tau_{e}\n$$\n$$\n\\mu_{Gi e} = Q_{i}*fi_{e}*\\tau_{i}\n$$\n$$\n\\mu_{Gi i} = Q_{i}*fi_{i}*\\tau_{i}\n$$\n$$\n\\mu_{G e} = g_{L} + \\mu_{Ge e} + \\mu_{Gi e}\n$$\n$$\n\\mu_{G i} = g_{L} + \\mu_{Ge i} + \\mu_{Gi i}\n$$\n$$\nT_{m e} = \\frac{C_{m}}{\\mu_{G e}}\n$$\n$$\nT_{m i} = \\frac{C_{m}}{\\mu_{G i}}\n$$\n$$\n\\mu_{V e} = \\frac{- W_{e} + E_{L e}*g_{L} + E_{e}*\\mu_{Ge e} + E_{i}*\\mu_{Gi e}}{\\mu_{G e}}\n$$\n$$\n\\mu_{V i} = \\frac{- W_{i} + E_{L i}*g_{L} + E_{e}*\\mu_{Ge i} + E_{i}*\\mu_{Gi i}}{\\mu_{G i}}\n$$\n$$\nU_{e e} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{e i} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nU_{i e} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{i i} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nV_{e} = \\frac{\\mu_{V e} - muV_{0}}{DmuV_{0}}\n$$\n$$\nV_{i} = \\frac{\\mu_{V i} - muV_{0}}{DmuV_{0}}\n$$\n$$\nT_{V e} = \\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2} + fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{T_{m e} + \\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{T_{m e} + \\tau_{i}}}\n$$\n$$\nT_{V i} = \\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2} + fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{T_{m i} + \\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{T_{m i} + \\tau_{i}}}\n$$\n$$\n\\sigma_{V e} = \\sqrt{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{2.0*T_{m e} + 2.0*\\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{2.0*T_{m e} + 2.0*\\tau_{i}}}\n$$\n$$\n\\sigma_{V i} = \\sqrt{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{2.0*T_{m i} + 2.0*\\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{2.0*T_{m i} + 2.0*\\tau_{i}}}\n$$\n$$\nS_{e} = \\frac{\\sigma_{V e} - sV_{0}}{DsV_{0}}\n$$\n$$\nS_{i} = \\frac{\\sigma_{V i} - sV_{0}}{DsV_{0}}\n$$\n$$\nT_{e} = \\frac{- TvN_{0} + \\frac{T_{V e}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nT_{i} = \\frac{- TvN_{0} + \\frac{T_{V i}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nV_{thre e} = 1000.0*P_{0 e} + 1000.0*P_{1 e}*V_{e} + 1000.0*P_{2 e}*S_{e} + 1000.0*P_{3 e}*T_{e} + 1000.0*P_{4 e}*V_{e}^{2} + 1000.0*P_{5 e}*S_{e}^{2} + 1000.0*P_{6 e}*T_{e}^{2} + 1000.0*P_{7 e}*S_{e}*V_{e} + 1000.0*P_{8 e}*T_{e}*V_{e} + 1000.0*P_{9 e}*S_{e}*T_{e}\n$$\n$$\nV_{thre i} = 1000.0*P_{0 i} + 1000.0*P_{1 i}*V_{i} + 1000.0*P_{2 i}*S_{i} + 1000.0*P_{3 i}*T_{i} + 1000.0*P_{4 i}*V_{i}^{2} + 1000.0*P_{5 i}*S_{i}^{2} + 1000.0*P_{6 i}*T_{i}^{2} + 1000.0*P_{7 i}*S_{i}*V_{i} + 1000.0*P_{8 i}*T_{i}*V_{i} + 1000.0*P_{9 i}*S_{i}*T_{i}\n$$\n$$\nf_{out e} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre e} - \\mu_{V e}\\right)}{2*\\sigma_{V e}} \\right)}}{2*T_{V e}}\n$$\n$$\nf_{out i} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre i} - \\mu_{V i}\\right)}{2*\\sigma_{V i}} \\right)}}{2*T_{V i}}\n$$\n\n\n\n\n## References\nCitation key 'diVolo2019' not found.\n\nCitation key 'Zerlaut2018' not found.\n",
+    "report_md": "\n\n## ZerlautAdaptationFirstOrder\n\n\n### State Equations\n$$\n\\dot{E} = \\frac{f_{out e} - E}{T}\n$$\n$$\n\\dot{I} = \\frac{f_{out i} - I}{T}\n$$\n$$\n\\dot{W_{e}} = E*b_{e} - \\frac{W_{e}}{\\tau_{w e}} + \\frac{a_{e}*\\left(\\mu_{V e} - E_{L e}\\right)}{\\tau_{w e}}\n$$\n$$\n\\dot{W_{i}} = I*b_{i} - \\frac{W_{i}}{\\tau_{w i}} + \\frac{a_{i}*\\left(\\mu_{V i} - E_{L i}\\right)}{\\tau_{w i}}\n$$\n$$\n\\dot{ou_{drift}} = - \\frac{ou_{drift}}{\\tau_{OU}}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C_{m}$ | 200.0 | N/A | membrane capacitance [pF] |\n| $DTvN_{0}$ | 1.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DmuV_{0}$ | 10.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $DsV_{0}$ | 6.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $E_{L e}$ | -65.0 | N/A | leak reversal potential for excitatory [mV] |\n| $E_{L i}$ | -65.0 | N/A | leak reversal potential for inhibitory [mV] |\n| $E_{e}$ | 0.0 | N/A | excitatory reversal potential [mV] |\n| $E_{i}$ | -80.0 | N/A | inhibitory reversal potential [mV] |\n| $K_{ext e}$ | 400.0 | N/A | Number of excitatory connexions from external population |\n| $K_{ext i}$ | 0.0 | N/A | Number of inhibitory connexions from external population |\n| $N_{tot}$ | 10000.0 | N/A | cell number |\n| $P_{0 e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{0 i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{1 e}$ | 0.005063550882777035 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{1 i}$ | 0.004003689190271077 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{2 e}$ | -0.023470121807314552 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{2 i}$ | -0.008352013668528155 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{3 e}$ | 0.0022951513725067503 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{3 i}$ | 0.0002414237992765705 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{4 e}$ | -0.0004105302652029825 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{4 i}$ | -0.0005070645080016026 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{5 e}$ | 0.010547051343547399 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{5 i}$ | 0.0014345394104282397 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{6 e}$ | -0.03659252821136933 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{6 i}$ | -0.014686689498949967 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{7 e}$ | 0.007437487505797858 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{7 i}$ | 0.004502706285435741 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{8 e}$ | 0.001265064721846073 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{8 i}$ | 0.0028472190352532454 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{9 e}$ | -0.04072161294490446 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{9 i}$ | -0.015357804594594548 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $P_{e}$ | -0.04983106 | N/A | Polynome of excitatory phenomenological threshold (order 9) |\n| $P_{i}$ | -0.05149122024209484 | N/A | Polynome of inhibitory phenomenological threshold (order 9) |\n| $Q_{e}$ | 1.5 | N/A | excitatory quantal conductance [nS] |\n| $Q_{i}$ | 5.0 | N/A | inhibitory quantal conductance [nS] |\n| $S_{i}$ | 1.0 | N/A | Scaling of the remote input for the inhibitory population with         respect to the excitatory population |\n| $T$ | 20.0 | N/A | Time scale of describing network activity |\n| $TvN_{0}$ | 0.5 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $a_{e}$ | 4.0 | N/A | Excitatory adaptation conductance [nS] |\n| $a_{i}$ | 0.0 | N/A | Inhibitory adaptation conductance [nS] |\n| $b_{e}$ | 60.0 | N/A | Excitatory adaptation current increment [pA] |\n| $b_{i}$ | 0.0 | N/A | Inhibitory adaptation current increment [pA] |\n| $external_{input ex ex}$ | 0.0 | N/A | external drive |\n| $external_{input ex in}$ | 0.0 | N/A | external drive |\n| $external_{input in ex}$ | 0.0 | N/A | external drive |\n| $external_{input in in}$ | 0.0 | N/A | external drive |\n| $g_{L}$ | 10.0 | N/A | leak conductance [nS] |\n| $g$ | 0.2 | N/A | fraction of inhibitory cells |\n| $muV_{0}$ | -60.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $p_{connect e}$ | 0.05 | N/A | connectivity probability |\n| $p_{connect i}$ | 0.05 | N/A | connectivity probability |\n| $sV_{0}$ | 4.0 | N/A | Normalization factors page 48 after the equation 4 from [ZD_2018] |\n| $\\tau_{OU}$ | 5.0 | N/A | time constant noise |\n| $\\tau_{e}$ | 5.0 | N/A | excitatory decay [ms] |\n| $\\tau_{i}$ | 5.0 | N/A | inhibitory decay [ms] |\n| $\\tau_{w e}$ | 500.0 | N/A | Adaptation time constant of excitatory neurons [ms] |\n| $\\tau_{w i}$ | 1.0 | N/A | Adaptation time constant of inhibitory neurons [ms] |\n| $weight_{noise}$ | 10.5 | N/A | weight noise |\n\n### Derived Quantities\n#### Derived Variables\n$$\nlc_{E} = E*c_{local}\n$$\n$$\nlc_{I} = I*c_{local}\n$$\n$$\nFe_{ext} = \\begin{cases} 0 & \\text{for}\\: K_{ext e}*\\left(c_{global} + lc_{E} + ou_{drift}*weight_{noise}\\right) < 0 \\\\c_{global} + lc_{E} + ou_{drift}*weight_{noise} & \\text{otherwise} \\end{cases}\n$$\n$$\nFi_{ext} = lc_{I}\n$$\n$$\nfe_{e} = K_{ext e}*\\left(Fe_{ext} + external_{input ex ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfe_{i} = K_{ext e}*\\left(Fe_{ext} + external_{input in ex}\\right) + N_{tot}*p_{connect e}*\\left(\\frac{1}{1000000} + E\\right)*\\left(1.0 - g\\right)\n$$\n$$\nfi_{e} = K_{ext i}*\\left(Fi_{ext} + external_{input ex in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\nfi_{i} = K_{ext i}*\\left(Fi_{ext} + external_{input in in}\\right) + N_{tot}*g*p_{connect i}*\\left(\\frac{1}{1000000} + I\\right)\n$$\n$$\n\\mu_{Ge e} = Q_{e}*fe_{e}*\\tau_{e}\n$$\n$$\n\\mu_{Ge i} = Q_{e}*fe_{i}*\\tau_{e}\n$$\n$$\n\\mu_{Gi e} = Q_{i}*fi_{e}*\\tau_{i}\n$$\n$$\n\\mu_{Gi i} = Q_{i}*fi_{i}*\\tau_{i}\n$$\n$$\n\\mu_{G e} = g_{L} + \\mu_{Ge e} + \\mu_{Gi e}\n$$\n$$\n\\mu_{G i} = g_{L} + \\mu_{Ge i} + \\mu_{Gi i}\n$$\n$$\nT_{m e} = \\frac{C_{m}}{\\mu_{G e}}\n$$\n$$\nT_{m i} = \\frac{C_{m}}{\\mu_{G i}}\n$$\n$$\n\\mu_{V e} = \\frac{- W_{e} + E_{L e}*g_{L} + E_{e}*\\mu_{Ge e} + E_{i}*\\mu_{Gi e}}{\\mu_{G e}}\n$$\n$$\n\\mu_{V i} = \\frac{- W_{i} + E_{L i}*g_{L} + E_{e}*\\mu_{Ge i} + E_{i}*\\mu_{Gi i}}{\\mu_{G i}}\n$$\n$$\nU_{e e} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{e i} = \\frac{Q_{e}*\\left(E_{e} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nU_{i e} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V e}\\right)}{\\mu_{G e}}\n$$\n$$\nU_{i i} = \\frac{Q_{i}*\\left(E_{i} - \\mu_{V i}\\right)}{\\mu_{G i}}\n$$\n$$\nV_{e} = \\frac{\\mu_{V e} - muV_{0}}{DmuV_{0}}\n$$\n$$\nV_{i} = \\frac{\\mu_{V i} - muV_{0}}{DmuV_{0}}\n$$\n$$\nT_{V e} = \\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2} + fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{T_{m e} + \\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{T_{m e} + \\tau_{i}}}\n$$\n$$\nT_{V i} = \\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2} + fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{T_{m i} + \\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{T_{m i} + \\tau_{i}}}\n$$\n$$\n\\sigma_{V e} = \\sqrt{\\frac{fe_{e}*U_{e e}^{2}*\\tau_{e}^{2}}{2.0*T_{m e} + 2.0*\\tau_{e}} + \\frac{fi_{e}*U_{i e}^{2}*\\tau_{i}^{2}}{2.0*T_{m e} + 2.0*\\tau_{i}}}\n$$\n$$\n\\sigma_{V i} = \\sqrt{\\frac{fe_{i}*U_{e i}^{2}*\\tau_{e}^{2}}{2.0*T_{m i} + 2.0*\\tau_{e}} + \\frac{fi_{i}*U_{i i}^{2}*\\tau_{i}^{2}}{2.0*T_{m i} + 2.0*\\tau_{i}}}\n$$\n$$\nS_{e} = \\frac{\\sigma_{V e} - sV_{0}}{DsV_{0}}\n$$\n$$\nS_{i} = \\frac{\\sigma_{V i} - sV_{0}}{DsV_{0}}\n$$\n$$\nT_{e} = \\frac{- TvN_{0} + \\frac{T_{V e}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nT_{i} = \\frac{- TvN_{0} + \\frac{T_{V i}*g_{L}}{C_{m}}}{DTvN_{0}}\n$$\n$$\nV_{thre e} = 1000.0*P_{0 e} + 1000.0*P_{1 e}*V_{e} + 1000.0*P_{2 e}*S_{e} + 1000.0*P_{3 e}*T_{e} + 1000.0*P_{4 e}*V_{e}^{2} + 1000.0*P_{5 e}*S_{e}^{2} + 1000.0*P_{6 e}*T_{e}^{2} + 1000.0*P_{7 e}*S_{e}*V_{e} + 1000.0*P_{8 e}*T_{e}*V_{e} + 1000.0*P_{9 e}*S_{e}*T_{e}\n$$\n$$\nV_{thre i} = 1000.0*P_{0 i} + 1000.0*P_{1 i}*V_{i} + 1000.0*P_{2 i}*S_{i} + 1000.0*P_{3 i}*T_{i} + 1000.0*P_{4 i}*V_{i}^{2} + 1000.0*P_{5 i}*S_{i}^{2} + 1000.0*P_{6 i}*T_{i}^{2} + 1000.0*P_{7 i}*S_{i}*V_{i} + 1000.0*P_{8 i}*T_{i}*V_{i} + 1000.0*P_{9 i}*S_{i}*T_{i}\n$$\n$$\nf_{out e} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre e} - \\mu_{V e}\\right)}{2*\\sigma_{V e}} \\right)}}{2*T_{V e}}\n$$\n$$\nf_{out i} = \\frac{\\operatorname{erfc}{\\left(\\frac{\\sqrt{2}*\\left(V_{thre i} - \\mu_{V i}\\right)}{2*\\sigma_{V i}} \\right)}}{2*T_{V i}}\n$$\n\n\n\n\n## References\nCitation key 'Zerlaut2018' not found.\n\nCitation key 'diVolo2019' not found.\n",
     "thumbnail": "browser/imgs/models/ZerlautAdaptationFirstOrder.png",
     "parameter_names": [
       "C_m",
@@ -12325,7 +12405,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/LarterBreakspear.yaml",
-    "report_md": "\n\n## LarterBreakspear\nThe Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, \npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. \n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b), \n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.\n\n### State Equations\n$$\n\\dot{V} = t_{scale}*\\left(I_{ext}*a_{ne} - g_{L}*\\left(V - V_{L}\\right) - \\left(V - V_{Na}\\right)*\\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) + m_{Ca}*\\left(V - V_{Ca}\\right)*\\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\\left(V - V_{K}\\right)\\right)\n$$\n$$\n\\dot{W} = \\frac{\\phi*t_{scale}*\\left(m_{K} - W\\right)}{\\tau_{K}}\n$$\n$$\n\\dot{Z} = b*t_{scale}*\\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C$ | 0.1 | N/A | Coupling scaling factor |\n| $I_{ext}$ | 0.3 | N/A | Subcortical input current |\n| $Q_{Vmax}$ | 1.0 | Kilohertz | Maximal firing rate for excitatory populations |\n| $Q_{Zmax}$ | 1.0 | Kilohertz | Maximal firing rate for inhibitory population |\n| $T_{Ca}$ | -0.01 | N/A | Threshold value for Ca channels |\n| $T_{K}$ | 0.0 | N/A | Threshold value for K channels |\n| $T_{Na}$ | 0.3 | N/A | Threshold value for sodium channels |\n| $V_{Ca}$ | 1.0 | N/A | Calcium Nernst potential |\n| $V_{K}$ | -0.7 | N/A | K Nernst potential |\n| $V_{L}$ | -0.5 | N/A | Nernst potential leak channels |\n| $V_{Na}$ | 0.53 | N/A | Na Nernst potential |\n| $V_{T}$ | 0.0 | N/A | Threshold potential for excitatory neurons |\n| $Z_{T}$ | 0.0 | N/A | Threshold potential (mean) for inihibtory neurons |\n| $a_{ee}$ | 0.4 | N/A | Excitatory-to-excitatory synaptic strength |\n| $a_{ei}$ | 2.0 | N/A | Excitatory-to-inhibitory synaptic strength |\n| $a_{ie}$ | 2.0 | N/A | Inhibitory-to-excitatory synaptic strength |\n| $a_{ne}$ | 1.0 | N/A | Non-specific-to-excitatory synaptic strength |\n| $a_{ni}$ | 0.4 | N/A | Non-specific-to-inhibitory synaptic strength |\n| $b$ | 0.1 | N/A | Time constant scaling factor |\n| $\\delta_{Ca}$ | 0.15 | N/A | Variance of Calcium channel threshold |\n| $\\delta_{K}$ | 0.3 | N/A | Variance of Potassium channel threshold |\n| $\\delta_{Na}$ | 0.15 | N/A | Variance of sodium channel threshold |\n| $\\delta_{V}$ | 0.65 | N/A | Variance of excitatory threshold |\n| $\\delta_{Z}$ | 0.7 | N/A | Variance of inhibitory threshold |\n| $g_{Ca}$ | 1.1 | N/A | Conductance of population of calcium (Ca++) channels |\n| $g_{K}$ | 2.0 | N/A | Conductance of population of potassium (K) channels |\n| $g_{L}$ | 0.5 | N/A | Conductance of population of leak channels |\n| $g_{Na}$ | 6.7 | N/A | Conductance of population of Na channels |\n| $\\phi$ | 0.7 | N/A | Temperature scaling factor |\n| $r_{NMDA}$ | 0.25 | N/A | Ratio of NMDA to AMPA receptors |\n| $t_{scale}$ | 1.0 | N/A | Time scale factor |\n| $\\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |\n\n### Derived Quantities\n#### Derived Variables\n$$\nQ_{V} = 0.5*Q_{Vmax}*\\left(1 + \\tanh{\\left(\\frac{V - V_{T}}{\\delta_{V}} \\right)}\\right)\n$$\n$$\nQ_{Z} = 0.5*Q_{Zmax}*\\left(1 + \\tanh{\\left(\\frac{Z - Z_{T}}{\\delta_{Z}} \\right)}\\right)\n$$\n$$\nm_{Ca} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Ca}}{\\delta_{Ca}} \\right)}\n$$\n$$\nm_{K} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{K}}{\\delta_{K}} \\right)}\n$$\n$$\nm_{Na} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Na}}{\\delta_{Na}} \\right)}\n$$\n$$\nlc_{0} = Q_{V}*c_{local}\n$$\n\n\n\n\n## References\nBreakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.\n\nBreakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.\n\nLarter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.\n",
+    "report_md": "\n\n## LarterBreakspear\nThe Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, \npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. \n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b), \n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.\n\n### State Equations\n$$\n\\dot{V} = t_{scale}*\\left(I_{ext}*a_{ne} - g_{L}*\\left(V - V_{L}\\right) - \\left(V - V_{Na}\\right)*\\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) + m_{Ca}*\\left(V - V_{Ca}\\right)*\\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\\left(V - V_{K}\\right)\\right)\n$$\n$$\n\\dot{W} = \\frac{\\phi*t_{scale}*\\left(m_{K} - W\\right)}{\\tau_{K}}\n$$\n$$\n\\dot{Z} = b*t_{scale}*\\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C$ | 0.1 | N/A | Coupling scaling factor |\n| $I_{ext}$ | 0.3 | N/A | Subcortical input current |\n| $Q_{Vmax}$ | 1.0 | Kilohertz | Maximal firing rate for excitatory populations |\n| $Q_{Zmax}$ | 1.0 | Kilohertz | Maximal firing rate for inhibitory population |\n| $T_{Ca}$ | -0.01 | N/A | Threshold value for Ca channels |\n| $T_{K}$ | 0.0 | N/A | Threshold value for K channels |\n| $T_{Na}$ | 0.3 | N/A | Threshold value for sodium channels |\n| $V_{Ca}$ | 1.0 | N/A | Calcium Nernst potential |\n| $V_{K}$ | -0.7 | N/A | K Nernst potential |\n| $V_{L}$ | -0.5 | N/A | Nernst potential leak channels |\n| $V_{Na}$ | 0.53 | N/A | Na Nernst potential |\n| $V_{T}$ | 0.0 | N/A | Threshold potential for excitatory neurons |\n| $Z_{T}$ | 0.0 | N/A | Threshold potential (mean) for inihibtory neurons |\n| $a_{ee}$ | 0.4 | N/A | Excitatory-to-excitatory synaptic strength |\n| $a_{ei}$ | 2.0 | N/A | Excitatory-to-inhibitory synaptic strength |\n| $a_{ie}$ | 2.0 | N/A | Inhibitory-to-excitatory synaptic strength |\n| $a_{ne}$ | 1.0 | N/A | Non-specific-to-excitatory synaptic strength |\n| $a_{ni}$ | 0.4 | N/A | Non-specific-to-inhibitory synaptic strength |\n| $b$ | 0.1 | N/A | Time constant scaling factor |\n| $\\delta_{Ca}$ | 0.15 | N/A | Variance of Calcium channel threshold |\n| $\\delta_{K}$ | 0.3 | N/A | Variance of Potassium channel threshold |\n| $\\delta_{Na}$ | 0.15 | N/A | Variance of sodium channel threshold |\n| $\\delta_{V}$ | 0.65 | N/A | Variance of excitatory threshold |\n| $\\delta_{Z}$ | 0.7 | N/A | Variance of inhibitory threshold |\n| $g_{Ca}$ | 1.1 | N/A | Conductance of population of calcium (Ca++) channels |\n| $g_{K}$ | 2.0 | N/A | Conductance of population of potassium (K) channels |\n| $g_{L}$ | 0.5 | N/A | Conductance of population of leak channels |\n| $g_{Na}$ | 6.7 | N/A | Conductance of population of Na channels |\n| $\\phi$ | 0.7 | N/A | Temperature scaling factor |\n| $r_{NMDA}$ | 0.25 | N/A | Ratio of NMDA to AMPA receptors |\n| $t_{scale}$ | 1.0 | N/A | Time scale factor |\n| $\\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |\n\n### Derived Quantities\n#### Derived Variables\n$$\nQ_{V} = 0.5*Q_{Vmax}*\\left(1 + \\tanh{\\left(\\frac{V - V_{T}}{\\delta_{V}} \\right)}\\right)\n$$\n$$\nQ_{Z} = 0.5*Q_{Zmax}*\\left(1 + \\tanh{\\left(\\frac{Z - Z_{T}}{\\delta_{Z}} \\right)}\\right)\n$$\n$$\nm_{Ca} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Ca}}{\\delta_{Ca}} \\right)}\n$$\n$$\nm_{K} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{K}}{\\delta_{K}} \\right)}\n$$\n$$\nm_{Na} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Na}}{\\delta_{Na}} \\right)}\n$$\n$$\nlc_{0} = Q_{V}*c_{local}\n$$\n\n\n\n\n## References\nBreakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.\n\nLarter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.\n\nBreakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.\n",
     "thumbnail": "browser/imgs/models/LarterBreakspear.png",
     "parameter_names": [
       "C",
@@ -13315,7 +13395,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Hopfield.yaml",
-    "report_md": "\n\n## Hopfield\nThe Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).\nWhen the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).\n\nVarious extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].\n\nNote:\n- This model uses the modifications implemented by Golos et al. (2015).\n\n### State Equations\n$$\n\\dot{\\theta} = \\frac{c_{pop1} - \\theta}{tauT}\n$$\n$$\n\\dot{x} = \\frac{c_{global} - x}{taux}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $tauT$ | 5.0 | N/A | The slow time-scale for threshold calculus :math:`\\\\theta`, state-variable of the model |\n| $taux$ | 1.0 | N/A | The fast time-scale for potential calculus :math:`x`, state-variable of the model |\n\n\n\n\n\n## References\nCitation key 'Hopfield1984' not found.\n\nCitation key 'Hopfield1982' not found.\n",
+    "report_md": "\n\n## Hopfield\nThe Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).\nWhen the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).\n\nVarious extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].\n\nNote:\n- This model uses the modifications implemented by Golos et al. (2015).\n\n### State Equations\n$$\n\\dot{\\theta} = \\frac{c_{pop1} - \\theta}{tauT}\n$$\n$$\n\\dot{x} = \\frac{c_{global} - x}{taux}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $tauT$ | 5.0 | N/A | The slow time-scale for threshold calculus :math:`\\\\theta`, state-variable of the model |\n| $taux$ | 1.0 | N/A | The fast time-scale for potential calculus :math:`x`, state-variable of the model |\n\n\n\n\n\n## References\nCitation key 'Hopfield1982' not found.\n\nCitation key 'Hopfield1984' not found.\n",
     "thumbnail": "browser/imgs/models/Hopfield.png",
     "parameter_names": [
       "tauT",
@@ -13586,7 +13666,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Generic2dOscillator.yaml",
-    "report_md": "\n\n## Generic2dOscillator\nThe Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.\n\n### State Equations\n$$\n\\dot{V} = d*\\tau*\\left(I*\\gamma + V*g + V*c_{local} + W*\\alpha + c_{glob}*\\gamma + e*V^{2} - f*V^{3}\\right)\n$$\n$$\n\\dot{W} = \\frac{d*\\left(a + V*b + c*V^{2} - W*\\beta\\right)}{\\tau}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.0 | N/A | Baseline shift of the cubic nullcline |\n| $a$ | -2.0 | N/A | Vertical shift of the configurable nullcline |\n| $\\alpha$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the slow variable to the fast variable. |\n| $b$ | -10.0 | N/A | Linear slope of the configurable nullcline |\n| $\\beta$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the             slow variable to itself |\n| $c$ | 0.0 | N/A | Parabolic term of the configurable nullcline |\n| $d$ | 0.02 | N/A | Temporal scale factor |\n| $e$ | 3.0 | N/A | Coefficient of the quadratic term of the cubic nullcline |\n| $f$ | 1.0 | N/A | Coefficient of the cubic term of the cubic nullcline |\n| $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |\n| $\\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |\n| $\\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |\n\n\n\n\n\n## References\nNagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.\n\nFitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.\n",
+    "report_md": "\n\n## Generic2dOscillator\nThe Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.\n\n### State Equations\n$$\n\\dot{V} = d*\\tau*\\left(I*\\gamma + V*g + V*c_{local} + W*\\alpha + c_{glob}*\\gamma + e*V^{2} - f*V^{3}\\right)\n$$\n$$\n\\dot{W} = \\frac{d*\\left(a + V*b + c*V^{2} - W*\\beta\\right)}{\\tau}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.0 | N/A | Baseline shift of the cubic nullcline |\n| $a$ | -2.0 | N/A | Vertical shift of the configurable nullcline |\n| $\\alpha$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the slow variable to the fast variable. |\n| $b$ | -10.0 | N/A | Linear slope of the configurable nullcline |\n| $\\beta$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the             slow variable to itself |\n| $c$ | 0.0 | N/A | Parabolic term of the configurable nullcline |\n| $d$ | 0.02 | N/A | Temporal scale factor |\n| $e$ | 3.0 | N/A | Coefficient of the quadratic term of the cubic nullcline |\n| $f$ | 1.0 | N/A | Coefficient of the cubic term of the cubic nullcline |\n| $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |\n| $\\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |\n| $\\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |\n\n\n\n\n\n## References\nFitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.\n\nNagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.\n",
     "thumbnail": "browser/imgs/models/Generic2dOscillator.png",
     "parameter_names": [
       "I",
@@ -13948,7 +14028,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/ReducedWongWang.yaml",
-    "report_md": "\n\n## ReducedWongWang\nReduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).\n\nRWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.\n\n### State Equations\n$$\n\\dot{S} = - \\frac{S}{\\tau_{s}} + H*\\gamma*\\left(1 - S\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{o}$ | 0.33 | nA | External input current to the neurons population (Deco et al |\n| $J_{N}$ | 0.2609 | nA | Excitatory recurrence |\n| $a$ | 0.27 | (pC)^-1 | Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $b$ | 0.108 | kHz | Shift parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $d$ | 154.0 | ms | Scaling parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $\\gamma$ | 0.641 | N/A | Kinetic parameter |\n| $\\tau_{s}$ | 100.0 | ms | Kinetic parameter |\n| $w$ | 0.6 | dimensionless | Excitatory recurrence |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx = I_{o} + J_{N}*c_{global} + J_{N}*S*c_{local} + J_{N}*S*w\n$$\n$$\nH = \\frac{- b + a*x}{1 - e^{- d*\\left(- b + a*x\\right)}}\n$$\n\n\n\n\n## References\nCitation key 'WongWang2006' not found.\n\nCitation key 'Deco2013' not found.\n",
+    "report_md": "\n\n## ReducedWongWang\nReduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).\n\nRWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.\n\n### State Equations\n$$\n\\dot{S} = - \\frac{S}{\\tau_{s}} + H*\\gamma*\\left(1 - S\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{o}$ | 0.33 | nA | External input current to the neurons population (Deco et al |\n| $J_{N}$ | 0.2609 | nA | Excitatory recurrence |\n| $a$ | 0.27 | (pC)^-1 | Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $b$ | 0.108 | kHz | Shift parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $d$ | 154.0 | ms | Scaling parameter of the sigmoid input-output function H_RWW (Deco et al |\n| $\\gamma$ | 0.641 | N/A | Kinetic parameter |\n| $\\tau_{s}$ | 100.0 | ms | Kinetic parameter |\n| $w$ | 0.6 | dimensionless | Excitatory recurrence |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx = I_{o} + J_{N}*c_{global} + J_{N}*S*c_{local} + J_{N}*S*w\n$$\n$$\nH = \\frac{- b + a*x}{1 - e^{- d*\\left(- b + a*x\\right)}}\n$$\n\n\n\n\n## References\nCitation key 'Deco2013' not found.\n\nCitation key 'WongWang2006' not found.\n",
     "thumbnail": "browser/imgs/models/ReducedWongWang.png",
     "parameter_names": [
       "I_o",
@@ -26175,10 +26255,12 @@ window.searchData = [
           "number_of_nodes": 2,
           "label": "Two identical visual cortex columns",
           "description": "Symmetric coupling, zero delay. Both columns in same cortical area with identical standard parameters producing alpha activity.",
-          "conduction_speed": {
-            "name": "conduction_speed",
-            "value": 0,
-            "description": "Zero delay: columns in same cortical area"
+          "parameters": {
+            "conduction_speed": {
+              "name": "conduction_speed",
+              "value": 0,
+              "description": "Zero delay: columns in same cortical area"
+            }
           },
           "nodes": [
             {
@@ -26497,10 +26579,12 @@ window.searchData = [
           "number_of_nodes": 2,
           "label": "Visual cortex (col 1) ↔ Prefrontal cortex (col 2)",
           "description": "Column 1 = visual cortex (alpha), Column 2 = prefrontal cortex (beta). Feed-forward (K1: visual→prefrontal) ~10× stronger than feedback (K2). Inter-column delay via h_d(t) with a_d = 30 s⁻¹ (3-synapse pathway, Eq. 7).",
-          "conduction_speed": {
-            "name": "conduction_speed",
-            "value": 1.0,
-            "description": "Delay modelled by h_d(t) with a_d = 30 s⁻¹ (Eq. 7)"
+          "parameters": {
+            "conduction_speed": {
+              "name": "conduction_speed",
+              "value": 1.0,
+              "description": "Delay modelled by h_d(t) with a_d = 30 s⁻¹ (Eq. 7)"
+            }
           },
           "nodes": [
             {
@@ -26813,10 +26897,12 @@ window.searchData = [
         "network": {
           "number_of_nodes": 2,
           "label": "Two identical visual cortex columns (no delay)",
-          "conduction_speed": {
-            "name": "conduction_speed",
-            "value": 0,
-            "description": "Zero delay"
+          "parameters": {
+            "conduction_speed": {
+              "name": "conduction_speed",
+              "value": 0,
+              "description": "Zero delay"
+            }
           },
           "nodes": [
             {
@@ -27223,10 +27309,12 @@ window.searchData = [
           "number_of_regions": 2,
           "number_of_nodes": 2,
           "label": "Visual cortex (col 1) ↔ Prefrontal cortex (col 2) with delay",
-          "conduction_speed": {
-            "name": "conduction_speed",
-            "value": 0,
-            "description": "Delay via h_d(t) with a_d = 30 s⁻¹ (Eq. 7), not modeled via conduction_speed"
+          "parameters": {
+            "conduction_speed": {
+              "name": "conduction_speed",
+              "value": 0,
+              "description": "Delay via h_d(t) with a_d = 30 s⁻¹ (Eq. 7), not modeled via conduction_speed"
+            }
           },
           "nodes": [
             {
@@ -27783,10 +27871,12 @@ window.searchData = [
               0
             ]
           },
-          "conduction_speed": {
-            "name": "conduction_speed",
-            "value": 3.0,
-            "unit": "mm/ms"
+          "parameters": {
+            "conduction_speed": {
+              "name": "conduction_speed",
+              "value": 3.0,
+              "unit": "mm/ms"
+            }
           }
         },
         "coupling": {
@@ -28081,14 +28171,16 @@ window.searchData = [
             }
           },
           "tractogram": "dTOR",
-          "global_coupling_strength": {
-            "name": "G",
-            "value": 2.0
-          },
-          "conduction_speed": {
-            "name": "v",
-            "value": 6.0,
-            "unit": "m/s"
+          "parameters": {
+            "G": {
+              "name": "G",
+              "value": 2.0
+            },
+            "conduction_speed": {
+              "name": "v",
+              "value": 6.0,
+              "unit": "m/s"
+            }
           }
         },
         "integration": {
@@ -29445,10 +29537,12 @@ window.searchData = [
         }
       }
     ],
-    "network.global_coupling_strength": {
-      "name": "G",
-      "value": 1.0,
-      "description": "Global coupling scaling (implicit in LRE/FFI)"
+    "network.parameters": {
+      "G": {
+        "name": "G",
+        "value": 1.0,
+        "description": "Global coupling scaling (implicit in LRE/FFI)"
+      }
     },
     "integration.method": "Euler",
     "integration.step_size": 1.0,
@@ -35910,242 +36004,190 @@ window.searchData = [
     "thumbnail": "browser/imgs/atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg.png"
   },
   {
-    "type": "network",
     "label": "DesikanKillianyranked (dTOR)",
-    "name": "DesikanKillianyranked (dTOR)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKillianyranked"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "dTOR",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 458885.0,
-    "weights_mean": 1977.2881490289337,
-    "weights_median": 10.0,
-    "weights_histogram.bins": [
-      0.0,
-      45888.5,
-      91777.0,
-      137665.5,
-      183554.0,
-      229442.5,
-      275331.0,
-      321219.5,
-      367108.0,
-      412996.5,
-      458885.0
-    ],
-    "weights_histogram.counts": [
-      7541,
-      18,
-      2,
-      6,
-      0,
-      0,
-      0,
-      0,
-      0,
-      2
-    ],
+    "name": "DesikanKillianyranked (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "DesikanKillianyranked",
     "atlas.name": "DesikanKillianyranked",
     "n_regions": 87,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "DesikanKilliany (ranked)",
-    "name": "DesikanKilliany (ranked)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKilliany"
     },
-    "tractogram": "ranked",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "ranked",
     "space": "MNI152Nlin2009c",
-    "template": "MghUscHcp32",
-    "weights_min": 0.0,
-    "weights_max": 21104.0,
-    "weights_mean": 213.47390672479852,
-    "weights_median": 2.0,
-    "weights_histogram.bins": [
-      0.0,
-      2110.4,
-      4220.8,
-      6331.200000000001,
-      8441.6,
-      10552.0,
-      12662.400000000001,
-      14772.800000000001,
-      16883.2,
-      18993.600000000002,
-      21104.0
-    ],
-    "weights_histogram.counts": [
-      7383,
-      94,
-      58,
-      20,
-      6,
-      4,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "DesikanKilliany (ranked)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked.yaml",
-    "desc": "ranked",
+    "desc": {
+      "name": "ranked"
+    },
     "atlas": "DesikanKilliany",
     "atlas.name": "DesikanKilliany",
     "n_regions": 87,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked.png"
   },
   {
-    "type": "network",
     "label": "virtualdbs (dTOR)",
-    "name": "virtualdbs (dTOR)",
+    "number_of_nodes": 370,
+    "number_of_regions": 370,
+    "data_file": "space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "virtualdbs"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR_lengths.csv",
-    "number_of_regions": 370,
+    "tractogram.name": "dTOR",
     "space": "MNI152NLin2009c",
-    "weights_min": 0.0,
-    "weights_max": 38083.0,
-    "weights_mean": 115.8228487947407,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      3808.3,
-      7616.6,
-      11424.900000000001,
-      15233.2,
-      19041.5,
-      22849.800000000003,
-      26658.100000000002,
-      30466.4,
-      34274.700000000004,
-      38083.0
-    ],
-    "weights_histogram.counts": [
-      136198,
-      430,
-      122,
-      78,
-      24,
-      24,
-      10,
-      4,
-      6,
-      4
-    ],
+    "name": "virtualdbs (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "virtualdbs",
     "atlas.name": "virtualdbs",
     "n_regions": 370,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "Destrieux (ranked)",
-    "name": "Destrieux (ranked)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieux"
     },
-    "tractogram": "ranked",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "ranked",
     "space": "MNI152Nlin2009c",
-    "template": "MghUscHcp32",
-    "weights_min": 0.0,
-    "weights_max": 21104.0,
-    "weights_mean": 78.24138549248808,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      2110.4,
-      4220.8,
-      6331.200000000001,
-      8441.6,
-      10552.0,
-      12662.400000000001,
-      14772.800000000001,
-      16883.2,
-      18993.600000000002,
-      21104.0
-    ],
-    "weights_histogram.counts": [
-      27691,
-      130,
-      32,
-      18,
-      8,
-      2,
-      4,
-      0,
-      0,
-      4
-    ],
+    "name": "Destrieux (ranked)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked.yaml",
-    "desc": "ranked",
+    "desc": {
+      "name": "ranked"
+    },
     "atlas": "Destrieux",
     "atlas.name": "Destrieux",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked.png"
   },
   {
-    "type": "network",
     "label": "Yeo17 (dTOR)",
-    "name": "Yeo17 (dTOR)",
+    "number_of_nodes": 17,
+    "number_of_regions": 17,
+    "data_file": "space-MNI152_atlas-Yeo17_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Yeo17"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-dTOR_lengths.csv",
-    "number_of_regions": 17,
+    "tractogram.name": "dTOR",
     "space": "MNI152",
-    "weights_min": 0.0,
-    "weights_max": 175715.0,
-    "weights_mean": 27403.813148788926,
-    "weights_median": 13429.0,
-    "weights_histogram.bins": [
-      0.0,
-      17571.5,
-      35143.0,
-      52714.5,
-      70286.0,
-      87857.5,
-      105429.0,
-      123000.5,
-      140572.0,
-      158143.5,
-      175715.0
-    ],
-    "weights_histogram.counts": [
-      165,
-      48,
-      22,
-      14,
-      18,
-      10,
-      4,
-      0,
-      6,
-      2
-    ],
+    "name": "Yeo17 (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152_atlas-Yeo17_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "Yeo17",
     "atlas.name": "Yeo17",
     "n_regions": 17,
@@ -36351,1451 +36393,1153 @@ window.searchData = [
       }
     ],
     "number_of_nodes": 3,
-    "global_coupling_strength.name": "G",
-    "global_coupling_strength.value": 1.0,
-    "conduction_speed.name": "speed",
-    "conduction_speed.value": 3.0,
-    "conduction_speed.unit": "mm/ms",
+    "parameters.G": {
+      "name": "G",
+      "value": 1.0
+    },
+    "parameters.conduction_speed": {
+      "name": "speed",
+      "value": 3.0,
+      "unit": "mm/ms"
+    },
     "type": "network",
     "file": "database/networks/example_3node_network.yaml"
   },
   {
-    "type": "network",
     "label": "virtualdbs (MghUscHcp32)",
-    "name": "virtualdbs (MghUscHcp32)",
+    "number_of_nodes": 370,
+    "number_of_regions": 370,
+    "data_file": "space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "virtualdbs"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 370,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152NLin2009c",
-    "weights_min": 0.0,
-    "weights_max": 9461.0,
-    "weights_mean": 17.813571950328708,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      946.1,
-      1892.2,
-      2838.3,
-      3784.4,
-      4730.5,
-      5676.6,
-      6622.7,
-      7568.8,
-      8514.9,
-      9461.0
-    ],
-    "weights_histogram.counts": [
-      136520,
-      282,
-      52,
-      12,
-      10,
-      8,
-      6,
-      2,
-      2,
-      6
-    ],
+    "name": "virtualdbs (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "virtualdbs",
     "atlas.name": "virtualdbs",
     "n_regions": 370,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "hcpmmp1 (PPMI85)",
-    "name": "hcpmmp1 (PPMI85)",
+    "number_of_nodes": 379,
+    "number_of_regions": 379,
+    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "hcpmmp1"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85_lengths.csv",
-    "number_of_regions": 379,
+    "tractogram.name": "PPMI85",
     "space": "MNI152NLin2009b",
-    "weights_min": 0.0,
-    "weights_max": 12801.0,
-    "weights_mean": 6.574599174330449,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1280.1,
-      2560.2,
-      3840.2999999999997,
-      5120.4,
-      6400.5,
-      7680.599999999999,
-      8960.699999999999,
-      10240.8,
-      11520.9,
-      12801.0
-    ],
-    "weights_histogram.counts": [
-      143587,
-      40,
-      10,
-      0,
-      0,
-      0,
-      0,
-      0,
-      2,
-      2
-    ],
+    "name": "hcpmmp1 (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "hcpmmp1",
     "atlas.name": "hcpmmp1",
     "n_regions": 379,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "Destrieux (MghUscHcp32)",
-    "name": "Destrieux (MghUscHcp32)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieux"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 21104.0,
-    "weights_mean": 78.24138549248808,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      2110.4,
-      4220.8,
-      6331.200000000001,
-      8441.6,
-      10552.0,
-      12662.400000000001,
-      14772.800000000001,
-      16883.2,
-      18993.600000000002,
-      21104.0
-    ],
-    "weights_histogram.counts": [
-      27691,
-      130,
-      32,
-      18,
-      8,
-      2,
-      4,
-      0,
-      0,
-      4
-    ],
+    "name": "Destrieux (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "Destrieux",
     "atlas.name": "Destrieux",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "Destrieuxranked (MghUscHcp32)",
-    "name": "Destrieuxranked (MghUscHcp32)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieuxranked"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 21104.0,
-    "weights_mean": 78.24138549248808,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      2110.4,
-      4220.8,
-      6331.200000000001,
-      8441.6,
-      10552.0,
-      12662.400000000001,
-      14772.800000000001,
-      16883.2,
-      18993.600000000002,
-      21104.0
-    ],
-    "weights_histogram.counts": [
-      27691,
-      130,
-      32,
-      18,
-      8,
-      2,
-      4,
-      0,
-      0,
-      4
-    ],
+    "name": "Destrieuxranked (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "Destrieuxranked",
     "atlas.name": "Destrieuxranked",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "hcpmmp1ordered (dTOR)",
-    "name": "hcpmmp1ordered (dTOR)",
+    "number_of_nodes": 379,
+    "number_of_regions": 379,
+    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "hcpmmp1ordered"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR_lengths.csv",
-    "number_of_regions": 379,
+    "tractogram.name": "dTOR",
     "space": "MNI152NLin2009b",
-    "weights_min": 0.0,
-    "weights_max": 182165.0,
-    "weights_mean": 122.98396697321796,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      18216.5,
-      36433.0,
-      54649.5,
-      72866.0,
-      91082.5,
-      109299.0,
-      127515.5,
-      145732.0,
-      163948.5,
-      182165.0
-    ],
-    "weights_histogram.counts": [
-      143589,
-      40,
-      6,
-      0,
-      0,
-      0,
-      0,
-      2,
-      2,
-      2
-    ],
+    "name": "hcpmmp1ordered (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "hcpmmp1ordered",
     "atlas.name": "hcpmmp1ordered",
     "n_regions": 379,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "Schaefer1000 (MghUscHcp32)",
-    "name": "Schaefer1000 (MghUscHcp32)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer1000"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "MghUscHcp32",
     "space": "FSLMNI152",
-    "weights_min": 0.0,
-    "weights_max": 2056.0,
-    "weights_mean": 2.29345,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      205.6,
-      411.2,
-      616.8,
-      822.4,
-      1028.0,
-      1233.6,
-      1439.2,
-      1644.8,
-      1850.3999999999999,
-      2056.0
-    ],
-    "weights_histogram.counts": [
-      998026,
-      1568,
-      302,
-      60,
-      24,
-      12,
-      2,
-      2,
-      2,
-      2
-    ],
+    "name": "Schaefer1000 (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "Schaefer1000",
     "atlas.name": "Schaefer1000",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "hcpmmp1 (dTOR)",
-    "name": "hcpmmp1 (dTOR)",
+    "number_of_nodes": 379,
+    "number_of_regions": 379,
+    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "hcpmmp1"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR_lengths.csv",
-    "number_of_regions": 379,
+    "tractogram.name": "dTOR",
     "space": "MNI152NLin2009b",
-    "weights_min": 0.0,
-    "weights_max": 182165.0,
-    "weights_mean": 122.98396697321796,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      18216.5,
-      36433.0,
-      54649.5,
-      72866.0,
-      91082.5,
-      109299.0,
-      127515.5,
-      145732.0,
-      163948.5,
-      182165.0
-    ],
-    "weights_histogram.counts": [
-      143589,
-      40,
-      6,
-      0,
-      0,
-      0,
-      0,
-      2,
-      2,
-      2
-    ],
+    "name": "hcpmmp1 (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "hcpmmp1",
     "atlas.name": "hcpmmp1",
     "n_regions": 379,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "Schaefer100017Networks (dTOR)",
-    "name": "Schaefer100017Networks (dTOR)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer100017Networks"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "dTOR",
     "space": "FSLMNI152",
-    "weights_min": 0.0,
-    "weights_max": 12469.0,
-    "weights_mean": 12.559944,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1246.9,
-      2493.8,
-      3740.7000000000003,
-      4987.6,
-      6234.5,
-      7481.400000000001,
-      8728.300000000001,
-      9975.2,
-      11222.1,
-      12469.0
-    ],
-    "weights_histogram.counts": [
-      998848,
-      886,
-      164,
-      54,
-      22,
-      14,
-      8,
-      2,
-      0,
-      2
-    ],
+    "name": "Schaefer100017Networks (dTOR)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "Schaefer100017Networks",
     "atlas.name": "Schaefer100017Networks",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "HOCPA (MghUscHcp32)",
-    "name": "HOCPA (MghUscHcp32)",
+    "number_of_nodes": 48,
+    "number_of_regions": 48,
+    "data_file": "space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "HOCPA"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 48,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152NLin2009cAsym",
-    "weights_min": 0.0,
-    "weights_max": 35698.0,
-    "weights_mean": 1022.2135416666666,
-    "weights_median": 126.0,
-    "weights_histogram.bins": [
-      0.0,
-      3569.8,
-      7139.6,
-      10709.400000000001,
-      14279.2,
-      17849.0,
-      21418.800000000003,
-      24988.600000000002,
-      28558.4,
-      32128.2,
-      35698.0
-    ],
-    "weights_histogram.counts": [
-      2138,
-      90,
-      34,
-      14,
-      14,
-      4,
-      6,
-      0,
-      2,
-      2
-    ],
+    "name": "HOCPA (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "HOCPA",
     "atlas.name": "HOCPA",
     "n_regions": 48,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "Schaefer100017Networks (MghUscHcp32)",
-    "name": "Schaefer100017Networks (MghUscHcp32)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer100017Networks"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "MghUscHcp32",
     "space": "FSLMNI152",
-    "weights_min": 0.0,
-    "weights_max": 2056.0,
-    "weights_mean": 2.29345,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      205.6,
-      411.2,
-      616.8,
-      822.4,
-      1028.0,
-      1233.6,
-      1439.2,
-      1644.8,
-      1850.3999999999999,
-      2056.0
-    ],
-    "weights_histogram.counts": [
-      998026,
-      1568,
-      302,
-      60,
-      24,
-      12,
-      2,
-      2,
-      2,
-      2
-    ],
+    "name": "Schaefer100017Networks (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "Schaefer100017Networks",
     "atlas.name": "Schaefer100017Networks",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "Schaefer100017Networks (PPMI85)",
-    "name": "Schaefer100017Networks (PPMI85)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer100017Networks"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "PPMI85",
     "space": "FSLMNI152",
-    "weights_min": 0.0,
-    "weights_max": 1842.0,
-    "weights_mean": 0.717102,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      184.2,
-      368.4,
-      552.5999999999999,
-      736.8,
-      921.0,
-      1105.1999999999998,
-      1289.3999999999999,
-      1473.6,
-      1657.8,
-      1842.0
-    ],
-    "weights_histogram.counts": [
-      999496,
-      414,
-      66,
-      14,
-      8,
-      0,
-      0,
-      0,
-      0,
-      2
-    ],
+    "name": "Schaefer100017Networks (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "Schaefer100017Networks",
     "atlas.name": "Schaefer100017Networks",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "Destrieuxranked (PPMI85)",
-    "name": "Destrieuxranked (PPMI85)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieuxranked"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "PPMI85",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 11197.0,
-    "weights_mean": 23.865108107139015,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1119.7,
-      2239.4,
-      3359.1000000000004,
-      4478.8,
-      5598.5,
-      6718.200000000001,
-      7837.900000000001,
-      8957.6,
-      10077.300000000001,
-      11197.0
-    ],
-    "weights_histogram.counts": [
-      27787,
-      72,
-      16,
-      10,
-      0,
-      0,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "Destrieuxranked (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "Destrieuxranked",
     "atlas.name": "Destrieuxranked",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "Yeo17 (PPMI85)",
-    "name": "Yeo17 (PPMI85)",
+    "number_of_nodes": 17,
+    "number_of_regions": 17,
+    "data_file": "space-MNI152_atlas-Yeo17_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Yeo17"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-PPMI85_lengths.csv",
-    "number_of_regions": 17,
+    "tractogram.name": "PPMI85",
     "space": "MNI152",
-    "weights_min": 0.0,
-    "weights_max": 11942.0,
-    "weights_mean": 1591.5640138408305,
-    "weights_median": 627.0,
-    "weights_histogram.bins": [
-      0.0,
-      1194.2,
-      2388.4,
-      3582.6000000000004,
-      4776.8,
-      5971.0,
-      7165.200000000001,
-      8359.4,
-      9553.6,
-      10747.800000000001,
-      11942.0
-    ],
-    "weights_histogram.counts": [
-      183,
-      36,
-      26,
-      22,
-      2,
-      4,
-      10,
-      2,
-      2,
-      2
-    ],
+    "name": "Yeo17 (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152_atlas-Yeo17_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "Yeo17",
     "atlas.name": "Yeo17",
     "n_regions": 17,
     "thumbnail": "browser/imgs/networks/space-MNI152_atlas-Yeo17_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "HCPex (dTOR)",
-    "name": "HCPex (dTOR)",
+    "number_of_nodes": 427,
+    "number_of_regions": 427,
+    "data_file": "space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "HCPex"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR_lengths.csv",
-    "number_of_regions": 427,
+    "tractogram.name": "dTOR",
     "space": "MNI152NLin2009cAsym",
-    "assignments": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR_assignments.csv",
-    "weights_min": 0.0,
-    "weights_max": 44497.0,
-    "weights_mean": 111.84821942751839,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      4449.7,
-      8899.4,
-      13349.099999999999,
-      17798.8,
-      22248.5,
-      26698.199999999997,
-      31147.899999999998,
-      35597.6,
-      40047.299999999996,
-      44497.0
-    ],
-    "weights_histogram.counts": [
-      181481,
-      526,
-      172,
-      84,
-      24,
-      12,
-      10,
-      12,
-      6,
-      2
-    ],
+    "name": "HCPex (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "HCPex",
     "atlas.name": "HCPex",
     "n_regions": 427,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "Schaefer1000 (dTOR)",
-    "name": "Schaefer1000 (dTOR)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_atlas-Schaefer1000_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer1000"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer1000_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer1000_desc-dTOR_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "dTOR",
     "space": "FSLMNI152",
-    "weights_min": 0.0,
-    "weights_max": 12469.0,
-    "weights_mean": 12.559944,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1246.9,
-      2493.8,
-      3740.7000000000003,
-      4987.6,
-      6234.5,
-      7481.400000000001,
-      8728.300000000001,
-      9975.2,
-      11222.1,
-      12469.0
-    ],
-    "weights_histogram.counts": [
-      998848,
-      886,
-      164,
-      54,
-      22,
-      14,
-      8,
-      2,
-      0,
-      2
-    ],
+    "name": "Schaefer1000 (dTOR)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_atlas-Schaefer1000_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "Schaefer1000",
     "atlas.name": "Schaefer1000",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer1000_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "Schaefer1000 (PPMI85)",
-    "name": "Schaefer1000 (PPMI85)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer1000"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "PPMI85",
     "space": "FSLMNI152",
-    "weights_min": 0.0,
-    "weights_max": 1842.0,
-    "weights_mean": 0.717102,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      184.2,
-      368.4,
-      552.5999999999999,
-      736.8,
-      921.0,
-      1105.1999999999998,
-      1289.3999999999999,
-      1473.6,
-      1657.8,
-      1842.0
-    ],
-    "weights_histogram.counts": [
-      999496,
-      414,
-      66,
-      14,
-      8,
-      0,
-      0,
-      0,
-      0,
-      2
-    ],
+    "name": "Schaefer1000 (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "Schaefer1000",
     "atlas.name": "Schaefer1000",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "DesikanKilliany (dTOR)",
-    "name": "DesikanKilliany (dTOR)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKilliany"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "dTOR",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 458885.0,
-    "weights_mean": 1977.2881490289337,
-    "weights_median": 10.0,
-    "weights_histogram.bins": [
-      0.0,
-      45888.5,
-      91777.0,
-      137665.5,
-      183554.0,
-      229442.5,
-      275331.0,
-      321219.5,
-      367108.0,
-      412996.5,
-      458885.0
-    ],
-    "weights_histogram.counts": [
-      7541,
-      18,
-      2,
-      6,
-      0,
-      0,
-      0,
-      0,
-      0,
-      2
-    ],
+    "name": "DesikanKilliany (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "DesikanKilliany",
     "atlas.name": "DesikanKilliany",
     "n_regions": 87,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "DesikanKillianyranked (PPMI85)",
-    "name": "DesikanKillianyranked (PPMI85)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKillianyranked"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "PPMI85",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 11197.0,
-    "weights_mean": 82.10569427929714,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1119.7,
-      2239.4,
-      3359.1000000000004,
-      4478.8,
-      5598.5,
-      6718.200000000001,
-      7837.900000000001,
-      8957.6,
-      10077.300000000001,
-      11197.0
-    ],
-    "weights_histogram.counts": [
-      7423,
-      102,
-      26,
-      12,
-      2,
-      0,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "DesikanKillianyranked (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "DesikanKillianyranked",
     "atlas.name": "DesikanKillianyranked",
     "n_regions": 87,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "hcpmmp1 (MghUscHcp32)",
-    "name": "hcpmmp1 (MghUscHcp32)",
+    "number_of_nodes": 379,
+    "number_of_regions": 379,
+    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "hcpmmp1"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 379,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152NLin2009b",
-    "weights_min": 0.0,
-    "weights_max": 21800.0,
-    "weights_mean": 17.905430900648145,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      2180.0,
-      4360.0,
-      6540.0,
-      8720.0,
-      10900.0,
-      13080.0,
-      15260.0,
-      17440.0,
-      19620.0,
-      21800.0
-    ],
-    "weights_histogram.counts": [
-      143553,
-      52,
-      26,
-      4,
-      2,
-      0,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "hcpmmp1 (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "hcpmmp1",
     "atlas.name": "hcpmmp1",
     "n_regions": 379,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "hcpmmp1ordered (PPMI85)",
-    "name": "hcpmmp1ordered (PPMI85)",
+    "number_of_nodes": 379,
+    "number_of_regions": 379,
+    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "hcpmmp1ordered"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85_lengths.csv",
-    "number_of_regions": 379,
+    "tractogram.name": "PPMI85",
     "space": "MNI152NLin2009b",
-    "weights_min": 0.0,
-    "weights_max": 12801.0,
-    "weights_mean": 6.574599174330449,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1280.1,
-      2560.2,
-      3840.2999999999997,
-      5120.4,
-      6400.5,
-      7680.599999999999,
-      8960.699999999999,
-      10240.8,
-      11520.9,
-      12801.0
-    ],
-    "weights_histogram.counts": [
-      143587,
-      40,
-      10,
-      0,
-      0,
-      0,
-      0,
-      0,
-      2,
-      2
-    ],
+    "name": "hcpmmp1ordered (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "hcpmmp1ordered",
     "atlas.name": "hcpmmp1ordered",
     "n_regions": 379,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "Destrieux (dTOR)",
-    "name": "Destrieux (dTOR)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieux"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "dTOR",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 306659.0,
-    "weights_mean": 585.4290221951306,
-    "weights_median": 2.0,
-    "weights_histogram.bins": [
-      0.0,
-      30665.9,
-      61331.8,
-      91997.70000000001,
-      122663.6,
-      153329.5,
-      183995.40000000002,
-      214661.30000000002,
-      245327.2,
-      275993.10000000003,
-      306659.0
-    ],
-    "weights_histogram.counts": [
-      27865,
-      12,
-      4,
-      0,
-      4,
-      2,
-      0,
-      0,
-      0,
-      2
-    ],
+    "name": "Destrieux (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "Destrieux",
     "atlas.name": "Destrieux",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "Yeo17 (MghUscHcp32)",
-    "name": "Yeo17 (MghUscHcp32)",
+    "number_of_nodes": 17,
+    "number_of_regions": 17,
+    "data_file": "space-MNI152_atlas-Yeo17_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Yeo17"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152_atlas-Yeo17_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 17,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152",
-    "weights_min": 0.0,
-    "weights_max": 35376.0,
-    "weights_mean": 4745.038062283737,
-    "weights_median": 1244.0,
-    "weights_histogram.bins": [
-      0.0,
-      3537.6,
-      7075.2,
-      10612.8,
-      14150.4,
-      17688.0,
-      21225.6,
-      24763.2,
-      28300.8,
-      31838.399999999998,
-      35376.0
-    ],
-    "weights_histogram.counts": [
-      183,
-      42,
-      16,
-      14,
-      14,
-      8,
-      4,
-      4,
-      0,
-      4
-    ],
+    "name": "Yeo17 (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152_atlas-Yeo17_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "Yeo17",
     "atlas.name": "Yeo17",
     "n_regions": 17,
     "thumbnail": "browser/imgs/networks/space-MNI152_atlas-Yeo17_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "DesikanKilliany (MghUscHcp32)",
-    "name": "DesikanKilliany (MghUscHcp32)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKilliany"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 21104.0,
-    "weights_mean": 213.47390672479852,
-    "weights_median": 2.0,
-    "weights_histogram.bins": [
-      0.0,
-      2110.4,
-      4220.8,
-      6331.200000000001,
-      8441.6,
-      10552.0,
-      12662.400000000001,
-      14772.800000000001,
-      16883.2,
-      18993.600000000002,
-      21104.0
-    ],
-    "weights_histogram.counts": [
-      7383,
-      94,
-      58,
-      20,
-      6,
-      4,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "DesikanKilliany (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "DesikanKilliany",
     "atlas.name": "DesikanKilliany",
     "n_regions": 87,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "Destrieuxranked (dTOR)",
-    "name": "Destrieuxranked (dTOR)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieuxranked"
     },
-    "tractogram": "dTOR",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "dTOR",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 306659.0,
-    "weights_mean": 585.4290221951306,
-    "weights_median": 2.0,
-    "weights_histogram.bins": [
-      0.0,
-      30665.9,
-      61331.8,
-      91997.70000000001,
-      122663.6,
-      153329.5,
-      183995.40000000002,
-      214661.30000000002,
-      245327.2,
-      275993.10000000003,
-      306659.0
-    ],
-    "weights_histogram.counts": [
-      27865,
-      12,
-      4,
-      0,
-      4,
-      2,
-      0,
-      0,
-      0,
-      2
-    ],
+    "name": "Destrieuxranked (dTOR)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR.yaml",
-    "desc": "dTOR",
+    "desc": {
+      "name": "dTOR"
+    },
     "atlas": "Destrieuxranked",
     "atlas.name": "Destrieuxranked",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR.png"
   },
   {
-    "type": "network",
     "label": "hcpmmp1ordered (MghUscHcp32)",
-    "name": "hcpmmp1ordered (MghUscHcp32)",
+    "number_of_nodes": 379,
+    "number_of_regions": 379,
+    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "hcpmmp1ordered"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 379,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152NLin2009b",
-    "weights_min": 0.0,
-    "weights_max": 21800.0,
-    "weights_mean": 17.905430900648145,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      2180.0,
-      4360.0,
-      6540.0,
-      8720.0,
-      10900.0,
-      13080.0,
-      15260.0,
-      17440.0,
-      19620.0,
-      21800.0
-    ],
-    "weights_histogram.counts": [
-      143553,
-      52,
-      26,
-      4,
-      2,
-      0,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "hcpmmp1ordered (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "hcpmmp1ordered",
     "atlas.name": "hcpmmp1ordered",
     "n_regions": 379,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32.png"
   },
   {
-    "type": "network",
     "label": "Destrieux (PPMI85)",
-    "name": "Destrieux (PPMI85)",
+    "number_of_nodes": 167,
+    "number_of_regions": 167,
+    "data_file": "space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Destrieux"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85_lengths.csv",
-    "number_of_regions": 167,
+    "tractogram.name": "PPMI85",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 11197.0,
-    "weights_mean": 23.865108107139015,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1119.7,
-      2239.4,
-      3359.1000000000004,
-      4478.8,
-      5598.5,
-      6718.200000000001,
-      7837.900000000001,
-      8957.6,
-      10077.300000000001,
-      11197.0
-    ],
-    "weights_histogram.counts": [
-      27787,
-      72,
-      16,
-      10,
-      0,
-      0,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "Destrieux (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "Destrieux",
     "atlas.name": "Destrieux",
     "n_regions": 167,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "Schaefer1000 (17Networks)",
-    "name": "Schaefer1000 (17Networks)",
+    "number_of_nodes": 1000,
+    "number_of_regions": 1000,
+    "data_file": "space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "Schaefer1000"
     },
-    "tractogram": "17Networks",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks_lengths.csv",
-    "number_of_regions": 1000,
+    "tractogram.name": "17Networks",
     "space": "FSLMNI152",
-    "template": "MghUscHcp32",
-    "weights_min": 0.0,
-    "weights_max": 2056.0,
-    "weights_mean": 2.29345,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      205.6,
-      411.2,
-      616.8,
-      822.4,
-      1028.0,
-      1233.6,
-      1439.2,
-      1644.8,
-      1850.3999999999999,
-      2056.0
-    ],
-    "weights_histogram.counts": [
-      998026,
-      1568,
-      302,
-      60,
-      24,
-      12,
-      2,
-      2,
-      2,
-      2
-    ],
+    "name": "Schaefer1000 (17Networks)",
+    "type": "network",
     "file": "database/networks/space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks.yaml",
-    "desc": "17Networks",
+    "desc": {
+      "name": "17Networks"
+    },
     "atlas": "Schaefer1000",
     "atlas.name": "Schaefer1000",
     "n_regions": 1000,
     "thumbnail": "browser/imgs/networks/space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks.png"
   },
   {
-    "type": "network",
     "label": "DesikanKilliany (PPMI85)",
-    "name": "DesikanKilliany (PPMI85)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKilliany"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "PPMI85",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 11197.0,
-    "weights_mean": 82.10569427929714,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      1119.7,
-      2239.4,
-      3359.1000000000004,
-      4478.8,
-      5598.5,
-      6718.200000000001,
-      7837.900000000001,
-      8957.6,
-      10077.300000000001,
-      11197.0
-    ],
-    "weights_histogram.counts": [
-      7423,
-      102,
-      26,
-      12,
-      2,
-      0,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "DesikanKilliany (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "DesikanKilliany",
     "atlas.name": "DesikanKilliany",
     "n_regions": 87,
     "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "virtualdbs (PPMI85)",
-    "name": "virtualdbs (PPMI85)",
+    "number_of_nodes": 370,
+    "number_of_regions": 370,
+    "data_file": "space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "virtualdbs"
     },
-    "tractogram": "PPMI85",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85_lengths.csv",
-    "number_of_regions": 370,
+    "tractogram.name": "PPMI85",
     "space": "MNI152NLin2009c",
-    "weights_min": 0.0,
-    "weights_max": 6355.0,
-    "weights_mean": 6.396026296566837,
-    "weights_median": 0.0,
-    "weights_histogram.bins": [
-      0.0,
-      635.5,
-      1271.0,
-      1906.5,
-      2542.0,
-      3177.5,
-      3813.0,
-      4448.5,
-      5084.0,
-      5719.5,
-      6355.0
-    ],
-    "weights_histogram.counts": [
-      136704,
-      140,
-      38,
-      10,
-      2,
-      0,
-      2,
-      0,
-      2,
-      2
-    ],
+    "name": "virtualdbs (PPMI85)",
+    "type": "network",
     "file": "database/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85.yaml",
-    "desc": "PPMI85",
+    "desc": {
+      "name": "PPMI85"
+    },
     "atlas": "virtualdbs",
     "atlas.name": "virtualdbs",
     "n_regions": 370,
     "thumbnail": "browser/imgs/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85.png"
   },
   {
-    "type": "network",
     "label": "DesikanKillianyranked (MghUscHcp32)",
-    "name": "DesikanKillianyranked (MghUscHcp32)",
+    "number_of_nodes": 87,
+    "number_of_regions": 87,
+    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
     "parcellation.atlas": {
       "name": "DesikanKillianyranked"
     },
-    "tractogram": "MghUscHcp32",
-    "weights": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32_weights.csv",
-    "lengths": "/Users/leonmartin_bih/tools/tvbo-python/tvbo/data/tvbo_data/connectome/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32_lengths.csv",
-    "number_of_regions": 87,
+    "tractogram.name": "MghUscHcp32",
     "space": "MNI152Nlin2009c",
-    "weights_min": 0.0,
-    "weights_max": 21104.0,
-    "weights_mean": 213.47390672479852,
-    "weights_median": 2.0,
-    "weights_histogram.bins": [
-      0.0,
-      2110.4,
-      4220.8,
-      6331.200000000001,
-      8441.6,
-      10552.0,
-      12662.400000000001,
-      14772.800000000001,
-      16883.2,
-      18993.600000000002,
-      21104.0
-    ],
-    "weights_histogram.counts": [
-      7383,
-      94,
-      58,
-      20,
-      6,
-      4,
-      0,
-      0,
-      0,
-      4
-    ],
+    "name": "DesikanKillianyranked (MghUscHcp32)",
+    "type": "network",
     "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32.yaml",
-    "desc": "MghUscHcp32",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
     "atlas": "DesikanKillianyranked",
     "atlas.name": "DesikanKillianyranked",
     "n_regions": 87,

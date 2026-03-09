@@ -576,7 +576,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="setup" class="level1">
 <h1>Setup</h1>
-<div id="setup" class="cell" data-execution_count="1">
+<div id="setup" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -590,7 +590,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="create-a-simulation-experiment" class="level1">
 <h1>Create a Simulation Experiment</h1>
 <p>First, let’s set up a simulation experiment using the Wilson-Cowan model with a sample connectome.</p>
-<div id="4758d9aa" class="cell" data-execution_count="2">
+<div id="4758d9aa" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel.tvbo_datamodel <span class="im">import</span> CouplingInput, Parameter</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># | label: create-experiment</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load a sample connectome</span></span>
@@ -621,7 +621,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="run-the-simulation" class="level1">
 <h1>Run the Simulation</h1>
-<div id="8d0542ca" class="cell" data-execution_count="3">
+<div id="8d0542ca" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> experiment.run(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TimeSeries shape: </span><span class="sc">{</span>ts<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -654,7 +654,7 @@ Sample period: 0.1 ms</code></pre>
 </section>
 <section id="visualize-results" class="level1">
 <h1>Visualize Results</h1>
-<div id="cell-visualize-results" class="cell" data-execution_count="4">
+<div id="cell-visualize-results" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot time series for a few regions</span></span>
@@ -718,7 +718,7 @@ Sample period: 0.1 ms</code></pre>
 </section>
 <section id="method-1-export-via-timeseries" class="level2">
 <h2 class="anchored" data-anchor-id="method-1-export-via-timeseries">Method 1: Export via TimeSeries</h2>
-<div id="export-via-timeseries" class="cell" data-execution_count="5">
+<div id="export-via-timeseries" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the derivatives folder for BIDS output</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>bids_output <span class="op">=</span> os.path.join(os.path.dirname(<span class="va">__file__</span>) <span class="cf">if</span> <span class="st">'__file__'</span> <span class="kw">in</span> <span class="bu">dir</span>() <span class="cf">else</span> <span class="st">'.'</span>, <span class="st">'derivatives'</span>, <span class="st">'tvbo'</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>os.makedirs(bids_output, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
@@ -745,7 +745,7 @@ Sample period: 0.1 ms</code></pre>
 <section id="method-1b-export-as-hdf5-preserving-full-dimensions" class="level2">
 <h2 class="anchored" data-anchor-id="method-1b-export-as-hdf5-preserving-full-dimensions">Method 1b: Export as HDF5 (preserving full dimensions)</h2>
 <p>For data with multiple dimensions (e.g., parameter sweeps, modes), use HDF5:</p>
-<div id="export-hdf5" class="cell" data-execution_count="6">
+<div id="export-hdf5" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># HDF5 preserves full dimensionality without splitting by state variable</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Ideal for: (sweep, time, state, region, mode) or other multi-dimensional data</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>output_path_h5 <span class="op">=</span> ts.to_bids(</span>
@@ -759,7 +759,7 @@ Sample period: 0.1 ms</code></pre>
 <section id="method-2-export-via-simulationexperiment" class="level2">
 <h2 class="anchored" data-anchor-id="method-2-export-via-simulationexperiment">Method 2: Export via SimulationExperiment</h2>
 <p>Alternatively, you can export directly from the experiment (which will run the simulation if needed):</p>
-<div id="export-via-experiment" class="cell" data-execution_count="7">
+<div id="export-via-experiment" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use derivatives folder for experiment export</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>bids_output2 <span class="op">=</span> os.path.join(os.path.dirname(<span class="va">__file__</span>) <span class="cf">if</span> <span class="st">'__file__'</span> <span class="kw">in</span> <span class="bu">dir</span>() <span class="cf">else</span> <span class="st">'.'</span>, <span class="st">'derivatives'</span>, <span class="st">'tvbo_experiment'</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>os.makedirs(bids_output2, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
@@ -783,7 +783,7 @@ Sample period: 0.1 ms</code></pre>
 <section id="inspect-the-bep034-structure" class="level1">
 <h1>Inspect the BEP034 Structure</h1>
 <p>Let’s examine the created BIDS dataset structure. BEP034 organizes data into specific directories:</p>
-<div id="inspect-structure" class="cell" data-execution_count="8">
+<div id="inspect-structure" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> print_tree(path, prefix<span class="op">=</span><span class="st">""</span>):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Print directory tree structure."""</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    entries <span class="op">=</span> <span class="bu">sorted</span>(os.listdir(path))</span>
@@ -877,7 +877,7 @@ Sample period: 0.1 ms</code></pre>
 <p><strong>Examples:</strong> - <code>ts-V_State.ptseries.nii</code> - Raw state variable V - <code>ts-Diff_BOLD.ptseries.nii</code> - Derived output (V-W) convolved with HRF</p>
 <section id="dataset-description" class="level2">
 <h2 class="anchored" data-anchor-id="dataset-description">Dataset Description</h2>
-<div id="show-dataset-description" class="cell" data-execution_count="9">
+<div id="show-dataset-description" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read and display the dataset_description.json</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>desc_path <span class="op">=</span> os.path.join(bids_output, <span class="st">"dataset_description.json"</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(desc_path, <span class="st">"r"</span>) <span class="im">as</span> f:</span>
@@ -906,7 +906,7 @@ Sample period: 0.1 ms</code></pre>
 </section>
 <section id="time-series-sidecar-ts-directory" class="level2">
 <h2 class="anchored" data-anchor-id="time-series-sidecar-ts-directory">Time Series Sidecar (ts/ directory)</h2>
-<div id="show-sidecar" class="cell" data-execution_count="10">
+<div id="show-sidecar" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find and display the JSON sidecar from ts/ directory</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> glob</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -972,7 +972,7 @@ Sample period: 0.1 ms</code></pre>
 </section>
 <section id="network-connectivity-net-directory" class="level2">
 <h2 class="anchored" data-anchor-id="network-connectivity-net-directory">Network Connectivity (net/ directory)</h2>
-<div id="show-network" class="cell" data-execution_count="11">
+<div id="show-network" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find network files</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>net_files <span class="op">=</span> glob.glob(os.path.join(bids_output, <span class="st">"**"</span>, <span class="st">"net"</span>, <span class="st">"*.json"</span>), recursive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> net_files:</span>
@@ -999,7 +999,7 @@ Sample period: 0.1 ms</code></pre>
 </section>
 <section id="participants-file" class="level2">
 <h2 class="anchored" data-anchor-id="participants-file">Participants File</h2>
-<div id="show-participants" class="cell" data-execution_count="12">
+<div id="show-participants" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>participants_path <span class="op">=</span> os.path.join(bids_output, <span class="st">"participants.tsv"</span>)</span>
@@ -1033,7 +1033,7 @@ Sample period: 0.1 ms</code></pre>
 <section id="model-equations-eq-directory" class="level2">
 <h2 class="anchored" data-anchor-id="model-equations-eq-directory">1. Model Equations (eq/ directory)</h2>
 <p>Model equations are exported in tvbo format (JSON):</p>
-<div id="show-equations" class="cell" data-execution_count="13">
+<div id="show-equations" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for equation files</span></span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>eq_files <span class="op">=</span> glob.glob(os.path.join(bids_output, <span class="st">"**"</span>, <span class="st">"eq"</span>, <span class="st">"*.json"</span>), recursive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> eq_files:</span>
@@ -1068,7 +1068,7 @@ Equation metadata:
 <li><code>*_net-weights_id-&lt;hash&gt;.tsv</code>: Connection weights</li>
 <li><code>*_net-distances_id-&lt;hash&gt;.tsv</code>: Tract lengths/distances</li>
 </ul>
-<div id="show-connectivity" class="cell" data-execution_count="14">
+<div id="show-connectivity" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for connectivity files in net/ directory</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>weights_files <span class="op">=</span> glob.glob(os.path.join(bids_output, <span class="st">"**"</span>, <span class="st">"net"</span>, <span class="st">"*net-weights*.tsv"</span>), recursive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>distances_files <span class="op">=</span> glob.glob(os.path.join(bids_output, <span class="st">"**"</span>, <span class="st">"net"</span>, <span class="st">"*net-distances*.tsv"</span>), recursive<span class="op">=</span><span class="va">True</span>)</span>
@@ -1102,7 +1102,7 @@ Distances files: 6
 <section id="id-based-file-naming" class="level2">
 <h2 class="anchored" data-anchor-id="id-based-file-naming">3. ID-based File Naming</h2>
 <p>BEP034 uses hash-based IDs computed from the JSON sidecar content:</p>
-<div id="show-id-pattern" class="cell" data-execution_count="15">
+<div id="show-id-pattern" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show example of ID pattern</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1121,7 +1121,7 @@ Distances files: 6
 <section id="provenance-tracking" class="level2">
 <h2 class="anchored" data-anchor-id="provenance-tracking">4. Provenance Tracking</h2>
 <p>The JSON sidecar includes simulation provenance:</p>
-<div id="show-provenance" class="cell" data-execution_count="16">
+<div id="show-provenance" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> sidecar_files:</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(sidecar_files[<span class="dv">0</span>], <span class="st">"r"</span>) <span class="im">as</span> f:</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>        sidecar <span class="op">=</span> json.load(f)</span>
@@ -1136,7 +1136,7 @@ Distances files: 6
 <section id="complete-example-multiple-subjects" class="level1">
 <h1>Complete Example: Multiple Subjects</h1>
 <p>Here’s how to create a multi-subject BIDS dataset:</p>
-<div id="multi-subject" class="cell" data-execution_count="17">
+<div id="multi-subject" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a multi-subject dataset in derivatives</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>multi_bids <span class="op">=</span> os.path.join(os.path.dirname(<span class="va">__file__</span>) <span class="cf">if</span> <span class="st">'__file__'</span> <span class="kw">in</span> <span class="bu">dir</span>() <span class="cf">else</span> <span class="st">'.'</span>, <span class="st">'derivatives'</span>, <span class="st">'tvbo_multi'</span>)</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>os.makedirs(multi_bids, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
@@ -1255,7 +1255,7 @@ Multi-subject dataset structure:
 <p>You can load a previously exported BIDS dataset back into a SimulationExperiment using the <code>from_bids()</code> class method. This enables full round-trip workflows.</p>
 <section id="minimal-example" class="level2">
 <h2 class="anchored" data-anchor-id="minimal-example">Minimal Example</h2>
-<div id="round-trip-minimal" class="cell" data-execution_count="18">
+<div id="round-trip-minimal" class="cell" data-execution_count="19">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export to BIDS (HDF5 for 100% fidelity)</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>round_trip_dir <span class="op">=</span> os.path.join(<span class="st">'.'</span>, <span class="st">'derivatives'</span>, <span class="st">'tvbo_roundtrip'</span>)</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>os.makedirs(round_trip_dir, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
@@ -1285,7 +1285,7 @@ Model: Dynamics</code></pre>
 </section>
 <section id="verifying-reproducibility-with-np.isclose" class="level2">
 <h2 class="anchored" data-anchor-id="verifying-reproducibility-with-np.isclose">Verifying Reproducibility with <code>np.isclose</code></h2>
-<div id="verify-isclose" class="cell" data-execution_count="19">
+<div id="verify-isclose" class="cell" data-execution_count="20">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare original and loaded data</span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>original_data <span class="op">=</span> ts.data</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>loaded_data <span class="op">=</span> loaded_ts.data</span>
@@ -1310,7 +1310,7 @@ Max absolute difference:    0.00e+00
 <section id="loading-without-hdf5-ciftitsv" class="level2">
 <h2 class="anchored" data-anchor-id="loading-without-hdf5-ciftitsv">Loading Without HDF5 (CIFTI/TSV)</h2>
 <p>When loading from CIFTI or TSV format, data is reconstructed from per-state files:</p>
-<div id="from-bids-cifti" class="cell" data-execution_count="20">
+<div id="from-bids-cifti" class="cell" data-execution_count="21">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load from the earlier CIFTI export</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>loaded_exp2, loaded_ts2 <span class="op">=</span> SimulationExperiment.from_bids(</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    bids_dir<span class="op">=</span>bids_output,</span>
@@ -1367,7 +1367,7 @@ CIFTI round-trip match: True</code></pre>
 <section id="output-location" class="level1">
 <h1>Output Location</h1>
 <p>The BIDS datasets are saved in the <code>derivatives</code> folder alongside this notebook:</p>
-<div id="output-location" class="cell" data-execution_count="21">
+<div id="output-location" class="cell" data-execution_count="22">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Main output: </span><span class="sc">{</span>bids_output<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Experiment output: </span><span class="sc">{</span>bids_output2<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Multi-subject output: </span><span class="sc">{</span>multi_bids<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

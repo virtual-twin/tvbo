@@ -234,6 +234,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.datamodel.tvbopydantic.PDE" id="toc-tvbo.datamodel.tvbopydantic.PDE" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.PDE">PDE</a></li>
   <li><a href="#tvbo.datamodel.tvbopydantic.ParcellationEntity" id="toc-tvbo.datamodel.tvbopydantic.ParcellationEntity" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.ParcellationEntity">ParcellationEntity</a></li>
   <li><a href="#tvbo.datamodel.tvbopydantic.ParcellationTerminology" id="toc-tvbo.datamodel.tvbopydantic.ParcellationTerminology" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.ParcellationTerminology">ParcellationTerminology</a></li>
+  <li><a href="#tvbo.datamodel.tvbopydantic.Provenance" id="toc-tvbo.datamodel.tvbopydantic.Provenance" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.Provenance">Provenance</a></li>
   <li><a href="#tvbo.datamodel.tvbopydantic.Range" id="toc-tvbo.datamodel.tvbopydantic.Range" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.Range">Range</a></li>
   <li><a href="#tvbo.datamodel.tvbopydantic.ReductionType" id="toc-tvbo.datamodel.tvbopydantic.ReductionType" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.ReductionType">ReductionType</a></li>
   <li><a href="#tvbo.datamodel.tvbopydantic.RegionMapping" id="toc-tvbo.datamodel.tvbopydantic.RegionMapping" class="nav-link" data-scroll-target="#tvbo.datamodel.tvbopydantic.RegionMapping">RegionMapping</a></li>
@@ -383,7 +384,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.Edge">Edge</a></td>
-<td>A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.</td>
+<td>An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.Electrode">Electrode</a></td>
@@ -478,62 +479,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>A schema for representing a parcellation terminology, which consists of parcellation entities.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.datamodel.tvbopydantic.Provenance">Provenance</a></td>
+<td>W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.Range">Range</a></td>
 <td>Specifies a range for array generation, parameter bounds, or grid exploration.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.ReductionType">ReductionType</a></td>
 <td>Operations for reducing/aggregating values across dimensions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.RegionMapping">RegionMapping</a></td>
 <td>Maps vertices to parent regions for hierarchical/aggregated coupling</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.SamplingAxis">SamplingAxis</a></td>
 <td>Dimension along which a distribution is sampled.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.SoftwarePackage">SoftwarePackage</a></td>
 <td>Identity information about a software package independent of a specific version requirement.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.Solver">Solver</a></td>
 <td>Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.SpecimenEnum">SpecimenEnum</a></td>
 <td>A set of permissible types for specimens used in brain atlas creation.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.StandardGraphType">StandardGraphType</a></td>
 <td>Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.StateValue">StateValue</a></td>
 <td>A named state variable value for per-node initialization.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.StimulationSetting">StimulationSetting</a></td>
 <td>DBS parameters for a specific session.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.Subject">Subject</a></td>
 <td>Human or animal subject receiving DBS.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.TimeSeries">TimeSeries</a></td>
 <td>Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.Tractogram">Tractogram</a></td>
 <td>Reference to tractography/diffusion MRI data used to derive structural connectivity</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.tvbopydantic.TuningObjective">TuningObjective</a></td>
 <td>Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.tvbopydantic.UpdateRule">UpdateRule</a></td>
 <td>Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.</td>
 </tr>
@@ -780,7 +785,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.datamodel.tvbopydantic.Edge" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Edge">Edge</h3>
 <div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Edge()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units.</p>
+<p>An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.Electrode" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Electrode">Electrode</h3>
@@ -984,14 +989,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.ParcellationTerminology()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A schema for representing a parcellation terminology, which consists of parcellation entities.</p>
 </section>
+<section id="tvbo.datamodel.tvbopydantic.Provenance" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Provenance">Provenance</h3>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Provenance()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).</p>
+</section>
 <section id="tvbo.datamodel.tvbopydantic.Range" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Range">Range</h3>
-<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Range()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Range()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Specifies a range for array generation, parameter bounds, or grid exploration.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.ReductionType" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.ReductionType">ReductionType</h3>
-<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.ReductionType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.ReductionType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Operations for reducing/aggregating values across dimensions</p>
 <section id="attributes-6" class="level4">
 <h4 class="anchored" data-anchor-id="attributes-6">Attributes</h4>
@@ -1029,12 +1039,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.datamodel.tvbopydantic.RegionMapping" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.RegionMapping">RegionMapping</h3>
-<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.RegionMapping()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.RegionMapping()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Maps vertices to parent regions for hierarchical/aggregated coupling</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.SamplingAxis" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.SamplingAxis">SamplingAxis</h3>
-<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.SamplingAxis()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.SamplingAxis()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Dimension along which a distribution is sampled.</p>
 <section id="attributes-7" class="level4">
 <h4 class="anchored" data-anchor-id="attributes-7">Attributes</h4>
@@ -1060,22 +1070,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.datamodel.tvbopydantic.SoftwarePackage" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.SoftwarePackage">SoftwarePackage</h3>
-<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.SoftwarePackage()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.SoftwarePackage()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Identity information about a software package independent of a specific version requirement.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.Solver" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Solver">Solver</h3>
-<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Solver()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Solver()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.SpecimenEnum" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.SpecimenEnum">SpecimenEnum</h3>
-<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.SpecimenEnum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.SpecimenEnum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A set of permissible types for specimens used in brain atlas creation.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.StandardGraphType" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.StandardGraphType">StandardGraphType</h3>
-<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.StandardGraphType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.StandardGraphType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).</p>
 <section id="attributes-8" class="level4">
 <h4 class="anchored" data-anchor-id="attributes-8">Attributes</h4>
@@ -1125,37 +1135,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.datamodel.tvbopydantic.StateValue" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.StateValue">StateValue</h3>
-<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.StateValue()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.StateValue()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A named state variable value for per-node initialization.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.StimulationSetting" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.StimulationSetting">StimulationSetting</h3>
-<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.StimulationSetting()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.StimulationSetting()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>DBS parameters for a specific session.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.Subject" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Subject">Subject</h3>
-<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Subject()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Subject()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Human or animal subject receiving DBS.</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.TimeSeries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.TimeSeries">TimeSeries</h3>
-<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.TimeSeries()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.TimeSeries()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034).</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.Tractogram" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.Tractogram">Tractogram</h3>
-<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Tractogram()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.Tractogram()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Reference to tractography/diffusion MRI data used to derive structural connectivity</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.TuningObjective" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.TuningObjective">TuningObjective</h3>
-<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.TuningObjective()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.TuningObjective()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).</p>
 </section>
 <section id="tvbo.datamodel.tvbopydantic.UpdateRule" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.tvbopydantic.UpdateRule">UpdateRule</h3>
-<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.UpdateRule()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>datamodel.tvbopydantic.UpdateRule()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.</p>
 
 

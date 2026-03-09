@@ -549,7 +549,7 @@ window.Quarto = {
 </section>
 <section id="define-three-different-dynamics" class="level2">
 <h2 class="anchored" data-anchor-id="define-three-different-dynamics">Define Three Different Dynamics</h2>
-<div id="4a2ae255" class="cell" data-execution_count="1">
+<div id="4a2ae255" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Slow Hopf oscillator - the DRIVER (~0.05 Hz period)</span></span>
@@ -627,7 +627,7 @@ window.Quarto = {
 </section>
 <section id="create-simulationexperiment-with-network" class="level2">
 <h2 class="anchored" data-anchor-id="create-simulationexperiment-with-network">Create SimulationExperiment with Network</h2>
-<div id="f1db0d87" class="cell" data-execution_count="2">
+<div id="f1db0d87" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yaml</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Network</span>
@@ -716,7 +716,7 @@ window.Quarto = {
 <section id="export-to-pyrates-yaml" class="level2">
 <h2 class="anchored" data-anchor-id="export-to-pyrates-yaml">Export to PyRates YAML</h2>
 <p>The streamlined API exports directly via <code>SimulationExperiment.to_yaml(format="pyrates")</code>:</p>
-<div id="b0c670dc" class="cell" data-execution_count="3">
+<div id="b0c670dc" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Provide minimal integration settings required by the schema</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>exp.integration.duration <span class="op">=</span> <span class="fl">200.0</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>exp.integration.step_size <span class="op">=</span> <span class="fl">0.01</span></span>
@@ -815,7 +815,7 @@ HeterogeneousModulation:
 </code></pre>
 </div>
 </div>
-<div id="22fddb15" class="cell" data-execution_count="4">
+<div id="22fddb15" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run with PyRates backend - returns TVBO TimeSeries</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>exp.integration.duration <span class="op">=</span> <span class="fl">300.0</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>exp.integration.step_size <span class="op">=</span> <span class="fl">0.01</span></span>
@@ -840,7 +840,7 @@ Simulation Progress
         ...finished after 0.5069850829895586s.</code></pre>
 </div>
 </div>
-<div id="1aae7ed3" class="cell" data-execution_count="5">
+<div id="1aae7ed3" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check the result format</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(res)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Data shape: </span><span class="sc">{</span>res<span class="sc">.</span>data<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">  →  (time, state_vars, nodes, modes)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -877,7 +877,7 @@ Simulation Progress
 Data shape: (30000, 4, 3, 1)  →  (time, state_vars, nodes, modes)</code></pre>
 </div>
 </div>
-<div id="98b48d44" class="cell" data-execution_count="6">
+<div id="98b48d44" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>res.get_region(<span class="st">'Excitable'</span>).plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
 <div>
@@ -891,7 +891,7 @@ Data shape: (30000, 4, 3, 1)  →  (time, state_vars, nodes, modes)</code></pre>
 <section id="run-in-pyrates" class="level2">
 <h2 class="anchored" data-anchor-id="run-in-pyrates">Run in PyRates</h2>
 <p>For manual control, you can still run PyRates directly:</p>
-<div id="63b3454e" class="cell" data-execution_count="7">
+<div id="63b3454e" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyrates.frontend <span class="im">import</span> CircuitTemplate</span>
@@ -943,7 +943,7 @@ Simulated 30000 time points over 300 ms</code></pre>
 </section>
 <section id="visualize" class="level2">
 <h2 class="anchored" data-anchor-id="visualize">Visualize</h2>
-<div id="337436d1" class="cell" data-execution_count="8">
+<div id="337436d1" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -995,7 +995,7 @@ Simulated 30000 time points over 300 ms</code></pre>
 </section>
 <section id="phase-relationship-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="phase-relationship-analysis">Phase Relationship Analysis</h2>
-<div id="fbbfe4ab" class="cell" data-execution_count="9">
+<div id="fbbfe4ab" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Overlay all three normalized to similar scale</span></span>
@@ -1088,7 +1088,7 @@ Output Variables in PyRates
 </section>
 <section id="define-plasticity-dynamics" class="level2">
 <h2 class="anchored" data-anchor-id="define-plasticity-dynamics">Define Plasticity Dynamics</h2>
-<div id="d7e22184" class="cell" data-execution_count="10">
+<div id="d7e22184" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Tsodyks-Markram sho#rt-term plasticity model</span></span>
@@ -1220,7 +1220,7 @@ Output Variables in PyRates
 </section>
 <section id="create-network-with-plastic-synapses" class="level2">
 <h2 class="anchored" data-anchor-id="create-network-with-plastic-synapses">Create Network with Plastic Synapses</h2>
-<div id="bc855a79" class="cell" data-execution_count="11">
+<div id="bc855a79" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yaml</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Network</span>
@@ -1342,7 +1342,7 @@ Edges:
 </section>
 <section id="export-and-run" class="level2">
 <h2 class="anchored" data-anchor-id="export-and-run">Export and Run</h2>
-<div id="02242eaf" class="cell" data-execution_count="12">
+<div id="02242eaf" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyrates.frontend <span class="im">import</span> CircuitTemplate</span>
@@ -1423,7 +1423,7 @@ Simulated 5000 time points</code></pre>
 </section>
 <section id="visualize-plasticity-effects" class="level2">
 <h2 class="anchored" data-anchor-id="visualize-plasticity-effects">Visualize Plasticity Effects</h2>
-<div id="e54f84eb" class="cell" data-execution_count="13">
+<div id="e54f84eb" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">5</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">12</span>), sharex<span class="op">=</span><span class="va">True</span>)</span>
@@ -1484,7 +1484,7 @@ Simulated 5000 time points</code></pre>
 </section>
 <section id="compare-synaptic-outputs" class="level2">
 <h2 class="anchored" data-anchor-id="compare-synaptic-outputs">Compare Synaptic Outputs</h2>
-<div id="44a0bd55" class="cell" data-execution_count="14">
+<div id="44a0bd55" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>ax.plot(t, result_plasticity[<span class="st">"pre"</span>], <span class="st">'k'</span>, lw<span class="op">=</span><span class="dv">2</span>, alpha<span class="op">=</span><span class="fl">0.3</span>, label<span class="op">=</span><span class="st">"Pre-synaptic input"</span>)</span>
