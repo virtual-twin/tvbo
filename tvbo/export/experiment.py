@@ -524,14 +524,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         network = None
         if bids_data["network"] is not None:
             net_data = bids_data["network"]
-            network = Network(
-                weights=net_data["weights"],
-                tract_lengths=net_data.get("distances"),
-                region_labels=(
-                    np.array(net_data["region_labels"])
-                    if net_data["region_labels"]
+            labels = (
+                list(net_data["region_labels"])
+                if net_data["region_labels"]
+                else None
+            )
+            network = Network.from_matrix(
+                weights=np.asarray(net_data["weights"]),
+                lengths=(
+                    np.asarray(net_data["distances"])
+                    if net_data.get("distances") is not None
                     else None
                 ),
+                labels=labels,
             )
 
             # Add coordinates if available
@@ -641,7 +646,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             dynamics=dynamics,
             network=network,
             integration=integration,
-            coupling=Coupling(name="Linear", use_ontology=True),  # Default coupling
+            coupling=Coupling.from_ontology("Linear"),
         )
 
         # Store BIDS source info
