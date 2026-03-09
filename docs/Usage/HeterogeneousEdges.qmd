@@ -263,21 +263,33 @@ time = np.arange(0, duration, step_size)
 
 # Pulse train with longer recovery periods to show plasticity effects
 # Two bursts of rapid pulses separated by a long gap
-pulse_times = [50, 80, 110, 140, 170,   # First burst (rapid)
-               500, 530, 560, 590, 620]  # Second burst after recovery
+pulse_times = [
+    50,
+    80,
+    110,
+    140,
+    170,  # First burst (rapid)
+    500,
+    530,
+    560,
+    590,
+    620,
+]  # Second burst after recovery
 input_signal = np.zeros_like(time)
 for pt in pulse_times:
     mask = (time >= pt) & (time < pt + 15)
     input_signal[mask] = 5.0
 
-# Create experiment
-exp_plasticity = SimulationExperiment(
-    dynamics={
+network_plasticity.dynamics.update(
+    {
         "RateNeuron": rate_neuron,
         "Depression": depression,
         "Facilitation": facilitation,
         "TsodyksMarkram": tsodyks,
-    },
+    }
+),
+# Create experiment
+exp_plasticity = SimulationExperiment(
     network=network_plasticity,
 )
 
@@ -286,7 +298,7 @@ exp_plasticity.integration.step_size = step_size
 
 # Run with pulsed input to PreSynaptic neuron
 pyrates_inputs = {"PreSynaptic/RateNeuron_op/I_ext": input_signal}
-res = exp_plasticity.run('pyrates', inputs=pyrates_inputs)
+res = exp_plasticity.run("pyrates", inputs=pyrates_inputs)
 print(res)
 ```
 
