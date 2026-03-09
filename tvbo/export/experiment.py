@@ -307,7 +307,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             net.__class__ = Network
             _sync_network_node_count(net)
             if not getattr(net, "conduction_speed", None):
-                net.conduction_speed = tvbo_datamodel.Parameter(
+                if not net.parameters:
+                    net.parameters = {}
+                net.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
                     name="conduction_speed", label="v",
                     value=3.0, unit="mm/ms",
                 )
@@ -1007,10 +1009,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 L = None
 
             # Disable delays if lengths are None or all zeros
+            cs_param = (conn.parameters or {}).get('conduction_speed')
+            cs_val = float(cs_param.value) if cs_param and cs_param.value else 1.0
             if (
                 L is None
                 or np.allclose(L, 0)
-                or np.allclose(L.max() / conn.conduction_speed.value, 0)
+                or np.allclose(L.max() / cs_val, 0)
             ):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False

@@ -1,0 +1,27 @@
+label: virtualdbs (PPMI85)
+descriptor: SC
+number_of_nodes: 370
+data_file: tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-virtualdbs_desc-SC_relmat.h5
+edges:
+- label: weights
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+bids:
+  bids_version: "1.10.0"
+  dataset_type: derivative
+  template: MNI152NLin2009cAsym
+  cohort: PPMI85
+  reconstruction: PPMI85
+parcellation:
+  atlas:
+    name: virtualdbs
+tractogram:
+  name: PPMI85
