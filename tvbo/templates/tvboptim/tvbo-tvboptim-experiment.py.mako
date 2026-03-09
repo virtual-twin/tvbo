@@ -47,19 +47,11 @@ model_state_outputs = [v for v in model_output_vars if v in state_names]
 has_model_output = bool(model_output_vars)
 
 # Extract state variable bounds (for BoundedSolver)
-# Collect lo/hi from state_variable.domain if present
-state_bounds_lo = []
-state_bounds_hi = []
-for sv_name, sv in model.state_variables.items():
-    lo, hi = None, None
-    if hasattr(sv, 'domain') and sv.domain:
-        lo = getattr(sv.domain, 'lo', None)
-        hi = getattr(sv.domain, 'hi', None)
-    state_bounds_lo.append(float(lo) if lo is not None else float('-inf'))
-    state_bounds_hi.append(float(hi) if hi is not None else float('inf'))
-
-# Check if any state has finite bounds (needs BoundedSolver)
-has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
+# Uses SymPy oo so code printers emit the correct backend literal
+from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
+state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
+state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
+state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
 
 # Build coupling_inputs dict from model.coupling_inputs
 coupling_inputs_dict = {}
@@ -681,8 +673,8 @@ def get_solver():
 % if has_state_bounds:
     solver = BoundedSolver(
         base_solver,
-        low=jnp.array(${state_bounds_lo})[:, None],
-        high=jnp.array(${state_bounds_hi})[:, None]
+        low=jnp.array(${state_bounds_lo_str})[:, None],
+        high=jnp.array(${state_bounds_hi_str})[:, None]
     )
 % else:
     solver = base_solver

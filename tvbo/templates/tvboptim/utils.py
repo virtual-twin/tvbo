@@ -190,6 +190,65 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
 
 
 # =============================================================================
+# State Variable Bounds
+# =============================================================================
+
+def get_state_bounds(model) -> Tuple[List, List, bool]:
+    """Extract state variable bounds as SymPy expressions.
+
+    Uses ``sympy.oo`` for unbounded dimensions so that code printers
+    automatically render the correct backend literal (``jnp.inf``,
+    ``np.inf``, ``Inf``, etc.).
+
+    Args:
+        model: Dynamics instance with ``.state_variables``
+
+    Returns:
+        tuple: (bounds_lo, bounds_hi, has_finite_bounds)
+            - bounds_lo: list of sympy expressions (Float or -oo)
+            - bounds_hi: list of sympy expressions (Float or oo)
+            - has_finite_bounds: True if any bound is finite
+    """
+    from sympy import oo, Float
+
+    bounds_lo: list = []
+    bounds_hi: list = []
+
+    if not model or not getattr(model, 'state_variables', None):
+        return bounds_lo, bounds_hi, False
+
+    for _sv_name, sv in model.state_variables.items():
+        lo, hi = None, None
+        if hasattr(sv, 'domain') and sv.domain:
+            lo = getattr(sv.domain, 'lo', None)
+            hi = getattr(sv.domain, 'hi', None)
+        bounds_lo.append(Float(lo) if lo is not None else -oo)
+        bounds_hi.append(Float(hi) if hi is not None else oo)
+
+    has_finite = any(v != -oo for v in bounds_lo) or any(v != oo for v in bounds_hi)
+    return bounds_lo, bounds_hi, has_finite
+
+
+def format_bounds_array(bounds: List, format: str = "jax") -> str:
+    """Render a list of SymPy bound values as a code-level list literal.
+
+    Uses the appropriate TVBO code printer so infinity is rendered
+    correctly for any backend (``jnp.inf``, ``np.inf``, ``Inf``, …).
+
+    Args:
+        bounds: list of sympy expressions (Float / oo / -oo)
+        format: target backend (``'jax'``, ``'numpy'``, ``'julia'``, …)
+
+    Returns:
+        String like ``[-10.0, -jnp.inf]`` ready for code generation.
+    """
+    from tvbo.export.code import get_printer
+    printer = get_printer(format)
+    parts = [printer.doprint(v) for v in bounds]
+    return '[' + ', '.join(parts) + ']'
+
+
+# =============================================================================
 # Observation Helpers
 # =============================================================================
 
