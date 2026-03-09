@@ -582,6 +582,12 @@ classes:
                 inlined: true
 
             # BIDS integration (BEP017)
+            descriptor:
+                range: string
+                description: >-
+                    Short alphanumeric identifier for the BIDS desc- filename
+                    entity (e.g., SC, FC, EC, SCFC). Classifies the connectivity
+                    modality of the network's edge measures.
             bids_dir:
                 range: string
                 description: "Path to BEP017-compliant BIDS directory for loading connectivity matrices"
