@@ -133,8 +133,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0, 0, 0]    # no delay
-      conduction_speed:
-        value: 1.0
+      parameters:
+        conduction_speed:
+          value: 1.0
     coupling:
       name: Linear
       delayed: false
@@ -179,8 +180,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0.033, 0.033, 0]  # ~33 ms one-way delays
-      conduction_speed:
-        value: 1.0                     # so delay ≈ length
+      parameters:
+        conduction_speed:
+          value: 1.0                     # so delay ≈ length
     coupling:
       name: Linear
       delayed: true
@@ -216,8 +218,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0, 0, 0]
-      conduction_speed:
-        value: 1.0
+      parameters:
+        conduction_speed:
+          value: 1.0
     coupling:
       name: Linear
       delayed: false
@@ -269,8 +272,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0.033, 0.033, 0]
-      conduction_speed:
-        value: 1.0
+      parameters:
+        conduction_speed:
+          value: 1.0
     coupling:
       name: Linear
       delayed: true

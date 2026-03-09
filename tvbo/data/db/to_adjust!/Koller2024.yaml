@@ -30,13 +30,13 @@ simulation_experiments:
 
     coupling:
       label: KuramotoCoupling
-      conduction_speed:
-        free: yes
-        domain:
-          lo: 1
-          hi: 10
-          step: 1
       parameters:
+        - label: conduction_speed
+          free: yes
+          domain:
+            lo: 1
+            hi: 10
+            step: 1
         - label: K
           description: "Global coupling scaling"
           free: yes
