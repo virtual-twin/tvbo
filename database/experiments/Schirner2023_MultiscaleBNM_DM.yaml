@@ -457,16 +457,16 @@ network:
     # For simplified 2-node toy model (as in Python notebook)
     # number_of_nodes: 2
 
-    conduction_speed:
-        name: global_trans_v
-        value: 1.0
-        unit: m/s
-        description: "Global transmission velocity for computing delays"
-
-    global_coupling_strength:
-        name: G
-        value: 0.5
-        description: "Global scaling factor for connectivity weights"
+    parameters:
+        conduction_speed:
+            name: global_trans_v
+            value: 1.0
+            unit: m/s
+            description: "Global transmission velocity for computing delays"
+        G:
+            name: G
+            value: 0.5
+            description: "Global scaling factor for connectivity weights"
 
     normalization:
         rhs: "W * G * J_NMDA"

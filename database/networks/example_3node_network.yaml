@@ -108,10 +108,11 @@ edges:
 
 # Global network parameters
 number_of_nodes: 3
-global_coupling_strength:
-  name: "G"
-  value: 1.0
-conduction_speed:
-  name: "speed"
-  value: 3.0
-  unit: "mm/ms"
+parameters:
+  G:
+    name: "G"
+    value: 1.0
+  conduction_speed:
+    name: "speed"
+    value: 3.0
+    unit: "mm/ms"

@@ -4,6 +4,7 @@ from fastapi import Body, FastAPI, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from tvbo.api.ontology_api import OntologyAPI
+from tvbo.api.network_api import router as network_router
 
 app = FastAPI(
     title="TVBO API",
@@ -11,6 +12,9 @@ app = FastAPI(
     version="0.1.0"
 )
 api = OntologyAPI()
+
+# Register sub-routers
+app.include_router(network_router)
 
 
 # ============================================

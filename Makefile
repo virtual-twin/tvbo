@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all pypi-release release gen-linkml gen-openminds all
+.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-publish pypi-release release gen-linkml gen-openminds all
 all: build save
 
 # LinkML schema generation
@@ -123,9 +123,17 @@ docs-gen-datamodel:
 	@cd docs && python scripts/generate_datamodel_docs.py
 	@echo "✓ DataModel documentation generated in docs/datamodel/"
 
-docs-preview: docs-gen-datamodel
-	@echo "Building Quarto preview with datamodel..."
+docs-preview:
+	@echo "Starting Quarto preview (freeze: auto caches notebooks)..."
 	@cd docs && quarto preview
+
+docs-render:
+	@echo "Full Quarto render..."
+	@cd docs && quarto render
+
+docs-publish:
+	@echo "Publishing docs to GitHub Pages..."
+	@cd docs && quarto publish gh-pages --no-prompt
 
 docs-test-to-debug:
 	@mkdir -p ./docs/Usage

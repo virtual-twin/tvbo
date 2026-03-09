@@ -192,10 +192,11 @@ network:
     bids_dir: "../networks/bids/dk_average"
     structural_measures: [streamlineCount, tractLength]
     observational_measures: [BoldCorrelation]
-    conduction_speed:
-        name: conduction_speed
-        value: 3.0
-        unit: mm/ms
+    parameters:
+        conduction_speed:
+            name: conduction_speed
+            value: 3.0
+            unit: mm/ms
     normalization:
         rhs: "W / max(W)"
 
