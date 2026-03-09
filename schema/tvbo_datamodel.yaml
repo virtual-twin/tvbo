@@ -517,7 +517,7 @@ classes:
                 # implements:
                 #   - linkml:elements
 
-
+    Network:
         class_uri: tvbo:Network
         aliases:
             - Connectome
