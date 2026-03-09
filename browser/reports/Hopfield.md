@@ -29,6 +29,6 @@ $$
 
 
 ## References
-Citation key 'Hopfield1982' not found.
-
 Citation key 'Hopfield1984' not found.
+
+Citation key 'Hopfield1982' not found.

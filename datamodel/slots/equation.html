@@ -105,6 +105,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
 <script src="//unpkg.com/3d-force-graph"></script>
+<script src="../../_static/tvbo-icons.js"></script>
 
 
 <link rel="stylesheet" href="../../styles.css">
@@ -139,6 +140,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Installation</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../../api/index.html"> 
 <span class="menu-text">API Documentation</span></a>
   </li>  
@@ -149,10 +154,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li class="nav-item">
     <a class="nav-link" href="../../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../Interoperability/index.html"> 
@@ -219,8 +220,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
 <td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
+<td>Unified class for all observation/measurement specifications</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -229,58 +250,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Case.html">Case</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
 <td>Defines how a parameter is updated based on observables</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
-<td>Unified class for all observation/measurement specifications</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
-<td>Observation derived from one or more other observations</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Event.html">Event</a></td>
-<td>A discrete or continuous event that modifies the system during simulation</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Noise.html">Noise</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DifferentialOperator.html">DifferentialOperator</a></td>
-<td></td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -290,6 +261,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DifferentialOperator.html">DifferentialOperator</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Noise.html">Noise</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Case.html">Case</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
 <td></td>
 <td>no</td>
 </tr>

@@ -445,7 +445,8 @@ window.searchData = [
         {
           "entities": {
             "range": "ParcellationEntity",
-            "multivalued": true
+            "multivalued": true,
+            "inlined": true
           }
         }
       ],
@@ -1202,7 +1203,6 @@ window.searchData = [
         },
         "format": {
           "range": "SparseFormat",
-          "ifabsent": "string(dense)",
           "description": "Storage format in binary companion (dense, csr, coo)"
         },
         "shape": {
@@ -1473,7 +1473,6 @@ window.searchData = [
       "class_uri": "tvbo:Edge",
       "description": "An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.",
       "slots": [
-        "name",
         "label",
         "description",
         "parameters"
@@ -1495,7 +1494,6 @@ window.searchData = [
         },
         "format": {
           "range": "SparseFormat",
-          "ifabsent": "string(dense)",
           "description": "Storage format in HDF5 (template edges only)"
         },
         "weighted": {
@@ -8938,7 +8936,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Epileptor2D.yaml",
-    "report_md": "\n\n## Epileptor2D\nEpileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).\n\nNote: \n------\n- Equations and default parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### State Equations\n$$\n\\dot{x_{1}} = tt*\\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\\right)\n$$\n$$\n\\dot{z} = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext$ | 3.1 | N/A | External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E2D uses a nonlinear influence on z_E2D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor) |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor2D |\n| $x_{0}$ | -1.6 | N/A | Degree of excitability or epileptogenicity in Epileptor2D (Proix et al |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx1cond = \\begin{cases} a*x_{1}^{2} + x_{1}*\\left(- b + d\\right) & \\text{for}\\: x_{1} < 0 \\\\d*x_{1} - slope - 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3.0}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1.0} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nCitation key 'Proix2014' not found.\n\nCitation key 'Proix2017' not found.\n",
+    "report_md": "\n\n## Epileptor2D\nEpileptor2D (E2D) is a phenomenological neural mass model consisting in the two-dimensional reduction ('x', 'z') of the original Epileptor model (see Epileptor5D; Proix et al., 2014, 2017).\n\nNote: \n------\n- Equations and default parameters are taken from (Proix et al.,2014),\n- The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).\n\n### State Equations\n$$\n\\dot{x_{1}} = tt*\\left(Iext + c - z + Kvf*c_{global} + c_{local}*x_{1} - x_{1}*x1cond\\right)\n$$\n$$\n\\dot{z} = r*tt*\\left(h - z + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $Iext$ | 3.1 | N/A | External input current to the first state-variable x_E2D, in Epileptor2D (Proix et al |\n| $Ks$ | 0.0 | N/A | Permittivity coupling on the slow permittivity state-variable z_E2D in Epileptor2D (Proix et al |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x_E2D via the function f(x)_E2D, in Epileptor2D Proix et al |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable x_{2},         called :math:`y_{0}` in Jirsa paper |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the first state-variable x_E2D via the function f in Epileptor2D (Proix et al |\n| $modification$ | 0.0 | N/A | When modification is True, the function h_E2D uses a nonlinear influence on z_E2D |\n| $r$ | 0.00035 | N/A | Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor) |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x_E2D via the function f_E2D, in Epileptor2D (Proix et al |\n| $tt$ | 1.0 | N/A | Characteristic time scale of the whole-system Epileptor2D |\n| $x_{0}$ | -1.6 | N/A | Degree of excitability or epileptogenicity in Epileptor2D (Proix et al |\n\n### Derived Quantities\n#### Derived Variables\n$$\nx1cond = \\begin{cases} a*x_{1}^{2} + x_{1}*\\left(- b + d\\right) & \\text{for}\\: x_{1} < 0 \\\\d*x_{1} - slope - 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0 & \\text{otherwise} \\end{cases}\n$$\n$$\nh = \\begin{cases} x_{0} + \\frac{3.0}{e^{\\frac{- x_{1} - 0.5}{0.1}} + 1.0} & \\text{for}\\: modification > 0 \\\\zcond + 4*\\left(- x_{0} + x_{1}\\right) & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nCitation key 'Proix2017' not found.\n\nCitation key 'Proix2014' not found.\n",
     "thumbnail": "browser/imgs/models/Epileptor2D.png",
     "parameter_names": [
       "Iext",
@@ -9561,7 +9559,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/WilsonCowan.yaml",
-    "report_md": "\n\n## WilsonCowan\nThe Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973). \n\nThis model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011). \n\nKey parameters in the model are the strength of connectivity between each subtype of population (excitatory and inhibitory) and the strength of input to each subpopulation. The Input parameters P and Q also provide the entry point for local and long-range connectivity, that is, the activity coming from neighboring and distant populations respectively.\n\nVarying Input and connectivity generates a diversity of dynamical behaviors that are representative of observed activity in the brain, like multistability, oscillations, traveling waves and spatial patterns.\nWe consider the transmission parameters of the excitatory population to be glutamatergic and therefore to be modified by glutamatergic receptors. The inhibitory population is considered as GABAergic.\n\nNote:\n- Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)\n- Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)\n- The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.\n\n### State Equations\n$$\n\\dot{E} = \\frac{- E + s_{e}*\\left(k_{e} - E*r_{e}\\right)}{\\tau_{e}}\n$$\n$$\n\\dot{I} = \\frac{- I + s_{i}*\\left(k_{i} - I*r_{i}\\right)}{\\tau_{i}}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $P$ | 0.0 | N/A | External stimulus to the excitatory population (Wilson and Cowan, 1972) |\n| $Q$ | 0.0 | N/A | External stimulus to the inhibitory population (Wilson and Cowan, 1972) |\n| $a_{e}$ | 1.2 | N/A | Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972) |\n| $a_{i}$ | 1.0 | N/A | Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972) |\n| $\\alpha_{e}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $\\alpha_{i}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $b_{e}$ | 2.8 | N/A | Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al |\n| $b_{i}$ | 4.0 | N/A | Position of the maximum slope of a sigmoid function [in         threshold units] |\n| $c_{e}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function |\n| $c_{ee}$ | 12.0 | N/A | Excitatory to excitatory  coupling coefficient |\n| $c_{ei}$ | 4.0 | N/A | Inhibitory to excitatory coupling coefficient |\n| $c_{i}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al |\n| $c_{ie}$ | 13.0 | N/A | Excitatory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $c_{ii}$ | 11.0 | N/A | Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $k_{e}$ | 1.0 | N/A | Maximum value of the excitatory response function |\n| $k_{i}$ | 1.0 | N/A | Maximum value of the inhibitory response function |\n| $r_{e}$ | 1.0 | N/A | Excitatory refractory period |\n| $r_{i}$ | 1.0 | N/A | Inhibitory refractory period |\n| $shift_{sigmoid}$ | 1.0 | N/A | In order to have resting state (E=0 and I=0) in absence of external input,         the logistic curve are translated downward S(0)=0 |\n| $\\tau_{e}$ | 10.0 | ms | Excitatory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\tau_{i}$ | 10.0 | ms | Inhibitory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\theta_{e}$ | 0.0 | N/A | Excitation threshold of excitatory population (Sanz-Leon et al |\n| $\\theta_{i}$ | 0.0 | N/A | Excitation threshold of inhibitory population (Sanz-Leon et al |\n\n### Derived Quantities\n#### Derived Variables\n$$\nlc_{0} = E*c_{local}\n$$\n$$\nlc_{1} = I*c_{local}\n$$\n$$\nx_{e} = \\alpha_{e}*\\left(P + c_{global} + lc_{0} + lc_{1} - \\theta_{e} + E*c_{ee} - I*c_{ei}\\right)\n$$\n$$\nx_{i} = \\alpha_{i}*\\left(Q + lc_{0} + lc_{1} - \\theta_{i} + E*c_{ie} - I*c_{ii}\\right)\n$$\n$$\ns_{e} = \\frac{c_{e}}{1.0 + e^{- a_{e}*\\left(x_{e} - b_{e}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{e}*b_{e}}}\n$$\n$$\ns_{i} = \\frac{c_{i}}{1.0 + e^{- a_{i}*\\left(x_{i} - b_{i}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{i}*b_{i}}}\n$$\n\n\n\n\n## References\nCitation key 'Wilson1972' not found.\n\nCitation key 'Wilson1973' not found.\n",
+    "report_md": "\n\n## WilsonCowan\nThe Wilson and Cowan model consists of two populations or masses, one excitatory and one inhibitory, that are described by their mean firings rates E and I respectively (Wilson and Cowan, 1972, 1973). \n\nThis model is the minimal representation of a NMM with a coarse-grained description of the overall activity of a large-scale neuronal network, as opposed to being a detailed biophysical model. While employing just two differential equations, it has been used to build various biophysically realistic models (Liley et al., 1999; Daffertshofer and van Wijk, 2011). \n\nKey parameters in the model are the strength of connectivity between each subtype of population (excitatory and inhibitory) and the strength of input to each subpopulation. The Input parameters P and Q also provide the entry point for local and long-range connectivity, that is, the activity coming from neighboring and distant populations respectively.\n\nVarying Input and connectivity generates a diversity of dynamical behaviors that are representative of observed activity in the brain, like multistability, oscillations, traveling waves and spatial patterns.\nWe consider the transmission parameters of the excitatory population to be glutamatergic and therefore to be modified by glutamatergic receptors. The inhibitory population is considered as GABAergic.\n\nNote:\n- Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)\n- Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)\n- The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.\n\n### State Equations\n$$\n\\dot{E} = \\frac{- E + s_{e}*\\left(k_{e} - E*r_{e}\\right)}{\\tau_{e}}\n$$\n$$\n\\dot{I} = \\frac{- I + s_{i}*\\left(k_{i} - I*r_{i}\\right)}{\\tau_{i}}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $P$ | 0.0 | N/A | External stimulus to the excitatory population (Wilson and Cowan, 1972) |\n| $Q$ | 0.0 | N/A | External stimulus to the inhibitory population (Wilson and Cowan, 1972) |\n| $a_{e}$ | 1.2 | N/A | Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972) |\n| $a_{i}$ | 1.0 | N/A | Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972) |\n| $\\alpha_{e}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $\\alpha_{i}$ | 1.0 | N/A | Balance parameter between excitatory and inhibitory masses (Sanz-Leon et al |\n| $b_{e}$ | 2.8 | N/A | Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al |\n| $b_{i}$ | 4.0 | N/A | Position of the maximum slope of a sigmoid function [in         threshold units] |\n| $c_{e}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function |\n| $c_{ee}$ | 12.0 | N/A | Excitatory to excitatory  coupling coefficient |\n| $c_{ei}$ | 4.0 | N/A | Inhibitory to excitatory coupling coefficient |\n| $c_{i}$ | 1.0 | N/A | The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al |\n| $c_{ie}$ | 13.0 | N/A | Excitatory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $c_{ii}$ | 11.0 | N/A | Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al |\n| $k_{e}$ | 1.0 | N/A | Maximum value of the excitatory response function |\n| $k_{i}$ | 1.0 | N/A | Maximum value of the inhibitory response function |\n| $r_{e}$ | 1.0 | N/A | Excitatory refractory period |\n| $r_{i}$ | 1.0 | N/A | Inhibitory refractory period |\n| $shift_{sigmoid}$ | 1.0 | N/A | In order to have resting state (E=0 and I=0) in absence of external input,         the logistic curve are translated downward S(0)=0 |\n| $\\tau_{e}$ | 10.0 | ms | Excitatory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\tau_{i}$ | 10.0 | ms | Inhibitory population, membrane time-constant (Wilson and Cowan, 1972) |\n| $\\theta_{e}$ | 0.0 | N/A | Excitation threshold of excitatory population (Sanz-Leon et al |\n| $\\theta_{i}$ | 0.0 | N/A | Excitation threshold of inhibitory population (Sanz-Leon et al |\n\n### Derived Quantities\n#### Derived Variables\n$$\nlc_{0} = E*c_{local}\n$$\n$$\nlc_{1} = I*c_{local}\n$$\n$$\nx_{e} = \\alpha_{e}*\\left(P + c_{global} + lc_{0} + lc_{1} - \\theta_{e} + E*c_{ee} - I*c_{ei}\\right)\n$$\n$$\nx_{i} = \\alpha_{i}*\\left(Q + lc_{0} + lc_{1} - \\theta_{i} + E*c_{ie} - I*c_{ii}\\right)\n$$\n$$\ns_{e} = \\frac{c_{e}}{1.0 + e^{- a_{e}*\\left(x_{e} - b_{e}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{e}*b_{e}}}\n$$\n$$\ns_{i} = \\frac{c_{i}}{1.0 + e^{- a_{i}*\\left(x_{i} - b_{i}\\right)}} - \\frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{i}*b_{i}}}\n$$\n\n\n\n\n## References\nCitation key 'Wilson1973' not found.\n\nCitation key 'Wilson1972' not found.\n",
     "thumbnail": "browser/imgs/models/WilsonCowan.png",
     "parameter_names": [
       "P",
@@ -12405,7 +12403,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/LarterBreakspear.yaml",
-    "report_md": "\n\n## LarterBreakspear\nThe Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, \npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. \n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b), \n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.\n\n### State Equations\n$$\n\\dot{V} = t_{scale}*\\left(I_{ext}*a_{ne} - g_{L}*\\left(V - V_{L}\\right) - \\left(V - V_{Na}\\right)*\\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) + m_{Ca}*\\left(V - V_{Ca}\\right)*\\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\\left(V - V_{K}\\right)\\right)\n$$\n$$\n\\dot{W} = \\frac{\\phi*t_{scale}*\\left(m_{K} - W\\right)}{\\tau_{K}}\n$$\n$$\n\\dot{Z} = b*t_{scale}*\\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C$ | 0.1 | N/A | Coupling scaling factor |\n| $I_{ext}$ | 0.3 | N/A | Subcortical input current |\n| $Q_{Vmax}$ | 1.0 | Kilohertz | Maximal firing rate for excitatory populations |\n| $Q_{Zmax}$ | 1.0 | Kilohertz | Maximal firing rate for inhibitory population |\n| $T_{Ca}$ | -0.01 | N/A | Threshold value for Ca channels |\n| $T_{K}$ | 0.0 | N/A | Threshold value for K channels |\n| $T_{Na}$ | 0.3 | N/A | Threshold value for sodium channels |\n| $V_{Ca}$ | 1.0 | N/A | Calcium Nernst potential |\n| $V_{K}$ | -0.7 | N/A | K Nernst potential |\n| $V_{L}$ | -0.5 | N/A | Nernst potential leak channels |\n| $V_{Na}$ | 0.53 | N/A | Na Nernst potential |\n| $V_{T}$ | 0.0 | N/A | Threshold potential for excitatory neurons |\n| $Z_{T}$ | 0.0 | N/A | Threshold potential (mean) for inihibtory neurons |\n| $a_{ee}$ | 0.4 | N/A | Excitatory-to-excitatory synaptic strength |\n| $a_{ei}$ | 2.0 | N/A | Excitatory-to-inhibitory synaptic strength |\n| $a_{ie}$ | 2.0 | N/A | Inhibitory-to-excitatory synaptic strength |\n| $a_{ne}$ | 1.0 | N/A | Non-specific-to-excitatory synaptic strength |\n| $a_{ni}$ | 0.4 | N/A | Non-specific-to-inhibitory synaptic strength |\n| $b$ | 0.1 | N/A | Time constant scaling factor |\n| $\\delta_{Ca}$ | 0.15 | N/A | Variance of Calcium channel threshold |\n| $\\delta_{K}$ | 0.3 | N/A | Variance of Potassium channel threshold |\n| $\\delta_{Na}$ | 0.15 | N/A | Variance of sodium channel threshold |\n| $\\delta_{V}$ | 0.65 | N/A | Variance of excitatory threshold |\n| $\\delta_{Z}$ | 0.7 | N/A | Variance of inhibitory threshold |\n| $g_{Ca}$ | 1.1 | N/A | Conductance of population of calcium (Ca++) channels |\n| $g_{K}$ | 2.0 | N/A | Conductance of population of potassium (K) channels |\n| $g_{L}$ | 0.5 | N/A | Conductance of population of leak channels |\n| $g_{Na}$ | 6.7 | N/A | Conductance of population of Na channels |\n| $\\phi$ | 0.7 | N/A | Temperature scaling factor |\n| $r_{NMDA}$ | 0.25 | N/A | Ratio of NMDA to AMPA receptors |\n| $t_{scale}$ | 1.0 | N/A | Time scale factor |\n| $\\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |\n\n### Derived Quantities\n#### Derived Variables\n$$\nQ_{V} = 0.5*Q_{Vmax}*\\left(1 + \\tanh{\\left(\\frac{V - V_{T}}{\\delta_{V}} \\right)}\\right)\n$$\n$$\nQ_{Z} = 0.5*Q_{Zmax}*\\left(1 + \\tanh{\\left(\\frac{Z - Z_{T}}{\\delta_{Z}} \\right)}\\right)\n$$\n$$\nm_{Ca} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Ca}}{\\delta_{Ca}} \\right)}\n$$\n$$\nm_{K} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{K}}{\\delta_{K}} \\right)}\n$$\n$$\nm_{Na} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Na}}{\\delta_{Na}} \\right)}\n$$\n$$\nlc_{0} = Q_{V}*c_{local}\n$$\n\n\n\n\n## References\nBreakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.\n\nLarter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.\n\nBreakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.\n",
+    "report_md": "\n\n## LarterBreakspear\nThe Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, \npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. \n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b), \n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.\n\n### State Equations\n$$\n\\dot{V} = t_{scale}*\\left(I_{ext}*a_{ne} - g_{L}*\\left(V - V_{L}\\right) - \\left(V - V_{Na}\\right)*\\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) + m_{Ca}*\\left(V - V_{Ca}\\right)*\\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\\left(1.0 - C\\right)*\\left(Q_{V} + lc_{0}\\right)\\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\\left(V - V_{K}\\right)\\right)\n$$\n$$\n\\dot{W} = \\frac{\\phi*t_{scale}*\\left(m_{K} - W\\right)}{\\tau_{K}}\n$$\n$$\n\\dot{Z} = b*t_{scale}*\\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $C$ | 0.1 | N/A | Coupling scaling factor |\n| $I_{ext}$ | 0.3 | N/A | Subcortical input current |\n| $Q_{Vmax}$ | 1.0 | Kilohertz | Maximal firing rate for excitatory populations |\n| $Q_{Zmax}$ | 1.0 | Kilohertz | Maximal firing rate for inhibitory population |\n| $T_{Ca}$ | -0.01 | N/A | Threshold value for Ca channels |\n| $T_{K}$ | 0.0 | N/A | Threshold value for K channels |\n| $T_{Na}$ | 0.3 | N/A | Threshold value for sodium channels |\n| $V_{Ca}$ | 1.0 | N/A | Calcium Nernst potential |\n| $V_{K}$ | -0.7 | N/A | K Nernst potential |\n| $V_{L}$ | -0.5 | N/A | Nernst potential leak channels |\n| $V_{Na}$ | 0.53 | N/A | Na Nernst potential |\n| $V_{T}$ | 0.0 | N/A | Threshold potential for excitatory neurons |\n| $Z_{T}$ | 0.0 | N/A | Threshold potential (mean) for inihibtory neurons |\n| $a_{ee}$ | 0.4 | N/A | Excitatory-to-excitatory synaptic strength |\n| $a_{ei}$ | 2.0 | N/A | Excitatory-to-inhibitory synaptic strength |\n| $a_{ie}$ | 2.0 | N/A | Inhibitory-to-excitatory synaptic strength |\n| $a_{ne}$ | 1.0 | N/A | Non-specific-to-excitatory synaptic strength |\n| $a_{ni}$ | 0.4 | N/A | Non-specific-to-inhibitory synaptic strength |\n| $b$ | 0.1 | N/A | Time constant scaling factor |\n| $\\delta_{Ca}$ | 0.15 | N/A | Variance of Calcium channel threshold |\n| $\\delta_{K}$ | 0.3 | N/A | Variance of Potassium channel threshold |\n| $\\delta_{Na}$ | 0.15 | N/A | Variance of sodium channel threshold |\n| $\\delta_{V}$ | 0.65 | N/A | Variance of excitatory threshold |\n| $\\delta_{Z}$ | 0.7 | N/A | Variance of inhibitory threshold |\n| $g_{Ca}$ | 1.1 | N/A | Conductance of population of calcium (Ca++) channels |\n| $g_{K}$ | 2.0 | N/A | Conductance of population of potassium (K) channels |\n| $g_{L}$ | 0.5 | N/A | Conductance of population of leak channels |\n| $g_{Na}$ | 6.7 | N/A | Conductance of population of Na channels |\n| $\\phi$ | 0.7 | N/A | Temperature scaling factor |\n| $r_{NMDA}$ | 0.25 | N/A | Ratio of NMDA to AMPA receptors |\n| $t_{scale}$ | 1.0 | N/A | Time scale factor |\n| $\\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |\n\n### Derived Quantities\n#### Derived Variables\n$$\nQ_{V} = 0.5*Q_{Vmax}*\\left(1 + \\tanh{\\left(\\frac{V - V_{T}}{\\delta_{V}} \\right)}\\right)\n$$\n$$\nQ_{Z} = 0.5*Q_{Zmax}*\\left(1 + \\tanh{\\left(\\frac{Z - Z_{T}}{\\delta_{Z}} \\right)}\\right)\n$$\n$$\nm_{Ca} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Ca}}{\\delta_{Ca}} \\right)}\n$$\n$$\nm_{K} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{K}}{\\delta_{K}} \\right)}\n$$\n$$\nm_{Na} = 0.5 + 0.5*\\tanh{\\left(\\frac{V - T_{Na}}{\\delta_{Na}} \\right)}\n$$\n$$\nlc_{0} = Q_{V}*c_{local}\n$$\n\n\n\n\n## References\nBreakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.\n\nLarter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.\n\nBreakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.\n",
     "thumbnail": "browser/imgs/models/LarterBreakspear.png",
     "parameter_names": [
       "C",
@@ -13395,7 +13393,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Hopfield.yaml",
-    "report_md": "\n\n## Hopfield\nThe Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).\nWhen the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).\n\nVarious extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].\n\nNote:\n- This model uses the modifications implemented by Golos et al. (2015).\n\n### State Equations\n$$\n\\dot{\\theta} = \\frac{c_{pop1} - \\theta}{tauT}\n$$\n$$\n\\dot{x} = \\frac{c_{global} - x}{taux}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $tauT$ | 5.0 | N/A | The slow time-scale for threshold calculus :math:`\\\\theta`, state-variable of the model |\n| $taux$ | 1.0 | N/A | The fast time-scale for potential calculus :math:`x`, state-variable of the model |\n\n\n\n\n\n## References\nCitation key 'Hopfield1982' not found.\n\nCitation key 'Hopfield1984' not found.\n",
+    "report_md": "\n\n## Hopfield\nThe Hopfield neural network is a discrete time dynamical system composed of multiple binary nodes, with a connectivity matrix built from a predetermined set of patterns. The update, inspired from the spin-glass model (used to describe magnetic properties of dilute alloys), is based on a random scanning of every node. The existence of a fixed point dynamics is guaranteed by a Lyapunov function. The Hopfield network is expected to have those multiple patterns as attractors (multistable dynamical system).\nWhen the initial conditions are close to one of the 'learned' patterns, the dynamical system is expected to relax on the corresponding attractor. A possible output of the system is the final attractive state (interpreted as an associative memory).\n\nVarious extensions of the initial model have been proposed, among which a noiseless and continuous version [Hopfield 1984] having a slightly different Lyapunov function, but essentially the same dynamical properties, with more straightforward physiological Interpretation. A continuous Hopfield neural network (with a sigmoid transfer function) can indeed be interpreted as a network of neural masses with every node corresponding to the mean field activity of a local brain region, with many bridges with the Wilson Cowan model [WC_1972].\n\nNote:\n- This model uses the modifications implemented by Golos et al. (2015).\n\n### State Equations\n$$\n\\dot{\\theta} = \\frac{c_{pop1} - \\theta}{tauT}\n$$\n$$\n\\dot{x} = \\frac{c_{global} - x}{taux}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $tauT$ | 5.0 | N/A | The slow time-scale for threshold calculus :math:`\\\\theta`, state-variable of the model |\n| $taux$ | 1.0 | N/A | The fast time-scale for potential calculus :math:`x`, state-variable of the model |\n\n\n\n\n\n## References\nCitation key 'Hopfield1984' not found.\n\nCitation key 'Hopfield1982' not found.\n",
     "thumbnail": "browser/imgs/models/Hopfield.png",
     "parameter_names": [
       "tauT",
@@ -13666,7 +13664,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/Generic2dOscillator.yaml",
-    "report_md": "\n\n## Generic2dOscillator\nThe Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.\n\n### State Equations\n$$\n\\dot{V} = d*\\tau*\\left(I*\\gamma + V*g + V*c_{local} + W*\\alpha + c_{glob}*\\gamma + e*V^{2} - f*V^{3}\\right)\n$$\n$$\n\\dot{W} = \\frac{d*\\left(a + V*b + c*V^{2} - W*\\beta\\right)}{\\tau}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.0 | N/A | Baseline shift of the cubic nullcline |\n| $a$ | -2.0 | N/A | Vertical shift of the configurable nullcline |\n| $\\alpha$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the slow variable to the fast variable. |\n| $b$ | -10.0 | N/A | Linear slope of the configurable nullcline |\n| $\\beta$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the             slow variable to itself |\n| $c$ | 0.0 | N/A | Parabolic term of the configurable nullcline |\n| $d$ | 0.02 | N/A | Temporal scale factor |\n| $e$ | 3.0 | N/A | Coefficient of the quadratic term of the cubic nullcline |\n| $f$ | 1.0 | N/A | Coefficient of the cubic term of the cubic nullcline |\n| $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |\n| $\\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |\n| $\\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |\n\n\n\n\n\n## References\nFitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.\n\nNagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.\n",
+    "report_md": "\n\n## Generic2dOscillator\nThe Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.\n\n### State Equations\n$$\n\\dot{V} = d*\\tau*\\left(I*\\gamma + V*g + V*c_{local} + W*\\alpha + c_{glob}*\\gamma + e*V^{2} - f*V^{3}\\right)\n$$\n$$\n\\dot{W} = \\frac{d*\\left(a + V*b + c*V^{2} - W*\\beta\\right)}{\\tau}\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I$ | 0.0 | N/A | Baseline shift of the cubic nullcline |\n| $a$ | -2.0 | N/A | Vertical shift of the configurable nullcline |\n| $\\alpha$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the slow variable to the fast variable. |\n| $b$ | -10.0 | N/A | Linear slope of the configurable nullcline |\n| $\\beta$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the             slow variable to itself |\n| $c$ | 0.0 | N/A | Parabolic term of the configurable nullcline |\n| $d$ | 0.02 | N/A | Temporal scale factor |\n| $e$ | 3.0 | N/A | Coefficient of the quadratic term of the cubic nullcline |\n| $f$ | 1.0 | N/A | Coefficient of the cubic term of the cubic nullcline |\n| $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |\n| $\\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |\n| $\\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |\n\n\n\n\n\n## References\nNagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. *Proceedings of the IRE*, 50(10), 2061-2070.\n\nFitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. *Biophysical Journal*, 1(6), 445-466.\n",
     "thumbnail": "browser/imgs/models/Generic2dOscillator.png",
     "parameter_names": [
       "I",
@@ -16532,7 +16530,7 @@ window.searchData = [
     "number_of_modes": 1,
     "type": "model",
     "file": "database/models/EpileptorRestingState.yaml",
-    "report_md": "\n\n## EpileptorRestingState\nEpileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.\n        \nThis model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).\n\n### State Equations\n$$\n\\dot{g} = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\dot{x_{1}} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\dot{x_{2}} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\dot{x_{rs}} = d_{rs}*\\tau_{rs}*\\left(lc_{1} + I_{rs}*\\gamma_{rs} + \\alpha_{rs}*y_{rs} + e_{rs}*x_{rs}^{2} - f_{rs}*x_{rs}^{3} + K_{rs}*c_{pop2}*\\gamma_{rs}\\right)\n$$\n$$\n\\dot{y_{1}} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\dot{y_{2}} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\dot{y_{rs}} = \\frac{d_{rs}*\\left(a_{rs} + b_{rs}*x_{rs} - \\beta_{rs}*y_{rs}\\right)}{\\tau_{rs}}\n$$\n$$\n\\dot{z} = r*tt*\\left(zcond - z - 4*x_{0} + 4*x_{1} + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{rs}$ | 0.0 | N/A | External input current to the third population (x_rs, y_rs) |\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population (x2, y2) |\n| $Iext$ | 3.1 | N/A | External input current to the first population (x1, y1) |\n| $K_{rs}$ | 1.0 | N/A | Coupling scaling on a fast time scale |\n| $Kf$ | 0.0 | N/A | Coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling, that is from the very fast time scale         toward the slow time scale |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x1 |\n| $a_{rs}$ | -2.0 | N/A | Vertical shift of the configurable nullcline         in the state-variable y_rs |\n| $aa$ | 6.0 | N/A | Linear coefficient in the fifth state-variable y2 |\n| $\\alpha_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to the fast variable x_rs |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x1 |\n| $b_{rs}$ | -10.0 | N/A | Linear coefficient of the state-variable y_rs |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in the fourth         state-variable x2 |\n| $\\beta_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to itself |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable y1,         called :math:'y_{0}' in Jirsa et al |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the second state-variable y1 |\n| $d_{rs}$ | 0.02 | N/A | Temporal scaling of the whole third system (x_rs, y_rs) |\n| $e_{rs}$ | 3.0 | N/A | Coefficient of the squared term in the sixth state-variable x_rs |\n| $f_{rs}$ | 1.0 | N/A | Coefficient of the cubic term in the sixth state-variable x_rs |\n| $\\gamma_{rs}$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where         excitatory input currents are negative |\n| $p$ | 0.0 | N/A | Linear coefficient |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state-variable z,         called :math:'1/\tau_{0}' in Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x1 |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in the fifth state-variable y2 |\n| $\\tau_{rs}$ | 1.0 | N/A | Temporal scaling coefficient in the third population (x_rs, y_rs) |\n| $tt$ | 1.0 | N/A | Time scaling of the Epileptor |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity parameter |\n\n### Derived Quantities\n#### Derived Variables\n$$\nlc_{1} = c_{local}*x_{rs}\n$$\n$$\noutput = p*\\left(x_{2} - x_{1}\\right) + x_{rs}*\\left(1 - p\\right)\n$$\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n\nCitation key 'Courtiol2020' not found.\n",
+    "report_md": "\n\n## EpileptorRestingState\nEpileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.\n        \nThis model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).\n\n### State Equations\n$$\n\\dot{g} = tt*\\left(0.001*x_{1} - 0.01*g\\right)\n$$\n$$\n\\dot{x_{1}} = tt*\\left(Iext + y_{1} - z + Kvf*c_{global} + c_{local}*x_{1} + x_{1}*x1cond\\right)\n$$\n$$\n\\dot{x_{2}} = tt*\\left(1.05 + Iext_{2} + x_{2} - y_{2} - x_{2}^{3} - 0.3*z + Kf*c_{pop1} + bb*g\\right)\n$$\n$$\n\\dot{x_{rs}} = d_{rs}*\\tau_{rs}*\\left(lc_{1} + I_{rs}*\\gamma_{rs} + \\alpha_{rs}*y_{rs} + e_{rs}*x_{rs}^{2} - f_{rs}*x_{rs}^{3} + K_{rs}*c_{pop2}*\\gamma_{rs}\\right)\n$$\n$$\n\\dot{y_{1}} = tt*\\left(c - y_{1} - d*x_{1}^{2}\\right)\n$$\n$$\n\\dot{y_{2}} = \\frac{tt*\\left(y2cond - y_{2}\\right)}{\\tau}\n$$\n$$\n\\dot{y_{rs}} = \\frac{d_{rs}*\\left(a_{rs} + b_{rs}*x_{rs} - \\beta_{rs}*y_{rs}\\right)}{\\tau_{rs}}\n$$\n$$\n\\dot{z} = r*tt*\\left(zcond - z - 4*x_{0} + 4*x_{1} + Ks*c_{global}\\right)\n$$\n\n### Parameters\n\n| **Parameter** | **Value** | **Unit** | **Description** |\n|---------------|-----------|----------|-----------------|\n| $I_{rs}$ | 0.0 | N/A | External input current to the third population (x_rs, y_rs) |\n| $Iext_{2}$ | 0.45 | N/A | External input current to the second population (x2, y2) |\n| $Iext$ | 3.1 | N/A | External input current to the first population (x1, y1) |\n| $K_{rs}$ | 1.0 | N/A | Coupling scaling on a fast time scale |\n| $Kf$ | 0.0 | N/A | Coupling scaling on a fast time scale |\n| $Ks$ | 0.0 | N/A | Permittivity coupling, that is from the very fast time scale         toward the slow time scale |\n| $Kvf$ | 0.0 | N/A | Coupling scaling on a very fast time scale |\n| $a$ | 1.0 | N/A | Coefficient of the cubic term in the first state-variable x1 |\n| $a_{rs}$ | -2.0 | N/A | Vertical shift of the configurable nullcline         in the state-variable y_rs |\n| $aa$ | 6.0 | N/A | Linear coefficient in the fifth state-variable y2 |\n| $\\alpha_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to the fast variable x_rs |\n| $b$ | 3.0 | N/A | Coefficient of the squared term in the first state-variable x1 |\n| $b_{rs}$ | -10.0 | N/A | Linear coefficient of the state-variable y_rs |\n| $bb$ | 2.0 | N/A | Linear coefficient of lowpass excitatory coupling in the fourth         state-variable x2 |\n| $\\beta_{rs}$ | 1.0 | N/A | Constant parameter to scale the rate of feedback from the         slow variable y_rs to itself |\n| $c$ | 1.0 | N/A | Additive coefficient for the second state-variable y1,         called :math:'y_{0}' in Jirsa et al |\n| $d$ | 5.0 | N/A | Coefficient of the squared term in the second state-variable y1 |\n| $d_{rs}$ | 0.02 | N/A | Temporal scaling of the whole third system (x_rs, y_rs) |\n| $e_{rs}$ | 3.0 | N/A | Coefficient of the squared term in the sixth state-variable x_rs |\n| $f_{rs}$ | 1.0 | N/A | Coefficient of the cubic term in the sixth state-variable x_rs |\n| $\\gamma_{rs}$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where         excitatory input currents are negative |\n| $p$ | 0.0 | N/A | Linear coefficient |\n| $r$ | 0.00035 | N/A | Temporal scaling in the third state-variable z,         called :math:'1/\tau_{0}' in Jirsa et al |\n| $slope$ | 0.0 | N/A | Linear coefficient in the first state-variable x1 |\n| $\\tau$ | 10.0 | N/A | Temporal scaling coefficient in the fifth state-variable y2 |\n| $\\tau_{rs}$ | 1.0 | N/A | Temporal scaling coefficient in the third population (x_rs, y_rs) |\n| $tt$ | 1.0 | N/A | Time scaling of the Epileptor |\n| $x_{0}$ | -1.6 | N/A | Epileptogenicity parameter |\n\n### Derived Quantities\n#### Derived Variables\n$$\nlc_{1} = c_{local}*x_{rs}\n$$\n$$\noutput = p*\\left(x_{2} - x_{1}\\right) + x_{rs}*\\left(1 - p\\right)\n$$\n$$\nx1cond = \\begin{cases} - a*x_{1}^{2} + b*x_{1} & \\text{for}\\: x_{1} < 0 \\\\slope - x_{2} + 0.6*\\left(z - 1*4.0\\right)^{2} & \\text{otherwise} \\end{cases}\n$$\n$$\ny2cond = \\begin{cases} 0.0 & \\text{for}\\: x_{2} < -0.25 \\\\aa*\\left(x_{2} + 0.25\\right) & \\text{otherwise} \\end{cases}\n$$\n$$\nzcond = \\begin{cases} - 0.1*z^{7} & \\text{for}\\: z < 0 \\\\0.0 & \\text{otherwise} \\end{cases}\n$$\n\n\n\n\n## References\nCitation key 'Courtiol2020' not found.\n\nJirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.\n",
     "thumbnail": "browser/imgs/models/EpileptorRestingState.png",
     "parameter_names": [
       "I_rs",
@@ -36004,10 +36002,10 @@ window.searchData = [
     "thumbnail": "browser/imgs/atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg.png"
   },
   {
-    "label": "DesikanKillianyranked (dTOR)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR.h5",
+    "label": "Yeo17 (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 17,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Yeo17_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36025,65 +36023,3637 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
     "parcellation.atlas": {
-      "name": "DesikanKillianyranked"
+      "name": "Yeo17",
+      "coordinateSpace": "MNI152"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "1",
+        "position": {
+          "x": -28.1814,
+          "y": -82.261,
+          "z": -1.8011
+        }
+      },
+      {
+        "id": 2,
+        "label": "2",
+        "position": {
+          "x": -11.7843,
+          "y": -70.4562,
+          "z": 10.6088
+        }
+      },
+      {
+        "id": 3,
+        "label": "3",
+        "position": {
+          "x": -21.5086,
+          "y": -25.4171,
+          "z": 61.0289
+        }
+      },
+      {
+        "id": 4,
+        "label": "4",
+        "position": {
+          "x": -50.9723,
+          "y": -15.5061,
+          "z": 15.8259
+        }
+      },
+      {
+        "id": 5,
+        "label": "5",
+        "position": {
+          "x": -35.9277,
+          "y": -64.0721,
+          "z": 15.3916
+        }
+      },
+      {
+        "id": 6,
+        "label": "6",
+        "position": {
+          "x": -34.984,
+          "y": -41.0618,
+          "z": 52.9398
+        }
+      },
+      {
+        "id": 7,
+        "label": "7",
+        "position": {
+          "x": -42.4291,
+          "y": 1.4167,
+          "z": 1.6973
+        }
+      },
+      {
+        "id": 8,
+        "label": "8",
+        "position": {
+          "x": -31.6194,
+          "y": 43.2796,
+          "z": 27.2684
+        }
+      },
+      {
+        "id": 9,
+        "label": "9",
+        "position": {
+          "x": -36.0099,
+          "y": -4.2135,
+          "z": -33.6964
+        }
+      },
+      {
+        "id": 10,
+        "label": "10",
+        "position": {
+          "x": -13.5827,
+          "y": 39.0201,
+          "z": -17.8346
+        }
+      },
+      {
+        "id": 11,
+        "label": "11",
+        "position": {
+          "x": -6.5844,
+          "y": -61.7441,
+          "z": 44.312
+        }
+      },
+      {
+        "id": 12,
+        "label": "12",
+        "position": {
+          "x": -42.9896,
+          "y": 21.7503,
+          "z": 22.4576
+        }
+      },
+      {
+        "id": 13,
+        "label": "13",
+        "position": {
+          "x": -33.811,
+          "y": 53.9538,
+          "z": -2.4838
+        }
+      },
+      {
+        "id": 14,
+        "label": "14",
+        "position": {
+          "x": -56.7354,
+          "y": -30.9535,
+          "z": 4.3668
+        }
+      },
+      {
+        "id": 15,
+        "label": "15",
+        "position": {
+          "x": -25.948,
+          "y": -31.4755,
+          "z": -18.8827
+        }
+      },
+      {
+        "id": 16,
+        "label": "16",
+        "position": {
+          "x": -8.3339,
+          "y": 50.5137,
+          "z": 6.4307
+        }
+      },
+      {
+        "id": 17,
+        "label": "17",
+        "position": {
+          "x": -56.0317,
+          "y": -12.537,
+          "z": -18.7785
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Yeo17_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "Yeo17",
+    "atlas.name": "Yeo17"
+  },
+  {
+    "label": "hcpmmp1 (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 379,
+    "data_file": "tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009bAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "hcpmmp1",
+      "coordinateSpace": "MNI152NLin2009cAsym"
     },
     "tractogram.name": "dTOR",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKillianyranked (dTOR)",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "L_V1",
+        "position": {
+          "x": -10.364,
+          "y": -84.1004,
+          "z": 1.6224
+        }
+      },
+      {
+        "id": 2,
+        "label": "L_MST",
+        "position": {
+          "x": -43.784,
+          "y": -66.8058,
+          "z": 11.9515
+        }
+      },
+      {
+        "id": 3,
+        "label": "L_V6",
+        "position": {
+          "x": -14.8822,
+          "y": -80.5731,
+          "z": 32.2153
+        }
+      },
+      {
+        "id": 4,
+        "label": "L_V2",
+        "position": {
+          "x": -10.5689,
+          "y": -82.3316,
+          "z": 4.0629
+        }
+      },
+      {
+        "id": 5,
+        "label": "L_V3",
+        "position": {
+          "x": -15.976,
+          "y": -86.1955,
+          "z": 7.9722
+        }
+      },
+      {
+        "id": 6,
+        "label": "L_V4",
+        "position": {
+          "x": -28.3751,
+          "y": -86.9758,
+          "z": -0.0061
+        }
+      },
+      {
+        "id": 7,
+        "label": "L_V8",
+        "position": {
+          "x": -30.3423,
+          "y": -76.8966,
+          "z": -12.8754
+        }
+      },
+      {
+        "id": 8,
+        "label": "L_4",
+        "position": {
+          "x": -28.4284,
+          "y": -20.3676,
+          "z": 54.6372
+        }
+      },
+      {
+        "id": 9,
+        "label": "L_3b",
+        "position": {
+          "x": -39.3971,
+          "y": -22.2953,
+          "z": 52.8104
+        }
+      },
+      {
+        "id": 10,
+        "label": "L_FEF",
+        "position": {
+          "x": -41.8243,
+          "y": -6.8251,
+          "z": 51.5479
+        }
+      },
+      {
+        "id": 11,
+        "label": "L_PEF",
+        "position": {
+          "x": -49.0095,
+          "y": -0.4517,
+          "z": 40.5917
+        }
+      },
+      {
+        "id": 12,
+        "label": "L_55b",
+        "position": {
+          "x": -48.9816,
+          "y": -1.5129,
+          "z": 50.1907
+        }
+      },
+      {
+        "id": 13,
+        "label": "L_V3A",
+        "position": {
+          "x": -15.0154,
+          "y": -91.6078,
+          "z": 28.2444
+        }
+      },
+      {
+        "id": 14,
+        "label": "L_RSC",
+        "position": {
+          "x": -4.8849,
+          "y": -36.571,
+          "z": 21.1122
+        }
+      },
+      {
+        "id": 15,
+        "label": "L_POS2",
+        "position": {
+          "x": -9.4942,
+          "y": -72.2524,
+          "z": 36.7902
+        }
+      },
+      {
+        "id": 16,
+        "label": "L_V7",
+        "position": {
+          "x": -24.0981,
+          "y": -87.0738,
+          "z": 29.6168
+        }
+      },
+      {
+        "id": 17,
+        "label": "L_IPS1",
+        "position": {
+          "x": -24.3039,
+          "y": -75.2696,
+          "z": 37.4596
+        }
+      },
+      {
+        "id": 18,
+        "label": "L_FFC",
+        "position": {
+          "x": -42.0212,
+          "y": -61.4224,
+          "z": -17.2907
+        }
+      },
+      {
+        "id": 19,
+        "label": "L_V3B",
+        "position": {
+          "x": -26.2942,
+          "y": -83.0281,
+          "z": 17.6529
+        }
+      },
+      {
+        "id": 20,
+        "label": "L_LO1",
+        "position": {
+          "x": -39.7809,
+          "y": -83.9116,
+          "z": 8.2445
+        }
+      },
+      {
+        "id": 21,
+        "label": "L_LO2",
+        "position": {
+          "x": -45.7787,
+          "y": -85.1696,
+          "z": 0.7286
+        }
+      },
+      {
+        "id": 22,
+        "label": "L_PIT",
+        "position": {
+          "x": -43.7057,
+          "y": -83.2109,
+          "z": -11.0143
+        }
+      },
+      {
+        "id": 23,
+        "label": "L_MT",
+        "position": {
+          "x": -42.7722,
+          "y": -69.9594,
+          "z": 14.452
+        }
+      },
+      {
+        "id": 24,
+        "label": "L_A1",
+        "position": {
+          "x": -43.1723,
+          "y": -25.3579,
+          "z": 12.3234
+        }
+      },
+      {
+        "id": 25,
+        "label": "L_PSL",
+        "position": {
+          "x": -58.5839,
+          "y": -47.2283,
+          "z": 25.4311
+        }
+      },
+      {
+        "id": 26,
+        "label": "L_SFL",
+        "position": {
+          "x": -8.6095,
+          "y": 17.5137,
+          "z": 63.9293
+        }
+      },
+      {
+        "id": 27,
+        "label": "L_PCV",
+        "position": {
+          "x": -6.298,
+          "y": -51.1579,
+          "z": 49.2086
+        }
+      },
+      {
+        "id": 28,
+        "label": "L_STV",
+        "position": {
+          "x": -61.089,
+          "y": -50.9521,
+          "z": 18.2324
+        }
+      },
+      {
+        "id": 29,
+        "label": "L_7Pm",
+        "position": {
+          "x": -4.2062,
+          "y": -70.4214,
+          "z": 50.3404
+        }
+      },
+      {
+        "id": 30,
+        "label": "L_7m",
+        "position": {
+          "x": -4.2845,
+          "y": -63.8785,
+          "z": 35.1841
+        }
+      },
+      {
+        "id": 31,
+        "label": "L_POS1",
+        "position": {
+          "x": -12.6035,
+          "y": -59.0019,
+          "z": 15.0424
+        }
+      },
+      {
+        "id": 32,
+        "label": "L_23d",
+        "position": {
+          "x": -2.8881,
+          "y": -20.6781,
+          "z": 39.3587
+        }
+      },
+      {
+        "id": 33,
+        "label": "L_v23ab",
+        "position": {
+          "x": -3.3636,
+          "y": -58.247,
+          "z": 18.2133
+        }
+      },
+      {
+        "id": 34,
+        "label": "L_d23ab",
+        "position": {
+          "x": -3.0438,
+          "y": -42.6808,
+          "z": 31.2975
+        }
+      },
+      {
+        "id": 35,
+        "label": "L_31pv",
+        "position": {
+          "x": -9.4073,
+          "y": -46.7604,
+          "z": 32.5419
+        }
+      },
+      {
+        "id": 36,
+        "label": "L_5m",
+        "position": {
+          "x": -6.2842,
+          "y": -41.9173,
+          "z": 63.3997
+        }
+      },
+      {
+        "id": 37,
+        "label": "L_5mv",
+        "position": {
+          "x": -13.7018,
+          "y": -37.1393,
+          "z": 50.3818
+        }
+      },
+      {
+        "id": 38,
+        "label": "L_23c",
+        "position": {
+          "x": -11.4488,
+          "y": -30.5269,
+          "z": 43.0083
+        }
+      },
+      {
+        "id": 39,
+        "label": "L_5L",
+        "position": {
+          "x": -14.7776,
+          "y": -48.6065,
+          "z": 72.5933
+        }
+      },
+      {
+        "id": 40,
+        "label": "L_24dd",
+        "position": {
+          "x": -5.8855,
+          "y": -16.0126,
+          "z": 50.5898
+        }
+      },
+      {
+        "id": 41,
+        "label": "L_24dv",
+        "position": {
+          "x": -8.3022,
+          "y": -0.3766,
+          "z": 44.8102
+        }
+      },
+      {
+        "id": 42,
+        "label": "L_7AL",
+        "position": {
+          "x": -20.4027,
+          "y": -51.9913,
+          "z": 65.6772
+        }
+      },
+      {
+        "id": 43,
+        "label": "L_SCEF",
+        "position": {
+          "x": -5.9317,
+          "y": 4.1342,
+          "z": 59.6032
+        }
+      },
+      {
+        "id": 44,
+        "label": "L_6ma",
+        "position": {
+          "x": -20.0984,
+          "y": 3.9694,
+          "z": 67.8903
+        }
+      },
+      {
+        "id": 45,
+        "label": "L_7Am",
+        "position": {
+          "x": -6.9458,
+          "y": -60.3173,
+          "z": 61.4581
+        }
+      },
+      {
+        "id": 46,
+        "label": "L_7PL",
+        "position": {
+          "x": -14.816,
+          "y": -73.7112,
+          "z": 56.0083
+        }
+      },
+      {
+        "id": 47,
+        "label": "L_7PC",
+        "position": {
+          "x": -37.4515,
+          "y": -46.7109,
+          "z": 60.6276
+        }
+      },
+      {
+        "id": 48,
+        "label": "L_LIPv",
+        "position": {
+          "x": -30.8546,
+          "y": -58.4029,
+          "z": 55.2323
+        }
+      },
+      {
+        "id": 49,
+        "label": "L_VIP",
+        "position": {
+          "x": -22.8218,
+          "y": -63.5048,
+          "z": 64.4746
+        }
+      },
+      {
+        "id": 50,
+        "label": "L_MIP",
+        "position": {
+          "x": -24.857,
+          "y": -67.1281,
+          "z": 47.1007
+        }
+      },
+      {
+        "id": 51,
+        "label": "L_1",
+        "position": {
+          "x": -47.0296,
+          "y": -26.3181,
+          "z": 56.3848
+        }
+      },
+      {
+        "id": 52,
+        "label": "L_2",
+        "position": {
+          "x": -38.8683,
+          "y": -32.9202,
+          "z": 51.957
+        }
+      },
+      {
+        "id": 53,
+        "label": "L_3a",
+        "position": {
+          "x": -35.2805,
+          "y": -20.5097,
+          "z": 42.8339
+        }
+      },
+      {
+        "id": 54,
+        "label": "L_6d",
+        "position": {
+          "x": -33.7943,
+          "y": -14.2162,
+          "z": 67.7344
+        }
+      },
+      {
+        "id": 55,
+        "label": "L_6mp",
+        "position": {
+          "x": -10.7334,
+          "y": -15.0087,
+          "z": 71.0262
+        }
+      },
+      {
+        "id": 56,
+        "label": "L_6v",
+        "position": {
+          "x": -59.5034,
+          "y": 3.7871,
+          "z": 31.9067
+        }
+      },
+      {
+        "id": 57,
+        "label": "L_p24pr",
+        "position": {
+          "x": -3.9615,
+          "y": -2.2441,
+          "z": 40.3761
+        }
+      },
+      {
+        "id": 58,
+        "label": "L_33pr",
+        "position": {
+          "x": -2.3983,
+          "y": 11.2592,
+          "z": 28.7215
+        }
+      },
+      {
+        "id": 59,
+        "label": "L_a24pr",
+        "position": {
+          "x": -5.3869,
+          "y": 18.3002,
+          "z": 30.9814
+        }
+      },
+      {
+        "id": 60,
+        "label": "L_p32pr",
+        "position": {
+          "x": -7.9292,
+          "y": 15.3954,
+          "z": 38.7959
+        }
+      },
+      {
+        "id": 61,
+        "label": "L_a24",
+        "position": {
+          "x": -6.1363,
+          "y": 41.965,
+          "z": -4.4968
+        }
+      },
+      {
+        "id": 62,
+        "label": "L_d32",
+        "position": {
+          "x": -8.0403,
+          "y": 42.4755,
+          "z": 24.9597
+        }
+      },
+      {
+        "id": 63,
+        "label": "L_8BM",
+        "position": {
+          "x": -4.7592,
+          "y": 32.5683,
+          "z": 45.1662
+        }
+      },
+      {
+        "id": 64,
+        "label": "L_p32",
+        "position": {
+          "x": -11.2759,
+          "y": 50.3924,
+          "z": -2.3392
+        }
+      },
+      {
+        "id": 65,
+        "label": "L_10r",
+        "position": {
+          "x": -6.0341,
+          "y": 51.6407,
+          "z": -10.6444
+        }
+      },
+      {
+        "id": 66,
+        "label": "L_47m",
+        "position": {
+          "x": -37.4924,
+          "y": 31.5348,
+          "z": -13.9227
+        }
+      },
+      {
+        "id": 67,
+        "label": "L_8Av",
+        "position": {
+          "x": -38.3312,
+          "y": 16.5889,
+          "z": 52.2792
+        }
+      },
+      {
+        "id": 68,
+        "label": "L_8Ad",
+        "position": {
+          "x": -23.3507,
+          "y": 28.996,
+          "z": 43.3465
+        }
+      },
+      {
+        "id": 69,
+        "label": "L_9m",
+        "position": {
+          "x": -6.0375,
+          "y": 55.1478,
+          "z": 24.2637
+        }
+      },
+      {
+        "id": 70,
+        "label": "L_8BL",
+        "position": {
+          "x": -11.6218,
+          "y": 37.1473,
+          "z": 53.8005
+        }
+      },
+      {
+        "id": 71,
+        "label": "L_9p",
+        "position": {
+          "x": -19.8944,
+          "y": 47.3057,
+          "z": 38.4792
+        }
+      },
+      {
+        "id": 72,
+        "label": "L_10d",
+        "position": {
+          "x": -11.1632,
+          "y": 66.2958,
+          "z": 8.4044
+        }
+      },
+      {
+        "id": 73,
+        "label": "L_8C",
+        "position": {
+          "x": -43.7036,
+          "y": 11.8118,
+          "z": 37.7097
+        }
+      },
+      {
+        "id": 74,
+        "label": "L_44",
+        "position": {
+          "x": -53.8786,
+          "y": 14.8412,
+          "z": 14.0097
+        }
+      },
+      {
+        "id": 75,
+        "label": "L_45",
+        "position": {
+          "x": -50.609,
+          "y": 25.5687,
+          "z": 3.2206
+        }
+      },
+      {
+        "id": 76,
+        "label": "L_47l",
+        "position": {
+          "x": -46.7708,
+          "y": 30.1001,
+          "z": -9.9578
+        }
+      },
+      {
+        "id": 77,
+        "label": "L_a47r",
+        "position": {
+          "x": -41.3563,
+          "y": 48.5638,
+          "z": -11.9072
+        }
+      },
+      {
+        "id": 78,
+        "label": "L_6r",
+        "position": {
+          "x": -52.4908,
+          "y": 6.6641,
+          "z": 17.7741
+        }
+      },
+      {
+        "id": 79,
+        "label": "L_IFJa",
+        "position": {
+          "x": -41.0068,
+          "y": 10.8526,
+          "z": 26.3856
+        }
+      },
+      {
+        "id": 80,
+        "label": "L_IFJp",
+        "position": {
+          "x": -41.3634,
+          "y": 2.2956,
+          "z": 30.0642
+        }
+      },
+      {
+        "id": 81,
+        "label": "L_IFSp",
+        "position": {
+          "x": -48.8016,
+          "y": 20.9089,
+          "z": 22.8515
+        }
+      },
+      {
+        "id": 82,
+        "label": "L_IFSa",
+        "position": {
+          "x": -48.1015,
+          "y": 32.1216,
+          "z": 10.6533
+        }
+      },
+      {
+        "id": 83,
+        "label": "L_p9-46v",
+        "position": {
+          "x": -47.1903,
+          "y": 28.8919,
+          "z": 25.9915
+        }
+      },
+      {
+        "id": 84,
+        "label": "L_46",
+        "position": {
+          "x": -38.4057,
+          "y": 37.8526,
+          "z": 32.9207
+        }
+      },
+      {
+        "id": 85,
+        "label": "L_a9-46v",
+        "position": {
+          "x": -40.0072,
+          "y": 51.6397,
+          "z": 9.1728
+        }
+      },
+      {
+        "id": 86,
+        "label": "L_9-46d",
+        "position": {
+          "x": -29.4487,
+          "y": 45.8579,
+          "z": 23.4636
+        }
+      },
+      {
+        "id": 87,
+        "label": "L_9a",
+        "position": {
+          "x": -21.7269,
+          "y": 57.5628,
+          "z": 24.1526
+        }
+      },
+      {
+        "id": 88,
+        "label": "L_10v",
+        "position": {
+          "x": -4.0071,
+          "y": 52.9119,
+          "z": -17.8343
+        }
+      },
+      {
+        "id": 89,
+        "label": "L_a10p",
+        "position": {
+          "x": -26.4781,
+          "y": 59.742,
+          "z": -6.8987
+        }
+      },
+      {
+        "id": 90,
+        "label": "L_10pp",
+        "position": {
+          "x": -12.7721,
+          "y": 62.2831,
+          "z": -16.2485
+        }
+      },
+      {
+        "id": 91,
+        "label": "L_11l",
+        "position": {
+          "x": -25.9362,
+          "y": 49.4761,
+          "z": -15.4714
+        }
+      },
+      {
+        "id": 92,
+        "label": "L_13l",
+        "position": {
+          "x": -23.3043,
+          "y": 30.0783,
+          "z": -19.8865
+        }
+      },
+      {
+        "id": 93,
+        "label": "L_OFC",
+        "position": {
+          "x": -10.8287,
+          "y": 33.539,
+          "z": -24.5052
+        }
+      },
+      {
+        "id": 94,
+        "label": "L_47s",
+        "position": {
+          "x": -34.5233,
+          "y": 22.1134,
+          "z": -19.1547
+        }
+      },
+      {
+        "id": 95,
+        "label": "L_LIPd",
+        "position": {
+          "x": -30.0745,
+          "y": -55.4435,
+          "z": 42.8996
+        }
+      },
+      {
+        "id": 96,
+        "label": "L_6a",
+        "position": {
+          "x": -25.3604,
+          "y": -4.9318,
+          "z": 55.5618
+        }
+      },
+      {
+        "id": 97,
+        "label": "L_i6-8",
+        "position": {
+          "x": -29.5765,
+          "y": 5.2274,
+          "z": 56.748
+        }
+      },
+      {
+        "id": 98,
+        "label": "L_s6-8",
+        "position": {
+          "x": -22.3087,
+          "y": 24.1516,
+          "z": 56.2966
+        }
+      },
+      {
+        "id": 99,
+        "label": "L_43",
+        "position": {
+          "x": -56.3831,
+          "y": -0.3366,
+          "z": 9.4767
+        }
+      },
+      {
+        "id": 100,
+        "label": "L_OP4",
+        "position": {
+          "x": -59.2233,
+          "y": -13.4846,
+          "z": 15.315
+        }
+      },
+      {
+        "id": 101,
+        "label": "L_OP1",
+        "position": {
+          "x": -46.9496,
+          "y": -22.3801,
+          "z": 19.1422
+        }
+      },
+      {
+        "id": 102,
+        "label": "L_OP2-3",
+        "position": {
+          "x": -40.4601,
+          "y": -17.2433,
+          "z": 19.0212
+        }
+      },
+      {
+        "id": 103,
+        "label": "L_52",
+        "position": {
+          "x": -38.0016,
+          "y": -22.3612,
+          "z": 1.9379
+        }
+      },
+      {
+        "id": 104,
+        "label": "L_RI",
+        "position": {
+          "x": -40.1846,
+          "y": -35.5219,
+          "z": 20.2432
+        }
+      },
+      {
+        "id": 105,
+        "label": "L_PFcm",
+        "position": {
+          "x": -50.4059,
+          "y": -32.309,
+          "z": 21.7463
+        }
+      },
+      {
+        "id": 106,
+        "label": "L_PoI2",
+        "position": {
+          "x": -40.4908,
+          "y": -2.9287,
+          "z": -0.0029
+        }
+      },
+      {
+        "id": 107,
+        "label": "L_TA2",
+        "position": {
+          "x": -50.3675,
+          "y": -0.1737,
+          "z": -5.4789
+        }
+      },
+      {
+        "id": 108,
+        "label": "L_FOP4",
+        "position": {
+          "x": -41.4917,
+          "y": 12.7776,
+          "z": 5.6919
+        }
+      },
+      {
+        "id": 109,
+        "label": "L_MI",
+        "position": {
+          "x": -36.2879,
+          "y": 11.1963,
+          "z": 3.3261
+        }
+      },
+      {
+        "id": 110,
+        "label": "L_Pir",
+        "position": {
+          "x": -32.039,
+          "y": 6.3815,
+          "z": -17.6798
+        }
+      },
+      {
+        "id": 111,
+        "label": "L_AVI",
+        "position": {
+          "x": -30.8608,
+          "y": 25.4027,
+          "z": -2.4888
+        }
+      },
+      {
+        "id": 112,
+        "label": "L_AAIC",
+        "position": {
+          "x": -35.4208,
+          "y": 14.345,
+          "z": -10.4385
+        }
+      },
+      {
+        "id": 113,
+        "label": "L_FOP1",
+        "position": {
+          "x": -49.8875,
+          "y": 1.6589,
+          "z": 4.5696
+        }
+      },
+      {
+        "id": 114,
+        "label": "L_FOP3",
+        "position": {
+          "x": -35.995,
+          "y": 2.1376,
+          "z": 13.4428
+        }
+      },
+      {
+        "id": 115,
+        "label": "L_FOP2",
+        "position": {
+          "x": -42.4128,
+          "y": -4.9531,
+          "z": 14.7998
+        }
+      },
+      {
+        "id": 116,
+        "label": "L_PFt",
+        "position": {
+          "x": -56.3928,
+          "y": -25.7538,
+          "z": 36.533
+        }
+      },
+      {
+        "id": 117,
+        "label": "L_AIP",
+        "position": {
+          "x": -39.7852,
+          "y": -39.0137,
+          "z": 42.2767
+        }
+      },
+      {
+        "id": 118,
+        "label": "L_EC",
+        "position": {
+          "x": -22.9398,
+          "y": -13.6461,
+          "z": -31.6681
+        }
+      },
+      {
+        "id": 119,
+        "label": "L_PreS",
+        "position": {
+          "x": -16.9281,
+          "y": -34.2994,
+          "z": -13.8604
+        }
+      },
+      {
+        "id": 120,
+        "label": "L_H",
+        "position": {
+          "x": -11.9167,
+          "y": -39.75,
+          "z": -2.9167
+        }
+      },
+      {
+        "id": 121,
+        "label": "L_ProS",
+        "position": {
+          "x": -22.0685,
+          "y": -57.0108,
+          "z": 4.6909
+        }
+      },
+      {
+        "id": 122,
+        "label": "L_PeEc",
+        "position": {
+          "x": -31.1356,
+          "y": -9.5889,
+          "z": -33.6028
+        }
+      },
+      {
+        "id": 123,
+        "label": "L_STGa",
+        "position": {
+          "x": -50.8535,
+          "y": 12.9215,
+          "z": -16.6696
+        }
+      },
+      {
+        "id": 124,
+        "label": "L_PBelt",
+        "position": {
+          "x": -52.7095,
+          "y": -26.0037,
+          "z": 9.006
+        }
+      },
+      {
+        "id": 125,
+        "label": "L_A5",
+        "position": {
+          "x": -62.9832,
+          "y": -15.2118,
+          "z": -1.1005
+        }
+      },
+      {
+        "id": 126,
+        "label": "L_PHA1",
+        "position": {
+          "x": -23.3494,
+          "y": -37.7192,
+          "z": -14.638
+        }
+      },
+      {
+        "id": 127,
+        "label": "L_PHA3",
+        "position": {
+          "x": -31.8398,
+          "y": -37.931,
+          "z": -17.7307
+        }
+      },
+      {
+        "id": 128,
+        "label": "L_STSda",
+        "position": {
+          "x": -54.8082,
+          "y": -4.1468,
+          "z": -11.5957
+        }
+      },
+      {
+        "id": 129,
+        "label": "L_STSdp",
+        "position": {
+          "x": -52.7884,
+          "y": -32.6386,
+          "z": 1.1349
+        }
+      },
+      {
+        "id": 130,
+        "label": "L_STSvp",
+        "position": {
+          "x": -54.8898,
+          "y": -34.8552,
+          "z": -3.4358
+        }
+      },
+      {
+        "id": 131,
+        "label": "L_TGd",
+        "position": {
+          "x": -38.1921,
+          "y": 12.305,
+          "z": -34.4727
+        }
+      },
+      {
+        "id": 132,
+        "label": "L_TE1a",
+        "position": {
+          "x": -59.7754,
+          "y": -5.2246,
+          "z": -23.1151
+        }
+      },
+      {
+        "id": 133,
+        "label": "L_TE1p",
+        "position": {
+          "x": -61.7726,
+          "y": -48.2135,
+          "z": -8.6963
+        }
+      },
+      {
+        "id": 134,
+        "label": "L_TE2a",
+        "position": {
+          "x": -57.2752,
+          "y": -24.3832,
+          "z": -27.7009
+        }
+      },
+      {
+        "id": 135,
+        "label": "L_TF",
+        "position": {
+          "x": -42.3942,
+          "y": -22.0097,
+          "z": -30.0052
+        }
+      },
+      {
+        "id": 136,
+        "label": "L_TE2p",
+        "position": {
+          "x": -49.3913,
+          "y": -43.4235,
+          "z": -20.5057
+        }
+      },
+      {
+        "id": 137,
+        "label": "L_PHT",
+        "position": {
+          "x": -58.3918,
+          "y": -60.6461,
+          "z": 3.2289
+        }
+      },
+      {
+        "id": 138,
+        "label": "L_PH",
+        "position": {
+          "x": -45.9845,
+          "y": -65.1466,
+          "z": -5.3422
+        }
+      },
+      {
+        "id": 139,
+        "label": "L_TPOJ1",
+        "position": {
+          "x": -54.1676,
+          "y": -46.3202,
+          "z": 10.26
+        }
+      },
+      {
+        "id": 140,
+        "label": "L_TPOJ2",
+        "position": {
+          "x": -51.9934,
+          "y": -62.363,
+          "z": 15.7838
+        }
+      },
+      {
+        "id": 141,
+        "label": "L_TPOJ3",
+        "position": {
+          "x": -45.9746,
+          "y": -72.674,
+          "z": 20.7012
+        }
+      },
+      {
+        "id": 142,
+        "label": "L_DVT",
+        "position": {
+          "x": -17.6379,
+          "y": -74.2901,
+          "z": 36.3106
+        }
+      },
+      {
+        "id": 143,
+        "label": "L_PGp",
+        "position": {
+          "x": -38.6978,
+          "y": -85.4329,
+          "z": 23.0889
+        }
+      },
+      {
+        "id": 144,
+        "label": "L_IP2",
+        "position": {
+          "x": -40.9491,
+          "y": -48.8004,
+          "z": 43.3753
+        }
+      },
+      {
+        "id": 145,
+        "label": "L_IP1",
+        "position": {
+          "x": -30.258,
+          "y": -70.6326,
+          "z": 39.1023
+        }
+      },
+      {
+        "id": 146,
+        "label": "L_IP0",
+        "position": {
+          "x": -30.8447,
+          "y": -79.0757,
+          "z": 24.2723
+        }
+      },
+      {
+        "id": 147,
+        "label": "L_PFop",
+        "position": {
+          "x": -62.9615,
+          "y": -23.7361,
+          "z": 24.0328
+        }
+      },
+      {
+        "id": 148,
+        "label": "L_PF",
+        "position": {
+          "x": -60.306,
+          "y": -37.2782,
+          "z": 37.9053
+        }
+      },
+      {
+        "id": 149,
+        "label": "L_PFm",
+        "position": {
+          "x": -49.516,
+          "y": -58.0483,
+          "z": 44.8952
+        }
+      },
+      {
+        "id": 150,
+        "label": "L_PGi",
+        "position": {
+          "x": -46.5455,
+          "y": -64.0108,
+          "z": 27.542
+        }
+      },
+      {
+        "id": 151,
+        "label": "L_PGs",
+        "position": {
+          "x": -39.1906,
+          "y": -78.071,
+          "z": 38.9904
+        }
+      },
+      {
+        "id": 152,
+        "label": "L_V6A",
+        "position": {
+          "x": -21.7836,
+          "y": -86.1888,
+          "z": 42.7225
+        }
+      },
+      {
+        "id": 153,
+        "label": "L_VMV1",
+        "position": {
+          "x": -18.6619,
+          "y": -55.9416,
+          "z": -5.522
+        }
+      },
+      {
+        "id": 154,
+        "label": "L_VMV3",
+        "position": {
+          "x": -27.7219,
+          "y": -62.6969,
+          "z": -11.2141
+        }
+      },
+      {
+        "id": 155,
+        "label": "L_PHA2",
+        "position": {
+          "x": -31.9234,
+          "y": -37.4482,
+          "z": -11.7815
+        }
+      },
+      {
+        "id": 156,
+        "label": "L_V4t",
+        "position": {
+          "x": -49.261,
+          "y": -77.1178,
+          "z": 7.8354
+        }
+      },
+      {
+        "id": 157,
+        "label": "L_FST",
+        "position": {
+          "x": -45.8253,
+          "y": -68.6921,
+          "z": 5.6201
+        }
+      },
+      {
+        "id": 158,
+        "label": "L_V3CD",
+        "position": {
+          "x": -35.65,
+          "y": -88.8457,
+          "z": 11.2729
+        }
+      },
+      {
+        "id": 159,
+        "label": "L_LO3",
+        "position": {
+          "x": -41.2095,
+          "y": -77.1728,
+          "z": 15.1551
+        }
+      },
+      {
+        "id": 160,
+        "label": "L_VMV2",
+        "position": {
+          "x": -27.3375,
+          "y": -54.8236,
+          "z": -6.411
+        }
+      },
+      {
+        "id": 161,
+        "label": "L_31pd",
+        "position": {
+          "x": -8.7,
+          "y": -53.4323,
+          "z": 34.6469
+        }
+      },
+      {
+        "id": 162,
+        "label": "L_31a",
+        "position": {
+          "x": -4.679,
+          "y": -37.7455,
+          "z": 43.5579
+        }
+      },
+      {
+        "id": 163,
+        "label": "L_VVC",
+        "position": {
+          "x": -31.0334,
+          "y": -53.2359,
+          "z": -17.3407
+        }
+      },
+      {
+        "id": 164,
+        "label": "L_25",
+        "position": {
+          "x": -4.275,
+          "y": 23.9379,
+          "z": -14.7562
+        }
+      },
+      {
+        "id": 165,
+        "label": "L_s32",
+        "position": {
+          "x": -7.5366,
+          "y": 35.6621,
+          "z": -15.0659
+        }
+      },
+      {
+        "id": 166,
+        "label": "L_pOFC",
+        "position": {
+          "x": -14.3972,
+          "y": 14.3564,
+          "z": -20.8892
+        }
+      },
+      {
+        "id": 167,
+        "label": "L_PoI1",
+        "position": {
+          "x": -39.1902,
+          "y": -12.1828,
+          "z": -2.2671
+        }
+      },
+      {
+        "id": 168,
+        "label": "L_Ig",
+        "position": {
+          "x": -35.5904,
+          "y": -16.1798,
+          "z": 15.9868
+        }
+      },
+      {
+        "id": 169,
+        "label": "L_FOP5",
+        "position": {
+          "x": -35.4105,
+          "y": 26.75,
+          "z": 5.1684
+        }
+      },
+      {
+        "id": 170,
+        "label": "L_p10p",
+        "position": {
+          "x": -24.0707,
+          "y": 62.9202,
+          "z": 2.3932
+        }
+      },
+      {
+        "id": 171,
+        "label": "L_p47r",
+        "position": {
+          "x": -45.6345,
+          "y": 43.0795,
+          "z": 0.9857
+        }
+      },
+      {
+        "id": 172,
+        "label": "L_TGv",
+        "position": {
+          "x": -37.3067,
+          "y": -1.3122,
+          "z": -44.4583
+        }
+      },
+      {
+        "id": 173,
+        "label": "L_MBelt",
+        "position": {
+          "x": -44.3888,
+          "y": -17.7063,
+          "z": 4.3489
+        }
+      },
+      {
+        "id": 174,
+        "label": "L_LBelt",
+        "position": {
+          "x": -45.2987,
+          "y": -27.4349,
+          "z": 9.0529
+        }
+      },
+      {
+        "id": 175,
+        "label": "L_A4",
+        "position": {
+          "x": -63.3197,
+          "y": -23.574,
+          "z": 9.17
+        }
+      },
+      {
+        "id": 176,
+        "label": "L_STSva",
+        "position": {
+          "x": -51.638,
+          "y": -7.7992,
+          "z": -16.9657
+        }
+      },
+      {
+        "id": 177,
+        "label": "L_TE1m",
+        "position": {
+          "x": -64.136,
+          "y": -26.1294,
+          "z": -14.9553
+        }
+      },
+      {
+        "id": 178,
+        "label": "L_PI",
+        "position": {
+          "x": -43.9474,
+          "y": -4.1449,
+          "z": -13.5724
+        }
+      },
+      {
+        "id": 179,
+        "label": "L_a32pr",
+        "position": {
+          "x": -7.6802,
+          "y": 30.6322,
+          "z": 28.6548
+        }
+      },
+      {
+        "id": 180,
+        "label": "L_p24",
+        "position": {
+          "x": -5.1704,
+          "y": 38.8593,
+          "z": 13.874
+        }
+      },
+      {
+        "id": 181,
+        "label": "R_V1",
+        "position": {
+          "x": 12.4486,
+          "y": -80.3925,
+          "z": 4.0572
+        }
+      },
+      {
+        "id": 182,
+        "label": "R_MST",
+        "position": {
+          "x": 48.0338,
+          "y": -64.2372,
+          "z": 7.2628
+        }
+      },
+      {
+        "id": 183,
+        "label": "R_V6",
+        "position": {
+          "x": 17.9109,
+          "y": -76.9513,
+          "z": 31.0297
+        }
+      },
+      {
+        "id": 184,
+        "label": "R_V2",
+        "position": {
+          "x": 12.2652,
+          "y": -79.2862,
+          "z": 6.878
+        }
+      },
+      {
+        "id": 185,
+        "label": "R_V3",
+        "position": {
+          "x": 17.422,
+          "y": -85.2411,
+          "z": 8.9125
+        }
+      },
+      {
+        "id": 186,
+        "label": "R_V4",
+        "position": {
+          "x": 30.754,
+          "y": -84.8834,
+          "z": -1.1632
+        }
+      },
+      {
+        "id": 187,
+        "label": "R_V8",
+        "position": {
+          "x": 30.4344,
+          "y": -75.2613,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 188,
+        "label": "R_4",
+        "position": {
+          "x": 29.7796,
+          "y": -17.1529,
+          "z": 55.2073
+        }
+      },
+      {
+        "id": 189,
+        "label": "R_3b",
+        "position": {
+          "x": 40.1439,
+          "y": -19.37,
+          "z": 51.0025
+        }
+      },
+      {
+        "id": 190,
+        "label": "R_FEF",
+        "position": {
+          "x": 44.8025,
+          "y": -2.4317,
+          "z": 51.7016
+        }
+      },
+      {
+        "id": 191,
+        "label": "R_PEF",
+        "position": {
+          "x": 47.4893,
+          "y": 2.6073,
+          "z": 37.1363
+        }
+      },
+      {
+        "id": 192,
+        "label": "R_55b",
+        "position": {
+          "x": 50.355,
+          "y": 1.9929,
+          "z": 47.0793
+        }
+      },
+      {
+        "id": 193,
+        "label": "R_V3A",
+        "position": {
+          "x": 16.7601,
+          "y": -89.1821,
+          "z": 30.9474
+        }
+      },
+      {
+        "id": 194,
+        "label": "R_RSC",
+        "position": {
+          "x": 5.5622,
+          "y": -36.4378,
+          "z": 21.5635
+        }
+      },
+      {
+        "id": 195,
+        "label": "R_POS2",
+        "position": {
+          "x": 12.009,
+          "y": -70.2659,
+          "z": 38.2154
+        }
+      },
+      {
+        "id": 196,
+        "label": "R_V7",
+        "position": {
+          "x": 28.2829,
+          "y": -84.3952,
+          "z": 31.1622
+        }
+      },
+      {
+        "id": 197,
+        "label": "R_IPS1",
+        "position": {
+          "x": 27.3292,
+          "y": -72.735,
+          "z": 39.84
+        }
+      },
+      {
+        "id": 198,
+        "label": "R_FFC",
+        "position": {
+          "x": 40.8223,
+          "y": -53.4603,
+          "z": -19.1962
+        }
+      },
+      {
+        "id": 199,
+        "label": "R_V3B",
+        "position": {
+          "x": 29.7124,
+          "y": -77.2134,
+          "z": 20.855
+        }
+      },
+      {
+        "id": 200,
+        "label": "R_LO1",
+        "position": {
+          "x": 39.6977,
+          "y": -80.2326,
+          "z": 4.845
+        }
+      },
+      {
+        "id": 201,
+        "label": "R_LO2",
+        "position": {
+          "x": 44.5944,
+          "y": -83.4509,
+          "z": -0.8363
+        }
+      },
+      {
+        "id": 202,
+        "label": "R_PIT",
+        "position": {
+          "x": 42.7838,
+          "y": -80.5454,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 203,
+        "label": "R_MT",
+        "position": {
+          "x": 51.9897,
+          "y": -69.6252,
+          "z": 10.796
+        }
+      },
+      {
+        "id": 204,
+        "label": "R_A1",
+        "position": {
+          "x": 42.7181,
+          "y": -21.674,
+          "z": 11.3995
+        }
+      },
+      {
+        "id": 205,
+        "label": "R_PSL",
+        "position": {
+          "x": 63.9626,
+          "y": -35.7187,
+          "z": 27.4379
+        }
+      },
+      {
+        "id": 206,
+        "label": "R_SFL",
+        "position": {
+          "x": 8.8271,
+          "y": 17.0075,
+          "z": 65.405
+        }
+      },
+      {
+        "id": 207,
+        "label": "R_PCV",
+        "position": {
+          "x": 5.5035,
+          "y": -52.2473,
+          "z": 51.218
+        }
+      },
+      {
+        "id": 208,
+        "label": "R_STV",
+        "position": {
+          "x": 60.0356,
+          "y": -44.0253,
+          "z": 20.4059
+        }
+      },
+      {
+        "id": 209,
+        "label": "R_7Pm",
+        "position": {
+          "x": 5.2416,
+          "y": -68.4553,
+          "z": 50.8443
+        }
+      },
+      {
+        "id": 210,
+        "label": "R_7m",
+        "position": {
+          "x": 4.523,
+          "y": -62.5104,
+          "z": 34.4648
+        }
+      },
+      {
+        "id": 211,
+        "label": "R_POS1",
+        "position": {
+          "x": 13.9837,
+          "y": -57.065,
+          "z": 17.4055
+        }
+      },
+      {
+        "id": 212,
+        "label": "R_23d",
+        "position": {
+          "x": 3.4704,
+          "y": -21.1334,
+          "z": 39.4247
+        }
+      },
+      {
+        "id": 213,
+        "label": "R_v23ab",
+        "position": {
+          "x": 4.3643,
+          "y": -55.0147,
+          "z": 18.8382
+        }
+      },
+      {
+        "id": 214,
+        "label": "R_d23ab",
+        "position": {
+          "x": 3.4887,
+          "y": -40.7114,
+          "z": 33.1083
+        }
+      },
+      {
+        "id": 215,
+        "label": "R_31pv",
+        "position": {
+          "x": 9.1273,
+          "y": -42.9801,
+          "z": 34.757
+        }
+      },
+      {
+        "id": 216,
+        "label": "R_5m",
+        "position": {
+          "x": 5.4319,
+          "y": -39.2363,
+          "z": 65.8784
+        }
+      },
+      {
+        "id": 217,
+        "label": "R_5mv",
+        "position": {
+          "x": 12.0772,
+          "y": -40.2585,
+          "z": 55.0079
+        }
+      },
+      {
+        "id": 218,
+        "label": "R_23c",
+        "position": {
+          "x": 11.2516,
+          "y": -33.0341,
+          "z": 44.1153
+        }
+      },
+      {
+        "id": 219,
+        "label": "R_5L",
+        "position": {
+          "x": 14.0538,
+          "y": -47.551,
+          "z": 74.551
+        }
+      },
+      {
+        "id": 220,
+        "label": "R_24dd",
+        "position": {
+          "x": 6.3501,
+          "y": -16.2504,
+          "z": 53.1445
+        }
+      },
+      {
+        "id": 221,
+        "label": "R_24dv",
+        "position": {
+          "x": 9.1272,
+          "y": -2.5587,
+          "z": 46.7573
+        }
+      },
+      {
+        "id": 222,
+        "label": "R_7AL",
+        "position": {
+          "x": 23.9706,
+          "y": -51.6995,
+          "z": 68.6683
+        }
+      },
+      {
+        "id": 223,
+        "label": "R_SCEF",
+        "position": {
+          "x": 6.1055,
+          "y": 4.0798,
+          "z": 61.3124
+        }
+      },
+      {
+        "id": 224,
+        "label": "R_6ma",
+        "position": {
+          "x": 21.0205,
+          "y": 5.2517,
+          "z": 67.207
+        }
+      },
+      {
+        "id": 225,
+        "label": "R_7Am",
+        "position": {
+          "x": 9.0168,
+          "y": -60.4508,
+          "z": 62.1322
+        }
+      },
+      {
+        "id": 226,
+        "label": "R_7PL",
+        "position": {
+          "x": 12.4214,
+          "y": -73.0975,
+          "z": 56.9243
+        }
+      },
+      {
+        "id": 227,
+        "label": "R_7PC",
+        "position": {
+          "x": 36.4209,
+          "y": -47.3008,
+          "z": 61.4182
+        }
+      },
+      {
+        "id": 228,
+        "label": "R_LIPv",
+        "position": {
+          "x": 28.3435,
+          "y": -57.3692,
+          "z": 53.8374
+        }
+      },
+      {
+        "id": 229,
+        "label": "R_VIP",
+        "position": {
+          "x": 21.8264,
+          "y": -63.6259,
+          "z": 63.3134
+        }
+      },
+      {
+        "id": 230,
+        "label": "R_MIP",
+        "position": {
+          "x": 25.6649,
+          "y": -68.1292,
+          "z": 50.8733
+        }
+      },
+      {
+        "id": 231,
+        "label": "R_1",
+        "position": {
+          "x": 48.9993,
+          "y": -21.151,
+          "z": 54.7363
+        }
+      },
+      {
+        "id": 232,
+        "label": "R_2",
+        "position": {
+          "x": 38.4988,
+          "y": -30.2372,
+          "z": 52.3331
+        }
+      },
+      {
+        "id": 233,
+        "label": "R_3a",
+        "position": {
+          "x": 32.6255,
+          "y": -19.9419,
+          "z": 46.9856
+        }
+      },
+      {
+        "id": 234,
+        "label": "R_6d",
+        "position": {
+          "x": 38.0044,
+          "y": -11.3205,
+          "z": 64.7474
+        }
+      },
+      {
+        "id": 235,
+        "label": "R_6mp",
+        "position": {
+          "x": 17.3891,
+          "y": -11.7631,
+          "z": 69.3736
+        }
+      },
+      {
+        "id": 236,
+        "label": "R_6v",
+        "position": {
+          "x": 59.5139,
+          "y": 6.6888,
+          "z": 30.6097
+        }
+      },
+      {
+        "id": 237,
+        "label": "R_p24pr",
+        "position": {
+          "x": 4.3647,
+          "y": -2.1376,
+          "z": 40.5612
+        }
+      },
+      {
+        "id": 238,
+        "label": "R_33pr",
+        "position": {
+          "x": 3.3875,
+          "y": 14.9531,
+          "z": 26.8608
+        }
+      },
+      {
+        "id": 239,
+        "label": "R_a24pr",
+        "position": {
+          "x": 4.3666,
+          "y": 19.4909,
+          "z": 32.1381
+        }
+      },
+      {
+        "id": 240,
+        "label": "R_p32pr",
+        "position": {
+          "x": 9.0316,
+          "y": 14.6212,
+          "z": 40.1911
+        }
+      },
+      {
+        "id": 241,
+        "label": "R_a24",
+        "position": {
+          "x": -0.5,
+          "y": 33.25,
+          "z": -6.575
+        }
+      },
+      {
+        "id": 242,
+        "label": "R_d32",
+        "position": {
+          "x": 7.2199,
+          "y": 39.4286,
+          "z": 26.991
+        }
+      },
+      {
+        "id": 243,
+        "label": "R_8BM",
+        "position": {
+          "x": 4.8658,
+          "y": 30.6518,
+          "z": 47.4365
+        }
+      },
+      {
+        "id": 244,
+        "label": "R_p32",
+        "position": {
+          "x": -0.5,
+          "y": 43.25,
+          "z": -12.75
+        }
+      },
+      {
+        "id": 245,
+        "label": "R_10r",
+        "position": {
+          "x": -0.5,
+          "y": 45.25,
+          "z": -11.75
+        }
+      },
+      {
+        "id": 246,
+        "label": "R_47m",
+        "position": {
+          "x": 33.7357,
+          "y": 32.5717,
+          "z": -15.8829
+        }
+      },
+      {
+        "id": 247,
+        "label": "R_8Av",
+        "position": {
+          "x": 39.8249,
+          "y": 18.8202,
+          "z": 49.0997
+        }
+      },
+      {
+        "id": 248,
+        "label": "R_8Ad",
+        "position": {
+          "x": 23.9837,
+          "y": 30.6051,
+          "z": 42.3136
+        }
+      },
+      {
+        "id": 249,
+        "label": "R_9m",
+        "position": {
+          "x": 6.7434,
+          "y": 55.0901,
+          "z": 20.9469
+        }
+      },
+      {
+        "id": 250,
+        "label": "R_8BL",
+        "position": {
+          "x": 13.2097,
+          "y": 41.9075,
+          "z": 49.5118
+        }
+      },
+      {
+        "id": 251,
+        "label": "R_9p",
+        "position": {
+          "x": 20.6326,
+          "y": 50.9359,
+          "z": 34.1932
+        }
+      },
+      {
+        "id": 252,
+        "label": "R_10d",
+        "position": {
+          "x": 9.5,
+          "y": 67.8472,
+          "z": 5.0731
+        }
+      },
+      {
+        "id": 253,
+        "label": "R_8C",
+        "position": {
+          "x": 39.5685,
+          "y": 18.1531,
+          "z": 36.715
+        }
+      },
+      {
+        "id": 254,
+        "label": "R_44",
+        "position": {
+          "x": 53.431,
+          "y": 18.9778,
+          "z": 12.591
+        }
+      },
+      {
+        "id": 255,
+        "label": "R_45",
+        "position": {
+          "x": 50.382,
+          "y": 26.5792,
+          "z": 3.3714
+        }
+      },
+      {
+        "id": 256,
+        "label": "R_47l",
+        "position": {
+          "x": 45.234,
+          "y": 33.282,
+          "z": -13.7013
+        }
+      },
+      {
+        "id": 257,
+        "label": "R_a47r",
+        "position": {
+          "x": 39.2721,
+          "y": 51.7682,
+          "z": -8.55
+        }
+      },
+      {
+        "id": 258,
+        "label": "R_6r",
+        "position": {
+          "x": 52.1951,
+          "y": 10.0254,
+          "z": 13.331
+        }
+      },
+      {
+        "id": 259,
+        "label": "R_IFJa",
+        "position": {
+          "x": 44.3623,
+          "y": 16.6019,
+          "z": 25.5586
+        }
+      },
+      {
+        "id": 260,
+        "label": "R_IFJp",
+        "position": {
+          "x": 38.6061,
+          "y": 7.4913,
+          "z": 27.1746
+        }
+      },
+      {
+        "id": 261,
+        "label": "R_IFSp",
+        "position": {
+          "x": 47.7224,
+          "y": 28.693,
+          "z": 18.9286
+        }
+      },
+      {
+        "id": 262,
+        "label": "R_IFSa",
+        "position": {
+          "x": 49.9917,
+          "y": 36.133,
+          "z": 3.711
+        }
+      },
+      {
+        "id": 263,
+        "label": "R_p9-46v",
+        "position": {
+          "x": 47.4775,
+          "y": 30.949,
+          "z": 27.2125
+        }
+      },
+      {
+        "id": 264,
+        "label": "R_46",
+        "position": {
+          "x": 36.7753,
+          "y": 39.899,
+          "z": 30.7436
+        }
+      },
+      {
+        "id": 265,
+        "label": "R_a9-46v",
+        "position": {
+          "x": 39.7225,
+          "y": 52.6637,
+          "z": 10.1349
+        }
+      },
+      {
+        "id": 266,
+        "label": "R_9-46d",
+        "position": {
+          "x": 29.2571,
+          "y": 49.3418,
+          "z": 23.4743
+        }
+      },
+      {
+        "id": 267,
+        "label": "R_9a",
+        "position": {
+          "x": 19.2701,
+          "y": 62.3271,
+          "z": 19.8617
+        }
+      },
+      {
+        "id": 268,
+        "label": "R_10v",
+        "position": {
+          "x": -0.5,
+          "y": 27.25,
+          "z": -24.375
+        }
+      },
+      {
+        "id": 269,
+        "label": "R_a10p",
+        "position": {
+          "x": 25.0974,
+          "y": 62.2746,
+          "z": -8.5039
+        }
+      },
+      {
+        "id": 270,
+        "label": "R_10pp",
+        "position": {
+          "x": 12.4893,
+          "y": 63.2321,
+          "z": -16.4082
+        }
+      },
+      {
+        "id": 271,
+        "label": "R_11l",
+        "position": {
+          "x": 25.7072,
+          "y": 48.1913,
+          "z": -16.2445
+        }
+      },
+      {
+        "id": 272,
+        "label": "R_13l",
+        "position": {
+          "x": 20.1407,
+          "y": 28.9822,
+          "z": -20.2606
+        }
+      },
+      {
+        "id": 273,
+        "label": "R_OFC",
+        "position": {
+          "x": -0.5,
+          "y": 23.1786,
+          "z": -23.9643
+        }
+      },
+      {
+        "id": 274,
+        "label": "R_47s",
+        "position": {
+          "x": 31.2879,
+          "y": 22.4318,
+          "z": -19.6222
+        }
+      },
+      {
+        "id": 275,
+        "label": "R_LIPd",
+        "position": {
+          "x": 31.1998,
+          "y": -54.4651,
+          "z": 45.1389
+        }
+      },
+      {
+        "id": 276,
+        "label": "R_6a",
+        "position": {
+          "x": 26.9379,
+          "y": -2.1452,
+          "z": 53.4619
+        }
+      },
+      {
+        "id": 277,
+        "label": "R_i6-8",
+        "position": {
+          "x": 32.9857,
+          "y": 8.1121,
+          "z": 58.0711
+        }
+      },
+      {
+        "id": 278,
+        "label": "R_s6-8",
+        "position": {
+          "x": 20.4722,
+          "y": 22.041,
+          "z": 59.118
+        }
+      },
+      {
+        "id": 279,
+        "label": "R_43",
+        "position": {
+          "x": 55.7014,
+          "y": 0.7986,
+          "z": 9.7493
+        }
+      },
+      {
+        "id": 280,
+        "label": "R_OP4",
+        "position": {
+          "x": 56.672,
+          "y": -11.1951,
+          "z": 14.1699
+        }
+      },
+      {
+        "id": 281,
+        "label": "R_OP1",
+        "position": {
+          "x": 41.9844,
+          "y": -19.7196,
+          "z": 19.1868
+        }
+      },
+      {
+        "id": 282,
+        "label": "R_OP2-3",
+        "position": {
+          "x": 38.6844,
+          "y": -13.5717,
+          "z": 18.4529
+        }
+      },
+      {
+        "id": 283,
+        "label": "R_52",
+        "position": {
+          "x": 38.2373,
+          "y": -20.5939,
+          "z": 2.6576
+        }
+      },
+      {
+        "id": 284,
+        "label": "R_RI",
+        "position": {
+          "x": 41.188,
+          "y": -30.8163,
+          "z": 19.7572
+        }
+      },
+      {
+        "id": 285,
+        "label": "R_PFcm",
+        "position": {
+          "x": 47.0206,
+          "y": -27.7562,
+          "z": 22.8386
+        }
+      },
+      {
+        "id": 286,
+        "label": "R_PoI2",
+        "position": {
+          "x": 41.0401,
+          "y": -1.3234,
+          "z": -0.3265
+        }
+      },
+      {
+        "id": 287,
+        "label": "R_TA2",
+        "position": {
+          "x": 50.6498,
+          "y": 1.1111,
+          "z": -5.5774
+        }
+      },
+      {
+        "id": 288,
+        "label": "R_FOP4",
+        "position": {
+          "x": 38.7014,
+          "y": 15.141,
+          "z": 7.4438
+        }
+      },
+      {
+        "id": 289,
+        "label": "R_MI",
+        "position": {
+          "x": 36.89,
+          "y": 12.3212,
+          "z": 3.0166
+        }
+      },
+      {
+        "id": 290,
+        "label": "R_Pir",
+        "position": {
+          "x": 33.209,
+          "y": 8.5452,
+          "z": -18.3559
+        }
+      },
+      {
+        "id": 291,
+        "label": "R_AVI",
+        "position": {
+          "x": 32.6765,
+          "y": 26.25,
+          "z": -3.3401
+        }
+      },
+      {
+        "id": 292,
+        "label": "R_AAIC",
+        "position": {
+          "x": 35.0712,
+          "y": 16.7672,
+          "z": -10.4889
+        }
+      },
+      {
+        "id": 293,
+        "label": "R_FOP1",
+        "position": {
+          "x": 46.1755,
+          "y": 4.6386,
+          "z": 5.7439
+        }
+      },
+      {
+        "id": 294,
+        "label": "R_FOP3",
+        "position": {
+          "x": 34.706,
+          "y": 8.0125,
+          "z": 12.0931
+        }
+      },
+      {
+        "id": 295,
+        "label": "R_FOP2",
+        "position": {
+          "x": 40.4563,
+          "y": -1.9126,
+          "z": 15.551
+        }
+      },
+      {
+        "id": 296,
+        "label": "R_PFt",
+        "position": {
+          "x": 56.2214,
+          "y": -20.3243,
+          "z": 37.2779
+        }
+      },
+      {
+        "id": 297,
+        "label": "R_AIP",
+        "position": {
+          "x": 38.6782,
+          "y": -38.671,
+          "z": 44.446
+        }
+      },
+      {
+        "id": 298,
+        "label": "R_EC",
+        "position": {
+          "x": 21.9653,
+          "y": -16.3076,
+          "z": -29.7914
+        }
+      },
+      {
+        "id": 299,
+        "label": "R_PreS",
+        "position": {
+          "x": 16.5333,
+          "y": -34.3921,
+          "z": -10.7781
+        }
+      },
+      {
+        "id": 300,
+        "label": "R_H",
+        "position": {
+          "x": 13.2115,
+          "y": -39.1346,
+          "z": -2.0192
+        }
+      },
+      {
+        "id": 301,
+        "label": "R_ProS",
+        "position": {
+          "x": 22.0104,
+          "y": -50.286,
+          "z": 3.0339
+        }
+      },
+      {
+        "id": 302,
+        "label": "R_PeEc",
+        "position": {
+          "x": 30.1558,
+          "y": -9.921,
+          "z": -34.3296
+        }
+      },
+      {
+        "id": 303,
+        "label": "R_STGa",
+        "position": {
+          "x": 50.1622,
+          "y": 15.2004,
+          "z": -19.0317
+        }
+      },
+      {
+        "id": 304,
+        "label": "R_PBelt",
+        "position": {
+          "x": 55.7916,
+          "y": -18.9197,
+          "z": 8.9682
+        }
+      },
+      {
+        "id": 305,
+        "label": "R_A5",
+        "position": {
+          "x": 62.3912,
+          "y": -14.1458,
+          "z": -1.8871
+        }
+      },
+      {
+        "id": 306,
+        "label": "R_PHA1",
+        "position": {
+          "x": 22.3286,
+          "y": -35.8067,
+          "z": -15.3268
+        }
+      },
+      {
+        "id": 307,
+        "label": "R_PHA3",
+        "position": {
+          "x": 33.4733,
+          "y": -37.2925,
+          "z": -14.9007
+        }
+      },
+      {
+        "id": 308,
+        "label": "R_STSda",
+        "position": {
+          "x": 53.1256,
+          "y": -0.6531,
+          "z": -14.8518
+        }
+      },
+      {
+        "id": 309,
+        "label": "R_STSdp",
+        "position": {
+          "x": 49.2487,
+          "y": -27.9362,
+          "z": -1.114
+        }
+      },
+      {
+        "id": 310,
+        "label": "R_STSvp",
+        "position": {
+          "x": 57.3578,
+          "y": -29.7056,
+          "z": -4.1428
+        }
+      },
+      {
+        "id": 311,
+        "label": "R_TGd",
+        "position": {
+          "x": 35.9692,
+          "y": 14.2698,
+          "z": -35.7327
+        }
+      },
+      {
+        "id": 312,
+        "label": "R_TE1a",
+        "position": {
+          "x": 58.8777,
+          "y": -0.5748,
+          "z": -26.1682
+        }
+      },
+      {
+        "id": 313,
+        "label": "R_TE1p",
+        "position": {
+          "x": 61.7643,
+          "y": -42.8111,
+          "z": -12.1323
+        }
+      },
+      {
+        "id": 314,
+        "label": "R_TE2a",
+        "position": {
+          "x": 55.1806,
+          "y": -18.1076,
+          "z": -30.153
+        }
+      },
+      {
+        "id": 315,
+        "label": "R_TF",
+        "position": {
+          "x": 41.3975,
+          "y": -20.0727,
+          "z": -30.0139
+        }
+      },
+      {
+        "id": 316,
+        "label": "R_TE2p",
+        "position": {
+          "x": 48.3043,
+          "y": -37.4086,
+          "z": -21.5332
+        }
+      },
+      {
+        "id": 317,
+        "label": "R_PHT",
+        "position": {
+          "x": 60.3208,
+          "y": -52.8903,
+          "z": -4.623
+        }
+      },
+      {
+        "id": 318,
+        "label": "R_PH",
+        "position": {
+          "x": 47.9129,
+          "y": -62.6316,
+          "z": -9.5152
+        }
+      },
+      {
+        "id": 319,
+        "label": "R_TPOJ1",
+        "position": {
+          "x": 54.4983,
+          "y": -43.9962,
+          "z": 12.3185
+        }
+      },
+      {
+        "id": 320,
+        "label": "R_TPOJ2",
+        "position": {
+          "x": 54.0637,
+          "y": -55.9967,
+          "z": 8.4856
+        }
+      },
+      {
+        "id": 321,
+        "label": "R_TPOJ3",
+        "position": {
+          "x": 46.514,
+          "y": -62.061,
+          "z": 18.2366
+        }
+      },
+      {
+        "id": 322,
+        "label": "R_DVT",
+        "position": {
+          "x": 20.2276,
+          "y": -71.1343,
+          "z": 36.5018
+        }
+      },
+      {
+        "id": 323,
+        "label": "R_PGp",
+        "position": {
+          "x": 44.5853,
+          "y": -77.6875,
+          "z": 25.4817
+        }
+      },
+      {
+        "id": 324,
+        "label": "R_IP2",
+        "position": {
+          "x": 43.2124,
+          "y": -41.7836,
+          "z": 46.2569
+        }
+      },
+      {
+        "id": 325,
+        "label": "R_IP1",
+        "position": {
+          "x": 34.1084,
+          "y": -67.1459,
+          "z": 41.9002
+        }
+      },
+      {
+        "id": 326,
+        "label": "R_IP0",
+        "position": {
+          "x": 34.1304,
+          "y": -74.7003,
+          "z": 27.4938
+        }
+      },
+      {
+        "id": 327,
+        "label": "R_PFop",
+        "position": {
+          "x": 61.991,
+          "y": -19.1475,
+          "z": 23.4041
+        }
+      },
+      {
+        "id": 328,
+        "label": "R_PF",
+        "position": {
+          "x": 60.7622,
+          "y": -28.5703,
+          "z": 37.1253
+        }
+      },
+      {
+        "id": 329,
+        "label": "R_PFm",
+        "position": {
+          "x": 52.6248,
+          "y": -48.012,
+          "z": 46.5486
+        }
+      },
+      {
+        "id": 330,
+        "label": "R_PGi",
+        "position": {
+          "x": 51.1735,
+          "y": -59.6045,
+          "z": 28.7867
+        }
+      },
+      {
+        "id": 331,
+        "label": "R_PGs",
+        "position": {
+          "x": 44.5803,
+          "y": -68.6269,
+          "z": 42.1399
+        }
+      },
+      {
+        "id": 332,
+        "label": "R_V6A",
+        "position": {
+          "x": 24.2369,
+          "y": -84.3861,
+          "z": 43.5123
+        }
+      },
+      {
+        "id": 333,
+        "label": "R_VMV1",
+        "position": {
+          "x": 18.1655,
+          "y": -54.5927,
+          "z": -6.3762
+        }
+      },
+      {
+        "id": 334,
+        "label": "R_VMV3",
+        "position": {
+          "x": 27.4959,
+          "y": -61.1176,
+          "z": -9.4297
+        }
+      },
+      {
+        "id": 335,
+        "label": "R_PHA2",
+        "position": {
+          "x": 31.1381,
+          "y": -35.282,
+          "z": -12.871
+        }
+      },
+      {
+        "id": 336,
+        "label": "R_V4t",
+        "position": {
+          "x": 50.1715,
+          "y": -74.1807,
+          "z": -0.2363
+        }
+      },
+      {
+        "id": 337,
+        "label": "R_FST",
+        "position": {
+          "x": 50.0233,
+          "y": -63.0782,
+          "z": 1.421
+        }
+      },
+      {
+        "id": 338,
+        "label": "R_V3CD",
+        "position": {
+          "x": 37.867,
+          "y": -83.5003,
+          "z": 12.1034
+        }
+      },
+      {
+        "id": 339,
+        "label": "R_LO3",
+        "position": {
+          "x": 43.5272,
+          "y": -74.2936,
+          "z": 13.2493
+        }
+      },
+      {
+        "id": 340,
+        "label": "R_VMV2",
+        "position": {
+          "x": 27.1853,
+          "y": -54.0215,
+          "z": -6.6275
+        }
+      },
+      {
+        "id": 341,
+        "label": "R_31pd",
+        "position": {
+          "x": 11.0481,
+          "y": -52.3633,
+          "z": 35.7534
+        }
+      },
+      {
+        "id": 342,
+        "label": "R_31a",
+        "position": {
+          "x": 6.6786,
+          "y": -41.3916,
+          "z": 42.7462
+        }
+      },
+      {
+        "id": 343,
+        "label": "R_VVC",
+        "position": {
+          "x": 28.9754,
+          "y": -48.2738,
+          "z": -17.6034
+        }
+      },
+      {
+        "id": 344,
+        "label": "R_25",
+        "position": {
+          "x": -0.5,
+          "y": 23.1848,
+          "z": -18.5326
+        }
+      },
+      {
+        "id": 345,
+        "label": "R_s32",
+        "position": {
+          "x": -0.5,
+          "y": 37.8952,
+          "z": -16.0887
+        }
+      },
+      {
+        "id": 346,
+        "label": "R_pOFC",
+        "position": {
+          "x": 13.1506,
+          "y": 15.4519,
+          "z": -19.9167
+        }
+      },
+      {
+        "id": 347,
+        "label": "R_PoI1",
+        "position": {
+          "x": 39.2738,
+          "y": -9.35,
+          "z": -4.6275
+        }
+      },
+      {
+        "id": 348,
+        "label": "R_Ig",
+        "position": {
+          "x": 36.5567,
+          "y": -12.947,
+          "z": 14.1143
+        }
+      },
+      {
+        "id": 349,
+        "label": "R_FOP5",
+        "position": {
+          "x": 36.9903,
+          "y": 27.5504,
+          "z": 4.8314
+        }
+      },
+      {
+        "id": 350,
+        "label": "R_p10p",
+        "position": {
+          "x": 24.2919,
+          "y": 60.9964,
+          "z": 3.7517
+        }
+      },
+      {
+        "id": 351,
+        "label": "R_p47r",
+        "position": {
+          "x": 46.3992,
+          "y": 44.2913,
+          "z": -4.2913
+        }
+      },
+      {
+        "id": 352,
+        "label": "R_TGv",
+        "position": {
+          "x": 35.207,
+          "y": -1.2092,
+          "z": -45.1935
+        }
+      },
+      {
+        "id": 353,
+        "label": "R_MBelt",
+        "position": {
+          "x": 45.4061,
+          "y": -16.026,
+          "z": 4.698
+        }
+      },
+      {
+        "id": 354,
+        "label": "R_LBelt",
+        "position": {
+          "x": 46.7576,
+          "y": -25.1332,
+          "z": 10.7439
+        }
+      },
+      {
+        "id": 355,
+        "label": "R_A4",
+        "position": {
+          "x": 64.4099,
+          "y": -15.491,
+          "z": 6.57
+        }
+      },
+      {
+        "id": 356,
+        "label": "R_STSva",
+        "position": {
+          "x": 54.1492,
+          "y": -8.5735,
+          "z": -16.9097
+        }
+      },
+      {
+        "id": 357,
+        "label": "R_TE1m",
+        "position": {
+          "x": 64.4446,
+          "y": -22.4579,
+          "z": -16.4575
+        }
+      },
+      {
+        "id": 358,
+        "label": "R_PI",
+        "position": {
+          "x": 44.2384,
+          "y": -3.3355,
+          "z": -12.7233
+        }
+      },
+      {
+        "id": 359,
+        "label": "R_a32pr",
+        "position": {
+          "x": 9.498,
+          "y": 28.6079,
+          "z": 30.5014
+        }
+      },
+      {
+        "id": 360,
+        "label": "R_p24",
+        "position": {
+          "x": 4.5403,
+          "y": 37.9601,
+          "z": 15.4066
+        }
+      },
+      {
+        "id": 361,
+        "label": "L_Cerebellum",
+        "position": {
+          "x": -24.4841,
+          "y": -62.9174,
+          "z": -36.8393
+        }
+      },
+      {
+        "id": 362,
+        "label": "L_Thalamus",
+        "position": {
+          "x": -11.4968,
+          "y": -19.2297,
+          "z": 6.6696
+        }
+      },
+      {
+        "id": 363,
+        "label": "L_Caudate",
+        "position": {
+          "x": -12.9359,
+          "y": 9.5888,
+          "z": 9.5779
+        }
+      },
+      {
+        "id": 364,
+        "label": "L_Putamen",
+        "position": {
+          "x": -26.3518,
+          "y": 0.0041,
+          "z": 0.1759
+        }
+      },
+      {
+        "id": 365,
+        "label": "L_Pallidum",
+        "position": {
+          "x": -20.5731,
+          "y": -5.126,
+          "z": -1.1612
+        }
+      },
+      {
+        "id": 366,
+        "label": "L_Hippocampus",
+        "position": {
+          "x": -25.4045,
+          "y": -22.4638,
+          "z": -14.298
+        }
+      },
+      {
+        "id": 367,
+        "label": "L_Amygdala",
+        "position": {
+          "x": -22.9962,
+          "y": -5.0696,
+          "z": -19.6654
+        }
+      },
+      {
+        "id": 368,
+        "label": "L_Accumbens",
+        "position": {
+          "x": -8.5215,
+          "y": 9.994,
+          "z": -8.4476
+        }
+      },
+      {
+        "id": 369,
+        "label": "L_VentralDC",
+        "position": {
+          "x": -10.5311,
+          "y": -15.4878,
+          "z": -10.5673
+        }
+      },
+      {
+        "id": 370,
+        "label": "R_Cerebellum",
+        "position": {
+          "x": -0.5,
+          "y": -55.7269,
+          "z": -48.0246
+        }
+      },
+      {
+        "id": 371,
+        "label": "R_Thalamus",
+        "position": {
+          "x": 11.2509,
+          "y": -17.528,
+          "z": 6.8822
+        }
+      },
+      {
+        "id": 372,
+        "label": "R_Caudate",
+        "position": {
+          "x": 13.0486,
+          "y": 11.0092,
+          "z": 9.6262
+        }
+      },
+      {
+        "id": 373,
+        "label": "R_Putamen",
+        "position": {
+          "x": 26.3425,
+          "y": 2.0114,
+          "z": -0.2748
+        }
+      },
+      {
+        "id": 374,
+        "label": "R_Pallidum",
+        "position": {
+          "x": 21.0138,
+          "y": -3.7858,
+          "z": -1.0325
+        }
+      },
+      {
+        "id": 375,
+        "label": "R_Hippocampus",
+        "position": {
+          "x": 26.0941,
+          "y": -21.3944,
+          "z": -14.0873
+        }
+      },
+      {
+        "id": 376,
+        "label": "R_Amygdala",
+        "position": {
+          "x": 23.24,
+          "y": -3.735,
+          "z": -19.8364
+        }
+      },
+      {
+        "id": 377,
+        "label": "R_Accumbens",
+        "position": {
+          "x": 7.9293,
+          "y": 11.3815,
+          "z": -7.4997
+        }
+      },
+      {
+        "id": 378,
+        "label": "R_VentralDC",
+        "position": {
+          "x": 10.5525,
+          "y": -14.6552,
+          "z": -10.1548
+        }
+      },
+      {
+        "id": 379,
+        "label": "Brain-Stem",
+        "position": {
+          "x": -6.0839,
+          "y": -30.9513,
+          "z": -33.0764
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.yaml",
     "desc": {
       "name": "dTOR"
     },
-    "atlas": "DesikanKillianyranked",
-    "atlas.name": "DesikanKillianyranked",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-dTOR.png"
-  },
-  {
-    "label": "DesikanKilliany (ranked)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "DesikanKilliany"
-    },
-    "tractogram.name": "ranked",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKilliany (ranked)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked.yaml",
-    "desc": {
-      "name": "ranked"
-    },
-    "atlas": "DesikanKilliany",
-    "atlas.name": "DesikanKilliany",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked.png"
+    "atlas": "hcpmmp1",
+    "atlas.name": "hcpmmp1"
   },
   {
     "label": "virtualdbs (dTOR)",
+    "descriptor": "SC",
     "number_of_nodes": 370,
-    "number_of_regions": 370,
-    "data_file": "space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR.h5",
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-virtualdbs_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36101,27 +39671,67 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
     "parcellation.atlas": {
       "name": "virtualdbs"
     },
     "tractogram.name": "dTOR",
-    "space": "MNI152NLin2009c",
-    "name": "virtualdbs (dTOR)",
     "type": "network",
-    "file": "database/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-virtualdbs_desc-SC_relmat.yaml",
     "desc": {
       "name": "dTOR"
     },
     "atlas": "virtualdbs",
-    "atlas.name": "virtualdbs",
-    "n_regions": 370,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-dTOR.png"
+    "atlas.name": "virtualdbs"
   },
   {
-    "label": "Destrieux (ranked)",
-    "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked.h5",
+    "label": "Schaefer100017Networks (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 1000,
+    "data_file": "tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "FSLMNI152",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "Schaefer100017Networks"
+    },
+    "tractogram.name": "MghUscHcp32",
+    "type": "network",
+    "file": "database/networks/tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
+    "atlas": "Schaefer100017Networks",
+    "atlas.name": "Schaefer100017Networks"
+  },
+  {
+    "label": "hcpmmp1 (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 379,
+    "data_file": "tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36139,27 +39749,3442 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009bAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
     "parcellation.atlas": {
-      "name": "Destrieux"
+      "name": "hcpmmp1",
+      "coordinateSpace": "MNI152NLin2009cAsym"
     },
-    "tractogram.name": "ranked",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieux (ranked)",
+    "tractogram.name": "MghUscHcp32",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "L_V1",
+        "position": {
+          "x": -10.364,
+          "y": -84.1004,
+          "z": 1.6224
+        }
+      },
+      {
+        "id": 2,
+        "label": "L_MST",
+        "position": {
+          "x": -43.784,
+          "y": -66.8058,
+          "z": 11.9515
+        }
+      },
+      {
+        "id": 3,
+        "label": "L_V6",
+        "position": {
+          "x": -14.8822,
+          "y": -80.5731,
+          "z": 32.2153
+        }
+      },
+      {
+        "id": 4,
+        "label": "L_V2",
+        "position": {
+          "x": -10.5689,
+          "y": -82.3316,
+          "z": 4.0629
+        }
+      },
+      {
+        "id": 5,
+        "label": "L_V3",
+        "position": {
+          "x": -15.976,
+          "y": -86.1955,
+          "z": 7.9722
+        }
+      },
+      {
+        "id": 6,
+        "label": "L_V4",
+        "position": {
+          "x": -28.3751,
+          "y": -86.9758,
+          "z": -0.0061
+        }
+      },
+      {
+        "id": 7,
+        "label": "L_V8",
+        "position": {
+          "x": -30.3423,
+          "y": -76.8966,
+          "z": -12.8754
+        }
+      },
+      {
+        "id": 8,
+        "label": "L_4",
+        "position": {
+          "x": -28.4284,
+          "y": -20.3676,
+          "z": 54.6372
+        }
+      },
+      {
+        "id": 9,
+        "label": "L_3b",
+        "position": {
+          "x": -39.3971,
+          "y": -22.2953,
+          "z": 52.8104
+        }
+      },
+      {
+        "id": 10,
+        "label": "L_FEF",
+        "position": {
+          "x": -41.8243,
+          "y": -6.8251,
+          "z": 51.5479
+        }
+      },
+      {
+        "id": 11,
+        "label": "L_PEF",
+        "position": {
+          "x": -49.0095,
+          "y": -0.4517,
+          "z": 40.5917
+        }
+      },
+      {
+        "id": 12,
+        "label": "L_55b",
+        "position": {
+          "x": -48.9816,
+          "y": -1.5129,
+          "z": 50.1907
+        }
+      },
+      {
+        "id": 13,
+        "label": "L_V3A",
+        "position": {
+          "x": -15.0154,
+          "y": -91.6078,
+          "z": 28.2444
+        }
+      },
+      {
+        "id": 14,
+        "label": "L_RSC",
+        "position": {
+          "x": -4.8849,
+          "y": -36.571,
+          "z": 21.1122
+        }
+      },
+      {
+        "id": 15,
+        "label": "L_POS2",
+        "position": {
+          "x": -9.4942,
+          "y": -72.2524,
+          "z": 36.7902
+        }
+      },
+      {
+        "id": 16,
+        "label": "L_V7",
+        "position": {
+          "x": -24.0981,
+          "y": -87.0738,
+          "z": 29.6168
+        }
+      },
+      {
+        "id": 17,
+        "label": "L_IPS1",
+        "position": {
+          "x": -24.3039,
+          "y": -75.2696,
+          "z": 37.4596
+        }
+      },
+      {
+        "id": 18,
+        "label": "L_FFC",
+        "position": {
+          "x": -42.0212,
+          "y": -61.4224,
+          "z": -17.2907
+        }
+      },
+      {
+        "id": 19,
+        "label": "L_V3B",
+        "position": {
+          "x": -26.2942,
+          "y": -83.0281,
+          "z": 17.6529
+        }
+      },
+      {
+        "id": 20,
+        "label": "L_LO1",
+        "position": {
+          "x": -39.7809,
+          "y": -83.9116,
+          "z": 8.2445
+        }
+      },
+      {
+        "id": 21,
+        "label": "L_LO2",
+        "position": {
+          "x": -45.7787,
+          "y": -85.1696,
+          "z": 0.7286
+        }
+      },
+      {
+        "id": 22,
+        "label": "L_PIT",
+        "position": {
+          "x": -43.7057,
+          "y": -83.2109,
+          "z": -11.0143
+        }
+      },
+      {
+        "id": 23,
+        "label": "L_MT",
+        "position": {
+          "x": -42.7722,
+          "y": -69.9594,
+          "z": 14.452
+        }
+      },
+      {
+        "id": 24,
+        "label": "L_A1",
+        "position": {
+          "x": -43.1723,
+          "y": -25.3579,
+          "z": 12.3234
+        }
+      },
+      {
+        "id": 25,
+        "label": "L_PSL",
+        "position": {
+          "x": -58.5839,
+          "y": -47.2283,
+          "z": 25.4311
+        }
+      },
+      {
+        "id": 26,
+        "label": "L_SFL",
+        "position": {
+          "x": -8.6095,
+          "y": 17.5137,
+          "z": 63.9293
+        }
+      },
+      {
+        "id": 27,
+        "label": "L_PCV",
+        "position": {
+          "x": -6.298,
+          "y": -51.1579,
+          "z": 49.2086
+        }
+      },
+      {
+        "id": 28,
+        "label": "L_STV",
+        "position": {
+          "x": -61.089,
+          "y": -50.9521,
+          "z": 18.2324
+        }
+      },
+      {
+        "id": 29,
+        "label": "L_7Pm",
+        "position": {
+          "x": -4.2062,
+          "y": -70.4214,
+          "z": 50.3404
+        }
+      },
+      {
+        "id": 30,
+        "label": "L_7m",
+        "position": {
+          "x": -4.2845,
+          "y": -63.8785,
+          "z": 35.1841
+        }
+      },
+      {
+        "id": 31,
+        "label": "L_POS1",
+        "position": {
+          "x": -12.6035,
+          "y": -59.0019,
+          "z": 15.0424
+        }
+      },
+      {
+        "id": 32,
+        "label": "L_23d",
+        "position": {
+          "x": -2.8881,
+          "y": -20.6781,
+          "z": 39.3587
+        }
+      },
+      {
+        "id": 33,
+        "label": "L_v23ab",
+        "position": {
+          "x": -3.3636,
+          "y": -58.247,
+          "z": 18.2133
+        }
+      },
+      {
+        "id": 34,
+        "label": "L_d23ab",
+        "position": {
+          "x": -3.0438,
+          "y": -42.6808,
+          "z": 31.2975
+        }
+      },
+      {
+        "id": 35,
+        "label": "L_31pv",
+        "position": {
+          "x": -9.4073,
+          "y": -46.7604,
+          "z": 32.5419
+        }
+      },
+      {
+        "id": 36,
+        "label": "L_5m",
+        "position": {
+          "x": -6.2842,
+          "y": -41.9173,
+          "z": 63.3997
+        }
+      },
+      {
+        "id": 37,
+        "label": "L_5mv",
+        "position": {
+          "x": -13.7018,
+          "y": -37.1393,
+          "z": 50.3818
+        }
+      },
+      {
+        "id": 38,
+        "label": "L_23c",
+        "position": {
+          "x": -11.4488,
+          "y": -30.5269,
+          "z": 43.0083
+        }
+      },
+      {
+        "id": 39,
+        "label": "L_5L",
+        "position": {
+          "x": -14.7776,
+          "y": -48.6065,
+          "z": 72.5933
+        }
+      },
+      {
+        "id": 40,
+        "label": "L_24dd",
+        "position": {
+          "x": -5.8855,
+          "y": -16.0126,
+          "z": 50.5898
+        }
+      },
+      {
+        "id": 41,
+        "label": "L_24dv",
+        "position": {
+          "x": -8.3022,
+          "y": -0.3766,
+          "z": 44.8102
+        }
+      },
+      {
+        "id": 42,
+        "label": "L_7AL",
+        "position": {
+          "x": -20.4027,
+          "y": -51.9913,
+          "z": 65.6772
+        }
+      },
+      {
+        "id": 43,
+        "label": "L_SCEF",
+        "position": {
+          "x": -5.9317,
+          "y": 4.1342,
+          "z": 59.6032
+        }
+      },
+      {
+        "id": 44,
+        "label": "L_6ma",
+        "position": {
+          "x": -20.0984,
+          "y": 3.9694,
+          "z": 67.8903
+        }
+      },
+      {
+        "id": 45,
+        "label": "L_7Am",
+        "position": {
+          "x": -6.9458,
+          "y": -60.3173,
+          "z": 61.4581
+        }
+      },
+      {
+        "id": 46,
+        "label": "L_7PL",
+        "position": {
+          "x": -14.816,
+          "y": -73.7112,
+          "z": 56.0083
+        }
+      },
+      {
+        "id": 47,
+        "label": "L_7PC",
+        "position": {
+          "x": -37.4515,
+          "y": -46.7109,
+          "z": 60.6276
+        }
+      },
+      {
+        "id": 48,
+        "label": "L_LIPv",
+        "position": {
+          "x": -30.8546,
+          "y": -58.4029,
+          "z": 55.2323
+        }
+      },
+      {
+        "id": 49,
+        "label": "L_VIP",
+        "position": {
+          "x": -22.8218,
+          "y": -63.5048,
+          "z": 64.4746
+        }
+      },
+      {
+        "id": 50,
+        "label": "L_MIP",
+        "position": {
+          "x": -24.857,
+          "y": -67.1281,
+          "z": 47.1007
+        }
+      },
+      {
+        "id": 51,
+        "label": "L_1",
+        "position": {
+          "x": -47.0296,
+          "y": -26.3181,
+          "z": 56.3848
+        }
+      },
+      {
+        "id": 52,
+        "label": "L_2",
+        "position": {
+          "x": -38.8683,
+          "y": -32.9202,
+          "z": 51.957
+        }
+      },
+      {
+        "id": 53,
+        "label": "L_3a",
+        "position": {
+          "x": -35.2805,
+          "y": -20.5097,
+          "z": 42.8339
+        }
+      },
+      {
+        "id": 54,
+        "label": "L_6d",
+        "position": {
+          "x": -33.7943,
+          "y": -14.2162,
+          "z": 67.7344
+        }
+      },
+      {
+        "id": 55,
+        "label": "L_6mp",
+        "position": {
+          "x": -10.7334,
+          "y": -15.0087,
+          "z": 71.0262
+        }
+      },
+      {
+        "id": 56,
+        "label": "L_6v",
+        "position": {
+          "x": -59.5034,
+          "y": 3.7871,
+          "z": 31.9067
+        }
+      },
+      {
+        "id": 57,
+        "label": "L_p24pr",
+        "position": {
+          "x": -3.9615,
+          "y": -2.2441,
+          "z": 40.3761
+        }
+      },
+      {
+        "id": 58,
+        "label": "L_33pr",
+        "position": {
+          "x": -2.3983,
+          "y": 11.2592,
+          "z": 28.7215
+        }
+      },
+      {
+        "id": 59,
+        "label": "L_a24pr",
+        "position": {
+          "x": -5.3869,
+          "y": 18.3002,
+          "z": 30.9814
+        }
+      },
+      {
+        "id": 60,
+        "label": "L_p32pr",
+        "position": {
+          "x": -7.9292,
+          "y": 15.3954,
+          "z": 38.7959
+        }
+      },
+      {
+        "id": 61,
+        "label": "L_a24",
+        "position": {
+          "x": -6.1363,
+          "y": 41.965,
+          "z": -4.4968
+        }
+      },
+      {
+        "id": 62,
+        "label": "L_d32",
+        "position": {
+          "x": -8.0403,
+          "y": 42.4755,
+          "z": 24.9597
+        }
+      },
+      {
+        "id": 63,
+        "label": "L_8BM",
+        "position": {
+          "x": -4.7592,
+          "y": 32.5683,
+          "z": 45.1662
+        }
+      },
+      {
+        "id": 64,
+        "label": "L_p32",
+        "position": {
+          "x": -11.2759,
+          "y": 50.3924,
+          "z": -2.3392
+        }
+      },
+      {
+        "id": 65,
+        "label": "L_10r",
+        "position": {
+          "x": -6.0341,
+          "y": 51.6407,
+          "z": -10.6444
+        }
+      },
+      {
+        "id": 66,
+        "label": "L_47m",
+        "position": {
+          "x": -37.4924,
+          "y": 31.5348,
+          "z": -13.9227
+        }
+      },
+      {
+        "id": 67,
+        "label": "L_8Av",
+        "position": {
+          "x": -38.3312,
+          "y": 16.5889,
+          "z": 52.2792
+        }
+      },
+      {
+        "id": 68,
+        "label": "L_8Ad",
+        "position": {
+          "x": -23.3507,
+          "y": 28.996,
+          "z": 43.3465
+        }
+      },
+      {
+        "id": 69,
+        "label": "L_9m",
+        "position": {
+          "x": -6.0375,
+          "y": 55.1478,
+          "z": 24.2637
+        }
+      },
+      {
+        "id": 70,
+        "label": "L_8BL",
+        "position": {
+          "x": -11.6218,
+          "y": 37.1473,
+          "z": 53.8005
+        }
+      },
+      {
+        "id": 71,
+        "label": "L_9p",
+        "position": {
+          "x": -19.8944,
+          "y": 47.3057,
+          "z": 38.4792
+        }
+      },
+      {
+        "id": 72,
+        "label": "L_10d",
+        "position": {
+          "x": -11.1632,
+          "y": 66.2958,
+          "z": 8.4044
+        }
+      },
+      {
+        "id": 73,
+        "label": "L_8C",
+        "position": {
+          "x": -43.7036,
+          "y": 11.8118,
+          "z": 37.7097
+        }
+      },
+      {
+        "id": 74,
+        "label": "L_44",
+        "position": {
+          "x": -53.8786,
+          "y": 14.8412,
+          "z": 14.0097
+        }
+      },
+      {
+        "id": 75,
+        "label": "L_45",
+        "position": {
+          "x": -50.609,
+          "y": 25.5687,
+          "z": 3.2206
+        }
+      },
+      {
+        "id": 76,
+        "label": "L_47l",
+        "position": {
+          "x": -46.7708,
+          "y": 30.1001,
+          "z": -9.9578
+        }
+      },
+      {
+        "id": 77,
+        "label": "L_a47r",
+        "position": {
+          "x": -41.3563,
+          "y": 48.5638,
+          "z": -11.9072
+        }
+      },
+      {
+        "id": 78,
+        "label": "L_6r",
+        "position": {
+          "x": -52.4908,
+          "y": 6.6641,
+          "z": 17.7741
+        }
+      },
+      {
+        "id": 79,
+        "label": "L_IFJa",
+        "position": {
+          "x": -41.0068,
+          "y": 10.8526,
+          "z": 26.3856
+        }
+      },
+      {
+        "id": 80,
+        "label": "L_IFJp",
+        "position": {
+          "x": -41.3634,
+          "y": 2.2956,
+          "z": 30.0642
+        }
+      },
+      {
+        "id": 81,
+        "label": "L_IFSp",
+        "position": {
+          "x": -48.8016,
+          "y": 20.9089,
+          "z": 22.8515
+        }
+      },
+      {
+        "id": 82,
+        "label": "L_IFSa",
+        "position": {
+          "x": -48.1015,
+          "y": 32.1216,
+          "z": 10.6533
+        }
+      },
+      {
+        "id": 83,
+        "label": "L_p9-46v",
+        "position": {
+          "x": -47.1903,
+          "y": 28.8919,
+          "z": 25.9915
+        }
+      },
+      {
+        "id": 84,
+        "label": "L_46",
+        "position": {
+          "x": -38.4057,
+          "y": 37.8526,
+          "z": 32.9207
+        }
+      },
+      {
+        "id": 85,
+        "label": "L_a9-46v",
+        "position": {
+          "x": -40.0072,
+          "y": 51.6397,
+          "z": 9.1728
+        }
+      },
+      {
+        "id": 86,
+        "label": "L_9-46d",
+        "position": {
+          "x": -29.4487,
+          "y": 45.8579,
+          "z": 23.4636
+        }
+      },
+      {
+        "id": 87,
+        "label": "L_9a",
+        "position": {
+          "x": -21.7269,
+          "y": 57.5628,
+          "z": 24.1526
+        }
+      },
+      {
+        "id": 88,
+        "label": "L_10v",
+        "position": {
+          "x": -4.0071,
+          "y": 52.9119,
+          "z": -17.8343
+        }
+      },
+      {
+        "id": 89,
+        "label": "L_a10p",
+        "position": {
+          "x": -26.4781,
+          "y": 59.742,
+          "z": -6.8987
+        }
+      },
+      {
+        "id": 90,
+        "label": "L_10pp",
+        "position": {
+          "x": -12.7721,
+          "y": 62.2831,
+          "z": -16.2485
+        }
+      },
+      {
+        "id": 91,
+        "label": "L_11l",
+        "position": {
+          "x": -25.9362,
+          "y": 49.4761,
+          "z": -15.4714
+        }
+      },
+      {
+        "id": 92,
+        "label": "L_13l",
+        "position": {
+          "x": -23.3043,
+          "y": 30.0783,
+          "z": -19.8865
+        }
+      },
+      {
+        "id": 93,
+        "label": "L_OFC",
+        "position": {
+          "x": -10.8287,
+          "y": 33.539,
+          "z": -24.5052
+        }
+      },
+      {
+        "id": 94,
+        "label": "L_47s",
+        "position": {
+          "x": -34.5233,
+          "y": 22.1134,
+          "z": -19.1547
+        }
+      },
+      {
+        "id": 95,
+        "label": "L_LIPd",
+        "position": {
+          "x": -30.0745,
+          "y": -55.4435,
+          "z": 42.8996
+        }
+      },
+      {
+        "id": 96,
+        "label": "L_6a",
+        "position": {
+          "x": -25.3604,
+          "y": -4.9318,
+          "z": 55.5618
+        }
+      },
+      {
+        "id": 97,
+        "label": "L_i6-8",
+        "position": {
+          "x": -29.5765,
+          "y": 5.2274,
+          "z": 56.748
+        }
+      },
+      {
+        "id": 98,
+        "label": "L_s6-8",
+        "position": {
+          "x": -22.3087,
+          "y": 24.1516,
+          "z": 56.2966
+        }
+      },
+      {
+        "id": 99,
+        "label": "L_43",
+        "position": {
+          "x": -56.3831,
+          "y": -0.3366,
+          "z": 9.4767
+        }
+      },
+      {
+        "id": 100,
+        "label": "L_OP4",
+        "position": {
+          "x": -59.2233,
+          "y": -13.4846,
+          "z": 15.315
+        }
+      },
+      {
+        "id": 101,
+        "label": "L_OP1",
+        "position": {
+          "x": -46.9496,
+          "y": -22.3801,
+          "z": 19.1422
+        }
+      },
+      {
+        "id": 102,
+        "label": "L_OP2-3",
+        "position": {
+          "x": -40.4601,
+          "y": -17.2433,
+          "z": 19.0212
+        }
+      },
+      {
+        "id": 103,
+        "label": "L_52",
+        "position": {
+          "x": -38.0016,
+          "y": -22.3612,
+          "z": 1.9379
+        }
+      },
+      {
+        "id": 104,
+        "label": "L_RI",
+        "position": {
+          "x": -40.1846,
+          "y": -35.5219,
+          "z": 20.2432
+        }
+      },
+      {
+        "id": 105,
+        "label": "L_PFcm",
+        "position": {
+          "x": -50.4059,
+          "y": -32.309,
+          "z": 21.7463
+        }
+      },
+      {
+        "id": 106,
+        "label": "L_PoI2",
+        "position": {
+          "x": -40.4908,
+          "y": -2.9287,
+          "z": -0.0029
+        }
+      },
+      {
+        "id": 107,
+        "label": "L_TA2",
+        "position": {
+          "x": -50.3675,
+          "y": -0.1737,
+          "z": -5.4789
+        }
+      },
+      {
+        "id": 108,
+        "label": "L_FOP4",
+        "position": {
+          "x": -41.4917,
+          "y": 12.7776,
+          "z": 5.6919
+        }
+      },
+      {
+        "id": 109,
+        "label": "L_MI",
+        "position": {
+          "x": -36.2879,
+          "y": 11.1963,
+          "z": 3.3261
+        }
+      },
+      {
+        "id": 110,
+        "label": "L_Pir",
+        "position": {
+          "x": -32.039,
+          "y": 6.3815,
+          "z": -17.6798
+        }
+      },
+      {
+        "id": 111,
+        "label": "L_AVI",
+        "position": {
+          "x": -30.8608,
+          "y": 25.4027,
+          "z": -2.4888
+        }
+      },
+      {
+        "id": 112,
+        "label": "L_AAIC",
+        "position": {
+          "x": -35.4208,
+          "y": 14.345,
+          "z": -10.4385
+        }
+      },
+      {
+        "id": 113,
+        "label": "L_FOP1",
+        "position": {
+          "x": -49.8875,
+          "y": 1.6589,
+          "z": 4.5696
+        }
+      },
+      {
+        "id": 114,
+        "label": "L_FOP3",
+        "position": {
+          "x": -35.995,
+          "y": 2.1376,
+          "z": 13.4428
+        }
+      },
+      {
+        "id": 115,
+        "label": "L_FOP2",
+        "position": {
+          "x": -42.4128,
+          "y": -4.9531,
+          "z": 14.7998
+        }
+      },
+      {
+        "id": 116,
+        "label": "L_PFt",
+        "position": {
+          "x": -56.3928,
+          "y": -25.7538,
+          "z": 36.533
+        }
+      },
+      {
+        "id": 117,
+        "label": "L_AIP",
+        "position": {
+          "x": -39.7852,
+          "y": -39.0137,
+          "z": 42.2767
+        }
+      },
+      {
+        "id": 118,
+        "label": "L_EC",
+        "position": {
+          "x": -22.9398,
+          "y": -13.6461,
+          "z": -31.6681
+        }
+      },
+      {
+        "id": 119,
+        "label": "L_PreS",
+        "position": {
+          "x": -16.9281,
+          "y": -34.2994,
+          "z": -13.8604
+        }
+      },
+      {
+        "id": 120,
+        "label": "L_H",
+        "position": {
+          "x": -11.9167,
+          "y": -39.75,
+          "z": -2.9167
+        }
+      },
+      {
+        "id": 121,
+        "label": "L_ProS",
+        "position": {
+          "x": -22.0685,
+          "y": -57.0108,
+          "z": 4.6909
+        }
+      },
+      {
+        "id": 122,
+        "label": "L_PeEc",
+        "position": {
+          "x": -31.1356,
+          "y": -9.5889,
+          "z": -33.6028
+        }
+      },
+      {
+        "id": 123,
+        "label": "L_STGa",
+        "position": {
+          "x": -50.8535,
+          "y": 12.9215,
+          "z": -16.6696
+        }
+      },
+      {
+        "id": 124,
+        "label": "L_PBelt",
+        "position": {
+          "x": -52.7095,
+          "y": -26.0037,
+          "z": 9.006
+        }
+      },
+      {
+        "id": 125,
+        "label": "L_A5",
+        "position": {
+          "x": -62.9832,
+          "y": -15.2118,
+          "z": -1.1005
+        }
+      },
+      {
+        "id": 126,
+        "label": "L_PHA1",
+        "position": {
+          "x": -23.3494,
+          "y": -37.7192,
+          "z": -14.638
+        }
+      },
+      {
+        "id": 127,
+        "label": "L_PHA3",
+        "position": {
+          "x": -31.8398,
+          "y": -37.931,
+          "z": -17.7307
+        }
+      },
+      {
+        "id": 128,
+        "label": "L_STSda",
+        "position": {
+          "x": -54.8082,
+          "y": -4.1468,
+          "z": -11.5957
+        }
+      },
+      {
+        "id": 129,
+        "label": "L_STSdp",
+        "position": {
+          "x": -52.7884,
+          "y": -32.6386,
+          "z": 1.1349
+        }
+      },
+      {
+        "id": 130,
+        "label": "L_STSvp",
+        "position": {
+          "x": -54.8898,
+          "y": -34.8552,
+          "z": -3.4358
+        }
+      },
+      {
+        "id": 131,
+        "label": "L_TGd",
+        "position": {
+          "x": -38.1921,
+          "y": 12.305,
+          "z": -34.4727
+        }
+      },
+      {
+        "id": 132,
+        "label": "L_TE1a",
+        "position": {
+          "x": -59.7754,
+          "y": -5.2246,
+          "z": -23.1151
+        }
+      },
+      {
+        "id": 133,
+        "label": "L_TE1p",
+        "position": {
+          "x": -61.7726,
+          "y": -48.2135,
+          "z": -8.6963
+        }
+      },
+      {
+        "id": 134,
+        "label": "L_TE2a",
+        "position": {
+          "x": -57.2752,
+          "y": -24.3832,
+          "z": -27.7009
+        }
+      },
+      {
+        "id": 135,
+        "label": "L_TF",
+        "position": {
+          "x": -42.3942,
+          "y": -22.0097,
+          "z": -30.0052
+        }
+      },
+      {
+        "id": 136,
+        "label": "L_TE2p",
+        "position": {
+          "x": -49.3913,
+          "y": -43.4235,
+          "z": -20.5057
+        }
+      },
+      {
+        "id": 137,
+        "label": "L_PHT",
+        "position": {
+          "x": -58.3918,
+          "y": -60.6461,
+          "z": 3.2289
+        }
+      },
+      {
+        "id": 138,
+        "label": "L_PH",
+        "position": {
+          "x": -45.9845,
+          "y": -65.1466,
+          "z": -5.3422
+        }
+      },
+      {
+        "id": 139,
+        "label": "L_TPOJ1",
+        "position": {
+          "x": -54.1676,
+          "y": -46.3202,
+          "z": 10.26
+        }
+      },
+      {
+        "id": 140,
+        "label": "L_TPOJ2",
+        "position": {
+          "x": -51.9934,
+          "y": -62.363,
+          "z": 15.7838
+        }
+      },
+      {
+        "id": 141,
+        "label": "L_TPOJ3",
+        "position": {
+          "x": -45.9746,
+          "y": -72.674,
+          "z": 20.7012
+        }
+      },
+      {
+        "id": 142,
+        "label": "L_DVT",
+        "position": {
+          "x": -17.6379,
+          "y": -74.2901,
+          "z": 36.3106
+        }
+      },
+      {
+        "id": 143,
+        "label": "L_PGp",
+        "position": {
+          "x": -38.6978,
+          "y": -85.4329,
+          "z": 23.0889
+        }
+      },
+      {
+        "id": 144,
+        "label": "L_IP2",
+        "position": {
+          "x": -40.9491,
+          "y": -48.8004,
+          "z": 43.3753
+        }
+      },
+      {
+        "id": 145,
+        "label": "L_IP1",
+        "position": {
+          "x": -30.258,
+          "y": -70.6326,
+          "z": 39.1023
+        }
+      },
+      {
+        "id": 146,
+        "label": "L_IP0",
+        "position": {
+          "x": -30.8447,
+          "y": -79.0757,
+          "z": 24.2723
+        }
+      },
+      {
+        "id": 147,
+        "label": "L_PFop",
+        "position": {
+          "x": -62.9615,
+          "y": -23.7361,
+          "z": 24.0328
+        }
+      },
+      {
+        "id": 148,
+        "label": "L_PF",
+        "position": {
+          "x": -60.306,
+          "y": -37.2782,
+          "z": 37.9053
+        }
+      },
+      {
+        "id": 149,
+        "label": "L_PFm",
+        "position": {
+          "x": -49.516,
+          "y": -58.0483,
+          "z": 44.8952
+        }
+      },
+      {
+        "id": 150,
+        "label": "L_PGi",
+        "position": {
+          "x": -46.5455,
+          "y": -64.0108,
+          "z": 27.542
+        }
+      },
+      {
+        "id": 151,
+        "label": "L_PGs",
+        "position": {
+          "x": -39.1906,
+          "y": -78.071,
+          "z": 38.9904
+        }
+      },
+      {
+        "id": 152,
+        "label": "L_V6A",
+        "position": {
+          "x": -21.7836,
+          "y": -86.1888,
+          "z": 42.7225
+        }
+      },
+      {
+        "id": 153,
+        "label": "L_VMV1",
+        "position": {
+          "x": -18.6619,
+          "y": -55.9416,
+          "z": -5.522
+        }
+      },
+      {
+        "id": 154,
+        "label": "L_VMV3",
+        "position": {
+          "x": -27.7219,
+          "y": -62.6969,
+          "z": -11.2141
+        }
+      },
+      {
+        "id": 155,
+        "label": "L_PHA2",
+        "position": {
+          "x": -31.9234,
+          "y": -37.4482,
+          "z": -11.7815
+        }
+      },
+      {
+        "id": 156,
+        "label": "L_V4t",
+        "position": {
+          "x": -49.261,
+          "y": -77.1178,
+          "z": 7.8354
+        }
+      },
+      {
+        "id": 157,
+        "label": "L_FST",
+        "position": {
+          "x": -45.8253,
+          "y": -68.6921,
+          "z": 5.6201
+        }
+      },
+      {
+        "id": 158,
+        "label": "L_V3CD",
+        "position": {
+          "x": -35.65,
+          "y": -88.8457,
+          "z": 11.2729
+        }
+      },
+      {
+        "id": 159,
+        "label": "L_LO3",
+        "position": {
+          "x": -41.2095,
+          "y": -77.1728,
+          "z": 15.1551
+        }
+      },
+      {
+        "id": 160,
+        "label": "L_VMV2",
+        "position": {
+          "x": -27.3375,
+          "y": -54.8236,
+          "z": -6.411
+        }
+      },
+      {
+        "id": 161,
+        "label": "L_31pd",
+        "position": {
+          "x": -8.7,
+          "y": -53.4323,
+          "z": 34.6469
+        }
+      },
+      {
+        "id": 162,
+        "label": "L_31a",
+        "position": {
+          "x": -4.679,
+          "y": -37.7455,
+          "z": 43.5579
+        }
+      },
+      {
+        "id": 163,
+        "label": "L_VVC",
+        "position": {
+          "x": -31.0334,
+          "y": -53.2359,
+          "z": -17.3407
+        }
+      },
+      {
+        "id": 164,
+        "label": "L_25",
+        "position": {
+          "x": -4.275,
+          "y": 23.9379,
+          "z": -14.7562
+        }
+      },
+      {
+        "id": 165,
+        "label": "L_s32",
+        "position": {
+          "x": -7.5366,
+          "y": 35.6621,
+          "z": -15.0659
+        }
+      },
+      {
+        "id": 166,
+        "label": "L_pOFC",
+        "position": {
+          "x": -14.3972,
+          "y": 14.3564,
+          "z": -20.8892
+        }
+      },
+      {
+        "id": 167,
+        "label": "L_PoI1",
+        "position": {
+          "x": -39.1902,
+          "y": -12.1828,
+          "z": -2.2671
+        }
+      },
+      {
+        "id": 168,
+        "label": "L_Ig",
+        "position": {
+          "x": -35.5904,
+          "y": -16.1798,
+          "z": 15.9868
+        }
+      },
+      {
+        "id": 169,
+        "label": "L_FOP5",
+        "position": {
+          "x": -35.4105,
+          "y": 26.75,
+          "z": 5.1684
+        }
+      },
+      {
+        "id": 170,
+        "label": "L_p10p",
+        "position": {
+          "x": -24.0707,
+          "y": 62.9202,
+          "z": 2.3932
+        }
+      },
+      {
+        "id": 171,
+        "label": "L_p47r",
+        "position": {
+          "x": -45.6345,
+          "y": 43.0795,
+          "z": 0.9857
+        }
+      },
+      {
+        "id": 172,
+        "label": "L_TGv",
+        "position": {
+          "x": -37.3067,
+          "y": -1.3122,
+          "z": -44.4583
+        }
+      },
+      {
+        "id": 173,
+        "label": "L_MBelt",
+        "position": {
+          "x": -44.3888,
+          "y": -17.7063,
+          "z": 4.3489
+        }
+      },
+      {
+        "id": 174,
+        "label": "L_LBelt",
+        "position": {
+          "x": -45.2987,
+          "y": -27.4349,
+          "z": 9.0529
+        }
+      },
+      {
+        "id": 175,
+        "label": "L_A4",
+        "position": {
+          "x": -63.3197,
+          "y": -23.574,
+          "z": 9.17
+        }
+      },
+      {
+        "id": 176,
+        "label": "L_STSva",
+        "position": {
+          "x": -51.638,
+          "y": -7.7992,
+          "z": -16.9657
+        }
+      },
+      {
+        "id": 177,
+        "label": "L_TE1m",
+        "position": {
+          "x": -64.136,
+          "y": -26.1294,
+          "z": -14.9553
+        }
+      },
+      {
+        "id": 178,
+        "label": "L_PI",
+        "position": {
+          "x": -43.9474,
+          "y": -4.1449,
+          "z": -13.5724
+        }
+      },
+      {
+        "id": 179,
+        "label": "L_a32pr",
+        "position": {
+          "x": -7.6802,
+          "y": 30.6322,
+          "z": 28.6548
+        }
+      },
+      {
+        "id": 180,
+        "label": "L_p24",
+        "position": {
+          "x": -5.1704,
+          "y": 38.8593,
+          "z": 13.874
+        }
+      },
+      {
+        "id": 181,
+        "label": "R_V1",
+        "position": {
+          "x": 12.4486,
+          "y": -80.3925,
+          "z": 4.0572
+        }
+      },
+      {
+        "id": 182,
+        "label": "R_MST",
+        "position": {
+          "x": 48.0338,
+          "y": -64.2372,
+          "z": 7.2628
+        }
+      },
+      {
+        "id": 183,
+        "label": "R_V6",
+        "position": {
+          "x": 17.9109,
+          "y": -76.9513,
+          "z": 31.0297
+        }
+      },
+      {
+        "id": 184,
+        "label": "R_V2",
+        "position": {
+          "x": 12.2652,
+          "y": -79.2862,
+          "z": 6.878
+        }
+      },
+      {
+        "id": 185,
+        "label": "R_V3",
+        "position": {
+          "x": 17.422,
+          "y": -85.2411,
+          "z": 8.9125
+        }
+      },
+      {
+        "id": 186,
+        "label": "R_V4",
+        "position": {
+          "x": 30.754,
+          "y": -84.8834,
+          "z": -1.1632
+        }
+      },
+      {
+        "id": 187,
+        "label": "R_V8",
+        "position": {
+          "x": 30.4344,
+          "y": -75.2613,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 188,
+        "label": "R_4",
+        "position": {
+          "x": 29.7796,
+          "y": -17.1529,
+          "z": 55.2073
+        }
+      },
+      {
+        "id": 189,
+        "label": "R_3b",
+        "position": {
+          "x": 40.1439,
+          "y": -19.37,
+          "z": 51.0025
+        }
+      },
+      {
+        "id": 190,
+        "label": "R_FEF",
+        "position": {
+          "x": 44.8025,
+          "y": -2.4317,
+          "z": 51.7016
+        }
+      },
+      {
+        "id": 191,
+        "label": "R_PEF",
+        "position": {
+          "x": 47.4893,
+          "y": 2.6073,
+          "z": 37.1363
+        }
+      },
+      {
+        "id": 192,
+        "label": "R_55b",
+        "position": {
+          "x": 50.355,
+          "y": 1.9929,
+          "z": 47.0793
+        }
+      },
+      {
+        "id": 193,
+        "label": "R_V3A",
+        "position": {
+          "x": 16.7601,
+          "y": -89.1821,
+          "z": 30.9474
+        }
+      },
+      {
+        "id": 194,
+        "label": "R_RSC",
+        "position": {
+          "x": 5.5622,
+          "y": -36.4378,
+          "z": 21.5635
+        }
+      },
+      {
+        "id": 195,
+        "label": "R_POS2",
+        "position": {
+          "x": 12.009,
+          "y": -70.2659,
+          "z": 38.2154
+        }
+      },
+      {
+        "id": 196,
+        "label": "R_V7",
+        "position": {
+          "x": 28.2829,
+          "y": -84.3952,
+          "z": 31.1622
+        }
+      },
+      {
+        "id": 197,
+        "label": "R_IPS1",
+        "position": {
+          "x": 27.3292,
+          "y": -72.735,
+          "z": 39.84
+        }
+      },
+      {
+        "id": 198,
+        "label": "R_FFC",
+        "position": {
+          "x": 40.8223,
+          "y": -53.4603,
+          "z": -19.1962
+        }
+      },
+      {
+        "id": 199,
+        "label": "R_V3B",
+        "position": {
+          "x": 29.7124,
+          "y": -77.2134,
+          "z": 20.855
+        }
+      },
+      {
+        "id": 200,
+        "label": "R_LO1",
+        "position": {
+          "x": 39.6977,
+          "y": -80.2326,
+          "z": 4.845
+        }
+      },
+      {
+        "id": 201,
+        "label": "R_LO2",
+        "position": {
+          "x": 44.5944,
+          "y": -83.4509,
+          "z": -0.8363
+        }
+      },
+      {
+        "id": 202,
+        "label": "R_PIT",
+        "position": {
+          "x": 42.7838,
+          "y": -80.5454,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 203,
+        "label": "R_MT",
+        "position": {
+          "x": 51.9897,
+          "y": -69.6252,
+          "z": 10.796
+        }
+      },
+      {
+        "id": 204,
+        "label": "R_A1",
+        "position": {
+          "x": 42.7181,
+          "y": -21.674,
+          "z": 11.3995
+        }
+      },
+      {
+        "id": 205,
+        "label": "R_PSL",
+        "position": {
+          "x": 63.9626,
+          "y": -35.7187,
+          "z": 27.4379
+        }
+      },
+      {
+        "id": 206,
+        "label": "R_SFL",
+        "position": {
+          "x": 8.8271,
+          "y": 17.0075,
+          "z": 65.405
+        }
+      },
+      {
+        "id": 207,
+        "label": "R_PCV",
+        "position": {
+          "x": 5.5035,
+          "y": -52.2473,
+          "z": 51.218
+        }
+      },
+      {
+        "id": 208,
+        "label": "R_STV",
+        "position": {
+          "x": 60.0356,
+          "y": -44.0253,
+          "z": 20.4059
+        }
+      },
+      {
+        "id": 209,
+        "label": "R_7Pm",
+        "position": {
+          "x": 5.2416,
+          "y": -68.4553,
+          "z": 50.8443
+        }
+      },
+      {
+        "id": 210,
+        "label": "R_7m",
+        "position": {
+          "x": 4.523,
+          "y": -62.5104,
+          "z": 34.4648
+        }
+      },
+      {
+        "id": 211,
+        "label": "R_POS1",
+        "position": {
+          "x": 13.9837,
+          "y": -57.065,
+          "z": 17.4055
+        }
+      },
+      {
+        "id": 212,
+        "label": "R_23d",
+        "position": {
+          "x": 3.4704,
+          "y": -21.1334,
+          "z": 39.4247
+        }
+      },
+      {
+        "id": 213,
+        "label": "R_v23ab",
+        "position": {
+          "x": 4.3643,
+          "y": -55.0147,
+          "z": 18.8382
+        }
+      },
+      {
+        "id": 214,
+        "label": "R_d23ab",
+        "position": {
+          "x": 3.4887,
+          "y": -40.7114,
+          "z": 33.1083
+        }
+      },
+      {
+        "id": 215,
+        "label": "R_31pv",
+        "position": {
+          "x": 9.1273,
+          "y": -42.9801,
+          "z": 34.757
+        }
+      },
+      {
+        "id": 216,
+        "label": "R_5m",
+        "position": {
+          "x": 5.4319,
+          "y": -39.2363,
+          "z": 65.8784
+        }
+      },
+      {
+        "id": 217,
+        "label": "R_5mv",
+        "position": {
+          "x": 12.0772,
+          "y": -40.2585,
+          "z": 55.0079
+        }
+      },
+      {
+        "id": 218,
+        "label": "R_23c",
+        "position": {
+          "x": 11.2516,
+          "y": -33.0341,
+          "z": 44.1153
+        }
+      },
+      {
+        "id": 219,
+        "label": "R_5L",
+        "position": {
+          "x": 14.0538,
+          "y": -47.551,
+          "z": 74.551
+        }
+      },
+      {
+        "id": 220,
+        "label": "R_24dd",
+        "position": {
+          "x": 6.3501,
+          "y": -16.2504,
+          "z": 53.1445
+        }
+      },
+      {
+        "id": 221,
+        "label": "R_24dv",
+        "position": {
+          "x": 9.1272,
+          "y": -2.5587,
+          "z": 46.7573
+        }
+      },
+      {
+        "id": 222,
+        "label": "R_7AL",
+        "position": {
+          "x": 23.9706,
+          "y": -51.6995,
+          "z": 68.6683
+        }
+      },
+      {
+        "id": 223,
+        "label": "R_SCEF",
+        "position": {
+          "x": 6.1055,
+          "y": 4.0798,
+          "z": 61.3124
+        }
+      },
+      {
+        "id": 224,
+        "label": "R_6ma",
+        "position": {
+          "x": 21.0205,
+          "y": 5.2517,
+          "z": 67.207
+        }
+      },
+      {
+        "id": 225,
+        "label": "R_7Am",
+        "position": {
+          "x": 9.0168,
+          "y": -60.4508,
+          "z": 62.1322
+        }
+      },
+      {
+        "id": 226,
+        "label": "R_7PL",
+        "position": {
+          "x": 12.4214,
+          "y": -73.0975,
+          "z": 56.9243
+        }
+      },
+      {
+        "id": 227,
+        "label": "R_7PC",
+        "position": {
+          "x": 36.4209,
+          "y": -47.3008,
+          "z": 61.4182
+        }
+      },
+      {
+        "id": 228,
+        "label": "R_LIPv",
+        "position": {
+          "x": 28.3435,
+          "y": -57.3692,
+          "z": 53.8374
+        }
+      },
+      {
+        "id": 229,
+        "label": "R_VIP",
+        "position": {
+          "x": 21.8264,
+          "y": -63.6259,
+          "z": 63.3134
+        }
+      },
+      {
+        "id": 230,
+        "label": "R_MIP",
+        "position": {
+          "x": 25.6649,
+          "y": -68.1292,
+          "z": 50.8733
+        }
+      },
+      {
+        "id": 231,
+        "label": "R_1",
+        "position": {
+          "x": 48.9993,
+          "y": -21.151,
+          "z": 54.7363
+        }
+      },
+      {
+        "id": 232,
+        "label": "R_2",
+        "position": {
+          "x": 38.4988,
+          "y": -30.2372,
+          "z": 52.3331
+        }
+      },
+      {
+        "id": 233,
+        "label": "R_3a",
+        "position": {
+          "x": 32.6255,
+          "y": -19.9419,
+          "z": 46.9856
+        }
+      },
+      {
+        "id": 234,
+        "label": "R_6d",
+        "position": {
+          "x": 38.0044,
+          "y": -11.3205,
+          "z": 64.7474
+        }
+      },
+      {
+        "id": 235,
+        "label": "R_6mp",
+        "position": {
+          "x": 17.3891,
+          "y": -11.7631,
+          "z": 69.3736
+        }
+      },
+      {
+        "id": 236,
+        "label": "R_6v",
+        "position": {
+          "x": 59.5139,
+          "y": 6.6888,
+          "z": 30.6097
+        }
+      },
+      {
+        "id": 237,
+        "label": "R_p24pr",
+        "position": {
+          "x": 4.3647,
+          "y": -2.1376,
+          "z": 40.5612
+        }
+      },
+      {
+        "id": 238,
+        "label": "R_33pr",
+        "position": {
+          "x": 3.3875,
+          "y": 14.9531,
+          "z": 26.8608
+        }
+      },
+      {
+        "id": 239,
+        "label": "R_a24pr",
+        "position": {
+          "x": 4.3666,
+          "y": 19.4909,
+          "z": 32.1381
+        }
+      },
+      {
+        "id": 240,
+        "label": "R_p32pr",
+        "position": {
+          "x": 9.0316,
+          "y": 14.6212,
+          "z": 40.1911
+        }
+      },
+      {
+        "id": 241,
+        "label": "R_a24",
+        "position": {
+          "x": -0.5,
+          "y": 33.25,
+          "z": -6.575
+        }
+      },
+      {
+        "id": 242,
+        "label": "R_d32",
+        "position": {
+          "x": 7.2199,
+          "y": 39.4286,
+          "z": 26.991
+        }
+      },
+      {
+        "id": 243,
+        "label": "R_8BM",
+        "position": {
+          "x": 4.8658,
+          "y": 30.6518,
+          "z": 47.4365
+        }
+      },
+      {
+        "id": 244,
+        "label": "R_p32",
+        "position": {
+          "x": -0.5,
+          "y": 43.25,
+          "z": -12.75
+        }
+      },
+      {
+        "id": 245,
+        "label": "R_10r",
+        "position": {
+          "x": -0.5,
+          "y": 45.25,
+          "z": -11.75
+        }
+      },
+      {
+        "id": 246,
+        "label": "R_47m",
+        "position": {
+          "x": 33.7357,
+          "y": 32.5717,
+          "z": -15.8829
+        }
+      },
+      {
+        "id": 247,
+        "label": "R_8Av",
+        "position": {
+          "x": 39.8249,
+          "y": 18.8202,
+          "z": 49.0997
+        }
+      },
+      {
+        "id": 248,
+        "label": "R_8Ad",
+        "position": {
+          "x": 23.9837,
+          "y": 30.6051,
+          "z": 42.3136
+        }
+      },
+      {
+        "id": 249,
+        "label": "R_9m",
+        "position": {
+          "x": 6.7434,
+          "y": 55.0901,
+          "z": 20.9469
+        }
+      },
+      {
+        "id": 250,
+        "label": "R_8BL",
+        "position": {
+          "x": 13.2097,
+          "y": 41.9075,
+          "z": 49.5118
+        }
+      },
+      {
+        "id": 251,
+        "label": "R_9p",
+        "position": {
+          "x": 20.6326,
+          "y": 50.9359,
+          "z": 34.1932
+        }
+      },
+      {
+        "id": 252,
+        "label": "R_10d",
+        "position": {
+          "x": 9.5,
+          "y": 67.8472,
+          "z": 5.0731
+        }
+      },
+      {
+        "id": 253,
+        "label": "R_8C",
+        "position": {
+          "x": 39.5685,
+          "y": 18.1531,
+          "z": 36.715
+        }
+      },
+      {
+        "id": 254,
+        "label": "R_44",
+        "position": {
+          "x": 53.431,
+          "y": 18.9778,
+          "z": 12.591
+        }
+      },
+      {
+        "id": 255,
+        "label": "R_45",
+        "position": {
+          "x": 50.382,
+          "y": 26.5792,
+          "z": 3.3714
+        }
+      },
+      {
+        "id": 256,
+        "label": "R_47l",
+        "position": {
+          "x": 45.234,
+          "y": 33.282,
+          "z": -13.7013
+        }
+      },
+      {
+        "id": 257,
+        "label": "R_a47r",
+        "position": {
+          "x": 39.2721,
+          "y": 51.7682,
+          "z": -8.55
+        }
+      },
+      {
+        "id": 258,
+        "label": "R_6r",
+        "position": {
+          "x": 52.1951,
+          "y": 10.0254,
+          "z": 13.331
+        }
+      },
+      {
+        "id": 259,
+        "label": "R_IFJa",
+        "position": {
+          "x": 44.3623,
+          "y": 16.6019,
+          "z": 25.5586
+        }
+      },
+      {
+        "id": 260,
+        "label": "R_IFJp",
+        "position": {
+          "x": 38.6061,
+          "y": 7.4913,
+          "z": 27.1746
+        }
+      },
+      {
+        "id": 261,
+        "label": "R_IFSp",
+        "position": {
+          "x": 47.7224,
+          "y": 28.693,
+          "z": 18.9286
+        }
+      },
+      {
+        "id": 262,
+        "label": "R_IFSa",
+        "position": {
+          "x": 49.9917,
+          "y": 36.133,
+          "z": 3.711
+        }
+      },
+      {
+        "id": 263,
+        "label": "R_p9-46v",
+        "position": {
+          "x": 47.4775,
+          "y": 30.949,
+          "z": 27.2125
+        }
+      },
+      {
+        "id": 264,
+        "label": "R_46",
+        "position": {
+          "x": 36.7753,
+          "y": 39.899,
+          "z": 30.7436
+        }
+      },
+      {
+        "id": 265,
+        "label": "R_a9-46v",
+        "position": {
+          "x": 39.7225,
+          "y": 52.6637,
+          "z": 10.1349
+        }
+      },
+      {
+        "id": 266,
+        "label": "R_9-46d",
+        "position": {
+          "x": 29.2571,
+          "y": 49.3418,
+          "z": 23.4743
+        }
+      },
+      {
+        "id": 267,
+        "label": "R_9a",
+        "position": {
+          "x": 19.2701,
+          "y": 62.3271,
+          "z": 19.8617
+        }
+      },
+      {
+        "id": 268,
+        "label": "R_10v",
+        "position": {
+          "x": -0.5,
+          "y": 27.25,
+          "z": -24.375
+        }
+      },
+      {
+        "id": 269,
+        "label": "R_a10p",
+        "position": {
+          "x": 25.0974,
+          "y": 62.2746,
+          "z": -8.5039
+        }
+      },
+      {
+        "id": 270,
+        "label": "R_10pp",
+        "position": {
+          "x": 12.4893,
+          "y": 63.2321,
+          "z": -16.4082
+        }
+      },
+      {
+        "id": 271,
+        "label": "R_11l",
+        "position": {
+          "x": 25.7072,
+          "y": 48.1913,
+          "z": -16.2445
+        }
+      },
+      {
+        "id": 272,
+        "label": "R_13l",
+        "position": {
+          "x": 20.1407,
+          "y": 28.9822,
+          "z": -20.2606
+        }
+      },
+      {
+        "id": 273,
+        "label": "R_OFC",
+        "position": {
+          "x": -0.5,
+          "y": 23.1786,
+          "z": -23.9643
+        }
+      },
+      {
+        "id": 274,
+        "label": "R_47s",
+        "position": {
+          "x": 31.2879,
+          "y": 22.4318,
+          "z": -19.6222
+        }
+      },
+      {
+        "id": 275,
+        "label": "R_LIPd",
+        "position": {
+          "x": 31.1998,
+          "y": -54.4651,
+          "z": 45.1389
+        }
+      },
+      {
+        "id": 276,
+        "label": "R_6a",
+        "position": {
+          "x": 26.9379,
+          "y": -2.1452,
+          "z": 53.4619
+        }
+      },
+      {
+        "id": 277,
+        "label": "R_i6-8",
+        "position": {
+          "x": 32.9857,
+          "y": 8.1121,
+          "z": 58.0711
+        }
+      },
+      {
+        "id": 278,
+        "label": "R_s6-8",
+        "position": {
+          "x": 20.4722,
+          "y": 22.041,
+          "z": 59.118
+        }
+      },
+      {
+        "id": 279,
+        "label": "R_43",
+        "position": {
+          "x": 55.7014,
+          "y": 0.7986,
+          "z": 9.7493
+        }
+      },
+      {
+        "id": 280,
+        "label": "R_OP4",
+        "position": {
+          "x": 56.672,
+          "y": -11.1951,
+          "z": 14.1699
+        }
+      },
+      {
+        "id": 281,
+        "label": "R_OP1",
+        "position": {
+          "x": 41.9844,
+          "y": -19.7196,
+          "z": 19.1868
+        }
+      },
+      {
+        "id": 282,
+        "label": "R_OP2-3",
+        "position": {
+          "x": 38.6844,
+          "y": -13.5717,
+          "z": 18.4529
+        }
+      },
+      {
+        "id": 283,
+        "label": "R_52",
+        "position": {
+          "x": 38.2373,
+          "y": -20.5939,
+          "z": 2.6576
+        }
+      },
+      {
+        "id": 284,
+        "label": "R_RI",
+        "position": {
+          "x": 41.188,
+          "y": -30.8163,
+          "z": 19.7572
+        }
+      },
+      {
+        "id": 285,
+        "label": "R_PFcm",
+        "position": {
+          "x": 47.0206,
+          "y": -27.7562,
+          "z": 22.8386
+        }
+      },
+      {
+        "id": 286,
+        "label": "R_PoI2",
+        "position": {
+          "x": 41.0401,
+          "y": -1.3234,
+          "z": -0.3265
+        }
+      },
+      {
+        "id": 287,
+        "label": "R_TA2",
+        "position": {
+          "x": 50.6498,
+          "y": 1.1111,
+          "z": -5.5774
+        }
+      },
+      {
+        "id": 288,
+        "label": "R_FOP4",
+        "position": {
+          "x": 38.7014,
+          "y": 15.141,
+          "z": 7.4438
+        }
+      },
+      {
+        "id": 289,
+        "label": "R_MI",
+        "position": {
+          "x": 36.89,
+          "y": 12.3212,
+          "z": 3.0166
+        }
+      },
+      {
+        "id": 290,
+        "label": "R_Pir",
+        "position": {
+          "x": 33.209,
+          "y": 8.5452,
+          "z": -18.3559
+        }
+      },
+      {
+        "id": 291,
+        "label": "R_AVI",
+        "position": {
+          "x": 32.6765,
+          "y": 26.25,
+          "z": -3.3401
+        }
+      },
+      {
+        "id": 292,
+        "label": "R_AAIC",
+        "position": {
+          "x": 35.0712,
+          "y": 16.7672,
+          "z": -10.4889
+        }
+      },
+      {
+        "id": 293,
+        "label": "R_FOP1",
+        "position": {
+          "x": 46.1755,
+          "y": 4.6386,
+          "z": 5.7439
+        }
+      },
+      {
+        "id": 294,
+        "label": "R_FOP3",
+        "position": {
+          "x": 34.706,
+          "y": 8.0125,
+          "z": 12.0931
+        }
+      },
+      {
+        "id": 295,
+        "label": "R_FOP2",
+        "position": {
+          "x": 40.4563,
+          "y": -1.9126,
+          "z": 15.551
+        }
+      },
+      {
+        "id": 296,
+        "label": "R_PFt",
+        "position": {
+          "x": 56.2214,
+          "y": -20.3243,
+          "z": 37.2779
+        }
+      },
+      {
+        "id": 297,
+        "label": "R_AIP",
+        "position": {
+          "x": 38.6782,
+          "y": -38.671,
+          "z": 44.446
+        }
+      },
+      {
+        "id": 298,
+        "label": "R_EC",
+        "position": {
+          "x": 21.9653,
+          "y": -16.3076,
+          "z": -29.7914
+        }
+      },
+      {
+        "id": 299,
+        "label": "R_PreS",
+        "position": {
+          "x": 16.5333,
+          "y": -34.3921,
+          "z": -10.7781
+        }
+      },
+      {
+        "id": 300,
+        "label": "R_H",
+        "position": {
+          "x": 13.2115,
+          "y": -39.1346,
+          "z": -2.0192
+        }
+      },
+      {
+        "id": 301,
+        "label": "R_ProS",
+        "position": {
+          "x": 22.0104,
+          "y": -50.286,
+          "z": 3.0339
+        }
+      },
+      {
+        "id": 302,
+        "label": "R_PeEc",
+        "position": {
+          "x": 30.1558,
+          "y": -9.921,
+          "z": -34.3296
+        }
+      },
+      {
+        "id": 303,
+        "label": "R_STGa",
+        "position": {
+          "x": 50.1622,
+          "y": 15.2004,
+          "z": -19.0317
+        }
+      },
+      {
+        "id": 304,
+        "label": "R_PBelt",
+        "position": {
+          "x": 55.7916,
+          "y": -18.9197,
+          "z": 8.9682
+        }
+      },
+      {
+        "id": 305,
+        "label": "R_A5",
+        "position": {
+          "x": 62.3912,
+          "y": -14.1458,
+          "z": -1.8871
+        }
+      },
+      {
+        "id": 306,
+        "label": "R_PHA1",
+        "position": {
+          "x": 22.3286,
+          "y": -35.8067,
+          "z": -15.3268
+        }
+      },
+      {
+        "id": 307,
+        "label": "R_PHA3",
+        "position": {
+          "x": 33.4733,
+          "y": -37.2925,
+          "z": -14.9007
+        }
+      },
+      {
+        "id": 308,
+        "label": "R_STSda",
+        "position": {
+          "x": 53.1256,
+          "y": -0.6531,
+          "z": -14.8518
+        }
+      },
+      {
+        "id": 309,
+        "label": "R_STSdp",
+        "position": {
+          "x": 49.2487,
+          "y": -27.9362,
+          "z": -1.114
+        }
+      },
+      {
+        "id": 310,
+        "label": "R_STSvp",
+        "position": {
+          "x": 57.3578,
+          "y": -29.7056,
+          "z": -4.1428
+        }
+      },
+      {
+        "id": 311,
+        "label": "R_TGd",
+        "position": {
+          "x": 35.9692,
+          "y": 14.2698,
+          "z": -35.7327
+        }
+      },
+      {
+        "id": 312,
+        "label": "R_TE1a",
+        "position": {
+          "x": 58.8777,
+          "y": -0.5748,
+          "z": -26.1682
+        }
+      },
+      {
+        "id": 313,
+        "label": "R_TE1p",
+        "position": {
+          "x": 61.7643,
+          "y": -42.8111,
+          "z": -12.1323
+        }
+      },
+      {
+        "id": 314,
+        "label": "R_TE2a",
+        "position": {
+          "x": 55.1806,
+          "y": -18.1076,
+          "z": -30.153
+        }
+      },
+      {
+        "id": 315,
+        "label": "R_TF",
+        "position": {
+          "x": 41.3975,
+          "y": -20.0727,
+          "z": -30.0139
+        }
+      },
+      {
+        "id": 316,
+        "label": "R_TE2p",
+        "position": {
+          "x": 48.3043,
+          "y": -37.4086,
+          "z": -21.5332
+        }
+      },
+      {
+        "id": 317,
+        "label": "R_PHT",
+        "position": {
+          "x": 60.3208,
+          "y": -52.8903,
+          "z": -4.623
+        }
+      },
+      {
+        "id": 318,
+        "label": "R_PH",
+        "position": {
+          "x": 47.9129,
+          "y": -62.6316,
+          "z": -9.5152
+        }
+      },
+      {
+        "id": 319,
+        "label": "R_TPOJ1",
+        "position": {
+          "x": 54.4983,
+          "y": -43.9962,
+          "z": 12.3185
+        }
+      },
+      {
+        "id": 320,
+        "label": "R_TPOJ2",
+        "position": {
+          "x": 54.0637,
+          "y": -55.9967,
+          "z": 8.4856
+        }
+      },
+      {
+        "id": 321,
+        "label": "R_TPOJ3",
+        "position": {
+          "x": 46.514,
+          "y": -62.061,
+          "z": 18.2366
+        }
+      },
+      {
+        "id": 322,
+        "label": "R_DVT",
+        "position": {
+          "x": 20.2276,
+          "y": -71.1343,
+          "z": 36.5018
+        }
+      },
+      {
+        "id": 323,
+        "label": "R_PGp",
+        "position": {
+          "x": 44.5853,
+          "y": -77.6875,
+          "z": 25.4817
+        }
+      },
+      {
+        "id": 324,
+        "label": "R_IP2",
+        "position": {
+          "x": 43.2124,
+          "y": -41.7836,
+          "z": 46.2569
+        }
+      },
+      {
+        "id": 325,
+        "label": "R_IP1",
+        "position": {
+          "x": 34.1084,
+          "y": -67.1459,
+          "z": 41.9002
+        }
+      },
+      {
+        "id": 326,
+        "label": "R_IP0",
+        "position": {
+          "x": 34.1304,
+          "y": -74.7003,
+          "z": 27.4938
+        }
+      },
+      {
+        "id": 327,
+        "label": "R_PFop",
+        "position": {
+          "x": 61.991,
+          "y": -19.1475,
+          "z": 23.4041
+        }
+      },
+      {
+        "id": 328,
+        "label": "R_PF",
+        "position": {
+          "x": 60.7622,
+          "y": -28.5703,
+          "z": 37.1253
+        }
+      },
+      {
+        "id": 329,
+        "label": "R_PFm",
+        "position": {
+          "x": 52.6248,
+          "y": -48.012,
+          "z": 46.5486
+        }
+      },
+      {
+        "id": 330,
+        "label": "R_PGi",
+        "position": {
+          "x": 51.1735,
+          "y": -59.6045,
+          "z": 28.7867
+        }
+      },
+      {
+        "id": 331,
+        "label": "R_PGs",
+        "position": {
+          "x": 44.5803,
+          "y": -68.6269,
+          "z": 42.1399
+        }
+      },
+      {
+        "id": 332,
+        "label": "R_V6A",
+        "position": {
+          "x": 24.2369,
+          "y": -84.3861,
+          "z": 43.5123
+        }
+      },
+      {
+        "id": 333,
+        "label": "R_VMV1",
+        "position": {
+          "x": 18.1655,
+          "y": -54.5927,
+          "z": -6.3762
+        }
+      },
+      {
+        "id": 334,
+        "label": "R_VMV3",
+        "position": {
+          "x": 27.4959,
+          "y": -61.1176,
+          "z": -9.4297
+        }
+      },
+      {
+        "id": 335,
+        "label": "R_PHA2",
+        "position": {
+          "x": 31.1381,
+          "y": -35.282,
+          "z": -12.871
+        }
+      },
+      {
+        "id": 336,
+        "label": "R_V4t",
+        "position": {
+          "x": 50.1715,
+          "y": -74.1807,
+          "z": -0.2363
+        }
+      },
+      {
+        "id": 337,
+        "label": "R_FST",
+        "position": {
+          "x": 50.0233,
+          "y": -63.0782,
+          "z": 1.421
+        }
+      },
+      {
+        "id": 338,
+        "label": "R_V3CD",
+        "position": {
+          "x": 37.867,
+          "y": -83.5003,
+          "z": 12.1034
+        }
+      },
+      {
+        "id": 339,
+        "label": "R_LO3",
+        "position": {
+          "x": 43.5272,
+          "y": -74.2936,
+          "z": 13.2493
+        }
+      },
+      {
+        "id": 340,
+        "label": "R_VMV2",
+        "position": {
+          "x": 27.1853,
+          "y": -54.0215,
+          "z": -6.6275
+        }
+      },
+      {
+        "id": 341,
+        "label": "R_31pd",
+        "position": {
+          "x": 11.0481,
+          "y": -52.3633,
+          "z": 35.7534
+        }
+      },
+      {
+        "id": 342,
+        "label": "R_31a",
+        "position": {
+          "x": 6.6786,
+          "y": -41.3916,
+          "z": 42.7462
+        }
+      },
+      {
+        "id": 343,
+        "label": "R_VVC",
+        "position": {
+          "x": 28.9754,
+          "y": -48.2738,
+          "z": -17.6034
+        }
+      },
+      {
+        "id": 344,
+        "label": "R_25",
+        "position": {
+          "x": -0.5,
+          "y": 23.1848,
+          "z": -18.5326
+        }
+      },
+      {
+        "id": 345,
+        "label": "R_s32",
+        "position": {
+          "x": -0.5,
+          "y": 37.8952,
+          "z": -16.0887
+        }
+      },
+      {
+        "id": 346,
+        "label": "R_pOFC",
+        "position": {
+          "x": 13.1506,
+          "y": 15.4519,
+          "z": -19.9167
+        }
+      },
+      {
+        "id": 347,
+        "label": "R_PoI1",
+        "position": {
+          "x": 39.2738,
+          "y": -9.35,
+          "z": -4.6275
+        }
+      },
+      {
+        "id": 348,
+        "label": "R_Ig",
+        "position": {
+          "x": 36.5567,
+          "y": -12.947,
+          "z": 14.1143
+        }
+      },
+      {
+        "id": 349,
+        "label": "R_FOP5",
+        "position": {
+          "x": 36.9903,
+          "y": 27.5504,
+          "z": 4.8314
+        }
+      },
+      {
+        "id": 350,
+        "label": "R_p10p",
+        "position": {
+          "x": 24.2919,
+          "y": 60.9964,
+          "z": 3.7517
+        }
+      },
+      {
+        "id": 351,
+        "label": "R_p47r",
+        "position": {
+          "x": 46.3992,
+          "y": 44.2913,
+          "z": -4.2913
+        }
+      },
+      {
+        "id": 352,
+        "label": "R_TGv",
+        "position": {
+          "x": 35.207,
+          "y": -1.2092,
+          "z": -45.1935
+        }
+      },
+      {
+        "id": 353,
+        "label": "R_MBelt",
+        "position": {
+          "x": 45.4061,
+          "y": -16.026,
+          "z": 4.698
+        }
+      },
+      {
+        "id": 354,
+        "label": "R_LBelt",
+        "position": {
+          "x": 46.7576,
+          "y": -25.1332,
+          "z": 10.7439
+        }
+      },
+      {
+        "id": 355,
+        "label": "R_A4",
+        "position": {
+          "x": 64.4099,
+          "y": -15.491,
+          "z": 6.57
+        }
+      },
+      {
+        "id": 356,
+        "label": "R_STSva",
+        "position": {
+          "x": 54.1492,
+          "y": -8.5735,
+          "z": -16.9097
+        }
+      },
+      {
+        "id": 357,
+        "label": "R_TE1m",
+        "position": {
+          "x": 64.4446,
+          "y": -22.4579,
+          "z": -16.4575
+        }
+      },
+      {
+        "id": 358,
+        "label": "R_PI",
+        "position": {
+          "x": 44.2384,
+          "y": -3.3355,
+          "z": -12.7233
+        }
+      },
+      {
+        "id": 359,
+        "label": "R_a32pr",
+        "position": {
+          "x": 9.498,
+          "y": 28.6079,
+          "z": 30.5014
+        }
+      },
+      {
+        "id": 360,
+        "label": "R_p24",
+        "position": {
+          "x": 4.5403,
+          "y": 37.9601,
+          "z": 15.4066
+        }
+      },
+      {
+        "id": 361,
+        "label": "L_Cerebellum",
+        "position": {
+          "x": -24.4841,
+          "y": -62.9174,
+          "z": -36.8393
+        }
+      },
+      {
+        "id": 362,
+        "label": "L_Thalamus",
+        "position": {
+          "x": -11.4968,
+          "y": -19.2297,
+          "z": 6.6696
+        }
+      },
+      {
+        "id": 363,
+        "label": "L_Caudate",
+        "position": {
+          "x": -12.9359,
+          "y": 9.5888,
+          "z": 9.5779
+        }
+      },
+      {
+        "id": 364,
+        "label": "L_Putamen",
+        "position": {
+          "x": -26.3518,
+          "y": 0.0041,
+          "z": 0.1759
+        }
+      },
+      {
+        "id": 365,
+        "label": "L_Pallidum",
+        "position": {
+          "x": -20.5731,
+          "y": -5.126,
+          "z": -1.1612
+        }
+      },
+      {
+        "id": 366,
+        "label": "L_Hippocampus",
+        "position": {
+          "x": -25.4045,
+          "y": -22.4638,
+          "z": -14.298
+        }
+      },
+      {
+        "id": 367,
+        "label": "L_Amygdala",
+        "position": {
+          "x": -22.9962,
+          "y": -5.0696,
+          "z": -19.6654
+        }
+      },
+      {
+        "id": 368,
+        "label": "L_Accumbens",
+        "position": {
+          "x": -8.5215,
+          "y": 9.994,
+          "z": -8.4476
+        }
+      },
+      {
+        "id": 369,
+        "label": "L_VentralDC",
+        "position": {
+          "x": -10.5311,
+          "y": -15.4878,
+          "z": -10.5673
+        }
+      },
+      {
+        "id": 370,
+        "label": "R_Cerebellum",
+        "position": {
+          "x": -0.5,
+          "y": -55.7269,
+          "z": -48.0246
+        }
+      },
+      {
+        "id": 371,
+        "label": "R_Thalamus",
+        "position": {
+          "x": 11.2509,
+          "y": -17.528,
+          "z": 6.8822
+        }
+      },
+      {
+        "id": 372,
+        "label": "R_Caudate",
+        "position": {
+          "x": 13.0486,
+          "y": 11.0092,
+          "z": 9.6262
+        }
+      },
+      {
+        "id": 373,
+        "label": "R_Putamen",
+        "position": {
+          "x": 26.3425,
+          "y": 2.0114,
+          "z": -0.2748
+        }
+      },
+      {
+        "id": 374,
+        "label": "R_Pallidum",
+        "position": {
+          "x": 21.0138,
+          "y": -3.7858,
+          "z": -1.0325
+        }
+      },
+      {
+        "id": 375,
+        "label": "R_Hippocampus",
+        "position": {
+          "x": 26.0941,
+          "y": -21.3944,
+          "z": -14.0873
+        }
+      },
+      {
+        "id": 376,
+        "label": "R_Amygdala",
+        "position": {
+          "x": 23.24,
+          "y": -3.735,
+          "z": -19.8364
+        }
+      },
+      {
+        "id": 377,
+        "label": "R_Accumbens",
+        "position": {
+          "x": 7.9293,
+          "y": 11.3815,
+          "z": -7.4997
+        }
+      },
+      {
+        "id": 378,
+        "label": "R_VentralDC",
+        "position": {
+          "x": 10.5525,
+          "y": -14.6552,
+          "z": -10.1548
+        }
+      },
+      {
+        "id": 379,
+        "label": "Brain-Stem",
+        "position": {
+          "x": -6.0839,
+          "y": -30.9513,
+          "z": -33.0764
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.yaml",
     "desc": {
-      "name": "ranked"
+      "name": "MghUscHcp32"
     },
-    "atlas": "Destrieux",
-    "atlas.name": "Destrieux",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked.png"
+    "atlas": "hcpmmp1",
+    "atlas.name": "hcpmmp1"
   },
   {
     "label": "Yeo17 (dTOR)",
+    "descriptor": "SC",
     "number_of_nodes": 17,
-    "number_of_regions": 17,
-    "data_file": "space-MNI152_atlas-Yeo17_desc-dTOR.h5",
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36177,21 +43202,6145 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
     "parcellation.atlas": {
-      "name": "Yeo17"
+      "name": "Yeo17",
+      "coordinateSpace": "MNI152"
     },
     "tractogram.name": "dTOR",
-    "space": "MNI152",
-    "name": "Yeo17 (dTOR)",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "1",
+        "position": {
+          "x": -28.1814,
+          "y": -82.261,
+          "z": -1.8011
+        }
+      },
+      {
+        "id": 2,
+        "label": "2",
+        "position": {
+          "x": -11.7843,
+          "y": -70.4562,
+          "z": 10.6088
+        }
+      },
+      {
+        "id": 3,
+        "label": "3",
+        "position": {
+          "x": -21.5086,
+          "y": -25.4171,
+          "z": 61.0289
+        }
+      },
+      {
+        "id": 4,
+        "label": "4",
+        "position": {
+          "x": -50.9723,
+          "y": -15.5061,
+          "z": 15.8259
+        }
+      },
+      {
+        "id": 5,
+        "label": "5",
+        "position": {
+          "x": -35.9277,
+          "y": -64.0721,
+          "z": 15.3916
+        }
+      },
+      {
+        "id": 6,
+        "label": "6",
+        "position": {
+          "x": -34.984,
+          "y": -41.0618,
+          "z": 52.9398
+        }
+      },
+      {
+        "id": 7,
+        "label": "7",
+        "position": {
+          "x": -42.4291,
+          "y": 1.4167,
+          "z": 1.6973
+        }
+      },
+      {
+        "id": 8,
+        "label": "8",
+        "position": {
+          "x": -31.6194,
+          "y": 43.2796,
+          "z": 27.2684
+        }
+      },
+      {
+        "id": 9,
+        "label": "9",
+        "position": {
+          "x": -36.0099,
+          "y": -4.2135,
+          "z": -33.6964
+        }
+      },
+      {
+        "id": 10,
+        "label": "10",
+        "position": {
+          "x": -13.5827,
+          "y": 39.0201,
+          "z": -17.8346
+        }
+      },
+      {
+        "id": 11,
+        "label": "11",
+        "position": {
+          "x": -6.5844,
+          "y": -61.7441,
+          "z": 44.312
+        }
+      },
+      {
+        "id": 12,
+        "label": "12",
+        "position": {
+          "x": -42.9896,
+          "y": 21.7503,
+          "z": 22.4576
+        }
+      },
+      {
+        "id": 13,
+        "label": "13",
+        "position": {
+          "x": -33.811,
+          "y": 53.9538,
+          "z": -2.4838
+        }
+      },
+      {
+        "id": 14,
+        "label": "14",
+        "position": {
+          "x": -56.7354,
+          "y": -30.9535,
+          "z": 4.3668
+        }
+      },
+      {
+        "id": 15,
+        "label": "15",
+        "position": {
+          "x": -25.948,
+          "y": -31.4755,
+          "z": -18.8827
+        }
+      },
+      {
+        "id": 16,
+        "label": "16",
+        "position": {
+          "x": -8.3339,
+          "y": 50.5137,
+          "z": 6.4307
+        }
+      },
+      {
+        "id": 17,
+        "label": "17",
+        "position": {
+          "x": -56.0317,
+          "y": -12.537,
+          "z": -18.7785
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152_atlas-Yeo17_desc-dTOR.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat.yaml",
     "desc": {
       "name": "dTOR"
     },
     "atlas": "Yeo17",
-    "atlas.name": "Yeo17",
-    "n_regions": 17,
-    "thumbnail": "browser/imgs/networks/space-MNI152_atlas-Yeo17_desc-dTOR.png"
+    "atlas.name": "Yeo17"
+  },
+  {
+    "label": "Schaefer100017Networks (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 1000,
+    "data_file": "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "FSLMNI152",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "Schaefer100017Networks"
+    },
+    "tractogram.name": "dTOR",
+    "type": "network",
+    "file": "database/networks/tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "Schaefer100017Networks",
+    "atlas.name": "Schaefer100017Networks"
+  },
+  {
+    "label": "DesikanKillianyranked (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 87,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
+    "parcellation.atlas": {
+      "name": "DesikanKillianyranked",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx-lh-bankssts",
+        "position": {
+          "x": -53.3976,
+          "y": -45.7942,
+          "z": 8.5151
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx-lh-caudalanteriorcingulate",
+        "position": {
+          "x": -4.9731,
+          "y": 21.236,
+          "z": 27.0319
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx-lh-caudalmiddlefrontal",
+        "position": {
+          "x": -36.744,
+          "y": 11.223,
+          "z": 49.34
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx-lh-cuneus",
+        "position": {
+          "x": -6.8467,
+          "y": -78.2874,
+          "z": 21.7138
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx-lh-entorhinal",
+        "position": {
+          "x": -24.2013,
+          "y": -4.7792,
+          "z": -32.8247
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx-lh-fusiform",
+        "position": {
+          "x": -34.9055,
+          "y": -44.1335,
+          "z": -20.642
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx-lh-inferiorparietal",
+        "position": {
+          "x": -40.6055,
+          "y": -70.5623,
+          "z": 33.0363
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx-lh-inferiortemporal",
+        "position": {
+          "x": -50.5649,
+          "y": -31.5391,
+          "z": -24.8692
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx-lh-isthmuscingulate",
+        "position": {
+          "x": -6.5292,
+          "y": -45.3841,
+          "z": 19.7732
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx-lh-lateraloccipital",
+        "position": {
+          "x": -30.9615,
+          "y": -88.6305,
+          "z": 1.6724
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx-lh-lateralorbitofrontal",
+        "position": {
+          "x": -24.3595,
+          "y": 31.9715,
+          "z": -18.0296
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx-lh-lingual",
+        "position": {
+          "x": -14.1542,
+          "y": -67.35,
+          "z": -4.7485
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx-lh-medialorbitofrontal",
+        "position": {
+          "x": -5.9356,
+          "y": 34.5393,
+          "z": -17.1274
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx-lh-middletemporal",
+        "position": {
+          "x": -57.9583,
+          "y": -21.8374,
+          "z": -14.9323
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx-lh-parahippocampal",
+        "position": {
+          "x": -23.9457,
+          "y": -30.4017,
+          "z": -18.6359
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx-lh-paracentral",
+        "position": {
+          "x": -6.3653,
+          "y": -28.3585,
+          "z": 58.7593
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx-lh-parsopercularis",
+        "position": {
+          "x": -47.7282,
+          "y": 15.5084,
+          "z": 14.4266
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx-lh-parsorbitalis",
+        "position": {
+          "x": -43.2052,
+          "y": 41.3991,
+          "z": -12.9799
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx-lh-parstriangularis",
+        "position": {
+          "x": -47.2455,
+          "y": 31.7149,
+          "z": 3.1207
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx-lh-pericalcarine",
+        "position": {
+          "x": -12.0913,
+          "y": -80.1167,
+          "z": 6.467
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx-lh-postcentral",
+        "position": {
+          "x": -46.6283,
+          "y": -22.267,
+          "z": 44.2489
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx-lh-posteriorcingulate",
+        "position": {
+          "x": -5.3964,
+          "y": -18.0922,
+          "z": 39.0261
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx-lh-precentral",
+        "position": {
+          "x": -43.054,
+          "y": -6.9651,
+          "z": 42.5493
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx-lh-precuneus",
+        "position": {
+          "x": -8.4673,
+          "y": -59.0119,
+          "z": 38.9913
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx-lh-rostralanteriorcingulate",
+        "position": {
+          "x": -4.6127,
+          "y": 36.2858,
+          "z": -0.7904
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx-lh-rostralmiddlefrontal",
+        "position": {
+          "x": -33.5028,
+          "y": 46.3926,
+          "z": 17.8395
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx-lh-superiorfrontal",
+        "position": {
+          "x": -11.2887,
+          "y": 30.4652,
+          "z": 43.9548
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx-lh-superiorparietal",
+        "position": {
+          "x": -23.4716,
+          "y": -64.1303,
+          "z": 51.9987
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx-lh-superiortemporal",
+        "position": {
+          "x": -53.7298,
+          "y": -11.5455,
+          "z": -3.7002
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx-lh-supramarginal",
+        "position": {
+          "x": -55.0221,
+          "y": -39.3578,
+          "z": 35.1147
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx-lh-frontalpole",
+        "position": {
+          "x": -7.6003,
+          "y": 67.4761,
+          "z": -10.2032
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx-lh-temporalpole",
+        "position": {
+          "x": -28.4672,
+          "y": 13.6612,
+          "z": -37.0388
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx-lh-transversetemporal",
+        "position": {
+          "x": -44.8061,
+          "y": -21.555,
+          "z": 9.3891
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx-lh-insula",
+        "position": {
+          "x": -36.0443,
+          "y": 0.8968,
+          "z": -0.4175
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx-rh-bankssts",
+        "position": {
+          "x": 54.3559,
+          "y": -40.3169,
+          "z": 9.9074
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx-rh-caudalanteriorcingulate",
+        "position": {
+          "x": 5.1196,
+          "y": 22.4728,
+          "z": 27.4146
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx-rh-caudalmiddlefrontal",
+        "position": {
+          "x": 36.8488,
+          "y": 14.0197,
+          "z": 49.3889
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx-rh-cuneus",
+        "position": {
+          "x": 8.294,
+          "y": -78.2692,
+          "z": 22.7618
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx-rh-entorhinal",
+        "position": {
+          "x": 23.8225,
+          "y": -4.8235,
+          "z": -33.728
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx-rh-fusiform",
+        "position": {
+          "x": 33.9921,
+          "y": -37.6616,
+          "z": -22.8656
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx-rh-inferiorparietal",
+        "position": {
+          "x": 46.3382,
+          "y": -63.0738,
+          "z": 32.6917
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx-rh-inferiortemporal",
+        "position": {
+          "x": 50.5196,
+          "y": -27.1179,
+          "z": -27.1838
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx-rh-isthmuscingulate",
+        "position": {
+          "x": 7.6885,
+          "y": -43.6831,
+          "z": 20.1113
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx-rh-lateraloccipital",
+        "position": {
+          "x": 35.0922,
+          "y": -83.9116,
+          "z": 0.8458
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx-rh-lateralorbitofrontal",
+        "position": {
+          "x": 23.5878,
+          "y": 32.1558,
+          "z": -18.2904
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx-rh-lingual",
+        "position": {
+          "x": 14.4806,
+          "y": -65.4811,
+          "z": -3.4636
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx-rh-medialorbitofrontal",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx-rh-middletemporal",
+        "position": {
+          "x": 57.9961,
+          "y": -19.825,
+          "z": -15.6952
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx-rh-parahippocampal",
+        "position": {
+          "x": 25.0776,
+          "y": -28.9856,
+          "z": -18.8843
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx-rh-paracentral",
+        "position": {
+          "x": 7.2402,
+          "y": -26.0961,
+          "z": 58.7403
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx-rh-parsopercularis",
+        "position": {
+          "x": 48.4566,
+          "y": 16.0601,
+          "z": 13.3438
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx-rh-parsorbitalis",
+        "position": {
+          "x": 43.1135,
+          "y": 42.5175,
+          "z": -13.3768
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx-rh-parstriangularis",
+        "position": {
+          "x": 49.0725,
+          "y": 32.3705,
+          "z": 4.812
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx-rh-pericalcarine",
+        "position": {
+          "x": 13.2706,
+          "y": -78.056,
+          "z": 8.1234
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx-rh-postcentral",
+        "position": {
+          "x": 47.4325,
+          "y": -18.7825,
+          "z": 43.8269
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx-rh-posteriorcingulate",
+        "position": {
+          "x": 5.8462,
+          "y": -16.4543,
+          "z": 39.1514
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx-rh-precentral",
+        "position": {
+          "x": 44.2892,
+          "y": -4.544,
+          "z": 42.765
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx-rh-precuneus",
+        "position": {
+          "x": 10.295,
+          "y": -57.7096,
+          "z": 38.6811
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx-rh-rostralanteriorcingulate",
+        "position": {
+          "x": 4.9514,
+          "y": 37.2003,
+          "z": 1.941
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx-rh-rostralmiddlefrontal",
+        "position": {
+          "x": 34.4679,
+          "y": 47.876,
+          "z": 16.5323
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx-rh-superiorfrontal",
+        "position": {
+          "x": 11.91,
+          "y": 31.7403,
+          "z": 43.4741
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx-rh-superiorparietal",
+        "position": {
+          "x": 25.1605,
+          "y": -63.0393,
+          "z": 53.2944
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx-rh-superiortemporal",
+        "position": {
+          "x": 54.6697,
+          "y": -6.9466,
+          "z": -5.237
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx-rh-supramarginal",
+        "position": {
+          "x": 55.9183,
+          "y": -30.9668,
+          "z": 35.9768
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx-rh-frontalpole",
+        "position": {
+          "x": 8.368,
+          "y": 67.1573,
+          "z": -13.1551
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx-rh-temporalpole",
+        "position": {
+          "x": 28.2896,
+          "y": 15.05,
+          "z": -35.0567
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx-rh-transversetemporal",
+        "position": {
+          "x": 45.6819,
+          "y": -17.8535,
+          "z": 8.7486
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx-rh-insula",
+        "position": {
+          "x": 34.8554,
+          "y": 3.4149,
+          "z": -2.5363
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "DesikanKillianyranked",
+    "atlas.name": "DesikanKillianyranked"
+  },
+  {
+    "label": "DesikanKilliany (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 87,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "DesikanKilliany",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "dTOR",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx-lh-bankssts",
+        "position": {
+          "x": -53.3976,
+          "y": -45.7942,
+          "z": 8.5151
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx-lh-caudalanteriorcingulate",
+        "position": {
+          "x": -4.9731,
+          "y": 21.236,
+          "z": 27.0319
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx-lh-caudalmiddlefrontal",
+        "position": {
+          "x": -36.744,
+          "y": 11.223,
+          "z": 49.34
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx-lh-cuneus",
+        "position": {
+          "x": -6.8467,
+          "y": -78.2874,
+          "z": 21.7138
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx-lh-entorhinal",
+        "position": {
+          "x": -24.2013,
+          "y": -4.7792,
+          "z": -32.8247
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx-lh-fusiform",
+        "position": {
+          "x": -34.9055,
+          "y": -44.1335,
+          "z": -20.642
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx-lh-inferiorparietal",
+        "position": {
+          "x": -40.6055,
+          "y": -70.5623,
+          "z": 33.0363
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx-lh-inferiortemporal",
+        "position": {
+          "x": -50.5649,
+          "y": -31.5391,
+          "z": -24.8692
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx-lh-isthmuscingulate",
+        "position": {
+          "x": -6.5292,
+          "y": -45.3841,
+          "z": 19.7732
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx-lh-lateraloccipital",
+        "position": {
+          "x": -30.9615,
+          "y": -88.6305,
+          "z": 1.6724
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx-lh-lateralorbitofrontal",
+        "position": {
+          "x": -24.3595,
+          "y": 31.9715,
+          "z": -18.0296
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx-lh-lingual",
+        "position": {
+          "x": -14.1542,
+          "y": -67.35,
+          "z": -4.7485
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx-lh-medialorbitofrontal",
+        "position": {
+          "x": -5.9356,
+          "y": 34.5393,
+          "z": -17.1274
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx-lh-middletemporal",
+        "position": {
+          "x": -57.9583,
+          "y": -21.8374,
+          "z": -14.9323
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx-lh-parahippocampal",
+        "position": {
+          "x": -23.9457,
+          "y": -30.4017,
+          "z": -18.6359
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx-lh-paracentral",
+        "position": {
+          "x": -6.3653,
+          "y": -28.3585,
+          "z": 58.7593
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx-lh-parsopercularis",
+        "position": {
+          "x": -47.7282,
+          "y": 15.5084,
+          "z": 14.4266
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx-lh-parsorbitalis",
+        "position": {
+          "x": -43.2052,
+          "y": 41.3991,
+          "z": -12.9799
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx-lh-parstriangularis",
+        "position": {
+          "x": -47.2455,
+          "y": 31.7149,
+          "z": 3.1207
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx-lh-pericalcarine",
+        "position": {
+          "x": -12.0913,
+          "y": -80.1167,
+          "z": 6.467
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx-lh-postcentral",
+        "position": {
+          "x": -46.6283,
+          "y": -22.267,
+          "z": 44.2489
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx-lh-posteriorcingulate",
+        "position": {
+          "x": -5.3964,
+          "y": -18.0922,
+          "z": 39.0261
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx-lh-precentral",
+        "position": {
+          "x": -43.054,
+          "y": -6.9651,
+          "z": 42.5493
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx-lh-precuneus",
+        "position": {
+          "x": -8.4673,
+          "y": -59.0119,
+          "z": 38.9913
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx-lh-rostralanteriorcingulate",
+        "position": {
+          "x": -4.6127,
+          "y": 36.2858,
+          "z": -0.7904
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx-lh-rostralmiddlefrontal",
+        "position": {
+          "x": -33.5028,
+          "y": 46.3926,
+          "z": 17.8395
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx-lh-superiorfrontal",
+        "position": {
+          "x": -11.2887,
+          "y": 30.4652,
+          "z": 43.9548
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx-lh-superiorparietal",
+        "position": {
+          "x": -23.4716,
+          "y": -64.1303,
+          "z": 51.9987
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx-lh-superiortemporal",
+        "position": {
+          "x": -53.7298,
+          "y": -11.5455,
+          "z": -3.7002
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx-lh-supramarginal",
+        "position": {
+          "x": -55.0221,
+          "y": -39.3578,
+          "z": 35.1147
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx-lh-frontalpole",
+        "position": {
+          "x": -7.6003,
+          "y": 67.4761,
+          "z": -10.2032
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx-lh-temporalpole",
+        "position": {
+          "x": -28.4672,
+          "y": 13.6612,
+          "z": -37.0388
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx-lh-transversetemporal",
+        "position": {
+          "x": -44.8061,
+          "y": -21.555,
+          "z": 9.3891
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx-lh-insula",
+        "position": {
+          "x": -36.0443,
+          "y": 0.8968,
+          "z": -0.4175
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx-rh-bankssts",
+        "position": {
+          "x": 54.3559,
+          "y": -40.3169,
+          "z": 9.9074
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx-rh-caudalanteriorcingulate",
+        "position": {
+          "x": 5.1196,
+          "y": 22.4728,
+          "z": 27.4146
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx-rh-caudalmiddlefrontal",
+        "position": {
+          "x": 36.8488,
+          "y": 14.0197,
+          "z": 49.3889
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx-rh-cuneus",
+        "position": {
+          "x": 8.294,
+          "y": -78.2692,
+          "z": 22.7618
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx-rh-entorhinal",
+        "position": {
+          "x": 23.8225,
+          "y": -4.8235,
+          "z": -33.728
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx-rh-fusiform",
+        "position": {
+          "x": 33.9921,
+          "y": -37.6616,
+          "z": -22.8656
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx-rh-inferiorparietal",
+        "position": {
+          "x": 46.3382,
+          "y": -63.0738,
+          "z": 32.6917
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx-rh-inferiortemporal",
+        "position": {
+          "x": 50.5196,
+          "y": -27.1179,
+          "z": -27.1838
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx-rh-isthmuscingulate",
+        "position": {
+          "x": 7.6885,
+          "y": -43.6831,
+          "z": 20.1113
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx-rh-lateraloccipital",
+        "position": {
+          "x": 35.0922,
+          "y": -83.9116,
+          "z": 0.8458
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx-rh-lateralorbitofrontal",
+        "position": {
+          "x": 23.5878,
+          "y": 32.1558,
+          "z": -18.2904
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx-rh-lingual",
+        "position": {
+          "x": 14.4806,
+          "y": -65.4811,
+          "z": -3.4636
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx-rh-medialorbitofrontal",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx-rh-middletemporal",
+        "position": {
+          "x": 57.9961,
+          "y": -19.825,
+          "z": -15.6952
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx-rh-parahippocampal",
+        "position": {
+          "x": 25.0776,
+          "y": -28.9856,
+          "z": -18.8843
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx-rh-paracentral",
+        "position": {
+          "x": 7.2402,
+          "y": -26.0961,
+          "z": 58.7403
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx-rh-parsopercularis",
+        "position": {
+          "x": 48.4566,
+          "y": 16.0601,
+          "z": 13.3438
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx-rh-parsorbitalis",
+        "position": {
+          "x": 43.1135,
+          "y": 42.5175,
+          "z": -13.3768
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx-rh-parstriangularis",
+        "position": {
+          "x": 49.0725,
+          "y": 32.3705,
+          "z": 4.812
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx-rh-pericalcarine",
+        "position": {
+          "x": 13.2706,
+          "y": -78.056,
+          "z": 8.1234
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx-rh-postcentral",
+        "position": {
+          "x": 47.4325,
+          "y": -18.7825,
+          "z": 43.8269
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx-rh-posteriorcingulate",
+        "position": {
+          "x": 5.8462,
+          "y": -16.4543,
+          "z": 39.1514
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx-rh-precentral",
+        "position": {
+          "x": 44.2892,
+          "y": -4.544,
+          "z": 42.765
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx-rh-precuneus",
+        "position": {
+          "x": 10.295,
+          "y": -57.7096,
+          "z": 38.6811
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx-rh-rostralanteriorcingulate",
+        "position": {
+          "x": 4.9514,
+          "y": 37.2003,
+          "z": 1.941
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx-rh-rostralmiddlefrontal",
+        "position": {
+          "x": 34.4679,
+          "y": 47.876,
+          "z": 16.5323
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx-rh-superiorfrontal",
+        "position": {
+          "x": 11.91,
+          "y": 31.7403,
+          "z": 43.4741
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx-rh-superiorparietal",
+        "position": {
+          "x": 25.1605,
+          "y": -63.0393,
+          "z": 53.2944
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx-rh-superiortemporal",
+        "position": {
+          "x": 54.6697,
+          "y": -6.9466,
+          "z": -5.237
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx-rh-supramarginal",
+        "position": {
+          "x": 55.9183,
+          "y": -30.9668,
+          "z": 35.9768
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx-rh-frontalpole",
+        "position": {
+          "x": 8.368,
+          "y": 67.1573,
+          "z": -13.1551
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx-rh-temporalpole",
+        "position": {
+          "x": 28.2896,
+          "y": 15.05,
+          "z": -35.0567
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx-rh-transversetemporal",
+        "position": {
+          "x": 45.6819,
+          "y": -17.8535,
+          "z": 8.7486
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx-rh-insula",
+        "position": {
+          "x": 34.8554,
+          "y": 3.4149,
+          "z": -2.5363
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "DesikanKilliany",
+    "atlas.name": "DesikanKilliany"
+  },
+  {
+    "label": "hcpmmp1ordered (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 379,
+    "data_file": "tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009bAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "hcpmmp1ordered",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "dTOR",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "L_V1",
+        "position": {
+          "x": -10.364,
+          "y": -84.1004,
+          "z": 1.6224
+        }
+      },
+      {
+        "id": 2,
+        "label": "L_MST",
+        "position": {
+          "x": -43.784,
+          "y": -66.8058,
+          "z": 11.9515
+        }
+      },
+      {
+        "id": 3,
+        "label": "L_V6",
+        "position": {
+          "x": -14.8822,
+          "y": -80.5731,
+          "z": 32.2153
+        }
+      },
+      {
+        "id": 4,
+        "label": "L_V2",
+        "position": {
+          "x": -10.5689,
+          "y": -82.3316,
+          "z": 4.0629
+        }
+      },
+      {
+        "id": 5,
+        "label": "L_V3",
+        "position": {
+          "x": -15.976,
+          "y": -86.1955,
+          "z": 7.9722
+        }
+      },
+      {
+        "id": 6,
+        "label": "L_V4",
+        "position": {
+          "x": -28.3751,
+          "y": -86.9758,
+          "z": -0.0061
+        }
+      },
+      {
+        "id": 7,
+        "label": "L_V8",
+        "position": {
+          "x": -30.3423,
+          "y": -76.8966,
+          "z": -12.8754
+        }
+      },
+      {
+        "id": 8,
+        "label": "L_4",
+        "position": {
+          "x": -28.4284,
+          "y": -20.3676,
+          "z": 54.6372
+        }
+      },
+      {
+        "id": 9,
+        "label": "L_3b",
+        "position": {
+          "x": -39.3971,
+          "y": -22.2953,
+          "z": 52.8104
+        }
+      },
+      {
+        "id": 10,
+        "label": "L_FEF",
+        "position": {
+          "x": -41.8243,
+          "y": -6.8251,
+          "z": 51.5479
+        }
+      },
+      {
+        "id": 11,
+        "label": "L_PEF",
+        "position": {
+          "x": -49.0095,
+          "y": -0.4517,
+          "z": 40.5917
+        }
+      },
+      {
+        "id": 12,
+        "label": "L_55b",
+        "position": {
+          "x": -48.9816,
+          "y": -1.5129,
+          "z": 50.1907
+        }
+      },
+      {
+        "id": 13,
+        "label": "L_V3A",
+        "position": {
+          "x": -15.0154,
+          "y": -91.6078,
+          "z": 28.2444
+        }
+      },
+      {
+        "id": 14,
+        "label": "L_RSC",
+        "position": {
+          "x": -4.8849,
+          "y": -36.571,
+          "z": 21.1122
+        }
+      },
+      {
+        "id": 15,
+        "label": "L_POS2",
+        "position": {
+          "x": -9.4942,
+          "y": -72.2524,
+          "z": 36.7902
+        }
+      },
+      {
+        "id": 16,
+        "label": "L_V7",
+        "position": {
+          "x": -24.0981,
+          "y": -87.0738,
+          "z": 29.6168
+        }
+      },
+      {
+        "id": 17,
+        "label": "L_IPS1",
+        "position": {
+          "x": -24.3039,
+          "y": -75.2696,
+          "z": 37.4596
+        }
+      },
+      {
+        "id": 18,
+        "label": "L_FFC",
+        "position": {
+          "x": -42.0212,
+          "y": -61.4224,
+          "z": -17.2907
+        }
+      },
+      {
+        "id": 19,
+        "label": "L_V3B",
+        "position": {
+          "x": -26.2942,
+          "y": -83.0281,
+          "z": 17.6529
+        }
+      },
+      {
+        "id": 20,
+        "label": "L_LO1",
+        "position": {
+          "x": -39.7809,
+          "y": -83.9116,
+          "z": 8.2445
+        }
+      },
+      {
+        "id": 21,
+        "label": "L_LO2",
+        "position": {
+          "x": -45.7787,
+          "y": -85.1696,
+          "z": 0.7286
+        }
+      },
+      {
+        "id": 22,
+        "label": "L_PIT",
+        "position": {
+          "x": -43.7057,
+          "y": -83.2109,
+          "z": -11.0143
+        }
+      },
+      {
+        "id": 23,
+        "label": "L_MT",
+        "position": {
+          "x": -42.7722,
+          "y": -69.9594,
+          "z": 14.452
+        }
+      },
+      {
+        "id": 24,
+        "label": "L_A1",
+        "position": {
+          "x": -43.1723,
+          "y": -25.3579,
+          "z": 12.3234
+        }
+      },
+      {
+        "id": 25,
+        "label": "L_PSL",
+        "position": {
+          "x": -58.5839,
+          "y": -47.2283,
+          "z": 25.4311
+        }
+      },
+      {
+        "id": 26,
+        "label": "L_SFL",
+        "position": {
+          "x": -8.6095,
+          "y": 17.5137,
+          "z": 63.9293
+        }
+      },
+      {
+        "id": 27,
+        "label": "L_PCV",
+        "position": {
+          "x": -6.298,
+          "y": -51.1579,
+          "z": 49.2086
+        }
+      },
+      {
+        "id": 28,
+        "label": "L_STV",
+        "position": {
+          "x": -61.089,
+          "y": -50.9521,
+          "z": 18.2324
+        }
+      },
+      {
+        "id": 29,
+        "label": "L_7Pm",
+        "position": {
+          "x": -4.2062,
+          "y": -70.4214,
+          "z": 50.3404
+        }
+      },
+      {
+        "id": 30,
+        "label": "L_7m",
+        "position": {
+          "x": -4.2845,
+          "y": -63.8785,
+          "z": 35.1841
+        }
+      },
+      {
+        "id": 31,
+        "label": "L_POS1",
+        "position": {
+          "x": -12.6035,
+          "y": -59.0019,
+          "z": 15.0424
+        }
+      },
+      {
+        "id": 32,
+        "label": "L_23d",
+        "position": {
+          "x": -2.8881,
+          "y": -20.6781,
+          "z": 39.3587
+        }
+      },
+      {
+        "id": 33,
+        "label": "L_v23ab",
+        "position": {
+          "x": -3.3636,
+          "y": -58.247,
+          "z": 18.2133
+        }
+      },
+      {
+        "id": 34,
+        "label": "L_d23ab",
+        "position": {
+          "x": -3.0438,
+          "y": -42.6808,
+          "z": 31.2975
+        }
+      },
+      {
+        "id": 35,
+        "label": "L_31pv",
+        "position": {
+          "x": -9.4073,
+          "y": -46.7604,
+          "z": 32.5419
+        }
+      },
+      {
+        "id": 36,
+        "label": "L_5m",
+        "position": {
+          "x": -6.2842,
+          "y": -41.9173,
+          "z": 63.3997
+        }
+      },
+      {
+        "id": 37,
+        "label": "L_5mv",
+        "position": {
+          "x": -13.7018,
+          "y": -37.1393,
+          "z": 50.3818
+        }
+      },
+      {
+        "id": 38,
+        "label": "L_23c",
+        "position": {
+          "x": -11.4488,
+          "y": -30.5269,
+          "z": 43.0083
+        }
+      },
+      {
+        "id": 39,
+        "label": "L_5L",
+        "position": {
+          "x": -14.7776,
+          "y": -48.6065,
+          "z": 72.5933
+        }
+      },
+      {
+        "id": 40,
+        "label": "L_24dd",
+        "position": {
+          "x": -5.8855,
+          "y": -16.0126,
+          "z": 50.5898
+        }
+      },
+      {
+        "id": 41,
+        "label": "L_24dv",
+        "position": {
+          "x": -8.3022,
+          "y": -0.3766,
+          "z": 44.8102
+        }
+      },
+      {
+        "id": 42,
+        "label": "L_7AL",
+        "position": {
+          "x": -20.4027,
+          "y": -51.9913,
+          "z": 65.6772
+        }
+      },
+      {
+        "id": 43,
+        "label": "L_SCEF",
+        "position": {
+          "x": -5.9317,
+          "y": 4.1342,
+          "z": 59.6032
+        }
+      },
+      {
+        "id": 44,
+        "label": "L_6ma",
+        "position": {
+          "x": -20.0984,
+          "y": 3.9694,
+          "z": 67.8903
+        }
+      },
+      {
+        "id": 45,
+        "label": "L_7Am",
+        "position": {
+          "x": -6.9458,
+          "y": -60.3173,
+          "z": 61.4581
+        }
+      },
+      {
+        "id": 46,
+        "label": "L_7PL",
+        "position": {
+          "x": -14.816,
+          "y": -73.7112,
+          "z": 56.0083
+        }
+      },
+      {
+        "id": 47,
+        "label": "L_7PC",
+        "position": {
+          "x": -37.4515,
+          "y": -46.7109,
+          "z": 60.6276
+        }
+      },
+      {
+        "id": 48,
+        "label": "L_LIPv",
+        "position": {
+          "x": -30.8546,
+          "y": -58.4029,
+          "z": 55.2323
+        }
+      },
+      {
+        "id": 49,
+        "label": "L_VIP",
+        "position": {
+          "x": -22.8218,
+          "y": -63.5048,
+          "z": 64.4746
+        }
+      },
+      {
+        "id": 50,
+        "label": "L_MIP",
+        "position": {
+          "x": -24.857,
+          "y": -67.1281,
+          "z": 47.1007
+        }
+      },
+      {
+        "id": 51,
+        "label": "L_1",
+        "position": {
+          "x": -47.0296,
+          "y": -26.3181,
+          "z": 56.3848
+        }
+      },
+      {
+        "id": 52,
+        "label": "L_2",
+        "position": {
+          "x": -38.8683,
+          "y": -32.9202,
+          "z": 51.957
+        }
+      },
+      {
+        "id": 53,
+        "label": "L_3a",
+        "position": {
+          "x": -35.2805,
+          "y": -20.5097,
+          "z": 42.8339
+        }
+      },
+      {
+        "id": 54,
+        "label": "L_6d",
+        "position": {
+          "x": -33.7943,
+          "y": -14.2162,
+          "z": 67.7344
+        }
+      },
+      {
+        "id": 55,
+        "label": "L_6mp",
+        "position": {
+          "x": -10.7334,
+          "y": -15.0087,
+          "z": 71.0262
+        }
+      },
+      {
+        "id": 56,
+        "label": "L_6v",
+        "position": {
+          "x": -59.5034,
+          "y": 3.7871,
+          "z": 31.9067
+        }
+      },
+      {
+        "id": 57,
+        "label": "L_p24pr",
+        "position": {
+          "x": -3.9615,
+          "y": -2.2441,
+          "z": 40.3761
+        }
+      },
+      {
+        "id": 58,
+        "label": "L_33pr",
+        "position": {
+          "x": -2.3983,
+          "y": 11.2592,
+          "z": 28.7215
+        }
+      },
+      {
+        "id": 59,
+        "label": "L_a24pr",
+        "position": {
+          "x": -5.3869,
+          "y": 18.3002,
+          "z": 30.9814
+        }
+      },
+      {
+        "id": 60,
+        "label": "L_p32pr",
+        "position": {
+          "x": -7.9292,
+          "y": 15.3954,
+          "z": 38.7959
+        }
+      },
+      {
+        "id": 61,
+        "label": "L_a24",
+        "position": {
+          "x": -6.1363,
+          "y": 41.965,
+          "z": -4.4968
+        }
+      },
+      {
+        "id": 62,
+        "label": "L_d32",
+        "position": {
+          "x": -8.0403,
+          "y": 42.4755,
+          "z": 24.9597
+        }
+      },
+      {
+        "id": 63,
+        "label": "L_8BM",
+        "position": {
+          "x": -4.7592,
+          "y": 32.5683,
+          "z": 45.1662
+        }
+      },
+      {
+        "id": 64,
+        "label": "L_p32",
+        "position": {
+          "x": -11.2759,
+          "y": 50.3924,
+          "z": -2.3392
+        }
+      },
+      {
+        "id": 65,
+        "label": "L_10r",
+        "position": {
+          "x": -6.0341,
+          "y": 51.6407,
+          "z": -10.6444
+        }
+      },
+      {
+        "id": 66,
+        "label": "L_47m",
+        "position": {
+          "x": -37.4924,
+          "y": 31.5348,
+          "z": -13.9227
+        }
+      },
+      {
+        "id": 67,
+        "label": "L_8Av",
+        "position": {
+          "x": -38.3312,
+          "y": 16.5889,
+          "z": 52.2792
+        }
+      },
+      {
+        "id": 68,
+        "label": "L_8Ad",
+        "position": {
+          "x": -23.3507,
+          "y": 28.996,
+          "z": 43.3465
+        }
+      },
+      {
+        "id": 69,
+        "label": "L_9m",
+        "position": {
+          "x": -6.0375,
+          "y": 55.1478,
+          "z": 24.2637
+        }
+      },
+      {
+        "id": 70,
+        "label": "L_8BL",
+        "position": {
+          "x": -11.6218,
+          "y": 37.1473,
+          "z": 53.8005
+        }
+      },
+      {
+        "id": 71,
+        "label": "L_9p",
+        "position": {
+          "x": -19.8944,
+          "y": 47.3057,
+          "z": 38.4792
+        }
+      },
+      {
+        "id": 72,
+        "label": "L_10d",
+        "position": {
+          "x": -11.1632,
+          "y": 66.2958,
+          "z": 8.4044
+        }
+      },
+      {
+        "id": 73,
+        "label": "L_8C",
+        "position": {
+          "x": -43.7036,
+          "y": 11.8118,
+          "z": 37.7097
+        }
+      },
+      {
+        "id": 74,
+        "label": "L_44",
+        "position": {
+          "x": -53.8786,
+          "y": 14.8412,
+          "z": 14.0097
+        }
+      },
+      {
+        "id": 75,
+        "label": "L_45",
+        "position": {
+          "x": -50.609,
+          "y": 25.5687,
+          "z": 3.2206
+        }
+      },
+      {
+        "id": 76,
+        "label": "L_47l",
+        "position": {
+          "x": -46.7708,
+          "y": 30.1001,
+          "z": -9.9578
+        }
+      },
+      {
+        "id": 77,
+        "label": "L_a47r",
+        "position": {
+          "x": -41.3563,
+          "y": 48.5638,
+          "z": -11.9072
+        }
+      },
+      {
+        "id": 78,
+        "label": "L_6r",
+        "position": {
+          "x": -52.4908,
+          "y": 6.6641,
+          "z": 17.7741
+        }
+      },
+      {
+        "id": 79,
+        "label": "L_IFJa",
+        "position": {
+          "x": -41.0068,
+          "y": 10.8526,
+          "z": 26.3856
+        }
+      },
+      {
+        "id": 80,
+        "label": "L_IFJp",
+        "position": {
+          "x": -41.3634,
+          "y": 2.2956,
+          "z": 30.0642
+        }
+      },
+      {
+        "id": 81,
+        "label": "L_IFSp",
+        "position": {
+          "x": -48.8016,
+          "y": 20.9089,
+          "z": 22.8515
+        }
+      },
+      {
+        "id": 82,
+        "label": "L_IFSa",
+        "position": {
+          "x": -48.1015,
+          "y": 32.1216,
+          "z": 10.6533
+        }
+      },
+      {
+        "id": 83,
+        "label": "L_p9-46v",
+        "position": {
+          "x": -47.1903,
+          "y": 28.8919,
+          "z": 25.9915
+        }
+      },
+      {
+        "id": 84,
+        "label": "L_46",
+        "position": {
+          "x": -38.4057,
+          "y": 37.8526,
+          "z": 32.9207
+        }
+      },
+      {
+        "id": 85,
+        "label": "L_a9-46v",
+        "position": {
+          "x": -40.0072,
+          "y": 51.6397,
+          "z": 9.1728
+        }
+      },
+      {
+        "id": 86,
+        "label": "L_9-46d",
+        "position": {
+          "x": -29.4487,
+          "y": 45.8579,
+          "z": 23.4636
+        }
+      },
+      {
+        "id": 87,
+        "label": "L_9a",
+        "position": {
+          "x": -21.7269,
+          "y": 57.5628,
+          "z": 24.1526
+        }
+      },
+      {
+        "id": 88,
+        "label": "L_10v",
+        "position": {
+          "x": -4.0071,
+          "y": 52.9119,
+          "z": -17.8343
+        }
+      },
+      {
+        "id": 89,
+        "label": "L_a10p",
+        "position": {
+          "x": -26.4781,
+          "y": 59.742,
+          "z": -6.8987
+        }
+      },
+      {
+        "id": 90,
+        "label": "L_10pp",
+        "position": {
+          "x": -12.7721,
+          "y": 62.2831,
+          "z": -16.2485
+        }
+      },
+      {
+        "id": 91,
+        "label": "L_11l",
+        "position": {
+          "x": -25.9362,
+          "y": 49.4761,
+          "z": -15.4714
+        }
+      },
+      {
+        "id": 92,
+        "label": "L_13l",
+        "position": {
+          "x": -23.3043,
+          "y": 30.0783,
+          "z": -19.8865
+        }
+      },
+      {
+        "id": 93,
+        "label": "L_OFC",
+        "position": {
+          "x": -10.8287,
+          "y": 33.539,
+          "z": -24.5052
+        }
+      },
+      {
+        "id": 94,
+        "label": "L_47s",
+        "position": {
+          "x": -34.5233,
+          "y": 22.1134,
+          "z": -19.1547
+        }
+      },
+      {
+        "id": 95,
+        "label": "L_LIPd",
+        "position": {
+          "x": -30.0745,
+          "y": -55.4435,
+          "z": 42.8996
+        }
+      },
+      {
+        "id": 96,
+        "label": "L_6a",
+        "position": {
+          "x": -25.3604,
+          "y": -4.9318,
+          "z": 55.5618
+        }
+      },
+      {
+        "id": 97,
+        "label": "L_i6-8",
+        "position": {
+          "x": -29.5765,
+          "y": 5.2274,
+          "z": 56.748
+        }
+      },
+      {
+        "id": 98,
+        "label": "L_s6-8",
+        "position": {
+          "x": -22.3087,
+          "y": 24.1516,
+          "z": 56.2966
+        }
+      },
+      {
+        "id": 99,
+        "label": "L_43",
+        "position": {
+          "x": -56.3831,
+          "y": -0.3366,
+          "z": 9.4767
+        }
+      },
+      {
+        "id": 100,
+        "label": "L_OP4",
+        "position": {
+          "x": -59.2233,
+          "y": -13.4846,
+          "z": 15.315
+        }
+      },
+      {
+        "id": 101,
+        "label": "L_OP1",
+        "position": {
+          "x": -46.9496,
+          "y": -22.3801,
+          "z": 19.1422
+        }
+      },
+      {
+        "id": 102,
+        "label": "L_OP2-3",
+        "position": {
+          "x": -40.4601,
+          "y": -17.2433,
+          "z": 19.0212
+        }
+      },
+      {
+        "id": 103,
+        "label": "L_52",
+        "position": {
+          "x": -38.0016,
+          "y": -22.3612,
+          "z": 1.9379
+        }
+      },
+      {
+        "id": 104,
+        "label": "L_RI",
+        "position": {
+          "x": -40.1846,
+          "y": -35.5219,
+          "z": 20.2432
+        }
+      },
+      {
+        "id": 105,
+        "label": "L_PFcm",
+        "position": {
+          "x": -50.4059,
+          "y": -32.309,
+          "z": 21.7463
+        }
+      },
+      {
+        "id": 106,
+        "label": "L_PoI2",
+        "position": {
+          "x": -40.4908,
+          "y": -2.9287,
+          "z": -0.0029
+        }
+      },
+      {
+        "id": 107,
+        "label": "L_TA2",
+        "position": {
+          "x": -50.3675,
+          "y": -0.1737,
+          "z": -5.4789
+        }
+      },
+      {
+        "id": 108,
+        "label": "L_FOP4",
+        "position": {
+          "x": -41.4917,
+          "y": 12.7776,
+          "z": 5.6919
+        }
+      },
+      {
+        "id": 109,
+        "label": "L_MI",
+        "position": {
+          "x": -36.2879,
+          "y": 11.1963,
+          "z": 3.3261
+        }
+      },
+      {
+        "id": 110,
+        "label": "L_Pir",
+        "position": {
+          "x": -32.039,
+          "y": 6.3815,
+          "z": -17.6798
+        }
+      },
+      {
+        "id": 111,
+        "label": "L_AVI",
+        "position": {
+          "x": -30.8608,
+          "y": 25.4027,
+          "z": -2.4888
+        }
+      },
+      {
+        "id": 112,
+        "label": "L_AAIC",
+        "position": {
+          "x": -35.4208,
+          "y": 14.345,
+          "z": -10.4385
+        }
+      },
+      {
+        "id": 113,
+        "label": "L_FOP1",
+        "position": {
+          "x": -49.8875,
+          "y": 1.6589,
+          "z": 4.5696
+        }
+      },
+      {
+        "id": 114,
+        "label": "L_FOP3",
+        "position": {
+          "x": -35.995,
+          "y": 2.1376,
+          "z": 13.4428
+        }
+      },
+      {
+        "id": 115,
+        "label": "L_FOP2",
+        "position": {
+          "x": -42.4128,
+          "y": -4.9531,
+          "z": 14.7998
+        }
+      },
+      {
+        "id": 116,
+        "label": "L_PFt",
+        "position": {
+          "x": -56.3928,
+          "y": -25.7538,
+          "z": 36.533
+        }
+      },
+      {
+        "id": 117,
+        "label": "L_AIP",
+        "position": {
+          "x": -39.7852,
+          "y": -39.0137,
+          "z": 42.2767
+        }
+      },
+      {
+        "id": 118,
+        "label": "L_EC",
+        "position": {
+          "x": -22.9398,
+          "y": -13.6461,
+          "z": -31.6681
+        }
+      },
+      {
+        "id": 119,
+        "label": "L_PreS",
+        "position": {
+          "x": -16.9281,
+          "y": -34.2994,
+          "z": -13.8604
+        }
+      },
+      {
+        "id": 120,
+        "label": "L_H",
+        "position": {
+          "x": -11.9167,
+          "y": -39.75,
+          "z": -2.9167
+        }
+      },
+      {
+        "id": 121,
+        "label": "L_ProS",
+        "position": {
+          "x": -22.0685,
+          "y": -57.0108,
+          "z": 4.6909
+        }
+      },
+      {
+        "id": 122,
+        "label": "L_PeEc",
+        "position": {
+          "x": -31.1356,
+          "y": -9.5889,
+          "z": -33.6028
+        }
+      },
+      {
+        "id": 123,
+        "label": "L_STGa",
+        "position": {
+          "x": -50.8535,
+          "y": 12.9215,
+          "z": -16.6696
+        }
+      },
+      {
+        "id": 124,
+        "label": "L_PBelt",
+        "position": {
+          "x": -52.7095,
+          "y": -26.0037,
+          "z": 9.006
+        }
+      },
+      {
+        "id": 125,
+        "label": "L_A5",
+        "position": {
+          "x": -62.9832,
+          "y": -15.2118,
+          "z": -1.1005
+        }
+      },
+      {
+        "id": 126,
+        "label": "L_PHA1",
+        "position": {
+          "x": -23.3494,
+          "y": -37.7192,
+          "z": -14.638
+        }
+      },
+      {
+        "id": 127,
+        "label": "L_PHA3",
+        "position": {
+          "x": -31.8398,
+          "y": -37.931,
+          "z": -17.7307
+        }
+      },
+      {
+        "id": 128,
+        "label": "L_STSda",
+        "position": {
+          "x": -54.8082,
+          "y": -4.1468,
+          "z": -11.5957
+        }
+      },
+      {
+        "id": 129,
+        "label": "L_STSdp",
+        "position": {
+          "x": -52.7884,
+          "y": -32.6386,
+          "z": 1.1349
+        }
+      },
+      {
+        "id": 130,
+        "label": "L_STSvp",
+        "position": {
+          "x": -54.8898,
+          "y": -34.8552,
+          "z": -3.4358
+        }
+      },
+      {
+        "id": 131,
+        "label": "L_TGd",
+        "position": {
+          "x": -38.1921,
+          "y": 12.305,
+          "z": -34.4727
+        }
+      },
+      {
+        "id": 132,
+        "label": "L_TE1a",
+        "position": {
+          "x": -59.7754,
+          "y": -5.2246,
+          "z": -23.1151
+        }
+      },
+      {
+        "id": 133,
+        "label": "L_TE1p",
+        "position": {
+          "x": -61.7726,
+          "y": -48.2135,
+          "z": -8.6963
+        }
+      },
+      {
+        "id": 134,
+        "label": "L_TE2a",
+        "position": {
+          "x": -57.2752,
+          "y": -24.3832,
+          "z": -27.7009
+        }
+      },
+      {
+        "id": 135,
+        "label": "L_TF",
+        "position": {
+          "x": -42.3942,
+          "y": -22.0097,
+          "z": -30.0052
+        }
+      },
+      {
+        "id": 136,
+        "label": "L_TE2p",
+        "position": {
+          "x": -49.3913,
+          "y": -43.4235,
+          "z": -20.5057
+        }
+      },
+      {
+        "id": 137,
+        "label": "L_PHT",
+        "position": {
+          "x": -58.3918,
+          "y": -60.6461,
+          "z": 3.2289
+        }
+      },
+      {
+        "id": 138,
+        "label": "L_PH",
+        "position": {
+          "x": -45.9845,
+          "y": -65.1466,
+          "z": -5.3422
+        }
+      },
+      {
+        "id": 139,
+        "label": "L_TPOJ1",
+        "position": {
+          "x": -54.1676,
+          "y": -46.3202,
+          "z": 10.26
+        }
+      },
+      {
+        "id": 140,
+        "label": "L_TPOJ2",
+        "position": {
+          "x": -51.9934,
+          "y": -62.363,
+          "z": 15.7838
+        }
+      },
+      {
+        "id": 141,
+        "label": "L_TPOJ3",
+        "position": {
+          "x": -45.9746,
+          "y": -72.674,
+          "z": 20.7012
+        }
+      },
+      {
+        "id": 142,
+        "label": "L_DVT",
+        "position": {
+          "x": -17.6379,
+          "y": -74.2901,
+          "z": 36.3106
+        }
+      },
+      {
+        "id": 143,
+        "label": "L_PGp",
+        "position": {
+          "x": -38.6978,
+          "y": -85.4329,
+          "z": 23.0889
+        }
+      },
+      {
+        "id": 144,
+        "label": "L_IP2",
+        "position": {
+          "x": -40.9491,
+          "y": -48.8004,
+          "z": 43.3753
+        }
+      },
+      {
+        "id": 145,
+        "label": "L_IP1",
+        "position": {
+          "x": -30.258,
+          "y": -70.6326,
+          "z": 39.1023
+        }
+      },
+      {
+        "id": 146,
+        "label": "L_IP0",
+        "position": {
+          "x": -30.8447,
+          "y": -79.0757,
+          "z": 24.2723
+        }
+      },
+      {
+        "id": 147,
+        "label": "L_PFop",
+        "position": {
+          "x": -62.9615,
+          "y": -23.7361,
+          "z": 24.0328
+        }
+      },
+      {
+        "id": 148,
+        "label": "L_PF",
+        "position": {
+          "x": -60.306,
+          "y": -37.2782,
+          "z": 37.9053
+        }
+      },
+      {
+        "id": 149,
+        "label": "L_PFm",
+        "position": {
+          "x": -49.516,
+          "y": -58.0483,
+          "z": 44.8952
+        }
+      },
+      {
+        "id": 150,
+        "label": "L_PGi",
+        "position": {
+          "x": -46.5455,
+          "y": -64.0108,
+          "z": 27.542
+        }
+      },
+      {
+        "id": 151,
+        "label": "L_PGs",
+        "position": {
+          "x": -39.1906,
+          "y": -78.071,
+          "z": 38.9904
+        }
+      },
+      {
+        "id": 152,
+        "label": "L_V6A",
+        "position": {
+          "x": -21.7836,
+          "y": -86.1888,
+          "z": 42.7225
+        }
+      },
+      {
+        "id": 153,
+        "label": "L_VMV1",
+        "position": {
+          "x": -18.6619,
+          "y": -55.9416,
+          "z": -5.522
+        }
+      },
+      {
+        "id": 154,
+        "label": "L_VMV3",
+        "position": {
+          "x": -27.7219,
+          "y": -62.6969,
+          "z": -11.2141
+        }
+      },
+      {
+        "id": 155,
+        "label": "L_PHA2",
+        "position": {
+          "x": -31.9234,
+          "y": -37.4482,
+          "z": -11.7815
+        }
+      },
+      {
+        "id": 156,
+        "label": "L_V4t",
+        "position": {
+          "x": -49.261,
+          "y": -77.1178,
+          "z": 7.8354
+        }
+      },
+      {
+        "id": 157,
+        "label": "L_FST",
+        "position": {
+          "x": -45.8253,
+          "y": -68.6921,
+          "z": 5.6201
+        }
+      },
+      {
+        "id": 158,
+        "label": "L_V3CD",
+        "position": {
+          "x": -35.65,
+          "y": -88.8457,
+          "z": 11.2729
+        }
+      },
+      {
+        "id": 159,
+        "label": "L_LO3",
+        "position": {
+          "x": -41.2095,
+          "y": -77.1728,
+          "z": 15.1551
+        }
+      },
+      {
+        "id": 160,
+        "label": "L_VMV2",
+        "position": {
+          "x": -27.3375,
+          "y": -54.8236,
+          "z": -6.411
+        }
+      },
+      {
+        "id": 161,
+        "label": "L_31pd",
+        "position": {
+          "x": -8.7,
+          "y": -53.4323,
+          "z": 34.6469
+        }
+      },
+      {
+        "id": 162,
+        "label": "L_31a",
+        "position": {
+          "x": -4.679,
+          "y": -37.7455,
+          "z": 43.5579
+        }
+      },
+      {
+        "id": 163,
+        "label": "L_VVC",
+        "position": {
+          "x": -31.0334,
+          "y": -53.2359,
+          "z": -17.3407
+        }
+      },
+      {
+        "id": 164,
+        "label": "L_25",
+        "position": {
+          "x": -4.275,
+          "y": 23.9379,
+          "z": -14.7562
+        }
+      },
+      {
+        "id": 165,
+        "label": "L_s32",
+        "position": {
+          "x": -7.5366,
+          "y": 35.6621,
+          "z": -15.0659
+        }
+      },
+      {
+        "id": 166,
+        "label": "L_pOFC",
+        "position": {
+          "x": -14.3972,
+          "y": 14.3564,
+          "z": -20.8892
+        }
+      },
+      {
+        "id": 167,
+        "label": "L_PoI1",
+        "position": {
+          "x": -39.1902,
+          "y": -12.1828,
+          "z": -2.2671
+        }
+      },
+      {
+        "id": 168,
+        "label": "L_Ig",
+        "position": {
+          "x": -35.5904,
+          "y": -16.1798,
+          "z": 15.9868
+        }
+      },
+      {
+        "id": 169,
+        "label": "L_FOP5",
+        "position": {
+          "x": -35.4105,
+          "y": 26.75,
+          "z": 5.1684
+        }
+      },
+      {
+        "id": 170,
+        "label": "L_p10p",
+        "position": {
+          "x": -24.0707,
+          "y": 62.9202,
+          "z": 2.3932
+        }
+      },
+      {
+        "id": 171,
+        "label": "L_p47r",
+        "position": {
+          "x": -45.6345,
+          "y": 43.0795,
+          "z": 0.9857
+        }
+      },
+      {
+        "id": 172,
+        "label": "L_TGv",
+        "position": {
+          "x": -37.3067,
+          "y": -1.3122,
+          "z": -44.4583
+        }
+      },
+      {
+        "id": 173,
+        "label": "L_MBelt",
+        "position": {
+          "x": -44.3888,
+          "y": -17.7063,
+          "z": 4.3489
+        }
+      },
+      {
+        "id": 174,
+        "label": "L_LBelt",
+        "position": {
+          "x": -45.2987,
+          "y": -27.4349,
+          "z": 9.0529
+        }
+      },
+      {
+        "id": 175,
+        "label": "L_A4",
+        "position": {
+          "x": -63.3197,
+          "y": -23.574,
+          "z": 9.17
+        }
+      },
+      {
+        "id": 176,
+        "label": "L_STSva",
+        "position": {
+          "x": -51.638,
+          "y": -7.7992,
+          "z": -16.9657
+        }
+      },
+      {
+        "id": 177,
+        "label": "L_TE1m",
+        "position": {
+          "x": -64.136,
+          "y": -26.1294,
+          "z": -14.9553
+        }
+      },
+      {
+        "id": 178,
+        "label": "L_PI",
+        "position": {
+          "x": -43.9474,
+          "y": -4.1449,
+          "z": -13.5724
+        }
+      },
+      {
+        "id": 179,
+        "label": "L_a32pr",
+        "position": {
+          "x": -7.6802,
+          "y": 30.6322,
+          "z": 28.6548
+        }
+      },
+      {
+        "id": 180,
+        "label": "L_p24",
+        "position": {
+          "x": -5.1704,
+          "y": 38.8593,
+          "z": 13.874
+        }
+      },
+      {
+        "id": 181,
+        "label": "R_V1",
+        "position": {
+          "x": 12.4486,
+          "y": -80.3925,
+          "z": 4.0572
+        }
+      },
+      {
+        "id": 182,
+        "label": "R_MST",
+        "position": {
+          "x": 48.0338,
+          "y": -64.2372,
+          "z": 7.2628
+        }
+      },
+      {
+        "id": 183,
+        "label": "R_V6",
+        "position": {
+          "x": 17.9109,
+          "y": -76.9513,
+          "z": 31.0297
+        }
+      },
+      {
+        "id": 184,
+        "label": "R_V2",
+        "position": {
+          "x": 12.2652,
+          "y": -79.2862,
+          "z": 6.878
+        }
+      },
+      {
+        "id": 185,
+        "label": "R_V3",
+        "position": {
+          "x": 17.422,
+          "y": -85.2411,
+          "z": 8.9125
+        }
+      },
+      {
+        "id": 186,
+        "label": "R_V4",
+        "position": {
+          "x": 30.754,
+          "y": -84.8834,
+          "z": -1.1632
+        }
+      },
+      {
+        "id": 187,
+        "label": "R_V8",
+        "position": {
+          "x": 30.4344,
+          "y": -75.2613,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 188,
+        "label": "R_4",
+        "position": {
+          "x": 29.7796,
+          "y": -17.1529,
+          "z": 55.2073
+        }
+      },
+      {
+        "id": 189,
+        "label": "R_3b",
+        "position": {
+          "x": 40.1439,
+          "y": -19.37,
+          "z": 51.0025
+        }
+      },
+      {
+        "id": 190,
+        "label": "R_FEF",
+        "position": {
+          "x": 44.8025,
+          "y": -2.4317,
+          "z": 51.7016
+        }
+      },
+      {
+        "id": 191,
+        "label": "R_PEF",
+        "position": {
+          "x": 47.4893,
+          "y": 2.6073,
+          "z": 37.1363
+        }
+      },
+      {
+        "id": 192,
+        "label": "R_55b",
+        "position": {
+          "x": 50.355,
+          "y": 1.9929,
+          "z": 47.0793
+        }
+      },
+      {
+        "id": 193,
+        "label": "R_V3A",
+        "position": {
+          "x": 16.7601,
+          "y": -89.1821,
+          "z": 30.9474
+        }
+      },
+      {
+        "id": 194,
+        "label": "R_RSC",
+        "position": {
+          "x": 5.5622,
+          "y": -36.4378,
+          "z": 21.5635
+        }
+      },
+      {
+        "id": 195,
+        "label": "R_POS2",
+        "position": {
+          "x": 12.009,
+          "y": -70.2659,
+          "z": 38.2154
+        }
+      },
+      {
+        "id": 196,
+        "label": "R_V7",
+        "position": {
+          "x": 28.2829,
+          "y": -84.3952,
+          "z": 31.1622
+        }
+      },
+      {
+        "id": 197,
+        "label": "R_IPS1",
+        "position": {
+          "x": 27.3292,
+          "y": -72.735,
+          "z": 39.84
+        }
+      },
+      {
+        "id": 198,
+        "label": "R_FFC",
+        "position": {
+          "x": 40.8223,
+          "y": -53.4603,
+          "z": -19.1962
+        }
+      },
+      {
+        "id": 199,
+        "label": "R_V3B",
+        "position": {
+          "x": 29.7124,
+          "y": -77.2134,
+          "z": 20.855
+        }
+      },
+      {
+        "id": 200,
+        "label": "R_LO1",
+        "position": {
+          "x": 39.6977,
+          "y": -80.2326,
+          "z": 4.845
+        }
+      },
+      {
+        "id": 201,
+        "label": "R_LO2",
+        "position": {
+          "x": 44.5944,
+          "y": -83.4509,
+          "z": -0.8363
+        }
+      },
+      {
+        "id": 202,
+        "label": "R_PIT",
+        "position": {
+          "x": 42.7838,
+          "y": -80.5454,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 203,
+        "label": "R_MT",
+        "position": {
+          "x": 51.9897,
+          "y": -69.6252,
+          "z": 10.796
+        }
+      },
+      {
+        "id": 204,
+        "label": "R_A1",
+        "position": {
+          "x": 42.7181,
+          "y": -21.674,
+          "z": 11.3995
+        }
+      },
+      {
+        "id": 205,
+        "label": "R_PSL",
+        "position": {
+          "x": 63.9626,
+          "y": -35.7187,
+          "z": 27.4379
+        }
+      },
+      {
+        "id": 206,
+        "label": "R_SFL",
+        "position": {
+          "x": 8.8271,
+          "y": 17.0075,
+          "z": 65.405
+        }
+      },
+      {
+        "id": 207,
+        "label": "R_PCV",
+        "position": {
+          "x": 5.5035,
+          "y": -52.2473,
+          "z": 51.218
+        }
+      },
+      {
+        "id": 208,
+        "label": "R_STV",
+        "position": {
+          "x": 60.0356,
+          "y": -44.0253,
+          "z": 20.4059
+        }
+      },
+      {
+        "id": 209,
+        "label": "R_7Pm",
+        "position": {
+          "x": 5.2416,
+          "y": -68.4553,
+          "z": 50.8443
+        }
+      },
+      {
+        "id": 210,
+        "label": "R_7m",
+        "position": {
+          "x": 4.523,
+          "y": -62.5104,
+          "z": 34.4648
+        }
+      },
+      {
+        "id": 211,
+        "label": "R_POS1",
+        "position": {
+          "x": 13.9837,
+          "y": -57.065,
+          "z": 17.4055
+        }
+      },
+      {
+        "id": 212,
+        "label": "R_23d",
+        "position": {
+          "x": 3.4704,
+          "y": -21.1334,
+          "z": 39.4247
+        }
+      },
+      {
+        "id": 213,
+        "label": "R_v23ab",
+        "position": {
+          "x": 4.3643,
+          "y": -55.0147,
+          "z": 18.8382
+        }
+      },
+      {
+        "id": 214,
+        "label": "R_d23ab",
+        "position": {
+          "x": 3.4887,
+          "y": -40.7114,
+          "z": 33.1083
+        }
+      },
+      {
+        "id": 215,
+        "label": "R_31pv",
+        "position": {
+          "x": 9.1273,
+          "y": -42.9801,
+          "z": 34.757
+        }
+      },
+      {
+        "id": 216,
+        "label": "R_5m",
+        "position": {
+          "x": 5.4319,
+          "y": -39.2363,
+          "z": 65.8784
+        }
+      },
+      {
+        "id": 217,
+        "label": "R_5mv",
+        "position": {
+          "x": 12.0772,
+          "y": -40.2585,
+          "z": 55.0079
+        }
+      },
+      {
+        "id": 218,
+        "label": "R_23c",
+        "position": {
+          "x": 11.2516,
+          "y": -33.0341,
+          "z": 44.1153
+        }
+      },
+      {
+        "id": 219,
+        "label": "R_5L",
+        "position": {
+          "x": 14.0538,
+          "y": -47.551,
+          "z": 74.551
+        }
+      },
+      {
+        "id": 220,
+        "label": "R_24dd",
+        "position": {
+          "x": 6.3501,
+          "y": -16.2504,
+          "z": 53.1445
+        }
+      },
+      {
+        "id": 221,
+        "label": "R_24dv",
+        "position": {
+          "x": 9.1272,
+          "y": -2.5587,
+          "z": 46.7573
+        }
+      },
+      {
+        "id": 222,
+        "label": "R_7AL",
+        "position": {
+          "x": 23.9706,
+          "y": -51.6995,
+          "z": 68.6683
+        }
+      },
+      {
+        "id": 223,
+        "label": "R_SCEF",
+        "position": {
+          "x": 6.1055,
+          "y": 4.0798,
+          "z": 61.3124
+        }
+      },
+      {
+        "id": 224,
+        "label": "R_6ma",
+        "position": {
+          "x": 21.0205,
+          "y": 5.2517,
+          "z": 67.207
+        }
+      },
+      {
+        "id": 225,
+        "label": "R_7Am",
+        "position": {
+          "x": 9.0168,
+          "y": -60.4508,
+          "z": 62.1322
+        }
+      },
+      {
+        "id": 226,
+        "label": "R_7PL",
+        "position": {
+          "x": 12.4214,
+          "y": -73.0975,
+          "z": 56.9243
+        }
+      },
+      {
+        "id": 227,
+        "label": "R_7PC",
+        "position": {
+          "x": 36.4209,
+          "y": -47.3008,
+          "z": 61.4182
+        }
+      },
+      {
+        "id": 228,
+        "label": "R_LIPv",
+        "position": {
+          "x": 28.3435,
+          "y": -57.3692,
+          "z": 53.8374
+        }
+      },
+      {
+        "id": 229,
+        "label": "R_VIP",
+        "position": {
+          "x": 21.8264,
+          "y": -63.6259,
+          "z": 63.3134
+        }
+      },
+      {
+        "id": 230,
+        "label": "R_MIP",
+        "position": {
+          "x": 25.6649,
+          "y": -68.1292,
+          "z": 50.8733
+        }
+      },
+      {
+        "id": 231,
+        "label": "R_1",
+        "position": {
+          "x": 48.9993,
+          "y": -21.151,
+          "z": 54.7363
+        }
+      },
+      {
+        "id": 232,
+        "label": "R_2",
+        "position": {
+          "x": 38.4988,
+          "y": -30.2372,
+          "z": 52.3331
+        }
+      },
+      {
+        "id": 233,
+        "label": "R_3a",
+        "position": {
+          "x": 32.6255,
+          "y": -19.9419,
+          "z": 46.9856
+        }
+      },
+      {
+        "id": 234,
+        "label": "R_6d",
+        "position": {
+          "x": 38.0044,
+          "y": -11.3205,
+          "z": 64.7474
+        }
+      },
+      {
+        "id": 235,
+        "label": "R_6mp",
+        "position": {
+          "x": 17.3891,
+          "y": -11.7631,
+          "z": 69.3736
+        }
+      },
+      {
+        "id": 236,
+        "label": "R_6v",
+        "position": {
+          "x": 59.5139,
+          "y": 6.6888,
+          "z": 30.6097
+        }
+      },
+      {
+        "id": 237,
+        "label": "R_p24pr",
+        "position": {
+          "x": 4.3647,
+          "y": -2.1376,
+          "z": 40.5612
+        }
+      },
+      {
+        "id": 238,
+        "label": "R_33pr",
+        "position": {
+          "x": 3.3875,
+          "y": 14.9531,
+          "z": 26.8608
+        }
+      },
+      {
+        "id": 239,
+        "label": "R_a24pr",
+        "position": {
+          "x": 4.3666,
+          "y": 19.4909,
+          "z": 32.1381
+        }
+      },
+      {
+        "id": 240,
+        "label": "R_p32pr",
+        "position": {
+          "x": 9.0316,
+          "y": 14.6212,
+          "z": 40.1911
+        }
+      },
+      {
+        "id": 241,
+        "label": "R_a24",
+        "position": {
+          "x": -0.5,
+          "y": 33.25,
+          "z": -6.575
+        }
+      },
+      {
+        "id": 242,
+        "label": "R_d32",
+        "position": {
+          "x": 7.2199,
+          "y": 39.4286,
+          "z": 26.991
+        }
+      },
+      {
+        "id": 243,
+        "label": "R_8BM",
+        "position": {
+          "x": 4.8658,
+          "y": 30.6518,
+          "z": 47.4365
+        }
+      },
+      {
+        "id": 244,
+        "label": "R_p32",
+        "position": {
+          "x": -0.5,
+          "y": 43.25,
+          "z": -12.75
+        }
+      },
+      {
+        "id": 245,
+        "label": "R_10r",
+        "position": {
+          "x": -0.5,
+          "y": 45.25,
+          "z": -11.75
+        }
+      },
+      {
+        "id": 246,
+        "label": "R_47m",
+        "position": {
+          "x": 33.7357,
+          "y": 32.5717,
+          "z": -15.8829
+        }
+      },
+      {
+        "id": 247,
+        "label": "R_8Av",
+        "position": {
+          "x": 39.8249,
+          "y": 18.8202,
+          "z": 49.0997
+        }
+      },
+      {
+        "id": 248,
+        "label": "R_8Ad",
+        "position": {
+          "x": 23.9837,
+          "y": 30.6051,
+          "z": 42.3136
+        }
+      },
+      {
+        "id": 249,
+        "label": "R_9m",
+        "position": {
+          "x": 6.7434,
+          "y": 55.0901,
+          "z": 20.9469
+        }
+      },
+      {
+        "id": 250,
+        "label": "R_8BL",
+        "position": {
+          "x": 13.2097,
+          "y": 41.9075,
+          "z": 49.5118
+        }
+      },
+      {
+        "id": 251,
+        "label": "R_9p",
+        "position": {
+          "x": 20.6326,
+          "y": 50.9359,
+          "z": 34.1932
+        }
+      },
+      {
+        "id": 252,
+        "label": "R_10d",
+        "position": {
+          "x": 9.5,
+          "y": 67.8472,
+          "z": 5.0731
+        }
+      },
+      {
+        "id": 253,
+        "label": "R_8C",
+        "position": {
+          "x": 39.5685,
+          "y": 18.1531,
+          "z": 36.715
+        }
+      },
+      {
+        "id": 254,
+        "label": "R_44",
+        "position": {
+          "x": 53.431,
+          "y": 18.9778,
+          "z": 12.591
+        }
+      },
+      {
+        "id": 255,
+        "label": "R_45",
+        "position": {
+          "x": 50.382,
+          "y": 26.5792,
+          "z": 3.3714
+        }
+      },
+      {
+        "id": 256,
+        "label": "R_47l",
+        "position": {
+          "x": 45.234,
+          "y": 33.282,
+          "z": -13.7013
+        }
+      },
+      {
+        "id": 257,
+        "label": "R_a47r",
+        "position": {
+          "x": 39.2721,
+          "y": 51.7682,
+          "z": -8.55
+        }
+      },
+      {
+        "id": 258,
+        "label": "R_6r",
+        "position": {
+          "x": 52.1951,
+          "y": 10.0254,
+          "z": 13.331
+        }
+      },
+      {
+        "id": 259,
+        "label": "R_IFJa",
+        "position": {
+          "x": 44.3623,
+          "y": 16.6019,
+          "z": 25.5586
+        }
+      },
+      {
+        "id": 260,
+        "label": "R_IFJp",
+        "position": {
+          "x": 38.6061,
+          "y": 7.4913,
+          "z": 27.1746
+        }
+      },
+      {
+        "id": 261,
+        "label": "R_IFSp",
+        "position": {
+          "x": 47.7224,
+          "y": 28.693,
+          "z": 18.9286
+        }
+      },
+      {
+        "id": 262,
+        "label": "R_IFSa",
+        "position": {
+          "x": 49.9917,
+          "y": 36.133,
+          "z": 3.711
+        }
+      },
+      {
+        "id": 263,
+        "label": "R_p9-46v",
+        "position": {
+          "x": 47.4775,
+          "y": 30.949,
+          "z": 27.2125
+        }
+      },
+      {
+        "id": 264,
+        "label": "R_46",
+        "position": {
+          "x": 36.7753,
+          "y": 39.899,
+          "z": 30.7436
+        }
+      },
+      {
+        "id": 265,
+        "label": "R_a9-46v",
+        "position": {
+          "x": 39.7225,
+          "y": 52.6637,
+          "z": 10.1349
+        }
+      },
+      {
+        "id": 266,
+        "label": "R_9-46d",
+        "position": {
+          "x": 29.2571,
+          "y": 49.3418,
+          "z": 23.4743
+        }
+      },
+      {
+        "id": 267,
+        "label": "R_9a",
+        "position": {
+          "x": 19.2701,
+          "y": 62.3271,
+          "z": 19.8617
+        }
+      },
+      {
+        "id": 268,
+        "label": "R_10v",
+        "position": {
+          "x": -0.5,
+          "y": 27.25,
+          "z": -24.375
+        }
+      },
+      {
+        "id": 269,
+        "label": "R_a10p",
+        "position": {
+          "x": 25.0974,
+          "y": 62.2746,
+          "z": -8.5039
+        }
+      },
+      {
+        "id": 270,
+        "label": "R_10pp",
+        "position": {
+          "x": 12.4893,
+          "y": 63.2321,
+          "z": -16.4082
+        }
+      },
+      {
+        "id": 271,
+        "label": "R_11l",
+        "position": {
+          "x": 25.7072,
+          "y": 48.1913,
+          "z": -16.2445
+        }
+      },
+      {
+        "id": 272,
+        "label": "R_13l",
+        "position": {
+          "x": 20.1407,
+          "y": 28.9822,
+          "z": -20.2606
+        }
+      },
+      {
+        "id": 273,
+        "label": "R_OFC",
+        "position": {
+          "x": -0.5,
+          "y": 23.1786,
+          "z": -23.9643
+        }
+      },
+      {
+        "id": 274,
+        "label": "R_47s",
+        "position": {
+          "x": 31.2879,
+          "y": 22.4318,
+          "z": -19.6222
+        }
+      },
+      {
+        "id": 275,
+        "label": "R_LIPd",
+        "position": {
+          "x": 31.1998,
+          "y": -54.4651,
+          "z": 45.1389
+        }
+      },
+      {
+        "id": 276,
+        "label": "R_6a",
+        "position": {
+          "x": 26.9379,
+          "y": -2.1452,
+          "z": 53.4619
+        }
+      },
+      {
+        "id": 277,
+        "label": "R_i6-8",
+        "position": {
+          "x": 32.9857,
+          "y": 8.1121,
+          "z": 58.0711
+        }
+      },
+      {
+        "id": 278,
+        "label": "R_s6-8",
+        "position": {
+          "x": 20.4722,
+          "y": 22.041,
+          "z": 59.118
+        }
+      },
+      {
+        "id": 279,
+        "label": "R_43",
+        "position": {
+          "x": 55.7014,
+          "y": 0.7986,
+          "z": 9.7493
+        }
+      },
+      {
+        "id": 280,
+        "label": "R_OP4",
+        "position": {
+          "x": 56.672,
+          "y": -11.1951,
+          "z": 14.1699
+        }
+      },
+      {
+        "id": 281,
+        "label": "R_OP1",
+        "position": {
+          "x": 41.9844,
+          "y": -19.7196,
+          "z": 19.1868
+        }
+      },
+      {
+        "id": 282,
+        "label": "R_OP2-3",
+        "position": {
+          "x": 38.6844,
+          "y": -13.5717,
+          "z": 18.4529
+        }
+      },
+      {
+        "id": 283,
+        "label": "R_52",
+        "position": {
+          "x": 38.2373,
+          "y": -20.5939,
+          "z": 2.6576
+        }
+      },
+      {
+        "id": 284,
+        "label": "R_RI",
+        "position": {
+          "x": 41.188,
+          "y": -30.8163,
+          "z": 19.7572
+        }
+      },
+      {
+        "id": 285,
+        "label": "R_PFcm",
+        "position": {
+          "x": 47.0206,
+          "y": -27.7562,
+          "z": 22.8386
+        }
+      },
+      {
+        "id": 286,
+        "label": "R_PoI2",
+        "position": {
+          "x": 41.0401,
+          "y": -1.3234,
+          "z": -0.3265
+        }
+      },
+      {
+        "id": 287,
+        "label": "R_TA2",
+        "position": {
+          "x": 50.6498,
+          "y": 1.1111,
+          "z": -5.5774
+        }
+      },
+      {
+        "id": 288,
+        "label": "R_FOP4",
+        "position": {
+          "x": 38.7014,
+          "y": 15.141,
+          "z": 7.4438
+        }
+      },
+      {
+        "id": 289,
+        "label": "R_MI",
+        "position": {
+          "x": 36.89,
+          "y": 12.3212,
+          "z": 3.0166
+        }
+      },
+      {
+        "id": 290,
+        "label": "R_Pir",
+        "position": {
+          "x": 33.209,
+          "y": 8.5452,
+          "z": -18.3559
+        }
+      },
+      {
+        "id": 291,
+        "label": "R_AVI",
+        "position": {
+          "x": 32.6765,
+          "y": 26.25,
+          "z": -3.3401
+        }
+      },
+      {
+        "id": 292,
+        "label": "R_AAIC",
+        "position": {
+          "x": 35.0712,
+          "y": 16.7672,
+          "z": -10.4889
+        }
+      },
+      {
+        "id": 293,
+        "label": "R_FOP1",
+        "position": {
+          "x": 46.1755,
+          "y": 4.6386,
+          "z": 5.7439
+        }
+      },
+      {
+        "id": 294,
+        "label": "R_FOP3",
+        "position": {
+          "x": 34.706,
+          "y": 8.0125,
+          "z": 12.0931
+        }
+      },
+      {
+        "id": 295,
+        "label": "R_FOP2",
+        "position": {
+          "x": 40.4563,
+          "y": -1.9126,
+          "z": 15.551
+        }
+      },
+      {
+        "id": 296,
+        "label": "R_PFt",
+        "position": {
+          "x": 56.2214,
+          "y": -20.3243,
+          "z": 37.2779
+        }
+      },
+      {
+        "id": 297,
+        "label": "R_AIP",
+        "position": {
+          "x": 38.6782,
+          "y": -38.671,
+          "z": 44.446
+        }
+      },
+      {
+        "id": 298,
+        "label": "R_EC",
+        "position": {
+          "x": 21.9653,
+          "y": -16.3076,
+          "z": -29.7914
+        }
+      },
+      {
+        "id": 299,
+        "label": "R_PreS",
+        "position": {
+          "x": 16.5333,
+          "y": -34.3921,
+          "z": -10.7781
+        }
+      },
+      {
+        "id": 300,
+        "label": "R_H",
+        "position": {
+          "x": 13.2115,
+          "y": -39.1346,
+          "z": -2.0192
+        }
+      },
+      {
+        "id": 301,
+        "label": "R_ProS",
+        "position": {
+          "x": 22.0104,
+          "y": -50.286,
+          "z": 3.0339
+        }
+      },
+      {
+        "id": 302,
+        "label": "R_PeEc",
+        "position": {
+          "x": 30.1558,
+          "y": -9.921,
+          "z": -34.3296
+        }
+      },
+      {
+        "id": 303,
+        "label": "R_STGa",
+        "position": {
+          "x": 50.1622,
+          "y": 15.2004,
+          "z": -19.0317
+        }
+      },
+      {
+        "id": 304,
+        "label": "R_PBelt",
+        "position": {
+          "x": 55.7916,
+          "y": -18.9197,
+          "z": 8.9682
+        }
+      },
+      {
+        "id": 305,
+        "label": "R_A5",
+        "position": {
+          "x": 62.3912,
+          "y": -14.1458,
+          "z": -1.8871
+        }
+      },
+      {
+        "id": 306,
+        "label": "R_PHA1",
+        "position": {
+          "x": 22.3286,
+          "y": -35.8067,
+          "z": -15.3268
+        }
+      },
+      {
+        "id": 307,
+        "label": "R_PHA3",
+        "position": {
+          "x": 33.4733,
+          "y": -37.2925,
+          "z": -14.9007
+        }
+      },
+      {
+        "id": 308,
+        "label": "R_STSda",
+        "position": {
+          "x": 53.1256,
+          "y": -0.6531,
+          "z": -14.8518
+        }
+      },
+      {
+        "id": 309,
+        "label": "R_STSdp",
+        "position": {
+          "x": 49.2487,
+          "y": -27.9362,
+          "z": -1.114
+        }
+      },
+      {
+        "id": 310,
+        "label": "R_STSvp",
+        "position": {
+          "x": 57.3578,
+          "y": -29.7056,
+          "z": -4.1428
+        }
+      },
+      {
+        "id": 311,
+        "label": "R_TGd",
+        "position": {
+          "x": 35.9692,
+          "y": 14.2698,
+          "z": -35.7327
+        }
+      },
+      {
+        "id": 312,
+        "label": "R_TE1a",
+        "position": {
+          "x": 58.8777,
+          "y": -0.5748,
+          "z": -26.1682
+        }
+      },
+      {
+        "id": 313,
+        "label": "R_TE1p",
+        "position": {
+          "x": 61.7643,
+          "y": -42.8111,
+          "z": -12.1323
+        }
+      },
+      {
+        "id": 314,
+        "label": "R_TE2a",
+        "position": {
+          "x": 55.1806,
+          "y": -18.1076,
+          "z": -30.153
+        }
+      },
+      {
+        "id": 315,
+        "label": "R_TF",
+        "position": {
+          "x": 41.3975,
+          "y": -20.0727,
+          "z": -30.0139
+        }
+      },
+      {
+        "id": 316,
+        "label": "R_TE2p",
+        "position": {
+          "x": 48.3043,
+          "y": -37.4086,
+          "z": -21.5332
+        }
+      },
+      {
+        "id": 317,
+        "label": "R_PHT",
+        "position": {
+          "x": 60.3208,
+          "y": -52.8903,
+          "z": -4.623
+        }
+      },
+      {
+        "id": 318,
+        "label": "R_PH",
+        "position": {
+          "x": 47.9129,
+          "y": -62.6316,
+          "z": -9.5152
+        }
+      },
+      {
+        "id": 319,
+        "label": "R_TPOJ1",
+        "position": {
+          "x": 54.4983,
+          "y": -43.9962,
+          "z": 12.3185
+        }
+      },
+      {
+        "id": 320,
+        "label": "R_TPOJ2",
+        "position": {
+          "x": 54.0637,
+          "y": -55.9967,
+          "z": 8.4856
+        }
+      },
+      {
+        "id": 321,
+        "label": "R_TPOJ3",
+        "position": {
+          "x": 46.514,
+          "y": -62.061,
+          "z": 18.2366
+        }
+      },
+      {
+        "id": 322,
+        "label": "R_DVT",
+        "position": {
+          "x": 20.2276,
+          "y": -71.1343,
+          "z": 36.5018
+        }
+      },
+      {
+        "id": 323,
+        "label": "R_PGp",
+        "position": {
+          "x": 44.5853,
+          "y": -77.6875,
+          "z": 25.4817
+        }
+      },
+      {
+        "id": 324,
+        "label": "R_IP2",
+        "position": {
+          "x": 43.2124,
+          "y": -41.7836,
+          "z": 46.2569
+        }
+      },
+      {
+        "id": 325,
+        "label": "R_IP1",
+        "position": {
+          "x": 34.1084,
+          "y": -67.1459,
+          "z": 41.9002
+        }
+      },
+      {
+        "id": 326,
+        "label": "R_IP0",
+        "position": {
+          "x": 34.1304,
+          "y": -74.7003,
+          "z": 27.4938
+        }
+      },
+      {
+        "id": 327,
+        "label": "R_PFop",
+        "position": {
+          "x": 61.991,
+          "y": -19.1475,
+          "z": 23.4041
+        }
+      },
+      {
+        "id": 328,
+        "label": "R_PF",
+        "position": {
+          "x": 60.7622,
+          "y": -28.5703,
+          "z": 37.1253
+        }
+      },
+      {
+        "id": 329,
+        "label": "R_PFm",
+        "position": {
+          "x": 52.6248,
+          "y": -48.012,
+          "z": 46.5486
+        }
+      },
+      {
+        "id": 330,
+        "label": "R_PGi",
+        "position": {
+          "x": 51.1735,
+          "y": -59.6045,
+          "z": 28.7867
+        }
+      },
+      {
+        "id": 331,
+        "label": "R_PGs",
+        "position": {
+          "x": 44.5803,
+          "y": -68.6269,
+          "z": 42.1399
+        }
+      },
+      {
+        "id": 332,
+        "label": "R_V6A",
+        "position": {
+          "x": 24.2369,
+          "y": -84.3861,
+          "z": 43.5123
+        }
+      },
+      {
+        "id": 333,
+        "label": "R_VMV1",
+        "position": {
+          "x": 18.1655,
+          "y": -54.5927,
+          "z": -6.3762
+        }
+      },
+      {
+        "id": 334,
+        "label": "R_VMV3",
+        "position": {
+          "x": 27.4959,
+          "y": -61.1176,
+          "z": -9.4297
+        }
+      },
+      {
+        "id": 335,
+        "label": "R_PHA2",
+        "position": {
+          "x": 31.1381,
+          "y": -35.282,
+          "z": -12.871
+        }
+      },
+      {
+        "id": 336,
+        "label": "R_V4t",
+        "position": {
+          "x": 50.1715,
+          "y": -74.1807,
+          "z": -0.2363
+        }
+      },
+      {
+        "id": 337,
+        "label": "R_FST",
+        "position": {
+          "x": 50.0233,
+          "y": -63.0782,
+          "z": 1.421
+        }
+      },
+      {
+        "id": 338,
+        "label": "R_V3CD",
+        "position": {
+          "x": 37.867,
+          "y": -83.5003,
+          "z": 12.1034
+        }
+      },
+      {
+        "id": 339,
+        "label": "R_LO3",
+        "position": {
+          "x": 43.5272,
+          "y": -74.2936,
+          "z": 13.2493
+        }
+      },
+      {
+        "id": 340,
+        "label": "R_VMV2",
+        "position": {
+          "x": 27.1853,
+          "y": -54.0215,
+          "z": -6.6275
+        }
+      },
+      {
+        "id": 341,
+        "label": "R_31pd",
+        "position": {
+          "x": 11.0481,
+          "y": -52.3633,
+          "z": 35.7534
+        }
+      },
+      {
+        "id": 342,
+        "label": "R_31a",
+        "position": {
+          "x": 6.6786,
+          "y": -41.3916,
+          "z": 42.7462
+        }
+      },
+      {
+        "id": 343,
+        "label": "R_VVC",
+        "position": {
+          "x": 28.9754,
+          "y": -48.2738,
+          "z": -17.6034
+        }
+      },
+      {
+        "id": 344,
+        "label": "R_25",
+        "position": {
+          "x": -0.5,
+          "y": 23.1848,
+          "z": -18.5326
+        }
+      },
+      {
+        "id": 345,
+        "label": "R_s32",
+        "position": {
+          "x": -0.5,
+          "y": 37.8952,
+          "z": -16.0887
+        }
+      },
+      {
+        "id": 346,
+        "label": "R_pOFC",
+        "position": {
+          "x": 13.1506,
+          "y": 15.4519,
+          "z": -19.9167
+        }
+      },
+      {
+        "id": 347,
+        "label": "R_PoI1",
+        "position": {
+          "x": 39.2738,
+          "y": -9.35,
+          "z": -4.6275
+        }
+      },
+      {
+        "id": 348,
+        "label": "R_Ig",
+        "position": {
+          "x": 36.5567,
+          "y": -12.947,
+          "z": 14.1143
+        }
+      },
+      {
+        "id": 349,
+        "label": "R_FOP5",
+        "position": {
+          "x": 36.9903,
+          "y": 27.5504,
+          "z": 4.8314
+        }
+      },
+      {
+        "id": 350,
+        "label": "R_p10p",
+        "position": {
+          "x": 24.2919,
+          "y": 60.9964,
+          "z": 3.7517
+        }
+      },
+      {
+        "id": 351,
+        "label": "R_p47r",
+        "position": {
+          "x": 46.3992,
+          "y": 44.2913,
+          "z": -4.2913
+        }
+      },
+      {
+        "id": 352,
+        "label": "R_TGv",
+        "position": {
+          "x": 35.207,
+          "y": -1.2092,
+          "z": -45.1935
+        }
+      },
+      {
+        "id": 353,
+        "label": "R_MBelt",
+        "position": {
+          "x": 45.4061,
+          "y": -16.026,
+          "z": 4.698
+        }
+      },
+      {
+        "id": 354,
+        "label": "R_LBelt",
+        "position": {
+          "x": 46.7576,
+          "y": -25.1332,
+          "z": 10.7439
+        }
+      },
+      {
+        "id": 355,
+        "label": "R_A4",
+        "position": {
+          "x": 64.4099,
+          "y": -15.491,
+          "z": 6.57
+        }
+      },
+      {
+        "id": 356,
+        "label": "R_STSva",
+        "position": {
+          "x": 54.1492,
+          "y": -8.5735,
+          "z": -16.9097
+        }
+      },
+      {
+        "id": 357,
+        "label": "R_TE1m",
+        "position": {
+          "x": 64.4446,
+          "y": -22.4579,
+          "z": -16.4575
+        }
+      },
+      {
+        "id": 358,
+        "label": "R_PI",
+        "position": {
+          "x": 44.2384,
+          "y": -3.3355,
+          "z": -12.7233
+        }
+      },
+      {
+        "id": 359,
+        "label": "R_a32pr",
+        "position": {
+          "x": 9.498,
+          "y": 28.6079,
+          "z": 30.5014
+        }
+      },
+      {
+        "id": 360,
+        "label": "R_p24",
+        "position": {
+          "x": 4.5403,
+          "y": 37.9601,
+          "z": 15.4066
+        }
+      },
+      {
+        "id": 361,
+        "label": "L_Cerebellum",
+        "position": {
+          "x": -24.4841,
+          "y": -62.9174,
+          "z": -36.8393
+        }
+      },
+      {
+        "id": 362,
+        "label": "L_Thalamus",
+        "position": {
+          "x": -11.4968,
+          "y": -19.2297,
+          "z": 6.6696
+        }
+      },
+      {
+        "id": 363,
+        "label": "L_Caudate",
+        "position": {
+          "x": -12.9359,
+          "y": 9.5888,
+          "z": 9.5779
+        }
+      },
+      {
+        "id": 364,
+        "label": "L_Putamen",
+        "position": {
+          "x": -26.3518,
+          "y": 0.0041,
+          "z": 0.1759
+        }
+      },
+      {
+        "id": 365,
+        "label": "L_Pallidum",
+        "position": {
+          "x": -20.5731,
+          "y": -5.126,
+          "z": -1.1612
+        }
+      },
+      {
+        "id": 366,
+        "label": "L_Hippocampus",
+        "position": {
+          "x": -25.4045,
+          "y": -22.4638,
+          "z": -14.298
+        }
+      },
+      {
+        "id": 367,
+        "label": "L_Amygdala",
+        "position": {
+          "x": -22.9962,
+          "y": -5.0696,
+          "z": -19.6654
+        }
+      },
+      {
+        "id": 368,
+        "label": "L_Accumbens",
+        "position": {
+          "x": -8.5215,
+          "y": 9.994,
+          "z": -8.4476
+        }
+      },
+      {
+        "id": 369,
+        "label": "L_VentralDC",
+        "position": {
+          "x": -10.5311,
+          "y": -15.4878,
+          "z": -10.5673
+        }
+      },
+      {
+        "id": 370,
+        "label": "R_Cerebellum",
+        "position": {
+          "x": -0.5,
+          "y": -55.7269,
+          "z": -48.0246
+        }
+      },
+      {
+        "id": 371,
+        "label": "R_Thalamus",
+        "position": {
+          "x": 11.2509,
+          "y": -17.528,
+          "z": 6.8822
+        }
+      },
+      {
+        "id": 372,
+        "label": "R_Caudate",
+        "position": {
+          "x": 13.0486,
+          "y": 11.0092,
+          "z": 9.6262
+        }
+      },
+      {
+        "id": 373,
+        "label": "R_Putamen",
+        "position": {
+          "x": 26.3425,
+          "y": 2.0114,
+          "z": -0.2748
+        }
+      },
+      {
+        "id": 374,
+        "label": "R_Pallidum",
+        "position": {
+          "x": 21.0138,
+          "y": -3.7858,
+          "z": -1.0325
+        }
+      },
+      {
+        "id": 375,
+        "label": "R_Hippocampus",
+        "position": {
+          "x": 26.0941,
+          "y": -21.3944,
+          "z": -14.0873
+        }
+      },
+      {
+        "id": 376,
+        "label": "R_Amygdala",
+        "position": {
+          "x": 23.24,
+          "y": -3.735,
+          "z": -19.8364
+        }
+      },
+      {
+        "id": 377,
+        "label": "R_Accumbens",
+        "position": {
+          "x": 7.9293,
+          "y": 11.3815,
+          "z": -7.4997
+        }
+      },
+      {
+        "id": 378,
+        "label": "R_VentralDC",
+        "position": {
+          "x": 10.5525,
+          "y": -14.6552,
+          "z": -10.1548
+        }
+      },
+      {
+        "id": 379,
+        "label": "Brain-Stem",
+        "position": {
+          "x": -6.0839,
+          "y": -30.9513,
+          "z": -33.0764
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "hcpmmp1ordered",
+    "atlas.name": "hcpmmp1ordered"
+  },
+  {
+    "label": "DesikanKillianyranked (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 87,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "DesikanKillianyranked",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "dTOR",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx-lh-bankssts",
+        "position": {
+          "x": -53.3976,
+          "y": -45.7942,
+          "z": 8.5151
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx-lh-caudalanteriorcingulate",
+        "position": {
+          "x": -4.9731,
+          "y": 21.236,
+          "z": 27.0319
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx-lh-caudalmiddlefrontal",
+        "position": {
+          "x": -36.744,
+          "y": 11.223,
+          "z": 49.34
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx-lh-cuneus",
+        "position": {
+          "x": -6.8467,
+          "y": -78.2874,
+          "z": 21.7138
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx-lh-entorhinal",
+        "position": {
+          "x": -24.2013,
+          "y": -4.7792,
+          "z": -32.8247
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx-lh-fusiform",
+        "position": {
+          "x": -34.9055,
+          "y": -44.1335,
+          "z": -20.642
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx-lh-inferiorparietal",
+        "position": {
+          "x": -40.6055,
+          "y": -70.5623,
+          "z": 33.0363
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx-lh-inferiortemporal",
+        "position": {
+          "x": -50.5649,
+          "y": -31.5391,
+          "z": -24.8692
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx-lh-isthmuscingulate",
+        "position": {
+          "x": -6.5292,
+          "y": -45.3841,
+          "z": 19.7732
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx-lh-lateraloccipital",
+        "position": {
+          "x": -30.9615,
+          "y": -88.6305,
+          "z": 1.6724
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx-lh-lateralorbitofrontal",
+        "position": {
+          "x": -24.3595,
+          "y": 31.9715,
+          "z": -18.0296
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx-lh-lingual",
+        "position": {
+          "x": -14.1542,
+          "y": -67.35,
+          "z": -4.7485
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx-lh-medialorbitofrontal",
+        "position": {
+          "x": -5.9356,
+          "y": 34.5393,
+          "z": -17.1274
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx-lh-middletemporal",
+        "position": {
+          "x": -57.9583,
+          "y": -21.8374,
+          "z": -14.9323
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx-lh-parahippocampal",
+        "position": {
+          "x": -23.9457,
+          "y": -30.4017,
+          "z": -18.6359
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx-lh-paracentral",
+        "position": {
+          "x": -6.3653,
+          "y": -28.3585,
+          "z": 58.7593
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx-lh-parsopercularis",
+        "position": {
+          "x": -47.7282,
+          "y": 15.5084,
+          "z": 14.4266
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx-lh-parsorbitalis",
+        "position": {
+          "x": -43.2052,
+          "y": 41.3991,
+          "z": -12.9799
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx-lh-parstriangularis",
+        "position": {
+          "x": -47.2455,
+          "y": 31.7149,
+          "z": 3.1207
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx-lh-pericalcarine",
+        "position": {
+          "x": -12.0913,
+          "y": -80.1167,
+          "z": 6.467
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx-lh-postcentral",
+        "position": {
+          "x": -46.6283,
+          "y": -22.267,
+          "z": 44.2489
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx-lh-posteriorcingulate",
+        "position": {
+          "x": -5.3964,
+          "y": -18.0922,
+          "z": 39.0261
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx-lh-precentral",
+        "position": {
+          "x": -43.054,
+          "y": -6.9651,
+          "z": 42.5493
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx-lh-precuneus",
+        "position": {
+          "x": -8.4673,
+          "y": -59.0119,
+          "z": 38.9913
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx-lh-rostralanteriorcingulate",
+        "position": {
+          "x": -4.6127,
+          "y": 36.2858,
+          "z": -0.7904
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx-lh-rostralmiddlefrontal",
+        "position": {
+          "x": -33.5028,
+          "y": 46.3926,
+          "z": 17.8395
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx-lh-superiorfrontal",
+        "position": {
+          "x": -11.2887,
+          "y": 30.4652,
+          "z": 43.9548
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx-lh-superiorparietal",
+        "position": {
+          "x": -23.4716,
+          "y": -64.1303,
+          "z": 51.9987
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx-lh-superiortemporal",
+        "position": {
+          "x": -53.7298,
+          "y": -11.5455,
+          "z": -3.7002
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx-lh-supramarginal",
+        "position": {
+          "x": -55.0221,
+          "y": -39.3578,
+          "z": 35.1147
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx-lh-frontalpole",
+        "position": {
+          "x": -7.6003,
+          "y": 67.4761,
+          "z": -10.2032
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx-lh-temporalpole",
+        "position": {
+          "x": -28.4672,
+          "y": 13.6612,
+          "z": -37.0388
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx-lh-transversetemporal",
+        "position": {
+          "x": -44.8061,
+          "y": -21.555,
+          "z": 9.3891
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx-lh-insula",
+        "position": {
+          "x": -36.0443,
+          "y": 0.8968,
+          "z": -0.4175
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx-rh-bankssts",
+        "position": {
+          "x": 54.3559,
+          "y": -40.3169,
+          "z": 9.9074
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx-rh-caudalanteriorcingulate",
+        "position": {
+          "x": 5.1196,
+          "y": 22.4728,
+          "z": 27.4146
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx-rh-caudalmiddlefrontal",
+        "position": {
+          "x": 36.8488,
+          "y": 14.0197,
+          "z": 49.3889
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx-rh-cuneus",
+        "position": {
+          "x": 8.294,
+          "y": -78.2692,
+          "z": 22.7618
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx-rh-entorhinal",
+        "position": {
+          "x": 23.8225,
+          "y": -4.8235,
+          "z": -33.728
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx-rh-fusiform",
+        "position": {
+          "x": 33.9921,
+          "y": -37.6616,
+          "z": -22.8656
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx-rh-inferiorparietal",
+        "position": {
+          "x": 46.3382,
+          "y": -63.0738,
+          "z": 32.6917
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx-rh-inferiortemporal",
+        "position": {
+          "x": 50.5196,
+          "y": -27.1179,
+          "z": -27.1838
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx-rh-isthmuscingulate",
+        "position": {
+          "x": 7.6885,
+          "y": -43.6831,
+          "z": 20.1113
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx-rh-lateraloccipital",
+        "position": {
+          "x": 35.0922,
+          "y": -83.9116,
+          "z": 0.8458
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx-rh-lateralorbitofrontal",
+        "position": {
+          "x": 23.5878,
+          "y": 32.1558,
+          "z": -18.2904
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx-rh-lingual",
+        "position": {
+          "x": 14.4806,
+          "y": -65.4811,
+          "z": -3.4636
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx-rh-medialorbitofrontal",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx-rh-middletemporal",
+        "position": {
+          "x": 57.9961,
+          "y": -19.825,
+          "z": -15.6952
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx-rh-parahippocampal",
+        "position": {
+          "x": 25.0776,
+          "y": -28.9856,
+          "z": -18.8843
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx-rh-paracentral",
+        "position": {
+          "x": 7.2402,
+          "y": -26.0961,
+          "z": 58.7403
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx-rh-parsopercularis",
+        "position": {
+          "x": 48.4566,
+          "y": 16.0601,
+          "z": 13.3438
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx-rh-parsorbitalis",
+        "position": {
+          "x": 43.1135,
+          "y": 42.5175,
+          "z": -13.3768
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx-rh-parstriangularis",
+        "position": {
+          "x": 49.0725,
+          "y": 32.3705,
+          "z": 4.812
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx-rh-pericalcarine",
+        "position": {
+          "x": 13.2706,
+          "y": -78.056,
+          "z": 8.1234
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx-rh-postcentral",
+        "position": {
+          "x": 47.4325,
+          "y": -18.7825,
+          "z": 43.8269
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx-rh-posteriorcingulate",
+        "position": {
+          "x": 5.8462,
+          "y": -16.4543,
+          "z": 39.1514
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx-rh-precentral",
+        "position": {
+          "x": 44.2892,
+          "y": -4.544,
+          "z": 42.765
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx-rh-precuneus",
+        "position": {
+          "x": 10.295,
+          "y": -57.7096,
+          "z": 38.6811
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx-rh-rostralanteriorcingulate",
+        "position": {
+          "x": 4.9514,
+          "y": 37.2003,
+          "z": 1.941
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx-rh-rostralmiddlefrontal",
+        "position": {
+          "x": 34.4679,
+          "y": 47.876,
+          "z": 16.5323
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx-rh-superiorfrontal",
+        "position": {
+          "x": 11.91,
+          "y": 31.7403,
+          "z": 43.4741
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx-rh-superiorparietal",
+        "position": {
+          "x": 25.1605,
+          "y": -63.0393,
+          "z": 53.2944
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx-rh-superiortemporal",
+        "position": {
+          "x": 54.6697,
+          "y": -6.9466,
+          "z": -5.237
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx-rh-supramarginal",
+        "position": {
+          "x": 55.9183,
+          "y": -30.9668,
+          "z": 35.9768
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx-rh-frontalpole",
+        "position": {
+          "x": 8.368,
+          "y": 67.1573,
+          "z": -13.1551
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx-rh-temporalpole",
+        "position": {
+          "x": 28.2896,
+          "y": 15.05,
+          "z": -35.0567
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx-rh-transversetemporal",
+        "position": {
+          "x": 45.6819,
+          "y": -17.8535,
+          "z": 8.7486
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx-rh-insula",
+        "position": {
+          "x": 34.8554,
+          "y": 3.4149,
+          "z": -2.5363
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "DesikanKillianyranked",
+    "atlas.name": "DesikanKillianyranked"
   },
   {
     "label": "Simple 3-Node Network Example",
@@ -36406,10 +49555,10 @@ window.searchData = [
     "file": "database/networks/example_3node_network.yaml"
   },
   {
-    "label": "virtualdbs (MghUscHcp32)",
-    "number_of_nodes": 370,
-    "number_of_regions": 370,
-    "data_file": "space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32.h5",
+    "label": "DesikanKilliany (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 87,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36427,65 +49576,814 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
     "parcellation.atlas": {
-      "name": "virtualdbs"
+      "name": "DesikanKilliany",
+      "coordinateSpace": "MNI152NLin2009cAsym"
     },
     "tractogram.name": "MghUscHcp32",
-    "space": "MNI152NLin2009c",
-    "name": "virtualdbs (MghUscHcp32)",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx-lh-bankssts",
+        "position": {
+          "x": -53.3976,
+          "y": -45.7942,
+          "z": 8.5151
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx-lh-caudalanteriorcingulate",
+        "position": {
+          "x": -4.9731,
+          "y": 21.236,
+          "z": 27.0319
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx-lh-caudalmiddlefrontal",
+        "position": {
+          "x": -36.744,
+          "y": 11.223,
+          "z": 49.34
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx-lh-cuneus",
+        "position": {
+          "x": -6.8467,
+          "y": -78.2874,
+          "z": 21.7138
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx-lh-entorhinal",
+        "position": {
+          "x": -24.2013,
+          "y": -4.7792,
+          "z": -32.8247
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx-lh-fusiform",
+        "position": {
+          "x": -34.9055,
+          "y": -44.1335,
+          "z": -20.642
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx-lh-inferiorparietal",
+        "position": {
+          "x": -40.6055,
+          "y": -70.5623,
+          "z": 33.0363
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx-lh-inferiortemporal",
+        "position": {
+          "x": -50.5649,
+          "y": -31.5391,
+          "z": -24.8692
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx-lh-isthmuscingulate",
+        "position": {
+          "x": -6.5292,
+          "y": -45.3841,
+          "z": 19.7732
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx-lh-lateraloccipital",
+        "position": {
+          "x": -30.9615,
+          "y": -88.6305,
+          "z": 1.6724
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx-lh-lateralorbitofrontal",
+        "position": {
+          "x": -24.3595,
+          "y": 31.9715,
+          "z": -18.0296
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx-lh-lingual",
+        "position": {
+          "x": -14.1542,
+          "y": -67.35,
+          "z": -4.7485
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx-lh-medialorbitofrontal",
+        "position": {
+          "x": -5.9356,
+          "y": 34.5393,
+          "z": -17.1274
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx-lh-middletemporal",
+        "position": {
+          "x": -57.9583,
+          "y": -21.8374,
+          "z": -14.9323
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx-lh-parahippocampal",
+        "position": {
+          "x": -23.9457,
+          "y": -30.4017,
+          "z": -18.6359
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx-lh-paracentral",
+        "position": {
+          "x": -6.3653,
+          "y": -28.3585,
+          "z": 58.7593
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx-lh-parsopercularis",
+        "position": {
+          "x": -47.7282,
+          "y": 15.5084,
+          "z": 14.4266
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx-lh-parsorbitalis",
+        "position": {
+          "x": -43.2052,
+          "y": 41.3991,
+          "z": -12.9799
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx-lh-parstriangularis",
+        "position": {
+          "x": -47.2455,
+          "y": 31.7149,
+          "z": 3.1207
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx-lh-pericalcarine",
+        "position": {
+          "x": -12.0913,
+          "y": -80.1167,
+          "z": 6.467
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx-lh-postcentral",
+        "position": {
+          "x": -46.6283,
+          "y": -22.267,
+          "z": 44.2489
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx-lh-posteriorcingulate",
+        "position": {
+          "x": -5.3964,
+          "y": -18.0922,
+          "z": 39.0261
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx-lh-precentral",
+        "position": {
+          "x": -43.054,
+          "y": -6.9651,
+          "z": 42.5493
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx-lh-precuneus",
+        "position": {
+          "x": -8.4673,
+          "y": -59.0119,
+          "z": 38.9913
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx-lh-rostralanteriorcingulate",
+        "position": {
+          "x": -4.6127,
+          "y": 36.2858,
+          "z": -0.7904
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx-lh-rostralmiddlefrontal",
+        "position": {
+          "x": -33.5028,
+          "y": 46.3926,
+          "z": 17.8395
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx-lh-superiorfrontal",
+        "position": {
+          "x": -11.2887,
+          "y": 30.4652,
+          "z": 43.9548
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx-lh-superiorparietal",
+        "position": {
+          "x": -23.4716,
+          "y": -64.1303,
+          "z": 51.9987
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx-lh-superiortemporal",
+        "position": {
+          "x": -53.7298,
+          "y": -11.5455,
+          "z": -3.7002
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx-lh-supramarginal",
+        "position": {
+          "x": -55.0221,
+          "y": -39.3578,
+          "z": 35.1147
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx-lh-frontalpole",
+        "position": {
+          "x": -7.6003,
+          "y": 67.4761,
+          "z": -10.2032
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx-lh-temporalpole",
+        "position": {
+          "x": -28.4672,
+          "y": 13.6612,
+          "z": -37.0388
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx-lh-transversetemporal",
+        "position": {
+          "x": -44.8061,
+          "y": -21.555,
+          "z": 9.3891
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx-lh-insula",
+        "position": {
+          "x": -36.0443,
+          "y": 0.8968,
+          "z": -0.4175
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx-rh-bankssts",
+        "position": {
+          "x": 54.3559,
+          "y": -40.3169,
+          "z": 9.9074
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx-rh-caudalanteriorcingulate",
+        "position": {
+          "x": 5.1196,
+          "y": 22.4728,
+          "z": 27.4146
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx-rh-caudalmiddlefrontal",
+        "position": {
+          "x": 36.8488,
+          "y": 14.0197,
+          "z": 49.3889
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx-rh-cuneus",
+        "position": {
+          "x": 8.294,
+          "y": -78.2692,
+          "z": 22.7618
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx-rh-entorhinal",
+        "position": {
+          "x": 23.8225,
+          "y": -4.8235,
+          "z": -33.728
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx-rh-fusiform",
+        "position": {
+          "x": 33.9921,
+          "y": -37.6616,
+          "z": -22.8656
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx-rh-inferiorparietal",
+        "position": {
+          "x": 46.3382,
+          "y": -63.0738,
+          "z": 32.6917
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx-rh-inferiortemporal",
+        "position": {
+          "x": 50.5196,
+          "y": -27.1179,
+          "z": -27.1838
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx-rh-isthmuscingulate",
+        "position": {
+          "x": 7.6885,
+          "y": -43.6831,
+          "z": 20.1113
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx-rh-lateraloccipital",
+        "position": {
+          "x": 35.0922,
+          "y": -83.9116,
+          "z": 0.8458
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx-rh-lateralorbitofrontal",
+        "position": {
+          "x": 23.5878,
+          "y": 32.1558,
+          "z": -18.2904
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx-rh-lingual",
+        "position": {
+          "x": 14.4806,
+          "y": -65.4811,
+          "z": -3.4636
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx-rh-medialorbitofrontal",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx-rh-middletemporal",
+        "position": {
+          "x": 57.9961,
+          "y": -19.825,
+          "z": -15.6952
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx-rh-parahippocampal",
+        "position": {
+          "x": 25.0776,
+          "y": -28.9856,
+          "z": -18.8843
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx-rh-paracentral",
+        "position": {
+          "x": 7.2402,
+          "y": -26.0961,
+          "z": 58.7403
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx-rh-parsopercularis",
+        "position": {
+          "x": 48.4566,
+          "y": 16.0601,
+          "z": 13.3438
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx-rh-parsorbitalis",
+        "position": {
+          "x": 43.1135,
+          "y": 42.5175,
+          "z": -13.3768
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx-rh-parstriangularis",
+        "position": {
+          "x": 49.0725,
+          "y": 32.3705,
+          "z": 4.812
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx-rh-pericalcarine",
+        "position": {
+          "x": 13.2706,
+          "y": -78.056,
+          "z": 8.1234
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx-rh-postcentral",
+        "position": {
+          "x": 47.4325,
+          "y": -18.7825,
+          "z": 43.8269
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx-rh-posteriorcingulate",
+        "position": {
+          "x": 5.8462,
+          "y": -16.4543,
+          "z": 39.1514
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx-rh-precentral",
+        "position": {
+          "x": 44.2892,
+          "y": -4.544,
+          "z": 42.765
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx-rh-precuneus",
+        "position": {
+          "x": 10.295,
+          "y": -57.7096,
+          "z": 38.6811
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx-rh-rostralanteriorcingulate",
+        "position": {
+          "x": 4.9514,
+          "y": 37.2003,
+          "z": 1.941
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx-rh-rostralmiddlefrontal",
+        "position": {
+          "x": 34.4679,
+          "y": 47.876,
+          "z": 16.5323
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx-rh-superiorfrontal",
+        "position": {
+          "x": 11.91,
+          "y": 31.7403,
+          "z": 43.4741
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx-rh-superiorparietal",
+        "position": {
+          "x": 25.1605,
+          "y": -63.0393,
+          "z": 53.2944
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx-rh-superiortemporal",
+        "position": {
+          "x": 54.6697,
+          "y": -6.9466,
+          "z": -5.237
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx-rh-supramarginal",
+        "position": {
+          "x": 55.9183,
+          "y": -30.9668,
+          "z": 35.9768
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx-rh-frontalpole",
+        "position": {
+          "x": 8.368,
+          "y": 67.1573,
+          "z": -13.1551
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx-rh-temporalpole",
+        "position": {
+          "x": 28.2896,
+          "y": 15.05,
+          "z": -35.0567
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx-rh-transversetemporal",
+        "position": {
+          "x": 45.6819,
+          "y": -17.8535,
+          "z": 8.7486
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx-rh-insula",
+        "position": {
+          "x": 34.8554,
+          "y": 3.4149,
+          "z": -2.5363
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_desc-SC_relmat.yaml",
     "desc": {
       "name": "MghUscHcp32"
     },
-    "atlas": "virtualdbs",
-    "atlas.name": "virtualdbs",
-    "n_regions": 370,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-MghUscHcp32.png"
+    "atlas": "DesikanKilliany",
+    "atlas.name": "DesikanKilliany"
   },
   {
-    "label": "hcpmmp1 (PPMI85)",
-    "number_of_nodes": 379,
-    "number_of_regions": 379,
-    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "hcpmmp1"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152NLin2009b",
-    "name": "hcpmmp1 (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "hcpmmp1",
-    "atlas.name": "hcpmmp1",
-    "n_regions": 379,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-PPMI85.png"
-  },
-  {
-    "label": "Destrieux (MghUscHcp32)",
+    "label": "Destrieuxranked (dTOR)",
+    "descriptor": "SC",
     "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32.h5",
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Destrieux_seg-ranked_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36503,27 +50401,1729 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
     "parcellation.atlas": {
-      "name": "Destrieux"
+      "name": "Destrieuxranked",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "dTOR",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx_lh_g_and_s_frontomargin",
+        "position": {
+          "x": -24.0,
+          "y": 61.0717,
+          "z": -8.018
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx_lh_g_and_s_occipital_inf",
+        "position": {
+          "x": -38.2836,
+          "y": -83.0171,
+          "z": -9.6874
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx_lh_g_and_s_paracentral",
+        "position": {
+          "x": -7.2356,
+          "y": -35.3537,
+          "z": 69.4461
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx_lh_g_and_s_subcentral",
+        "position": {
+          "x": -56.3629,
+          "y": -10.6463,
+          "z": 15.3022
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx_lh_g_and_s_transv_frontopol",
+        "position": {
+          "x": -16.0892,
+          "y": 67.463,
+          "z": -2.0906
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx_lh_g_and_s_cingul-ant",
+        "position": {
+          "x": -7.219,
+          "y": 40.905,
+          "z": 7.0314
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx_lh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": -6.6139,
+          "y": 16.9951,
+          "z": 36.9201
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx_lh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": -6.9033,
+          "y": -11.2828,
+          "z": 41.5185
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx_lh_g_cingul-post-dorsal",
+        "position": {
+          "x": -3.03,
+          "y": -38.6929,
+          "z": 32.8713
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx_lh_g_cingul-post-ventral",
+        "position": {
+          "x": -6.7789,
+          "y": -49.4885,
+          "z": 7.9672
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx_lh_g_cuneus",
+        "position": {
+          "x": -4.8326,
+          "y": -80.1757,
+          "z": 23.1777
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx_lh_g_front_inf-opercular",
+        "position": {
+          "x": -50.105,
+          "y": 11.9496,
+          "z": 10.3457
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx_lh_g_front_inf-orbital",
+        "position": {
+          "x": -45.3208,
+          "y": 30.0249,
+          "z": -9.4672
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx_lh_g_front_inf-triangul",
+        "position": {
+          "x": -51.0645,
+          "y": 30.8717,
+          "z": 4.9089
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx_lh_g_front_middle",
+        "position": {
+          "x": -37.4162,
+          "y": 33.9899,
+          "z": 35.5547
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx_lh_g_front_sup",
+        "position": {
+          "x": -8.9765,
+          "y": 29.0693,
+          "z": 46.0935
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx_lh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": -38.1326,
+          "y": -6.1028,
+          "z": -0.4616
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx_lh_g_insular_short",
+        "position": {
+          "x": -37.6087,
+          "y": 10.0331,
+          "z": -3.6818
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx_lh_g_occipital_middle",
+        "position": {
+          "x": -37.9259,
+          "y": -87.5018,
+          "z": 13.1752
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx_lh_g_occipital_sup",
+        "position": {
+          "x": -14.4854,
+          "y": -91.9612,
+          "z": 30.1997
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx_lh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": -35.0602,
+          "y": -54.8076,
+          "z": -18.1465
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx_lh_g_oc-temp_med-lingual",
+        "position": {
+          "x": -10.4458,
+          "y": -71.206,
+          "z": -5.5908
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx_lh_g_oc-temp_med-parahip",
+        "position": {
+          "x": -22.7779,
+          "y": -18.6288,
+          "z": -25.4956
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx_lh_g_orbital",
+        "position": {
+          "x": -30.0351,
+          "y": 37.0414,
+          "z": -18.6018
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx_lh_g_pariet_inf-angular",
+        "position": {
+          "x": -43.3172,
+          "y": -68.6398,
+          "z": 41.3971
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx_lh_g_pariet_inf-supramar",
+        "position": {
+          "x": -58.3486,
+          "y": -36.939,
+          "z": 34.6425
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx_lh_g_parietal_sup",
+        "position": {
+          "x": -25.1312,
+          "y": -61.0393,
+          "z": 60.1347
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx_lh_g_postcentral",
+        "position": {
+          "x": -48.5895,
+          "y": -24.1446,
+          "z": 54.8891
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx_lh_g_precentral",
+        "position": {
+          "x": -46.509,
+          "y": -5.9234,
+          "z": 49.8839
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx_lh_g_precuneus",
+        "position": {
+          "x": -4.7441,
+          "y": -60.1616,
+          "z": 45.9517
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx_lh_g_rectus",
+        "position": {
+          "x": -3.8248,
+          "y": 38.4238,
+          "z": -22.5695
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx_lh_g_subcallosal",
+        "position": {
+          "x": -9.5127,
+          "y": 9.1883,
+          "z": -13.5187
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx_lh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": -48.0589,
+          "y": -17.4559,
+          "z": 8.2527
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx_lh_g_temp_sup-lateral",
+        "position": {
+          "x": -57.4003,
+          "y": -6.3553,
+          "z": -7.2621
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx_lh_g_temp_sup-plan_polar",
+        "position": {
+          "x": -40.3483,
+          "y": 8.1018,
+          "z": -19.141
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx_lh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": -58.0488,
+          "y": -37.1459,
+          "z": 18.2355
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx_lh_g_temporal_inf",
+        "position": {
+          "x": -52.3971,
+          "y": -34.1496,
+          "z": -25.5
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx_lh_g_temporal_middle",
+        "position": {
+          "x": -61.3249,
+          "y": -25.3671,
+          "z": -13.037
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx_lh_lat_fis-ant-horizont",
+        "position": {
+          "x": -42.3913,
+          "y": 32.7663,
+          "z": -2.8207
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx_lh_lat_fis-ant-vertical",
+        "position": {
+          "x": -46.445,
+          "y": 21.3861,
+          "z": 10.3704
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx_lh_lat_fis-post",
+        "position": {
+          "x": -41.2842,
+          "y": -34.15,
+          "z": 21.1458
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx_lh_pole_occipital",
+        "position": {
+          "x": -16.2053,
+          "y": -100.7264,
+          "z": -3.2525
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx_lh_pole_temporal",
+        "position": {
+          "x": -31.7438,
+          "y": 8.3073,
+          "z": -41.267
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx_lh_s_calcarine",
+        "position": {
+          "x": -15.7374,
+          "y": -68.8105,
+          "z": 5.6484
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx_lh_s_central",
+        "position": {
+          "x": -38.5248,
+          "y": -18.3079,
+          "z": 47.443
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx_lh_s_cingul-marginalis",
+        "position": {
+          "x": -12.3835,
+          "y": -38.0053,
+          "z": 50.0885
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx_lh_s_circular_insula_ant",
+        "position": {
+          "x": -30.5666,
+          "y": 21.569,
+          "z": -9.7416
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx_lh_s_circular_insula_inf",
+        "position": {
+          "x": -40.6835,
+          "y": -10.5521,
+          "z": -5.0486
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx_lh_s_circular_insula_sup",
+        "position": {
+          "x": -35.776,
+          "y": 6.3584,
+          "z": 11.8398
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx_lh_s_collat_transv_ant",
+        "position": {
+          "x": -40.9084,
+          "y": -19.3811,
+          "z": -28.3737
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx_lh_s_collat_transv_post",
+        "position": {
+          "x": -23.9819,
+          "y": -82.5479,
+          "z": -7.8354
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx_lh_s_front_inf",
+        "position": {
+          "x": -40.3037,
+          "y": 26.0116,
+          "z": 21.439
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx_lh_s_front_middle",
+        "position": {
+          "x": -27.1817,
+          "y": 47.3083,
+          "z": 19.4748
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx_lh_s_front_sup",
+        "position": {
+          "x": -23.7373,
+          "y": 22.6406,
+          "z": 46.3171
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx_lh_s_interm_prim-jensen",
+        "position": {
+          "x": -51.4334,
+          "y": -54.5265,
+          "z": 37.1475
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx_lh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": -34.9075,
+          "y": -51.414,
+          "z": 44.8004
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx_lh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": -32.1061,
+          "y": -85.948,
+          "z": 8.3716
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx_lh_s_oc_sup_and_transversal",
+        "position": {
+          "x": -26.3851,
+          "y": -82.69,
+          "z": 22.3452
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx_lh_s_occipital_ant",
+        "position": {
+          "x": -40.694,
+          "y": -68.579,
+          "z": 7.7443
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx_lh_s_oc-temp_lat",
+        "position": {
+          "x": -44.0357,
+          "y": -50.7328,
+          "z": -12.9207
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx_lh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": -28.0735,
+          "y": -46.5972,
+          "z": -11.5485
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx_lh_s_orbital_lateral",
+        "position": {
+          "x": -41.4841,
+          "y": 46.4036,
+          "z": -3.4932
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx_lh_s_orbital_med-olfact",
+        "position": {
+          "x": -12.4184,
+          "y": 26.4558,
+          "z": -19.7254
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx_lh_s_orbital-h_shaped",
+        "position": {
+          "x": -24.6261,
+          "y": 39.5289,
+          "z": -16.4209
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx_lh_s_parieto_occipital",
+        "position": {
+          "x": -14.7876,
+          "y": -68.1004,
+          "z": 25.8391
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx_lh_s_pericallosal",
+        "position": {
+          "x": -4.6719,
+          "y": -6.4706,
+          "z": 15.4169
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx_lh_s_postcentral",
+        "position": {
+          "x": -41.5756,
+          "y": -32.0865,
+          "z": 46.892
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx_lh_s_precentral-inf-part",
+        "position": {
+          "x": -44.5555,
+          "y": 4.4786,
+          "z": 31.2218
+        }
+      },
+      {
+        "id": 88,
+        "label": "ctx_lh_s_precentral-sup-part",
+        "position": {
+          "x": -29.0827,
+          "y": -9.2953,
+          "z": 56.1585
+        }
+      },
+      {
+        "id": 89,
+        "label": "ctx_lh_s_suborbital",
+        "position": {
+          "x": -6.9466,
+          "y": 43.4199,
+          "z": -13.0309
+        }
+      },
+      {
+        "id": 90,
+        "label": "ctx_lh_s_subparietal",
+        "position": {
+          "x": -9.7122,
+          "y": -48.6867,
+          "z": 38.7621
+        }
+      },
+      {
+        "id": 91,
+        "label": "ctx_lh_s_temporal_inf",
+        "position": {
+          "x": -53.7095,
+          "y": -13.637,
+          "z": -27.2072
+        }
+      },
+      {
+        "id": 92,
+        "label": "ctx_lh_s_temporal_sup",
+        "position": {
+          "x": -50.4691,
+          "y": -41.0099,
+          "z": 7.1445
+        }
+      },
+      {
+        "id": 93,
+        "label": "ctx_lh_s_temporal_transverse",
+        "position": {
+          "x": -51.7371,
+          "y": -22.4901,
+          "z": 6.1295
+        }
+      },
+      {
+        "id": 94,
+        "label": "ctx_rh_g_and_s_frontomargin",
+        "position": {
+          "x": 22.2577,
+          "y": 62.2808,
+          "z": -10.9596
+        }
+      },
+      {
+        "id": 95,
+        "label": "ctx_rh_g_and_s_occipital_inf",
+        "position": {
+          "x": 42.5309,
+          "y": -75.9362,
+          "z": -11.0983
+        }
+      },
+      {
+        "id": 96,
+        "label": "ctx_rh_g_and_s_paracentral",
+        "position": {
+          "x": 6.7722,
+          "y": -33.822,
+          "z": 69.3321
+        }
+      },
+      {
+        "id": 97,
+        "label": "ctx_rh_g_and_s_subcentral",
+        "position": {
+          "x": 56.6981,
+          "y": -7.5802,
+          "z": 15.2277
+        }
+      },
+      {
+        "id": 98,
+        "label": "ctx_rh_g_and_s_transv_frontopol",
+        "position": {
+          "x": 16.8463,
+          "y": 67.8866,
+          "z": 1.6446
+        }
+      },
+      {
+        "id": 99,
+        "label": "ctx_rh_g_and_s_cingul-ant",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 100,
+        "label": "ctx_rh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": 7.0708,
+          "y": 16.5535,
+          "z": 36.486
+        }
+      },
+      {
+        "id": 101,
+        "label": "ctx_rh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": 7.3054,
+          "y": -8.7592,
+          "z": 43.9232
+        }
+      },
+      {
+        "id": 102,
+        "label": "ctx_rh_g_cingul-post-dorsal",
+        "position": {
+          "x": 3.6303,
+          "y": -36.3968,
+          "z": 33.9612
+        }
+      },
+      {
+        "id": 103,
+        "label": "ctx_rh_g_cingul-post-ventral",
+        "position": {
+          "x": 7.92,
+          "y": -48.5479,
+          "z": 8.5795
+        }
+      },
+      {
+        "id": 104,
+        "label": "ctx_rh_g_cuneus",
+        "position": {
+          "x": 6.4586,
+          "y": -78.9207,
+          "z": 22.2696
+        }
+      },
+      {
+        "id": 105,
+        "label": "ctx_rh_g_front_inf-opercular",
+        "position": {
+          "x": 51.5669,
+          "y": 13.9053,
+          "z": 9.5014
+        }
+      },
+      {
+        "id": 106,
+        "label": "ctx_rh_g_front_inf-orbital",
+        "position": {
+          "x": 49.4969,
+          "y": 35.0579,
+          "z": -8.7516
+        }
+      },
+      {
+        "id": 107,
+        "label": "ctx_rh_g_front_inf-triangul",
+        "position": {
+          "x": 52.8144,
+          "y": 33.1095,
+          "z": 6.7407
+        }
+      },
+      {
+        "id": 108,
+        "label": "ctx_rh_g_front_middle",
+        "position": {
+          "x": 38.7159,
+          "y": 34.5516,
+          "z": 35.148
+        }
+      },
+      {
+        "id": 109,
+        "label": "ctx_rh_g_front_sup",
+        "position": {
+          "x": 9.7085,
+          "y": 29.6224,
+          "z": 47.3579
+        }
+      },
+      {
+        "id": 110,
+        "label": "ctx_rh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": 40.2448,
+          "y": -2.6863,
+          "z": -2.3974
+        }
+      },
+      {
+        "id": 111,
+        "label": "ctx_rh_g_insular_short",
+        "position": {
+          "x": 38.1091,
+          "y": 12.0044,
+          "z": -4.2694
+        }
+      },
+      {
+        "id": 112,
+        "label": "ctx_rh_g_occipital_middle",
+        "position": {
+          "x": 44.4103,
+          "y": -79.0762,
+          "z": 16.2817
+        }
+      },
+      {
+        "id": 113,
+        "label": "ctx_rh_g_occipital_sup",
+        "position": {
+          "x": 21.0472,
+          "y": -88.7719,
+          "z": 33.7281
+        }
+      },
+      {
+        "id": 114,
+        "label": "ctx_rh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": 34.514,
+          "y": -46.9914,
+          "z": -20.5891
+        }
+      },
+      {
+        "id": 115,
+        "label": "ctx_rh_g_oc-temp_med-lingual",
+        "position": {
+          "x": 10.6606,
+          "y": -66.325,
+          "z": -3.0172
+        }
+      },
+      {
+        "id": 116,
+        "label": "ctx_rh_g_oc-temp_med-parahip",
+        "position": {
+          "x": 24.0181,
+          "y": -13.5509,
+          "z": -27.867
+        }
+      },
+      {
+        "id": 117,
+        "label": "ctx_rh_g_orbital",
+        "position": {
+          "x": 29.2894,
+          "y": 36.5417,
+          "z": -18.3141
+        }
+      },
+      {
+        "id": 118,
+        "label": "ctx_rh_g_pariet_inf-angular",
+        "position": {
+          "x": 48.1448,
+          "y": -60.7703,
+          "z": 43.0383
+        }
+      },
+      {
+        "id": 119,
+        "label": "ctx_rh_g_pariet_inf-supramar",
+        "position": {
+          "x": 59.9047,
+          "y": -29.7624,
+          "z": 37.295
+        }
+      },
+      {
+        "id": 120,
+        "label": "ctx_rh_g_parietal_sup",
+        "position": {
+          "x": 25.6607,
+          "y": -59.5495,
+          "z": 62.988
+        }
+      },
+      {
+        "id": 121,
+        "label": "ctx_rh_g_postcentral",
+        "position": {
+          "x": 50.0604,
+          "y": -19.9696,
+          "z": 53.9498
+        }
+      },
+      {
+        "id": 122,
+        "label": "ctx_rh_g_precentral",
+        "position": {
+          "x": 47.2617,
+          "y": -4.1329,
+          "z": 49.8164
+        }
+      },
+      {
+        "id": 123,
+        "label": "ctx_rh_g_precuneus",
+        "position": {
+          "x": 5.3165,
+          "y": -59.5503,
+          "z": 46.5569
+        }
+      },
+      {
+        "id": 124,
+        "label": "ctx_rh_g_rectus",
+        "position": {
+          "x": 3.5741,
+          "y": 39.4113,
+          "z": -23.4651
+        }
+      },
+      {
+        "id": 125,
+        "label": "ctx_rh_g_subcallosal",
+        "position": {
+          "x": 4.4077,
+          "y": 13.1095,
+          "z": -11.5686
+        }
+      },
+      {
+        "id": 126,
+        "label": "ctx_rh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": 49.262,
+          "y": -12.6511,
+          "z": 6.6042
+        }
+      },
+      {
+        "id": 127,
+        "label": "ctx_rh_g_temp_sup-lateral",
+        "position": {
+          "x": 59.1945,
+          "y": -4.5715,
+          "z": -6.2145
+        }
+      },
+      {
+        "id": 128,
+        "label": "ctx_rh_g_temp_sup-plan_polar",
+        "position": {
+          "x": 39.3637,
+          "y": 10.4394,
+          "z": -19.4632
+        }
+      },
+      {
+        "id": 129,
+        "label": "ctx_rh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": 60.8687,
+          "y": -28.0353,
+          "z": 19.5365
+        }
+      },
+      {
+        "id": 130,
+        "label": "ctx_rh_g_temporal_inf",
+        "position": {
+          "x": 54.1066,
+          "y": -30.3604,
+          "z": -27.28
+        }
+      },
+      {
+        "id": 131,
+        "label": "ctx_rh_g_temporal_middle",
+        "position": {
+          "x": 61.7879,
+          "y": -23.5953,
+          "z": -12.5268
+        }
+      },
+      {
+        "id": 132,
+        "label": "ctx_rh_lat_fis-ant-horizont",
+        "position": {
+          "x": 42.0326,
+          "y": 29.2974,
+          "z": 0.0054
+        }
+      },
+      {
+        "id": 133,
+        "label": "ctx_rh_lat_fis-ant-vertical",
+        "position": {
+          "x": 49.276,
+          "y": 23.5427,
+          "z": 10.1533
+        }
+      },
+      {
+        "id": 134,
+        "label": "ctx_rh_lat_fis-post",
+        "position": {
+          "x": 41.0928,
+          "y": -25.633,
+          "z": 20.0004
+        }
+      },
+      {
+        "id": 135,
+        "label": "ctx_rh_pole_occipital",
+        "position": {
+          "x": 20.8655,
+          "y": -95.6293,
+          "z": -1.6295
+        }
+      },
+      {
+        "id": 136,
+        "label": "ctx_rh_pole_temporal",
+        "position": {
+          "x": 31.8922,
+          "y": 10.5642,
+          "z": -41.3543
+        }
+      },
+      {
+        "id": 137,
+        "label": "ctx_rh_s_calcarine",
+        "position": {
+          "x": 18.1099,
+          "y": -63.0424,
+          "z": 7.2867
+        }
+      },
+      {
+        "id": 138,
+        "label": "ctx_rh_s_central",
+        "position": {
+          "x": 39.7119,
+          "y": -15.6691,
+          "z": 46.7884
+        }
+      },
+      {
+        "id": 139,
+        "label": "ctx_rh_s_cingul-marginalis",
+        "position": {
+          "x": 12.5432,
+          "y": -36.8154,
+          "z": 51.2974
+        }
+      },
+      {
+        "id": 140,
+        "label": "ctx_rh_s_circular_insula_ant",
+        "position": {
+          "x": 31.3719,
+          "y": 23.9157,
+          "z": -8.5989
+        }
+      },
+      {
+        "id": 141,
+        "label": "ctx_rh_s_circular_insula_inf",
+        "position": {
+          "x": 42.9132,
+          "y": -7.3267,
+          "z": -6.4154
+        }
+      },
+      {
+        "id": 142,
+        "label": "ctx_rh_s_circular_insula_sup",
+        "position": {
+          "x": 37.0455,
+          "y": 9.8494,
+          "z": 9.8043
+        }
+      },
+      {
+        "id": 143,
+        "label": "ctx_rh_s_collat_transv_ant",
+        "position": {
+          "x": 41.6575,
+          "y": -17.6448,
+          "z": -28.9297
+        }
+      },
+      {
+        "id": 144,
+        "label": "ctx_rh_s_collat_transv_post",
+        "position": {
+          "x": 26.2846,
+          "y": -78.1792,
+          "z": -7.5346
+        }
+      },
+      {
+        "id": 145,
+        "label": "ctx_rh_s_front_inf",
+        "position": {
+          "x": 40.3424,
+          "y": 27.3534,
+          "z": 23.1634
+        }
+      },
+      {
+        "id": 146,
+        "label": "ctx_rh_s_front_middle",
+        "position": {
+          "x": 30.3692,
+          "y": 46.1326,
+          "z": 20.7821
+        }
+      },
+      {
+        "id": 147,
+        "label": "ctx_rh_s_front_sup",
+        "position": {
+          "x": 23.7666,
+          "y": 24.5791,
+          "z": 46.0738
+        }
+      },
+      {
+        "id": 148,
+        "label": "ctx_rh_s_interm_prim-jensen",
+        "position": {
+          "x": 53.7937,
+          "y": -41.9432,
+          "z": 39.6779
+        }
+      },
+      {
+        "id": 149,
+        "label": "ctx_rh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": 33.6163,
+          "y": -50.9082,
+          "z": 48.6832
+        }
+      },
+      {
+        "id": 150,
+        "label": "ctx_rh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": 36.9766,
+          "y": -79.5268,
+          "z": 8.9653
+        }
+      },
+      {
+        "id": 151,
+        "label": "ctx_rh_s_oc_sup_and_transversal",
+        "position": {
+          "x": 30.6016,
+          "y": -78.1289,
+          "z": 24.247
+        }
+      },
+      {
+        "id": 152,
+        "label": "ctx_rh_s_occipital_ant",
+        "position": {
+          "x": 47.6465,
+          "y": -63.6936,
+          "z": 5.1335
+        }
+      },
+      {
+        "id": 153,
+        "label": "ctx_rh_s_oc-temp_lat",
+        "position": {
+          "x": 45.5915,
+          "y": -46.1461,
+          "z": -15.3462
+        }
+      },
+      {
+        "id": 154,
+        "label": "ctx_rh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": 28.5243,
+          "y": -45.6739,
+          "z": -11.7078
+        }
+      },
+      {
+        "id": 155,
+        "label": "ctx_rh_s_orbital_lateral",
+        "position": {
+          "x": 42.425,
+          "y": 44.91,
+          "z": -2.1147
+        }
+      },
+      {
+        "id": 156,
+        "label": "ctx_rh_s_orbital_med-olfact",
+        "position": {
+          "x": 11.9521,
+          "y": 26.9754,
+          "z": -19.2287
+        }
+      },
+      {
+        "id": 157,
+        "label": "ctx_rh_s_orbital-h_shaped",
+        "position": {
+          "x": 25.3021,
+          "y": 40.7269,
+          "z": -16.2795
+        }
+      },
+      {
+        "id": 158,
+        "label": "ctx_rh_s_parieto_occipital",
+        "position": {
+          "x": 17.9312,
+          "y": -66.3152,
+          "z": 28.4718
+        }
+      },
+      {
+        "id": 159,
+        "label": "ctx_rh_s_pericallosal",
+        "position": {
+          "x": 5.8165,
+          "y": -2.6584,
+          "z": 18.2367
+        }
+      },
+      {
+        "id": 160,
+        "label": "ctx_rh_s_postcentral",
+        "position": {
+          "x": 40.1527,
+          "y": -29.5508,
+          "z": 48.8675
+        }
+      },
+      {
+        "id": 161,
+        "label": "ctx_rh_s_precentral-inf-part",
+        "position": {
+          "x": 44.843,
+          "y": 7.2932,
+          "z": 31.5875
+        }
+      },
+      {
+        "id": 162,
+        "label": "ctx_rh_s_precentral-sup-part",
+        "position": {
+          "x": 29.9073,
+          "y": -7.5881,
+          "z": 57.3501
+        }
+      },
+      {
+        "id": 163,
+        "label": "ctx_rh_s_suborbital",
+        "position": {
+          "x": 4.7283,
+          "y": 41.9289,
+          "z": -16.9112
+        }
+      },
+      {
+        "id": 164,
+        "label": "ctx_rh_s_subparietal",
+        "position": {
+          "x": 9.8259,
+          "y": -48.1836,
+          "z": 38.7466
+        }
+      },
+      {
+        "id": 165,
+        "label": "ctx_rh_s_temporal_inf",
+        "position": {
+          "x": 52.7454,
+          "y": -13.5317,
+          "z": -26.3953
+        }
+      },
+      {
+        "id": 166,
+        "label": "ctx_rh_s_temporal_sup",
+        "position": {
+          "x": 53.2414,
+          "y": -30.4284,
+          "z": 4.9165
+        }
+      },
+      {
+        "id": 167,
+        "label": "ctx_rh_s_temporal_transverse",
+        "position": {
+          "x": 53.2088,
+          "y": -17.5966,
+          "z": 7.2557
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Destrieux_seg-ranked_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "Destrieuxranked",
+    "atlas.name": "Destrieuxranked"
+  },
+  {
+    "label": "Yeo17 (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 17,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Yeo17_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "Yeo17",
+      "coordinateSpace": "MNI152"
     },
     "tractogram.name": "MghUscHcp32",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieux (MghUscHcp32)",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "1",
+        "position": {
+          "x": -28.1814,
+          "y": -82.261,
+          "z": -1.8011
+        }
+      },
+      {
+        "id": 2,
+        "label": "2",
+        "position": {
+          "x": -11.7843,
+          "y": -70.4562,
+          "z": 10.6088
+        }
+      },
+      {
+        "id": 3,
+        "label": "3",
+        "position": {
+          "x": -21.5086,
+          "y": -25.4171,
+          "z": 61.0289
+        }
+      },
+      {
+        "id": 4,
+        "label": "4",
+        "position": {
+          "x": -50.9723,
+          "y": -15.5061,
+          "z": 15.8259
+        }
+      },
+      {
+        "id": 5,
+        "label": "5",
+        "position": {
+          "x": -35.9277,
+          "y": -64.0721,
+          "z": 15.3916
+        }
+      },
+      {
+        "id": 6,
+        "label": "6",
+        "position": {
+          "x": -34.984,
+          "y": -41.0618,
+          "z": 52.9398
+        }
+      },
+      {
+        "id": 7,
+        "label": "7",
+        "position": {
+          "x": -42.4291,
+          "y": 1.4167,
+          "z": 1.6973
+        }
+      },
+      {
+        "id": 8,
+        "label": "8",
+        "position": {
+          "x": -31.6194,
+          "y": 43.2796,
+          "z": 27.2684
+        }
+      },
+      {
+        "id": 9,
+        "label": "9",
+        "position": {
+          "x": -36.0099,
+          "y": -4.2135,
+          "z": -33.6964
+        }
+      },
+      {
+        "id": 10,
+        "label": "10",
+        "position": {
+          "x": -13.5827,
+          "y": 39.0201,
+          "z": -17.8346
+        }
+      },
+      {
+        "id": 11,
+        "label": "11",
+        "position": {
+          "x": -6.5844,
+          "y": -61.7441,
+          "z": 44.312
+        }
+      },
+      {
+        "id": 12,
+        "label": "12",
+        "position": {
+          "x": -42.9896,
+          "y": 21.7503,
+          "z": 22.4576
+        }
+      },
+      {
+        "id": 13,
+        "label": "13",
+        "position": {
+          "x": -33.811,
+          "y": 53.9538,
+          "z": -2.4838
+        }
+      },
+      {
+        "id": 14,
+        "label": "14",
+        "position": {
+          "x": -56.7354,
+          "y": -30.9535,
+          "z": 4.3668
+        }
+      },
+      {
+        "id": 15,
+        "label": "15",
+        "position": {
+          "x": -25.948,
+          "y": -31.4755,
+          "z": -18.8827
+        }
+      },
+      {
+        "id": 16,
+        "label": "16",
+        "position": {
+          "x": -8.3339,
+          "y": 50.5137,
+          "z": 6.4307
+        }
+      },
+      {
+        "id": 17,
+        "label": "17",
+        "position": {
+          "x": -56.0317,
+          "y": -12.537,
+          "z": -18.7785
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Yeo17_desc-SC_relmat.yaml",
     "desc": {
       "name": "MghUscHcp32"
     },
-    "atlas": "Destrieux",
-    "atlas.name": "Destrieux",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-MghUscHcp32.png"
+    "atlas": "Yeo17",
+    "atlas.name": "Yeo17"
   },
   {
     "label": "Destrieuxranked (MghUscHcp32)",
+    "descriptor": "SC",
     "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32.h5",
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Destrieux_seg-ranked_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36541,65 +52141,1534 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
     "parcellation.atlas": {
-      "name": "Destrieuxranked"
+      "name": "Destrieuxranked",
+      "coordinateSpace": "MNI152NLin2009cAsym"
     },
     "tractogram.name": "MghUscHcp32",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieuxranked (MghUscHcp32)",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx_lh_g_and_s_frontomargin",
+        "position": {
+          "x": -24.0,
+          "y": 61.0717,
+          "z": -8.018
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx_lh_g_and_s_occipital_inf",
+        "position": {
+          "x": -38.2836,
+          "y": -83.0171,
+          "z": -9.6874
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx_lh_g_and_s_paracentral",
+        "position": {
+          "x": -7.2356,
+          "y": -35.3537,
+          "z": 69.4461
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx_lh_g_and_s_subcentral",
+        "position": {
+          "x": -56.3629,
+          "y": -10.6463,
+          "z": 15.3022
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx_lh_g_and_s_transv_frontopol",
+        "position": {
+          "x": -16.0892,
+          "y": 67.463,
+          "z": -2.0906
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx_lh_g_and_s_cingul-ant",
+        "position": {
+          "x": -7.219,
+          "y": 40.905,
+          "z": 7.0314
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx_lh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": -6.6139,
+          "y": 16.9951,
+          "z": 36.9201
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx_lh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": -6.9033,
+          "y": -11.2828,
+          "z": 41.5185
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx_lh_g_cingul-post-dorsal",
+        "position": {
+          "x": -3.03,
+          "y": -38.6929,
+          "z": 32.8713
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx_lh_g_cingul-post-ventral",
+        "position": {
+          "x": -6.7789,
+          "y": -49.4885,
+          "z": 7.9672
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx_lh_g_cuneus",
+        "position": {
+          "x": -4.8326,
+          "y": -80.1757,
+          "z": 23.1777
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx_lh_g_front_inf-opercular",
+        "position": {
+          "x": -50.105,
+          "y": 11.9496,
+          "z": 10.3457
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx_lh_g_front_inf-orbital",
+        "position": {
+          "x": -45.3208,
+          "y": 30.0249,
+          "z": -9.4672
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx_lh_g_front_inf-triangul",
+        "position": {
+          "x": -51.0645,
+          "y": 30.8717,
+          "z": 4.9089
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx_lh_g_front_middle",
+        "position": {
+          "x": -37.4162,
+          "y": 33.9899,
+          "z": 35.5547
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx_lh_g_front_sup",
+        "position": {
+          "x": -8.9765,
+          "y": 29.0693,
+          "z": 46.0935
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx_lh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": -38.1326,
+          "y": -6.1028,
+          "z": -0.4616
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx_lh_g_insular_short",
+        "position": {
+          "x": -37.6087,
+          "y": 10.0331,
+          "z": -3.6818
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx_lh_g_occipital_middle",
+        "position": {
+          "x": -37.9259,
+          "y": -87.5018,
+          "z": 13.1752
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx_lh_g_occipital_sup",
+        "position": {
+          "x": -14.4854,
+          "y": -91.9612,
+          "z": 30.1997
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx_lh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": -35.0602,
+          "y": -54.8076,
+          "z": -18.1465
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx_lh_g_oc-temp_med-lingual",
+        "position": {
+          "x": -10.4458,
+          "y": -71.206,
+          "z": -5.5908
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx_lh_g_oc-temp_med-parahip",
+        "position": {
+          "x": -22.7779,
+          "y": -18.6288,
+          "z": -25.4956
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx_lh_g_orbital",
+        "position": {
+          "x": -30.0351,
+          "y": 37.0414,
+          "z": -18.6018
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx_lh_g_pariet_inf-angular",
+        "position": {
+          "x": -43.3172,
+          "y": -68.6398,
+          "z": 41.3971
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx_lh_g_pariet_inf-supramar",
+        "position": {
+          "x": -58.3486,
+          "y": -36.939,
+          "z": 34.6425
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx_lh_g_parietal_sup",
+        "position": {
+          "x": -25.1312,
+          "y": -61.0393,
+          "z": 60.1347
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx_lh_g_postcentral",
+        "position": {
+          "x": -48.5895,
+          "y": -24.1446,
+          "z": 54.8891
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx_lh_g_precentral",
+        "position": {
+          "x": -46.509,
+          "y": -5.9234,
+          "z": 49.8839
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx_lh_g_precuneus",
+        "position": {
+          "x": -4.7441,
+          "y": -60.1616,
+          "z": 45.9517
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx_lh_g_rectus",
+        "position": {
+          "x": -3.8248,
+          "y": 38.4238,
+          "z": -22.5695
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx_lh_g_subcallosal",
+        "position": {
+          "x": -9.5127,
+          "y": 9.1883,
+          "z": -13.5187
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx_lh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": -48.0589,
+          "y": -17.4559,
+          "z": 8.2527
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx_lh_g_temp_sup-lateral",
+        "position": {
+          "x": -57.4003,
+          "y": -6.3553,
+          "z": -7.2621
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx_lh_g_temp_sup-plan_polar",
+        "position": {
+          "x": -40.3483,
+          "y": 8.1018,
+          "z": -19.141
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx_lh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": -58.0488,
+          "y": -37.1459,
+          "z": 18.2355
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx_lh_g_temporal_inf",
+        "position": {
+          "x": -52.3971,
+          "y": -34.1496,
+          "z": -25.5
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx_lh_g_temporal_middle",
+        "position": {
+          "x": -61.3249,
+          "y": -25.3671,
+          "z": -13.037
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx_lh_lat_fis-ant-horizont",
+        "position": {
+          "x": -42.3913,
+          "y": 32.7663,
+          "z": -2.8207
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx_lh_lat_fis-ant-vertical",
+        "position": {
+          "x": -46.445,
+          "y": 21.3861,
+          "z": 10.3704
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx_lh_lat_fis-post",
+        "position": {
+          "x": -41.2842,
+          "y": -34.15,
+          "z": 21.1458
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx_lh_pole_occipital",
+        "position": {
+          "x": -16.2053,
+          "y": -100.7264,
+          "z": -3.2525
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx_lh_pole_temporal",
+        "position": {
+          "x": -31.7438,
+          "y": 8.3073,
+          "z": -41.267
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx_lh_s_calcarine",
+        "position": {
+          "x": -15.7374,
+          "y": -68.8105,
+          "z": 5.6484
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx_lh_s_central",
+        "position": {
+          "x": -38.5248,
+          "y": -18.3079,
+          "z": 47.443
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx_lh_s_cingul-marginalis",
+        "position": {
+          "x": -12.3835,
+          "y": -38.0053,
+          "z": 50.0885
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx_lh_s_circular_insula_ant",
+        "position": {
+          "x": -30.5666,
+          "y": 21.569,
+          "z": -9.7416
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx_lh_s_circular_insula_inf",
+        "position": {
+          "x": -40.6835,
+          "y": -10.5521,
+          "z": -5.0486
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx_lh_s_circular_insula_sup",
+        "position": {
+          "x": -35.776,
+          "y": 6.3584,
+          "z": 11.8398
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx_lh_s_collat_transv_ant",
+        "position": {
+          "x": -40.9084,
+          "y": -19.3811,
+          "z": -28.3737
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx_lh_s_collat_transv_post",
+        "position": {
+          "x": -23.9819,
+          "y": -82.5479,
+          "z": -7.8354
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx_lh_s_front_inf",
+        "position": {
+          "x": -40.3037,
+          "y": 26.0116,
+          "z": 21.439
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx_lh_s_front_middle",
+        "position": {
+          "x": -27.1817,
+          "y": 47.3083,
+          "z": 19.4748
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx_lh_s_front_sup",
+        "position": {
+          "x": -23.7373,
+          "y": 22.6406,
+          "z": 46.3171
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx_lh_s_interm_prim-jensen",
+        "position": {
+          "x": -51.4334,
+          "y": -54.5265,
+          "z": 37.1475
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx_lh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": -34.9075,
+          "y": -51.414,
+          "z": 44.8004
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx_lh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": -32.1061,
+          "y": -85.948,
+          "z": 8.3716
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx_lh_s_oc_sup_and_transversal",
+        "position": {
+          "x": -26.3851,
+          "y": -82.69,
+          "z": 22.3452
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx_lh_s_occipital_ant",
+        "position": {
+          "x": -40.694,
+          "y": -68.579,
+          "z": 7.7443
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx_lh_s_oc-temp_lat",
+        "position": {
+          "x": -44.0357,
+          "y": -50.7328,
+          "z": -12.9207
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx_lh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": -28.0735,
+          "y": -46.5972,
+          "z": -11.5485
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx_lh_s_orbital_lateral",
+        "position": {
+          "x": -41.4841,
+          "y": 46.4036,
+          "z": -3.4932
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx_lh_s_orbital_med-olfact",
+        "position": {
+          "x": -12.4184,
+          "y": 26.4558,
+          "z": -19.7254
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx_lh_s_orbital-h_shaped",
+        "position": {
+          "x": -24.6261,
+          "y": 39.5289,
+          "z": -16.4209
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx_lh_s_parieto_occipital",
+        "position": {
+          "x": -14.7876,
+          "y": -68.1004,
+          "z": 25.8391
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx_lh_s_pericallosal",
+        "position": {
+          "x": -4.6719,
+          "y": -6.4706,
+          "z": 15.4169
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx_lh_s_postcentral",
+        "position": {
+          "x": -41.5756,
+          "y": -32.0865,
+          "z": 46.892
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx_lh_s_precentral-inf-part",
+        "position": {
+          "x": -44.5555,
+          "y": 4.4786,
+          "z": 31.2218
+        }
+      },
+      {
+        "id": 88,
+        "label": "ctx_lh_s_precentral-sup-part",
+        "position": {
+          "x": -29.0827,
+          "y": -9.2953,
+          "z": 56.1585
+        }
+      },
+      {
+        "id": 89,
+        "label": "ctx_lh_s_suborbital",
+        "position": {
+          "x": -6.9466,
+          "y": 43.4199,
+          "z": -13.0309
+        }
+      },
+      {
+        "id": 90,
+        "label": "ctx_lh_s_subparietal",
+        "position": {
+          "x": -9.7122,
+          "y": -48.6867,
+          "z": 38.7621
+        }
+      },
+      {
+        "id": 91,
+        "label": "ctx_lh_s_temporal_inf",
+        "position": {
+          "x": -53.7095,
+          "y": -13.637,
+          "z": -27.2072
+        }
+      },
+      {
+        "id": 92,
+        "label": "ctx_lh_s_temporal_sup",
+        "position": {
+          "x": -50.4691,
+          "y": -41.0099,
+          "z": 7.1445
+        }
+      },
+      {
+        "id": 93,
+        "label": "ctx_lh_s_temporal_transverse",
+        "position": {
+          "x": -51.7371,
+          "y": -22.4901,
+          "z": 6.1295
+        }
+      },
+      {
+        "id": 94,
+        "label": "ctx_rh_g_and_s_frontomargin",
+        "position": {
+          "x": 22.2577,
+          "y": 62.2808,
+          "z": -10.9596
+        }
+      },
+      {
+        "id": 95,
+        "label": "ctx_rh_g_and_s_occipital_inf",
+        "position": {
+          "x": 42.5309,
+          "y": -75.9362,
+          "z": -11.0983
+        }
+      },
+      {
+        "id": 96,
+        "label": "ctx_rh_g_and_s_paracentral",
+        "position": {
+          "x": 6.7722,
+          "y": -33.822,
+          "z": 69.3321
+        }
+      },
+      {
+        "id": 97,
+        "label": "ctx_rh_g_and_s_subcentral",
+        "position": {
+          "x": 56.6981,
+          "y": -7.5802,
+          "z": 15.2277
+        }
+      },
+      {
+        "id": 98,
+        "label": "ctx_rh_g_and_s_transv_frontopol",
+        "position": {
+          "x": 16.8463,
+          "y": 67.8866,
+          "z": 1.6446
+        }
+      },
+      {
+        "id": 99,
+        "label": "ctx_rh_g_and_s_cingul-ant",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 100,
+        "label": "ctx_rh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": 7.0708,
+          "y": 16.5535,
+          "z": 36.486
+        }
+      },
+      {
+        "id": 101,
+        "label": "ctx_rh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": 7.3054,
+          "y": -8.7592,
+          "z": 43.9232
+        }
+      },
+      {
+        "id": 102,
+        "label": "ctx_rh_g_cingul-post-dorsal",
+        "position": {
+          "x": 3.6303,
+          "y": -36.3968,
+          "z": 33.9612
+        }
+      },
+      {
+        "id": 103,
+        "label": "ctx_rh_g_cingul-post-ventral",
+        "position": {
+          "x": 7.92,
+          "y": -48.5479,
+          "z": 8.5795
+        }
+      },
+      {
+        "id": 104,
+        "label": "ctx_rh_g_cuneus",
+        "position": {
+          "x": 6.4586,
+          "y": -78.9207,
+          "z": 22.2696
+        }
+      },
+      {
+        "id": 105,
+        "label": "ctx_rh_g_front_inf-opercular",
+        "position": {
+          "x": 51.5669,
+          "y": 13.9053,
+          "z": 9.5014
+        }
+      },
+      {
+        "id": 106,
+        "label": "ctx_rh_g_front_inf-orbital",
+        "position": {
+          "x": 49.4969,
+          "y": 35.0579,
+          "z": -8.7516
+        }
+      },
+      {
+        "id": 107,
+        "label": "ctx_rh_g_front_inf-triangul",
+        "position": {
+          "x": 52.8144,
+          "y": 33.1095,
+          "z": 6.7407
+        }
+      },
+      {
+        "id": 108,
+        "label": "ctx_rh_g_front_middle",
+        "position": {
+          "x": 38.7159,
+          "y": 34.5516,
+          "z": 35.148
+        }
+      },
+      {
+        "id": 109,
+        "label": "ctx_rh_g_front_sup",
+        "position": {
+          "x": 9.7085,
+          "y": 29.6224,
+          "z": 47.3579
+        }
+      },
+      {
+        "id": 110,
+        "label": "ctx_rh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": 40.2448,
+          "y": -2.6863,
+          "z": -2.3974
+        }
+      },
+      {
+        "id": 111,
+        "label": "ctx_rh_g_insular_short",
+        "position": {
+          "x": 38.1091,
+          "y": 12.0044,
+          "z": -4.2694
+        }
+      },
+      {
+        "id": 112,
+        "label": "ctx_rh_g_occipital_middle",
+        "position": {
+          "x": 44.4103,
+          "y": -79.0762,
+          "z": 16.2817
+        }
+      },
+      {
+        "id": 113,
+        "label": "ctx_rh_g_occipital_sup",
+        "position": {
+          "x": 21.0472,
+          "y": -88.7719,
+          "z": 33.7281
+        }
+      },
+      {
+        "id": 114,
+        "label": "ctx_rh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": 34.514,
+          "y": -46.9914,
+          "z": -20.5891
+        }
+      },
+      {
+        "id": 115,
+        "label": "ctx_rh_g_oc-temp_med-lingual",
+        "position": {
+          "x": 10.6606,
+          "y": -66.325,
+          "z": -3.0172
+        }
+      },
+      {
+        "id": 116,
+        "label": "ctx_rh_g_oc-temp_med-parahip",
+        "position": {
+          "x": 24.0181,
+          "y": -13.5509,
+          "z": -27.867
+        }
+      },
+      {
+        "id": 117,
+        "label": "ctx_rh_g_orbital",
+        "position": {
+          "x": 29.2894,
+          "y": 36.5417,
+          "z": -18.3141
+        }
+      },
+      {
+        "id": 118,
+        "label": "ctx_rh_g_pariet_inf-angular",
+        "position": {
+          "x": 48.1448,
+          "y": -60.7703,
+          "z": 43.0383
+        }
+      },
+      {
+        "id": 119,
+        "label": "ctx_rh_g_pariet_inf-supramar",
+        "position": {
+          "x": 59.9047,
+          "y": -29.7624,
+          "z": 37.295
+        }
+      },
+      {
+        "id": 120,
+        "label": "ctx_rh_g_parietal_sup",
+        "position": {
+          "x": 25.6607,
+          "y": -59.5495,
+          "z": 62.988
+        }
+      },
+      {
+        "id": 121,
+        "label": "ctx_rh_g_postcentral",
+        "position": {
+          "x": 50.0604,
+          "y": -19.9696,
+          "z": 53.9498
+        }
+      },
+      {
+        "id": 122,
+        "label": "ctx_rh_g_precentral",
+        "position": {
+          "x": 47.2617,
+          "y": -4.1329,
+          "z": 49.8164
+        }
+      },
+      {
+        "id": 123,
+        "label": "ctx_rh_g_precuneus",
+        "position": {
+          "x": 5.3165,
+          "y": -59.5503,
+          "z": 46.5569
+        }
+      },
+      {
+        "id": 124,
+        "label": "ctx_rh_g_rectus",
+        "position": {
+          "x": 3.5741,
+          "y": 39.4113,
+          "z": -23.4651
+        }
+      },
+      {
+        "id": 125,
+        "label": "ctx_rh_g_subcallosal",
+        "position": {
+          "x": 4.4077,
+          "y": 13.1095,
+          "z": -11.5686
+        }
+      },
+      {
+        "id": 126,
+        "label": "ctx_rh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": 49.262,
+          "y": -12.6511,
+          "z": 6.6042
+        }
+      },
+      {
+        "id": 127,
+        "label": "ctx_rh_g_temp_sup-lateral",
+        "position": {
+          "x": 59.1945,
+          "y": -4.5715,
+          "z": -6.2145
+        }
+      },
+      {
+        "id": 128,
+        "label": "ctx_rh_g_temp_sup-plan_polar",
+        "position": {
+          "x": 39.3637,
+          "y": 10.4394,
+          "z": -19.4632
+        }
+      },
+      {
+        "id": 129,
+        "label": "ctx_rh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": 60.8687,
+          "y": -28.0353,
+          "z": 19.5365
+        }
+      },
+      {
+        "id": 130,
+        "label": "ctx_rh_g_temporal_inf",
+        "position": {
+          "x": 54.1066,
+          "y": -30.3604,
+          "z": -27.28
+        }
+      },
+      {
+        "id": 131,
+        "label": "ctx_rh_g_temporal_middle",
+        "position": {
+          "x": 61.7879,
+          "y": -23.5953,
+          "z": -12.5268
+        }
+      },
+      {
+        "id": 132,
+        "label": "ctx_rh_lat_fis-ant-horizont",
+        "position": {
+          "x": 42.0326,
+          "y": 29.2974,
+          "z": 0.0054
+        }
+      },
+      {
+        "id": 133,
+        "label": "ctx_rh_lat_fis-ant-vertical",
+        "position": {
+          "x": 49.276,
+          "y": 23.5427,
+          "z": 10.1533
+        }
+      },
+      {
+        "id": 134,
+        "label": "ctx_rh_lat_fis-post",
+        "position": {
+          "x": 41.0928,
+          "y": -25.633,
+          "z": 20.0004
+        }
+      },
+      {
+        "id": 135,
+        "label": "ctx_rh_pole_occipital",
+        "position": {
+          "x": 20.8655,
+          "y": -95.6293,
+          "z": -1.6295
+        }
+      },
+      {
+        "id": 136,
+        "label": "ctx_rh_pole_temporal",
+        "position": {
+          "x": 31.8922,
+          "y": 10.5642,
+          "z": -41.3543
+        }
+      },
+      {
+        "id": 137,
+        "label": "ctx_rh_s_calcarine",
+        "position": {
+          "x": 18.1099,
+          "y": -63.0424,
+          "z": 7.2867
+        }
+      },
+      {
+        "id": 138,
+        "label": "ctx_rh_s_central",
+        "position": {
+          "x": 39.7119,
+          "y": -15.6691,
+          "z": 46.7884
+        }
+      },
+      {
+        "id": 139,
+        "label": "ctx_rh_s_cingul-marginalis",
+        "position": {
+          "x": 12.5432,
+          "y": -36.8154,
+          "z": 51.2974
+        }
+      },
+      {
+        "id": 140,
+        "label": "ctx_rh_s_circular_insula_ant",
+        "position": {
+          "x": 31.3719,
+          "y": 23.9157,
+          "z": -8.5989
+        }
+      },
+      {
+        "id": 141,
+        "label": "ctx_rh_s_circular_insula_inf",
+        "position": {
+          "x": 42.9132,
+          "y": -7.3267,
+          "z": -6.4154
+        }
+      },
+      {
+        "id": 142,
+        "label": "ctx_rh_s_circular_insula_sup",
+        "position": {
+          "x": 37.0455,
+          "y": 9.8494,
+          "z": 9.8043
+        }
+      },
+      {
+        "id": 143,
+        "label": "ctx_rh_s_collat_transv_ant",
+        "position": {
+          "x": 41.6575,
+          "y": -17.6448,
+          "z": -28.9297
+        }
+      },
+      {
+        "id": 144,
+        "label": "ctx_rh_s_collat_transv_post",
+        "position": {
+          "x": 26.2846,
+          "y": -78.1792,
+          "z": -7.5346
+        }
+      },
+      {
+        "id": 145,
+        "label": "ctx_rh_s_front_inf",
+        "position": {
+          "x": 40.3424,
+          "y": 27.3534,
+          "z": 23.1634
+        }
+      },
+      {
+        "id": 146,
+        "label": "ctx_rh_s_front_middle",
+        "position": {
+          "x": 30.3692,
+          "y": 46.1326,
+          "z": 20.7821
+        }
+      },
+      {
+        "id": 147,
+        "label": "ctx_rh_s_front_sup",
+        "position": {
+          "x": 23.7666,
+          "y": 24.5791,
+          "z": 46.0738
+        }
+      },
+      {
+        "id": 148,
+        "label": "ctx_rh_s_interm_prim-jensen",
+        "position": {
+          "x": 53.7937,
+          "y": -41.9432,
+          "z": 39.6779
+        }
+      },
+      {
+        "id": 149,
+        "label": "ctx_rh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": 33.6163,
+          "y": -50.9082,
+          "z": 48.6832
+        }
+      },
+      {
+        "id": 150,
+        "label": "ctx_rh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": 36.9766,
+          "y": -79.5268,
+          "z": 8.9653
+        }
+      },
+      {
+        "id": 151,
+        "label": "ctx_rh_s_oc_sup_and_transversal",
+        "position": {
+          "x": 30.6016,
+          "y": -78.1289,
+          "z": 24.247
+        }
+      },
+      {
+        "id": 152,
+        "label": "ctx_rh_s_occipital_ant",
+        "position": {
+          "x": 47.6465,
+          "y": -63.6936,
+          "z": 5.1335
+        }
+      },
+      {
+        "id": 153,
+        "label": "ctx_rh_s_oc-temp_lat",
+        "position": {
+          "x": 45.5915,
+          "y": -46.1461,
+          "z": -15.3462
+        }
+      },
+      {
+        "id": 154,
+        "label": "ctx_rh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": 28.5243,
+          "y": -45.6739,
+          "z": -11.7078
+        }
+      },
+      {
+        "id": 155,
+        "label": "ctx_rh_s_orbital_lateral",
+        "position": {
+          "x": 42.425,
+          "y": 44.91,
+          "z": -2.1147
+        }
+      },
+      {
+        "id": 156,
+        "label": "ctx_rh_s_orbital_med-olfact",
+        "position": {
+          "x": 11.9521,
+          "y": 26.9754,
+          "z": -19.2287
+        }
+      },
+      {
+        "id": 157,
+        "label": "ctx_rh_s_orbital-h_shaped",
+        "position": {
+          "x": 25.3021,
+          "y": 40.7269,
+          "z": -16.2795
+        }
+      },
+      {
+        "id": 158,
+        "label": "ctx_rh_s_parieto_occipital",
+        "position": {
+          "x": 17.9312,
+          "y": -66.3152,
+          "z": 28.4718
+        }
+      },
+      {
+        "id": 159,
+        "label": "ctx_rh_s_pericallosal",
+        "position": {
+          "x": 5.8165,
+          "y": -2.6584,
+          "z": 18.2367
+        }
+      },
+      {
+        "id": 160,
+        "label": "ctx_rh_s_postcentral",
+        "position": {
+          "x": 40.1527,
+          "y": -29.5508,
+          "z": 48.8675
+        }
+      },
+      {
+        "id": 161,
+        "label": "ctx_rh_s_precentral-inf-part",
+        "position": {
+          "x": 44.843,
+          "y": 7.2932,
+          "z": 31.5875
+        }
+      },
+      {
+        "id": 162,
+        "label": "ctx_rh_s_precentral-sup-part",
+        "position": {
+          "x": 29.9073,
+          "y": -7.5881,
+          "z": 57.3501
+        }
+      },
+      {
+        "id": 163,
+        "label": "ctx_rh_s_suborbital",
+        "position": {
+          "x": 4.7283,
+          "y": 41.9289,
+          "z": -16.9112
+        }
+      },
+      {
+        "id": 164,
+        "label": "ctx_rh_s_subparietal",
+        "position": {
+          "x": 9.8259,
+          "y": -48.1836,
+          "z": 38.7466
+        }
+      },
+      {
+        "id": 165,
+        "label": "ctx_rh_s_temporal_inf",
+        "position": {
+          "x": 52.7454,
+          "y": -13.5317,
+          "z": -26.3953
+        }
+      },
+      {
+        "id": 166,
+        "label": "ctx_rh_s_temporal_sup",
+        "position": {
+          "x": 53.2414,
+          "y": -30.4284,
+          "z": 4.9165
+        }
+      },
+      {
+        "id": 167,
+        "label": "ctx_rh_s_temporal_transverse",
+        "position": {
+          "x": 53.2088,
+          "y": -17.5966,
+          "z": 7.2557
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Destrieux_seg-ranked_desc-SC_relmat.yaml",
     "desc": {
       "name": "MghUscHcp32"
     },
     "atlas": "Destrieuxranked",
-    "atlas.name": "Destrieuxranked",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32.png"
+    "atlas.name": "Destrieuxranked"
   },
   {
-    "label": "hcpmmp1ordered (dTOR)",
-    "number_of_nodes": 379,
-    "number_of_regions": 379,
-    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "hcpmmp1ordered"
-    },
-    "tractogram.name": "dTOR",
-    "space": "MNI152NLin2009b",
-    "name": "hcpmmp1ordered (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "hcpmmp1ordered",
-    "atlas.name": "hcpmmp1ordered",
-    "n_regions": 379,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-dTOR.png"
-  },
-  {
-    "label": "Schaefer1000 (MghUscHcp32)",
+    "label": "Schaefer100017Networks (PPMI85)",
+    "descriptor": "SC",
     "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32.h5",
+    "data_file": "tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36617,103 +53686,28 @@ window.searchData = [
         "non_negative": true
       }
     ],
-    "parcellation.atlas": {
-      "name": "Schaefer1000"
-    },
-    "tractogram.name": "MghUscHcp32",
-    "space": "FSLMNI152",
-    "name": "Schaefer1000 (MghUscHcp32)",
-    "type": "network",
-    "file": "database/networks/space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32.yaml",
-    "desc": {
-      "name": "MghUscHcp32"
-    },
-    "atlas": "Schaefer1000",
-    "atlas.name": "Schaefer1000",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer1000_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "hcpmmp1 (dTOR)",
-    "number_of_nodes": 379,
-    "number_of_regions": 379,
-    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "hcpmmp1"
-    },
-    "tractogram.name": "dTOR",
-    "space": "MNI152NLin2009b",
-    "name": "hcpmmp1 (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "hcpmmp1",
-    "atlas.name": "hcpmmp1",
-    "n_regions": 379,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-dTOR.png"
-  },
-  {
-    "label": "Schaefer100017Networks (dTOR)",
-    "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "FSLMNI152",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
     "parcellation.atlas": {
       "name": "Schaefer100017Networks"
     },
-    "tractogram.name": "dTOR",
-    "space": "FSLMNI152",
-    "name": "Schaefer100017Networks (dTOR)",
+    "tractogram.name": "PPMI85",
     "type": "network",
-    "file": "database/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR.yaml",
+    "file": "database/networks/tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.yaml",
     "desc": {
-      "name": "dTOR"
+      "name": "PPMI85"
     },
     "atlas": "Schaefer100017Networks",
-    "atlas.name": "Schaefer100017Networks",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-dTOR.png"
+    "atlas.name": "Schaefer100017Networks"
   },
   {
-    "label": "HOCPA (MghUscHcp32)",
-    "number_of_nodes": 48,
-    "number_of_regions": 48,
-    "data_file": "space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32.h5",
+    "label": "hcpmmp1ordered (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 379,
+    "data_file": "tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -36731,749 +53725,15061 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009bAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
+    "parcellation.atlas": {
+      "name": "hcpmmp1ordered",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "L_V1",
+        "position": {
+          "x": -10.364,
+          "y": -84.1004,
+          "z": 1.6224
+        }
+      },
+      {
+        "id": 2,
+        "label": "L_MST",
+        "position": {
+          "x": -43.784,
+          "y": -66.8058,
+          "z": 11.9515
+        }
+      },
+      {
+        "id": 3,
+        "label": "L_V6",
+        "position": {
+          "x": -14.8822,
+          "y": -80.5731,
+          "z": 32.2153
+        }
+      },
+      {
+        "id": 4,
+        "label": "L_V2",
+        "position": {
+          "x": -10.5689,
+          "y": -82.3316,
+          "z": 4.0629
+        }
+      },
+      {
+        "id": 5,
+        "label": "L_V3",
+        "position": {
+          "x": -15.976,
+          "y": -86.1955,
+          "z": 7.9722
+        }
+      },
+      {
+        "id": 6,
+        "label": "L_V4",
+        "position": {
+          "x": -28.3751,
+          "y": -86.9758,
+          "z": -0.0061
+        }
+      },
+      {
+        "id": 7,
+        "label": "L_V8",
+        "position": {
+          "x": -30.3423,
+          "y": -76.8966,
+          "z": -12.8754
+        }
+      },
+      {
+        "id": 8,
+        "label": "L_4",
+        "position": {
+          "x": -28.4284,
+          "y": -20.3676,
+          "z": 54.6372
+        }
+      },
+      {
+        "id": 9,
+        "label": "L_3b",
+        "position": {
+          "x": -39.3971,
+          "y": -22.2953,
+          "z": 52.8104
+        }
+      },
+      {
+        "id": 10,
+        "label": "L_FEF",
+        "position": {
+          "x": -41.8243,
+          "y": -6.8251,
+          "z": 51.5479
+        }
+      },
+      {
+        "id": 11,
+        "label": "L_PEF",
+        "position": {
+          "x": -49.0095,
+          "y": -0.4517,
+          "z": 40.5917
+        }
+      },
+      {
+        "id": 12,
+        "label": "L_55b",
+        "position": {
+          "x": -48.9816,
+          "y": -1.5129,
+          "z": 50.1907
+        }
+      },
+      {
+        "id": 13,
+        "label": "L_V3A",
+        "position": {
+          "x": -15.0154,
+          "y": -91.6078,
+          "z": 28.2444
+        }
+      },
+      {
+        "id": 14,
+        "label": "L_RSC",
+        "position": {
+          "x": -4.8849,
+          "y": -36.571,
+          "z": 21.1122
+        }
+      },
+      {
+        "id": 15,
+        "label": "L_POS2",
+        "position": {
+          "x": -9.4942,
+          "y": -72.2524,
+          "z": 36.7902
+        }
+      },
+      {
+        "id": 16,
+        "label": "L_V7",
+        "position": {
+          "x": -24.0981,
+          "y": -87.0738,
+          "z": 29.6168
+        }
+      },
+      {
+        "id": 17,
+        "label": "L_IPS1",
+        "position": {
+          "x": -24.3039,
+          "y": -75.2696,
+          "z": 37.4596
+        }
+      },
+      {
+        "id": 18,
+        "label": "L_FFC",
+        "position": {
+          "x": -42.0212,
+          "y": -61.4224,
+          "z": -17.2907
+        }
+      },
+      {
+        "id": 19,
+        "label": "L_V3B",
+        "position": {
+          "x": -26.2942,
+          "y": -83.0281,
+          "z": 17.6529
+        }
+      },
+      {
+        "id": 20,
+        "label": "L_LO1",
+        "position": {
+          "x": -39.7809,
+          "y": -83.9116,
+          "z": 8.2445
+        }
+      },
+      {
+        "id": 21,
+        "label": "L_LO2",
+        "position": {
+          "x": -45.7787,
+          "y": -85.1696,
+          "z": 0.7286
+        }
+      },
+      {
+        "id": 22,
+        "label": "L_PIT",
+        "position": {
+          "x": -43.7057,
+          "y": -83.2109,
+          "z": -11.0143
+        }
+      },
+      {
+        "id": 23,
+        "label": "L_MT",
+        "position": {
+          "x": -42.7722,
+          "y": -69.9594,
+          "z": 14.452
+        }
+      },
+      {
+        "id": 24,
+        "label": "L_A1",
+        "position": {
+          "x": -43.1723,
+          "y": -25.3579,
+          "z": 12.3234
+        }
+      },
+      {
+        "id": 25,
+        "label": "L_PSL",
+        "position": {
+          "x": -58.5839,
+          "y": -47.2283,
+          "z": 25.4311
+        }
+      },
+      {
+        "id": 26,
+        "label": "L_SFL",
+        "position": {
+          "x": -8.6095,
+          "y": 17.5137,
+          "z": 63.9293
+        }
+      },
+      {
+        "id": 27,
+        "label": "L_PCV",
+        "position": {
+          "x": -6.298,
+          "y": -51.1579,
+          "z": 49.2086
+        }
+      },
+      {
+        "id": 28,
+        "label": "L_STV",
+        "position": {
+          "x": -61.089,
+          "y": -50.9521,
+          "z": 18.2324
+        }
+      },
+      {
+        "id": 29,
+        "label": "L_7Pm",
+        "position": {
+          "x": -4.2062,
+          "y": -70.4214,
+          "z": 50.3404
+        }
+      },
+      {
+        "id": 30,
+        "label": "L_7m",
+        "position": {
+          "x": -4.2845,
+          "y": -63.8785,
+          "z": 35.1841
+        }
+      },
+      {
+        "id": 31,
+        "label": "L_POS1",
+        "position": {
+          "x": -12.6035,
+          "y": -59.0019,
+          "z": 15.0424
+        }
+      },
+      {
+        "id": 32,
+        "label": "L_23d",
+        "position": {
+          "x": -2.8881,
+          "y": -20.6781,
+          "z": 39.3587
+        }
+      },
+      {
+        "id": 33,
+        "label": "L_v23ab",
+        "position": {
+          "x": -3.3636,
+          "y": -58.247,
+          "z": 18.2133
+        }
+      },
+      {
+        "id": 34,
+        "label": "L_d23ab",
+        "position": {
+          "x": -3.0438,
+          "y": -42.6808,
+          "z": 31.2975
+        }
+      },
+      {
+        "id": 35,
+        "label": "L_31pv",
+        "position": {
+          "x": -9.4073,
+          "y": -46.7604,
+          "z": 32.5419
+        }
+      },
+      {
+        "id": 36,
+        "label": "L_5m",
+        "position": {
+          "x": -6.2842,
+          "y": -41.9173,
+          "z": 63.3997
+        }
+      },
+      {
+        "id": 37,
+        "label": "L_5mv",
+        "position": {
+          "x": -13.7018,
+          "y": -37.1393,
+          "z": 50.3818
+        }
+      },
+      {
+        "id": 38,
+        "label": "L_23c",
+        "position": {
+          "x": -11.4488,
+          "y": -30.5269,
+          "z": 43.0083
+        }
+      },
+      {
+        "id": 39,
+        "label": "L_5L",
+        "position": {
+          "x": -14.7776,
+          "y": -48.6065,
+          "z": 72.5933
+        }
+      },
+      {
+        "id": 40,
+        "label": "L_24dd",
+        "position": {
+          "x": -5.8855,
+          "y": -16.0126,
+          "z": 50.5898
+        }
+      },
+      {
+        "id": 41,
+        "label": "L_24dv",
+        "position": {
+          "x": -8.3022,
+          "y": -0.3766,
+          "z": 44.8102
+        }
+      },
+      {
+        "id": 42,
+        "label": "L_7AL",
+        "position": {
+          "x": -20.4027,
+          "y": -51.9913,
+          "z": 65.6772
+        }
+      },
+      {
+        "id": 43,
+        "label": "L_SCEF",
+        "position": {
+          "x": -5.9317,
+          "y": 4.1342,
+          "z": 59.6032
+        }
+      },
+      {
+        "id": 44,
+        "label": "L_6ma",
+        "position": {
+          "x": -20.0984,
+          "y": 3.9694,
+          "z": 67.8903
+        }
+      },
+      {
+        "id": 45,
+        "label": "L_7Am",
+        "position": {
+          "x": -6.9458,
+          "y": -60.3173,
+          "z": 61.4581
+        }
+      },
+      {
+        "id": 46,
+        "label": "L_7PL",
+        "position": {
+          "x": -14.816,
+          "y": -73.7112,
+          "z": 56.0083
+        }
+      },
+      {
+        "id": 47,
+        "label": "L_7PC",
+        "position": {
+          "x": -37.4515,
+          "y": -46.7109,
+          "z": 60.6276
+        }
+      },
+      {
+        "id": 48,
+        "label": "L_LIPv",
+        "position": {
+          "x": -30.8546,
+          "y": -58.4029,
+          "z": 55.2323
+        }
+      },
+      {
+        "id": 49,
+        "label": "L_VIP",
+        "position": {
+          "x": -22.8218,
+          "y": -63.5048,
+          "z": 64.4746
+        }
+      },
+      {
+        "id": 50,
+        "label": "L_MIP",
+        "position": {
+          "x": -24.857,
+          "y": -67.1281,
+          "z": 47.1007
+        }
+      },
+      {
+        "id": 51,
+        "label": "L_1",
+        "position": {
+          "x": -47.0296,
+          "y": -26.3181,
+          "z": 56.3848
+        }
+      },
+      {
+        "id": 52,
+        "label": "L_2",
+        "position": {
+          "x": -38.8683,
+          "y": -32.9202,
+          "z": 51.957
+        }
+      },
+      {
+        "id": 53,
+        "label": "L_3a",
+        "position": {
+          "x": -35.2805,
+          "y": -20.5097,
+          "z": 42.8339
+        }
+      },
+      {
+        "id": 54,
+        "label": "L_6d",
+        "position": {
+          "x": -33.7943,
+          "y": -14.2162,
+          "z": 67.7344
+        }
+      },
+      {
+        "id": 55,
+        "label": "L_6mp",
+        "position": {
+          "x": -10.7334,
+          "y": -15.0087,
+          "z": 71.0262
+        }
+      },
+      {
+        "id": 56,
+        "label": "L_6v",
+        "position": {
+          "x": -59.5034,
+          "y": 3.7871,
+          "z": 31.9067
+        }
+      },
+      {
+        "id": 57,
+        "label": "L_p24pr",
+        "position": {
+          "x": -3.9615,
+          "y": -2.2441,
+          "z": 40.3761
+        }
+      },
+      {
+        "id": 58,
+        "label": "L_33pr",
+        "position": {
+          "x": -2.3983,
+          "y": 11.2592,
+          "z": 28.7215
+        }
+      },
+      {
+        "id": 59,
+        "label": "L_a24pr",
+        "position": {
+          "x": -5.3869,
+          "y": 18.3002,
+          "z": 30.9814
+        }
+      },
+      {
+        "id": 60,
+        "label": "L_p32pr",
+        "position": {
+          "x": -7.9292,
+          "y": 15.3954,
+          "z": 38.7959
+        }
+      },
+      {
+        "id": 61,
+        "label": "L_a24",
+        "position": {
+          "x": -6.1363,
+          "y": 41.965,
+          "z": -4.4968
+        }
+      },
+      {
+        "id": 62,
+        "label": "L_d32",
+        "position": {
+          "x": -8.0403,
+          "y": 42.4755,
+          "z": 24.9597
+        }
+      },
+      {
+        "id": 63,
+        "label": "L_8BM",
+        "position": {
+          "x": -4.7592,
+          "y": 32.5683,
+          "z": 45.1662
+        }
+      },
+      {
+        "id": 64,
+        "label": "L_p32",
+        "position": {
+          "x": -11.2759,
+          "y": 50.3924,
+          "z": -2.3392
+        }
+      },
+      {
+        "id": 65,
+        "label": "L_10r",
+        "position": {
+          "x": -6.0341,
+          "y": 51.6407,
+          "z": -10.6444
+        }
+      },
+      {
+        "id": 66,
+        "label": "L_47m",
+        "position": {
+          "x": -37.4924,
+          "y": 31.5348,
+          "z": -13.9227
+        }
+      },
+      {
+        "id": 67,
+        "label": "L_8Av",
+        "position": {
+          "x": -38.3312,
+          "y": 16.5889,
+          "z": 52.2792
+        }
+      },
+      {
+        "id": 68,
+        "label": "L_8Ad",
+        "position": {
+          "x": -23.3507,
+          "y": 28.996,
+          "z": 43.3465
+        }
+      },
+      {
+        "id": 69,
+        "label": "L_9m",
+        "position": {
+          "x": -6.0375,
+          "y": 55.1478,
+          "z": 24.2637
+        }
+      },
+      {
+        "id": 70,
+        "label": "L_8BL",
+        "position": {
+          "x": -11.6218,
+          "y": 37.1473,
+          "z": 53.8005
+        }
+      },
+      {
+        "id": 71,
+        "label": "L_9p",
+        "position": {
+          "x": -19.8944,
+          "y": 47.3057,
+          "z": 38.4792
+        }
+      },
+      {
+        "id": 72,
+        "label": "L_10d",
+        "position": {
+          "x": -11.1632,
+          "y": 66.2958,
+          "z": 8.4044
+        }
+      },
+      {
+        "id": 73,
+        "label": "L_8C",
+        "position": {
+          "x": -43.7036,
+          "y": 11.8118,
+          "z": 37.7097
+        }
+      },
+      {
+        "id": 74,
+        "label": "L_44",
+        "position": {
+          "x": -53.8786,
+          "y": 14.8412,
+          "z": 14.0097
+        }
+      },
+      {
+        "id": 75,
+        "label": "L_45",
+        "position": {
+          "x": -50.609,
+          "y": 25.5687,
+          "z": 3.2206
+        }
+      },
+      {
+        "id": 76,
+        "label": "L_47l",
+        "position": {
+          "x": -46.7708,
+          "y": 30.1001,
+          "z": -9.9578
+        }
+      },
+      {
+        "id": 77,
+        "label": "L_a47r",
+        "position": {
+          "x": -41.3563,
+          "y": 48.5638,
+          "z": -11.9072
+        }
+      },
+      {
+        "id": 78,
+        "label": "L_6r",
+        "position": {
+          "x": -52.4908,
+          "y": 6.6641,
+          "z": 17.7741
+        }
+      },
+      {
+        "id": 79,
+        "label": "L_IFJa",
+        "position": {
+          "x": -41.0068,
+          "y": 10.8526,
+          "z": 26.3856
+        }
+      },
+      {
+        "id": 80,
+        "label": "L_IFJp",
+        "position": {
+          "x": -41.3634,
+          "y": 2.2956,
+          "z": 30.0642
+        }
+      },
+      {
+        "id": 81,
+        "label": "L_IFSp",
+        "position": {
+          "x": -48.8016,
+          "y": 20.9089,
+          "z": 22.8515
+        }
+      },
+      {
+        "id": 82,
+        "label": "L_IFSa",
+        "position": {
+          "x": -48.1015,
+          "y": 32.1216,
+          "z": 10.6533
+        }
+      },
+      {
+        "id": 83,
+        "label": "L_p9-46v",
+        "position": {
+          "x": -47.1903,
+          "y": 28.8919,
+          "z": 25.9915
+        }
+      },
+      {
+        "id": 84,
+        "label": "L_46",
+        "position": {
+          "x": -38.4057,
+          "y": 37.8526,
+          "z": 32.9207
+        }
+      },
+      {
+        "id": 85,
+        "label": "L_a9-46v",
+        "position": {
+          "x": -40.0072,
+          "y": 51.6397,
+          "z": 9.1728
+        }
+      },
+      {
+        "id": 86,
+        "label": "L_9-46d",
+        "position": {
+          "x": -29.4487,
+          "y": 45.8579,
+          "z": 23.4636
+        }
+      },
+      {
+        "id": 87,
+        "label": "L_9a",
+        "position": {
+          "x": -21.7269,
+          "y": 57.5628,
+          "z": 24.1526
+        }
+      },
+      {
+        "id": 88,
+        "label": "L_10v",
+        "position": {
+          "x": -4.0071,
+          "y": 52.9119,
+          "z": -17.8343
+        }
+      },
+      {
+        "id": 89,
+        "label": "L_a10p",
+        "position": {
+          "x": -26.4781,
+          "y": 59.742,
+          "z": -6.8987
+        }
+      },
+      {
+        "id": 90,
+        "label": "L_10pp",
+        "position": {
+          "x": -12.7721,
+          "y": 62.2831,
+          "z": -16.2485
+        }
+      },
+      {
+        "id": 91,
+        "label": "L_11l",
+        "position": {
+          "x": -25.9362,
+          "y": 49.4761,
+          "z": -15.4714
+        }
+      },
+      {
+        "id": 92,
+        "label": "L_13l",
+        "position": {
+          "x": -23.3043,
+          "y": 30.0783,
+          "z": -19.8865
+        }
+      },
+      {
+        "id": 93,
+        "label": "L_OFC",
+        "position": {
+          "x": -10.8287,
+          "y": 33.539,
+          "z": -24.5052
+        }
+      },
+      {
+        "id": 94,
+        "label": "L_47s",
+        "position": {
+          "x": -34.5233,
+          "y": 22.1134,
+          "z": -19.1547
+        }
+      },
+      {
+        "id": 95,
+        "label": "L_LIPd",
+        "position": {
+          "x": -30.0745,
+          "y": -55.4435,
+          "z": 42.8996
+        }
+      },
+      {
+        "id": 96,
+        "label": "L_6a",
+        "position": {
+          "x": -25.3604,
+          "y": -4.9318,
+          "z": 55.5618
+        }
+      },
+      {
+        "id": 97,
+        "label": "L_i6-8",
+        "position": {
+          "x": -29.5765,
+          "y": 5.2274,
+          "z": 56.748
+        }
+      },
+      {
+        "id": 98,
+        "label": "L_s6-8",
+        "position": {
+          "x": -22.3087,
+          "y": 24.1516,
+          "z": 56.2966
+        }
+      },
+      {
+        "id": 99,
+        "label": "L_43",
+        "position": {
+          "x": -56.3831,
+          "y": -0.3366,
+          "z": 9.4767
+        }
+      },
+      {
+        "id": 100,
+        "label": "L_OP4",
+        "position": {
+          "x": -59.2233,
+          "y": -13.4846,
+          "z": 15.315
+        }
+      },
+      {
+        "id": 101,
+        "label": "L_OP1",
+        "position": {
+          "x": -46.9496,
+          "y": -22.3801,
+          "z": 19.1422
+        }
+      },
+      {
+        "id": 102,
+        "label": "L_OP2-3",
+        "position": {
+          "x": -40.4601,
+          "y": -17.2433,
+          "z": 19.0212
+        }
+      },
+      {
+        "id": 103,
+        "label": "L_52",
+        "position": {
+          "x": -38.0016,
+          "y": -22.3612,
+          "z": 1.9379
+        }
+      },
+      {
+        "id": 104,
+        "label": "L_RI",
+        "position": {
+          "x": -40.1846,
+          "y": -35.5219,
+          "z": 20.2432
+        }
+      },
+      {
+        "id": 105,
+        "label": "L_PFcm",
+        "position": {
+          "x": -50.4059,
+          "y": -32.309,
+          "z": 21.7463
+        }
+      },
+      {
+        "id": 106,
+        "label": "L_PoI2",
+        "position": {
+          "x": -40.4908,
+          "y": -2.9287,
+          "z": -0.0029
+        }
+      },
+      {
+        "id": 107,
+        "label": "L_TA2",
+        "position": {
+          "x": -50.3675,
+          "y": -0.1737,
+          "z": -5.4789
+        }
+      },
+      {
+        "id": 108,
+        "label": "L_FOP4",
+        "position": {
+          "x": -41.4917,
+          "y": 12.7776,
+          "z": 5.6919
+        }
+      },
+      {
+        "id": 109,
+        "label": "L_MI",
+        "position": {
+          "x": -36.2879,
+          "y": 11.1963,
+          "z": 3.3261
+        }
+      },
+      {
+        "id": 110,
+        "label": "L_Pir",
+        "position": {
+          "x": -32.039,
+          "y": 6.3815,
+          "z": -17.6798
+        }
+      },
+      {
+        "id": 111,
+        "label": "L_AVI",
+        "position": {
+          "x": -30.8608,
+          "y": 25.4027,
+          "z": -2.4888
+        }
+      },
+      {
+        "id": 112,
+        "label": "L_AAIC",
+        "position": {
+          "x": -35.4208,
+          "y": 14.345,
+          "z": -10.4385
+        }
+      },
+      {
+        "id": 113,
+        "label": "L_FOP1",
+        "position": {
+          "x": -49.8875,
+          "y": 1.6589,
+          "z": 4.5696
+        }
+      },
+      {
+        "id": 114,
+        "label": "L_FOP3",
+        "position": {
+          "x": -35.995,
+          "y": 2.1376,
+          "z": 13.4428
+        }
+      },
+      {
+        "id": 115,
+        "label": "L_FOP2",
+        "position": {
+          "x": -42.4128,
+          "y": -4.9531,
+          "z": 14.7998
+        }
+      },
+      {
+        "id": 116,
+        "label": "L_PFt",
+        "position": {
+          "x": -56.3928,
+          "y": -25.7538,
+          "z": 36.533
+        }
+      },
+      {
+        "id": 117,
+        "label": "L_AIP",
+        "position": {
+          "x": -39.7852,
+          "y": -39.0137,
+          "z": 42.2767
+        }
+      },
+      {
+        "id": 118,
+        "label": "L_EC",
+        "position": {
+          "x": -22.9398,
+          "y": -13.6461,
+          "z": -31.6681
+        }
+      },
+      {
+        "id": 119,
+        "label": "L_PreS",
+        "position": {
+          "x": -16.9281,
+          "y": -34.2994,
+          "z": -13.8604
+        }
+      },
+      {
+        "id": 120,
+        "label": "L_H",
+        "position": {
+          "x": -11.9167,
+          "y": -39.75,
+          "z": -2.9167
+        }
+      },
+      {
+        "id": 121,
+        "label": "L_ProS",
+        "position": {
+          "x": -22.0685,
+          "y": -57.0108,
+          "z": 4.6909
+        }
+      },
+      {
+        "id": 122,
+        "label": "L_PeEc",
+        "position": {
+          "x": -31.1356,
+          "y": -9.5889,
+          "z": -33.6028
+        }
+      },
+      {
+        "id": 123,
+        "label": "L_STGa",
+        "position": {
+          "x": -50.8535,
+          "y": 12.9215,
+          "z": -16.6696
+        }
+      },
+      {
+        "id": 124,
+        "label": "L_PBelt",
+        "position": {
+          "x": -52.7095,
+          "y": -26.0037,
+          "z": 9.006
+        }
+      },
+      {
+        "id": 125,
+        "label": "L_A5",
+        "position": {
+          "x": -62.9832,
+          "y": -15.2118,
+          "z": -1.1005
+        }
+      },
+      {
+        "id": 126,
+        "label": "L_PHA1",
+        "position": {
+          "x": -23.3494,
+          "y": -37.7192,
+          "z": -14.638
+        }
+      },
+      {
+        "id": 127,
+        "label": "L_PHA3",
+        "position": {
+          "x": -31.8398,
+          "y": -37.931,
+          "z": -17.7307
+        }
+      },
+      {
+        "id": 128,
+        "label": "L_STSda",
+        "position": {
+          "x": -54.8082,
+          "y": -4.1468,
+          "z": -11.5957
+        }
+      },
+      {
+        "id": 129,
+        "label": "L_STSdp",
+        "position": {
+          "x": -52.7884,
+          "y": -32.6386,
+          "z": 1.1349
+        }
+      },
+      {
+        "id": 130,
+        "label": "L_STSvp",
+        "position": {
+          "x": -54.8898,
+          "y": -34.8552,
+          "z": -3.4358
+        }
+      },
+      {
+        "id": 131,
+        "label": "L_TGd",
+        "position": {
+          "x": -38.1921,
+          "y": 12.305,
+          "z": -34.4727
+        }
+      },
+      {
+        "id": 132,
+        "label": "L_TE1a",
+        "position": {
+          "x": -59.7754,
+          "y": -5.2246,
+          "z": -23.1151
+        }
+      },
+      {
+        "id": 133,
+        "label": "L_TE1p",
+        "position": {
+          "x": -61.7726,
+          "y": -48.2135,
+          "z": -8.6963
+        }
+      },
+      {
+        "id": 134,
+        "label": "L_TE2a",
+        "position": {
+          "x": -57.2752,
+          "y": -24.3832,
+          "z": -27.7009
+        }
+      },
+      {
+        "id": 135,
+        "label": "L_TF",
+        "position": {
+          "x": -42.3942,
+          "y": -22.0097,
+          "z": -30.0052
+        }
+      },
+      {
+        "id": 136,
+        "label": "L_TE2p",
+        "position": {
+          "x": -49.3913,
+          "y": -43.4235,
+          "z": -20.5057
+        }
+      },
+      {
+        "id": 137,
+        "label": "L_PHT",
+        "position": {
+          "x": -58.3918,
+          "y": -60.6461,
+          "z": 3.2289
+        }
+      },
+      {
+        "id": 138,
+        "label": "L_PH",
+        "position": {
+          "x": -45.9845,
+          "y": -65.1466,
+          "z": -5.3422
+        }
+      },
+      {
+        "id": 139,
+        "label": "L_TPOJ1",
+        "position": {
+          "x": -54.1676,
+          "y": -46.3202,
+          "z": 10.26
+        }
+      },
+      {
+        "id": 140,
+        "label": "L_TPOJ2",
+        "position": {
+          "x": -51.9934,
+          "y": -62.363,
+          "z": 15.7838
+        }
+      },
+      {
+        "id": 141,
+        "label": "L_TPOJ3",
+        "position": {
+          "x": -45.9746,
+          "y": -72.674,
+          "z": 20.7012
+        }
+      },
+      {
+        "id": 142,
+        "label": "L_DVT",
+        "position": {
+          "x": -17.6379,
+          "y": -74.2901,
+          "z": 36.3106
+        }
+      },
+      {
+        "id": 143,
+        "label": "L_PGp",
+        "position": {
+          "x": -38.6978,
+          "y": -85.4329,
+          "z": 23.0889
+        }
+      },
+      {
+        "id": 144,
+        "label": "L_IP2",
+        "position": {
+          "x": -40.9491,
+          "y": -48.8004,
+          "z": 43.3753
+        }
+      },
+      {
+        "id": 145,
+        "label": "L_IP1",
+        "position": {
+          "x": -30.258,
+          "y": -70.6326,
+          "z": 39.1023
+        }
+      },
+      {
+        "id": 146,
+        "label": "L_IP0",
+        "position": {
+          "x": -30.8447,
+          "y": -79.0757,
+          "z": 24.2723
+        }
+      },
+      {
+        "id": 147,
+        "label": "L_PFop",
+        "position": {
+          "x": -62.9615,
+          "y": -23.7361,
+          "z": 24.0328
+        }
+      },
+      {
+        "id": 148,
+        "label": "L_PF",
+        "position": {
+          "x": -60.306,
+          "y": -37.2782,
+          "z": 37.9053
+        }
+      },
+      {
+        "id": 149,
+        "label": "L_PFm",
+        "position": {
+          "x": -49.516,
+          "y": -58.0483,
+          "z": 44.8952
+        }
+      },
+      {
+        "id": 150,
+        "label": "L_PGi",
+        "position": {
+          "x": -46.5455,
+          "y": -64.0108,
+          "z": 27.542
+        }
+      },
+      {
+        "id": 151,
+        "label": "L_PGs",
+        "position": {
+          "x": -39.1906,
+          "y": -78.071,
+          "z": 38.9904
+        }
+      },
+      {
+        "id": 152,
+        "label": "L_V6A",
+        "position": {
+          "x": -21.7836,
+          "y": -86.1888,
+          "z": 42.7225
+        }
+      },
+      {
+        "id": 153,
+        "label": "L_VMV1",
+        "position": {
+          "x": -18.6619,
+          "y": -55.9416,
+          "z": -5.522
+        }
+      },
+      {
+        "id": 154,
+        "label": "L_VMV3",
+        "position": {
+          "x": -27.7219,
+          "y": -62.6969,
+          "z": -11.2141
+        }
+      },
+      {
+        "id": 155,
+        "label": "L_PHA2",
+        "position": {
+          "x": -31.9234,
+          "y": -37.4482,
+          "z": -11.7815
+        }
+      },
+      {
+        "id": 156,
+        "label": "L_V4t",
+        "position": {
+          "x": -49.261,
+          "y": -77.1178,
+          "z": 7.8354
+        }
+      },
+      {
+        "id": 157,
+        "label": "L_FST",
+        "position": {
+          "x": -45.8253,
+          "y": -68.6921,
+          "z": 5.6201
+        }
+      },
+      {
+        "id": 158,
+        "label": "L_V3CD",
+        "position": {
+          "x": -35.65,
+          "y": -88.8457,
+          "z": 11.2729
+        }
+      },
+      {
+        "id": 159,
+        "label": "L_LO3",
+        "position": {
+          "x": -41.2095,
+          "y": -77.1728,
+          "z": 15.1551
+        }
+      },
+      {
+        "id": 160,
+        "label": "L_VMV2",
+        "position": {
+          "x": -27.3375,
+          "y": -54.8236,
+          "z": -6.411
+        }
+      },
+      {
+        "id": 161,
+        "label": "L_31pd",
+        "position": {
+          "x": -8.7,
+          "y": -53.4323,
+          "z": 34.6469
+        }
+      },
+      {
+        "id": 162,
+        "label": "L_31a",
+        "position": {
+          "x": -4.679,
+          "y": -37.7455,
+          "z": 43.5579
+        }
+      },
+      {
+        "id": 163,
+        "label": "L_VVC",
+        "position": {
+          "x": -31.0334,
+          "y": -53.2359,
+          "z": -17.3407
+        }
+      },
+      {
+        "id": 164,
+        "label": "L_25",
+        "position": {
+          "x": -4.275,
+          "y": 23.9379,
+          "z": -14.7562
+        }
+      },
+      {
+        "id": 165,
+        "label": "L_s32",
+        "position": {
+          "x": -7.5366,
+          "y": 35.6621,
+          "z": -15.0659
+        }
+      },
+      {
+        "id": 166,
+        "label": "L_pOFC",
+        "position": {
+          "x": -14.3972,
+          "y": 14.3564,
+          "z": -20.8892
+        }
+      },
+      {
+        "id": 167,
+        "label": "L_PoI1",
+        "position": {
+          "x": -39.1902,
+          "y": -12.1828,
+          "z": -2.2671
+        }
+      },
+      {
+        "id": 168,
+        "label": "L_Ig",
+        "position": {
+          "x": -35.5904,
+          "y": -16.1798,
+          "z": 15.9868
+        }
+      },
+      {
+        "id": 169,
+        "label": "L_FOP5",
+        "position": {
+          "x": -35.4105,
+          "y": 26.75,
+          "z": 5.1684
+        }
+      },
+      {
+        "id": 170,
+        "label": "L_p10p",
+        "position": {
+          "x": -24.0707,
+          "y": 62.9202,
+          "z": 2.3932
+        }
+      },
+      {
+        "id": 171,
+        "label": "L_p47r",
+        "position": {
+          "x": -45.6345,
+          "y": 43.0795,
+          "z": 0.9857
+        }
+      },
+      {
+        "id": 172,
+        "label": "L_TGv",
+        "position": {
+          "x": -37.3067,
+          "y": -1.3122,
+          "z": -44.4583
+        }
+      },
+      {
+        "id": 173,
+        "label": "L_MBelt",
+        "position": {
+          "x": -44.3888,
+          "y": -17.7063,
+          "z": 4.3489
+        }
+      },
+      {
+        "id": 174,
+        "label": "L_LBelt",
+        "position": {
+          "x": -45.2987,
+          "y": -27.4349,
+          "z": 9.0529
+        }
+      },
+      {
+        "id": 175,
+        "label": "L_A4",
+        "position": {
+          "x": -63.3197,
+          "y": -23.574,
+          "z": 9.17
+        }
+      },
+      {
+        "id": 176,
+        "label": "L_STSva",
+        "position": {
+          "x": -51.638,
+          "y": -7.7992,
+          "z": -16.9657
+        }
+      },
+      {
+        "id": 177,
+        "label": "L_TE1m",
+        "position": {
+          "x": -64.136,
+          "y": -26.1294,
+          "z": -14.9553
+        }
+      },
+      {
+        "id": 178,
+        "label": "L_PI",
+        "position": {
+          "x": -43.9474,
+          "y": -4.1449,
+          "z": -13.5724
+        }
+      },
+      {
+        "id": 179,
+        "label": "L_a32pr",
+        "position": {
+          "x": -7.6802,
+          "y": 30.6322,
+          "z": 28.6548
+        }
+      },
+      {
+        "id": 180,
+        "label": "L_p24",
+        "position": {
+          "x": -5.1704,
+          "y": 38.8593,
+          "z": 13.874
+        }
+      },
+      {
+        "id": 181,
+        "label": "R_V1",
+        "position": {
+          "x": 12.4486,
+          "y": -80.3925,
+          "z": 4.0572
+        }
+      },
+      {
+        "id": 182,
+        "label": "R_MST",
+        "position": {
+          "x": 48.0338,
+          "y": -64.2372,
+          "z": 7.2628
+        }
+      },
+      {
+        "id": 183,
+        "label": "R_V6",
+        "position": {
+          "x": 17.9109,
+          "y": -76.9513,
+          "z": 31.0297
+        }
+      },
+      {
+        "id": 184,
+        "label": "R_V2",
+        "position": {
+          "x": 12.2652,
+          "y": -79.2862,
+          "z": 6.878
+        }
+      },
+      {
+        "id": 185,
+        "label": "R_V3",
+        "position": {
+          "x": 17.422,
+          "y": -85.2411,
+          "z": 8.9125
+        }
+      },
+      {
+        "id": 186,
+        "label": "R_V4",
+        "position": {
+          "x": 30.754,
+          "y": -84.8834,
+          "z": -1.1632
+        }
+      },
+      {
+        "id": 187,
+        "label": "R_V8",
+        "position": {
+          "x": 30.4344,
+          "y": -75.2613,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 188,
+        "label": "R_4",
+        "position": {
+          "x": 29.7796,
+          "y": -17.1529,
+          "z": 55.2073
+        }
+      },
+      {
+        "id": 189,
+        "label": "R_3b",
+        "position": {
+          "x": 40.1439,
+          "y": -19.37,
+          "z": 51.0025
+        }
+      },
+      {
+        "id": 190,
+        "label": "R_FEF",
+        "position": {
+          "x": 44.8025,
+          "y": -2.4317,
+          "z": 51.7016
+        }
+      },
+      {
+        "id": 191,
+        "label": "R_PEF",
+        "position": {
+          "x": 47.4893,
+          "y": 2.6073,
+          "z": 37.1363
+        }
+      },
+      {
+        "id": 192,
+        "label": "R_55b",
+        "position": {
+          "x": 50.355,
+          "y": 1.9929,
+          "z": 47.0793
+        }
+      },
+      {
+        "id": 193,
+        "label": "R_V3A",
+        "position": {
+          "x": 16.7601,
+          "y": -89.1821,
+          "z": 30.9474
+        }
+      },
+      {
+        "id": 194,
+        "label": "R_RSC",
+        "position": {
+          "x": 5.5622,
+          "y": -36.4378,
+          "z": 21.5635
+        }
+      },
+      {
+        "id": 195,
+        "label": "R_POS2",
+        "position": {
+          "x": 12.009,
+          "y": -70.2659,
+          "z": 38.2154
+        }
+      },
+      {
+        "id": 196,
+        "label": "R_V7",
+        "position": {
+          "x": 28.2829,
+          "y": -84.3952,
+          "z": 31.1622
+        }
+      },
+      {
+        "id": 197,
+        "label": "R_IPS1",
+        "position": {
+          "x": 27.3292,
+          "y": -72.735,
+          "z": 39.84
+        }
+      },
+      {
+        "id": 198,
+        "label": "R_FFC",
+        "position": {
+          "x": 40.8223,
+          "y": -53.4603,
+          "z": -19.1962
+        }
+      },
+      {
+        "id": 199,
+        "label": "R_V3B",
+        "position": {
+          "x": 29.7124,
+          "y": -77.2134,
+          "z": 20.855
+        }
+      },
+      {
+        "id": 200,
+        "label": "R_LO1",
+        "position": {
+          "x": 39.6977,
+          "y": -80.2326,
+          "z": 4.845
+        }
+      },
+      {
+        "id": 201,
+        "label": "R_LO2",
+        "position": {
+          "x": 44.5944,
+          "y": -83.4509,
+          "z": -0.8363
+        }
+      },
+      {
+        "id": 202,
+        "label": "R_PIT",
+        "position": {
+          "x": 42.7838,
+          "y": -80.5454,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 203,
+        "label": "R_MT",
+        "position": {
+          "x": 51.9897,
+          "y": -69.6252,
+          "z": 10.796
+        }
+      },
+      {
+        "id": 204,
+        "label": "R_A1",
+        "position": {
+          "x": 42.7181,
+          "y": -21.674,
+          "z": 11.3995
+        }
+      },
+      {
+        "id": 205,
+        "label": "R_PSL",
+        "position": {
+          "x": 63.9626,
+          "y": -35.7187,
+          "z": 27.4379
+        }
+      },
+      {
+        "id": 206,
+        "label": "R_SFL",
+        "position": {
+          "x": 8.8271,
+          "y": 17.0075,
+          "z": 65.405
+        }
+      },
+      {
+        "id": 207,
+        "label": "R_PCV",
+        "position": {
+          "x": 5.5035,
+          "y": -52.2473,
+          "z": 51.218
+        }
+      },
+      {
+        "id": 208,
+        "label": "R_STV",
+        "position": {
+          "x": 60.0356,
+          "y": -44.0253,
+          "z": 20.4059
+        }
+      },
+      {
+        "id": 209,
+        "label": "R_7Pm",
+        "position": {
+          "x": 5.2416,
+          "y": -68.4553,
+          "z": 50.8443
+        }
+      },
+      {
+        "id": 210,
+        "label": "R_7m",
+        "position": {
+          "x": 4.523,
+          "y": -62.5104,
+          "z": 34.4648
+        }
+      },
+      {
+        "id": 211,
+        "label": "R_POS1",
+        "position": {
+          "x": 13.9837,
+          "y": -57.065,
+          "z": 17.4055
+        }
+      },
+      {
+        "id": 212,
+        "label": "R_23d",
+        "position": {
+          "x": 3.4704,
+          "y": -21.1334,
+          "z": 39.4247
+        }
+      },
+      {
+        "id": 213,
+        "label": "R_v23ab",
+        "position": {
+          "x": 4.3643,
+          "y": -55.0147,
+          "z": 18.8382
+        }
+      },
+      {
+        "id": 214,
+        "label": "R_d23ab",
+        "position": {
+          "x": 3.4887,
+          "y": -40.7114,
+          "z": 33.1083
+        }
+      },
+      {
+        "id": 215,
+        "label": "R_31pv",
+        "position": {
+          "x": 9.1273,
+          "y": -42.9801,
+          "z": 34.757
+        }
+      },
+      {
+        "id": 216,
+        "label": "R_5m",
+        "position": {
+          "x": 5.4319,
+          "y": -39.2363,
+          "z": 65.8784
+        }
+      },
+      {
+        "id": 217,
+        "label": "R_5mv",
+        "position": {
+          "x": 12.0772,
+          "y": -40.2585,
+          "z": 55.0079
+        }
+      },
+      {
+        "id": 218,
+        "label": "R_23c",
+        "position": {
+          "x": 11.2516,
+          "y": -33.0341,
+          "z": 44.1153
+        }
+      },
+      {
+        "id": 219,
+        "label": "R_5L",
+        "position": {
+          "x": 14.0538,
+          "y": -47.551,
+          "z": 74.551
+        }
+      },
+      {
+        "id": 220,
+        "label": "R_24dd",
+        "position": {
+          "x": 6.3501,
+          "y": -16.2504,
+          "z": 53.1445
+        }
+      },
+      {
+        "id": 221,
+        "label": "R_24dv",
+        "position": {
+          "x": 9.1272,
+          "y": -2.5587,
+          "z": 46.7573
+        }
+      },
+      {
+        "id": 222,
+        "label": "R_7AL",
+        "position": {
+          "x": 23.9706,
+          "y": -51.6995,
+          "z": 68.6683
+        }
+      },
+      {
+        "id": 223,
+        "label": "R_SCEF",
+        "position": {
+          "x": 6.1055,
+          "y": 4.0798,
+          "z": 61.3124
+        }
+      },
+      {
+        "id": 224,
+        "label": "R_6ma",
+        "position": {
+          "x": 21.0205,
+          "y": 5.2517,
+          "z": 67.207
+        }
+      },
+      {
+        "id": 225,
+        "label": "R_7Am",
+        "position": {
+          "x": 9.0168,
+          "y": -60.4508,
+          "z": 62.1322
+        }
+      },
+      {
+        "id": 226,
+        "label": "R_7PL",
+        "position": {
+          "x": 12.4214,
+          "y": -73.0975,
+          "z": 56.9243
+        }
+      },
+      {
+        "id": 227,
+        "label": "R_7PC",
+        "position": {
+          "x": 36.4209,
+          "y": -47.3008,
+          "z": 61.4182
+        }
+      },
+      {
+        "id": 228,
+        "label": "R_LIPv",
+        "position": {
+          "x": 28.3435,
+          "y": -57.3692,
+          "z": 53.8374
+        }
+      },
+      {
+        "id": 229,
+        "label": "R_VIP",
+        "position": {
+          "x": 21.8264,
+          "y": -63.6259,
+          "z": 63.3134
+        }
+      },
+      {
+        "id": 230,
+        "label": "R_MIP",
+        "position": {
+          "x": 25.6649,
+          "y": -68.1292,
+          "z": 50.8733
+        }
+      },
+      {
+        "id": 231,
+        "label": "R_1",
+        "position": {
+          "x": 48.9993,
+          "y": -21.151,
+          "z": 54.7363
+        }
+      },
+      {
+        "id": 232,
+        "label": "R_2",
+        "position": {
+          "x": 38.4988,
+          "y": -30.2372,
+          "z": 52.3331
+        }
+      },
+      {
+        "id": 233,
+        "label": "R_3a",
+        "position": {
+          "x": 32.6255,
+          "y": -19.9419,
+          "z": 46.9856
+        }
+      },
+      {
+        "id": 234,
+        "label": "R_6d",
+        "position": {
+          "x": 38.0044,
+          "y": -11.3205,
+          "z": 64.7474
+        }
+      },
+      {
+        "id": 235,
+        "label": "R_6mp",
+        "position": {
+          "x": 17.3891,
+          "y": -11.7631,
+          "z": 69.3736
+        }
+      },
+      {
+        "id": 236,
+        "label": "R_6v",
+        "position": {
+          "x": 59.5139,
+          "y": 6.6888,
+          "z": 30.6097
+        }
+      },
+      {
+        "id": 237,
+        "label": "R_p24pr",
+        "position": {
+          "x": 4.3647,
+          "y": -2.1376,
+          "z": 40.5612
+        }
+      },
+      {
+        "id": 238,
+        "label": "R_33pr",
+        "position": {
+          "x": 3.3875,
+          "y": 14.9531,
+          "z": 26.8608
+        }
+      },
+      {
+        "id": 239,
+        "label": "R_a24pr",
+        "position": {
+          "x": 4.3666,
+          "y": 19.4909,
+          "z": 32.1381
+        }
+      },
+      {
+        "id": 240,
+        "label": "R_p32pr",
+        "position": {
+          "x": 9.0316,
+          "y": 14.6212,
+          "z": 40.1911
+        }
+      },
+      {
+        "id": 241,
+        "label": "R_a24",
+        "position": {
+          "x": -0.5,
+          "y": 33.25,
+          "z": -6.575
+        }
+      },
+      {
+        "id": 242,
+        "label": "R_d32",
+        "position": {
+          "x": 7.2199,
+          "y": 39.4286,
+          "z": 26.991
+        }
+      },
+      {
+        "id": 243,
+        "label": "R_8BM",
+        "position": {
+          "x": 4.8658,
+          "y": 30.6518,
+          "z": 47.4365
+        }
+      },
+      {
+        "id": 244,
+        "label": "R_p32",
+        "position": {
+          "x": -0.5,
+          "y": 43.25,
+          "z": -12.75
+        }
+      },
+      {
+        "id": 245,
+        "label": "R_10r",
+        "position": {
+          "x": -0.5,
+          "y": 45.25,
+          "z": -11.75
+        }
+      },
+      {
+        "id": 246,
+        "label": "R_47m",
+        "position": {
+          "x": 33.7357,
+          "y": 32.5717,
+          "z": -15.8829
+        }
+      },
+      {
+        "id": 247,
+        "label": "R_8Av",
+        "position": {
+          "x": 39.8249,
+          "y": 18.8202,
+          "z": 49.0997
+        }
+      },
+      {
+        "id": 248,
+        "label": "R_8Ad",
+        "position": {
+          "x": 23.9837,
+          "y": 30.6051,
+          "z": 42.3136
+        }
+      },
+      {
+        "id": 249,
+        "label": "R_9m",
+        "position": {
+          "x": 6.7434,
+          "y": 55.0901,
+          "z": 20.9469
+        }
+      },
+      {
+        "id": 250,
+        "label": "R_8BL",
+        "position": {
+          "x": 13.2097,
+          "y": 41.9075,
+          "z": 49.5118
+        }
+      },
+      {
+        "id": 251,
+        "label": "R_9p",
+        "position": {
+          "x": 20.6326,
+          "y": 50.9359,
+          "z": 34.1932
+        }
+      },
+      {
+        "id": 252,
+        "label": "R_10d",
+        "position": {
+          "x": 9.5,
+          "y": 67.8472,
+          "z": 5.0731
+        }
+      },
+      {
+        "id": 253,
+        "label": "R_8C",
+        "position": {
+          "x": 39.5685,
+          "y": 18.1531,
+          "z": 36.715
+        }
+      },
+      {
+        "id": 254,
+        "label": "R_44",
+        "position": {
+          "x": 53.431,
+          "y": 18.9778,
+          "z": 12.591
+        }
+      },
+      {
+        "id": 255,
+        "label": "R_45",
+        "position": {
+          "x": 50.382,
+          "y": 26.5792,
+          "z": 3.3714
+        }
+      },
+      {
+        "id": 256,
+        "label": "R_47l",
+        "position": {
+          "x": 45.234,
+          "y": 33.282,
+          "z": -13.7013
+        }
+      },
+      {
+        "id": 257,
+        "label": "R_a47r",
+        "position": {
+          "x": 39.2721,
+          "y": 51.7682,
+          "z": -8.55
+        }
+      },
+      {
+        "id": 258,
+        "label": "R_6r",
+        "position": {
+          "x": 52.1951,
+          "y": 10.0254,
+          "z": 13.331
+        }
+      },
+      {
+        "id": 259,
+        "label": "R_IFJa",
+        "position": {
+          "x": 44.3623,
+          "y": 16.6019,
+          "z": 25.5586
+        }
+      },
+      {
+        "id": 260,
+        "label": "R_IFJp",
+        "position": {
+          "x": 38.6061,
+          "y": 7.4913,
+          "z": 27.1746
+        }
+      },
+      {
+        "id": 261,
+        "label": "R_IFSp",
+        "position": {
+          "x": 47.7224,
+          "y": 28.693,
+          "z": 18.9286
+        }
+      },
+      {
+        "id": 262,
+        "label": "R_IFSa",
+        "position": {
+          "x": 49.9917,
+          "y": 36.133,
+          "z": 3.711
+        }
+      },
+      {
+        "id": 263,
+        "label": "R_p9-46v",
+        "position": {
+          "x": 47.4775,
+          "y": 30.949,
+          "z": 27.2125
+        }
+      },
+      {
+        "id": 264,
+        "label": "R_46",
+        "position": {
+          "x": 36.7753,
+          "y": 39.899,
+          "z": 30.7436
+        }
+      },
+      {
+        "id": 265,
+        "label": "R_a9-46v",
+        "position": {
+          "x": 39.7225,
+          "y": 52.6637,
+          "z": 10.1349
+        }
+      },
+      {
+        "id": 266,
+        "label": "R_9-46d",
+        "position": {
+          "x": 29.2571,
+          "y": 49.3418,
+          "z": 23.4743
+        }
+      },
+      {
+        "id": 267,
+        "label": "R_9a",
+        "position": {
+          "x": 19.2701,
+          "y": 62.3271,
+          "z": 19.8617
+        }
+      },
+      {
+        "id": 268,
+        "label": "R_10v",
+        "position": {
+          "x": -0.5,
+          "y": 27.25,
+          "z": -24.375
+        }
+      },
+      {
+        "id": 269,
+        "label": "R_a10p",
+        "position": {
+          "x": 25.0974,
+          "y": 62.2746,
+          "z": -8.5039
+        }
+      },
+      {
+        "id": 270,
+        "label": "R_10pp",
+        "position": {
+          "x": 12.4893,
+          "y": 63.2321,
+          "z": -16.4082
+        }
+      },
+      {
+        "id": 271,
+        "label": "R_11l",
+        "position": {
+          "x": 25.7072,
+          "y": 48.1913,
+          "z": -16.2445
+        }
+      },
+      {
+        "id": 272,
+        "label": "R_13l",
+        "position": {
+          "x": 20.1407,
+          "y": 28.9822,
+          "z": -20.2606
+        }
+      },
+      {
+        "id": 273,
+        "label": "R_OFC",
+        "position": {
+          "x": -0.5,
+          "y": 23.1786,
+          "z": -23.9643
+        }
+      },
+      {
+        "id": 274,
+        "label": "R_47s",
+        "position": {
+          "x": 31.2879,
+          "y": 22.4318,
+          "z": -19.6222
+        }
+      },
+      {
+        "id": 275,
+        "label": "R_LIPd",
+        "position": {
+          "x": 31.1998,
+          "y": -54.4651,
+          "z": 45.1389
+        }
+      },
+      {
+        "id": 276,
+        "label": "R_6a",
+        "position": {
+          "x": 26.9379,
+          "y": -2.1452,
+          "z": 53.4619
+        }
+      },
+      {
+        "id": 277,
+        "label": "R_i6-8",
+        "position": {
+          "x": 32.9857,
+          "y": 8.1121,
+          "z": 58.0711
+        }
+      },
+      {
+        "id": 278,
+        "label": "R_s6-8",
+        "position": {
+          "x": 20.4722,
+          "y": 22.041,
+          "z": 59.118
+        }
+      },
+      {
+        "id": 279,
+        "label": "R_43",
+        "position": {
+          "x": 55.7014,
+          "y": 0.7986,
+          "z": 9.7493
+        }
+      },
+      {
+        "id": 280,
+        "label": "R_OP4",
+        "position": {
+          "x": 56.672,
+          "y": -11.1951,
+          "z": 14.1699
+        }
+      },
+      {
+        "id": 281,
+        "label": "R_OP1",
+        "position": {
+          "x": 41.9844,
+          "y": -19.7196,
+          "z": 19.1868
+        }
+      },
+      {
+        "id": 282,
+        "label": "R_OP2-3",
+        "position": {
+          "x": 38.6844,
+          "y": -13.5717,
+          "z": 18.4529
+        }
+      },
+      {
+        "id": 283,
+        "label": "R_52",
+        "position": {
+          "x": 38.2373,
+          "y": -20.5939,
+          "z": 2.6576
+        }
+      },
+      {
+        "id": 284,
+        "label": "R_RI",
+        "position": {
+          "x": 41.188,
+          "y": -30.8163,
+          "z": 19.7572
+        }
+      },
+      {
+        "id": 285,
+        "label": "R_PFcm",
+        "position": {
+          "x": 47.0206,
+          "y": -27.7562,
+          "z": 22.8386
+        }
+      },
+      {
+        "id": 286,
+        "label": "R_PoI2",
+        "position": {
+          "x": 41.0401,
+          "y": -1.3234,
+          "z": -0.3265
+        }
+      },
+      {
+        "id": 287,
+        "label": "R_TA2",
+        "position": {
+          "x": 50.6498,
+          "y": 1.1111,
+          "z": -5.5774
+        }
+      },
+      {
+        "id": 288,
+        "label": "R_FOP4",
+        "position": {
+          "x": 38.7014,
+          "y": 15.141,
+          "z": 7.4438
+        }
+      },
+      {
+        "id": 289,
+        "label": "R_MI",
+        "position": {
+          "x": 36.89,
+          "y": 12.3212,
+          "z": 3.0166
+        }
+      },
+      {
+        "id": 290,
+        "label": "R_Pir",
+        "position": {
+          "x": 33.209,
+          "y": 8.5452,
+          "z": -18.3559
+        }
+      },
+      {
+        "id": 291,
+        "label": "R_AVI",
+        "position": {
+          "x": 32.6765,
+          "y": 26.25,
+          "z": -3.3401
+        }
+      },
+      {
+        "id": 292,
+        "label": "R_AAIC",
+        "position": {
+          "x": 35.0712,
+          "y": 16.7672,
+          "z": -10.4889
+        }
+      },
+      {
+        "id": 293,
+        "label": "R_FOP1",
+        "position": {
+          "x": 46.1755,
+          "y": 4.6386,
+          "z": 5.7439
+        }
+      },
+      {
+        "id": 294,
+        "label": "R_FOP3",
+        "position": {
+          "x": 34.706,
+          "y": 8.0125,
+          "z": 12.0931
+        }
+      },
+      {
+        "id": 295,
+        "label": "R_FOP2",
+        "position": {
+          "x": 40.4563,
+          "y": -1.9126,
+          "z": 15.551
+        }
+      },
+      {
+        "id": 296,
+        "label": "R_PFt",
+        "position": {
+          "x": 56.2214,
+          "y": -20.3243,
+          "z": 37.2779
+        }
+      },
+      {
+        "id": 297,
+        "label": "R_AIP",
+        "position": {
+          "x": 38.6782,
+          "y": -38.671,
+          "z": 44.446
+        }
+      },
+      {
+        "id": 298,
+        "label": "R_EC",
+        "position": {
+          "x": 21.9653,
+          "y": -16.3076,
+          "z": -29.7914
+        }
+      },
+      {
+        "id": 299,
+        "label": "R_PreS",
+        "position": {
+          "x": 16.5333,
+          "y": -34.3921,
+          "z": -10.7781
+        }
+      },
+      {
+        "id": 300,
+        "label": "R_H",
+        "position": {
+          "x": 13.2115,
+          "y": -39.1346,
+          "z": -2.0192
+        }
+      },
+      {
+        "id": 301,
+        "label": "R_ProS",
+        "position": {
+          "x": 22.0104,
+          "y": -50.286,
+          "z": 3.0339
+        }
+      },
+      {
+        "id": 302,
+        "label": "R_PeEc",
+        "position": {
+          "x": 30.1558,
+          "y": -9.921,
+          "z": -34.3296
+        }
+      },
+      {
+        "id": 303,
+        "label": "R_STGa",
+        "position": {
+          "x": 50.1622,
+          "y": 15.2004,
+          "z": -19.0317
+        }
+      },
+      {
+        "id": 304,
+        "label": "R_PBelt",
+        "position": {
+          "x": 55.7916,
+          "y": -18.9197,
+          "z": 8.9682
+        }
+      },
+      {
+        "id": 305,
+        "label": "R_A5",
+        "position": {
+          "x": 62.3912,
+          "y": -14.1458,
+          "z": -1.8871
+        }
+      },
+      {
+        "id": 306,
+        "label": "R_PHA1",
+        "position": {
+          "x": 22.3286,
+          "y": -35.8067,
+          "z": -15.3268
+        }
+      },
+      {
+        "id": 307,
+        "label": "R_PHA3",
+        "position": {
+          "x": 33.4733,
+          "y": -37.2925,
+          "z": -14.9007
+        }
+      },
+      {
+        "id": 308,
+        "label": "R_STSda",
+        "position": {
+          "x": 53.1256,
+          "y": -0.6531,
+          "z": -14.8518
+        }
+      },
+      {
+        "id": 309,
+        "label": "R_STSdp",
+        "position": {
+          "x": 49.2487,
+          "y": -27.9362,
+          "z": -1.114
+        }
+      },
+      {
+        "id": 310,
+        "label": "R_STSvp",
+        "position": {
+          "x": 57.3578,
+          "y": -29.7056,
+          "z": -4.1428
+        }
+      },
+      {
+        "id": 311,
+        "label": "R_TGd",
+        "position": {
+          "x": 35.9692,
+          "y": 14.2698,
+          "z": -35.7327
+        }
+      },
+      {
+        "id": 312,
+        "label": "R_TE1a",
+        "position": {
+          "x": 58.8777,
+          "y": -0.5748,
+          "z": -26.1682
+        }
+      },
+      {
+        "id": 313,
+        "label": "R_TE1p",
+        "position": {
+          "x": 61.7643,
+          "y": -42.8111,
+          "z": -12.1323
+        }
+      },
+      {
+        "id": 314,
+        "label": "R_TE2a",
+        "position": {
+          "x": 55.1806,
+          "y": -18.1076,
+          "z": -30.153
+        }
+      },
+      {
+        "id": 315,
+        "label": "R_TF",
+        "position": {
+          "x": 41.3975,
+          "y": -20.0727,
+          "z": -30.0139
+        }
+      },
+      {
+        "id": 316,
+        "label": "R_TE2p",
+        "position": {
+          "x": 48.3043,
+          "y": -37.4086,
+          "z": -21.5332
+        }
+      },
+      {
+        "id": 317,
+        "label": "R_PHT",
+        "position": {
+          "x": 60.3208,
+          "y": -52.8903,
+          "z": -4.623
+        }
+      },
+      {
+        "id": 318,
+        "label": "R_PH",
+        "position": {
+          "x": 47.9129,
+          "y": -62.6316,
+          "z": -9.5152
+        }
+      },
+      {
+        "id": 319,
+        "label": "R_TPOJ1",
+        "position": {
+          "x": 54.4983,
+          "y": -43.9962,
+          "z": 12.3185
+        }
+      },
+      {
+        "id": 320,
+        "label": "R_TPOJ2",
+        "position": {
+          "x": 54.0637,
+          "y": -55.9967,
+          "z": 8.4856
+        }
+      },
+      {
+        "id": 321,
+        "label": "R_TPOJ3",
+        "position": {
+          "x": 46.514,
+          "y": -62.061,
+          "z": 18.2366
+        }
+      },
+      {
+        "id": 322,
+        "label": "R_DVT",
+        "position": {
+          "x": 20.2276,
+          "y": -71.1343,
+          "z": 36.5018
+        }
+      },
+      {
+        "id": 323,
+        "label": "R_PGp",
+        "position": {
+          "x": 44.5853,
+          "y": -77.6875,
+          "z": 25.4817
+        }
+      },
+      {
+        "id": 324,
+        "label": "R_IP2",
+        "position": {
+          "x": 43.2124,
+          "y": -41.7836,
+          "z": 46.2569
+        }
+      },
+      {
+        "id": 325,
+        "label": "R_IP1",
+        "position": {
+          "x": 34.1084,
+          "y": -67.1459,
+          "z": 41.9002
+        }
+      },
+      {
+        "id": 326,
+        "label": "R_IP0",
+        "position": {
+          "x": 34.1304,
+          "y": -74.7003,
+          "z": 27.4938
+        }
+      },
+      {
+        "id": 327,
+        "label": "R_PFop",
+        "position": {
+          "x": 61.991,
+          "y": -19.1475,
+          "z": 23.4041
+        }
+      },
+      {
+        "id": 328,
+        "label": "R_PF",
+        "position": {
+          "x": 60.7622,
+          "y": -28.5703,
+          "z": 37.1253
+        }
+      },
+      {
+        "id": 329,
+        "label": "R_PFm",
+        "position": {
+          "x": 52.6248,
+          "y": -48.012,
+          "z": 46.5486
+        }
+      },
+      {
+        "id": 330,
+        "label": "R_PGi",
+        "position": {
+          "x": 51.1735,
+          "y": -59.6045,
+          "z": 28.7867
+        }
+      },
+      {
+        "id": 331,
+        "label": "R_PGs",
+        "position": {
+          "x": 44.5803,
+          "y": -68.6269,
+          "z": 42.1399
+        }
+      },
+      {
+        "id": 332,
+        "label": "R_V6A",
+        "position": {
+          "x": 24.2369,
+          "y": -84.3861,
+          "z": 43.5123
+        }
+      },
+      {
+        "id": 333,
+        "label": "R_VMV1",
+        "position": {
+          "x": 18.1655,
+          "y": -54.5927,
+          "z": -6.3762
+        }
+      },
+      {
+        "id": 334,
+        "label": "R_VMV3",
+        "position": {
+          "x": 27.4959,
+          "y": -61.1176,
+          "z": -9.4297
+        }
+      },
+      {
+        "id": 335,
+        "label": "R_PHA2",
+        "position": {
+          "x": 31.1381,
+          "y": -35.282,
+          "z": -12.871
+        }
+      },
+      {
+        "id": 336,
+        "label": "R_V4t",
+        "position": {
+          "x": 50.1715,
+          "y": -74.1807,
+          "z": -0.2363
+        }
+      },
+      {
+        "id": 337,
+        "label": "R_FST",
+        "position": {
+          "x": 50.0233,
+          "y": -63.0782,
+          "z": 1.421
+        }
+      },
+      {
+        "id": 338,
+        "label": "R_V3CD",
+        "position": {
+          "x": 37.867,
+          "y": -83.5003,
+          "z": 12.1034
+        }
+      },
+      {
+        "id": 339,
+        "label": "R_LO3",
+        "position": {
+          "x": 43.5272,
+          "y": -74.2936,
+          "z": 13.2493
+        }
+      },
+      {
+        "id": 340,
+        "label": "R_VMV2",
+        "position": {
+          "x": 27.1853,
+          "y": -54.0215,
+          "z": -6.6275
+        }
+      },
+      {
+        "id": 341,
+        "label": "R_31pd",
+        "position": {
+          "x": 11.0481,
+          "y": -52.3633,
+          "z": 35.7534
+        }
+      },
+      {
+        "id": 342,
+        "label": "R_31a",
+        "position": {
+          "x": 6.6786,
+          "y": -41.3916,
+          "z": 42.7462
+        }
+      },
+      {
+        "id": 343,
+        "label": "R_VVC",
+        "position": {
+          "x": 28.9754,
+          "y": -48.2738,
+          "z": -17.6034
+        }
+      },
+      {
+        "id": 344,
+        "label": "R_25",
+        "position": {
+          "x": -0.5,
+          "y": 23.1848,
+          "z": -18.5326
+        }
+      },
+      {
+        "id": 345,
+        "label": "R_s32",
+        "position": {
+          "x": -0.5,
+          "y": 37.8952,
+          "z": -16.0887
+        }
+      },
+      {
+        "id": 346,
+        "label": "R_pOFC",
+        "position": {
+          "x": 13.1506,
+          "y": 15.4519,
+          "z": -19.9167
+        }
+      },
+      {
+        "id": 347,
+        "label": "R_PoI1",
+        "position": {
+          "x": 39.2738,
+          "y": -9.35,
+          "z": -4.6275
+        }
+      },
+      {
+        "id": 348,
+        "label": "R_Ig",
+        "position": {
+          "x": 36.5567,
+          "y": -12.947,
+          "z": 14.1143
+        }
+      },
+      {
+        "id": 349,
+        "label": "R_FOP5",
+        "position": {
+          "x": 36.9903,
+          "y": 27.5504,
+          "z": 4.8314
+        }
+      },
+      {
+        "id": 350,
+        "label": "R_p10p",
+        "position": {
+          "x": 24.2919,
+          "y": 60.9964,
+          "z": 3.7517
+        }
+      },
+      {
+        "id": 351,
+        "label": "R_p47r",
+        "position": {
+          "x": 46.3992,
+          "y": 44.2913,
+          "z": -4.2913
+        }
+      },
+      {
+        "id": 352,
+        "label": "R_TGv",
+        "position": {
+          "x": 35.207,
+          "y": -1.2092,
+          "z": -45.1935
+        }
+      },
+      {
+        "id": 353,
+        "label": "R_MBelt",
+        "position": {
+          "x": 45.4061,
+          "y": -16.026,
+          "z": 4.698
+        }
+      },
+      {
+        "id": 354,
+        "label": "R_LBelt",
+        "position": {
+          "x": 46.7576,
+          "y": -25.1332,
+          "z": 10.7439
+        }
+      },
+      {
+        "id": 355,
+        "label": "R_A4",
+        "position": {
+          "x": 64.4099,
+          "y": -15.491,
+          "z": 6.57
+        }
+      },
+      {
+        "id": 356,
+        "label": "R_STSva",
+        "position": {
+          "x": 54.1492,
+          "y": -8.5735,
+          "z": -16.9097
+        }
+      },
+      {
+        "id": 357,
+        "label": "R_TE1m",
+        "position": {
+          "x": 64.4446,
+          "y": -22.4579,
+          "z": -16.4575
+        }
+      },
+      {
+        "id": 358,
+        "label": "R_PI",
+        "position": {
+          "x": 44.2384,
+          "y": -3.3355,
+          "z": -12.7233
+        }
+      },
+      {
+        "id": 359,
+        "label": "R_a32pr",
+        "position": {
+          "x": 9.498,
+          "y": 28.6079,
+          "z": 30.5014
+        }
+      },
+      {
+        "id": 360,
+        "label": "R_p24",
+        "position": {
+          "x": 4.5403,
+          "y": 37.9601,
+          "z": 15.4066
+        }
+      },
+      {
+        "id": 361,
+        "label": "L_Cerebellum",
+        "position": {
+          "x": -24.4841,
+          "y": -62.9174,
+          "z": -36.8393
+        }
+      },
+      {
+        "id": 362,
+        "label": "L_Thalamus",
+        "position": {
+          "x": -11.4968,
+          "y": -19.2297,
+          "z": 6.6696
+        }
+      },
+      {
+        "id": 363,
+        "label": "L_Caudate",
+        "position": {
+          "x": -12.9359,
+          "y": 9.5888,
+          "z": 9.5779
+        }
+      },
+      {
+        "id": 364,
+        "label": "L_Putamen",
+        "position": {
+          "x": -26.3518,
+          "y": 0.0041,
+          "z": 0.1759
+        }
+      },
+      {
+        "id": 365,
+        "label": "L_Pallidum",
+        "position": {
+          "x": -20.5731,
+          "y": -5.126,
+          "z": -1.1612
+        }
+      },
+      {
+        "id": 366,
+        "label": "L_Hippocampus",
+        "position": {
+          "x": -25.4045,
+          "y": -22.4638,
+          "z": -14.298
+        }
+      },
+      {
+        "id": 367,
+        "label": "L_Amygdala",
+        "position": {
+          "x": -22.9962,
+          "y": -5.0696,
+          "z": -19.6654
+        }
+      },
+      {
+        "id": 368,
+        "label": "L_Accumbens",
+        "position": {
+          "x": -8.5215,
+          "y": 9.994,
+          "z": -8.4476
+        }
+      },
+      {
+        "id": 369,
+        "label": "L_VentralDC",
+        "position": {
+          "x": -10.5311,
+          "y": -15.4878,
+          "z": -10.5673
+        }
+      },
+      {
+        "id": 370,
+        "label": "R_Cerebellum",
+        "position": {
+          "x": -0.5,
+          "y": -55.7269,
+          "z": -48.0246
+        }
+      },
+      {
+        "id": 371,
+        "label": "R_Thalamus",
+        "position": {
+          "x": 11.2509,
+          "y": -17.528,
+          "z": 6.8822
+        }
+      },
+      {
+        "id": 372,
+        "label": "R_Caudate",
+        "position": {
+          "x": 13.0486,
+          "y": 11.0092,
+          "z": 9.6262
+        }
+      },
+      {
+        "id": 373,
+        "label": "R_Putamen",
+        "position": {
+          "x": 26.3425,
+          "y": 2.0114,
+          "z": -0.2748
+        }
+      },
+      {
+        "id": 374,
+        "label": "R_Pallidum",
+        "position": {
+          "x": 21.0138,
+          "y": -3.7858,
+          "z": -1.0325
+        }
+      },
+      {
+        "id": 375,
+        "label": "R_Hippocampus",
+        "position": {
+          "x": 26.0941,
+          "y": -21.3944,
+          "z": -14.0873
+        }
+      },
+      {
+        "id": 376,
+        "label": "R_Amygdala",
+        "position": {
+          "x": 23.24,
+          "y": -3.735,
+          "z": -19.8364
+        }
+      },
+      {
+        "id": 377,
+        "label": "R_Accumbens",
+        "position": {
+          "x": 7.9293,
+          "y": 11.3815,
+          "z": -7.4997
+        }
+      },
+      {
+        "id": 378,
+        "label": "R_VentralDC",
+        "position": {
+          "x": 10.5525,
+          "y": -14.6552,
+          "z": -10.1548
+        }
+      },
+      {
+        "id": 379,
+        "label": "Brain-Stem",
+        "position": {
+          "x": -6.0839,
+          "y": -30.9513,
+          "z": -33.0764
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "hcpmmp1ordered",
+    "atlas.name": "hcpmmp1ordered"
+  },
+  {
+    "label": "Destrieux (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 167,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Destrieux_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
+    "parcellation.atlas": {
+      "name": "Destrieux",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx_lh_g_and_s_frontomargin",
+        "position": {
+          "x": -24.0,
+          "y": 61.0717,
+          "z": -8.018
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx_lh_g_and_s_occipital_inf",
+        "position": {
+          "x": -38.2836,
+          "y": -83.0171,
+          "z": -9.6874
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx_lh_g_and_s_paracentral",
+        "position": {
+          "x": -7.2356,
+          "y": -35.3537,
+          "z": 69.4461
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx_lh_g_and_s_subcentral",
+        "position": {
+          "x": -56.3629,
+          "y": -10.6463,
+          "z": 15.3022
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx_lh_g_and_s_transv_frontopol",
+        "position": {
+          "x": -16.0892,
+          "y": 67.463,
+          "z": -2.0906
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx_lh_g_and_s_cingul-ant",
+        "position": {
+          "x": -7.219,
+          "y": 40.905,
+          "z": 7.0314
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx_lh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": -6.6139,
+          "y": 16.9951,
+          "z": 36.9201
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx_lh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": -6.9033,
+          "y": -11.2828,
+          "z": 41.5185
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx_lh_g_cingul-post-dorsal",
+        "position": {
+          "x": -3.03,
+          "y": -38.6929,
+          "z": 32.8713
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx_lh_g_cingul-post-ventral",
+        "position": {
+          "x": -6.7789,
+          "y": -49.4885,
+          "z": 7.9672
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx_lh_g_cuneus",
+        "position": {
+          "x": -4.8326,
+          "y": -80.1757,
+          "z": 23.1777
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx_lh_g_front_inf-opercular",
+        "position": {
+          "x": -50.105,
+          "y": 11.9496,
+          "z": 10.3457
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx_lh_g_front_inf-orbital",
+        "position": {
+          "x": -45.3208,
+          "y": 30.0249,
+          "z": -9.4672
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx_lh_g_front_inf-triangul",
+        "position": {
+          "x": -51.0645,
+          "y": 30.8717,
+          "z": 4.9089
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx_lh_g_front_middle",
+        "position": {
+          "x": -37.4162,
+          "y": 33.9899,
+          "z": 35.5547
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx_lh_g_front_sup",
+        "position": {
+          "x": -8.9765,
+          "y": 29.0693,
+          "z": 46.0935
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx_lh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": -38.1326,
+          "y": -6.1028,
+          "z": -0.4616
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx_lh_g_insular_short",
+        "position": {
+          "x": -37.6087,
+          "y": 10.0331,
+          "z": -3.6818
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx_lh_g_occipital_middle",
+        "position": {
+          "x": -37.9259,
+          "y": -87.5018,
+          "z": 13.1752
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx_lh_g_occipital_sup",
+        "position": {
+          "x": -14.4854,
+          "y": -91.9612,
+          "z": 30.1997
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx_lh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": -35.0602,
+          "y": -54.8076,
+          "z": -18.1465
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx_lh_g_oc-temp_med-lingual",
+        "position": {
+          "x": -10.4458,
+          "y": -71.206,
+          "z": -5.5908
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx_lh_g_oc-temp_med-parahip",
+        "position": {
+          "x": -22.7779,
+          "y": -18.6288,
+          "z": -25.4956
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx_lh_g_orbital",
+        "position": {
+          "x": -30.0351,
+          "y": 37.0414,
+          "z": -18.6018
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx_lh_g_pariet_inf-angular",
+        "position": {
+          "x": -43.3172,
+          "y": -68.6398,
+          "z": 41.3971
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx_lh_g_pariet_inf-supramar",
+        "position": {
+          "x": -58.3486,
+          "y": -36.939,
+          "z": 34.6425
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx_lh_g_parietal_sup",
+        "position": {
+          "x": -25.1312,
+          "y": -61.0393,
+          "z": 60.1347
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx_lh_g_postcentral",
+        "position": {
+          "x": -48.5895,
+          "y": -24.1446,
+          "z": 54.8891
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx_lh_g_precentral",
+        "position": {
+          "x": -46.509,
+          "y": -5.9234,
+          "z": 49.8839
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx_lh_g_precuneus",
+        "position": {
+          "x": -4.7441,
+          "y": -60.1616,
+          "z": 45.9517
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx_lh_g_rectus",
+        "position": {
+          "x": -3.8248,
+          "y": 38.4238,
+          "z": -22.5695
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx_lh_g_subcallosal",
+        "position": {
+          "x": -9.5127,
+          "y": 9.1883,
+          "z": -13.5187
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx_lh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": -48.0589,
+          "y": -17.4559,
+          "z": 8.2527
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx_lh_g_temp_sup-lateral",
+        "position": {
+          "x": -57.4003,
+          "y": -6.3553,
+          "z": -7.2621
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx_lh_g_temp_sup-plan_polar",
+        "position": {
+          "x": -40.3483,
+          "y": 8.1018,
+          "z": -19.141
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx_lh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": -58.0488,
+          "y": -37.1459,
+          "z": 18.2355
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx_lh_g_temporal_inf",
+        "position": {
+          "x": -52.3971,
+          "y": -34.1496,
+          "z": -25.5
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx_lh_g_temporal_middle",
+        "position": {
+          "x": -61.3249,
+          "y": -25.3671,
+          "z": -13.037
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx_lh_lat_fis-ant-horizont",
+        "position": {
+          "x": -42.3913,
+          "y": 32.7663,
+          "z": -2.8207
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx_lh_lat_fis-ant-vertical",
+        "position": {
+          "x": -46.445,
+          "y": 21.3861,
+          "z": 10.3704
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx_lh_lat_fis-post",
+        "position": {
+          "x": -41.2842,
+          "y": -34.15,
+          "z": 21.1458
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx_lh_pole_occipital",
+        "position": {
+          "x": -16.2053,
+          "y": -100.7264,
+          "z": -3.2525
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx_lh_pole_temporal",
+        "position": {
+          "x": -31.7438,
+          "y": 8.3073,
+          "z": -41.267
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx_lh_s_calcarine",
+        "position": {
+          "x": -15.7374,
+          "y": -68.8105,
+          "z": 5.6484
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx_lh_s_central",
+        "position": {
+          "x": -38.5248,
+          "y": -18.3079,
+          "z": 47.443
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx_lh_s_cingul-marginalis",
+        "position": {
+          "x": -12.3835,
+          "y": -38.0053,
+          "z": 50.0885
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx_lh_s_circular_insula_ant",
+        "position": {
+          "x": -30.5666,
+          "y": 21.569,
+          "z": -9.7416
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx_lh_s_circular_insula_inf",
+        "position": {
+          "x": -40.6835,
+          "y": -10.5521,
+          "z": -5.0486
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx_lh_s_circular_insula_sup",
+        "position": {
+          "x": -35.776,
+          "y": 6.3584,
+          "z": 11.8398
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx_lh_s_collat_transv_ant",
+        "position": {
+          "x": -40.9084,
+          "y": -19.3811,
+          "z": -28.3737
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx_lh_s_collat_transv_post",
+        "position": {
+          "x": -23.9819,
+          "y": -82.5479,
+          "z": -7.8354
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx_lh_s_front_inf",
+        "position": {
+          "x": -40.3037,
+          "y": 26.0116,
+          "z": 21.439
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx_lh_s_front_middle",
+        "position": {
+          "x": -27.1817,
+          "y": 47.3083,
+          "z": 19.4748
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx_lh_s_front_sup",
+        "position": {
+          "x": -23.7373,
+          "y": 22.6406,
+          "z": 46.3171
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx_lh_s_interm_prim-jensen",
+        "position": {
+          "x": -51.4334,
+          "y": -54.5265,
+          "z": 37.1475
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx_lh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": -34.9075,
+          "y": -51.414,
+          "z": 44.8004
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx_lh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": -32.1061,
+          "y": -85.948,
+          "z": 8.3716
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx_lh_s_oc_sup_and_transversal",
+        "position": {
+          "x": -26.3851,
+          "y": -82.69,
+          "z": 22.3452
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx_lh_s_occipital_ant",
+        "position": {
+          "x": -40.694,
+          "y": -68.579,
+          "z": 7.7443
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx_lh_s_oc-temp_lat",
+        "position": {
+          "x": -44.0357,
+          "y": -50.7328,
+          "z": -12.9207
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx_lh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": -28.0735,
+          "y": -46.5972,
+          "z": -11.5485
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx_lh_s_orbital_lateral",
+        "position": {
+          "x": -41.4841,
+          "y": 46.4036,
+          "z": -3.4932
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx_lh_s_orbital_med-olfact",
+        "position": {
+          "x": -12.4184,
+          "y": 26.4558,
+          "z": -19.7254
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx_lh_s_orbital-h_shaped",
+        "position": {
+          "x": -24.6261,
+          "y": 39.5289,
+          "z": -16.4209
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx_lh_s_parieto_occipital",
+        "position": {
+          "x": -14.7876,
+          "y": -68.1004,
+          "z": 25.8391
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx_lh_s_pericallosal",
+        "position": {
+          "x": -4.6719,
+          "y": -6.4706,
+          "z": 15.4169
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx_lh_s_postcentral",
+        "position": {
+          "x": -41.5756,
+          "y": -32.0865,
+          "z": 46.892
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx_lh_s_precentral-inf-part",
+        "position": {
+          "x": -44.5555,
+          "y": 4.4786,
+          "z": 31.2218
+        }
+      },
+      {
+        "id": 88,
+        "label": "ctx_lh_s_precentral-sup-part",
+        "position": {
+          "x": -29.0827,
+          "y": -9.2953,
+          "z": 56.1585
+        }
+      },
+      {
+        "id": 89,
+        "label": "ctx_lh_s_suborbital",
+        "position": {
+          "x": -6.9466,
+          "y": 43.4199,
+          "z": -13.0309
+        }
+      },
+      {
+        "id": 90,
+        "label": "ctx_lh_s_subparietal",
+        "position": {
+          "x": -9.7122,
+          "y": -48.6867,
+          "z": 38.7621
+        }
+      },
+      {
+        "id": 91,
+        "label": "ctx_lh_s_temporal_inf",
+        "position": {
+          "x": -53.7095,
+          "y": -13.637,
+          "z": -27.2072
+        }
+      },
+      {
+        "id": 92,
+        "label": "ctx_lh_s_temporal_sup",
+        "position": {
+          "x": -50.4691,
+          "y": -41.0099,
+          "z": 7.1445
+        }
+      },
+      {
+        "id": 93,
+        "label": "ctx_lh_s_temporal_transverse",
+        "position": {
+          "x": -51.7371,
+          "y": -22.4901,
+          "z": 6.1295
+        }
+      },
+      {
+        "id": 94,
+        "label": "ctx_rh_g_and_s_frontomargin",
+        "position": {
+          "x": 22.2577,
+          "y": 62.2808,
+          "z": -10.9596
+        }
+      },
+      {
+        "id": 95,
+        "label": "ctx_rh_g_and_s_occipital_inf",
+        "position": {
+          "x": 42.5309,
+          "y": -75.9362,
+          "z": -11.0983
+        }
+      },
+      {
+        "id": 96,
+        "label": "ctx_rh_g_and_s_paracentral",
+        "position": {
+          "x": 6.7722,
+          "y": -33.822,
+          "z": 69.3321
+        }
+      },
+      {
+        "id": 97,
+        "label": "ctx_rh_g_and_s_subcentral",
+        "position": {
+          "x": 56.6981,
+          "y": -7.5802,
+          "z": 15.2277
+        }
+      },
+      {
+        "id": 98,
+        "label": "ctx_rh_g_and_s_transv_frontopol",
+        "position": {
+          "x": 16.8463,
+          "y": 67.8866,
+          "z": 1.6446
+        }
+      },
+      {
+        "id": 99,
+        "label": "ctx_rh_g_and_s_cingul-ant",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 100,
+        "label": "ctx_rh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": 7.0708,
+          "y": 16.5535,
+          "z": 36.486
+        }
+      },
+      {
+        "id": 101,
+        "label": "ctx_rh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": 7.3054,
+          "y": -8.7592,
+          "z": 43.9232
+        }
+      },
+      {
+        "id": 102,
+        "label": "ctx_rh_g_cingul-post-dorsal",
+        "position": {
+          "x": 3.6303,
+          "y": -36.3968,
+          "z": 33.9612
+        }
+      },
+      {
+        "id": 103,
+        "label": "ctx_rh_g_cingul-post-ventral",
+        "position": {
+          "x": 7.92,
+          "y": -48.5479,
+          "z": 8.5795
+        }
+      },
+      {
+        "id": 104,
+        "label": "ctx_rh_g_cuneus",
+        "position": {
+          "x": 6.4586,
+          "y": -78.9207,
+          "z": 22.2696
+        }
+      },
+      {
+        "id": 105,
+        "label": "ctx_rh_g_front_inf-opercular",
+        "position": {
+          "x": 51.5669,
+          "y": 13.9053,
+          "z": 9.5014
+        }
+      },
+      {
+        "id": 106,
+        "label": "ctx_rh_g_front_inf-orbital",
+        "position": {
+          "x": 49.4969,
+          "y": 35.0579,
+          "z": -8.7516
+        }
+      },
+      {
+        "id": 107,
+        "label": "ctx_rh_g_front_inf-triangul",
+        "position": {
+          "x": 52.8144,
+          "y": 33.1095,
+          "z": 6.7407
+        }
+      },
+      {
+        "id": 108,
+        "label": "ctx_rh_g_front_middle",
+        "position": {
+          "x": 38.7159,
+          "y": 34.5516,
+          "z": 35.148
+        }
+      },
+      {
+        "id": 109,
+        "label": "ctx_rh_g_front_sup",
+        "position": {
+          "x": 9.7085,
+          "y": 29.6224,
+          "z": 47.3579
+        }
+      },
+      {
+        "id": 110,
+        "label": "ctx_rh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": 40.2448,
+          "y": -2.6863,
+          "z": -2.3974
+        }
+      },
+      {
+        "id": 111,
+        "label": "ctx_rh_g_insular_short",
+        "position": {
+          "x": 38.1091,
+          "y": 12.0044,
+          "z": -4.2694
+        }
+      },
+      {
+        "id": 112,
+        "label": "ctx_rh_g_occipital_middle",
+        "position": {
+          "x": 44.4103,
+          "y": -79.0762,
+          "z": 16.2817
+        }
+      },
+      {
+        "id": 113,
+        "label": "ctx_rh_g_occipital_sup",
+        "position": {
+          "x": 21.0472,
+          "y": -88.7719,
+          "z": 33.7281
+        }
+      },
+      {
+        "id": 114,
+        "label": "ctx_rh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": 34.514,
+          "y": -46.9914,
+          "z": -20.5891
+        }
+      },
+      {
+        "id": 115,
+        "label": "ctx_rh_g_oc-temp_med-lingual",
+        "position": {
+          "x": 10.6606,
+          "y": -66.325,
+          "z": -3.0172
+        }
+      },
+      {
+        "id": 116,
+        "label": "ctx_rh_g_oc-temp_med-parahip",
+        "position": {
+          "x": 24.0181,
+          "y": -13.5509,
+          "z": -27.867
+        }
+      },
+      {
+        "id": 117,
+        "label": "ctx_rh_g_orbital",
+        "position": {
+          "x": 29.2894,
+          "y": 36.5417,
+          "z": -18.3141
+        }
+      },
+      {
+        "id": 118,
+        "label": "ctx_rh_g_pariet_inf-angular",
+        "position": {
+          "x": 48.1448,
+          "y": -60.7703,
+          "z": 43.0383
+        }
+      },
+      {
+        "id": 119,
+        "label": "ctx_rh_g_pariet_inf-supramar",
+        "position": {
+          "x": 59.9047,
+          "y": -29.7624,
+          "z": 37.295
+        }
+      },
+      {
+        "id": 120,
+        "label": "ctx_rh_g_parietal_sup",
+        "position": {
+          "x": 25.6607,
+          "y": -59.5495,
+          "z": 62.988
+        }
+      },
+      {
+        "id": 121,
+        "label": "ctx_rh_g_postcentral",
+        "position": {
+          "x": 50.0604,
+          "y": -19.9696,
+          "z": 53.9498
+        }
+      },
+      {
+        "id": 122,
+        "label": "ctx_rh_g_precentral",
+        "position": {
+          "x": 47.2617,
+          "y": -4.1329,
+          "z": 49.8164
+        }
+      },
+      {
+        "id": 123,
+        "label": "ctx_rh_g_precuneus",
+        "position": {
+          "x": 5.3165,
+          "y": -59.5503,
+          "z": 46.5569
+        }
+      },
+      {
+        "id": 124,
+        "label": "ctx_rh_g_rectus",
+        "position": {
+          "x": 3.5741,
+          "y": 39.4113,
+          "z": -23.4651
+        }
+      },
+      {
+        "id": 125,
+        "label": "ctx_rh_g_subcallosal",
+        "position": {
+          "x": 4.4077,
+          "y": 13.1095,
+          "z": -11.5686
+        }
+      },
+      {
+        "id": 126,
+        "label": "ctx_rh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": 49.262,
+          "y": -12.6511,
+          "z": 6.6042
+        }
+      },
+      {
+        "id": 127,
+        "label": "ctx_rh_g_temp_sup-lateral",
+        "position": {
+          "x": 59.1945,
+          "y": -4.5715,
+          "z": -6.2145
+        }
+      },
+      {
+        "id": 128,
+        "label": "ctx_rh_g_temp_sup-plan_polar",
+        "position": {
+          "x": 39.3637,
+          "y": 10.4394,
+          "z": -19.4632
+        }
+      },
+      {
+        "id": 129,
+        "label": "ctx_rh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": 60.8687,
+          "y": -28.0353,
+          "z": 19.5365
+        }
+      },
+      {
+        "id": 130,
+        "label": "ctx_rh_g_temporal_inf",
+        "position": {
+          "x": 54.1066,
+          "y": -30.3604,
+          "z": -27.28
+        }
+      },
+      {
+        "id": 131,
+        "label": "ctx_rh_g_temporal_middle",
+        "position": {
+          "x": 61.7879,
+          "y": -23.5953,
+          "z": -12.5268
+        }
+      },
+      {
+        "id": 132,
+        "label": "ctx_rh_lat_fis-ant-horizont",
+        "position": {
+          "x": 42.0326,
+          "y": 29.2974,
+          "z": 0.0054
+        }
+      },
+      {
+        "id": 133,
+        "label": "ctx_rh_lat_fis-ant-vertical",
+        "position": {
+          "x": 49.276,
+          "y": 23.5427,
+          "z": 10.1533
+        }
+      },
+      {
+        "id": 134,
+        "label": "ctx_rh_lat_fis-post",
+        "position": {
+          "x": 41.0928,
+          "y": -25.633,
+          "z": 20.0004
+        }
+      },
+      {
+        "id": 135,
+        "label": "ctx_rh_pole_occipital",
+        "position": {
+          "x": 20.8655,
+          "y": -95.6293,
+          "z": -1.6295
+        }
+      },
+      {
+        "id": 136,
+        "label": "ctx_rh_pole_temporal",
+        "position": {
+          "x": 31.8922,
+          "y": 10.5642,
+          "z": -41.3543
+        }
+      },
+      {
+        "id": 137,
+        "label": "ctx_rh_s_calcarine",
+        "position": {
+          "x": 18.1099,
+          "y": -63.0424,
+          "z": 7.2867
+        }
+      },
+      {
+        "id": 138,
+        "label": "ctx_rh_s_central",
+        "position": {
+          "x": 39.7119,
+          "y": -15.6691,
+          "z": 46.7884
+        }
+      },
+      {
+        "id": 139,
+        "label": "ctx_rh_s_cingul-marginalis",
+        "position": {
+          "x": 12.5432,
+          "y": -36.8154,
+          "z": 51.2974
+        }
+      },
+      {
+        "id": 140,
+        "label": "ctx_rh_s_circular_insula_ant",
+        "position": {
+          "x": 31.3719,
+          "y": 23.9157,
+          "z": -8.5989
+        }
+      },
+      {
+        "id": 141,
+        "label": "ctx_rh_s_circular_insula_inf",
+        "position": {
+          "x": 42.9132,
+          "y": -7.3267,
+          "z": -6.4154
+        }
+      },
+      {
+        "id": 142,
+        "label": "ctx_rh_s_circular_insula_sup",
+        "position": {
+          "x": 37.0455,
+          "y": 9.8494,
+          "z": 9.8043
+        }
+      },
+      {
+        "id": 143,
+        "label": "ctx_rh_s_collat_transv_ant",
+        "position": {
+          "x": 41.6575,
+          "y": -17.6448,
+          "z": -28.9297
+        }
+      },
+      {
+        "id": 144,
+        "label": "ctx_rh_s_collat_transv_post",
+        "position": {
+          "x": 26.2846,
+          "y": -78.1792,
+          "z": -7.5346
+        }
+      },
+      {
+        "id": 145,
+        "label": "ctx_rh_s_front_inf",
+        "position": {
+          "x": 40.3424,
+          "y": 27.3534,
+          "z": 23.1634
+        }
+      },
+      {
+        "id": 146,
+        "label": "ctx_rh_s_front_middle",
+        "position": {
+          "x": 30.3692,
+          "y": 46.1326,
+          "z": 20.7821
+        }
+      },
+      {
+        "id": 147,
+        "label": "ctx_rh_s_front_sup",
+        "position": {
+          "x": 23.7666,
+          "y": 24.5791,
+          "z": 46.0738
+        }
+      },
+      {
+        "id": 148,
+        "label": "ctx_rh_s_interm_prim-jensen",
+        "position": {
+          "x": 53.7937,
+          "y": -41.9432,
+          "z": 39.6779
+        }
+      },
+      {
+        "id": 149,
+        "label": "ctx_rh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": 33.6163,
+          "y": -50.9082,
+          "z": 48.6832
+        }
+      },
+      {
+        "id": 150,
+        "label": "ctx_rh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": 36.9766,
+          "y": -79.5268,
+          "z": 8.9653
+        }
+      },
+      {
+        "id": 151,
+        "label": "ctx_rh_s_oc_sup_and_transversal",
+        "position": {
+          "x": 30.6016,
+          "y": -78.1289,
+          "z": 24.247
+        }
+      },
+      {
+        "id": 152,
+        "label": "ctx_rh_s_occipital_ant",
+        "position": {
+          "x": 47.6465,
+          "y": -63.6936,
+          "z": 5.1335
+        }
+      },
+      {
+        "id": 153,
+        "label": "ctx_rh_s_oc-temp_lat",
+        "position": {
+          "x": 45.5915,
+          "y": -46.1461,
+          "z": -15.3462
+        }
+      },
+      {
+        "id": 154,
+        "label": "ctx_rh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": 28.5243,
+          "y": -45.6739,
+          "z": -11.7078
+        }
+      },
+      {
+        "id": 155,
+        "label": "ctx_rh_s_orbital_lateral",
+        "position": {
+          "x": 42.425,
+          "y": 44.91,
+          "z": -2.1147
+        }
+      },
+      {
+        "id": 156,
+        "label": "ctx_rh_s_orbital_med-olfact",
+        "position": {
+          "x": 11.9521,
+          "y": 26.9754,
+          "z": -19.2287
+        }
+      },
+      {
+        "id": 157,
+        "label": "ctx_rh_s_orbital-h_shaped",
+        "position": {
+          "x": 25.3021,
+          "y": 40.7269,
+          "z": -16.2795
+        }
+      },
+      {
+        "id": 158,
+        "label": "ctx_rh_s_parieto_occipital",
+        "position": {
+          "x": 17.9312,
+          "y": -66.3152,
+          "z": 28.4718
+        }
+      },
+      {
+        "id": 159,
+        "label": "ctx_rh_s_pericallosal",
+        "position": {
+          "x": 5.8165,
+          "y": -2.6584,
+          "z": 18.2367
+        }
+      },
+      {
+        "id": 160,
+        "label": "ctx_rh_s_postcentral",
+        "position": {
+          "x": 40.1527,
+          "y": -29.5508,
+          "z": 48.8675
+        }
+      },
+      {
+        "id": 161,
+        "label": "ctx_rh_s_precentral-inf-part",
+        "position": {
+          "x": 44.843,
+          "y": 7.2932,
+          "z": 31.5875
+        }
+      },
+      {
+        "id": 162,
+        "label": "ctx_rh_s_precentral-sup-part",
+        "position": {
+          "x": 29.9073,
+          "y": -7.5881,
+          "z": 57.3501
+        }
+      },
+      {
+        "id": 163,
+        "label": "ctx_rh_s_suborbital",
+        "position": {
+          "x": 4.7283,
+          "y": 41.9289,
+          "z": -16.9112
+        }
+      },
+      {
+        "id": 164,
+        "label": "ctx_rh_s_subparietal",
+        "position": {
+          "x": 9.8259,
+          "y": -48.1836,
+          "z": 38.7466
+        }
+      },
+      {
+        "id": 165,
+        "label": "ctx_rh_s_temporal_inf",
+        "position": {
+          "x": 52.7454,
+          "y": -13.5317,
+          "z": -26.3953
+        }
+      },
+      {
+        "id": 166,
+        "label": "ctx_rh_s_temporal_sup",
+        "position": {
+          "x": 53.2414,
+          "y": -30.4284,
+          "z": 4.9165
+        }
+      },
+      {
+        "id": 167,
+        "label": "ctx_rh_s_temporal_transverse",
+        "position": {
+          "x": 53.2088,
+          "y": -17.5966,
+          "z": 7.2557
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Destrieux_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "Destrieux",
+    "atlas.name": "Destrieux"
+  },
+  {
+    "label": "Destrieux (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 167,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Destrieux_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "Destrieux",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "dTOR",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx_lh_g_and_s_frontomargin",
+        "position": {
+          "x": -24.0,
+          "y": 61.0717,
+          "z": -8.018
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx_lh_g_and_s_occipital_inf",
+        "position": {
+          "x": -38.2836,
+          "y": -83.0171,
+          "z": -9.6874
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx_lh_g_and_s_paracentral",
+        "position": {
+          "x": -7.2356,
+          "y": -35.3537,
+          "z": 69.4461
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx_lh_g_and_s_subcentral",
+        "position": {
+          "x": -56.3629,
+          "y": -10.6463,
+          "z": 15.3022
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx_lh_g_and_s_transv_frontopol",
+        "position": {
+          "x": -16.0892,
+          "y": 67.463,
+          "z": -2.0906
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx_lh_g_and_s_cingul-ant",
+        "position": {
+          "x": -7.219,
+          "y": 40.905,
+          "z": 7.0314
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx_lh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": -6.6139,
+          "y": 16.9951,
+          "z": 36.9201
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx_lh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": -6.9033,
+          "y": -11.2828,
+          "z": 41.5185
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx_lh_g_cingul-post-dorsal",
+        "position": {
+          "x": -3.03,
+          "y": -38.6929,
+          "z": 32.8713
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx_lh_g_cingul-post-ventral",
+        "position": {
+          "x": -6.7789,
+          "y": -49.4885,
+          "z": 7.9672
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx_lh_g_cuneus",
+        "position": {
+          "x": -4.8326,
+          "y": -80.1757,
+          "z": 23.1777
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx_lh_g_front_inf-opercular",
+        "position": {
+          "x": -50.105,
+          "y": 11.9496,
+          "z": 10.3457
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx_lh_g_front_inf-orbital",
+        "position": {
+          "x": -45.3208,
+          "y": 30.0249,
+          "z": -9.4672
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx_lh_g_front_inf-triangul",
+        "position": {
+          "x": -51.0645,
+          "y": 30.8717,
+          "z": 4.9089
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx_lh_g_front_middle",
+        "position": {
+          "x": -37.4162,
+          "y": 33.9899,
+          "z": 35.5547
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx_lh_g_front_sup",
+        "position": {
+          "x": -8.9765,
+          "y": 29.0693,
+          "z": 46.0935
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx_lh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": -38.1326,
+          "y": -6.1028,
+          "z": -0.4616
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx_lh_g_insular_short",
+        "position": {
+          "x": -37.6087,
+          "y": 10.0331,
+          "z": -3.6818
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx_lh_g_occipital_middle",
+        "position": {
+          "x": -37.9259,
+          "y": -87.5018,
+          "z": 13.1752
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx_lh_g_occipital_sup",
+        "position": {
+          "x": -14.4854,
+          "y": -91.9612,
+          "z": 30.1997
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx_lh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": -35.0602,
+          "y": -54.8076,
+          "z": -18.1465
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx_lh_g_oc-temp_med-lingual",
+        "position": {
+          "x": -10.4458,
+          "y": -71.206,
+          "z": -5.5908
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx_lh_g_oc-temp_med-parahip",
+        "position": {
+          "x": -22.7779,
+          "y": -18.6288,
+          "z": -25.4956
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx_lh_g_orbital",
+        "position": {
+          "x": -30.0351,
+          "y": 37.0414,
+          "z": -18.6018
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx_lh_g_pariet_inf-angular",
+        "position": {
+          "x": -43.3172,
+          "y": -68.6398,
+          "z": 41.3971
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx_lh_g_pariet_inf-supramar",
+        "position": {
+          "x": -58.3486,
+          "y": -36.939,
+          "z": 34.6425
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx_lh_g_parietal_sup",
+        "position": {
+          "x": -25.1312,
+          "y": -61.0393,
+          "z": 60.1347
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx_lh_g_postcentral",
+        "position": {
+          "x": -48.5895,
+          "y": -24.1446,
+          "z": 54.8891
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx_lh_g_precentral",
+        "position": {
+          "x": -46.509,
+          "y": -5.9234,
+          "z": 49.8839
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx_lh_g_precuneus",
+        "position": {
+          "x": -4.7441,
+          "y": -60.1616,
+          "z": 45.9517
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx_lh_g_rectus",
+        "position": {
+          "x": -3.8248,
+          "y": 38.4238,
+          "z": -22.5695
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx_lh_g_subcallosal",
+        "position": {
+          "x": -9.5127,
+          "y": 9.1883,
+          "z": -13.5187
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx_lh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": -48.0589,
+          "y": -17.4559,
+          "z": 8.2527
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx_lh_g_temp_sup-lateral",
+        "position": {
+          "x": -57.4003,
+          "y": -6.3553,
+          "z": -7.2621
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx_lh_g_temp_sup-plan_polar",
+        "position": {
+          "x": -40.3483,
+          "y": 8.1018,
+          "z": -19.141
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx_lh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": -58.0488,
+          "y": -37.1459,
+          "z": 18.2355
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx_lh_g_temporal_inf",
+        "position": {
+          "x": -52.3971,
+          "y": -34.1496,
+          "z": -25.5
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx_lh_g_temporal_middle",
+        "position": {
+          "x": -61.3249,
+          "y": -25.3671,
+          "z": -13.037
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx_lh_lat_fis-ant-horizont",
+        "position": {
+          "x": -42.3913,
+          "y": 32.7663,
+          "z": -2.8207
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx_lh_lat_fis-ant-vertical",
+        "position": {
+          "x": -46.445,
+          "y": 21.3861,
+          "z": 10.3704
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx_lh_lat_fis-post",
+        "position": {
+          "x": -41.2842,
+          "y": -34.15,
+          "z": 21.1458
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx_lh_pole_occipital",
+        "position": {
+          "x": -16.2053,
+          "y": -100.7264,
+          "z": -3.2525
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx_lh_pole_temporal",
+        "position": {
+          "x": -31.7438,
+          "y": 8.3073,
+          "z": -41.267
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx_lh_s_calcarine",
+        "position": {
+          "x": -15.7374,
+          "y": -68.8105,
+          "z": 5.6484
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx_lh_s_central",
+        "position": {
+          "x": -38.5248,
+          "y": -18.3079,
+          "z": 47.443
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx_lh_s_cingul-marginalis",
+        "position": {
+          "x": -12.3835,
+          "y": -38.0053,
+          "z": 50.0885
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx_lh_s_circular_insula_ant",
+        "position": {
+          "x": -30.5666,
+          "y": 21.569,
+          "z": -9.7416
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx_lh_s_circular_insula_inf",
+        "position": {
+          "x": -40.6835,
+          "y": -10.5521,
+          "z": -5.0486
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx_lh_s_circular_insula_sup",
+        "position": {
+          "x": -35.776,
+          "y": 6.3584,
+          "z": 11.8398
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx_lh_s_collat_transv_ant",
+        "position": {
+          "x": -40.9084,
+          "y": -19.3811,
+          "z": -28.3737
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx_lh_s_collat_transv_post",
+        "position": {
+          "x": -23.9819,
+          "y": -82.5479,
+          "z": -7.8354
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx_lh_s_front_inf",
+        "position": {
+          "x": -40.3037,
+          "y": 26.0116,
+          "z": 21.439
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx_lh_s_front_middle",
+        "position": {
+          "x": -27.1817,
+          "y": 47.3083,
+          "z": 19.4748
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx_lh_s_front_sup",
+        "position": {
+          "x": -23.7373,
+          "y": 22.6406,
+          "z": 46.3171
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx_lh_s_interm_prim-jensen",
+        "position": {
+          "x": -51.4334,
+          "y": -54.5265,
+          "z": 37.1475
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx_lh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": -34.9075,
+          "y": -51.414,
+          "z": 44.8004
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx_lh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": -32.1061,
+          "y": -85.948,
+          "z": 8.3716
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx_lh_s_oc_sup_and_transversal",
+        "position": {
+          "x": -26.3851,
+          "y": -82.69,
+          "z": 22.3452
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx_lh_s_occipital_ant",
+        "position": {
+          "x": -40.694,
+          "y": -68.579,
+          "z": 7.7443
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx_lh_s_oc-temp_lat",
+        "position": {
+          "x": -44.0357,
+          "y": -50.7328,
+          "z": -12.9207
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx_lh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": -28.0735,
+          "y": -46.5972,
+          "z": -11.5485
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx_lh_s_orbital_lateral",
+        "position": {
+          "x": -41.4841,
+          "y": 46.4036,
+          "z": -3.4932
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx_lh_s_orbital_med-olfact",
+        "position": {
+          "x": -12.4184,
+          "y": 26.4558,
+          "z": -19.7254
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx_lh_s_orbital-h_shaped",
+        "position": {
+          "x": -24.6261,
+          "y": 39.5289,
+          "z": -16.4209
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx_lh_s_parieto_occipital",
+        "position": {
+          "x": -14.7876,
+          "y": -68.1004,
+          "z": 25.8391
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx_lh_s_pericallosal",
+        "position": {
+          "x": -4.6719,
+          "y": -6.4706,
+          "z": 15.4169
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx_lh_s_postcentral",
+        "position": {
+          "x": -41.5756,
+          "y": -32.0865,
+          "z": 46.892
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx_lh_s_precentral-inf-part",
+        "position": {
+          "x": -44.5555,
+          "y": 4.4786,
+          "z": 31.2218
+        }
+      },
+      {
+        "id": 88,
+        "label": "ctx_lh_s_precentral-sup-part",
+        "position": {
+          "x": -29.0827,
+          "y": -9.2953,
+          "z": 56.1585
+        }
+      },
+      {
+        "id": 89,
+        "label": "ctx_lh_s_suborbital",
+        "position": {
+          "x": -6.9466,
+          "y": 43.4199,
+          "z": -13.0309
+        }
+      },
+      {
+        "id": 90,
+        "label": "ctx_lh_s_subparietal",
+        "position": {
+          "x": -9.7122,
+          "y": -48.6867,
+          "z": 38.7621
+        }
+      },
+      {
+        "id": 91,
+        "label": "ctx_lh_s_temporal_inf",
+        "position": {
+          "x": -53.7095,
+          "y": -13.637,
+          "z": -27.2072
+        }
+      },
+      {
+        "id": 92,
+        "label": "ctx_lh_s_temporal_sup",
+        "position": {
+          "x": -50.4691,
+          "y": -41.0099,
+          "z": 7.1445
+        }
+      },
+      {
+        "id": 93,
+        "label": "ctx_lh_s_temporal_transverse",
+        "position": {
+          "x": -51.7371,
+          "y": -22.4901,
+          "z": 6.1295
+        }
+      },
+      {
+        "id": 94,
+        "label": "ctx_rh_g_and_s_frontomargin",
+        "position": {
+          "x": 22.2577,
+          "y": 62.2808,
+          "z": -10.9596
+        }
+      },
+      {
+        "id": 95,
+        "label": "ctx_rh_g_and_s_occipital_inf",
+        "position": {
+          "x": 42.5309,
+          "y": -75.9362,
+          "z": -11.0983
+        }
+      },
+      {
+        "id": 96,
+        "label": "ctx_rh_g_and_s_paracentral",
+        "position": {
+          "x": 6.7722,
+          "y": -33.822,
+          "z": 69.3321
+        }
+      },
+      {
+        "id": 97,
+        "label": "ctx_rh_g_and_s_subcentral",
+        "position": {
+          "x": 56.6981,
+          "y": -7.5802,
+          "z": 15.2277
+        }
+      },
+      {
+        "id": 98,
+        "label": "ctx_rh_g_and_s_transv_frontopol",
+        "position": {
+          "x": 16.8463,
+          "y": 67.8866,
+          "z": 1.6446
+        }
+      },
+      {
+        "id": 99,
+        "label": "ctx_rh_g_and_s_cingul-ant",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 100,
+        "label": "ctx_rh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": 7.0708,
+          "y": 16.5535,
+          "z": 36.486
+        }
+      },
+      {
+        "id": 101,
+        "label": "ctx_rh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": 7.3054,
+          "y": -8.7592,
+          "z": 43.9232
+        }
+      },
+      {
+        "id": 102,
+        "label": "ctx_rh_g_cingul-post-dorsal",
+        "position": {
+          "x": 3.6303,
+          "y": -36.3968,
+          "z": 33.9612
+        }
+      },
+      {
+        "id": 103,
+        "label": "ctx_rh_g_cingul-post-ventral",
+        "position": {
+          "x": 7.92,
+          "y": -48.5479,
+          "z": 8.5795
+        }
+      },
+      {
+        "id": 104,
+        "label": "ctx_rh_g_cuneus",
+        "position": {
+          "x": 6.4586,
+          "y": -78.9207,
+          "z": 22.2696
+        }
+      },
+      {
+        "id": 105,
+        "label": "ctx_rh_g_front_inf-opercular",
+        "position": {
+          "x": 51.5669,
+          "y": 13.9053,
+          "z": 9.5014
+        }
+      },
+      {
+        "id": 106,
+        "label": "ctx_rh_g_front_inf-orbital",
+        "position": {
+          "x": 49.4969,
+          "y": 35.0579,
+          "z": -8.7516
+        }
+      },
+      {
+        "id": 107,
+        "label": "ctx_rh_g_front_inf-triangul",
+        "position": {
+          "x": 52.8144,
+          "y": 33.1095,
+          "z": 6.7407
+        }
+      },
+      {
+        "id": 108,
+        "label": "ctx_rh_g_front_middle",
+        "position": {
+          "x": 38.7159,
+          "y": 34.5516,
+          "z": 35.148
+        }
+      },
+      {
+        "id": 109,
+        "label": "ctx_rh_g_front_sup",
+        "position": {
+          "x": 9.7085,
+          "y": 29.6224,
+          "z": 47.3579
+        }
+      },
+      {
+        "id": 110,
+        "label": "ctx_rh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": 40.2448,
+          "y": -2.6863,
+          "z": -2.3974
+        }
+      },
+      {
+        "id": 111,
+        "label": "ctx_rh_g_insular_short",
+        "position": {
+          "x": 38.1091,
+          "y": 12.0044,
+          "z": -4.2694
+        }
+      },
+      {
+        "id": 112,
+        "label": "ctx_rh_g_occipital_middle",
+        "position": {
+          "x": 44.4103,
+          "y": -79.0762,
+          "z": 16.2817
+        }
+      },
+      {
+        "id": 113,
+        "label": "ctx_rh_g_occipital_sup",
+        "position": {
+          "x": 21.0472,
+          "y": -88.7719,
+          "z": 33.7281
+        }
+      },
+      {
+        "id": 114,
+        "label": "ctx_rh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": 34.514,
+          "y": -46.9914,
+          "z": -20.5891
+        }
+      },
+      {
+        "id": 115,
+        "label": "ctx_rh_g_oc-temp_med-lingual",
+        "position": {
+          "x": 10.6606,
+          "y": -66.325,
+          "z": -3.0172
+        }
+      },
+      {
+        "id": 116,
+        "label": "ctx_rh_g_oc-temp_med-parahip",
+        "position": {
+          "x": 24.0181,
+          "y": -13.5509,
+          "z": -27.867
+        }
+      },
+      {
+        "id": 117,
+        "label": "ctx_rh_g_orbital",
+        "position": {
+          "x": 29.2894,
+          "y": 36.5417,
+          "z": -18.3141
+        }
+      },
+      {
+        "id": 118,
+        "label": "ctx_rh_g_pariet_inf-angular",
+        "position": {
+          "x": 48.1448,
+          "y": -60.7703,
+          "z": 43.0383
+        }
+      },
+      {
+        "id": 119,
+        "label": "ctx_rh_g_pariet_inf-supramar",
+        "position": {
+          "x": 59.9047,
+          "y": -29.7624,
+          "z": 37.295
+        }
+      },
+      {
+        "id": 120,
+        "label": "ctx_rh_g_parietal_sup",
+        "position": {
+          "x": 25.6607,
+          "y": -59.5495,
+          "z": 62.988
+        }
+      },
+      {
+        "id": 121,
+        "label": "ctx_rh_g_postcentral",
+        "position": {
+          "x": 50.0604,
+          "y": -19.9696,
+          "z": 53.9498
+        }
+      },
+      {
+        "id": 122,
+        "label": "ctx_rh_g_precentral",
+        "position": {
+          "x": 47.2617,
+          "y": -4.1329,
+          "z": 49.8164
+        }
+      },
+      {
+        "id": 123,
+        "label": "ctx_rh_g_precuneus",
+        "position": {
+          "x": 5.3165,
+          "y": -59.5503,
+          "z": 46.5569
+        }
+      },
+      {
+        "id": 124,
+        "label": "ctx_rh_g_rectus",
+        "position": {
+          "x": 3.5741,
+          "y": 39.4113,
+          "z": -23.4651
+        }
+      },
+      {
+        "id": 125,
+        "label": "ctx_rh_g_subcallosal",
+        "position": {
+          "x": 4.4077,
+          "y": 13.1095,
+          "z": -11.5686
+        }
+      },
+      {
+        "id": 126,
+        "label": "ctx_rh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": 49.262,
+          "y": -12.6511,
+          "z": 6.6042
+        }
+      },
+      {
+        "id": 127,
+        "label": "ctx_rh_g_temp_sup-lateral",
+        "position": {
+          "x": 59.1945,
+          "y": -4.5715,
+          "z": -6.2145
+        }
+      },
+      {
+        "id": 128,
+        "label": "ctx_rh_g_temp_sup-plan_polar",
+        "position": {
+          "x": 39.3637,
+          "y": 10.4394,
+          "z": -19.4632
+        }
+      },
+      {
+        "id": 129,
+        "label": "ctx_rh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": 60.8687,
+          "y": -28.0353,
+          "z": 19.5365
+        }
+      },
+      {
+        "id": 130,
+        "label": "ctx_rh_g_temporal_inf",
+        "position": {
+          "x": 54.1066,
+          "y": -30.3604,
+          "z": -27.28
+        }
+      },
+      {
+        "id": 131,
+        "label": "ctx_rh_g_temporal_middle",
+        "position": {
+          "x": 61.7879,
+          "y": -23.5953,
+          "z": -12.5268
+        }
+      },
+      {
+        "id": 132,
+        "label": "ctx_rh_lat_fis-ant-horizont",
+        "position": {
+          "x": 42.0326,
+          "y": 29.2974,
+          "z": 0.0054
+        }
+      },
+      {
+        "id": 133,
+        "label": "ctx_rh_lat_fis-ant-vertical",
+        "position": {
+          "x": 49.276,
+          "y": 23.5427,
+          "z": 10.1533
+        }
+      },
+      {
+        "id": 134,
+        "label": "ctx_rh_lat_fis-post",
+        "position": {
+          "x": 41.0928,
+          "y": -25.633,
+          "z": 20.0004
+        }
+      },
+      {
+        "id": 135,
+        "label": "ctx_rh_pole_occipital",
+        "position": {
+          "x": 20.8655,
+          "y": -95.6293,
+          "z": -1.6295
+        }
+      },
+      {
+        "id": 136,
+        "label": "ctx_rh_pole_temporal",
+        "position": {
+          "x": 31.8922,
+          "y": 10.5642,
+          "z": -41.3543
+        }
+      },
+      {
+        "id": 137,
+        "label": "ctx_rh_s_calcarine",
+        "position": {
+          "x": 18.1099,
+          "y": -63.0424,
+          "z": 7.2867
+        }
+      },
+      {
+        "id": 138,
+        "label": "ctx_rh_s_central",
+        "position": {
+          "x": 39.7119,
+          "y": -15.6691,
+          "z": 46.7884
+        }
+      },
+      {
+        "id": 139,
+        "label": "ctx_rh_s_cingul-marginalis",
+        "position": {
+          "x": 12.5432,
+          "y": -36.8154,
+          "z": 51.2974
+        }
+      },
+      {
+        "id": 140,
+        "label": "ctx_rh_s_circular_insula_ant",
+        "position": {
+          "x": 31.3719,
+          "y": 23.9157,
+          "z": -8.5989
+        }
+      },
+      {
+        "id": 141,
+        "label": "ctx_rh_s_circular_insula_inf",
+        "position": {
+          "x": 42.9132,
+          "y": -7.3267,
+          "z": -6.4154
+        }
+      },
+      {
+        "id": 142,
+        "label": "ctx_rh_s_circular_insula_sup",
+        "position": {
+          "x": 37.0455,
+          "y": 9.8494,
+          "z": 9.8043
+        }
+      },
+      {
+        "id": 143,
+        "label": "ctx_rh_s_collat_transv_ant",
+        "position": {
+          "x": 41.6575,
+          "y": -17.6448,
+          "z": -28.9297
+        }
+      },
+      {
+        "id": 144,
+        "label": "ctx_rh_s_collat_transv_post",
+        "position": {
+          "x": 26.2846,
+          "y": -78.1792,
+          "z": -7.5346
+        }
+      },
+      {
+        "id": 145,
+        "label": "ctx_rh_s_front_inf",
+        "position": {
+          "x": 40.3424,
+          "y": 27.3534,
+          "z": 23.1634
+        }
+      },
+      {
+        "id": 146,
+        "label": "ctx_rh_s_front_middle",
+        "position": {
+          "x": 30.3692,
+          "y": 46.1326,
+          "z": 20.7821
+        }
+      },
+      {
+        "id": 147,
+        "label": "ctx_rh_s_front_sup",
+        "position": {
+          "x": 23.7666,
+          "y": 24.5791,
+          "z": 46.0738
+        }
+      },
+      {
+        "id": 148,
+        "label": "ctx_rh_s_interm_prim-jensen",
+        "position": {
+          "x": 53.7937,
+          "y": -41.9432,
+          "z": 39.6779
+        }
+      },
+      {
+        "id": 149,
+        "label": "ctx_rh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": 33.6163,
+          "y": -50.9082,
+          "z": 48.6832
+        }
+      },
+      {
+        "id": 150,
+        "label": "ctx_rh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": 36.9766,
+          "y": -79.5268,
+          "z": 8.9653
+        }
+      },
+      {
+        "id": 151,
+        "label": "ctx_rh_s_oc_sup_and_transversal",
+        "position": {
+          "x": 30.6016,
+          "y": -78.1289,
+          "z": 24.247
+        }
+      },
+      {
+        "id": 152,
+        "label": "ctx_rh_s_occipital_ant",
+        "position": {
+          "x": 47.6465,
+          "y": -63.6936,
+          "z": 5.1335
+        }
+      },
+      {
+        "id": 153,
+        "label": "ctx_rh_s_oc-temp_lat",
+        "position": {
+          "x": 45.5915,
+          "y": -46.1461,
+          "z": -15.3462
+        }
+      },
+      {
+        "id": 154,
+        "label": "ctx_rh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": 28.5243,
+          "y": -45.6739,
+          "z": -11.7078
+        }
+      },
+      {
+        "id": 155,
+        "label": "ctx_rh_s_orbital_lateral",
+        "position": {
+          "x": 42.425,
+          "y": 44.91,
+          "z": -2.1147
+        }
+      },
+      {
+        "id": 156,
+        "label": "ctx_rh_s_orbital_med-olfact",
+        "position": {
+          "x": 11.9521,
+          "y": 26.9754,
+          "z": -19.2287
+        }
+      },
+      {
+        "id": 157,
+        "label": "ctx_rh_s_orbital-h_shaped",
+        "position": {
+          "x": 25.3021,
+          "y": 40.7269,
+          "z": -16.2795
+        }
+      },
+      {
+        "id": 158,
+        "label": "ctx_rh_s_parieto_occipital",
+        "position": {
+          "x": 17.9312,
+          "y": -66.3152,
+          "z": 28.4718
+        }
+      },
+      {
+        "id": 159,
+        "label": "ctx_rh_s_pericallosal",
+        "position": {
+          "x": 5.8165,
+          "y": -2.6584,
+          "z": 18.2367
+        }
+      },
+      {
+        "id": 160,
+        "label": "ctx_rh_s_postcentral",
+        "position": {
+          "x": 40.1527,
+          "y": -29.5508,
+          "z": 48.8675
+        }
+      },
+      {
+        "id": 161,
+        "label": "ctx_rh_s_precentral-inf-part",
+        "position": {
+          "x": 44.843,
+          "y": 7.2932,
+          "z": 31.5875
+        }
+      },
+      {
+        "id": 162,
+        "label": "ctx_rh_s_precentral-sup-part",
+        "position": {
+          "x": 29.9073,
+          "y": -7.5881,
+          "z": 57.3501
+        }
+      },
+      {
+        "id": 163,
+        "label": "ctx_rh_s_suborbital",
+        "position": {
+          "x": 4.7283,
+          "y": 41.9289,
+          "z": -16.9112
+        }
+      },
+      {
+        "id": 164,
+        "label": "ctx_rh_s_subparietal",
+        "position": {
+          "x": 9.8259,
+          "y": -48.1836,
+          "z": 38.7466
+        }
+      },
+      {
+        "id": 165,
+        "label": "ctx_rh_s_temporal_inf",
+        "position": {
+          "x": 52.7454,
+          "y": -13.5317,
+          "z": -26.3953
+        }
+      },
+      {
+        "id": 166,
+        "label": "ctx_rh_s_temporal_sup",
+        "position": {
+          "x": 53.2414,
+          "y": -30.4284,
+          "z": 4.9165
+        }
+      },
+      {
+        "id": 167,
+        "label": "ctx_rh_s_temporal_transverse",
+        "position": {
+          "x": 53.2088,
+          "y": -17.5966,
+          "z": 7.2557
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Destrieux_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "Destrieux",
+    "atlas.name": "Destrieux"
+  },
+  {
+    "label": "Schaefer1000 (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 1000,
+    "data_file": "tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_scale-1000_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "FSLMNI152",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
+    "parcellation.atlas": {
+      "name": "Schaefer1000"
+    },
+    "tractogram.name": "PPMI85",
+    "type": "network",
+    "file": "database/networks/tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_scale-1000_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "Schaefer1000",
+    "atlas.name": "Schaefer1000"
+  },
+  {
+    "label": "hcpmmp1 (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 379,
+    "data_file": "tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009bAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
+    "parcellation.atlas": {
+      "name": "hcpmmp1",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "L_V1",
+        "position": {
+          "x": -10.364,
+          "y": -84.1004,
+          "z": 1.6224
+        }
+      },
+      {
+        "id": 2,
+        "label": "L_MST",
+        "position": {
+          "x": -43.784,
+          "y": -66.8058,
+          "z": 11.9515
+        }
+      },
+      {
+        "id": 3,
+        "label": "L_V6",
+        "position": {
+          "x": -14.8822,
+          "y": -80.5731,
+          "z": 32.2153
+        }
+      },
+      {
+        "id": 4,
+        "label": "L_V2",
+        "position": {
+          "x": -10.5689,
+          "y": -82.3316,
+          "z": 4.0629
+        }
+      },
+      {
+        "id": 5,
+        "label": "L_V3",
+        "position": {
+          "x": -15.976,
+          "y": -86.1955,
+          "z": 7.9722
+        }
+      },
+      {
+        "id": 6,
+        "label": "L_V4",
+        "position": {
+          "x": -28.3751,
+          "y": -86.9758,
+          "z": -0.0061
+        }
+      },
+      {
+        "id": 7,
+        "label": "L_V8",
+        "position": {
+          "x": -30.3423,
+          "y": -76.8966,
+          "z": -12.8754
+        }
+      },
+      {
+        "id": 8,
+        "label": "L_4",
+        "position": {
+          "x": -28.4284,
+          "y": -20.3676,
+          "z": 54.6372
+        }
+      },
+      {
+        "id": 9,
+        "label": "L_3b",
+        "position": {
+          "x": -39.3971,
+          "y": -22.2953,
+          "z": 52.8104
+        }
+      },
+      {
+        "id": 10,
+        "label": "L_FEF",
+        "position": {
+          "x": -41.8243,
+          "y": -6.8251,
+          "z": 51.5479
+        }
+      },
+      {
+        "id": 11,
+        "label": "L_PEF",
+        "position": {
+          "x": -49.0095,
+          "y": -0.4517,
+          "z": 40.5917
+        }
+      },
+      {
+        "id": 12,
+        "label": "L_55b",
+        "position": {
+          "x": -48.9816,
+          "y": -1.5129,
+          "z": 50.1907
+        }
+      },
+      {
+        "id": 13,
+        "label": "L_V3A",
+        "position": {
+          "x": -15.0154,
+          "y": -91.6078,
+          "z": 28.2444
+        }
+      },
+      {
+        "id": 14,
+        "label": "L_RSC",
+        "position": {
+          "x": -4.8849,
+          "y": -36.571,
+          "z": 21.1122
+        }
+      },
+      {
+        "id": 15,
+        "label": "L_POS2",
+        "position": {
+          "x": -9.4942,
+          "y": -72.2524,
+          "z": 36.7902
+        }
+      },
+      {
+        "id": 16,
+        "label": "L_V7",
+        "position": {
+          "x": -24.0981,
+          "y": -87.0738,
+          "z": 29.6168
+        }
+      },
+      {
+        "id": 17,
+        "label": "L_IPS1",
+        "position": {
+          "x": -24.3039,
+          "y": -75.2696,
+          "z": 37.4596
+        }
+      },
+      {
+        "id": 18,
+        "label": "L_FFC",
+        "position": {
+          "x": -42.0212,
+          "y": -61.4224,
+          "z": -17.2907
+        }
+      },
+      {
+        "id": 19,
+        "label": "L_V3B",
+        "position": {
+          "x": -26.2942,
+          "y": -83.0281,
+          "z": 17.6529
+        }
+      },
+      {
+        "id": 20,
+        "label": "L_LO1",
+        "position": {
+          "x": -39.7809,
+          "y": -83.9116,
+          "z": 8.2445
+        }
+      },
+      {
+        "id": 21,
+        "label": "L_LO2",
+        "position": {
+          "x": -45.7787,
+          "y": -85.1696,
+          "z": 0.7286
+        }
+      },
+      {
+        "id": 22,
+        "label": "L_PIT",
+        "position": {
+          "x": -43.7057,
+          "y": -83.2109,
+          "z": -11.0143
+        }
+      },
+      {
+        "id": 23,
+        "label": "L_MT",
+        "position": {
+          "x": -42.7722,
+          "y": -69.9594,
+          "z": 14.452
+        }
+      },
+      {
+        "id": 24,
+        "label": "L_A1",
+        "position": {
+          "x": -43.1723,
+          "y": -25.3579,
+          "z": 12.3234
+        }
+      },
+      {
+        "id": 25,
+        "label": "L_PSL",
+        "position": {
+          "x": -58.5839,
+          "y": -47.2283,
+          "z": 25.4311
+        }
+      },
+      {
+        "id": 26,
+        "label": "L_SFL",
+        "position": {
+          "x": -8.6095,
+          "y": 17.5137,
+          "z": 63.9293
+        }
+      },
+      {
+        "id": 27,
+        "label": "L_PCV",
+        "position": {
+          "x": -6.298,
+          "y": -51.1579,
+          "z": 49.2086
+        }
+      },
+      {
+        "id": 28,
+        "label": "L_STV",
+        "position": {
+          "x": -61.089,
+          "y": -50.9521,
+          "z": 18.2324
+        }
+      },
+      {
+        "id": 29,
+        "label": "L_7Pm",
+        "position": {
+          "x": -4.2062,
+          "y": -70.4214,
+          "z": 50.3404
+        }
+      },
+      {
+        "id": 30,
+        "label": "L_7m",
+        "position": {
+          "x": -4.2845,
+          "y": -63.8785,
+          "z": 35.1841
+        }
+      },
+      {
+        "id": 31,
+        "label": "L_POS1",
+        "position": {
+          "x": -12.6035,
+          "y": -59.0019,
+          "z": 15.0424
+        }
+      },
+      {
+        "id": 32,
+        "label": "L_23d",
+        "position": {
+          "x": -2.8881,
+          "y": -20.6781,
+          "z": 39.3587
+        }
+      },
+      {
+        "id": 33,
+        "label": "L_v23ab",
+        "position": {
+          "x": -3.3636,
+          "y": -58.247,
+          "z": 18.2133
+        }
+      },
+      {
+        "id": 34,
+        "label": "L_d23ab",
+        "position": {
+          "x": -3.0438,
+          "y": -42.6808,
+          "z": 31.2975
+        }
+      },
+      {
+        "id": 35,
+        "label": "L_31pv",
+        "position": {
+          "x": -9.4073,
+          "y": -46.7604,
+          "z": 32.5419
+        }
+      },
+      {
+        "id": 36,
+        "label": "L_5m",
+        "position": {
+          "x": -6.2842,
+          "y": -41.9173,
+          "z": 63.3997
+        }
+      },
+      {
+        "id": 37,
+        "label": "L_5mv",
+        "position": {
+          "x": -13.7018,
+          "y": -37.1393,
+          "z": 50.3818
+        }
+      },
+      {
+        "id": 38,
+        "label": "L_23c",
+        "position": {
+          "x": -11.4488,
+          "y": -30.5269,
+          "z": 43.0083
+        }
+      },
+      {
+        "id": 39,
+        "label": "L_5L",
+        "position": {
+          "x": -14.7776,
+          "y": -48.6065,
+          "z": 72.5933
+        }
+      },
+      {
+        "id": 40,
+        "label": "L_24dd",
+        "position": {
+          "x": -5.8855,
+          "y": -16.0126,
+          "z": 50.5898
+        }
+      },
+      {
+        "id": 41,
+        "label": "L_24dv",
+        "position": {
+          "x": -8.3022,
+          "y": -0.3766,
+          "z": 44.8102
+        }
+      },
+      {
+        "id": 42,
+        "label": "L_7AL",
+        "position": {
+          "x": -20.4027,
+          "y": -51.9913,
+          "z": 65.6772
+        }
+      },
+      {
+        "id": 43,
+        "label": "L_SCEF",
+        "position": {
+          "x": -5.9317,
+          "y": 4.1342,
+          "z": 59.6032
+        }
+      },
+      {
+        "id": 44,
+        "label": "L_6ma",
+        "position": {
+          "x": -20.0984,
+          "y": 3.9694,
+          "z": 67.8903
+        }
+      },
+      {
+        "id": 45,
+        "label": "L_7Am",
+        "position": {
+          "x": -6.9458,
+          "y": -60.3173,
+          "z": 61.4581
+        }
+      },
+      {
+        "id": 46,
+        "label": "L_7PL",
+        "position": {
+          "x": -14.816,
+          "y": -73.7112,
+          "z": 56.0083
+        }
+      },
+      {
+        "id": 47,
+        "label": "L_7PC",
+        "position": {
+          "x": -37.4515,
+          "y": -46.7109,
+          "z": 60.6276
+        }
+      },
+      {
+        "id": 48,
+        "label": "L_LIPv",
+        "position": {
+          "x": -30.8546,
+          "y": -58.4029,
+          "z": 55.2323
+        }
+      },
+      {
+        "id": 49,
+        "label": "L_VIP",
+        "position": {
+          "x": -22.8218,
+          "y": -63.5048,
+          "z": 64.4746
+        }
+      },
+      {
+        "id": 50,
+        "label": "L_MIP",
+        "position": {
+          "x": -24.857,
+          "y": -67.1281,
+          "z": 47.1007
+        }
+      },
+      {
+        "id": 51,
+        "label": "L_1",
+        "position": {
+          "x": -47.0296,
+          "y": -26.3181,
+          "z": 56.3848
+        }
+      },
+      {
+        "id": 52,
+        "label": "L_2",
+        "position": {
+          "x": -38.8683,
+          "y": -32.9202,
+          "z": 51.957
+        }
+      },
+      {
+        "id": 53,
+        "label": "L_3a",
+        "position": {
+          "x": -35.2805,
+          "y": -20.5097,
+          "z": 42.8339
+        }
+      },
+      {
+        "id": 54,
+        "label": "L_6d",
+        "position": {
+          "x": -33.7943,
+          "y": -14.2162,
+          "z": 67.7344
+        }
+      },
+      {
+        "id": 55,
+        "label": "L_6mp",
+        "position": {
+          "x": -10.7334,
+          "y": -15.0087,
+          "z": 71.0262
+        }
+      },
+      {
+        "id": 56,
+        "label": "L_6v",
+        "position": {
+          "x": -59.5034,
+          "y": 3.7871,
+          "z": 31.9067
+        }
+      },
+      {
+        "id": 57,
+        "label": "L_p24pr",
+        "position": {
+          "x": -3.9615,
+          "y": -2.2441,
+          "z": 40.3761
+        }
+      },
+      {
+        "id": 58,
+        "label": "L_33pr",
+        "position": {
+          "x": -2.3983,
+          "y": 11.2592,
+          "z": 28.7215
+        }
+      },
+      {
+        "id": 59,
+        "label": "L_a24pr",
+        "position": {
+          "x": -5.3869,
+          "y": 18.3002,
+          "z": 30.9814
+        }
+      },
+      {
+        "id": 60,
+        "label": "L_p32pr",
+        "position": {
+          "x": -7.9292,
+          "y": 15.3954,
+          "z": 38.7959
+        }
+      },
+      {
+        "id": 61,
+        "label": "L_a24",
+        "position": {
+          "x": -6.1363,
+          "y": 41.965,
+          "z": -4.4968
+        }
+      },
+      {
+        "id": 62,
+        "label": "L_d32",
+        "position": {
+          "x": -8.0403,
+          "y": 42.4755,
+          "z": 24.9597
+        }
+      },
+      {
+        "id": 63,
+        "label": "L_8BM",
+        "position": {
+          "x": -4.7592,
+          "y": 32.5683,
+          "z": 45.1662
+        }
+      },
+      {
+        "id": 64,
+        "label": "L_p32",
+        "position": {
+          "x": -11.2759,
+          "y": 50.3924,
+          "z": -2.3392
+        }
+      },
+      {
+        "id": 65,
+        "label": "L_10r",
+        "position": {
+          "x": -6.0341,
+          "y": 51.6407,
+          "z": -10.6444
+        }
+      },
+      {
+        "id": 66,
+        "label": "L_47m",
+        "position": {
+          "x": -37.4924,
+          "y": 31.5348,
+          "z": -13.9227
+        }
+      },
+      {
+        "id": 67,
+        "label": "L_8Av",
+        "position": {
+          "x": -38.3312,
+          "y": 16.5889,
+          "z": 52.2792
+        }
+      },
+      {
+        "id": 68,
+        "label": "L_8Ad",
+        "position": {
+          "x": -23.3507,
+          "y": 28.996,
+          "z": 43.3465
+        }
+      },
+      {
+        "id": 69,
+        "label": "L_9m",
+        "position": {
+          "x": -6.0375,
+          "y": 55.1478,
+          "z": 24.2637
+        }
+      },
+      {
+        "id": 70,
+        "label": "L_8BL",
+        "position": {
+          "x": -11.6218,
+          "y": 37.1473,
+          "z": 53.8005
+        }
+      },
+      {
+        "id": 71,
+        "label": "L_9p",
+        "position": {
+          "x": -19.8944,
+          "y": 47.3057,
+          "z": 38.4792
+        }
+      },
+      {
+        "id": 72,
+        "label": "L_10d",
+        "position": {
+          "x": -11.1632,
+          "y": 66.2958,
+          "z": 8.4044
+        }
+      },
+      {
+        "id": 73,
+        "label": "L_8C",
+        "position": {
+          "x": -43.7036,
+          "y": 11.8118,
+          "z": 37.7097
+        }
+      },
+      {
+        "id": 74,
+        "label": "L_44",
+        "position": {
+          "x": -53.8786,
+          "y": 14.8412,
+          "z": 14.0097
+        }
+      },
+      {
+        "id": 75,
+        "label": "L_45",
+        "position": {
+          "x": -50.609,
+          "y": 25.5687,
+          "z": 3.2206
+        }
+      },
+      {
+        "id": 76,
+        "label": "L_47l",
+        "position": {
+          "x": -46.7708,
+          "y": 30.1001,
+          "z": -9.9578
+        }
+      },
+      {
+        "id": 77,
+        "label": "L_a47r",
+        "position": {
+          "x": -41.3563,
+          "y": 48.5638,
+          "z": -11.9072
+        }
+      },
+      {
+        "id": 78,
+        "label": "L_6r",
+        "position": {
+          "x": -52.4908,
+          "y": 6.6641,
+          "z": 17.7741
+        }
+      },
+      {
+        "id": 79,
+        "label": "L_IFJa",
+        "position": {
+          "x": -41.0068,
+          "y": 10.8526,
+          "z": 26.3856
+        }
+      },
+      {
+        "id": 80,
+        "label": "L_IFJp",
+        "position": {
+          "x": -41.3634,
+          "y": 2.2956,
+          "z": 30.0642
+        }
+      },
+      {
+        "id": 81,
+        "label": "L_IFSp",
+        "position": {
+          "x": -48.8016,
+          "y": 20.9089,
+          "z": 22.8515
+        }
+      },
+      {
+        "id": 82,
+        "label": "L_IFSa",
+        "position": {
+          "x": -48.1015,
+          "y": 32.1216,
+          "z": 10.6533
+        }
+      },
+      {
+        "id": 83,
+        "label": "L_p9-46v",
+        "position": {
+          "x": -47.1903,
+          "y": 28.8919,
+          "z": 25.9915
+        }
+      },
+      {
+        "id": 84,
+        "label": "L_46",
+        "position": {
+          "x": -38.4057,
+          "y": 37.8526,
+          "z": 32.9207
+        }
+      },
+      {
+        "id": 85,
+        "label": "L_a9-46v",
+        "position": {
+          "x": -40.0072,
+          "y": 51.6397,
+          "z": 9.1728
+        }
+      },
+      {
+        "id": 86,
+        "label": "L_9-46d",
+        "position": {
+          "x": -29.4487,
+          "y": 45.8579,
+          "z": 23.4636
+        }
+      },
+      {
+        "id": 87,
+        "label": "L_9a",
+        "position": {
+          "x": -21.7269,
+          "y": 57.5628,
+          "z": 24.1526
+        }
+      },
+      {
+        "id": 88,
+        "label": "L_10v",
+        "position": {
+          "x": -4.0071,
+          "y": 52.9119,
+          "z": -17.8343
+        }
+      },
+      {
+        "id": 89,
+        "label": "L_a10p",
+        "position": {
+          "x": -26.4781,
+          "y": 59.742,
+          "z": -6.8987
+        }
+      },
+      {
+        "id": 90,
+        "label": "L_10pp",
+        "position": {
+          "x": -12.7721,
+          "y": 62.2831,
+          "z": -16.2485
+        }
+      },
+      {
+        "id": 91,
+        "label": "L_11l",
+        "position": {
+          "x": -25.9362,
+          "y": 49.4761,
+          "z": -15.4714
+        }
+      },
+      {
+        "id": 92,
+        "label": "L_13l",
+        "position": {
+          "x": -23.3043,
+          "y": 30.0783,
+          "z": -19.8865
+        }
+      },
+      {
+        "id": 93,
+        "label": "L_OFC",
+        "position": {
+          "x": -10.8287,
+          "y": 33.539,
+          "z": -24.5052
+        }
+      },
+      {
+        "id": 94,
+        "label": "L_47s",
+        "position": {
+          "x": -34.5233,
+          "y": 22.1134,
+          "z": -19.1547
+        }
+      },
+      {
+        "id": 95,
+        "label": "L_LIPd",
+        "position": {
+          "x": -30.0745,
+          "y": -55.4435,
+          "z": 42.8996
+        }
+      },
+      {
+        "id": 96,
+        "label": "L_6a",
+        "position": {
+          "x": -25.3604,
+          "y": -4.9318,
+          "z": 55.5618
+        }
+      },
+      {
+        "id": 97,
+        "label": "L_i6-8",
+        "position": {
+          "x": -29.5765,
+          "y": 5.2274,
+          "z": 56.748
+        }
+      },
+      {
+        "id": 98,
+        "label": "L_s6-8",
+        "position": {
+          "x": -22.3087,
+          "y": 24.1516,
+          "z": 56.2966
+        }
+      },
+      {
+        "id": 99,
+        "label": "L_43",
+        "position": {
+          "x": -56.3831,
+          "y": -0.3366,
+          "z": 9.4767
+        }
+      },
+      {
+        "id": 100,
+        "label": "L_OP4",
+        "position": {
+          "x": -59.2233,
+          "y": -13.4846,
+          "z": 15.315
+        }
+      },
+      {
+        "id": 101,
+        "label": "L_OP1",
+        "position": {
+          "x": -46.9496,
+          "y": -22.3801,
+          "z": 19.1422
+        }
+      },
+      {
+        "id": 102,
+        "label": "L_OP2-3",
+        "position": {
+          "x": -40.4601,
+          "y": -17.2433,
+          "z": 19.0212
+        }
+      },
+      {
+        "id": 103,
+        "label": "L_52",
+        "position": {
+          "x": -38.0016,
+          "y": -22.3612,
+          "z": 1.9379
+        }
+      },
+      {
+        "id": 104,
+        "label": "L_RI",
+        "position": {
+          "x": -40.1846,
+          "y": -35.5219,
+          "z": 20.2432
+        }
+      },
+      {
+        "id": 105,
+        "label": "L_PFcm",
+        "position": {
+          "x": -50.4059,
+          "y": -32.309,
+          "z": 21.7463
+        }
+      },
+      {
+        "id": 106,
+        "label": "L_PoI2",
+        "position": {
+          "x": -40.4908,
+          "y": -2.9287,
+          "z": -0.0029
+        }
+      },
+      {
+        "id": 107,
+        "label": "L_TA2",
+        "position": {
+          "x": -50.3675,
+          "y": -0.1737,
+          "z": -5.4789
+        }
+      },
+      {
+        "id": 108,
+        "label": "L_FOP4",
+        "position": {
+          "x": -41.4917,
+          "y": 12.7776,
+          "z": 5.6919
+        }
+      },
+      {
+        "id": 109,
+        "label": "L_MI",
+        "position": {
+          "x": -36.2879,
+          "y": 11.1963,
+          "z": 3.3261
+        }
+      },
+      {
+        "id": 110,
+        "label": "L_Pir",
+        "position": {
+          "x": -32.039,
+          "y": 6.3815,
+          "z": -17.6798
+        }
+      },
+      {
+        "id": 111,
+        "label": "L_AVI",
+        "position": {
+          "x": -30.8608,
+          "y": 25.4027,
+          "z": -2.4888
+        }
+      },
+      {
+        "id": 112,
+        "label": "L_AAIC",
+        "position": {
+          "x": -35.4208,
+          "y": 14.345,
+          "z": -10.4385
+        }
+      },
+      {
+        "id": 113,
+        "label": "L_FOP1",
+        "position": {
+          "x": -49.8875,
+          "y": 1.6589,
+          "z": 4.5696
+        }
+      },
+      {
+        "id": 114,
+        "label": "L_FOP3",
+        "position": {
+          "x": -35.995,
+          "y": 2.1376,
+          "z": 13.4428
+        }
+      },
+      {
+        "id": 115,
+        "label": "L_FOP2",
+        "position": {
+          "x": -42.4128,
+          "y": -4.9531,
+          "z": 14.7998
+        }
+      },
+      {
+        "id": 116,
+        "label": "L_PFt",
+        "position": {
+          "x": -56.3928,
+          "y": -25.7538,
+          "z": 36.533
+        }
+      },
+      {
+        "id": 117,
+        "label": "L_AIP",
+        "position": {
+          "x": -39.7852,
+          "y": -39.0137,
+          "z": 42.2767
+        }
+      },
+      {
+        "id": 118,
+        "label": "L_EC",
+        "position": {
+          "x": -22.9398,
+          "y": -13.6461,
+          "z": -31.6681
+        }
+      },
+      {
+        "id": 119,
+        "label": "L_PreS",
+        "position": {
+          "x": -16.9281,
+          "y": -34.2994,
+          "z": -13.8604
+        }
+      },
+      {
+        "id": 120,
+        "label": "L_H",
+        "position": {
+          "x": -11.9167,
+          "y": -39.75,
+          "z": -2.9167
+        }
+      },
+      {
+        "id": 121,
+        "label": "L_ProS",
+        "position": {
+          "x": -22.0685,
+          "y": -57.0108,
+          "z": 4.6909
+        }
+      },
+      {
+        "id": 122,
+        "label": "L_PeEc",
+        "position": {
+          "x": -31.1356,
+          "y": -9.5889,
+          "z": -33.6028
+        }
+      },
+      {
+        "id": 123,
+        "label": "L_STGa",
+        "position": {
+          "x": -50.8535,
+          "y": 12.9215,
+          "z": -16.6696
+        }
+      },
+      {
+        "id": 124,
+        "label": "L_PBelt",
+        "position": {
+          "x": -52.7095,
+          "y": -26.0037,
+          "z": 9.006
+        }
+      },
+      {
+        "id": 125,
+        "label": "L_A5",
+        "position": {
+          "x": -62.9832,
+          "y": -15.2118,
+          "z": -1.1005
+        }
+      },
+      {
+        "id": 126,
+        "label": "L_PHA1",
+        "position": {
+          "x": -23.3494,
+          "y": -37.7192,
+          "z": -14.638
+        }
+      },
+      {
+        "id": 127,
+        "label": "L_PHA3",
+        "position": {
+          "x": -31.8398,
+          "y": -37.931,
+          "z": -17.7307
+        }
+      },
+      {
+        "id": 128,
+        "label": "L_STSda",
+        "position": {
+          "x": -54.8082,
+          "y": -4.1468,
+          "z": -11.5957
+        }
+      },
+      {
+        "id": 129,
+        "label": "L_STSdp",
+        "position": {
+          "x": -52.7884,
+          "y": -32.6386,
+          "z": 1.1349
+        }
+      },
+      {
+        "id": 130,
+        "label": "L_STSvp",
+        "position": {
+          "x": -54.8898,
+          "y": -34.8552,
+          "z": -3.4358
+        }
+      },
+      {
+        "id": 131,
+        "label": "L_TGd",
+        "position": {
+          "x": -38.1921,
+          "y": 12.305,
+          "z": -34.4727
+        }
+      },
+      {
+        "id": 132,
+        "label": "L_TE1a",
+        "position": {
+          "x": -59.7754,
+          "y": -5.2246,
+          "z": -23.1151
+        }
+      },
+      {
+        "id": 133,
+        "label": "L_TE1p",
+        "position": {
+          "x": -61.7726,
+          "y": -48.2135,
+          "z": -8.6963
+        }
+      },
+      {
+        "id": 134,
+        "label": "L_TE2a",
+        "position": {
+          "x": -57.2752,
+          "y": -24.3832,
+          "z": -27.7009
+        }
+      },
+      {
+        "id": 135,
+        "label": "L_TF",
+        "position": {
+          "x": -42.3942,
+          "y": -22.0097,
+          "z": -30.0052
+        }
+      },
+      {
+        "id": 136,
+        "label": "L_TE2p",
+        "position": {
+          "x": -49.3913,
+          "y": -43.4235,
+          "z": -20.5057
+        }
+      },
+      {
+        "id": 137,
+        "label": "L_PHT",
+        "position": {
+          "x": -58.3918,
+          "y": -60.6461,
+          "z": 3.2289
+        }
+      },
+      {
+        "id": 138,
+        "label": "L_PH",
+        "position": {
+          "x": -45.9845,
+          "y": -65.1466,
+          "z": -5.3422
+        }
+      },
+      {
+        "id": 139,
+        "label": "L_TPOJ1",
+        "position": {
+          "x": -54.1676,
+          "y": -46.3202,
+          "z": 10.26
+        }
+      },
+      {
+        "id": 140,
+        "label": "L_TPOJ2",
+        "position": {
+          "x": -51.9934,
+          "y": -62.363,
+          "z": 15.7838
+        }
+      },
+      {
+        "id": 141,
+        "label": "L_TPOJ3",
+        "position": {
+          "x": -45.9746,
+          "y": -72.674,
+          "z": 20.7012
+        }
+      },
+      {
+        "id": 142,
+        "label": "L_DVT",
+        "position": {
+          "x": -17.6379,
+          "y": -74.2901,
+          "z": 36.3106
+        }
+      },
+      {
+        "id": 143,
+        "label": "L_PGp",
+        "position": {
+          "x": -38.6978,
+          "y": -85.4329,
+          "z": 23.0889
+        }
+      },
+      {
+        "id": 144,
+        "label": "L_IP2",
+        "position": {
+          "x": -40.9491,
+          "y": -48.8004,
+          "z": 43.3753
+        }
+      },
+      {
+        "id": 145,
+        "label": "L_IP1",
+        "position": {
+          "x": -30.258,
+          "y": -70.6326,
+          "z": 39.1023
+        }
+      },
+      {
+        "id": 146,
+        "label": "L_IP0",
+        "position": {
+          "x": -30.8447,
+          "y": -79.0757,
+          "z": 24.2723
+        }
+      },
+      {
+        "id": 147,
+        "label": "L_PFop",
+        "position": {
+          "x": -62.9615,
+          "y": -23.7361,
+          "z": 24.0328
+        }
+      },
+      {
+        "id": 148,
+        "label": "L_PF",
+        "position": {
+          "x": -60.306,
+          "y": -37.2782,
+          "z": 37.9053
+        }
+      },
+      {
+        "id": 149,
+        "label": "L_PFm",
+        "position": {
+          "x": -49.516,
+          "y": -58.0483,
+          "z": 44.8952
+        }
+      },
+      {
+        "id": 150,
+        "label": "L_PGi",
+        "position": {
+          "x": -46.5455,
+          "y": -64.0108,
+          "z": 27.542
+        }
+      },
+      {
+        "id": 151,
+        "label": "L_PGs",
+        "position": {
+          "x": -39.1906,
+          "y": -78.071,
+          "z": 38.9904
+        }
+      },
+      {
+        "id": 152,
+        "label": "L_V6A",
+        "position": {
+          "x": -21.7836,
+          "y": -86.1888,
+          "z": 42.7225
+        }
+      },
+      {
+        "id": 153,
+        "label": "L_VMV1",
+        "position": {
+          "x": -18.6619,
+          "y": -55.9416,
+          "z": -5.522
+        }
+      },
+      {
+        "id": 154,
+        "label": "L_VMV3",
+        "position": {
+          "x": -27.7219,
+          "y": -62.6969,
+          "z": -11.2141
+        }
+      },
+      {
+        "id": 155,
+        "label": "L_PHA2",
+        "position": {
+          "x": -31.9234,
+          "y": -37.4482,
+          "z": -11.7815
+        }
+      },
+      {
+        "id": 156,
+        "label": "L_V4t",
+        "position": {
+          "x": -49.261,
+          "y": -77.1178,
+          "z": 7.8354
+        }
+      },
+      {
+        "id": 157,
+        "label": "L_FST",
+        "position": {
+          "x": -45.8253,
+          "y": -68.6921,
+          "z": 5.6201
+        }
+      },
+      {
+        "id": 158,
+        "label": "L_V3CD",
+        "position": {
+          "x": -35.65,
+          "y": -88.8457,
+          "z": 11.2729
+        }
+      },
+      {
+        "id": 159,
+        "label": "L_LO3",
+        "position": {
+          "x": -41.2095,
+          "y": -77.1728,
+          "z": 15.1551
+        }
+      },
+      {
+        "id": 160,
+        "label": "L_VMV2",
+        "position": {
+          "x": -27.3375,
+          "y": -54.8236,
+          "z": -6.411
+        }
+      },
+      {
+        "id": 161,
+        "label": "L_31pd",
+        "position": {
+          "x": -8.7,
+          "y": -53.4323,
+          "z": 34.6469
+        }
+      },
+      {
+        "id": 162,
+        "label": "L_31a",
+        "position": {
+          "x": -4.679,
+          "y": -37.7455,
+          "z": 43.5579
+        }
+      },
+      {
+        "id": 163,
+        "label": "L_VVC",
+        "position": {
+          "x": -31.0334,
+          "y": -53.2359,
+          "z": -17.3407
+        }
+      },
+      {
+        "id": 164,
+        "label": "L_25",
+        "position": {
+          "x": -4.275,
+          "y": 23.9379,
+          "z": -14.7562
+        }
+      },
+      {
+        "id": 165,
+        "label": "L_s32",
+        "position": {
+          "x": -7.5366,
+          "y": 35.6621,
+          "z": -15.0659
+        }
+      },
+      {
+        "id": 166,
+        "label": "L_pOFC",
+        "position": {
+          "x": -14.3972,
+          "y": 14.3564,
+          "z": -20.8892
+        }
+      },
+      {
+        "id": 167,
+        "label": "L_PoI1",
+        "position": {
+          "x": -39.1902,
+          "y": -12.1828,
+          "z": -2.2671
+        }
+      },
+      {
+        "id": 168,
+        "label": "L_Ig",
+        "position": {
+          "x": -35.5904,
+          "y": -16.1798,
+          "z": 15.9868
+        }
+      },
+      {
+        "id": 169,
+        "label": "L_FOP5",
+        "position": {
+          "x": -35.4105,
+          "y": 26.75,
+          "z": 5.1684
+        }
+      },
+      {
+        "id": 170,
+        "label": "L_p10p",
+        "position": {
+          "x": -24.0707,
+          "y": 62.9202,
+          "z": 2.3932
+        }
+      },
+      {
+        "id": 171,
+        "label": "L_p47r",
+        "position": {
+          "x": -45.6345,
+          "y": 43.0795,
+          "z": 0.9857
+        }
+      },
+      {
+        "id": 172,
+        "label": "L_TGv",
+        "position": {
+          "x": -37.3067,
+          "y": -1.3122,
+          "z": -44.4583
+        }
+      },
+      {
+        "id": 173,
+        "label": "L_MBelt",
+        "position": {
+          "x": -44.3888,
+          "y": -17.7063,
+          "z": 4.3489
+        }
+      },
+      {
+        "id": 174,
+        "label": "L_LBelt",
+        "position": {
+          "x": -45.2987,
+          "y": -27.4349,
+          "z": 9.0529
+        }
+      },
+      {
+        "id": 175,
+        "label": "L_A4",
+        "position": {
+          "x": -63.3197,
+          "y": -23.574,
+          "z": 9.17
+        }
+      },
+      {
+        "id": 176,
+        "label": "L_STSva",
+        "position": {
+          "x": -51.638,
+          "y": -7.7992,
+          "z": -16.9657
+        }
+      },
+      {
+        "id": 177,
+        "label": "L_TE1m",
+        "position": {
+          "x": -64.136,
+          "y": -26.1294,
+          "z": -14.9553
+        }
+      },
+      {
+        "id": 178,
+        "label": "L_PI",
+        "position": {
+          "x": -43.9474,
+          "y": -4.1449,
+          "z": -13.5724
+        }
+      },
+      {
+        "id": 179,
+        "label": "L_a32pr",
+        "position": {
+          "x": -7.6802,
+          "y": 30.6322,
+          "z": 28.6548
+        }
+      },
+      {
+        "id": 180,
+        "label": "L_p24",
+        "position": {
+          "x": -5.1704,
+          "y": 38.8593,
+          "z": 13.874
+        }
+      },
+      {
+        "id": 181,
+        "label": "R_V1",
+        "position": {
+          "x": 12.4486,
+          "y": -80.3925,
+          "z": 4.0572
+        }
+      },
+      {
+        "id": 182,
+        "label": "R_MST",
+        "position": {
+          "x": 48.0338,
+          "y": -64.2372,
+          "z": 7.2628
+        }
+      },
+      {
+        "id": 183,
+        "label": "R_V6",
+        "position": {
+          "x": 17.9109,
+          "y": -76.9513,
+          "z": 31.0297
+        }
+      },
+      {
+        "id": 184,
+        "label": "R_V2",
+        "position": {
+          "x": 12.2652,
+          "y": -79.2862,
+          "z": 6.878
+        }
+      },
+      {
+        "id": 185,
+        "label": "R_V3",
+        "position": {
+          "x": 17.422,
+          "y": -85.2411,
+          "z": 8.9125
+        }
+      },
+      {
+        "id": 186,
+        "label": "R_V4",
+        "position": {
+          "x": 30.754,
+          "y": -84.8834,
+          "z": -1.1632
+        }
+      },
+      {
+        "id": 187,
+        "label": "R_V8",
+        "position": {
+          "x": 30.4344,
+          "y": -75.2613,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 188,
+        "label": "R_4",
+        "position": {
+          "x": 29.7796,
+          "y": -17.1529,
+          "z": 55.2073
+        }
+      },
+      {
+        "id": 189,
+        "label": "R_3b",
+        "position": {
+          "x": 40.1439,
+          "y": -19.37,
+          "z": 51.0025
+        }
+      },
+      {
+        "id": 190,
+        "label": "R_FEF",
+        "position": {
+          "x": 44.8025,
+          "y": -2.4317,
+          "z": 51.7016
+        }
+      },
+      {
+        "id": 191,
+        "label": "R_PEF",
+        "position": {
+          "x": 47.4893,
+          "y": 2.6073,
+          "z": 37.1363
+        }
+      },
+      {
+        "id": 192,
+        "label": "R_55b",
+        "position": {
+          "x": 50.355,
+          "y": 1.9929,
+          "z": 47.0793
+        }
+      },
+      {
+        "id": 193,
+        "label": "R_V3A",
+        "position": {
+          "x": 16.7601,
+          "y": -89.1821,
+          "z": 30.9474
+        }
+      },
+      {
+        "id": 194,
+        "label": "R_RSC",
+        "position": {
+          "x": 5.5622,
+          "y": -36.4378,
+          "z": 21.5635
+        }
+      },
+      {
+        "id": 195,
+        "label": "R_POS2",
+        "position": {
+          "x": 12.009,
+          "y": -70.2659,
+          "z": 38.2154
+        }
+      },
+      {
+        "id": 196,
+        "label": "R_V7",
+        "position": {
+          "x": 28.2829,
+          "y": -84.3952,
+          "z": 31.1622
+        }
+      },
+      {
+        "id": 197,
+        "label": "R_IPS1",
+        "position": {
+          "x": 27.3292,
+          "y": -72.735,
+          "z": 39.84
+        }
+      },
+      {
+        "id": 198,
+        "label": "R_FFC",
+        "position": {
+          "x": 40.8223,
+          "y": -53.4603,
+          "z": -19.1962
+        }
+      },
+      {
+        "id": 199,
+        "label": "R_V3B",
+        "position": {
+          "x": 29.7124,
+          "y": -77.2134,
+          "z": 20.855
+        }
+      },
+      {
+        "id": 200,
+        "label": "R_LO1",
+        "position": {
+          "x": 39.6977,
+          "y": -80.2326,
+          "z": 4.845
+        }
+      },
+      {
+        "id": 201,
+        "label": "R_LO2",
+        "position": {
+          "x": 44.5944,
+          "y": -83.4509,
+          "z": -0.8363
+        }
+      },
+      {
+        "id": 202,
+        "label": "R_PIT",
+        "position": {
+          "x": 42.7838,
+          "y": -80.5454,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 203,
+        "label": "R_MT",
+        "position": {
+          "x": 51.9897,
+          "y": -69.6252,
+          "z": 10.796
+        }
+      },
+      {
+        "id": 204,
+        "label": "R_A1",
+        "position": {
+          "x": 42.7181,
+          "y": -21.674,
+          "z": 11.3995
+        }
+      },
+      {
+        "id": 205,
+        "label": "R_PSL",
+        "position": {
+          "x": 63.9626,
+          "y": -35.7187,
+          "z": 27.4379
+        }
+      },
+      {
+        "id": 206,
+        "label": "R_SFL",
+        "position": {
+          "x": 8.8271,
+          "y": 17.0075,
+          "z": 65.405
+        }
+      },
+      {
+        "id": 207,
+        "label": "R_PCV",
+        "position": {
+          "x": 5.5035,
+          "y": -52.2473,
+          "z": 51.218
+        }
+      },
+      {
+        "id": 208,
+        "label": "R_STV",
+        "position": {
+          "x": 60.0356,
+          "y": -44.0253,
+          "z": 20.4059
+        }
+      },
+      {
+        "id": 209,
+        "label": "R_7Pm",
+        "position": {
+          "x": 5.2416,
+          "y": -68.4553,
+          "z": 50.8443
+        }
+      },
+      {
+        "id": 210,
+        "label": "R_7m",
+        "position": {
+          "x": 4.523,
+          "y": -62.5104,
+          "z": 34.4648
+        }
+      },
+      {
+        "id": 211,
+        "label": "R_POS1",
+        "position": {
+          "x": 13.9837,
+          "y": -57.065,
+          "z": 17.4055
+        }
+      },
+      {
+        "id": 212,
+        "label": "R_23d",
+        "position": {
+          "x": 3.4704,
+          "y": -21.1334,
+          "z": 39.4247
+        }
+      },
+      {
+        "id": 213,
+        "label": "R_v23ab",
+        "position": {
+          "x": 4.3643,
+          "y": -55.0147,
+          "z": 18.8382
+        }
+      },
+      {
+        "id": 214,
+        "label": "R_d23ab",
+        "position": {
+          "x": 3.4887,
+          "y": -40.7114,
+          "z": 33.1083
+        }
+      },
+      {
+        "id": 215,
+        "label": "R_31pv",
+        "position": {
+          "x": 9.1273,
+          "y": -42.9801,
+          "z": 34.757
+        }
+      },
+      {
+        "id": 216,
+        "label": "R_5m",
+        "position": {
+          "x": 5.4319,
+          "y": -39.2363,
+          "z": 65.8784
+        }
+      },
+      {
+        "id": 217,
+        "label": "R_5mv",
+        "position": {
+          "x": 12.0772,
+          "y": -40.2585,
+          "z": 55.0079
+        }
+      },
+      {
+        "id": 218,
+        "label": "R_23c",
+        "position": {
+          "x": 11.2516,
+          "y": -33.0341,
+          "z": 44.1153
+        }
+      },
+      {
+        "id": 219,
+        "label": "R_5L",
+        "position": {
+          "x": 14.0538,
+          "y": -47.551,
+          "z": 74.551
+        }
+      },
+      {
+        "id": 220,
+        "label": "R_24dd",
+        "position": {
+          "x": 6.3501,
+          "y": -16.2504,
+          "z": 53.1445
+        }
+      },
+      {
+        "id": 221,
+        "label": "R_24dv",
+        "position": {
+          "x": 9.1272,
+          "y": -2.5587,
+          "z": 46.7573
+        }
+      },
+      {
+        "id": 222,
+        "label": "R_7AL",
+        "position": {
+          "x": 23.9706,
+          "y": -51.6995,
+          "z": 68.6683
+        }
+      },
+      {
+        "id": 223,
+        "label": "R_SCEF",
+        "position": {
+          "x": 6.1055,
+          "y": 4.0798,
+          "z": 61.3124
+        }
+      },
+      {
+        "id": 224,
+        "label": "R_6ma",
+        "position": {
+          "x": 21.0205,
+          "y": 5.2517,
+          "z": 67.207
+        }
+      },
+      {
+        "id": 225,
+        "label": "R_7Am",
+        "position": {
+          "x": 9.0168,
+          "y": -60.4508,
+          "z": 62.1322
+        }
+      },
+      {
+        "id": 226,
+        "label": "R_7PL",
+        "position": {
+          "x": 12.4214,
+          "y": -73.0975,
+          "z": 56.9243
+        }
+      },
+      {
+        "id": 227,
+        "label": "R_7PC",
+        "position": {
+          "x": 36.4209,
+          "y": -47.3008,
+          "z": 61.4182
+        }
+      },
+      {
+        "id": 228,
+        "label": "R_LIPv",
+        "position": {
+          "x": 28.3435,
+          "y": -57.3692,
+          "z": 53.8374
+        }
+      },
+      {
+        "id": 229,
+        "label": "R_VIP",
+        "position": {
+          "x": 21.8264,
+          "y": -63.6259,
+          "z": 63.3134
+        }
+      },
+      {
+        "id": 230,
+        "label": "R_MIP",
+        "position": {
+          "x": 25.6649,
+          "y": -68.1292,
+          "z": 50.8733
+        }
+      },
+      {
+        "id": 231,
+        "label": "R_1",
+        "position": {
+          "x": 48.9993,
+          "y": -21.151,
+          "z": 54.7363
+        }
+      },
+      {
+        "id": 232,
+        "label": "R_2",
+        "position": {
+          "x": 38.4988,
+          "y": -30.2372,
+          "z": 52.3331
+        }
+      },
+      {
+        "id": 233,
+        "label": "R_3a",
+        "position": {
+          "x": 32.6255,
+          "y": -19.9419,
+          "z": 46.9856
+        }
+      },
+      {
+        "id": 234,
+        "label": "R_6d",
+        "position": {
+          "x": 38.0044,
+          "y": -11.3205,
+          "z": 64.7474
+        }
+      },
+      {
+        "id": 235,
+        "label": "R_6mp",
+        "position": {
+          "x": 17.3891,
+          "y": -11.7631,
+          "z": 69.3736
+        }
+      },
+      {
+        "id": 236,
+        "label": "R_6v",
+        "position": {
+          "x": 59.5139,
+          "y": 6.6888,
+          "z": 30.6097
+        }
+      },
+      {
+        "id": 237,
+        "label": "R_p24pr",
+        "position": {
+          "x": 4.3647,
+          "y": -2.1376,
+          "z": 40.5612
+        }
+      },
+      {
+        "id": 238,
+        "label": "R_33pr",
+        "position": {
+          "x": 3.3875,
+          "y": 14.9531,
+          "z": 26.8608
+        }
+      },
+      {
+        "id": 239,
+        "label": "R_a24pr",
+        "position": {
+          "x": 4.3666,
+          "y": 19.4909,
+          "z": 32.1381
+        }
+      },
+      {
+        "id": 240,
+        "label": "R_p32pr",
+        "position": {
+          "x": 9.0316,
+          "y": 14.6212,
+          "z": 40.1911
+        }
+      },
+      {
+        "id": 241,
+        "label": "R_a24",
+        "position": {
+          "x": -0.5,
+          "y": 33.25,
+          "z": -6.575
+        }
+      },
+      {
+        "id": 242,
+        "label": "R_d32",
+        "position": {
+          "x": 7.2199,
+          "y": 39.4286,
+          "z": 26.991
+        }
+      },
+      {
+        "id": 243,
+        "label": "R_8BM",
+        "position": {
+          "x": 4.8658,
+          "y": 30.6518,
+          "z": 47.4365
+        }
+      },
+      {
+        "id": 244,
+        "label": "R_p32",
+        "position": {
+          "x": -0.5,
+          "y": 43.25,
+          "z": -12.75
+        }
+      },
+      {
+        "id": 245,
+        "label": "R_10r",
+        "position": {
+          "x": -0.5,
+          "y": 45.25,
+          "z": -11.75
+        }
+      },
+      {
+        "id": 246,
+        "label": "R_47m",
+        "position": {
+          "x": 33.7357,
+          "y": 32.5717,
+          "z": -15.8829
+        }
+      },
+      {
+        "id": 247,
+        "label": "R_8Av",
+        "position": {
+          "x": 39.8249,
+          "y": 18.8202,
+          "z": 49.0997
+        }
+      },
+      {
+        "id": 248,
+        "label": "R_8Ad",
+        "position": {
+          "x": 23.9837,
+          "y": 30.6051,
+          "z": 42.3136
+        }
+      },
+      {
+        "id": 249,
+        "label": "R_9m",
+        "position": {
+          "x": 6.7434,
+          "y": 55.0901,
+          "z": 20.9469
+        }
+      },
+      {
+        "id": 250,
+        "label": "R_8BL",
+        "position": {
+          "x": 13.2097,
+          "y": 41.9075,
+          "z": 49.5118
+        }
+      },
+      {
+        "id": 251,
+        "label": "R_9p",
+        "position": {
+          "x": 20.6326,
+          "y": 50.9359,
+          "z": 34.1932
+        }
+      },
+      {
+        "id": 252,
+        "label": "R_10d",
+        "position": {
+          "x": 9.5,
+          "y": 67.8472,
+          "z": 5.0731
+        }
+      },
+      {
+        "id": 253,
+        "label": "R_8C",
+        "position": {
+          "x": 39.5685,
+          "y": 18.1531,
+          "z": 36.715
+        }
+      },
+      {
+        "id": 254,
+        "label": "R_44",
+        "position": {
+          "x": 53.431,
+          "y": 18.9778,
+          "z": 12.591
+        }
+      },
+      {
+        "id": 255,
+        "label": "R_45",
+        "position": {
+          "x": 50.382,
+          "y": 26.5792,
+          "z": 3.3714
+        }
+      },
+      {
+        "id": 256,
+        "label": "R_47l",
+        "position": {
+          "x": 45.234,
+          "y": 33.282,
+          "z": -13.7013
+        }
+      },
+      {
+        "id": 257,
+        "label": "R_a47r",
+        "position": {
+          "x": 39.2721,
+          "y": 51.7682,
+          "z": -8.55
+        }
+      },
+      {
+        "id": 258,
+        "label": "R_6r",
+        "position": {
+          "x": 52.1951,
+          "y": 10.0254,
+          "z": 13.331
+        }
+      },
+      {
+        "id": 259,
+        "label": "R_IFJa",
+        "position": {
+          "x": 44.3623,
+          "y": 16.6019,
+          "z": 25.5586
+        }
+      },
+      {
+        "id": 260,
+        "label": "R_IFJp",
+        "position": {
+          "x": 38.6061,
+          "y": 7.4913,
+          "z": 27.1746
+        }
+      },
+      {
+        "id": 261,
+        "label": "R_IFSp",
+        "position": {
+          "x": 47.7224,
+          "y": 28.693,
+          "z": 18.9286
+        }
+      },
+      {
+        "id": 262,
+        "label": "R_IFSa",
+        "position": {
+          "x": 49.9917,
+          "y": 36.133,
+          "z": 3.711
+        }
+      },
+      {
+        "id": 263,
+        "label": "R_p9-46v",
+        "position": {
+          "x": 47.4775,
+          "y": 30.949,
+          "z": 27.2125
+        }
+      },
+      {
+        "id": 264,
+        "label": "R_46",
+        "position": {
+          "x": 36.7753,
+          "y": 39.899,
+          "z": 30.7436
+        }
+      },
+      {
+        "id": 265,
+        "label": "R_a9-46v",
+        "position": {
+          "x": 39.7225,
+          "y": 52.6637,
+          "z": 10.1349
+        }
+      },
+      {
+        "id": 266,
+        "label": "R_9-46d",
+        "position": {
+          "x": 29.2571,
+          "y": 49.3418,
+          "z": 23.4743
+        }
+      },
+      {
+        "id": 267,
+        "label": "R_9a",
+        "position": {
+          "x": 19.2701,
+          "y": 62.3271,
+          "z": 19.8617
+        }
+      },
+      {
+        "id": 268,
+        "label": "R_10v",
+        "position": {
+          "x": -0.5,
+          "y": 27.25,
+          "z": -24.375
+        }
+      },
+      {
+        "id": 269,
+        "label": "R_a10p",
+        "position": {
+          "x": 25.0974,
+          "y": 62.2746,
+          "z": -8.5039
+        }
+      },
+      {
+        "id": 270,
+        "label": "R_10pp",
+        "position": {
+          "x": 12.4893,
+          "y": 63.2321,
+          "z": -16.4082
+        }
+      },
+      {
+        "id": 271,
+        "label": "R_11l",
+        "position": {
+          "x": 25.7072,
+          "y": 48.1913,
+          "z": -16.2445
+        }
+      },
+      {
+        "id": 272,
+        "label": "R_13l",
+        "position": {
+          "x": 20.1407,
+          "y": 28.9822,
+          "z": -20.2606
+        }
+      },
+      {
+        "id": 273,
+        "label": "R_OFC",
+        "position": {
+          "x": -0.5,
+          "y": 23.1786,
+          "z": -23.9643
+        }
+      },
+      {
+        "id": 274,
+        "label": "R_47s",
+        "position": {
+          "x": 31.2879,
+          "y": 22.4318,
+          "z": -19.6222
+        }
+      },
+      {
+        "id": 275,
+        "label": "R_LIPd",
+        "position": {
+          "x": 31.1998,
+          "y": -54.4651,
+          "z": 45.1389
+        }
+      },
+      {
+        "id": 276,
+        "label": "R_6a",
+        "position": {
+          "x": 26.9379,
+          "y": -2.1452,
+          "z": 53.4619
+        }
+      },
+      {
+        "id": 277,
+        "label": "R_i6-8",
+        "position": {
+          "x": 32.9857,
+          "y": 8.1121,
+          "z": 58.0711
+        }
+      },
+      {
+        "id": 278,
+        "label": "R_s6-8",
+        "position": {
+          "x": 20.4722,
+          "y": 22.041,
+          "z": 59.118
+        }
+      },
+      {
+        "id": 279,
+        "label": "R_43",
+        "position": {
+          "x": 55.7014,
+          "y": 0.7986,
+          "z": 9.7493
+        }
+      },
+      {
+        "id": 280,
+        "label": "R_OP4",
+        "position": {
+          "x": 56.672,
+          "y": -11.1951,
+          "z": 14.1699
+        }
+      },
+      {
+        "id": 281,
+        "label": "R_OP1",
+        "position": {
+          "x": 41.9844,
+          "y": -19.7196,
+          "z": 19.1868
+        }
+      },
+      {
+        "id": 282,
+        "label": "R_OP2-3",
+        "position": {
+          "x": 38.6844,
+          "y": -13.5717,
+          "z": 18.4529
+        }
+      },
+      {
+        "id": 283,
+        "label": "R_52",
+        "position": {
+          "x": 38.2373,
+          "y": -20.5939,
+          "z": 2.6576
+        }
+      },
+      {
+        "id": 284,
+        "label": "R_RI",
+        "position": {
+          "x": 41.188,
+          "y": -30.8163,
+          "z": 19.7572
+        }
+      },
+      {
+        "id": 285,
+        "label": "R_PFcm",
+        "position": {
+          "x": 47.0206,
+          "y": -27.7562,
+          "z": 22.8386
+        }
+      },
+      {
+        "id": 286,
+        "label": "R_PoI2",
+        "position": {
+          "x": 41.0401,
+          "y": -1.3234,
+          "z": -0.3265
+        }
+      },
+      {
+        "id": 287,
+        "label": "R_TA2",
+        "position": {
+          "x": 50.6498,
+          "y": 1.1111,
+          "z": -5.5774
+        }
+      },
+      {
+        "id": 288,
+        "label": "R_FOP4",
+        "position": {
+          "x": 38.7014,
+          "y": 15.141,
+          "z": 7.4438
+        }
+      },
+      {
+        "id": 289,
+        "label": "R_MI",
+        "position": {
+          "x": 36.89,
+          "y": 12.3212,
+          "z": 3.0166
+        }
+      },
+      {
+        "id": 290,
+        "label": "R_Pir",
+        "position": {
+          "x": 33.209,
+          "y": 8.5452,
+          "z": -18.3559
+        }
+      },
+      {
+        "id": 291,
+        "label": "R_AVI",
+        "position": {
+          "x": 32.6765,
+          "y": 26.25,
+          "z": -3.3401
+        }
+      },
+      {
+        "id": 292,
+        "label": "R_AAIC",
+        "position": {
+          "x": 35.0712,
+          "y": 16.7672,
+          "z": -10.4889
+        }
+      },
+      {
+        "id": 293,
+        "label": "R_FOP1",
+        "position": {
+          "x": 46.1755,
+          "y": 4.6386,
+          "z": 5.7439
+        }
+      },
+      {
+        "id": 294,
+        "label": "R_FOP3",
+        "position": {
+          "x": 34.706,
+          "y": 8.0125,
+          "z": 12.0931
+        }
+      },
+      {
+        "id": 295,
+        "label": "R_FOP2",
+        "position": {
+          "x": 40.4563,
+          "y": -1.9126,
+          "z": 15.551
+        }
+      },
+      {
+        "id": 296,
+        "label": "R_PFt",
+        "position": {
+          "x": 56.2214,
+          "y": -20.3243,
+          "z": 37.2779
+        }
+      },
+      {
+        "id": 297,
+        "label": "R_AIP",
+        "position": {
+          "x": 38.6782,
+          "y": -38.671,
+          "z": 44.446
+        }
+      },
+      {
+        "id": 298,
+        "label": "R_EC",
+        "position": {
+          "x": 21.9653,
+          "y": -16.3076,
+          "z": -29.7914
+        }
+      },
+      {
+        "id": 299,
+        "label": "R_PreS",
+        "position": {
+          "x": 16.5333,
+          "y": -34.3921,
+          "z": -10.7781
+        }
+      },
+      {
+        "id": 300,
+        "label": "R_H",
+        "position": {
+          "x": 13.2115,
+          "y": -39.1346,
+          "z": -2.0192
+        }
+      },
+      {
+        "id": 301,
+        "label": "R_ProS",
+        "position": {
+          "x": 22.0104,
+          "y": -50.286,
+          "z": 3.0339
+        }
+      },
+      {
+        "id": 302,
+        "label": "R_PeEc",
+        "position": {
+          "x": 30.1558,
+          "y": -9.921,
+          "z": -34.3296
+        }
+      },
+      {
+        "id": 303,
+        "label": "R_STGa",
+        "position": {
+          "x": 50.1622,
+          "y": 15.2004,
+          "z": -19.0317
+        }
+      },
+      {
+        "id": 304,
+        "label": "R_PBelt",
+        "position": {
+          "x": 55.7916,
+          "y": -18.9197,
+          "z": 8.9682
+        }
+      },
+      {
+        "id": 305,
+        "label": "R_A5",
+        "position": {
+          "x": 62.3912,
+          "y": -14.1458,
+          "z": -1.8871
+        }
+      },
+      {
+        "id": 306,
+        "label": "R_PHA1",
+        "position": {
+          "x": 22.3286,
+          "y": -35.8067,
+          "z": -15.3268
+        }
+      },
+      {
+        "id": 307,
+        "label": "R_PHA3",
+        "position": {
+          "x": 33.4733,
+          "y": -37.2925,
+          "z": -14.9007
+        }
+      },
+      {
+        "id": 308,
+        "label": "R_STSda",
+        "position": {
+          "x": 53.1256,
+          "y": -0.6531,
+          "z": -14.8518
+        }
+      },
+      {
+        "id": 309,
+        "label": "R_STSdp",
+        "position": {
+          "x": 49.2487,
+          "y": -27.9362,
+          "z": -1.114
+        }
+      },
+      {
+        "id": 310,
+        "label": "R_STSvp",
+        "position": {
+          "x": 57.3578,
+          "y": -29.7056,
+          "z": -4.1428
+        }
+      },
+      {
+        "id": 311,
+        "label": "R_TGd",
+        "position": {
+          "x": 35.9692,
+          "y": 14.2698,
+          "z": -35.7327
+        }
+      },
+      {
+        "id": 312,
+        "label": "R_TE1a",
+        "position": {
+          "x": 58.8777,
+          "y": -0.5748,
+          "z": -26.1682
+        }
+      },
+      {
+        "id": 313,
+        "label": "R_TE1p",
+        "position": {
+          "x": 61.7643,
+          "y": -42.8111,
+          "z": -12.1323
+        }
+      },
+      {
+        "id": 314,
+        "label": "R_TE2a",
+        "position": {
+          "x": 55.1806,
+          "y": -18.1076,
+          "z": -30.153
+        }
+      },
+      {
+        "id": 315,
+        "label": "R_TF",
+        "position": {
+          "x": 41.3975,
+          "y": -20.0727,
+          "z": -30.0139
+        }
+      },
+      {
+        "id": 316,
+        "label": "R_TE2p",
+        "position": {
+          "x": 48.3043,
+          "y": -37.4086,
+          "z": -21.5332
+        }
+      },
+      {
+        "id": 317,
+        "label": "R_PHT",
+        "position": {
+          "x": 60.3208,
+          "y": -52.8903,
+          "z": -4.623
+        }
+      },
+      {
+        "id": 318,
+        "label": "R_PH",
+        "position": {
+          "x": 47.9129,
+          "y": -62.6316,
+          "z": -9.5152
+        }
+      },
+      {
+        "id": 319,
+        "label": "R_TPOJ1",
+        "position": {
+          "x": 54.4983,
+          "y": -43.9962,
+          "z": 12.3185
+        }
+      },
+      {
+        "id": 320,
+        "label": "R_TPOJ2",
+        "position": {
+          "x": 54.0637,
+          "y": -55.9967,
+          "z": 8.4856
+        }
+      },
+      {
+        "id": 321,
+        "label": "R_TPOJ3",
+        "position": {
+          "x": 46.514,
+          "y": -62.061,
+          "z": 18.2366
+        }
+      },
+      {
+        "id": 322,
+        "label": "R_DVT",
+        "position": {
+          "x": 20.2276,
+          "y": -71.1343,
+          "z": 36.5018
+        }
+      },
+      {
+        "id": 323,
+        "label": "R_PGp",
+        "position": {
+          "x": 44.5853,
+          "y": -77.6875,
+          "z": 25.4817
+        }
+      },
+      {
+        "id": 324,
+        "label": "R_IP2",
+        "position": {
+          "x": 43.2124,
+          "y": -41.7836,
+          "z": 46.2569
+        }
+      },
+      {
+        "id": 325,
+        "label": "R_IP1",
+        "position": {
+          "x": 34.1084,
+          "y": -67.1459,
+          "z": 41.9002
+        }
+      },
+      {
+        "id": 326,
+        "label": "R_IP0",
+        "position": {
+          "x": 34.1304,
+          "y": -74.7003,
+          "z": 27.4938
+        }
+      },
+      {
+        "id": 327,
+        "label": "R_PFop",
+        "position": {
+          "x": 61.991,
+          "y": -19.1475,
+          "z": 23.4041
+        }
+      },
+      {
+        "id": 328,
+        "label": "R_PF",
+        "position": {
+          "x": 60.7622,
+          "y": -28.5703,
+          "z": 37.1253
+        }
+      },
+      {
+        "id": 329,
+        "label": "R_PFm",
+        "position": {
+          "x": 52.6248,
+          "y": -48.012,
+          "z": 46.5486
+        }
+      },
+      {
+        "id": 330,
+        "label": "R_PGi",
+        "position": {
+          "x": 51.1735,
+          "y": -59.6045,
+          "z": 28.7867
+        }
+      },
+      {
+        "id": 331,
+        "label": "R_PGs",
+        "position": {
+          "x": 44.5803,
+          "y": -68.6269,
+          "z": 42.1399
+        }
+      },
+      {
+        "id": 332,
+        "label": "R_V6A",
+        "position": {
+          "x": 24.2369,
+          "y": -84.3861,
+          "z": 43.5123
+        }
+      },
+      {
+        "id": 333,
+        "label": "R_VMV1",
+        "position": {
+          "x": 18.1655,
+          "y": -54.5927,
+          "z": -6.3762
+        }
+      },
+      {
+        "id": 334,
+        "label": "R_VMV3",
+        "position": {
+          "x": 27.4959,
+          "y": -61.1176,
+          "z": -9.4297
+        }
+      },
+      {
+        "id": 335,
+        "label": "R_PHA2",
+        "position": {
+          "x": 31.1381,
+          "y": -35.282,
+          "z": -12.871
+        }
+      },
+      {
+        "id": 336,
+        "label": "R_V4t",
+        "position": {
+          "x": 50.1715,
+          "y": -74.1807,
+          "z": -0.2363
+        }
+      },
+      {
+        "id": 337,
+        "label": "R_FST",
+        "position": {
+          "x": 50.0233,
+          "y": -63.0782,
+          "z": 1.421
+        }
+      },
+      {
+        "id": 338,
+        "label": "R_V3CD",
+        "position": {
+          "x": 37.867,
+          "y": -83.5003,
+          "z": 12.1034
+        }
+      },
+      {
+        "id": 339,
+        "label": "R_LO3",
+        "position": {
+          "x": 43.5272,
+          "y": -74.2936,
+          "z": 13.2493
+        }
+      },
+      {
+        "id": 340,
+        "label": "R_VMV2",
+        "position": {
+          "x": 27.1853,
+          "y": -54.0215,
+          "z": -6.6275
+        }
+      },
+      {
+        "id": 341,
+        "label": "R_31pd",
+        "position": {
+          "x": 11.0481,
+          "y": -52.3633,
+          "z": 35.7534
+        }
+      },
+      {
+        "id": 342,
+        "label": "R_31a",
+        "position": {
+          "x": 6.6786,
+          "y": -41.3916,
+          "z": 42.7462
+        }
+      },
+      {
+        "id": 343,
+        "label": "R_VVC",
+        "position": {
+          "x": 28.9754,
+          "y": -48.2738,
+          "z": -17.6034
+        }
+      },
+      {
+        "id": 344,
+        "label": "R_25",
+        "position": {
+          "x": -0.5,
+          "y": 23.1848,
+          "z": -18.5326
+        }
+      },
+      {
+        "id": 345,
+        "label": "R_s32",
+        "position": {
+          "x": -0.5,
+          "y": 37.8952,
+          "z": -16.0887
+        }
+      },
+      {
+        "id": 346,
+        "label": "R_pOFC",
+        "position": {
+          "x": 13.1506,
+          "y": 15.4519,
+          "z": -19.9167
+        }
+      },
+      {
+        "id": 347,
+        "label": "R_PoI1",
+        "position": {
+          "x": 39.2738,
+          "y": -9.35,
+          "z": -4.6275
+        }
+      },
+      {
+        "id": 348,
+        "label": "R_Ig",
+        "position": {
+          "x": 36.5567,
+          "y": -12.947,
+          "z": 14.1143
+        }
+      },
+      {
+        "id": 349,
+        "label": "R_FOP5",
+        "position": {
+          "x": 36.9903,
+          "y": 27.5504,
+          "z": 4.8314
+        }
+      },
+      {
+        "id": 350,
+        "label": "R_p10p",
+        "position": {
+          "x": 24.2919,
+          "y": 60.9964,
+          "z": 3.7517
+        }
+      },
+      {
+        "id": 351,
+        "label": "R_p47r",
+        "position": {
+          "x": 46.3992,
+          "y": 44.2913,
+          "z": -4.2913
+        }
+      },
+      {
+        "id": 352,
+        "label": "R_TGv",
+        "position": {
+          "x": 35.207,
+          "y": -1.2092,
+          "z": -45.1935
+        }
+      },
+      {
+        "id": 353,
+        "label": "R_MBelt",
+        "position": {
+          "x": 45.4061,
+          "y": -16.026,
+          "z": 4.698
+        }
+      },
+      {
+        "id": 354,
+        "label": "R_LBelt",
+        "position": {
+          "x": 46.7576,
+          "y": -25.1332,
+          "z": 10.7439
+        }
+      },
+      {
+        "id": 355,
+        "label": "R_A4",
+        "position": {
+          "x": 64.4099,
+          "y": -15.491,
+          "z": 6.57
+        }
+      },
+      {
+        "id": 356,
+        "label": "R_STSva",
+        "position": {
+          "x": 54.1492,
+          "y": -8.5735,
+          "z": -16.9097
+        }
+      },
+      {
+        "id": 357,
+        "label": "R_TE1m",
+        "position": {
+          "x": 64.4446,
+          "y": -22.4579,
+          "z": -16.4575
+        }
+      },
+      {
+        "id": 358,
+        "label": "R_PI",
+        "position": {
+          "x": 44.2384,
+          "y": -3.3355,
+          "z": -12.7233
+        }
+      },
+      {
+        "id": 359,
+        "label": "R_a32pr",
+        "position": {
+          "x": 9.498,
+          "y": 28.6079,
+          "z": 30.5014
+        }
+      },
+      {
+        "id": 360,
+        "label": "R_p24",
+        "position": {
+          "x": 4.5403,
+          "y": 37.9601,
+          "z": 15.4066
+        }
+      },
+      {
+        "id": 361,
+        "label": "L_Cerebellum",
+        "position": {
+          "x": -24.4841,
+          "y": -62.9174,
+          "z": -36.8393
+        }
+      },
+      {
+        "id": 362,
+        "label": "L_Thalamus",
+        "position": {
+          "x": -11.4968,
+          "y": -19.2297,
+          "z": 6.6696
+        }
+      },
+      {
+        "id": 363,
+        "label": "L_Caudate",
+        "position": {
+          "x": -12.9359,
+          "y": 9.5888,
+          "z": 9.5779
+        }
+      },
+      {
+        "id": 364,
+        "label": "L_Putamen",
+        "position": {
+          "x": -26.3518,
+          "y": 0.0041,
+          "z": 0.1759
+        }
+      },
+      {
+        "id": 365,
+        "label": "L_Pallidum",
+        "position": {
+          "x": -20.5731,
+          "y": -5.126,
+          "z": -1.1612
+        }
+      },
+      {
+        "id": 366,
+        "label": "L_Hippocampus",
+        "position": {
+          "x": -25.4045,
+          "y": -22.4638,
+          "z": -14.298
+        }
+      },
+      {
+        "id": 367,
+        "label": "L_Amygdala",
+        "position": {
+          "x": -22.9962,
+          "y": -5.0696,
+          "z": -19.6654
+        }
+      },
+      {
+        "id": 368,
+        "label": "L_Accumbens",
+        "position": {
+          "x": -8.5215,
+          "y": 9.994,
+          "z": -8.4476
+        }
+      },
+      {
+        "id": 369,
+        "label": "L_VentralDC",
+        "position": {
+          "x": -10.5311,
+          "y": -15.4878,
+          "z": -10.5673
+        }
+      },
+      {
+        "id": 370,
+        "label": "R_Cerebellum",
+        "position": {
+          "x": -0.5,
+          "y": -55.7269,
+          "z": -48.0246
+        }
+      },
+      {
+        "id": 371,
+        "label": "R_Thalamus",
+        "position": {
+          "x": 11.2509,
+          "y": -17.528,
+          "z": 6.8822
+        }
+      },
+      {
+        "id": 372,
+        "label": "R_Caudate",
+        "position": {
+          "x": 13.0486,
+          "y": 11.0092,
+          "z": 9.6262
+        }
+      },
+      {
+        "id": 373,
+        "label": "R_Putamen",
+        "position": {
+          "x": 26.3425,
+          "y": 2.0114,
+          "z": -0.2748
+        }
+      },
+      {
+        "id": 374,
+        "label": "R_Pallidum",
+        "position": {
+          "x": 21.0138,
+          "y": -3.7858,
+          "z": -1.0325
+        }
+      },
+      {
+        "id": 375,
+        "label": "R_Hippocampus",
+        "position": {
+          "x": 26.0941,
+          "y": -21.3944,
+          "z": -14.0873
+        }
+      },
+      {
+        "id": 376,
+        "label": "R_Amygdala",
+        "position": {
+          "x": 23.24,
+          "y": -3.735,
+          "z": -19.8364
+        }
+      },
+      {
+        "id": 377,
+        "label": "R_Accumbens",
+        "position": {
+          "x": 7.9293,
+          "y": 11.3815,
+          "z": -7.4997
+        }
+      },
+      {
+        "id": 378,
+        "label": "R_VentralDC",
+        "position": {
+          "x": 10.5525,
+          "y": -14.6552,
+          "z": -10.1548
+        }
+      },
+      {
+        "id": 379,
+        "label": "Brain-Stem",
+        "position": {
+          "x": -6.0839,
+          "y": -30.9513,
+          "z": -33.0764
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "hcpmmp1",
+    "atlas.name": "hcpmmp1"
+  },
+  {
+    "label": "Destrieux (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 167,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Destrieux_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "Destrieux",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "MghUscHcp32",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx_lh_g_and_s_frontomargin",
+        "position": {
+          "x": -24.0,
+          "y": 61.0717,
+          "z": -8.018
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx_lh_g_and_s_occipital_inf",
+        "position": {
+          "x": -38.2836,
+          "y": -83.0171,
+          "z": -9.6874
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx_lh_g_and_s_paracentral",
+        "position": {
+          "x": -7.2356,
+          "y": -35.3537,
+          "z": 69.4461
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx_lh_g_and_s_subcentral",
+        "position": {
+          "x": -56.3629,
+          "y": -10.6463,
+          "z": 15.3022
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx_lh_g_and_s_transv_frontopol",
+        "position": {
+          "x": -16.0892,
+          "y": 67.463,
+          "z": -2.0906
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx_lh_g_and_s_cingul-ant",
+        "position": {
+          "x": -7.219,
+          "y": 40.905,
+          "z": 7.0314
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx_lh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": -6.6139,
+          "y": 16.9951,
+          "z": 36.9201
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx_lh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": -6.9033,
+          "y": -11.2828,
+          "z": 41.5185
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx_lh_g_cingul-post-dorsal",
+        "position": {
+          "x": -3.03,
+          "y": -38.6929,
+          "z": 32.8713
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx_lh_g_cingul-post-ventral",
+        "position": {
+          "x": -6.7789,
+          "y": -49.4885,
+          "z": 7.9672
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx_lh_g_cuneus",
+        "position": {
+          "x": -4.8326,
+          "y": -80.1757,
+          "z": 23.1777
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx_lh_g_front_inf-opercular",
+        "position": {
+          "x": -50.105,
+          "y": 11.9496,
+          "z": 10.3457
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx_lh_g_front_inf-orbital",
+        "position": {
+          "x": -45.3208,
+          "y": 30.0249,
+          "z": -9.4672
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx_lh_g_front_inf-triangul",
+        "position": {
+          "x": -51.0645,
+          "y": 30.8717,
+          "z": 4.9089
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx_lh_g_front_middle",
+        "position": {
+          "x": -37.4162,
+          "y": 33.9899,
+          "z": 35.5547
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx_lh_g_front_sup",
+        "position": {
+          "x": -8.9765,
+          "y": 29.0693,
+          "z": 46.0935
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx_lh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": -38.1326,
+          "y": -6.1028,
+          "z": -0.4616
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx_lh_g_insular_short",
+        "position": {
+          "x": -37.6087,
+          "y": 10.0331,
+          "z": -3.6818
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx_lh_g_occipital_middle",
+        "position": {
+          "x": -37.9259,
+          "y": -87.5018,
+          "z": 13.1752
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx_lh_g_occipital_sup",
+        "position": {
+          "x": -14.4854,
+          "y": -91.9612,
+          "z": 30.1997
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx_lh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": -35.0602,
+          "y": -54.8076,
+          "z": -18.1465
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx_lh_g_oc-temp_med-lingual",
+        "position": {
+          "x": -10.4458,
+          "y": -71.206,
+          "z": -5.5908
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx_lh_g_oc-temp_med-parahip",
+        "position": {
+          "x": -22.7779,
+          "y": -18.6288,
+          "z": -25.4956
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx_lh_g_orbital",
+        "position": {
+          "x": -30.0351,
+          "y": 37.0414,
+          "z": -18.6018
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx_lh_g_pariet_inf-angular",
+        "position": {
+          "x": -43.3172,
+          "y": -68.6398,
+          "z": 41.3971
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx_lh_g_pariet_inf-supramar",
+        "position": {
+          "x": -58.3486,
+          "y": -36.939,
+          "z": 34.6425
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx_lh_g_parietal_sup",
+        "position": {
+          "x": -25.1312,
+          "y": -61.0393,
+          "z": 60.1347
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx_lh_g_postcentral",
+        "position": {
+          "x": -48.5895,
+          "y": -24.1446,
+          "z": 54.8891
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx_lh_g_precentral",
+        "position": {
+          "x": -46.509,
+          "y": -5.9234,
+          "z": 49.8839
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx_lh_g_precuneus",
+        "position": {
+          "x": -4.7441,
+          "y": -60.1616,
+          "z": 45.9517
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx_lh_g_rectus",
+        "position": {
+          "x": -3.8248,
+          "y": 38.4238,
+          "z": -22.5695
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx_lh_g_subcallosal",
+        "position": {
+          "x": -9.5127,
+          "y": 9.1883,
+          "z": -13.5187
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx_lh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": -48.0589,
+          "y": -17.4559,
+          "z": 8.2527
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx_lh_g_temp_sup-lateral",
+        "position": {
+          "x": -57.4003,
+          "y": -6.3553,
+          "z": -7.2621
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx_lh_g_temp_sup-plan_polar",
+        "position": {
+          "x": -40.3483,
+          "y": 8.1018,
+          "z": -19.141
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx_lh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": -58.0488,
+          "y": -37.1459,
+          "z": 18.2355
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx_lh_g_temporal_inf",
+        "position": {
+          "x": -52.3971,
+          "y": -34.1496,
+          "z": -25.5
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx_lh_g_temporal_middle",
+        "position": {
+          "x": -61.3249,
+          "y": -25.3671,
+          "z": -13.037
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx_lh_lat_fis-ant-horizont",
+        "position": {
+          "x": -42.3913,
+          "y": 32.7663,
+          "z": -2.8207
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx_lh_lat_fis-ant-vertical",
+        "position": {
+          "x": -46.445,
+          "y": 21.3861,
+          "z": 10.3704
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx_lh_lat_fis-post",
+        "position": {
+          "x": -41.2842,
+          "y": -34.15,
+          "z": 21.1458
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx_lh_pole_occipital",
+        "position": {
+          "x": -16.2053,
+          "y": -100.7264,
+          "z": -3.2525
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx_lh_pole_temporal",
+        "position": {
+          "x": -31.7438,
+          "y": 8.3073,
+          "z": -41.267
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx_lh_s_calcarine",
+        "position": {
+          "x": -15.7374,
+          "y": -68.8105,
+          "z": 5.6484
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx_lh_s_central",
+        "position": {
+          "x": -38.5248,
+          "y": -18.3079,
+          "z": 47.443
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx_lh_s_cingul-marginalis",
+        "position": {
+          "x": -12.3835,
+          "y": -38.0053,
+          "z": 50.0885
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx_lh_s_circular_insula_ant",
+        "position": {
+          "x": -30.5666,
+          "y": 21.569,
+          "z": -9.7416
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx_lh_s_circular_insula_inf",
+        "position": {
+          "x": -40.6835,
+          "y": -10.5521,
+          "z": -5.0486
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx_lh_s_circular_insula_sup",
+        "position": {
+          "x": -35.776,
+          "y": 6.3584,
+          "z": 11.8398
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx_lh_s_collat_transv_ant",
+        "position": {
+          "x": -40.9084,
+          "y": -19.3811,
+          "z": -28.3737
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx_lh_s_collat_transv_post",
+        "position": {
+          "x": -23.9819,
+          "y": -82.5479,
+          "z": -7.8354
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx_lh_s_front_inf",
+        "position": {
+          "x": -40.3037,
+          "y": 26.0116,
+          "z": 21.439
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx_lh_s_front_middle",
+        "position": {
+          "x": -27.1817,
+          "y": 47.3083,
+          "z": 19.4748
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx_lh_s_front_sup",
+        "position": {
+          "x": -23.7373,
+          "y": 22.6406,
+          "z": 46.3171
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx_lh_s_interm_prim-jensen",
+        "position": {
+          "x": -51.4334,
+          "y": -54.5265,
+          "z": 37.1475
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx_lh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": -34.9075,
+          "y": -51.414,
+          "z": 44.8004
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx_lh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": -32.1061,
+          "y": -85.948,
+          "z": 8.3716
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx_lh_s_oc_sup_and_transversal",
+        "position": {
+          "x": -26.3851,
+          "y": -82.69,
+          "z": 22.3452
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx_lh_s_occipital_ant",
+        "position": {
+          "x": -40.694,
+          "y": -68.579,
+          "z": 7.7443
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx_lh_s_oc-temp_lat",
+        "position": {
+          "x": -44.0357,
+          "y": -50.7328,
+          "z": -12.9207
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx_lh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": -28.0735,
+          "y": -46.5972,
+          "z": -11.5485
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx_lh_s_orbital_lateral",
+        "position": {
+          "x": -41.4841,
+          "y": 46.4036,
+          "z": -3.4932
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx_lh_s_orbital_med-olfact",
+        "position": {
+          "x": -12.4184,
+          "y": 26.4558,
+          "z": -19.7254
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx_lh_s_orbital-h_shaped",
+        "position": {
+          "x": -24.6261,
+          "y": 39.5289,
+          "z": -16.4209
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx_lh_s_parieto_occipital",
+        "position": {
+          "x": -14.7876,
+          "y": -68.1004,
+          "z": 25.8391
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx_lh_s_pericallosal",
+        "position": {
+          "x": -4.6719,
+          "y": -6.4706,
+          "z": 15.4169
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx_lh_s_postcentral",
+        "position": {
+          "x": -41.5756,
+          "y": -32.0865,
+          "z": 46.892
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx_lh_s_precentral-inf-part",
+        "position": {
+          "x": -44.5555,
+          "y": 4.4786,
+          "z": 31.2218
+        }
+      },
+      {
+        "id": 88,
+        "label": "ctx_lh_s_precentral-sup-part",
+        "position": {
+          "x": -29.0827,
+          "y": -9.2953,
+          "z": 56.1585
+        }
+      },
+      {
+        "id": 89,
+        "label": "ctx_lh_s_suborbital",
+        "position": {
+          "x": -6.9466,
+          "y": 43.4199,
+          "z": -13.0309
+        }
+      },
+      {
+        "id": 90,
+        "label": "ctx_lh_s_subparietal",
+        "position": {
+          "x": -9.7122,
+          "y": -48.6867,
+          "z": 38.7621
+        }
+      },
+      {
+        "id": 91,
+        "label": "ctx_lh_s_temporal_inf",
+        "position": {
+          "x": -53.7095,
+          "y": -13.637,
+          "z": -27.2072
+        }
+      },
+      {
+        "id": 92,
+        "label": "ctx_lh_s_temporal_sup",
+        "position": {
+          "x": -50.4691,
+          "y": -41.0099,
+          "z": 7.1445
+        }
+      },
+      {
+        "id": 93,
+        "label": "ctx_lh_s_temporal_transverse",
+        "position": {
+          "x": -51.7371,
+          "y": -22.4901,
+          "z": 6.1295
+        }
+      },
+      {
+        "id": 94,
+        "label": "ctx_rh_g_and_s_frontomargin",
+        "position": {
+          "x": 22.2577,
+          "y": 62.2808,
+          "z": -10.9596
+        }
+      },
+      {
+        "id": 95,
+        "label": "ctx_rh_g_and_s_occipital_inf",
+        "position": {
+          "x": 42.5309,
+          "y": -75.9362,
+          "z": -11.0983
+        }
+      },
+      {
+        "id": 96,
+        "label": "ctx_rh_g_and_s_paracentral",
+        "position": {
+          "x": 6.7722,
+          "y": -33.822,
+          "z": 69.3321
+        }
+      },
+      {
+        "id": 97,
+        "label": "ctx_rh_g_and_s_subcentral",
+        "position": {
+          "x": 56.6981,
+          "y": -7.5802,
+          "z": 15.2277
+        }
+      },
+      {
+        "id": 98,
+        "label": "ctx_rh_g_and_s_transv_frontopol",
+        "position": {
+          "x": 16.8463,
+          "y": 67.8866,
+          "z": 1.6446
+        }
+      },
+      {
+        "id": 99,
+        "label": "ctx_rh_g_and_s_cingul-ant",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 100,
+        "label": "ctx_rh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": 7.0708,
+          "y": 16.5535,
+          "z": 36.486
+        }
+      },
+      {
+        "id": 101,
+        "label": "ctx_rh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": 7.3054,
+          "y": -8.7592,
+          "z": 43.9232
+        }
+      },
+      {
+        "id": 102,
+        "label": "ctx_rh_g_cingul-post-dorsal",
+        "position": {
+          "x": 3.6303,
+          "y": -36.3968,
+          "z": 33.9612
+        }
+      },
+      {
+        "id": 103,
+        "label": "ctx_rh_g_cingul-post-ventral",
+        "position": {
+          "x": 7.92,
+          "y": -48.5479,
+          "z": 8.5795
+        }
+      },
+      {
+        "id": 104,
+        "label": "ctx_rh_g_cuneus",
+        "position": {
+          "x": 6.4586,
+          "y": -78.9207,
+          "z": 22.2696
+        }
+      },
+      {
+        "id": 105,
+        "label": "ctx_rh_g_front_inf-opercular",
+        "position": {
+          "x": 51.5669,
+          "y": 13.9053,
+          "z": 9.5014
+        }
+      },
+      {
+        "id": 106,
+        "label": "ctx_rh_g_front_inf-orbital",
+        "position": {
+          "x": 49.4969,
+          "y": 35.0579,
+          "z": -8.7516
+        }
+      },
+      {
+        "id": 107,
+        "label": "ctx_rh_g_front_inf-triangul",
+        "position": {
+          "x": 52.8144,
+          "y": 33.1095,
+          "z": 6.7407
+        }
+      },
+      {
+        "id": 108,
+        "label": "ctx_rh_g_front_middle",
+        "position": {
+          "x": 38.7159,
+          "y": 34.5516,
+          "z": 35.148
+        }
+      },
+      {
+        "id": 109,
+        "label": "ctx_rh_g_front_sup",
+        "position": {
+          "x": 9.7085,
+          "y": 29.6224,
+          "z": 47.3579
+        }
+      },
+      {
+        "id": 110,
+        "label": "ctx_rh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": 40.2448,
+          "y": -2.6863,
+          "z": -2.3974
+        }
+      },
+      {
+        "id": 111,
+        "label": "ctx_rh_g_insular_short",
+        "position": {
+          "x": 38.1091,
+          "y": 12.0044,
+          "z": -4.2694
+        }
+      },
+      {
+        "id": 112,
+        "label": "ctx_rh_g_occipital_middle",
+        "position": {
+          "x": 44.4103,
+          "y": -79.0762,
+          "z": 16.2817
+        }
+      },
+      {
+        "id": 113,
+        "label": "ctx_rh_g_occipital_sup",
+        "position": {
+          "x": 21.0472,
+          "y": -88.7719,
+          "z": 33.7281
+        }
+      },
+      {
+        "id": 114,
+        "label": "ctx_rh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": 34.514,
+          "y": -46.9914,
+          "z": -20.5891
+        }
+      },
+      {
+        "id": 115,
+        "label": "ctx_rh_g_oc-temp_med-lingual",
+        "position": {
+          "x": 10.6606,
+          "y": -66.325,
+          "z": -3.0172
+        }
+      },
+      {
+        "id": 116,
+        "label": "ctx_rh_g_oc-temp_med-parahip",
+        "position": {
+          "x": 24.0181,
+          "y": -13.5509,
+          "z": -27.867
+        }
+      },
+      {
+        "id": 117,
+        "label": "ctx_rh_g_orbital",
+        "position": {
+          "x": 29.2894,
+          "y": 36.5417,
+          "z": -18.3141
+        }
+      },
+      {
+        "id": 118,
+        "label": "ctx_rh_g_pariet_inf-angular",
+        "position": {
+          "x": 48.1448,
+          "y": -60.7703,
+          "z": 43.0383
+        }
+      },
+      {
+        "id": 119,
+        "label": "ctx_rh_g_pariet_inf-supramar",
+        "position": {
+          "x": 59.9047,
+          "y": -29.7624,
+          "z": 37.295
+        }
+      },
+      {
+        "id": 120,
+        "label": "ctx_rh_g_parietal_sup",
+        "position": {
+          "x": 25.6607,
+          "y": -59.5495,
+          "z": 62.988
+        }
+      },
+      {
+        "id": 121,
+        "label": "ctx_rh_g_postcentral",
+        "position": {
+          "x": 50.0604,
+          "y": -19.9696,
+          "z": 53.9498
+        }
+      },
+      {
+        "id": 122,
+        "label": "ctx_rh_g_precentral",
+        "position": {
+          "x": 47.2617,
+          "y": -4.1329,
+          "z": 49.8164
+        }
+      },
+      {
+        "id": 123,
+        "label": "ctx_rh_g_precuneus",
+        "position": {
+          "x": 5.3165,
+          "y": -59.5503,
+          "z": 46.5569
+        }
+      },
+      {
+        "id": 124,
+        "label": "ctx_rh_g_rectus",
+        "position": {
+          "x": 3.5741,
+          "y": 39.4113,
+          "z": -23.4651
+        }
+      },
+      {
+        "id": 125,
+        "label": "ctx_rh_g_subcallosal",
+        "position": {
+          "x": 4.4077,
+          "y": 13.1095,
+          "z": -11.5686
+        }
+      },
+      {
+        "id": 126,
+        "label": "ctx_rh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": 49.262,
+          "y": -12.6511,
+          "z": 6.6042
+        }
+      },
+      {
+        "id": 127,
+        "label": "ctx_rh_g_temp_sup-lateral",
+        "position": {
+          "x": 59.1945,
+          "y": -4.5715,
+          "z": -6.2145
+        }
+      },
+      {
+        "id": 128,
+        "label": "ctx_rh_g_temp_sup-plan_polar",
+        "position": {
+          "x": 39.3637,
+          "y": 10.4394,
+          "z": -19.4632
+        }
+      },
+      {
+        "id": 129,
+        "label": "ctx_rh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": 60.8687,
+          "y": -28.0353,
+          "z": 19.5365
+        }
+      },
+      {
+        "id": 130,
+        "label": "ctx_rh_g_temporal_inf",
+        "position": {
+          "x": 54.1066,
+          "y": -30.3604,
+          "z": -27.28
+        }
+      },
+      {
+        "id": 131,
+        "label": "ctx_rh_g_temporal_middle",
+        "position": {
+          "x": 61.7879,
+          "y": -23.5953,
+          "z": -12.5268
+        }
+      },
+      {
+        "id": 132,
+        "label": "ctx_rh_lat_fis-ant-horizont",
+        "position": {
+          "x": 42.0326,
+          "y": 29.2974,
+          "z": 0.0054
+        }
+      },
+      {
+        "id": 133,
+        "label": "ctx_rh_lat_fis-ant-vertical",
+        "position": {
+          "x": 49.276,
+          "y": 23.5427,
+          "z": 10.1533
+        }
+      },
+      {
+        "id": 134,
+        "label": "ctx_rh_lat_fis-post",
+        "position": {
+          "x": 41.0928,
+          "y": -25.633,
+          "z": 20.0004
+        }
+      },
+      {
+        "id": 135,
+        "label": "ctx_rh_pole_occipital",
+        "position": {
+          "x": 20.8655,
+          "y": -95.6293,
+          "z": -1.6295
+        }
+      },
+      {
+        "id": 136,
+        "label": "ctx_rh_pole_temporal",
+        "position": {
+          "x": 31.8922,
+          "y": 10.5642,
+          "z": -41.3543
+        }
+      },
+      {
+        "id": 137,
+        "label": "ctx_rh_s_calcarine",
+        "position": {
+          "x": 18.1099,
+          "y": -63.0424,
+          "z": 7.2867
+        }
+      },
+      {
+        "id": 138,
+        "label": "ctx_rh_s_central",
+        "position": {
+          "x": 39.7119,
+          "y": -15.6691,
+          "z": 46.7884
+        }
+      },
+      {
+        "id": 139,
+        "label": "ctx_rh_s_cingul-marginalis",
+        "position": {
+          "x": 12.5432,
+          "y": -36.8154,
+          "z": 51.2974
+        }
+      },
+      {
+        "id": 140,
+        "label": "ctx_rh_s_circular_insula_ant",
+        "position": {
+          "x": 31.3719,
+          "y": 23.9157,
+          "z": -8.5989
+        }
+      },
+      {
+        "id": 141,
+        "label": "ctx_rh_s_circular_insula_inf",
+        "position": {
+          "x": 42.9132,
+          "y": -7.3267,
+          "z": -6.4154
+        }
+      },
+      {
+        "id": 142,
+        "label": "ctx_rh_s_circular_insula_sup",
+        "position": {
+          "x": 37.0455,
+          "y": 9.8494,
+          "z": 9.8043
+        }
+      },
+      {
+        "id": 143,
+        "label": "ctx_rh_s_collat_transv_ant",
+        "position": {
+          "x": 41.6575,
+          "y": -17.6448,
+          "z": -28.9297
+        }
+      },
+      {
+        "id": 144,
+        "label": "ctx_rh_s_collat_transv_post",
+        "position": {
+          "x": 26.2846,
+          "y": -78.1792,
+          "z": -7.5346
+        }
+      },
+      {
+        "id": 145,
+        "label": "ctx_rh_s_front_inf",
+        "position": {
+          "x": 40.3424,
+          "y": 27.3534,
+          "z": 23.1634
+        }
+      },
+      {
+        "id": 146,
+        "label": "ctx_rh_s_front_middle",
+        "position": {
+          "x": 30.3692,
+          "y": 46.1326,
+          "z": 20.7821
+        }
+      },
+      {
+        "id": 147,
+        "label": "ctx_rh_s_front_sup",
+        "position": {
+          "x": 23.7666,
+          "y": 24.5791,
+          "z": 46.0738
+        }
+      },
+      {
+        "id": 148,
+        "label": "ctx_rh_s_interm_prim-jensen",
+        "position": {
+          "x": 53.7937,
+          "y": -41.9432,
+          "z": 39.6779
+        }
+      },
+      {
+        "id": 149,
+        "label": "ctx_rh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": 33.6163,
+          "y": -50.9082,
+          "z": 48.6832
+        }
+      },
+      {
+        "id": 150,
+        "label": "ctx_rh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": 36.9766,
+          "y": -79.5268,
+          "z": 8.9653
+        }
+      },
+      {
+        "id": 151,
+        "label": "ctx_rh_s_oc_sup_and_transversal",
+        "position": {
+          "x": 30.6016,
+          "y": -78.1289,
+          "z": 24.247
+        }
+      },
+      {
+        "id": 152,
+        "label": "ctx_rh_s_occipital_ant",
+        "position": {
+          "x": 47.6465,
+          "y": -63.6936,
+          "z": 5.1335
+        }
+      },
+      {
+        "id": 153,
+        "label": "ctx_rh_s_oc-temp_lat",
+        "position": {
+          "x": 45.5915,
+          "y": -46.1461,
+          "z": -15.3462
+        }
+      },
+      {
+        "id": 154,
+        "label": "ctx_rh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": 28.5243,
+          "y": -45.6739,
+          "z": -11.7078
+        }
+      },
+      {
+        "id": 155,
+        "label": "ctx_rh_s_orbital_lateral",
+        "position": {
+          "x": 42.425,
+          "y": 44.91,
+          "z": -2.1147
+        }
+      },
+      {
+        "id": 156,
+        "label": "ctx_rh_s_orbital_med-olfact",
+        "position": {
+          "x": 11.9521,
+          "y": 26.9754,
+          "z": -19.2287
+        }
+      },
+      {
+        "id": 157,
+        "label": "ctx_rh_s_orbital-h_shaped",
+        "position": {
+          "x": 25.3021,
+          "y": 40.7269,
+          "z": -16.2795
+        }
+      },
+      {
+        "id": 158,
+        "label": "ctx_rh_s_parieto_occipital",
+        "position": {
+          "x": 17.9312,
+          "y": -66.3152,
+          "z": 28.4718
+        }
+      },
+      {
+        "id": 159,
+        "label": "ctx_rh_s_pericallosal",
+        "position": {
+          "x": 5.8165,
+          "y": -2.6584,
+          "z": 18.2367
+        }
+      },
+      {
+        "id": 160,
+        "label": "ctx_rh_s_postcentral",
+        "position": {
+          "x": 40.1527,
+          "y": -29.5508,
+          "z": 48.8675
+        }
+      },
+      {
+        "id": 161,
+        "label": "ctx_rh_s_precentral-inf-part",
+        "position": {
+          "x": 44.843,
+          "y": 7.2932,
+          "z": 31.5875
+        }
+      },
+      {
+        "id": 162,
+        "label": "ctx_rh_s_precentral-sup-part",
+        "position": {
+          "x": 29.9073,
+          "y": -7.5881,
+          "z": 57.3501
+        }
+      },
+      {
+        "id": 163,
+        "label": "ctx_rh_s_suborbital",
+        "position": {
+          "x": 4.7283,
+          "y": 41.9289,
+          "z": -16.9112
+        }
+      },
+      {
+        "id": 164,
+        "label": "ctx_rh_s_subparietal",
+        "position": {
+          "x": 9.8259,
+          "y": -48.1836,
+          "z": 38.7466
+        }
+      },
+      {
+        "id": 165,
+        "label": "ctx_rh_s_temporal_inf",
+        "position": {
+          "x": 52.7454,
+          "y": -13.5317,
+          "z": -26.3953
+        }
+      },
+      {
+        "id": 166,
+        "label": "ctx_rh_s_temporal_sup",
+        "position": {
+          "x": 53.2414,
+          "y": -30.4284,
+          "z": 4.9165
+        }
+      },
+      {
+        "id": 167,
+        "label": "ctx_rh_s_temporal_transverse",
+        "position": {
+          "x": 53.2088,
+          "y": -17.5966,
+          "z": 7.2557
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Destrieux_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
+    "atlas": "Destrieux",
+    "atlas.name": "Destrieux"
+  },
+  {
+    "label": "hcpmmp1ordered (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 379,
+    "data_file": "tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009bAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "hcpmmp1ordered",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "MghUscHcp32",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "L_V1",
+        "position": {
+          "x": -10.364,
+          "y": -84.1004,
+          "z": 1.6224
+        }
+      },
+      {
+        "id": 2,
+        "label": "L_MST",
+        "position": {
+          "x": -43.784,
+          "y": -66.8058,
+          "z": 11.9515
+        }
+      },
+      {
+        "id": 3,
+        "label": "L_V6",
+        "position": {
+          "x": -14.8822,
+          "y": -80.5731,
+          "z": 32.2153
+        }
+      },
+      {
+        "id": 4,
+        "label": "L_V2",
+        "position": {
+          "x": -10.5689,
+          "y": -82.3316,
+          "z": 4.0629
+        }
+      },
+      {
+        "id": 5,
+        "label": "L_V3",
+        "position": {
+          "x": -15.976,
+          "y": -86.1955,
+          "z": 7.9722
+        }
+      },
+      {
+        "id": 6,
+        "label": "L_V4",
+        "position": {
+          "x": -28.3751,
+          "y": -86.9758,
+          "z": -0.0061
+        }
+      },
+      {
+        "id": 7,
+        "label": "L_V8",
+        "position": {
+          "x": -30.3423,
+          "y": -76.8966,
+          "z": -12.8754
+        }
+      },
+      {
+        "id": 8,
+        "label": "L_4",
+        "position": {
+          "x": -28.4284,
+          "y": -20.3676,
+          "z": 54.6372
+        }
+      },
+      {
+        "id": 9,
+        "label": "L_3b",
+        "position": {
+          "x": -39.3971,
+          "y": -22.2953,
+          "z": 52.8104
+        }
+      },
+      {
+        "id": 10,
+        "label": "L_FEF",
+        "position": {
+          "x": -41.8243,
+          "y": -6.8251,
+          "z": 51.5479
+        }
+      },
+      {
+        "id": 11,
+        "label": "L_PEF",
+        "position": {
+          "x": -49.0095,
+          "y": -0.4517,
+          "z": 40.5917
+        }
+      },
+      {
+        "id": 12,
+        "label": "L_55b",
+        "position": {
+          "x": -48.9816,
+          "y": -1.5129,
+          "z": 50.1907
+        }
+      },
+      {
+        "id": 13,
+        "label": "L_V3A",
+        "position": {
+          "x": -15.0154,
+          "y": -91.6078,
+          "z": 28.2444
+        }
+      },
+      {
+        "id": 14,
+        "label": "L_RSC",
+        "position": {
+          "x": -4.8849,
+          "y": -36.571,
+          "z": 21.1122
+        }
+      },
+      {
+        "id": 15,
+        "label": "L_POS2",
+        "position": {
+          "x": -9.4942,
+          "y": -72.2524,
+          "z": 36.7902
+        }
+      },
+      {
+        "id": 16,
+        "label": "L_V7",
+        "position": {
+          "x": -24.0981,
+          "y": -87.0738,
+          "z": 29.6168
+        }
+      },
+      {
+        "id": 17,
+        "label": "L_IPS1",
+        "position": {
+          "x": -24.3039,
+          "y": -75.2696,
+          "z": 37.4596
+        }
+      },
+      {
+        "id": 18,
+        "label": "L_FFC",
+        "position": {
+          "x": -42.0212,
+          "y": -61.4224,
+          "z": -17.2907
+        }
+      },
+      {
+        "id": 19,
+        "label": "L_V3B",
+        "position": {
+          "x": -26.2942,
+          "y": -83.0281,
+          "z": 17.6529
+        }
+      },
+      {
+        "id": 20,
+        "label": "L_LO1",
+        "position": {
+          "x": -39.7809,
+          "y": -83.9116,
+          "z": 8.2445
+        }
+      },
+      {
+        "id": 21,
+        "label": "L_LO2",
+        "position": {
+          "x": -45.7787,
+          "y": -85.1696,
+          "z": 0.7286
+        }
+      },
+      {
+        "id": 22,
+        "label": "L_PIT",
+        "position": {
+          "x": -43.7057,
+          "y": -83.2109,
+          "z": -11.0143
+        }
+      },
+      {
+        "id": 23,
+        "label": "L_MT",
+        "position": {
+          "x": -42.7722,
+          "y": -69.9594,
+          "z": 14.452
+        }
+      },
+      {
+        "id": 24,
+        "label": "L_A1",
+        "position": {
+          "x": -43.1723,
+          "y": -25.3579,
+          "z": 12.3234
+        }
+      },
+      {
+        "id": 25,
+        "label": "L_PSL",
+        "position": {
+          "x": -58.5839,
+          "y": -47.2283,
+          "z": 25.4311
+        }
+      },
+      {
+        "id": 26,
+        "label": "L_SFL",
+        "position": {
+          "x": -8.6095,
+          "y": 17.5137,
+          "z": 63.9293
+        }
+      },
+      {
+        "id": 27,
+        "label": "L_PCV",
+        "position": {
+          "x": -6.298,
+          "y": -51.1579,
+          "z": 49.2086
+        }
+      },
+      {
+        "id": 28,
+        "label": "L_STV",
+        "position": {
+          "x": -61.089,
+          "y": -50.9521,
+          "z": 18.2324
+        }
+      },
+      {
+        "id": 29,
+        "label": "L_7Pm",
+        "position": {
+          "x": -4.2062,
+          "y": -70.4214,
+          "z": 50.3404
+        }
+      },
+      {
+        "id": 30,
+        "label": "L_7m",
+        "position": {
+          "x": -4.2845,
+          "y": -63.8785,
+          "z": 35.1841
+        }
+      },
+      {
+        "id": 31,
+        "label": "L_POS1",
+        "position": {
+          "x": -12.6035,
+          "y": -59.0019,
+          "z": 15.0424
+        }
+      },
+      {
+        "id": 32,
+        "label": "L_23d",
+        "position": {
+          "x": -2.8881,
+          "y": -20.6781,
+          "z": 39.3587
+        }
+      },
+      {
+        "id": 33,
+        "label": "L_v23ab",
+        "position": {
+          "x": -3.3636,
+          "y": -58.247,
+          "z": 18.2133
+        }
+      },
+      {
+        "id": 34,
+        "label": "L_d23ab",
+        "position": {
+          "x": -3.0438,
+          "y": -42.6808,
+          "z": 31.2975
+        }
+      },
+      {
+        "id": 35,
+        "label": "L_31pv",
+        "position": {
+          "x": -9.4073,
+          "y": -46.7604,
+          "z": 32.5419
+        }
+      },
+      {
+        "id": 36,
+        "label": "L_5m",
+        "position": {
+          "x": -6.2842,
+          "y": -41.9173,
+          "z": 63.3997
+        }
+      },
+      {
+        "id": 37,
+        "label": "L_5mv",
+        "position": {
+          "x": -13.7018,
+          "y": -37.1393,
+          "z": 50.3818
+        }
+      },
+      {
+        "id": 38,
+        "label": "L_23c",
+        "position": {
+          "x": -11.4488,
+          "y": -30.5269,
+          "z": 43.0083
+        }
+      },
+      {
+        "id": 39,
+        "label": "L_5L",
+        "position": {
+          "x": -14.7776,
+          "y": -48.6065,
+          "z": 72.5933
+        }
+      },
+      {
+        "id": 40,
+        "label": "L_24dd",
+        "position": {
+          "x": -5.8855,
+          "y": -16.0126,
+          "z": 50.5898
+        }
+      },
+      {
+        "id": 41,
+        "label": "L_24dv",
+        "position": {
+          "x": -8.3022,
+          "y": -0.3766,
+          "z": 44.8102
+        }
+      },
+      {
+        "id": 42,
+        "label": "L_7AL",
+        "position": {
+          "x": -20.4027,
+          "y": -51.9913,
+          "z": 65.6772
+        }
+      },
+      {
+        "id": 43,
+        "label": "L_SCEF",
+        "position": {
+          "x": -5.9317,
+          "y": 4.1342,
+          "z": 59.6032
+        }
+      },
+      {
+        "id": 44,
+        "label": "L_6ma",
+        "position": {
+          "x": -20.0984,
+          "y": 3.9694,
+          "z": 67.8903
+        }
+      },
+      {
+        "id": 45,
+        "label": "L_7Am",
+        "position": {
+          "x": -6.9458,
+          "y": -60.3173,
+          "z": 61.4581
+        }
+      },
+      {
+        "id": 46,
+        "label": "L_7PL",
+        "position": {
+          "x": -14.816,
+          "y": -73.7112,
+          "z": 56.0083
+        }
+      },
+      {
+        "id": 47,
+        "label": "L_7PC",
+        "position": {
+          "x": -37.4515,
+          "y": -46.7109,
+          "z": 60.6276
+        }
+      },
+      {
+        "id": 48,
+        "label": "L_LIPv",
+        "position": {
+          "x": -30.8546,
+          "y": -58.4029,
+          "z": 55.2323
+        }
+      },
+      {
+        "id": 49,
+        "label": "L_VIP",
+        "position": {
+          "x": -22.8218,
+          "y": -63.5048,
+          "z": 64.4746
+        }
+      },
+      {
+        "id": 50,
+        "label": "L_MIP",
+        "position": {
+          "x": -24.857,
+          "y": -67.1281,
+          "z": 47.1007
+        }
+      },
+      {
+        "id": 51,
+        "label": "L_1",
+        "position": {
+          "x": -47.0296,
+          "y": -26.3181,
+          "z": 56.3848
+        }
+      },
+      {
+        "id": 52,
+        "label": "L_2",
+        "position": {
+          "x": -38.8683,
+          "y": -32.9202,
+          "z": 51.957
+        }
+      },
+      {
+        "id": 53,
+        "label": "L_3a",
+        "position": {
+          "x": -35.2805,
+          "y": -20.5097,
+          "z": 42.8339
+        }
+      },
+      {
+        "id": 54,
+        "label": "L_6d",
+        "position": {
+          "x": -33.7943,
+          "y": -14.2162,
+          "z": 67.7344
+        }
+      },
+      {
+        "id": 55,
+        "label": "L_6mp",
+        "position": {
+          "x": -10.7334,
+          "y": -15.0087,
+          "z": 71.0262
+        }
+      },
+      {
+        "id": 56,
+        "label": "L_6v",
+        "position": {
+          "x": -59.5034,
+          "y": 3.7871,
+          "z": 31.9067
+        }
+      },
+      {
+        "id": 57,
+        "label": "L_p24pr",
+        "position": {
+          "x": -3.9615,
+          "y": -2.2441,
+          "z": 40.3761
+        }
+      },
+      {
+        "id": 58,
+        "label": "L_33pr",
+        "position": {
+          "x": -2.3983,
+          "y": 11.2592,
+          "z": 28.7215
+        }
+      },
+      {
+        "id": 59,
+        "label": "L_a24pr",
+        "position": {
+          "x": -5.3869,
+          "y": 18.3002,
+          "z": 30.9814
+        }
+      },
+      {
+        "id": 60,
+        "label": "L_p32pr",
+        "position": {
+          "x": -7.9292,
+          "y": 15.3954,
+          "z": 38.7959
+        }
+      },
+      {
+        "id": 61,
+        "label": "L_a24",
+        "position": {
+          "x": -6.1363,
+          "y": 41.965,
+          "z": -4.4968
+        }
+      },
+      {
+        "id": 62,
+        "label": "L_d32",
+        "position": {
+          "x": -8.0403,
+          "y": 42.4755,
+          "z": 24.9597
+        }
+      },
+      {
+        "id": 63,
+        "label": "L_8BM",
+        "position": {
+          "x": -4.7592,
+          "y": 32.5683,
+          "z": 45.1662
+        }
+      },
+      {
+        "id": 64,
+        "label": "L_p32",
+        "position": {
+          "x": -11.2759,
+          "y": 50.3924,
+          "z": -2.3392
+        }
+      },
+      {
+        "id": 65,
+        "label": "L_10r",
+        "position": {
+          "x": -6.0341,
+          "y": 51.6407,
+          "z": -10.6444
+        }
+      },
+      {
+        "id": 66,
+        "label": "L_47m",
+        "position": {
+          "x": -37.4924,
+          "y": 31.5348,
+          "z": -13.9227
+        }
+      },
+      {
+        "id": 67,
+        "label": "L_8Av",
+        "position": {
+          "x": -38.3312,
+          "y": 16.5889,
+          "z": 52.2792
+        }
+      },
+      {
+        "id": 68,
+        "label": "L_8Ad",
+        "position": {
+          "x": -23.3507,
+          "y": 28.996,
+          "z": 43.3465
+        }
+      },
+      {
+        "id": 69,
+        "label": "L_9m",
+        "position": {
+          "x": -6.0375,
+          "y": 55.1478,
+          "z": 24.2637
+        }
+      },
+      {
+        "id": 70,
+        "label": "L_8BL",
+        "position": {
+          "x": -11.6218,
+          "y": 37.1473,
+          "z": 53.8005
+        }
+      },
+      {
+        "id": 71,
+        "label": "L_9p",
+        "position": {
+          "x": -19.8944,
+          "y": 47.3057,
+          "z": 38.4792
+        }
+      },
+      {
+        "id": 72,
+        "label": "L_10d",
+        "position": {
+          "x": -11.1632,
+          "y": 66.2958,
+          "z": 8.4044
+        }
+      },
+      {
+        "id": 73,
+        "label": "L_8C",
+        "position": {
+          "x": -43.7036,
+          "y": 11.8118,
+          "z": 37.7097
+        }
+      },
+      {
+        "id": 74,
+        "label": "L_44",
+        "position": {
+          "x": -53.8786,
+          "y": 14.8412,
+          "z": 14.0097
+        }
+      },
+      {
+        "id": 75,
+        "label": "L_45",
+        "position": {
+          "x": -50.609,
+          "y": 25.5687,
+          "z": 3.2206
+        }
+      },
+      {
+        "id": 76,
+        "label": "L_47l",
+        "position": {
+          "x": -46.7708,
+          "y": 30.1001,
+          "z": -9.9578
+        }
+      },
+      {
+        "id": 77,
+        "label": "L_a47r",
+        "position": {
+          "x": -41.3563,
+          "y": 48.5638,
+          "z": -11.9072
+        }
+      },
+      {
+        "id": 78,
+        "label": "L_6r",
+        "position": {
+          "x": -52.4908,
+          "y": 6.6641,
+          "z": 17.7741
+        }
+      },
+      {
+        "id": 79,
+        "label": "L_IFJa",
+        "position": {
+          "x": -41.0068,
+          "y": 10.8526,
+          "z": 26.3856
+        }
+      },
+      {
+        "id": 80,
+        "label": "L_IFJp",
+        "position": {
+          "x": -41.3634,
+          "y": 2.2956,
+          "z": 30.0642
+        }
+      },
+      {
+        "id": 81,
+        "label": "L_IFSp",
+        "position": {
+          "x": -48.8016,
+          "y": 20.9089,
+          "z": 22.8515
+        }
+      },
+      {
+        "id": 82,
+        "label": "L_IFSa",
+        "position": {
+          "x": -48.1015,
+          "y": 32.1216,
+          "z": 10.6533
+        }
+      },
+      {
+        "id": 83,
+        "label": "L_p9-46v",
+        "position": {
+          "x": -47.1903,
+          "y": 28.8919,
+          "z": 25.9915
+        }
+      },
+      {
+        "id": 84,
+        "label": "L_46",
+        "position": {
+          "x": -38.4057,
+          "y": 37.8526,
+          "z": 32.9207
+        }
+      },
+      {
+        "id": 85,
+        "label": "L_a9-46v",
+        "position": {
+          "x": -40.0072,
+          "y": 51.6397,
+          "z": 9.1728
+        }
+      },
+      {
+        "id": 86,
+        "label": "L_9-46d",
+        "position": {
+          "x": -29.4487,
+          "y": 45.8579,
+          "z": 23.4636
+        }
+      },
+      {
+        "id": 87,
+        "label": "L_9a",
+        "position": {
+          "x": -21.7269,
+          "y": 57.5628,
+          "z": 24.1526
+        }
+      },
+      {
+        "id": 88,
+        "label": "L_10v",
+        "position": {
+          "x": -4.0071,
+          "y": 52.9119,
+          "z": -17.8343
+        }
+      },
+      {
+        "id": 89,
+        "label": "L_a10p",
+        "position": {
+          "x": -26.4781,
+          "y": 59.742,
+          "z": -6.8987
+        }
+      },
+      {
+        "id": 90,
+        "label": "L_10pp",
+        "position": {
+          "x": -12.7721,
+          "y": 62.2831,
+          "z": -16.2485
+        }
+      },
+      {
+        "id": 91,
+        "label": "L_11l",
+        "position": {
+          "x": -25.9362,
+          "y": 49.4761,
+          "z": -15.4714
+        }
+      },
+      {
+        "id": 92,
+        "label": "L_13l",
+        "position": {
+          "x": -23.3043,
+          "y": 30.0783,
+          "z": -19.8865
+        }
+      },
+      {
+        "id": 93,
+        "label": "L_OFC",
+        "position": {
+          "x": -10.8287,
+          "y": 33.539,
+          "z": -24.5052
+        }
+      },
+      {
+        "id": 94,
+        "label": "L_47s",
+        "position": {
+          "x": -34.5233,
+          "y": 22.1134,
+          "z": -19.1547
+        }
+      },
+      {
+        "id": 95,
+        "label": "L_LIPd",
+        "position": {
+          "x": -30.0745,
+          "y": -55.4435,
+          "z": 42.8996
+        }
+      },
+      {
+        "id": 96,
+        "label": "L_6a",
+        "position": {
+          "x": -25.3604,
+          "y": -4.9318,
+          "z": 55.5618
+        }
+      },
+      {
+        "id": 97,
+        "label": "L_i6-8",
+        "position": {
+          "x": -29.5765,
+          "y": 5.2274,
+          "z": 56.748
+        }
+      },
+      {
+        "id": 98,
+        "label": "L_s6-8",
+        "position": {
+          "x": -22.3087,
+          "y": 24.1516,
+          "z": 56.2966
+        }
+      },
+      {
+        "id": 99,
+        "label": "L_43",
+        "position": {
+          "x": -56.3831,
+          "y": -0.3366,
+          "z": 9.4767
+        }
+      },
+      {
+        "id": 100,
+        "label": "L_OP4",
+        "position": {
+          "x": -59.2233,
+          "y": -13.4846,
+          "z": 15.315
+        }
+      },
+      {
+        "id": 101,
+        "label": "L_OP1",
+        "position": {
+          "x": -46.9496,
+          "y": -22.3801,
+          "z": 19.1422
+        }
+      },
+      {
+        "id": 102,
+        "label": "L_OP2-3",
+        "position": {
+          "x": -40.4601,
+          "y": -17.2433,
+          "z": 19.0212
+        }
+      },
+      {
+        "id": 103,
+        "label": "L_52",
+        "position": {
+          "x": -38.0016,
+          "y": -22.3612,
+          "z": 1.9379
+        }
+      },
+      {
+        "id": 104,
+        "label": "L_RI",
+        "position": {
+          "x": -40.1846,
+          "y": -35.5219,
+          "z": 20.2432
+        }
+      },
+      {
+        "id": 105,
+        "label": "L_PFcm",
+        "position": {
+          "x": -50.4059,
+          "y": -32.309,
+          "z": 21.7463
+        }
+      },
+      {
+        "id": 106,
+        "label": "L_PoI2",
+        "position": {
+          "x": -40.4908,
+          "y": -2.9287,
+          "z": -0.0029
+        }
+      },
+      {
+        "id": 107,
+        "label": "L_TA2",
+        "position": {
+          "x": -50.3675,
+          "y": -0.1737,
+          "z": -5.4789
+        }
+      },
+      {
+        "id": 108,
+        "label": "L_FOP4",
+        "position": {
+          "x": -41.4917,
+          "y": 12.7776,
+          "z": 5.6919
+        }
+      },
+      {
+        "id": 109,
+        "label": "L_MI",
+        "position": {
+          "x": -36.2879,
+          "y": 11.1963,
+          "z": 3.3261
+        }
+      },
+      {
+        "id": 110,
+        "label": "L_Pir",
+        "position": {
+          "x": -32.039,
+          "y": 6.3815,
+          "z": -17.6798
+        }
+      },
+      {
+        "id": 111,
+        "label": "L_AVI",
+        "position": {
+          "x": -30.8608,
+          "y": 25.4027,
+          "z": -2.4888
+        }
+      },
+      {
+        "id": 112,
+        "label": "L_AAIC",
+        "position": {
+          "x": -35.4208,
+          "y": 14.345,
+          "z": -10.4385
+        }
+      },
+      {
+        "id": 113,
+        "label": "L_FOP1",
+        "position": {
+          "x": -49.8875,
+          "y": 1.6589,
+          "z": 4.5696
+        }
+      },
+      {
+        "id": 114,
+        "label": "L_FOP3",
+        "position": {
+          "x": -35.995,
+          "y": 2.1376,
+          "z": 13.4428
+        }
+      },
+      {
+        "id": 115,
+        "label": "L_FOP2",
+        "position": {
+          "x": -42.4128,
+          "y": -4.9531,
+          "z": 14.7998
+        }
+      },
+      {
+        "id": 116,
+        "label": "L_PFt",
+        "position": {
+          "x": -56.3928,
+          "y": -25.7538,
+          "z": 36.533
+        }
+      },
+      {
+        "id": 117,
+        "label": "L_AIP",
+        "position": {
+          "x": -39.7852,
+          "y": -39.0137,
+          "z": 42.2767
+        }
+      },
+      {
+        "id": 118,
+        "label": "L_EC",
+        "position": {
+          "x": -22.9398,
+          "y": -13.6461,
+          "z": -31.6681
+        }
+      },
+      {
+        "id": 119,
+        "label": "L_PreS",
+        "position": {
+          "x": -16.9281,
+          "y": -34.2994,
+          "z": -13.8604
+        }
+      },
+      {
+        "id": 120,
+        "label": "L_H",
+        "position": {
+          "x": -11.9167,
+          "y": -39.75,
+          "z": -2.9167
+        }
+      },
+      {
+        "id": 121,
+        "label": "L_ProS",
+        "position": {
+          "x": -22.0685,
+          "y": -57.0108,
+          "z": 4.6909
+        }
+      },
+      {
+        "id": 122,
+        "label": "L_PeEc",
+        "position": {
+          "x": -31.1356,
+          "y": -9.5889,
+          "z": -33.6028
+        }
+      },
+      {
+        "id": 123,
+        "label": "L_STGa",
+        "position": {
+          "x": -50.8535,
+          "y": 12.9215,
+          "z": -16.6696
+        }
+      },
+      {
+        "id": 124,
+        "label": "L_PBelt",
+        "position": {
+          "x": -52.7095,
+          "y": -26.0037,
+          "z": 9.006
+        }
+      },
+      {
+        "id": 125,
+        "label": "L_A5",
+        "position": {
+          "x": -62.9832,
+          "y": -15.2118,
+          "z": -1.1005
+        }
+      },
+      {
+        "id": 126,
+        "label": "L_PHA1",
+        "position": {
+          "x": -23.3494,
+          "y": -37.7192,
+          "z": -14.638
+        }
+      },
+      {
+        "id": 127,
+        "label": "L_PHA3",
+        "position": {
+          "x": -31.8398,
+          "y": -37.931,
+          "z": -17.7307
+        }
+      },
+      {
+        "id": 128,
+        "label": "L_STSda",
+        "position": {
+          "x": -54.8082,
+          "y": -4.1468,
+          "z": -11.5957
+        }
+      },
+      {
+        "id": 129,
+        "label": "L_STSdp",
+        "position": {
+          "x": -52.7884,
+          "y": -32.6386,
+          "z": 1.1349
+        }
+      },
+      {
+        "id": 130,
+        "label": "L_STSvp",
+        "position": {
+          "x": -54.8898,
+          "y": -34.8552,
+          "z": -3.4358
+        }
+      },
+      {
+        "id": 131,
+        "label": "L_TGd",
+        "position": {
+          "x": -38.1921,
+          "y": 12.305,
+          "z": -34.4727
+        }
+      },
+      {
+        "id": 132,
+        "label": "L_TE1a",
+        "position": {
+          "x": -59.7754,
+          "y": -5.2246,
+          "z": -23.1151
+        }
+      },
+      {
+        "id": 133,
+        "label": "L_TE1p",
+        "position": {
+          "x": -61.7726,
+          "y": -48.2135,
+          "z": -8.6963
+        }
+      },
+      {
+        "id": 134,
+        "label": "L_TE2a",
+        "position": {
+          "x": -57.2752,
+          "y": -24.3832,
+          "z": -27.7009
+        }
+      },
+      {
+        "id": 135,
+        "label": "L_TF",
+        "position": {
+          "x": -42.3942,
+          "y": -22.0097,
+          "z": -30.0052
+        }
+      },
+      {
+        "id": 136,
+        "label": "L_TE2p",
+        "position": {
+          "x": -49.3913,
+          "y": -43.4235,
+          "z": -20.5057
+        }
+      },
+      {
+        "id": 137,
+        "label": "L_PHT",
+        "position": {
+          "x": -58.3918,
+          "y": -60.6461,
+          "z": 3.2289
+        }
+      },
+      {
+        "id": 138,
+        "label": "L_PH",
+        "position": {
+          "x": -45.9845,
+          "y": -65.1466,
+          "z": -5.3422
+        }
+      },
+      {
+        "id": 139,
+        "label": "L_TPOJ1",
+        "position": {
+          "x": -54.1676,
+          "y": -46.3202,
+          "z": 10.26
+        }
+      },
+      {
+        "id": 140,
+        "label": "L_TPOJ2",
+        "position": {
+          "x": -51.9934,
+          "y": -62.363,
+          "z": 15.7838
+        }
+      },
+      {
+        "id": 141,
+        "label": "L_TPOJ3",
+        "position": {
+          "x": -45.9746,
+          "y": -72.674,
+          "z": 20.7012
+        }
+      },
+      {
+        "id": 142,
+        "label": "L_DVT",
+        "position": {
+          "x": -17.6379,
+          "y": -74.2901,
+          "z": 36.3106
+        }
+      },
+      {
+        "id": 143,
+        "label": "L_PGp",
+        "position": {
+          "x": -38.6978,
+          "y": -85.4329,
+          "z": 23.0889
+        }
+      },
+      {
+        "id": 144,
+        "label": "L_IP2",
+        "position": {
+          "x": -40.9491,
+          "y": -48.8004,
+          "z": 43.3753
+        }
+      },
+      {
+        "id": 145,
+        "label": "L_IP1",
+        "position": {
+          "x": -30.258,
+          "y": -70.6326,
+          "z": 39.1023
+        }
+      },
+      {
+        "id": 146,
+        "label": "L_IP0",
+        "position": {
+          "x": -30.8447,
+          "y": -79.0757,
+          "z": 24.2723
+        }
+      },
+      {
+        "id": 147,
+        "label": "L_PFop",
+        "position": {
+          "x": -62.9615,
+          "y": -23.7361,
+          "z": 24.0328
+        }
+      },
+      {
+        "id": 148,
+        "label": "L_PF",
+        "position": {
+          "x": -60.306,
+          "y": -37.2782,
+          "z": 37.9053
+        }
+      },
+      {
+        "id": 149,
+        "label": "L_PFm",
+        "position": {
+          "x": -49.516,
+          "y": -58.0483,
+          "z": 44.8952
+        }
+      },
+      {
+        "id": 150,
+        "label": "L_PGi",
+        "position": {
+          "x": -46.5455,
+          "y": -64.0108,
+          "z": 27.542
+        }
+      },
+      {
+        "id": 151,
+        "label": "L_PGs",
+        "position": {
+          "x": -39.1906,
+          "y": -78.071,
+          "z": 38.9904
+        }
+      },
+      {
+        "id": 152,
+        "label": "L_V6A",
+        "position": {
+          "x": -21.7836,
+          "y": -86.1888,
+          "z": 42.7225
+        }
+      },
+      {
+        "id": 153,
+        "label": "L_VMV1",
+        "position": {
+          "x": -18.6619,
+          "y": -55.9416,
+          "z": -5.522
+        }
+      },
+      {
+        "id": 154,
+        "label": "L_VMV3",
+        "position": {
+          "x": -27.7219,
+          "y": -62.6969,
+          "z": -11.2141
+        }
+      },
+      {
+        "id": 155,
+        "label": "L_PHA2",
+        "position": {
+          "x": -31.9234,
+          "y": -37.4482,
+          "z": -11.7815
+        }
+      },
+      {
+        "id": 156,
+        "label": "L_V4t",
+        "position": {
+          "x": -49.261,
+          "y": -77.1178,
+          "z": 7.8354
+        }
+      },
+      {
+        "id": 157,
+        "label": "L_FST",
+        "position": {
+          "x": -45.8253,
+          "y": -68.6921,
+          "z": 5.6201
+        }
+      },
+      {
+        "id": 158,
+        "label": "L_V3CD",
+        "position": {
+          "x": -35.65,
+          "y": -88.8457,
+          "z": 11.2729
+        }
+      },
+      {
+        "id": 159,
+        "label": "L_LO3",
+        "position": {
+          "x": -41.2095,
+          "y": -77.1728,
+          "z": 15.1551
+        }
+      },
+      {
+        "id": 160,
+        "label": "L_VMV2",
+        "position": {
+          "x": -27.3375,
+          "y": -54.8236,
+          "z": -6.411
+        }
+      },
+      {
+        "id": 161,
+        "label": "L_31pd",
+        "position": {
+          "x": -8.7,
+          "y": -53.4323,
+          "z": 34.6469
+        }
+      },
+      {
+        "id": 162,
+        "label": "L_31a",
+        "position": {
+          "x": -4.679,
+          "y": -37.7455,
+          "z": 43.5579
+        }
+      },
+      {
+        "id": 163,
+        "label": "L_VVC",
+        "position": {
+          "x": -31.0334,
+          "y": -53.2359,
+          "z": -17.3407
+        }
+      },
+      {
+        "id": 164,
+        "label": "L_25",
+        "position": {
+          "x": -4.275,
+          "y": 23.9379,
+          "z": -14.7562
+        }
+      },
+      {
+        "id": 165,
+        "label": "L_s32",
+        "position": {
+          "x": -7.5366,
+          "y": 35.6621,
+          "z": -15.0659
+        }
+      },
+      {
+        "id": 166,
+        "label": "L_pOFC",
+        "position": {
+          "x": -14.3972,
+          "y": 14.3564,
+          "z": -20.8892
+        }
+      },
+      {
+        "id": 167,
+        "label": "L_PoI1",
+        "position": {
+          "x": -39.1902,
+          "y": -12.1828,
+          "z": -2.2671
+        }
+      },
+      {
+        "id": 168,
+        "label": "L_Ig",
+        "position": {
+          "x": -35.5904,
+          "y": -16.1798,
+          "z": 15.9868
+        }
+      },
+      {
+        "id": 169,
+        "label": "L_FOP5",
+        "position": {
+          "x": -35.4105,
+          "y": 26.75,
+          "z": 5.1684
+        }
+      },
+      {
+        "id": 170,
+        "label": "L_p10p",
+        "position": {
+          "x": -24.0707,
+          "y": 62.9202,
+          "z": 2.3932
+        }
+      },
+      {
+        "id": 171,
+        "label": "L_p47r",
+        "position": {
+          "x": -45.6345,
+          "y": 43.0795,
+          "z": 0.9857
+        }
+      },
+      {
+        "id": 172,
+        "label": "L_TGv",
+        "position": {
+          "x": -37.3067,
+          "y": -1.3122,
+          "z": -44.4583
+        }
+      },
+      {
+        "id": 173,
+        "label": "L_MBelt",
+        "position": {
+          "x": -44.3888,
+          "y": -17.7063,
+          "z": 4.3489
+        }
+      },
+      {
+        "id": 174,
+        "label": "L_LBelt",
+        "position": {
+          "x": -45.2987,
+          "y": -27.4349,
+          "z": 9.0529
+        }
+      },
+      {
+        "id": 175,
+        "label": "L_A4",
+        "position": {
+          "x": -63.3197,
+          "y": -23.574,
+          "z": 9.17
+        }
+      },
+      {
+        "id": 176,
+        "label": "L_STSva",
+        "position": {
+          "x": -51.638,
+          "y": -7.7992,
+          "z": -16.9657
+        }
+      },
+      {
+        "id": 177,
+        "label": "L_TE1m",
+        "position": {
+          "x": -64.136,
+          "y": -26.1294,
+          "z": -14.9553
+        }
+      },
+      {
+        "id": 178,
+        "label": "L_PI",
+        "position": {
+          "x": -43.9474,
+          "y": -4.1449,
+          "z": -13.5724
+        }
+      },
+      {
+        "id": 179,
+        "label": "L_a32pr",
+        "position": {
+          "x": -7.6802,
+          "y": 30.6322,
+          "z": 28.6548
+        }
+      },
+      {
+        "id": 180,
+        "label": "L_p24",
+        "position": {
+          "x": -5.1704,
+          "y": 38.8593,
+          "z": 13.874
+        }
+      },
+      {
+        "id": 181,
+        "label": "R_V1",
+        "position": {
+          "x": 12.4486,
+          "y": -80.3925,
+          "z": 4.0572
+        }
+      },
+      {
+        "id": 182,
+        "label": "R_MST",
+        "position": {
+          "x": 48.0338,
+          "y": -64.2372,
+          "z": 7.2628
+        }
+      },
+      {
+        "id": 183,
+        "label": "R_V6",
+        "position": {
+          "x": 17.9109,
+          "y": -76.9513,
+          "z": 31.0297
+        }
+      },
+      {
+        "id": 184,
+        "label": "R_V2",
+        "position": {
+          "x": 12.2652,
+          "y": -79.2862,
+          "z": 6.878
+        }
+      },
+      {
+        "id": 185,
+        "label": "R_V3",
+        "position": {
+          "x": 17.422,
+          "y": -85.2411,
+          "z": 8.9125
+        }
+      },
+      {
+        "id": 186,
+        "label": "R_V4",
+        "position": {
+          "x": 30.754,
+          "y": -84.8834,
+          "z": -1.1632
+        }
+      },
+      {
+        "id": 187,
+        "label": "R_V8",
+        "position": {
+          "x": 30.4344,
+          "y": -75.2613,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 188,
+        "label": "R_4",
+        "position": {
+          "x": 29.7796,
+          "y": -17.1529,
+          "z": 55.2073
+        }
+      },
+      {
+        "id": 189,
+        "label": "R_3b",
+        "position": {
+          "x": 40.1439,
+          "y": -19.37,
+          "z": 51.0025
+        }
+      },
+      {
+        "id": 190,
+        "label": "R_FEF",
+        "position": {
+          "x": 44.8025,
+          "y": -2.4317,
+          "z": 51.7016
+        }
+      },
+      {
+        "id": 191,
+        "label": "R_PEF",
+        "position": {
+          "x": 47.4893,
+          "y": 2.6073,
+          "z": 37.1363
+        }
+      },
+      {
+        "id": 192,
+        "label": "R_55b",
+        "position": {
+          "x": 50.355,
+          "y": 1.9929,
+          "z": 47.0793
+        }
+      },
+      {
+        "id": 193,
+        "label": "R_V3A",
+        "position": {
+          "x": 16.7601,
+          "y": -89.1821,
+          "z": 30.9474
+        }
+      },
+      {
+        "id": 194,
+        "label": "R_RSC",
+        "position": {
+          "x": 5.5622,
+          "y": -36.4378,
+          "z": 21.5635
+        }
+      },
+      {
+        "id": 195,
+        "label": "R_POS2",
+        "position": {
+          "x": 12.009,
+          "y": -70.2659,
+          "z": 38.2154
+        }
+      },
+      {
+        "id": 196,
+        "label": "R_V7",
+        "position": {
+          "x": 28.2829,
+          "y": -84.3952,
+          "z": 31.1622
+        }
+      },
+      {
+        "id": 197,
+        "label": "R_IPS1",
+        "position": {
+          "x": 27.3292,
+          "y": -72.735,
+          "z": 39.84
+        }
+      },
+      {
+        "id": 198,
+        "label": "R_FFC",
+        "position": {
+          "x": 40.8223,
+          "y": -53.4603,
+          "z": -19.1962
+        }
+      },
+      {
+        "id": 199,
+        "label": "R_V3B",
+        "position": {
+          "x": 29.7124,
+          "y": -77.2134,
+          "z": 20.855
+        }
+      },
+      {
+        "id": 200,
+        "label": "R_LO1",
+        "position": {
+          "x": 39.6977,
+          "y": -80.2326,
+          "z": 4.845
+        }
+      },
+      {
+        "id": 201,
+        "label": "R_LO2",
+        "position": {
+          "x": 44.5944,
+          "y": -83.4509,
+          "z": -0.8363
+        }
+      },
+      {
+        "id": 202,
+        "label": "R_PIT",
+        "position": {
+          "x": 42.7838,
+          "y": -80.5454,
+          "z": -11.879
+        }
+      },
+      {
+        "id": 203,
+        "label": "R_MT",
+        "position": {
+          "x": 51.9897,
+          "y": -69.6252,
+          "z": 10.796
+        }
+      },
+      {
+        "id": 204,
+        "label": "R_A1",
+        "position": {
+          "x": 42.7181,
+          "y": -21.674,
+          "z": 11.3995
+        }
+      },
+      {
+        "id": 205,
+        "label": "R_PSL",
+        "position": {
+          "x": 63.9626,
+          "y": -35.7187,
+          "z": 27.4379
+        }
+      },
+      {
+        "id": 206,
+        "label": "R_SFL",
+        "position": {
+          "x": 8.8271,
+          "y": 17.0075,
+          "z": 65.405
+        }
+      },
+      {
+        "id": 207,
+        "label": "R_PCV",
+        "position": {
+          "x": 5.5035,
+          "y": -52.2473,
+          "z": 51.218
+        }
+      },
+      {
+        "id": 208,
+        "label": "R_STV",
+        "position": {
+          "x": 60.0356,
+          "y": -44.0253,
+          "z": 20.4059
+        }
+      },
+      {
+        "id": 209,
+        "label": "R_7Pm",
+        "position": {
+          "x": 5.2416,
+          "y": -68.4553,
+          "z": 50.8443
+        }
+      },
+      {
+        "id": 210,
+        "label": "R_7m",
+        "position": {
+          "x": 4.523,
+          "y": -62.5104,
+          "z": 34.4648
+        }
+      },
+      {
+        "id": 211,
+        "label": "R_POS1",
+        "position": {
+          "x": 13.9837,
+          "y": -57.065,
+          "z": 17.4055
+        }
+      },
+      {
+        "id": 212,
+        "label": "R_23d",
+        "position": {
+          "x": 3.4704,
+          "y": -21.1334,
+          "z": 39.4247
+        }
+      },
+      {
+        "id": 213,
+        "label": "R_v23ab",
+        "position": {
+          "x": 4.3643,
+          "y": -55.0147,
+          "z": 18.8382
+        }
+      },
+      {
+        "id": 214,
+        "label": "R_d23ab",
+        "position": {
+          "x": 3.4887,
+          "y": -40.7114,
+          "z": 33.1083
+        }
+      },
+      {
+        "id": 215,
+        "label": "R_31pv",
+        "position": {
+          "x": 9.1273,
+          "y": -42.9801,
+          "z": 34.757
+        }
+      },
+      {
+        "id": 216,
+        "label": "R_5m",
+        "position": {
+          "x": 5.4319,
+          "y": -39.2363,
+          "z": 65.8784
+        }
+      },
+      {
+        "id": 217,
+        "label": "R_5mv",
+        "position": {
+          "x": 12.0772,
+          "y": -40.2585,
+          "z": 55.0079
+        }
+      },
+      {
+        "id": 218,
+        "label": "R_23c",
+        "position": {
+          "x": 11.2516,
+          "y": -33.0341,
+          "z": 44.1153
+        }
+      },
+      {
+        "id": 219,
+        "label": "R_5L",
+        "position": {
+          "x": 14.0538,
+          "y": -47.551,
+          "z": 74.551
+        }
+      },
+      {
+        "id": 220,
+        "label": "R_24dd",
+        "position": {
+          "x": 6.3501,
+          "y": -16.2504,
+          "z": 53.1445
+        }
+      },
+      {
+        "id": 221,
+        "label": "R_24dv",
+        "position": {
+          "x": 9.1272,
+          "y": -2.5587,
+          "z": 46.7573
+        }
+      },
+      {
+        "id": 222,
+        "label": "R_7AL",
+        "position": {
+          "x": 23.9706,
+          "y": -51.6995,
+          "z": 68.6683
+        }
+      },
+      {
+        "id": 223,
+        "label": "R_SCEF",
+        "position": {
+          "x": 6.1055,
+          "y": 4.0798,
+          "z": 61.3124
+        }
+      },
+      {
+        "id": 224,
+        "label": "R_6ma",
+        "position": {
+          "x": 21.0205,
+          "y": 5.2517,
+          "z": 67.207
+        }
+      },
+      {
+        "id": 225,
+        "label": "R_7Am",
+        "position": {
+          "x": 9.0168,
+          "y": -60.4508,
+          "z": 62.1322
+        }
+      },
+      {
+        "id": 226,
+        "label": "R_7PL",
+        "position": {
+          "x": 12.4214,
+          "y": -73.0975,
+          "z": 56.9243
+        }
+      },
+      {
+        "id": 227,
+        "label": "R_7PC",
+        "position": {
+          "x": 36.4209,
+          "y": -47.3008,
+          "z": 61.4182
+        }
+      },
+      {
+        "id": 228,
+        "label": "R_LIPv",
+        "position": {
+          "x": 28.3435,
+          "y": -57.3692,
+          "z": 53.8374
+        }
+      },
+      {
+        "id": 229,
+        "label": "R_VIP",
+        "position": {
+          "x": 21.8264,
+          "y": -63.6259,
+          "z": 63.3134
+        }
+      },
+      {
+        "id": 230,
+        "label": "R_MIP",
+        "position": {
+          "x": 25.6649,
+          "y": -68.1292,
+          "z": 50.8733
+        }
+      },
+      {
+        "id": 231,
+        "label": "R_1",
+        "position": {
+          "x": 48.9993,
+          "y": -21.151,
+          "z": 54.7363
+        }
+      },
+      {
+        "id": 232,
+        "label": "R_2",
+        "position": {
+          "x": 38.4988,
+          "y": -30.2372,
+          "z": 52.3331
+        }
+      },
+      {
+        "id": 233,
+        "label": "R_3a",
+        "position": {
+          "x": 32.6255,
+          "y": -19.9419,
+          "z": 46.9856
+        }
+      },
+      {
+        "id": 234,
+        "label": "R_6d",
+        "position": {
+          "x": 38.0044,
+          "y": -11.3205,
+          "z": 64.7474
+        }
+      },
+      {
+        "id": 235,
+        "label": "R_6mp",
+        "position": {
+          "x": 17.3891,
+          "y": -11.7631,
+          "z": 69.3736
+        }
+      },
+      {
+        "id": 236,
+        "label": "R_6v",
+        "position": {
+          "x": 59.5139,
+          "y": 6.6888,
+          "z": 30.6097
+        }
+      },
+      {
+        "id": 237,
+        "label": "R_p24pr",
+        "position": {
+          "x": 4.3647,
+          "y": -2.1376,
+          "z": 40.5612
+        }
+      },
+      {
+        "id": 238,
+        "label": "R_33pr",
+        "position": {
+          "x": 3.3875,
+          "y": 14.9531,
+          "z": 26.8608
+        }
+      },
+      {
+        "id": 239,
+        "label": "R_a24pr",
+        "position": {
+          "x": 4.3666,
+          "y": 19.4909,
+          "z": 32.1381
+        }
+      },
+      {
+        "id": 240,
+        "label": "R_p32pr",
+        "position": {
+          "x": 9.0316,
+          "y": 14.6212,
+          "z": 40.1911
+        }
+      },
+      {
+        "id": 241,
+        "label": "R_a24",
+        "position": {
+          "x": -0.5,
+          "y": 33.25,
+          "z": -6.575
+        }
+      },
+      {
+        "id": 242,
+        "label": "R_d32",
+        "position": {
+          "x": 7.2199,
+          "y": 39.4286,
+          "z": 26.991
+        }
+      },
+      {
+        "id": 243,
+        "label": "R_8BM",
+        "position": {
+          "x": 4.8658,
+          "y": 30.6518,
+          "z": 47.4365
+        }
+      },
+      {
+        "id": 244,
+        "label": "R_p32",
+        "position": {
+          "x": -0.5,
+          "y": 43.25,
+          "z": -12.75
+        }
+      },
+      {
+        "id": 245,
+        "label": "R_10r",
+        "position": {
+          "x": -0.5,
+          "y": 45.25,
+          "z": -11.75
+        }
+      },
+      {
+        "id": 246,
+        "label": "R_47m",
+        "position": {
+          "x": 33.7357,
+          "y": 32.5717,
+          "z": -15.8829
+        }
+      },
+      {
+        "id": 247,
+        "label": "R_8Av",
+        "position": {
+          "x": 39.8249,
+          "y": 18.8202,
+          "z": 49.0997
+        }
+      },
+      {
+        "id": 248,
+        "label": "R_8Ad",
+        "position": {
+          "x": 23.9837,
+          "y": 30.6051,
+          "z": 42.3136
+        }
+      },
+      {
+        "id": 249,
+        "label": "R_9m",
+        "position": {
+          "x": 6.7434,
+          "y": 55.0901,
+          "z": 20.9469
+        }
+      },
+      {
+        "id": 250,
+        "label": "R_8BL",
+        "position": {
+          "x": 13.2097,
+          "y": 41.9075,
+          "z": 49.5118
+        }
+      },
+      {
+        "id": 251,
+        "label": "R_9p",
+        "position": {
+          "x": 20.6326,
+          "y": 50.9359,
+          "z": 34.1932
+        }
+      },
+      {
+        "id": 252,
+        "label": "R_10d",
+        "position": {
+          "x": 9.5,
+          "y": 67.8472,
+          "z": 5.0731
+        }
+      },
+      {
+        "id": 253,
+        "label": "R_8C",
+        "position": {
+          "x": 39.5685,
+          "y": 18.1531,
+          "z": 36.715
+        }
+      },
+      {
+        "id": 254,
+        "label": "R_44",
+        "position": {
+          "x": 53.431,
+          "y": 18.9778,
+          "z": 12.591
+        }
+      },
+      {
+        "id": 255,
+        "label": "R_45",
+        "position": {
+          "x": 50.382,
+          "y": 26.5792,
+          "z": 3.3714
+        }
+      },
+      {
+        "id": 256,
+        "label": "R_47l",
+        "position": {
+          "x": 45.234,
+          "y": 33.282,
+          "z": -13.7013
+        }
+      },
+      {
+        "id": 257,
+        "label": "R_a47r",
+        "position": {
+          "x": 39.2721,
+          "y": 51.7682,
+          "z": -8.55
+        }
+      },
+      {
+        "id": 258,
+        "label": "R_6r",
+        "position": {
+          "x": 52.1951,
+          "y": 10.0254,
+          "z": 13.331
+        }
+      },
+      {
+        "id": 259,
+        "label": "R_IFJa",
+        "position": {
+          "x": 44.3623,
+          "y": 16.6019,
+          "z": 25.5586
+        }
+      },
+      {
+        "id": 260,
+        "label": "R_IFJp",
+        "position": {
+          "x": 38.6061,
+          "y": 7.4913,
+          "z": 27.1746
+        }
+      },
+      {
+        "id": 261,
+        "label": "R_IFSp",
+        "position": {
+          "x": 47.7224,
+          "y": 28.693,
+          "z": 18.9286
+        }
+      },
+      {
+        "id": 262,
+        "label": "R_IFSa",
+        "position": {
+          "x": 49.9917,
+          "y": 36.133,
+          "z": 3.711
+        }
+      },
+      {
+        "id": 263,
+        "label": "R_p9-46v",
+        "position": {
+          "x": 47.4775,
+          "y": 30.949,
+          "z": 27.2125
+        }
+      },
+      {
+        "id": 264,
+        "label": "R_46",
+        "position": {
+          "x": 36.7753,
+          "y": 39.899,
+          "z": 30.7436
+        }
+      },
+      {
+        "id": 265,
+        "label": "R_a9-46v",
+        "position": {
+          "x": 39.7225,
+          "y": 52.6637,
+          "z": 10.1349
+        }
+      },
+      {
+        "id": 266,
+        "label": "R_9-46d",
+        "position": {
+          "x": 29.2571,
+          "y": 49.3418,
+          "z": 23.4743
+        }
+      },
+      {
+        "id": 267,
+        "label": "R_9a",
+        "position": {
+          "x": 19.2701,
+          "y": 62.3271,
+          "z": 19.8617
+        }
+      },
+      {
+        "id": 268,
+        "label": "R_10v",
+        "position": {
+          "x": -0.5,
+          "y": 27.25,
+          "z": -24.375
+        }
+      },
+      {
+        "id": 269,
+        "label": "R_a10p",
+        "position": {
+          "x": 25.0974,
+          "y": 62.2746,
+          "z": -8.5039
+        }
+      },
+      {
+        "id": 270,
+        "label": "R_10pp",
+        "position": {
+          "x": 12.4893,
+          "y": 63.2321,
+          "z": -16.4082
+        }
+      },
+      {
+        "id": 271,
+        "label": "R_11l",
+        "position": {
+          "x": 25.7072,
+          "y": 48.1913,
+          "z": -16.2445
+        }
+      },
+      {
+        "id": 272,
+        "label": "R_13l",
+        "position": {
+          "x": 20.1407,
+          "y": 28.9822,
+          "z": -20.2606
+        }
+      },
+      {
+        "id": 273,
+        "label": "R_OFC",
+        "position": {
+          "x": -0.5,
+          "y": 23.1786,
+          "z": -23.9643
+        }
+      },
+      {
+        "id": 274,
+        "label": "R_47s",
+        "position": {
+          "x": 31.2879,
+          "y": 22.4318,
+          "z": -19.6222
+        }
+      },
+      {
+        "id": 275,
+        "label": "R_LIPd",
+        "position": {
+          "x": 31.1998,
+          "y": -54.4651,
+          "z": 45.1389
+        }
+      },
+      {
+        "id": 276,
+        "label": "R_6a",
+        "position": {
+          "x": 26.9379,
+          "y": -2.1452,
+          "z": 53.4619
+        }
+      },
+      {
+        "id": 277,
+        "label": "R_i6-8",
+        "position": {
+          "x": 32.9857,
+          "y": 8.1121,
+          "z": 58.0711
+        }
+      },
+      {
+        "id": 278,
+        "label": "R_s6-8",
+        "position": {
+          "x": 20.4722,
+          "y": 22.041,
+          "z": 59.118
+        }
+      },
+      {
+        "id": 279,
+        "label": "R_43",
+        "position": {
+          "x": 55.7014,
+          "y": 0.7986,
+          "z": 9.7493
+        }
+      },
+      {
+        "id": 280,
+        "label": "R_OP4",
+        "position": {
+          "x": 56.672,
+          "y": -11.1951,
+          "z": 14.1699
+        }
+      },
+      {
+        "id": 281,
+        "label": "R_OP1",
+        "position": {
+          "x": 41.9844,
+          "y": -19.7196,
+          "z": 19.1868
+        }
+      },
+      {
+        "id": 282,
+        "label": "R_OP2-3",
+        "position": {
+          "x": 38.6844,
+          "y": -13.5717,
+          "z": 18.4529
+        }
+      },
+      {
+        "id": 283,
+        "label": "R_52",
+        "position": {
+          "x": 38.2373,
+          "y": -20.5939,
+          "z": 2.6576
+        }
+      },
+      {
+        "id": 284,
+        "label": "R_RI",
+        "position": {
+          "x": 41.188,
+          "y": -30.8163,
+          "z": 19.7572
+        }
+      },
+      {
+        "id": 285,
+        "label": "R_PFcm",
+        "position": {
+          "x": 47.0206,
+          "y": -27.7562,
+          "z": 22.8386
+        }
+      },
+      {
+        "id": 286,
+        "label": "R_PoI2",
+        "position": {
+          "x": 41.0401,
+          "y": -1.3234,
+          "z": -0.3265
+        }
+      },
+      {
+        "id": 287,
+        "label": "R_TA2",
+        "position": {
+          "x": 50.6498,
+          "y": 1.1111,
+          "z": -5.5774
+        }
+      },
+      {
+        "id": 288,
+        "label": "R_FOP4",
+        "position": {
+          "x": 38.7014,
+          "y": 15.141,
+          "z": 7.4438
+        }
+      },
+      {
+        "id": 289,
+        "label": "R_MI",
+        "position": {
+          "x": 36.89,
+          "y": 12.3212,
+          "z": 3.0166
+        }
+      },
+      {
+        "id": 290,
+        "label": "R_Pir",
+        "position": {
+          "x": 33.209,
+          "y": 8.5452,
+          "z": -18.3559
+        }
+      },
+      {
+        "id": 291,
+        "label": "R_AVI",
+        "position": {
+          "x": 32.6765,
+          "y": 26.25,
+          "z": -3.3401
+        }
+      },
+      {
+        "id": 292,
+        "label": "R_AAIC",
+        "position": {
+          "x": 35.0712,
+          "y": 16.7672,
+          "z": -10.4889
+        }
+      },
+      {
+        "id": 293,
+        "label": "R_FOP1",
+        "position": {
+          "x": 46.1755,
+          "y": 4.6386,
+          "z": 5.7439
+        }
+      },
+      {
+        "id": 294,
+        "label": "R_FOP3",
+        "position": {
+          "x": 34.706,
+          "y": 8.0125,
+          "z": 12.0931
+        }
+      },
+      {
+        "id": 295,
+        "label": "R_FOP2",
+        "position": {
+          "x": 40.4563,
+          "y": -1.9126,
+          "z": 15.551
+        }
+      },
+      {
+        "id": 296,
+        "label": "R_PFt",
+        "position": {
+          "x": 56.2214,
+          "y": -20.3243,
+          "z": 37.2779
+        }
+      },
+      {
+        "id": 297,
+        "label": "R_AIP",
+        "position": {
+          "x": 38.6782,
+          "y": -38.671,
+          "z": 44.446
+        }
+      },
+      {
+        "id": 298,
+        "label": "R_EC",
+        "position": {
+          "x": 21.9653,
+          "y": -16.3076,
+          "z": -29.7914
+        }
+      },
+      {
+        "id": 299,
+        "label": "R_PreS",
+        "position": {
+          "x": 16.5333,
+          "y": -34.3921,
+          "z": -10.7781
+        }
+      },
+      {
+        "id": 300,
+        "label": "R_H",
+        "position": {
+          "x": 13.2115,
+          "y": -39.1346,
+          "z": -2.0192
+        }
+      },
+      {
+        "id": 301,
+        "label": "R_ProS",
+        "position": {
+          "x": 22.0104,
+          "y": -50.286,
+          "z": 3.0339
+        }
+      },
+      {
+        "id": 302,
+        "label": "R_PeEc",
+        "position": {
+          "x": 30.1558,
+          "y": -9.921,
+          "z": -34.3296
+        }
+      },
+      {
+        "id": 303,
+        "label": "R_STGa",
+        "position": {
+          "x": 50.1622,
+          "y": 15.2004,
+          "z": -19.0317
+        }
+      },
+      {
+        "id": 304,
+        "label": "R_PBelt",
+        "position": {
+          "x": 55.7916,
+          "y": -18.9197,
+          "z": 8.9682
+        }
+      },
+      {
+        "id": 305,
+        "label": "R_A5",
+        "position": {
+          "x": 62.3912,
+          "y": -14.1458,
+          "z": -1.8871
+        }
+      },
+      {
+        "id": 306,
+        "label": "R_PHA1",
+        "position": {
+          "x": 22.3286,
+          "y": -35.8067,
+          "z": -15.3268
+        }
+      },
+      {
+        "id": 307,
+        "label": "R_PHA3",
+        "position": {
+          "x": 33.4733,
+          "y": -37.2925,
+          "z": -14.9007
+        }
+      },
+      {
+        "id": 308,
+        "label": "R_STSda",
+        "position": {
+          "x": 53.1256,
+          "y": -0.6531,
+          "z": -14.8518
+        }
+      },
+      {
+        "id": 309,
+        "label": "R_STSdp",
+        "position": {
+          "x": 49.2487,
+          "y": -27.9362,
+          "z": -1.114
+        }
+      },
+      {
+        "id": 310,
+        "label": "R_STSvp",
+        "position": {
+          "x": 57.3578,
+          "y": -29.7056,
+          "z": -4.1428
+        }
+      },
+      {
+        "id": 311,
+        "label": "R_TGd",
+        "position": {
+          "x": 35.9692,
+          "y": 14.2698,
+          "z": -35.7327
+        }
+      },
+      {
+        "id": 312,
+        "label": "R_TE1a",
+        "position": {
+          "x": 58.8777,
+          "y": -0.5748,
+          "z": -26.1682
+        }
+      },
+      {
+        "id": 313,
+        "label": "R_TE1p",
+        "position": {
+          "x": 61.7643,
+          "y": -42.8111,
+          "z": -12.1323
+        }
+      },
+      {
+        "id": 314,
+        "label": "R_TE2a",
+        "position": {
+          "x": 55.1806,
+          "y": -18.1076,
+          "z": -30.153
+        }
+      },
+      {
+        "id": 315,
+        "label": "R_TF",
+        "position": {
+          "x": 41.3975,
+          "y": -20.0727,
+          "z": -30.0139
+        }
+      },
+      {
+        "id": 316,
+        "label": "R_TE2p",
+        "position": {
+          "x": 48.3043,
+          "y": -37.4086,
+          "z": -21.5332
+        }
+      },
+      {
+        "id": 317,
+        "label": "R_PHT",
+        "position": {
+          "x": 60.3208,
+          "y": -52.8903,
+          "z": -4.623
+        }
+      },
+      {
+        "id": 318,
+        "label": "R_PH",
+        "position": {
+          "x": 47.9129,
+          "y": -62.6316,
+          "z": -9.5152
+        }
+      },
+      {
+        "id": 319,
+        "label": "R_TPOJ1",
+        "position": {
+          "x": 54.4983,
+          "y": -43.9962,
+          "z": 12.3185
+        }
+      },
+      {
+        "id": 320,
+        "label": "R_TPOJ2",
+        "position": {
+          "x": 54.0637,
+          "y": -55.9967,
+          "z": 8.4856
+        }
+      },
+      {
+        "id": 321,
+        "label": "R_TPOJ3",
+        "position": {
+          "x": 46.514,
+          "y": -62.061,
+          "z": 18.2366
+        }
+      },
+      {
+        "id": 322,
+        "label": "R_DVT",
+        "position": {
+          "x": 20.2276,
+          "y": -71.1343,
+          "z": 36.5018
+        }
+      },
+      {
+        "id": 323,
+        "label": "R_PGp",
+        "position": {
+          "x": 44.5853,
+          "y": -77.6875,
+          "z": 25.4817
+        }
+      },
+      {
+        "id": 324,
+        "label": "R_IP2",
+        "position": {
+          "x": 43.2124,
+          "y": -41.7836,
+          "z": 46.2569
+        }
+      },
+      {
+        "id": 325,
+        "label": "R_IP1",
+        "position": {
+          "x": 34.1084,
+          "y": -67.1459,
+          "z": 41.9002
+        }
+      },
+      {
+        "id": 326,
+        "label": "R_IP0",
+        "position": {
+          "x": 34.1304,
+          "y": -74.7003,
+          "z": 27.4938
+        }
+      },
+      {
+        "id": 327,
+        "label": "R_PFop",
+        "position": {
+          "x": 61.991,
+          "y": -19.1475,
+          "z": 23.4041
+        }
+      },
+      {
+        "id": 328,
+        "label": "R_PF",
+        "position": {
+          "x": 60.7622,
+          "y": -28.5703,
+          "z": 37.1253
+        }
+      },
+      {
+        "id": 329,
+        "label": "R_PFm",
+        "position": {
+          "x": 52.6248,
+          "y": -48.012,
+          "z": 46.5486
+        }
+      },
+      {
+        "id": 330,
+        "label": "R_PGi",
+        "position": {
+          "x": 51.1735,
+          "y": -59.6045,
+          "z": 28.7867
+        }
+      },
+      {
+        "id": 331,
+        "label": "R_PGs",
+        "position": {
+          "x": 44.5803,
+          "y": -68.6269,
+          "z": 42.1399
+        }
+      },
+      {
+        "id": 332,
+        "label": "R_V6A",
+        "position": {
+          "x": 24.2369,
+          "y": -84.3861,
+          "z": 43.5123
+        }
+      },
+      {
+        "id": 333,
+        "label": "R_VMV1",
+        "position": {
+          "x": 18.1655,
+          "y": -54.5927,
+          "z": -6.3762
+        }
+      },
+      {
+        "id": 334,
+        "label": "R_VMV3",
+        "position": {
+          "x": 27.4959,
+          "y": -61.1176,
+          "z": -9.4297
+        }
+      },
+      {
+        "id": 335,
+        "label": "R_PHA2",
+        "position": {
+          "x": 31.1381,
+          "y": -35.282,
+          "z": -12.871
+        }
+      },
+      {
+        "id": 336,
+        "label": "R_V4t",
+        "position": {
+          "x": 50.1715,
+          "y": -74.1807,
+          "z": -0.2363
+        }
+      },
+      {
+        "id": 337,
+        "label": "R_FST",
+        "position": {
+          "x": 50.0233,
+          "y": -63.0782,
+          "z": 1.421
+        }
+      },
+      {
+        "id": 338,
+        "label": "R_V3CD",
+        "position": {
+          "x": 37.867,
+          "y": -83.5003,
+          "z": 12.1034
+        }
+      },
+      {
+        "id": 339,
+        "label": "R_LO3",
+        "position": {
+          "x": 43.5272,
+          "y": -74.2936,
+          "z": 13.2493
+        }
+      },
+      {
+        "id": 340,
+        "label": "R_VMV2",
+        "position": {
+          "x": 27.1853,
+          "y": -54.0215,
+          "z": -6.6275
+        }
+      },
+      {
+        "id": 341,
+        "label": "R_31pd",
+        "position": {
+          "x": 11.0481,
+          "y": -52.3633,
+          "z": 35.7534
+        }
+      },
+      {
+        "id": 342,
+        "label": "R_31a",
+        "position": {
+          "x": 6.6786,
+          "y": -41.3916,
+          "z": 42.7462
+        }
+      },
+      {
+        "id": 343,
+        "label": "R_VVC",
+        "position": {
+          "x": 28.9754,
+          "y": -48.2738,
+          "z": -17.6034
+        }
+      },
+      {
+        "id": 344,
+        "label": "R_25",
+        "position": {
+          "x": -0.5,
+          "y": 23.1848,
+          "z": -18.5326
+        }
+      },
+      {
+        "id": 345,
+        "label": "R_s32",
+        "position": {
+          "x": -0.5,
+          "y": 37.8952,
+          "z": -16.0887
+        }
+      },
+      {
+        "id": 346,
+        "label": "R_pOFC",
+        "position": {
+          "x": 13.1506,
+          "y": 15.4519,
+          "z": -19.9167
+        }
+      },
+      {
+        "id": 347,
+        "label": "R_PoI1",
+        "position": {
+          "x": 39.2738,
+          "y": -9.35,
+          "z": -4.6275
+        }
+      },
+      {
+        "id": 348,
+        "label": "R_Ig",
+        "position": {
+          "x": 36.5567,
+          "y": -12.947,
+          "z": 14.1143
+        }
+      },
+      {
+        "id": 349,
+        "label": "R_FOP5",
+        "position": {
+          "x": 36.9903,
+          "y": 27.5504,
+          "z": 4.8314
+        }
+      },
+      {
+        "id": 350,
+        "label": "R_p10p",
+        "position": {
+          "x": 24.2919,
+          "y": 60.9964,
+          "z": 3.7517
+        }
+      },
+      {
+        "id": 351,
+        "label": "R_p47r",
+        "position": {
+          "x": 46.3992,
+          "y": 44.2913,
+          "z": -4.2913
+        }
+      },
+      {
+        "id": 352,
+        "label": "R_TGv",
+        "position": {
+          "x": 35.207,
+          "y": -1.2092,
+          "z": -45.1935
+        }
+      },
+      {
+        "id": 353,
+        "label": "R_MBelt",
+        "position": {
+          "x": 45.4061,
+          "y": -16.026,
+          "z": 4.698
+        }
+      },
+      {
+        "id": 354,
+        "label": "R_LBelt",
+        "position": {
+          "x": 46.7576,
+          "y": -25.1332,
+          "z": 10.7439
+        }
+      },
+      {
+        "id": 355,
+        "label": "R_A4",
+        "position": {
+          "x": 64.4099,
+          "y": -15.491,
+          "z": 6.57
+        }
+      },
+      {
+        "id": 356,
+        "label": "R_STSva",
+        "position": {
+          "x": 54.1492,
+          "y": -8.5735,
+          "z": -16.9097
+        }
+      },
+      {
+        "id": 357,
+        "label": "R_TE1m",
+        "position": {
+          "x": 64.4446,
+          "y": -22.4579,
+          "z": -16.4575
+        }
+      },
+      {
+        "id": 358,
+        "label": "R_PI",
+        "position": {
+          "x": 44.2384,
+          "y": -3.3355,
+          "z": -12.7233
+        }
+      },
+      {
+        "id": 359,
+        "label": "R_a32pr",
+        "position": {
+          "x": 9.498,
+          "y": 28.6079,
+          "z": 30.5014
+        }
+      },
+      {
+        "id": 360,
+        "label": "R_p24",
+        "position": {
+          "x": 4.5403,
+          "y": 37.9601,
+          "z": 15.4066
+        }
+      },
+      {
+        "id": 361,
+        "label": "L_Cerebellum",
+        "position": {
+          "x": -24.4841,
+          "y": -62.9174,
+          "z": -36.8393
+        }
+      },
+      {
+        "id": 362,
+        "label": "L_Thalamus",
+        "position": {
+          "x": -11.4968,
+          "y": -19.2297,
+          "z": 6.6696
+        }
+      },
+      {
+        "id": 363,
+        "label": "L_Caudate",
+        "position": {
+          "x": -12.9359,
+          "y": 9.5888,
+          "z": 9.5779
+        }
+      },
+      {
+        "id": 364,
+        "label": "L_Putamen",
+        "position": {
+          "x": -26.3518,
+          "y": 0.0041,
+          "z": 0.1759
+        }
+      },
+      {
+        "id": 365,
+        "label": "L_Pallidum",
+        "position": {
+          "x": -20.5731,
+          "y": -5.126,
+          "z": -1.1612
+        }
+      },
+      {
+        "id": 366,
+        "label": "L_Hippocampus",
+        "position": {
+          "x": -25.4045,
+          "y": -22.4638,
+          "z": -14.298
+        }
+      },
+      {
+        "id": 367,
+        "label": "L_Amygdala",
+        "position": {
+          "x": -22.9962,
+          "y": -5.0696,
+          "z": -19.6654
+        }
+      },
+      {
+        "id": 368,
+        "label": "L_Accumbens",
+        "position": {
+          "x": -8.5215,
+          "y": 9.994,
+          "z": -8.4476
+        }
+      },
+      {
+        "id": 369,
+        "label": "L_VentralDC",
+        "position": {
+          "x": -10.5311,
+          "y": -15.4878,
+          "z": -10.5673
+        }
+      },
+      {
+        "id": 370,
+        "label": "R_Cerebellum",
+        "position": {
+          "x": -0.5,
+          "y": -55.7269,
+          "z": -48.0246
+        }
+      },
+      {
+        "id": 371,
+        "label": "R_Thalamus",
+        "position": {
+          "x": 11.2509,
+          "y": -17.528,
+          "z": 6.8822
+        }
+      },
+      {
+        "id": 372,
+        "label": "R_Caudate",
+        "position": {
+          "x": 13.0486,
+          "y": 11.0092,
+          "z": 9.6262
+        }
+      },
+      {
+        "id": 373,
+        "label": "R_Putamen",
+        "position": {
+          "x": 26.3425,
+          "y": 2.0114,
+          "z": -0.2748
+        }
+      },
+      {
+        "id": 374,
+        "label": "R_Pallidum",
+        "position": {
+          "x": 21.0138,
+          "y": -3.7858,
+          "z": -1.0325
+        }
+      },
+      {
+        "id": 375,
+        "label": "R_Hippocampus",
+        "position": {
+          "x": 26.0941,
+          "y": -21.3944,
+          "z": -14.0873
+        }
+      },
+      {
+        "id": 376,
+        "label": "R_Amygdala",
+        "position": {
+          "x": 23.24,
+          "y": -3.735,
+          "z": -19.8364
+        }
+      },
+      {
+        "id": 377,
+        "label": "R_Accumbens",
+        "position": {
+          "x": 7.9293,
+          "y": 11.3815,
+          "z": -7.4997
+        }
+      },
+      {
+        "id": 378,
+        "label": "R_VentralDC",
+        "position": {
+          "x": 10.5525,
+          "y": -14.6552,
+          "z": -10.1548
+        }
+      },
+      {
+        "id": 379,
+        "label": "Brain-Stem",
+        "position": {
+          "x": -6.0839,
+          "y": -30.9513,
+          "z": -33.0764
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
+    "atlas": "hcpmmp1ordered",
+    "atlas.name": "hcpmmp1ordered"
+  },
+  {
+    "label": "HOCPA (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 48,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HOCPA_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
     "parcellation.atlas": {
       "name": "HOCPA"
     },
     "tractogram.name": "MghUscHcp32",
-    "space": "MNI152NLin2009cAsym",
-    "name": "HOCPA (MghUscHcp32)",
     "type": "network",
-    "file": "database/networks/space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HOCPA_desc-SC_relmat.yaml",
     "desc": {
       "name": "MghUscHcp32"
     },
     "atlas": "HOCPA",
-    "atlas.name": "HOCPA",
-    "n_regions": 48,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009cAsym_atlas-HOCPA_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "Schaefer100017Networks (MghUscHcp32)",
-    "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Schaefer100017Networks"
-    },
-    "tractogram.name": "MghUscHcp32",
-    "space": "FSLMNI152",
-    "name": "Schaefer100017Networks (MghUscHcp32)",
-    "type": "network",
-    "file": "database/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32.yaml",
-    "desc": {
-      "name": "MghUscHcp32"
-    },
-    "atlas": "Schaefer100017Networks",
-    "atlas.name": "Schaefer100017Networks",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "Schaefer100017Networks (PPMI85)",
-    "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Schaefer100017Networks"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "FSLMNI152",
-    "name": "Schaefer100017Networks (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "Schaefer100017Networks",
-    "atlas.name": "Schaefer100017Networks",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer100017Networks_desc-PPMI85.png"
-  },
-  {
-    "label": "Destrieuxranked (PPMI85)",
-    "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Destrieuxranked"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieuxranked (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "Destrieuxranked",
-    "atlas.name": "Destrieuxranked",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-PPMI85.png"
-  },
-  {
-    "label": "Yeo17 (PPMI85)",
-    "number_of_nodes": 17,
-    "number_of_regions": 17,
-    "data_file": "space-MNI152_atlas-Yeo17_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Yeo17"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152",
-    "name": "Yeo17 (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152_atlas-Yeo17_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "Yeo17",
-    "atlas.name": "Yeo17",
-    "n_regions": 17,
-    "thumbnail": "browser/imgs/networks/space-MNI152_atlas-Yeo17_desc-PPMI85.png"
-  },
-  {
-    "label": "HCPex (dTOR)",
-    "number_of_nodes": 427,
-    "number_of_regions": 427,
-    "data_file": "space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "HCPex"
-    },
-    "tractogram.name": "dTOR",
-    "space": "MNI152NLin2009cAsym",
-    "name": "HCPex (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "HCPex",
-    "atlas.name": "HCPex",
-    "n_regions": 427,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009cAsym_atlas-HCPex_desc-dTOR.png"
-  },
-  {
-    "label": "Schaefer1000 (dTOR)",
-    "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_atlas-Schaefer1000_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Schaefer1000"
-    },
-    "tractogram.name": "dTOR",
-    "space": "FSLMNI152",
-    "name": "Schaefer1000 (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-FSLMNI152_atlas-Schaefer1000_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "Schaefer1000",
-    "atlas.name": "Schaefer1000",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer1000_desc-dTOR.png"
-  },
-  {
-    "label": "Schaefer1000 (PPMI85)",
-    "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Schaefer1000"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "FSLMNI152",
-    "name": "Schaefer1000 (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "Schaefer1000",
-    "atlas.name": "Schaefer1000",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_atlas-Schaefer1000_desc-PPMI85.png"
-  },
-  {
-    "label": "DesikanKilliany (dTOR)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "DesikanKilliany"
-    },
-    "tractogram.name": "dTOR",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKilliany (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "DesikanKilliany",
-    "atlas.name": "DesikanKilliany",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-dTOR.png"
-  },
-  {
-    "label": "DesikanKillianyranked (PPMI85)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "DesikanKillianyranked"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKillianyranked (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "DesikanKillianyranked",
-    "atlas.name": "DesikanKillianyranked",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-PPMI85.png"
-  },
-  {
-    "label": "hcpmmp1 (MghUscHcp32)",
-    "number_of_nodes": 379,
-    "number_of_regions": 379,
-    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "hcpmmp1"
-    },
-    "tractogram.name": "MghUscHcp32",
-    "space": "MNI152NLin2009b",
-    "name": "hcpmmp1 (MghUscHcp32)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32.yaml",
-    "desc": {
-      "name": "MghUscHcp32"
-    },
-    "atlas": "hcpmmp1",
-    "atlas.name": "hcpmmp1",
-    "n_regions": 379,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "hcpmmp1ordered (PPMI85)",
-    "number_of_nodes": 379,
-    "number_of_regions": 379,
-    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "hcpmmp1ordered"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152NLin2009b",
-    "name": "hcpmmp1ordered (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "hcpmmp1ordered",
-    "atlas.name": "hcpmmp1ordered",
-    "n_regions": 379,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-PPMI85.png"
-  },
-  {
-    "label": "Destrieux (dTOR)",
-    "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Destrieux"
-    },
-    "tractogram.name": "dTOR",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieux (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "Destrieux",
-    "atlas.name": "Destrieux",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-dTOR.png"
-  },
-  {
-    "label": "Yeo17 (MghUscHcp32)",
-    "number_of_nodes": 17,
-    "number_of_regions": 17,
-    "data_file": "space-MNI152_atlas-Yeo17_desc-MghUscHcp32.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Yeo17"
-    },
-    "tractogram.name": "MghUscHcp32",
-    "space": "MNI152",
-    "name": "Yeo17 (MghUscHcp32)",
-    "type": "network",
-    "file": "database/networks/space-MNI152_atlas-Yeo17_desc-MghUscHcp32.yaml",
-    "desc": {
-      "name": "MghUscHcp32"
-    },
-    "atlas": "Yeo17",
-    "atlas.name": "Yeo17",
-    "n_regions": 17,
-    "thumbnail": "browser/imgs/networks/space-MNI152_atlas-Yeo17_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "DesikanKilliany (MghUscHcp32)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "DesikanKilliany"
-    },
-    "tractogram.name": "MghUscHcp32",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKilliany (MghUscHcp32)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32.yaml",
-    "desc": {
-      "name": "MghUscHcp32"
-    },
-    "atlas": "DesikanKilliany",
-    "atlas.name": "DesikanKilliany",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "Destrieuxranked (dTOR)",
-    "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Destrieuxranked"
-    },
-    "tractogram.name": "dTOR",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieuxranked (dTOR)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR.yaml",
-    "desc": {
-      "name": "dTOR"
-    },
-    "atlas": "Destrieuxranked",
-    "atlas.name": "Destrieuxranked",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-dTOR.png"
-  },
-  {
-    "label": "hcpmmp1ordered (MghUscHcp32)",
-    "number_of_nodes": 379,
-    "number_of_regions": 379,
-    "data_file": "space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "hcpmmp1ordered"
-    },
-    "tractogram.name": "MghUscHcp32",
-    "space": "MNI152NLin2009b",
-    "name": "hcpmmp1ordered (MghUscHcp32)",
-    "type": "network",
-    "file": "database/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32.yaml",
-    "desc": {
-      "name": "MghUscHcp32"
-    },
-    "atlas": "hcpmmp1ordered",
-    "atlas.name": "hcpmmp1ordered",
-    "n_regions": 379,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009b_atlas-hcpmmp1ordered_desc-MghUscHcp32.png"
-  },
-  {
-    "label": "Destrieux (PPMI85)",
-    "number_of_nodes": 167,
-    "number_of_regions": 167,
-    "data_file": "space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Destrieux"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152Nlin2009c",
-    "name": "Destrieux (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "Destrieux",
-    "atlas.name": "Destrieux",
-    "n_regions": 167,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-Destrieux_desc-PPMI85.png"
-  },
-  {
-    "label": "Schaefer1000 (17Networks)",
-    "number_of_nodes": 1000,
-    "number_of_regions": 1000,
-    "data_file": "space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "csr",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "Schaefer1000"
-    },
-    "tractogram.name": "17Networks",
-    "space": "FSLMNI152",
-    "name": "Schaefer1000 (17Networks)",
-    "type": "network",
-    "file": "database/networks/space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks.yaml",
-    "desc": {
-      "name": "17Networks"
-    },
-    "atlas": "Schaefer1000",
-    "atlas.name": "Schaefer1000",
-    "n_regions": 1000,
-    "thumbnail": "browser/imgs/networks/space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks.png"
-  },
-  {
-    "label": "DesikanKilliany (PPMI85)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85.h5",
-    "edges": [
-      {
-        "name": "weights",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      },
-      {
-        "name": "lengths",
-        "unit": "mm",
-        "format": "dense",
-        "weighted": true,
-        "valid_diagonal": false,
-        "non_negative": true
-      }
-    ],
-    "parcellation.atlas": {
-      "name": "DesikanKilliany"
-    },
-    "tractogram.name": "PPMI85",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKilliany (PPMI85)",
-    "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85.yaml",
-    "desc": {
-      "name": "PPMI85"
-    },
-    "atlas": "DesikanKilliany",
-    "atlas.name": "DesikanKilliany",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKilliany_desc-PPMI85.png"
+    "atlas.name": "HOCPA"
   },
   {
     "label": "virtualdbs (PPMI85)",
+    "descriptor": "SC",
     "number_of_nodes": 370,
-    "number_of_regions": 370,
-    "data_file": "space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85.h5",
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-virtualdbs_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -37491,27 +68797,28 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
     "parcellation.atlas": {
       "name": "virtualdbs"
     },
     "tractogram.name": "PPMI85",
-    "space": "MNI152NLin2009c",
-    "name": "virtualdbs (PPMI85)",
     "type": "network",
-    "file": "database/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-virtualdbs_desc-SC_relmat.yaml",
     "desc": {
       "name": "PPMI85"
     },
     "atlas": "virtualdbs",
-    "atlas.name": "virtualdbs",
-    "n_regions": 370,
-    "thumbnail": "browser/imgs/networks/space-MNI152NLin2009c_atlas-virtualdbs_desc-PPMI85.png"
+    "atlas.name": "virtualdbs"
   },
   {
-    "label": "DesikanKillianyranked (MghUscHcp32)",
-    "number_of_nodes": 87,
-    "number_of_regions": 87,
-    "data_file": "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32.h5",
+    "label": "Destrieuxranked (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 167,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Destrieux_seg-ranked_desc-SC_relmat.h5",
     "edges": [
       {
         "name": "weights",
@@ -37529,21 +68836,3334 @@ window.searchData = [
         "non_negative": true
       }
     ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
     "parcellation.atlas": {
-      "name": "DesikanKillianyranked"
+      "name": "Destrieuxranked",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx_lh_g_and_s_frontomargin",
+        "position": {
+          "x": -24.0,
+          "y": 61.0717,
+          "z": -8.018
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx_lh_g_and_s_occipital_inf",
+        "position": {
+          "x": -38.2836,
+          "y": -83.0171,
+          "z": -9.6874
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx_lh_g_and_s_paracentral",
+        "position": {
+          "x": -7.2356,
+          "y": -35.3537,
+          "z": 69.4461
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx_lh_g_and_s_subcentral",
+        "position": {
+          "x": -56.3629,
+          "y": -10.6463,
+          "z": 15.3022
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx_lh_g_and_s_transv_frontopol",
+        "position": {
+          "x": -16.0892,
+          "y": 67.463,
+          "z": -2.0906
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx_lh_g_and_s_cingul-ant",
+        "position": {
+          "x": -7.219,
+          "y": 40.905,
+          "z": 7.0314
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx_lh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": -6.6139,
+          "y": 16.9951,
+          "z": 36.9201
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx_lh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": -6.9033,
+          "y": -11.2828,
+          "z": 41.5185
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx_lh_g_cingul-post-dorsal",
+        "position": {
+          "x": -3.03,
+          "y": -38.6929,
+          "z": 32.8713
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx_lh_g_cingul-post-ventral",
+        "position": {
+          "x": -6.7789,
+          "y": -49.4885,
+          "z": 7.9672
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx_lh_g_cuneus",
+        "position": {
+          "x": -4.8326,
+          "y": -80.1757,
+          "z": 23.1777
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx_lh_g_front_inf-opercular",
+        "position": {
+          "x": -50.105,
+          "y": 11.9496,
+          "z": 10.3457
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx_lh_g_front_inf-orbital",
+        "position": {
+          "x": -45.3208,
+          "y": 30.0249,
+          "z": -9.4672
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx_lh_g_front_inf-triangul",
+        "position": {
+          "x": -51.0645,
+          "y": 30.8717,
+          "z": 4.9089
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx_lh_g_front_middle",
+        "position": {
+          "x": -37.4162,
+          "y": 33.9899,
+          "z": 35.5547
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx_lh_g_front_sup",
+        "position": {
+          "x": -8.9765,
+          "y": 29.0693,
+          "z": 46.0935
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx_lh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": -38.1326,
+          "y": -6.1028,
+          "z": -0.4616
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx_lh_g_insular_short",
+        "position": {
+          "x": -37.6087,
+          "y": 10.0331,
+          "z": -3.6818
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx_lh_g_occipital_middle",
+        "position": {
+          "x": -37.9259,
+          "y": -87.5018,
+          "z": 13.1752
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx_lh_g_occipital_sup",
+        "position": {
+          "x": -14.4854,
+          "y": -91.9612,
+          "z": 30.1997
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx_lh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": -35.0602,
+          "y": -54.8076,
+          "z": -18.1465
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx_lh_g_oc-temp_med-lingual",
+        "position": {
+          "x": -10.4458,
+          "y": -71.206,
+          "z": -5.5908
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx_lh_g_oc-temp_med-parahip",
+        "position": {
+          "x": -22.7779,
+          "y": -18.6288,
+          "z": -25.4956
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx_lh_g_orbital",
+        "position": {
+          "x": -30.0351,
+          "y": 37.0414,
+          "z": -18.6018
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx_lh_g_pariet_inf-angular",
+        "position": {
+          "x": -43.3172,
+          "y": -68.6398,
+          "z": 41.3971
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx_lh_g_pariet_inf-supramar",
+        "position": {
+          "x": -58.3486,
+          "y": -36.939,
+          "z": 34.6425
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx_lh_g_parietal_sup",
+        "position": {
+          "x": -25.1312,
+          "y": -61.0393,
+          "z": 60.1347
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx_lh_g_postcentral",
+        "position": {
+          "x": -48.5895,
+          "y": -24.1446,
+          "z": 54.8891
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx_lh_g_precentral",
+        "position": {
+          "x": -46.509,
+          "y": -5.9234,
+          "z": 49.8839
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx_lh_g_precuneus",
+        "position": {
+          "x": -4.7441,
+          "y": -60.1616,
+          "z": 45.9517
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx_lh_g_rectus",
+        "position": {
+          "x": -3.8248,
+          "y": 38.4238,
+          "z": -22.5695
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx_lh_g_subcallosal",
+        "position": {
+          "x": -9.5127,
+          "y": 9.1883,
+          "z": -13.5187
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx_lh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": -48.0589,
+          "y": -17.4559,
+          "z": 8.2527
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx_lh_g_temp_sup-lateral",
+        "position": {
+          "x": -57.4003,
+          "y": -6.3553,
+          "z": -7.2621
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx_lh_g_temp_sup-plan_polar",
+        "position": {
+          "x": -40.3483,
+          "y": 8.1018,
+          "z": -19.141
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx_lh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": -58.0488,
+          "y": -37.1459,
+          "z": 18.2355
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx_lh_g_temporal_inf",
+        "position": {
+          "x": -52.3971,
+          "y": -34.1496,
+          "z": -25.5
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx_lh_g_temporal_middle",
+        "position": {
+          "x": -61.3249,
+          "y": -25.3671,
+          "z": -13.037
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx_lh_lat_fis-ant-horizont",
+        "position": {
+          "x": -42.3913,
+          "y": 32.7663,
+          "z": -2.8207
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx_lh_lat_fis-ant-vertical",
+        "position": {
+          "x": -46.445,
+          "y": 21.3861,
+          "z": 10.3704
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx_lh_lat_fis-post",
+        "position": {
+          "x": -41.2842,
+          "y": -34.15,
+          "z": 21.1458
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx_lh_pole_occipital",
+        "position": {
+          "x": -16.2053,
+          "y": -100.7264,
+          "z": -3.2525
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx_lh_pole_temporal",
+        "position": {
+          "x": -31.7438,
+          "y": 8.3073,
+          "z": -41.267
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx_lh_s_calcarine",
+        "position": {
+          "x": -15.7374,
+          "y": -68.8105,
+          "z": 5.6484
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx_lh_s_central",
+        "position": {
+          "x": -38.5248,
+          "y": -18.3079,
+          "z": 47.443
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx_lh_s_cingul-marginalis",
+        "position": {
+          "x": -12.3835,
+          "y": -38.0053,
+          "z": 50.0885
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx_lh_s_circular_insula_ant",
+        "position": {
+          "x": -30.5666,
+          "y": 21.569,
+          "z": -9.7416
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx_lh_s_circular_insula_inf",
+        "position": {
+          "x": -40.6835,
+          "y": -10.5521,
+          "z": -5.0486
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx_lh_s_circular_insula_sup",
+        "position": {
+          "x": -35.776,
+          "y": 6.3584,
+          "z": 11.8398
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx_lh_s_collat_transv_ant",
+        "position": {
+          "x": -40.9084,
+          "y": -19.3811,
+          "z": -28.3737
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx_lh_s_collat_transv_post",
+        "position": {
+          "x": -23.9819,
+          "y": -82.5479,
+          "z": -7.8354
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx_lh_s_front_inf",
+        "position": {
+          "x": -40.3037,
+          "y": 26.0116,
+          "z": 21.439
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx_lh_s_front_middle",
+        "position": {
+          "x": -27.1817,
+          "y": 47.3083,
+          "z": 19.4748
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx_lh_s_front_sup",
+        "position": {
+          "x": -23.7373,
+          "y": 22.6406,
+          "z": 46.3171
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx_lh_s_interm_prim-jensen",
+        "position": {
+          "x": -51.4334,
+          "y": -54.5265,
+          "z": 37.1475
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx_lh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": -34.9075,
+          "y": -51.414,
+          "z": 44.8004
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx_lh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": -32.1061,
+          "y": -85.948,
+          "z": 8.3716
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx_lh_s_oc_sup_and_transversal",
+        "position": {
+          "x": -26.3851,
+          "y": -82.69,
+          "z": 22.3452
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx_lh_s_occipital_ant",
+        "position": {
+          "x": -40.694,
+          "y": -68.579,
+          "z": 7.7443
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx_lh_s_oc-temp_lat",
+        "position": {
+          "x": -44.0357,
+          "y": -50.7328,
+          "z": -12.9207
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx_lh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": -28.0735,
+          "y": -46.5972,
+          "z": -11.5485
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx_lh_s_orbital_lateral",
+        "position": {
+          "x": -41.4841,
+          "y": 46.4036,
+          "z": -3.4932
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx_lh_s_orbital_med-olfact",
+        "position": {
+          "x": -12.4184,
+          "y": 26.4558,
+          "z": -19.7254
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx_lh_s_orbital-h_shaped",
+        "position": {
+          "x": -24.6261,
+          "y": 39.5289,
+          "z": -16.4209
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx_lh_s_parieto_occipital",
+        "position": {
+          "x": -14.7876,
+          "y": -68.1004,
+          "z": 25.8391
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx_lh_s_pericallosal",
+        "position": {
+          "x": -4.6719,
+          "y": -6.4706,
+          "z": 15.4169
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx_lh_s_postcentral",
+        "position": {
+          "x": -41.5756,
+          "y": -32.0865,
+          "z": 46.892
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx_lh_s_precentral-inf-part",
+        "position": {
+          "x": -44.5555,
+          "y": 4.4786,
+          "z": 31.2218
+        }
+      },
+      {
+        "id": 88,
+        "label": "ctx_lh_s_precentral-sup-part",
+        "position": {
+          "x": -29.0827,
+          "y": -9.2953,
+          "z": 56.1585
+        }
+      },
+      {
+        "id": 89,
+        "label": "ctx_lh_s_suborbital",
+        "position": {
+          "x": -6.9466,
+          "y": 43.4199,
+          "z": -13.0309
+        }
+      },
+      {
+        "id": 90,
+        "label": "ctx_lh_s_subparietal",
+        "position": {
+          "x": -9.7122,
+          "y": -48.6867,
+          "z": 38.7621
+        }
+      },
+      {
+        "id": 91,
+        "label": "ctx_lh_s_temporal_inf",
+        "position": {
+          "x": -53.7095,
+          "y": -13.637,
+          "z": -27.2072
+        }
+      },
+      {
+        "id": 92,
+        "label": "ctx_lh_s_temporal_sup",
+        "position": {
+          "x": -50.4691,
+          "y": -41.0099,
+          "z": 7.1445
+        }
+      },
+      {
+        "id": 93,
+        "label": "ctx_lh_s_temporal_transverse",
+        "position": {
+          "x": -51.7371,
+          "y": -22.4901,
+          "z": 6.1295
+        }
+      },
+      {
+        "id": 94,
+        "label": "ctx_rh_g_and_s_frontomargin",
+        "position": {
+          "x": 22.2577,
+          "y": 62.2808,
+          "z": -10.9596
+        }
+      },
+      {
+        "id": 95,
+        "label": "ctx_rh_g_and_s_occipital_inf",
+        "position": {
+          "x": 42.5309,
+          "y": -75.9362,
+          "z": -11.0983
+        }
+      },
+      {
+        "id": 96,
+        "label": "ctx_rh_g_and_s_paracentral",
+        "position": {
+          "x": 6.7722,
+          "y": -33.822,
+          "z": 69.3321
+        }
+      },
+      {
+        "id": 97,
+        "label": "ctx_rh_g_and_s_subcentral",
+        "position": {
+          "x": 56.6981,
+          "y": -7.5802,
+          "z": 15.2277
+        }
+      },
+      {
+        "id": 98,
+        "label": "ctx_rh_g_and_s_transv_frontopol",
+        "position": {
+          "x": 16.8463,
+          "y": 67.8866,
+          "z": 1.6446
+        }
+      },
+      {
+        "id": 99,
+        "label": "ctx_rh_g_and_s_cingul-ant",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 100,
+        "label": "ctx_rh_g_and_s_cingul-mid-ant",
+        "position": {
+          "x": 7.0708,
+          "y": 16.5535,
+          "z": 36.486
+        }
+      },
+      {
+        "id": 101,
+        "label": "ctx_rh_g_and_s_cingul-mid-post",
+        "position": {
+          "x": 7.3054,
+          "y": -8.7592,
+          "z": 43.9232
+        }
+      },
+      {
+        "id": 102,
+        "label": "ctx_rh_g_cingul-post-dorsal",
+        "position": {
+          "x": 3.6303,
+          "y": -36.3968,
+          "z": 33.9612
+        }
+      },
+      {
+        "id": 103,
+        "label": "ctx_rh_g_cingul-post-ventral",
+        "position": {
+          "x": 7.92,
+          "y": -48.5479,
+          "z": 8.5795
+        }
+      },
+      {
+        "id": 104,
+        "label": "ctx_rh_g_cuneus",
+        "position": {
+          "x": 6.4586,
+          "y": -78.9207,
+          "z": 22.2696
+        }
+      },
+      {
+        "id": 105,
+        "label": "ctx_rh_g_front_inf-opercular",
+        "position": {
+          "x": 51.5669,
+          "y": 13.9053,
+          "z": 9.5014
+        }
+      },
+      {
+        "id": 106,
+        "label": "ctx_rh_g_front_inf-orbital",
+        "position": {
+          "x": 49.4969,
+          "y": 35.0579,
+          "z": -8.7516
+        }
+      },
+      {
+        "id": 107,
+        "label": "ctx_rh_g_front_inf-triangul",
+        "position": {
+          "x": 52.8144,
+          "y": 33.1095,
+          "z": 6.7407
+        }
+      },
+      {
+        "id": 108,
+        "label": "ctx_rh_g_front_middle",
+        "position": {
+          "x": 38.7159,
+          "y": 34.5516,
+          "z": 35.148
+        }
+      },
+      {
+        "id": 109,
+        "label": "ctx_rh_g_front_sup",
+        "position": {
+          "x": 9.7085,
+          "y": 29.6224,
+          "z": 47.3579
+        }
+      },
+      {
+        "id": 110,
+        "label": "ctx_rh_g_ins_lg_and_s_cent_ins",
+        "position": {
+          "x": 40.2448,
+          "y": -2.6863,
+          "z": -2.3974
+        }
+      },
+      {
+        "id": 111,
+        "label": "ctx_rh_g_insular_short",
+        "position": {
+          "x": 38.1091,
+          "y": 12.0044,
+          "z": -4.2694
+        }
+      },
+      {
+        "id": 112,
+        "label": "ctx_rh_g_occipital_middle",
+        "position": {
+          "x": 44.4103,
+          "y": -79.0762,
+          "z": 16.2817
+        }
+      },
+      {
+        "id": 113,
+        "label": "ctx_rh_g_occipital_sup",
+        "position": {
+          "x": 21.0472,
+          "y": -88.7719,
+          "z": 33.7281
+        }
+      },
+      {
+        "id": 114,
+        "label": "ctx_rh_g_oc-temp_lat-fusifor",
+        "position": {
+          "x": 34.514,
+          "y": -46.9914,
+          "z": -20.5891
+        }
+      },
+      {
+        "id": 115,
+        "label": "ctx_rh_g_oc-temp_med-lingual",
+        "position": {
+          "x": 10.6606,
+          "y": -66.325,
+          "z": -3.0172
+        }
+      },
+      {
+        "id": 116,
+        "label": "ctx_rh_g_oc-temp_med-parahip",
+        "position": {
+          "x": 24.0181,
+          "y": -13.5509,
+          "z": -27.867
+        }
+      },
+      {
+        "id": 117,
+        "label": "ctx_rh_g_orbital",
+        "position": {
+          "x": 29.2894,
+          "y": 36.5417,
+          "z": -18.3141
+        }
+      },
+      {
+        "id": 118,
+        "label": "ctx_rh_g_pariet_inf-angular",
+        "position": {
+          "x": 48.1448,
+          "y": -60.7703,
+          "z": 43.0383
+        }
+      },
+      {
+        "id": 119,
+        "label": "ctx_rh_g_pariet_inf-supramar",
+        "position": {
+          "x": 59.9047,
+          "y": -29.7624,
+          "z": 37.295
+        }
+      },
+      {
+        "id": 120,
+        "label": "ctx_rh_g_parietal_sup",
+        "position": {
+          "x": 25.6607,
+          "y": -59.5495,
+          "z": 62.988
+        }
+      },
+      {
+        "id": 121,
+        "label": "ctx_rh_g_postcentral",
+        "position": {
+          "x": 50.0604,
+          "y": -19.9696,
+          "z": 53.9498
+        }
+      },
+      {
+        "id": 122,
+        "label": "ctx_rh_g_precentral",
+        "position": {
+          "x": 47.2617,
+          "y": -4.1329,
+          "z": 49.8164
+        }
+      },
+      {
+        "id": 123,
+        "label": "ctx_rh_g_precuneus",
+        "position": {
+          "x": 5.3165,
+          "y": -59.5503,
+          "z": 46.5569
+        }
+      },
+      {
+        "id": 124,
+        "label": "ctx_rh_g_rectus",
+        "position": {
+          "x": 3.5741,
+          "y": 39.4113,
+          "z": -23.4651
+        }
+      },
+      {
+        "id": 125,
+        "label": "ctx_rh_g_subcallosal",
+        "position": {
+          "x": 4.4077,
+          "y": 13.1095,
+          "z": -11.5686
+        }
+      },
+      {
+        "id": 126,
+        "label": "ctx_rh_g_temp_sup-g_t_transv",
+        "position": {
+          "x": 49.262,
+          "y": -12.6511,
+          "z": 6.6042
+        }
+      },
+      {
+        "id": 127,
+        "label": "ctx_rh_g_temp_sup-lateral",
+        "position": {
+          "x": 59.1945,
+          "y": -4.5715,
+          "z": -6.2145
+        }
+      },
+      {
+        "id": 128,
+        "label": "ctx_rh_g_temp_sup-plan_polar",
+        "position": {
+          "x": 39.3637,
+          "y": 10.4394,
+          "z": -19.4632
+        }
+      },
+      {
+        "id": 129,
+        "label": "ctx_rh_g_temp_sup-plan_tempo",
+        "position": {
+          "x": 60.8687,
+          "y": -28.0353,
+          "z": 19.5365
+        }
+      },
+      {
+        "id": 130,
+        "label": "ctx_rh_g_temporal_inf",
+        "position": {
+          "x": 54.1066,
+          "y": -30.3604,
+          "z": -27.28
+        }
+      },
+      {
+        "id": 131,
+        "label": "ctx_rh_g_temporal_middle",
+        "position": {
+          "x": 61.7879,
+          "y": -23.5953,
+          "z": -12.5268
+        }
+      },
+      {
+        "id": 132,
+        "label": "ctx_rh_lat_fis-ant-horizont",
+        "position": {
+          "x": 42.0326,
+          "y": 29.2974,
+          "z": 0.0054
+        }
+      },
+      {
+        "id": 133,
+        "label": "ctx_rh_lat_fis-ant-vertical",
+        "position": {
+          "x": 49.276,
+          "y": 23.5427,
+          "z": 10.1533
+        }
+      },
+      {
+        "id": 134,
+        "label": "ctx_rh_lat_fis-post",
+        "position": {
+          "x": 41.0928,
+          "y": -25.633,
+          "z": 20.0004
+        }
+      },
+      {
+        "id": 135,
+        "label": "ctx_rh_pole_occipital",
+        "position": {
+          "x": 20.8655,
+          "y": -95.6293,
+          "z": -1.6295
+        }
+      },
+      {
+        "id": 136,
+        "label": "ctx_rh_pole_temporal",
+        "position": {
+          "x": 31.8922,
+          "y": 10.5642,
+          "z": -41.3543
+        }
+      },
+      {
+        "id": 137,
+        "label": "ctx_rh_s_calcarine",
+        "position": {
+          "x": 18.1099,
+          "y": -63.0424,
+          "z": 7.2867
+        }
+      },
+      {
+        "id": 138,
+        "label": "ctx_rh_s_central",
+        "position": {
+          "x": 39.7119,
+          "y": -15.6691,
+          "z": 46.7884
+        }
+      },
+      {
+        "id": 139,
+        "label": "ctx_rh_s_cingul-marginalis",
+        "position": {
+          "x": 12.5432,
+          "y": -36.8154,
+          "z": 51.2974
+        }
+      },
+      {
+        "id": 140,
+        "label": "ctx_rh_s_circular_insula_ant",
+        "position": {
+          "x": 31.3719,
+          "y": 23.9157,
+          "z": -8.5989
+        }
+      },
+      {
+        "id": 141,
+        "label": "ctx_rh_s_circular_insula_inf",
+        "position": {
+          "x": 42.9132,
+          "y": -7.3267,
+          "z": -6.4154
+        }
+      },
+      {
+        "id": 142,
+        "label": "ctx_rh_s_circular_insula_sup",
+        "position": {
+          "x": 37.0455,
+          "y": 9.8494,
+          "z": 9.8043
+        }
+      },
+      {
+        "id": 143,
+        "label": "ctx_rh_s_collat_transv_ant",
+        "position": {
+          "x": 41.6575,
+          "y": -17.6448,
+          "z": -28.9297
+        }
+      },
+      {
+        "id": 144,
+        "label": "ctx_rh_s_collat_transv_post",
+        "position": {
+          "x": 26.2846,
+          "y": -78.1792,
+          "z": -7.5346
+        }
+      },
+      {
+        "id": 145,
+        "label": "ctx_rh_s_front_inf",
+        "position": {
+          "x": 40.3424,
+          "y": 27.3534,
+          "z": 23.1634
+        }
+      },
+      {
+        "id": 146,
+        "label": "ctx_rh_s_front_middle",
+        "position": {
+          "x": 30.3692,
+          "y": 46.1326,
+          "z": 20.7821
+        }
+      },
+      {
+        "id": 147,
+        "label": "ctx_rh_s_front_sup",
+        "position": {
+          "x": 23.7666,
+          "y": 24.5791,
+          "z": 46.0738
+        }
+      },
+      {
+        "id": 148,
+        "label": "ctx_rh_s_interm_prim-jensen",
+        "position": {
+          "x": 53.7937,
+          "y": -41.9432,
+          "z": 39.6779
+        }
+      },
+      {
+        "id": 149,
+        "label": "ctx_rh_s_intrapariet_and_p_trans",
+        "position": {
+          "x": 33.6163,
+          "y": -50.9082,
+          "z": 48.6832
+        }
+      },
+      {
+        "id": 150,
+        "label": "ctx_rh_s_oc_middle_and_lunatus",
+        "position": {
+          "x": 36.9766,
+          "y": -79.5268,
+          "z": 8.9653
+        }
+      },
+      {
+        "id": 151,
+        "label": "ctx_rh_s_oc_sup_and_transversal",
+        "position": {
+          "x": 30.6016,
+          "y": -78.1289,
+          "z": 24.247
+        }
+      },
+      {
+        "id": 152,
+        "label": "ctx_rh_s_occipital_ant",
+        "position": {
+          "x": 47.6465,
+          "y": -63.6936,
+          "z": 5.1335
+        }
+      },
+      {
+        "id": 153,
+        "label": "ctx_rh_s_oc-temp_lat",
+        "position": {
+          "x": 45.5915,
+          "y": -46.1461,
+          "z": -15.3462
+        }
+      },
+      {
+        "id": 154,
+        "label": "ctx_rh_s_oc-temp_med_and_lingual",
+        "position": {
+          "x": 28.5243,
+          "y": -45.6739,
+          "z": -11.7078
+        }
+      },
+      {
+        "id": 155,
+        "label": "ctx_rh_s_orbital_lateral",
+        "position": {
+          "x": 42.425,
+          "y": 44.91,
+          "z": -2.1147
+        }
+      },
+      {
+        "id": 156,
+        "label": "ctx_rh_s_orbital_med-olfact",
+        "position": {
+          "x": 11.9521,
+          "y": 26.9754,
+          "z": -19.2287
+        }
+      },
+      {
+        "id": 157,
+        "label": "ctx_rh_s_orbital-h_shaped",
+        "position": {
+          "x": 25.3021,
+          "y": 40.7269,
+          "z": -16.2795
+        }
+      },
+      {
+        "id": 158,
+        "label": "ctx_rh_s_parieto_occipital",
+        "position": {
+          "x": 17.9312,
+          "y": -66.3152,
+          "z": 28.4718
+        }
+      },
+      {
+        "id": 159,
+        "label": "ctx_rh_s_pericallosal",
+        "position": {
+          "x": 5.8165,
+          "y": -2.6584,
+          "z": 18.2367
+        }
+      },
+      {
+        "id": 160,
+        "label": "ctx_rh_s_postcentral",
+        "position": {
+          "x": 40.1527,
+          "y": -29.5508,
+          "z": 48.8675
+        }
+      },
+      {
+        "id": 161,
+        "label": "ctx_rh_s_precentral-inf-part",
+        "position": {
+          "x": 44.843,
+          "y": 7.2932,
+          "z": 31.5875
+        }
+      },
+      {
+        "id": 162,
+        "label": "ctx_rh_s_precentral-sup-part",
+        "position": {
+          "x": 29.9073,
+          "y": -7.5881,
+          "z": 57.3501
+        }
+      },
+      {
+        "id": 163,
+        "label": "ctx_rh_s_suborbital",
+        "position": {
+          "x": 4.7283,
+          "y": 41.9289,
+          "z": -16.9112
+        }
+      },
+      {
+        "id": 164,
+        "label": "ctx_rh_s_subparietal",
+        "position": {
+          "x": 9.8259,
+          "y": -48.1836,
+          "z": 38.7466
+        }
+      },
+      {
+        "id": 165,
+        "label": "ctx_rh_s_temporal_inf",
+        "position": {
+          "x": 52.7454,
+          "y": -13.5317,
+          "z": -26.3953
+        }
+      },
+      {
+        "id": 166,
+        "label": "ctx_rh_s_temporal_sup",
+        "position": {
+          "x": 53.2414,
+          "y": -30.4284,
+          "z": 4.9165
+        }
+      },
+      {
+        "id": 167,
+        "label": "ctx_rh_s_temporal_transverse",
+        "position": {
+          "x": 53.2088,
+          "y": -17.5966,
+          "z": 7.2557
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Destrieux_seg-ranked_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "Destrieuxranked",
+    "atlas.name": "Destrieuxranked"
+  },
+  {
+    "label": "Schaefer1000 (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 1000,
+    "data_file": "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "FSLMNI152",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "Schaefer1000"
+    },
+    "tractogram.name": "dTOR",
+    "type": "network",
+    "file": "database/networks/tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "Schaefer1000",
+    "atlas.name": "Schaefer1000"
+  },
+  {
+    "label": "DesikanKillianyranked (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 87,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "DesikanKillianyranked",
+      "coordinateSpace": "MNI152NLin2009cAsym"
     },
     "tractogram.name": "MghUscHcp32",
-    "space": "MNI152Nlin2009c",
-    "name": "DesikanKillianyranked (MghUscHcp32)",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx-lh-bankssts",
+        "position": {
+          "x": -53.3976,
+          "y": -45.7942,
+          "z": 8.5151
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx-lh-caudalanteriorcingulate",
+        "position": {
+          "x": -4.9731,
+          "y": 21.236,
+          "z": 27.0319
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx-lh-caudalmiddlefrontal",
+        "position": {
+          "x": -36.744,
+          "y": 11.223,
+          "z": 49.34
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx-lh-cuneus",
+        "position": {
+          "x": -6.8467,
+          "y": -78.2874,
+          "z": 21.7138
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx-lh-entorhinal",
+        "position": {
+          "x": -24.2013,
+          "y": -4.7792,
+          "z": -32.8247
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx-lh-fusiform",
+        "position": {
+          "x": -34.9055,
+          "y": -44.1335,
+          "z": -20.642
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx-lh-inferiorparietal",
+        "position": {
+          "x": -40.6055,
+          "y": -70.5623,
+          "z": 33.0363
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx-lh-inferiortemporal",
+        "position": {
+          "x": -50.5649,
+          "y": -31.5391,
+          "z": -24.8692
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx-lh-isthmuscingulate",
+        "position": {
+          "x": -6.5292,
+          "y": -45.3841,
+          "z": 19.7732
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx-lh-lateraloccipital",
+        "position": {
+          "x": -30.9615,
+          "y": -88.6305,
+          "z": 1.6724
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx-lh-lateralorbitofrontal",
+        "position": {
+          "x": -24.3595,
+          "y": 31.9715,
+          "z": -18.0296
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx-lh-lingual",
+        "position": {
+          "x": -14.1542,
+          "y": -67.35,
+          "z": -4.7485
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx-lh-medialorbitofrontal",
+        "position": {
+          "x": -5.9356,
+          "y": 34.5393,
+          "z": -17.1274
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx-lh-middletemporal",
+        "position": {
+          "x": -57.9583,
+          "y": -21.8374,
+          "z": -14.9323
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx-lh-parahippocampal",
+        "position": {
+          "x": -23.9457,
+          "y": -30.4017,
+          "z": -18.6359
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx-lh-paracentral",
+        "position": {
+          "x": -6.3653,
+          "y": -28.3585,
+          "z": 58.7593
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx-lh-parsopercularis",
+        "position": {
+          "x": -47.7282,
+          "y": 15.5084,
+          "z": 14.4266
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx-lh-parsorbitalis",
+        "position": {
+          "x": -43.2052,
+          "y": 41.3991,
+          "z": -12.9799
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx-lh-parstriangularis",
+        "position": {
+          "x": -47.2455,
+          "y": 31.7149,
+          "z": 3.1207
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx-lh-pericalcarine",
+        "position": {
+          "x": -12.0913,
+          "y": -80.1167,
+          "z": 6.467
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx-lh-postcentral",
+        "position": {
+          "x": -46.6283,
+          "y": -22.267,
+          "z": 44.2489
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx-lh-posteriorcingulate",
+        "position": {
+          "x": -5.3964,
+          "y": -18.0922,
+          "z": 39.0261
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx-lh-precentral",
+        "position": {
+          "x": -43.054,
+          "y": -6.9651,
+          "z": 42.5493
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx-lh-precuneus",
+        "position": {
+          "x": -8.4673,
+          "y": -59.0119,
+          "z": 38.9913
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx-lh-rostralanteriorcingulate",
+        "position": {
+          "x": -4.6127,
+          "y": 36.2858,
+          "z": -0.7904
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx-lh-rostralmiddlefrontal",
+        "position": {
+          "x": -33.5028,
+          "y": 46.3926,
+          "z": 17.8395
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx-lh-superiorfrontal",
+        "position": {
+          "x": -11.2887,
+          "y": 30.4652,
+          "z": 43.9548
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx-lh-superiorparietal",
+        "position": {
+          "x": -23.4716,
+          "y": -64.1303,
+          "z": 51.9987
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx-lh-superiortemporal",
+        "position": {
+          "x": -53.7298,
+          "y": -11.5455,
+          "z": -3.7002
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx-lh-supramarginal",
+        "position": {
+          "x": -55.0221,
+          "y": -39.3578,
+          "z": 35.1147
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx-lh-frontalpole",
+        "position": {
+          "x": -7.6003,
+          "y": 67.4761,
+          "z": -10.2032
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx-lh-temporalpole",
+        "position": {
+          "x": -28.4672,
+          "y": 13.6612,
+          "z": -37.0388
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx-lh-transversetemporal",
+        "position": {
+          "x": -44.8061,
+          "y": -21.555,
+          "z": 9.3891
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx-lh-insula",
+        "position": {
+          "x": -36.0443,
+          "y": 0.8968,
+          "z": -0.4175
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx-rh-bankssts",
+        "position": {
+          "x": 54.3559,
+          "y": -40.3169,
+          "z": 9.9074
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx-rh-caudalanteriorcingulate",
+        "position": {
+          "x": 5.1196,
+          "y": 22.4728,
+          "z": 27.4146
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx-rh-caudalmiddlefrontal",
+        "position": {
+          "x": 36.8488,
+          "y": 14.0197,
+          "z": 49.3889
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx-rh-cuneus",
+        "position": {
+          "x": 8.294,
+          "y": -78.2692,
+          "z": 22.7618
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx-rh-entorhinal",
+        "position": {
+          "x": 23.8225,
+          "y": -4.8235,
+          "z": -33.728
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx-rh-fusiform",
+        "position": {
+          "x": 33.9921,
+          "y": -37.6616,
+          "z": -22.8656
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx-rh-inferiorparietal",
+        "position": {
+          "x": 46.3382,
+          "y": -63.0738,
+          "z": 32.6917
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx-rh-inferiortemporal",
+        "position": {
+          "x": 50.5196,
+          "y": -27.1179,
+          "z": -27.1838
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx-rh-isthmuscingulate",
+        "position": {
+          "x": 7.6885,
+          "y": -43.6831,
+          "z": 20.1113
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx-rh-lateraloccipital",
+        "position": {
+          "x": 35.0922,
+          "y": -83.9116,
+          "z": 0.8458
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx-rh-lateralorbitofrontal",
+        "position": {
+          "x": 23.5878,
+          "y": 32.1558,
+          "z": -18.2904
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx-rh-lingual",
+        "position": {
+          "x": 14.4806,
+          "y": -65.4811,
+          "z": -3.4636
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx-rh-medialorbitofrontal",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx-rh-middletemporal",
+        "position": {
+          "x": 57.9961,
+          "y": -19.825,
+          "z": -15.6952
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx-rh-parahippocampal",
+        "position": {
+          "x": 25.0776,
+          "y": -28.9856,
+          "z": -18.8843
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx-rh-paracentral",
+        "position": {
+          "x": 7.2402,
+          "y": -26.0961,
+          "z": 58.7403
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx-rh-parsopercularis",
+        "position": {
+          "x": 48.4566,
+          "y": 16.0601,
+          "z": 13.3438
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx-rh-parsorbitalis",
+        "position": {
+          "x": 43.1135,
+          "y": 42.5175,
+          "z": -13.3768
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx-rh-parstriangularis",
+        "position": {
+          "x": 49.0725,
+          "y": 32.3705,
+          "z": 4.812
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx-rh-pericalcarine",
+        "position": {
+          "x": 13.2706,
+          "y": -78.056,
+          "z": 8.1234
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx-rh-postcentral",
+        "position": {
+          "x": 47.4325,
+          "y": -18.7825,
+          "z": 43.8269
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx-rh-posteriorcingulate",
+        "position": {
+          "x": 5.8462,
+          "y": -16.4543,
+          "z": 39.1514
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx-rh-precentral",
+        "position": {
+          "x": 44.2892,
+          "y": -4.544,
+          "z": 42.765
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx-rh-precuneus",
+        "position": {
+          "x": 10.295,
+          "y": -57.7096,
+          "z": 38.6811
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx-rh-rostralanteriorcingulate",
+        "position": {
+          "x": 4.9514,
+          "y": 37.2003,
+          "z": 1.941
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx-rh-rostralmiddlefrontal",
+        "position": {
+          "x": 34.4679,
+          "y": 47.876,
+          "z": 16.5323
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx-rh-superiorfrontal",
+        "position": {
+          "x": 11.91,
+          "y": 31.7403,
+          "z": 43.4741
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx-rh-superiorparietal",
+        "position": {
+          "x": 25.1605,
+          "y": -63.0393,
+          "z": 53.2944
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx-rh-superiortemporal",
+        "position": {
+          "x": 54.6697,
+          "y": -6.9466,
+          "z": -5.237
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx-rh-supramarginal",
+        "position": {
+          "x": 55.9183,
+          "y": -30.9668,
+          "z": 35.9768
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx-rh-frontalpole",
+        "position": {
+          "x": 8.368,
+          "y": 67.1573,
+          "z": -13.1551
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx-rh-temporalpole",
+        "position": {
+          "x": 28.2896,
+          "y": 15.05,
+          "z": -35.0567
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx-rh-transversetemporal",
+        "position": {
+          "x": 45.6819,
+          "y": -17.8535,
+          "z": 8.7486
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx-rh-insula",
+        "position": {
+          "x": 34.8554,
+          "y": 3.4149,
+          "z": -2.5363
+        }
+      }
+    ],
     "type": "network",
-    "file": "database/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32.yaml",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.yaml",
     "desc": {
       "name": "MghUscHcp32"
     },
     "atlas": "DesikanKillianyranked",
-    "atlas.name": "DesikanKillianyranked",
-    "n_regions": 87,
-    "thumbnail": "browser/imgs/networks/space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32.png"
+    "atlas.name": "DesikanKillianyranked"
+  },
+  {
+    "label": "DesikanKilliany (PPMI85)",
+    "descriptor": "SC",
+    "number_of_nodes": 87,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-DesikanKilliany_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "PPMI85",
+    "bids.reconstruction": "PPMI85",
+    "parcellation.atlas": {
+      "name": "DesikanKilliany",
+      "coordinateSpace": "MNI152NLin2009cAsym"
+    },
+    "tractogram.name": "PPMI85",
+    "nodes": [
+      {
+        "id": 1,
+        "label": "left-cerebellum-cortex",
+        "position": {
+          "x": -24.4064,
+          "y": -61.912,
+          "z": -36.6256
+        }
+      },
+      {
+        "id": 2,
+        "label": "left-thalamus",
+        "position": {
+          "x": -11.5002,
+          "y": -18.4582,
+          "z": 7.1412
+        }
+      },
+      {
+        "id": 3,
+        "label": "left-caudate",
+        "position": {
+          "x": -12.7352,
+          "y": 10.402,
+          "z": 9.8365
+        }
+      },
+      {
+        "id": 4,
+        "label": "left-putamen",
+        "position": {
+          "x": -25.9604,
+          "y": 1.3514,
+          "z": 0.1749
+        }
+      },
+      {
+        "id": 5,
+        "label": "left-pallidum",
+        "position": {
+          "x": -20.4778,
+          "y": -4.4579,
+          "z": -0.8174
+        }
+      },
+      {
+        "id": 6,
+        "label": "brain-stem",
+        "position": {
+          "x": -6.059,
+          "y": -30.4434,
+          "z": -33.1636
+        }
+      },
+      {
+        "id": 7,
+        "label": "left-hippocampus",
+        "position": {
+          "x": -25.2057,
+          "y": -21.8225,
+          "z": -13.6436
+        }
+      },
+      {
+        "id": 8,
+        "label": "left-amygdala",
+        "position": {
+          "x": -22.8538,
+          "y": -4.4597,
+          "z": -19.2704
+        }
+      },
+      {
+        "id": 9,
+        "label": "left-accumbens-area",
+        "position": {
+          "x": -8.3393,
+          "y": 11.4619,
+          "z": -7.7683
+        }
+      },
+      {
+        "id": 10,
+        "label": "left-ventraldc",
+        "position": {
+          "x": -10.2372,
+          "y": -14.781,
+          "z": -10.1059
+        }
+      },
+      {
+        "id": 11,
+        "label": "right-cerebellum-cortex",
+        "position": {
+          "x": 24.7927,
+          "y": -61.5357,
+          "z": -36.7036
+        }
+      },
+      {
+        "id": 12,
+        "label": "right-thalamus",
+        "position": {
+          "x": 11.6127,
+          "y": -16.8757,
+          "z": 7.1327
+        }
+      },
+      {
+        "id": 13,
+        "label": "right-caudate",
+        "position": {
+          "x": 13.2866,
+          "y": 11.8,
+          "z": 9.6942
+        }
+      },
+      {
+        "id": 14,
+        "label": "right-putamen",
+        "position": {
+          "x": 26.5674,
+          "y": 3.1727,
+          "z": -0.3935
+        }
+      },
+      {
+        "id": 15,
+        "label": "right-pallidum",
+        "position": {
+          "x": 21.2714,
+          "y": -2.8005,
+          "z": -0.9399
+        }
+      },
+      {
+        "id": 16,
+        "label": "right-hippocampus",
+        "position": {
+          "x": 26.5336,
+          "y": -20.7203,
+          "z": -13.7921
+        }
+      },
+      {
+        "id": 17,
+        "label": "right-amygdala",
+        "position": {
+          "x": 23.2788,
+          "y": -3.0473,
+          "z": -19.6271
+        }
+      },
+      {
+        "id": 18,
+        "label": "right-accumbens-area",
+        "position": {
+          "x": 8.5218,
+          "y": 12.6292,
+          "z": -7.1511
+        }
+      },
+      {
+        "id": 19,
+        "label": "right-ventraldc",
+        "position": {
+          "x": 10.5958,
+          "y": -14.2109,
+          "z": -10.175
+        }
+      },
+      {
+        "id": 20,
+        "label": "ctx-lh-bankssts",
+        "position": {
+          "x": -53.3976,
+          "y": -45.7942,
+          "z": 8.5151
+        }
+      },
+      {
+        "id": 21,
+        "label": "ctx-lh-caudalanteriorcingulate",
+        "position": {
+          "x": -4.9731,
+          "y": 21.236,
+          "z": 27.0319
+        }
+      },
+      {
+        "id": 22,
+        "label": "ctx-lh-caudalmiddlefrontal",
+        "position": {
+          "x": -36.744,
+          "y": 11.223,
+          "z": 49.34
+        }
+      },
+      {
+        "id": 23,
+        "label": "ctx-lh-cuneus",
+        "position": {
+          "x": -6.8467,
+          "y": -78.2874,
+          "z": 21.7138
+        }
+      },
+      {
+        "id": 24,
+        "label": "ctx-lh-entorhinal",
+        "position": {
+          "x": -24.2013,
+          "y": -4.7792,
+          "z": -32.8247
+        }
+      },
+      {
+        "id": 25,
+        "label": "ctx-lh-fusiform",
+        "position": {
+          "x": -34.9055,
+          "y": -44.1335,
+          "z": -20.642
+        }
+      },
+      {
+        "id": 26,
+        "label": "ctx-lh-inferiorparietal",
+        "position": {
+          "x": -40.6055,
+          "y": -70.5623,
+          "z": 33.0363
+        }
+      },
+      {
+        "id": 27,
+        "label": "ctx-lh-inferiortemporal",
+        "position": {
+          "x": -50.5649,
+          "y": -31.5391,
+          "z": -24.8692
+        }
+      },
+      {
+        "id": 28,
+        "label": "ctx-lh-isthmuscingulate",
+        "position": {
+          "x": -6.5292,
+          "y": -45.3841,
+          "z": 19.7732
+        }
+      },
+      {
+        "id": 29,
+        "label": "ctx-lh-lateraloccipital",
+        "position": {
+          "x": -30.9615,
+          "y": -88.6305,
+          "z": 1.6724
+        }
+      },
+      {
+        "id": 30,
+        "label": "ctx-lh-lateralorbitofrontal",
+        "position": {
+          "x": -24.3595,
+          "y": 31.9715,
+          "z": -18.0296
+        }
+      },
+      {
+        "id": 31,
+        "label": "ctx-lh-lingual",
+        "position": {
+          "x": -14.1542,
+          "y": -67.35,
+          "z": -4.7485
+        }
+      },
+      {
+        "id": 32,
+        "label": "ctx-lh-medialorbitofrontal",
+        "position": {
+          "x": -5.9356,
+          "y": 34.5393,
+          "z": -17.1274
+        }
+      },
+      {
+        "id": 33,
+        "label": "ctx-lh-middletemporal",
+        "position": {
+          "x": -57.9583,
+          "y": -21.8374,
+          "z": -14.9323
+        }
+      },
+      {
+        "id": 34,
+        "label": "ctx-lh-parahippocampal",
+        "position": {
+          "x": -23.9457,
+          "y": -30.4017,
+          "z": -18.6359
+        }
+      },
+      {
+        "id": 35,
+        "label": "ctx-lh-paracentral",
+        "position": {
+          "x": -6.3653,
+          "y": -28.3585,
+          "z": 58.7593
+        }
+      },
+      {
+        "id": 36,
+        "label": "ctx-lh-parsopercularis",
+        "position": {
+          "x": -47.7282,
+          "y": 15.5084,
+          "z": 14.4266
+        }
+      },
+      {
+        "id": 37,
+        "label": "ctx-lh-parsorbitalis",
+        "position": {
+          "x": -43.2052,
+          "y": 41.3991,
+          "z": -12.9799
+        }
+      },
+      {
+        "id": 38,
+        "label": "ctx-lh-parstriangularis",
+        "position": {
+          "x": -47.2455,
+          "y": 31.7149,
+          "z": 3.1207
+        }
+      },
+      {
+        "id": 39,
+        "label": "ctx-lh-pericalcarine",
+        "position": {
+          "x": -12.0913,
+          "y": -80.1167,
+          "z": 6.467
+        }
+      },
+      {
+        "id": 40,
+        "label": "ctx-lh-postcentral",
+        "position": {
+          "x": -46.6283,
+          "y": -22.267,
+          "z": 44.2489
+        }
+      },
+      {
+        "id": 41,
+        "label": "ctx-lh-posteriorcingulate",
+        "position": {
+          "x": -5.3964,
+          "y": -18.0922,
+          "z": 39.0261
+        }
+      },
+      {
+        "id": 42,
+        "label": "ctx-lh-precentral",
+        "position": {
+          "x": -43.054,
+          "y": -6.9651,
+          "z": 42.5493
+        }
+      },
+      {
+        "id": 43,
+        "label": "ctx-lh-precuneus",
+        "position": {
+          "x": -8.4673,
+          "y": -59.0119,
+          "z": 38.9913
+        }
+      },
+      {
+        "id": 44,
+        "label": "ctx-lh-rostralanteriorcingulate",
+        "position": {
+          "x": -4.6127,
+          "y": 36.2858,
+          "z": -0.7904
+        }
+      },
+      {
+        "id": 45,
+        "label": "ctx-lh-rostralmiddlefrontal",
+        "position": {
+          "x": -33.5028,
+          "y": 46.3926,
+          "z": 17.8395
+        }
+      },
+      {
+        "id": 46,
+        "label": "ctx-lh-superiorfrontal",
+        "position": {
+          "x": -11.2887,
+          "y": 30.4652,
+          "z": 43.9548
+        }
+      },
+      {
+        "id": 47,
+        "label": "ctx-lh-superiorparietal",
+        "position": {
+          "x": -23.4716,
+          "y": -64.1303,
+          "z": 51.9987
+        }
+      },
+      {
+        "id": 48,
+        "label": "ctx-lh-superiortemporal",
+        "position": {
+          "x": -53.7298,
+          "y": -11.5455,
+          "z": -3.7002
+        }
+      },
+      {
+        "id": 49,
+        "label": "ctx-lh-supramarginal",
+        "position": {
+          "x": -55.0221,
+          "y": -39.3578,
+          "z": 35.1147
+        }
+      },
+      {
+        "id": 50,
+        "label": "ctx-lh-frontalpole",
+        "position": {
+          "x": -7.6003,
+          "y": 67.4761,
+          "z": -10.2032
+        }
+      },
+      {
+        "id": 51,
+        "label": "ctx-lh-temporalpole",
+        "position": {
+          "x": -28.4672,
+          "y": 13.6612,
+          "z": -37.0388
+        }
+      },
+      {
+        "id": 52,
+        "label": "ctx-lh-transversetemporal",
+        "position": {
+          "x": -44.8061,
+          "y": -21.555,
+          "z": 9.3891
+        }
+      },
+      {
+        "id": 53,
+        "label": "ctx-lh-insula",
+        "position": {
+          "x": -36.0443,
+          "y": 0.8968,
+          "z": -0.4175
+        }
+      },
+      {
+        "id": 54,
+        "label": "ctx-rh-bankssts",
+        "position": {
+          "x": 54.3559,
+          "y": -40.3169,
+          "z": 9.9074
+        }
+      },
+      {
+        "id": 55,
+        "label": "ctx-rh-caudalanteriorcingulate",
+        "position": {
+          "x": 5.1196,
+          "y": 22.4728,
+          "z": 27.4146
+        }
+      },
+      {
+        "id": 56,
+        "label": "ctx-rh-caudalmiddlefrontal",
+        "position": {
+          "x": 36.8488,
+          "y": 14.0197,
+          "z": 49.3889
+        }
+      },
+      {
+        "id": 57,
+        "label": "ctx-rh-cuneus",
+        "position": {
+          "x": 8.294,
+          "y": -78.2692,
+          "z": 22.7618
+        }
+      },
+      {
+        "id": 58,
+        "label": "ctx-rh-entorhinal",
+        "position": {
+          "x": 23.8225,
+          "y": -4.8235,
+          "z": -33.728
+        }
+      },
+      {
+        "id": 59,
+        "label": "ctx-rh-fusiform",
+        "position": {
+          "x": 33.9921,
+          "y": -37.6616,
+          "z": -22.8656
+        }
+      },
+      {
+        "id": 60,
+        "label": "ctx-rh-inferiorparietal",
+        "position": {
+          "x": 46.3382,
+          "y": -63.0738,
+          "z": 32.6917
+        }
+      },
+      {
+        "id": 61,
+        "label": "ctx-rh-inferiortemporal",
+        "position": {
+          "x": 50.5196,
+          "y": -27.1179,
+          "z": -27.1838
+        }
+      },
+      {
+        "id": 62,
+        "label": "ctx-rh-isthmuscingulate",
+        "position": {
+          "x": 7.6885,
+          "y": -43.6831,
+          "z": 20.1113
+        }
+      },
+      {
+        "id": 63,
+        "label": "ctx-rh-lateraloccipital",
+        "position": {
+          "x": 35.0922,
+          "y": -83.9116,
+          "z": 0.8458
+        }
+      },
+      {
+        "id": 64,
+        "label": "ctx-rh-lateralorbitofrontal",
+        "position": {
+          "x": 23.5878,
+          "y": 32.1558,
+          "z": -18.2904
+        }
+      },
+      {
+        "id": 65,
+        "label": "ctx-rh-lingual",
+        "position": {
+          "x": 14.4806,
+          "y": -65.4811,
+          "z": -3.4636
+        }
+      },
+      {
+        "id": 66,
+        "label": "ctx-rh-medialorbitofrontal",
+        "position": {
+          "x": -1.0,
+          "y": 27.0,
+          "z": -17.0
+        }
+      },
+      {
+        "id": 67,
+        "label": "ctx-rh-middletemporal",
+        "position": {
+          "x": 57.9961,
+          "y": -19.825,
+          "z": -15.6952
+        }
+      },
+      {
+        "id": 68,
+        "label": "ctx-rh-parahippocampal",
+        "position": {
+          "x": 25.0776,
+          "y": -28.9856,
+          "z": -18.8843
+        }
+      },
+      {
+        "id": 69,
+        "label": "ctx-rh-paracentral",
+        "position": {
+          "x": 7.2402,
+          "y": -26.0961,
+          "z": 58.7403
+        }
+      },
+      {
+        "id": 70,
+        "label": "ctx-rh-parsopercularis",
+        "position": {
+          "x": 48.4566,
+          "y": 16.0601,
+          "z": 13.3438
+        }
+      },
+      {
+        "id": 71,
+        "label": "ctx-rh-parsorbitalis",
+        "position": {
+          "x": 43.1135,
+          "y": 42.5175,
+          "z": -13.3768
+        }
+      },
+      {
+        "id": 72,
+        "label": "ctx-rh-parstriangularis",
+        "position": {
+          "x": 49.0725,
+          "y": 32.3705,
+          "z": 4.812
+        }
+      },
+      {
+        "id": 73,
+        "label": "ctx-rh-pericalcarine",
+        "position": {
+          "x": 13.2706,
+          "y": -78.056,
+          "z": 8.1234
+        }
+      },
+      {
+        "id": 74,
+        "label": "ctx-rh-postcentral",
+        "position": {
+          "x": 47.4325,
+          "y": -18.7825,
+          "z": 43.8269
+        }
+      },
+      {
+        "id": 75,
+        "label": "ctx-rh-posteriorcingulate",
+        "position": {
+          "x": 5.8462,
+          "y": -16.4543,
+          "z": 39.1514
+        }
+      },
+      {
+        "id": 76,
+        "label": "ctx-rh-precentral",
+        "position": {
+          "x": 44.2892,
+          "y": -4.544,
+          "z": 42.765
+        }
+      },
+      {
+        "id": 77,
+        "label": "ctx-rh-precuneus",
+        "position": {
+          "x": 10.295,
+          "y": -57.7096,
+          "z": 38.6811
+        }
+      },
+      {
+        "id": 78,
+        "label": "ctx-rh-rostralanteriorcingulate",
+        "position": {
+          "x": 4.9514,
+          "y": 37.2003,
+          "z": 1.941
+        }
+      },
+      {
+        "id": 79,
+        "label": "ctx-rh-rostralmiddlefrontal",
+        "position": {
+          "x": 34.4679,
+          "y": 47.876,
+          "z": 16.5323
+        }
+      },
+      {
+        "id": 80,
+        "label": "ctx-rh-superiorfrontal",
+        "position": {
+          "x": 11.91,
+          "y": 31.7403,
+          "z": 43.4741
+        }
+      },
+      {
+        "id": 81,
+        "label": "ctx-rh-superiorparietal",
+        "position": {
+          "x": 25.1605,
+          "y": -63.0393,
+          "z": 53.2944
+        }
+      },
+      {
+        "id": 82,
+        "label": "ctx-rh-superiortemporal",
+        "position": {
+          "x": 54.6697,
+          "y": -6.9466,
+          "z": -5.237
+        }
+      },
+      {
+        "id": 83,
+        "label": "ctx-rh-supramarginal",
+        "position": {
+          "x": 55.9183,
+          "y": -30.9668,
+          "z": 35.9768
+        }
+      },
+      {
+        "id": 84,
+        "label": "ctx-rh-frontalpole",
+        "position": {
+          "x": 8.368,
+          "y": 67.1573,
+          "z": -13.1551
+        }
+      },
+      {
+        "id": 85,
+        "label": "ctx-rh-temporalpole",
+        "position": {
+          "x": 28.2896,
+          "y": 15.05,
+          "z": -35.0567
+        }
+      },
+      {
+        "id": 86,
+        "label": "ctx-rh-transversetemporal",
+        "position": {
+          "x": 45.6819,
+          "y": -17.8535,
+          "z": 8.7486
+        }
+      },
+      {
+        "id": 87,
+        "label": "ctx-rh-insula",
+        "position": {
+          "x": 34.8554,
+          "y": 3.4149,
+          "z": -2.5363
+        }
+      }
+    ],
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-DesikanKilliany_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "PPMI85"
+    },
+    "atlas": "DesikanKilliany",
+    "atlas.name": "DesikanKilliany"
+  },
+  {
+    "label": "virtualdbs (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 370,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-virtualdbs_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "virtualdbs"
+    },
+    "tractogram.name": "MghUscHcp32",
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-virtualdbs_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
+    "atlas": "virtualdbs",
+    "atlas.name": "virtualdbs"
+  },
+  {
+    "label": "Schaefer1000 (MghUscHcp32)",
+    "descriptor": "SC",
+    "number_of_nodes": 1000,
+    "data_file": "tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_scale-1000_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "csr",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "FSLMNI152",
+    "bids.cohort": "MghUscHcp32",
+    "bids.reconstruction": "MghUscHcp32",
+    "parcellation.atlas": {
+      "name": "Schaefer1000"
+    },
+    "tractogram.name": "MghUscHcp32",
+    "type": "network",
+    "file": "database/networks/tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_scale-1000_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "MghUscHcp32"
+    },
+    "atlas": "Schaefer1000",
+    "atlas.name": "Schaefer1000"
+  },
+  {
+    "label": "HCPex (dTOR)",
+    "descriptor": "SC",
+    "number_of_nodes": 427,
+    "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-HCPex_desc-SC_relmat.h5",
+    "edges": [
+      {
+        "name": "weights",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      },
+      {
+        "name": "lengths",
+        "unit": "mm",
+        "format": "dense",
+        "weighted": true,
+        "valid_diagonal": false,
+        "non_negative": true
+      }
+    ],
+    "bids.bids_version": "1.10.0",
+    "bids.dataset_type": "derivative",
+    "bids.template": "MNI152NLin2009cAsym",
+    "bids.cohort": "HCPYA",
+    "bids.reconstruction": "dTOR",
+    "parcellation.atlas": {
+      "name": "HCPex"
+    },
+    "tractogram.name": "dTOR",
+    "type": "network",
+    "file": "database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-HCPex_desc-SC_relmat.yaml",
+    "desc": {
+      "name": "dTOR"
+    },
+    "atlas": "HCPex",
+    "atlas.name": "HCPex"
   },
   {
     "name": "HyperbolicTangent",

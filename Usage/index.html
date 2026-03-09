@@ -71,6 +71,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
 <script src="//unpkg.com/3d-force-graph"></script>
+<script src="../_static/tvbo-icons.js"></script>
 
 
 <link rel="stylesheet" href="../styles.css">
@@ -105,6 +106,10 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Installation</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link active" href="../Usage/index.html" aria-current="page"> 
+<span class="menu-text">Usage</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../api/index.html"> 
 <span class="menu-text">API Documentation</span></a>
   </li>  
@@ -115,10 +120,6 @@ ul.task-list li input[type="checkbox"] {
   <li class="nav-item">
     <a class="nav-link" href="../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../Usage/index.html" aria-current="page"> 
-<span class="menu-text">Usage</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../Interoperability/index.html"> 
@@ -175,7 +176,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../Usage/Network.qmd" class="sidebar-item-text sidebar-link">
+  <a href="../Specification/Network.qmd" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Defining Networks</span></a>
   </div>
 </li>
@@ -233,7 +234,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../Usage/Algorithms.qmd" class="sidebar-item-text sidebar-link">
+  <a href="../Specification/Algorithms.qmd" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Algorithms</span></a>
   </div>
 </li>
@@ -373,17 +374,38 @@ ul.task-list li input[type="checkbox"] {
 }
 .usage-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 .usage-card a { text-decoration: none; color: inherit; }
-.usage-card .card-img {
+.usage-card .card-visual {
+  position: relative;
   width: 100%;
   aspect-ratio: 16/9;
+  overflow: hidden;
+}
+.usage-card .card-img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center;
   background: #f0f0f0;
   display: block;
 }
+.usage-card .card-icon-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  pointer-events: none;
+}
 .usage-card .card-img-placeholder {
   width: 100%;
-  aspect-ratio: 16/9;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -441,22 +463,16 @@ const PAGES = [
     href: "DefineDynamicalSystem.html",
     desc: "Create neural mass models from YAML, Python, or the ontology.",
     cats: ["fundamentals","dynamics","YAML"],
-    icon: "fa-solid fa-wave-square",
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     img: "" },
   { title: "Defining Networks",
     href: "Network.html",
     desc: "Build brain networks from matrices, YAML, connectome databases, or BIDS.",
     cats: ["fundamentals","networks","connectome"],
-    icon: "fa-solid fa-diagram-project",
-    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-    img: "" },
+    img: "thumbnails/DefineNetworks.png" },
   { title: "Simulation Experiments",
     href: "SimulationExperiments.html",
     desc: "Combine components, run on multiple backends, and inspect results.",
     cats: ["fundamentals","simulation","backends"],
-    icon: "fa-solid fa-flask",
-    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
     img: "" },
 
   // ── Code Generation ──
@@ -464,8 +480,6 @@ const PAGES = [
     href: "CodeGeneration.html",
     desc: "Generate standalone simulation code in JAX, Python, Julia, CUDA, and export to YAML/BIDS/OpenMINDS.",
     cats: ["codegen","JAX","Julia","export"],
-    icon: "fa-solid fa-code",
-    gradient: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
     img: "" },
 
   // ── Observation & Analysis ──
@@ -473,84 +487,70 @@ const PAGES = [
     href: "ObservationModels.html",
     desc: "BOLD, FC, PSD — define what to measure from simulations.",
     cats: ["analysis","observation","BOLD"],
-    icon: "fa-solid fa-eye",
-    gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
     img: "" },
   { title: "Parameter Exploration",
     href: "ParameterExploration.html",
     desc: "Systematic parameter sweeps and grid search across state spaces.",
     cats: ["analysis","optimization","sweeps"],
-    icon: "fa-solid fa-magnifying-glass-chart",
-    gradient: "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)",
     img: "" },
   { title: "Model Fitting",
     href: "ModelFitting.html",
     desc: "Loss functions and gradient-based optimization for empirical data.",
     cats: ["analysis","optimization","fitting"],
-    icon: "fa-solid fa-chart-line",
-    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
     img: "" },
   { title: "Algorithms",
     href: "Algorithms.html",
     desc: "Built-in tuning algorithms (FIC, EIB) for balanced network states.",
     cats: ["analysis","algorithms","FIC"],
-    icon: "fa-solid fa-gears",
-    gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
     img: "" },
   { title: "Bifurcation Analysis",
     href: "BifurcationAnalysis.html",
     desc: "Stability analysis and bifurcation diagrams for dynamical systems.",
     cats: ["analysis","bifurcation","stability"],
-    icon: "fa-solid fa-code-branch",
-    gradient: "linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)",
-    img: "" },
+    img: "thumbnails/BifurcationAnalysis.png" },
 
   // ── Simulation Features ──
   { title: "Events & Stimulation",
     href: "Events.html",
     desc: "External stimuli, per-region input, and time-varying parameters.",
     cats: ["simulation","stimulation","events"],
-    icon: "fa-solid fa-bolt",
-    gradient: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
     img: "" },
   { title: "Noise & Stochastic Integration",
     href: "Noise.html",
     desc: "Additive and multiplicative noise, Ornstein-Uhlenbeck processes.",
     cats: ["simulation","noise","stochastic"],
-    icon: "fa-solid fa-shuffle",
-    gradient: "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
-    img: "" },
+    img: "thumbnails/Noise.png" },
 
   // ── Advanced ──
   { title: "PDE Simulation",
     href: "PDESimulation.html",
     desc: "Surface-based PDE solving with finite elements (scikit-fem).",
     cats: ["advanced","PDE","surface"],
-    icon: "fa-solid fa-border-all",
-    gradient: "linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)",
     img: "" },
   { title: "Heterogeneous Node Dynamics",
     href: "HeterogeneousNodes.html",
     desc: "Different dynamics at each network node for multi-population models.",
     cats: ["advanced","heterogeneous","networks"],
-    icon: "fa-solid fa-circle-nodes",
-    gradient: "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
-    img: "" },
+    img: "thumbnails/HeterogeneousNodes.png" },
   { title: "Heterogeneous Edge Dynamics",
     href: "HeterogeneousEdges.html",
     desc: "Synaptic plasticity and edge-level dynamics on network connections.",
     cats: ["advanced","heterogeneous","plasticity"],
-    icon: "fa-solid fa-arrow-right-arrow-left",
-    gradient: "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
-    img: "" },
+    img: "thumbnails/HeterogeneousEdges.png" },
   { title: "Unit-Aware Computations",
     href: "UnitValidation.html",
     desc: "Physical units across simulation components for dimensionally consistent models.",
     cats: ["advanced","units","validation"],
-    icon: "fa-solid fa-ruler-combined",
-    gradient: "linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)",
     img: "" },
 ];
+
+// Enrich PAGES with icon/gradient from shared registry
+PAGES.forEach(p => {
+  const slug = p.href.replace('.html', '');
+  const info = TVBO_ICONS[slug] || {};
+  p.icon = info.icon || "fa-solid fa-file";
+  p.gradient = info.gradient || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+});
 
 // ── build filter buttons ──
 const allCats = [...new Set(PAGES.flatMap(p => p.cats))].sort();
@@ -598,21 +598,38 @@ sections.forEach(sec => {
     const imgWrap = document.createElement('a');
     imgWrap.href = p.href;
 
+    const visual = document.createElement('div');
+    visual.className = 'card-visual';
+
     if (p.img) {
       const img = document.createElement('img');
       img.className = 'card-img';
       img.loading = 'lazy';
       img.alt = p.title;
       img.src = p.img;
-      img.onerror = function () { makePlaceholder(this, p); };
-      imgWrap.appendChild(img);
+      img.onerror = function () {
+        const ph = document.createElement('div');
+        ph.className = 'card-img-placeholder';
+        ph.style.background = p.gradient;
+        ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+        this.replaceWith(ph);
+      };
+      visual.appendChild(img);
+      // icon badge overlay on thumbnail
+      const badge = document.createElement('div');
+      badge.className = 'card-icon-badge';
+      badge.style.background = p.gradient;
+      badge.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+      visual.appendChild(badge);
     } else {
       const ph = document.createElement('div');
       ph.className = 'card-img-placeholder';
       ph.style.background = p.gradient;
       ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
-      imgWrap.appendChild(ph);
+      visual.appendChild(ph);
     }
+
+    imgWrap.appendChild(visual);
     card.appendChild(imgWrap);
 
     // body
@@ -640,14 +657,6 @@ sections.forEach(sec => {
     grid.appendChild(card);
   });
 });
-
-function makePlaceholder(el, p) {
-  const ph = document.createElement('div');
-  ph.className = 'card-img-placeholder';
-  ph.style.background = p.gradient;
-  ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
-  el.replaceWith(ph);
-}
 
 // ── filter logic ──
 let activeFilter = 'all';
