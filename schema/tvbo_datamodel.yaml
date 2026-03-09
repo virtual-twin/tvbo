@@ -517,7 +517,7 @@ classes:
                 # implements:
                 #   - linkml:elements
 
-    Network:
+
         class_uri: tvbo:Network
         aliases:
             - Connectome
@@ -595,7 +595,7 @@ classes:
                 description: "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
 
             distance_unit:
-                range: string
+                raNetwork:nge: string
                 description: "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
                 ifabsent: string(mm)
             time_unit:

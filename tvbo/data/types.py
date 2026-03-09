@@ -1863,11 +1863,15 @@ class TimeSeries(BaseTimeSeries):
         # =====================================================================
         # 1. Export connectivity to net/ directory
         # =====================================================================
-        if include_connectivity and self.network is not None:
+        # Use experiment's network if TimeSeries doesn't have one attached
+        network = self.network
+        if network is None and experiment is not None:
+            network = getattr(experiment, 'network', None)
+        if include_connectivity and network is not None:
             # --- Weights matrix ---
             weights_sidecar = NetworkSidecar(
                 Description="Structural connectivity weights matrix",
-                NumberOfNodes=int(self.network.weights.shape[0]),
+                NumberOfNodes=int(network.weights.shape[0]),
                 Units="a.u.",
                 Source="tvbo simulation",
                 GeneratedAt=datetime.now().isoformat(),
@@ -1889,7 +1893,7 @@ class TimeSeries(BaseTimeSeries):
             weights_json_path = weights_tsv_path.replace(".tsv", ".json")
 
             weights_df = pd.DataFrame(
-                np.asarray(self.network.weights),
+                np.asarray(network.weights),
                 index=region_labels,
                 columns=region_labels,
             )
@@ -1898,9 +1902,12 @@ class TimeSeries(BaseTimeSeries):
             created_files["net"].append(weights_rel_path)
 
             # --- Distances (tract lengths) matrix ---
+            lengths = network.lengths if hasattr(network, 'lengths') else getattr(network, 'tract_lengths', None)
+            if lengths is None:
+                lengths = np.zeros_like(network.weights)
             distances_sidecar = NetworkSidecar(
                 Description="Tract lengths (distances) between regions",
-                NumberOfNodes=int(self.network.tract_lengths.shape[0]),
+                NumberOfNodes=int(lengths.shape[0]),
                 Units="mm",
                 Source="tvbo simulation",
                 GeneratedAt=datetime.now().isoformat(),
@@ -1921,7 +1928,7 @@ class TimeSeries(BaseTimeSeries):
             distances_json_path = distances_tsv_path.replace(".tsv", ".json")
 
             distances_df = pd.DataFrame(
-                np.asarray(self.network.tract_lengths),
+                np.asarray(lengths),
                 index=region_labels,
                 columns=region_labels,
             )
@@ -1930,10 +1937,10 @@ class TimeSeries(BaseTimeSeries):
             created_files["net"].append(distances_rel_path)
 
             # --- Coordinates if available ---
-            if hasattr(self.network, "centres") and self.network.centres is not None:
+            if hasattr(network, "centres") and network.centres is not None:
                 coord_sidecar = CoordinateSidecar(
                     Description="Region center coordinates",
-                    NumberOfNodes=int(self.network.centres.shape[0]),
+                    NumberOfNodes=int(network.centres.shape[0]),
                     CoordinateSystem="MNI152NLin6Asym",
                     Units="mm",
                     Columns=["x", "y", "z"],
@@ -1953,7 +1960,7 @@ class TimeSeries(BaseTimeSeries):
                 coord_json_path = coord_tsv_path.replace(".tsv", ".json")
 
                 coord_df = pd.DataFrame(
-                    np.asarray(self.network.centres),
+                    np.asarray(network.centres),
                     columns=["x", "y", "z"],
                     index=region_labels,
                 )

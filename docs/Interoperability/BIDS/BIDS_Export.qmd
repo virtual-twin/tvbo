@@ -63,7 +63,7 @@ import json
 import numpy as np
 
 # Import TVB-O components
-from tvbo.knowledge.simulation.network import Coupling
+from tvbo import Coupling
 from tvbo.knowledge import Integrator
 from tvbo import Network,SimulationExperiment,Dynamics
 ```
@@ -85,7 +85,7 @@ dynamics.coupling_inputs['c_glob'] = CouplingInput(name='c_glob')
 dynamics.coupling_terms['c_glob'] = Parameter(name='c_glob')
 
 # Define coupling function
-coupling = Coupling(name="Linear")
+coupling = Coupling.from_ontology('Linear')
 
 # Create the simulation experiment
 experiment = SimulationExperiment(
