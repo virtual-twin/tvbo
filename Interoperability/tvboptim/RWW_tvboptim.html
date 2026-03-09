@@ -152,90 +152,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-    </ul>
-  </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Interoperability</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">tvboptim</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/index.html">
- <span class="dropdown-text">tvboptim Backend</span></a>
+  <li class="nav-item">
+    <a class="nav-link active" href="../../Interoperability/index.html" aria-current="page"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/JR_tvboptim.html">
- <span class="dropdown-text">JR Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/RWW_tvboptim.html">
- <span class="dropdown-text">RWW Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
- <span class="dropdown-text">EI Tuning</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">PyRates</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/index.html">
- <span class="dropdown-text">PyRates Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Analysis.html">
- <span class="dropdown-text">PyRates Analysis</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">
- <span class="dropdown-text">PyRates Bifurcation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
- <span class="dropdown-text">Heterogeneous Networks</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">BIDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/index.html">
- <span class="dropdown-text">BIDS Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_Export.html">
- <span class="dropdown-text">BIDS Export</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_comp_modelling.md">
- <span class="dropdown-text">BIDS Computational Modelling</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">OpenMINDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/OpenMINDS.html">
- <span class="dropdown-text">OpenMINDS Interoperability</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">ModelingToolkit.jl</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/index.html">
- <span class="dropdown-text">MTK Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/higher_order.html">
- <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../Developer/contributing.html"> 
 <span class="menu-text">Developer</span></a>
@@ -566,7 +490,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Complete BOLD functional connectivity simulation &amp; optimization: simulation, exploration, global and regional parameter fitting.</p>
-<div id="ff285173" class="cell" data-execution_count="2">
+<div id="92222f6c" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"XLA_FLAGS"</span>] <span class="op">=</span> <span class="st">"--xla_force_host_platform_device_count=8"</span></span>
@@ -577,6 +501,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"../../../database/experiments/RWW_BOLD_FC_Optimization.yaml"</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> exp.run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+/Users/leonmartin_bih/tools/tvbo/tvbo/export/experiment.py:1023: UserWarning: Could not configure delays: 'NoneType' object has no attribute 'value'
+  warnings.warn(f"Could not configure delays: {e}")</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ============================================================
@@ -602,57 +532,57 @@ STEP 4: Running optimization...
 Step 0: 0.291980
 Step 10: 0.284520
 Step 20: 0.253220
-Step 30: 0.255367
-Step 40: 0.258662
-Step 50: 0.245564
-Step 60: 0.245211
-Step 70: 0.244506
-Step 80: 0.244431
-Step 90: 0.244266
-Step 100: 0.244095
+Step 30: 0.255369
+Step 40: 0.258589
+Step 50: 0.245514
+Step 60: 0.245253
+Step 70: 0.244505
+Step 80: 0.244433
+Step 90: 0.244267
+Step 100: 0.244094
 Step 110: 0.243937
-Step 120: 0.243775
-Step 130: 0.243607
-Step 140: 0.243431
-Step 150: 0.243249
-Step 160: 0.243061
-Step 170: 0.242868
-Step 180: 0.242671
-Step 190: 0.242470
-Step 200: 0.242266
-Step 210: 0.242060
-Step 220: 0.241852
-Step 230: 0.241643
-Step 240: 0.241433
-Step 250: 0.241222
-Step 260: 0.241012
-Step 270: 0.240802
-Step 280: 0.240593
-Step 290: 0.240385
+Step 120: 0.243777
+Step 130: 0.243609
+Step 140: 0.243434
+Step 150: 0.243253
+Step 160: 0.243066
+Step 170: 0.242874
+Step 180: 0.242678
+Step 190: 0.242478
+Step 200: 0.242275
+Step 210: 0.242070
+Step 220: 0.241863
+Step 230: 0.241654
+Step 240: 0.241445
+Step 250: 0.241235
+Step 260: 0.241026
+Step 270: 0.240817
+Step 280: 0.240608
+Step 290: 0.240401
 
 &gt;&gt;&gt; Stage 2/2: regional_optimization
     Free parameters: w, I_o
     Warmup from: global_optimization
-Step 0: 0.240177
-Step 10: 0.219167
-Step 20: 0.193876
-Step 30: 0.184129
-Step 40: 0.178330
-Step 50: 0.169185
-Step 60: 0.166903
-Step 70: 0.179134
-Step 80: 0.162633
-Step 90: 0.164550
-Step 100: 0.160938
-Step 110: 0.159060
-Step 120: 0.158126
-Step 130: 0.167432
-Step 140: 0.159297
-Step 150: 0.172902
-Step 160: 0.163380
-Step 170: 0.159590
-Step 180: 0.156938
-Step 190: 0.156594
+Step 0: 0.240194
+Step 10: 0.219938
+Step 20: 0.193228
+Step 30: 0.184486
+Step 40: 0.178909
+Step 50: 0.169767
+Step 60: 0.165078
+Step 70: 0.210624
+Step 80: 0.180995
+Step 90: 0.187224
+Step 100: 0.174615
+Step 110: 0.164379
+Step 120: 0.160757
+Step 130: 0.159757
+Step 140: 0.157963
+Step 150: 0.159571
+Step 160: 0.157056
+Step 170: 0.158122
+Step 180: 0.157289
+Step 190: 0.156973
 
 ============================================================
   Multi-stage optimization complete
@@ -665,195 +595,195 @@ Experiment complete.
 </div>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="cell-fig-rww-results" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># | fig-cap: "**RWW BOLD FC Optimization.** (A) Neural activity. (B) BOLD signal. (C) Parameter landscape with trajectory. (D-F) FC matrices: target, global, regional. (G-H) FC scatter plots. (I-J) Fitted regional parameters."</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> Normalize</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.patheffects <span class="im">as</span> path_effects</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvboptim.observations.observation <span class="im">import</span> fc_corr</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>mosaic <span class="op">=</span> <span class="st">"""</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st">AABBCC</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="st">DDEEFF</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">GGHHII</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplot_mosaic(mosaic, layout<span class="op">=</span><span class="st">'tight'</span>, figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>cmap <span class="op">=</span> plt.cm.cividis</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>fc_target <span class="op">=</span> results.integration.main.observations.empirical_fc</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co"># A: Neural Activity</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"A"</span>]</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>t_max <span class="op">=</span> <span class="bu">int</span>(<span class="dv">1000</span> <span class="op">/</span> exp.integration.step_size)</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> results.integration.main.data[:t_max, <span class="dv">0</span>, :]</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>norm <span class="op">=</span> Normalize(vmin<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">min</span>(), vmax<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">max</span>())</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(data.shape[<span class="dv">1</span>]):</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    ax.plot(</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        results.integration.main.time[:t_max],</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        data[:, i],</span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])),</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"Time [ms]"</span>, ylabel<span class="op">=</span><span class="st">"S [a.u.]"</span>, title<span class="op">=</span><span class="st">"Neural Activity"</span>)</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="co"># B: BOLD Signal</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"B"</span>]</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>bold <span class="op">=</span> results.integration.main.observations.bold</span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> bold.data[:<span class="dv">60</span>, <span class="dv">0</span>, :]</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>norm <span class="op">=</span> Normalize(vmin<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">min</span>(), vmax<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">max</span>())</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(data.shape[<span class="dv">1</span>]):</span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    ax.plot(bold.time[:<span class="dv">60</span>], data[:, i], color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])), lw<span class="op">=</span><span class="fl">0.8</span>)</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"Time [s]"</span>, ylabel<span class="op">=</span><span class="st">"BOLD [a.u.]"</span>, title<span class="op">=</span><span class="st">"BOLD Signal"</span>)</span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># C: Parameter Landscape with Trajectory</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"C"</span>]</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>expl <span class="op">=</span> results.exploration.parameter_landscape</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>pc <span class="op">=</span> expl.grid.collect()</span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>G_vals, w_vals <span class="op">=</span> pc.coupling.FastLinearCoupling.G.flatten(), pc.dynamics.w.flatten()</span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> ax.imshow(</span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    jnp.stack(expl.results).reshape(<span class="dv">32</span>, <span class="dv">32</span>).T,</span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span><span class="st">"cividis_r"</span>,</span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>    extent<span class="op">=</span>[G_vals.<span class="bu">min</span>(), G_vals.<span class="bu">max</span>(), w_vals.<span class="bu">min</span>(), w_vals.<span class="bu">max</span>()],</span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>    origin<span class="op">=</span><span class="st">"lower"</span>,</span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>    aspect<span class="op">=</span><span class="st">"auto"</span>,</span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">"Loss"</span>, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial &amp; fitted points</span></span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> label, G, w, dy <span class="kw">in</span> [</span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>    (</span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Initial"</span>,</span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>        results.state.coupling.FastLinearCoupling.G,</span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>        results.state.dynamics.w,</span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="fl">0.03</span>,</span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>    (</span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Optimized"</span>,</span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>        results.global_optimization.fitted_params.coupling.FastLinearCoupling.G.value,</span>
-<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>        results.global_optimization.fitted_params.dynamics.w.value,</span>
-<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span><span class="fl">0.05</span>,</span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>]:</span>
-<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>    ax.scatter(</span>
-<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>        G, w, color<span class="op">=</span><span class="st">"white"</span>, s<span class="op">=</span><span class="dv">80</span>, marker<span class="op">=</span><span class="st">"o"</span>, edgecolors<span class="op">=</span><span class="st">"k"</span>, linewidths<span class="op">=</span><span class="dv">2</span>, zorder<span class="op">=</span><span class="dv">5</span></span>
-<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>    ax.annotate(</span>
-<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>        label,</span>
-<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>        (G, w),</span>
-<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>        xytext<span class="op">=</span>(G, w <span class="op">+</span> dy),</span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span><span class="st">"white"</span>,</span>
-<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>        fontweight<span class="op">=</span><span class="st">"bold"</span>,</span>
-<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>        ha<span class="op">=</span><span class="st">"center"</span>,</span>
-<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>        path_effects<span class="op">=</span>[path_effects.withStroke(linewidth<span class="op">=</span><span class="dv">3</span>, foreground<span class="op">=</span><span class="st">"black"</span>)],</span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a><span class="co"># Trajectory</span></span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>route <span class="op">=</span> results.optimization.global_optimization.state_trajectory</span>
-<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>ax.scatter(</span>
-<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>    [s.coupling.FastLinearCoupling.G.value <span class="cf">for</span> s <span class="kw">in</span> route],</span>
-<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>    [s.dynamics.w.value <span class="cf">for</span> s <span class="kw">in</span> route],</span>
-<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"white"</span>,</span>
-<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    marker<span class="op">=</span><span class="st">"o"</span>,</span>
-<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>    edgecolors<span class="op">=</span><span class="st">"k"</span>,</span>
-<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>    linewidths<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>    zorder<span class="op">=</span><span class="dv">4</span>,</span>
-<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"G"</span>, ylabel<span class="op">=</span><span class="st">"w"</span>, title<span class="op">=</span><span class="st">"Exploration"</span>)</span>
-<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="co"># D-F: FC Matrices</span></span>
-<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, fc, title <span class="kw">in</span> [</span>
-<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"D"</span>, np.array(results.optimization.global_optimization.simulation.observations.fc), <span class="ss">f"Global"</span>),</span>
-<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"E"</span>, np.array(results.optimization.regional_optimization.simulation.observations.fc), <span class="ss">f"Regional"</span>),</span>
-<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"F"</span>, fc_target, <span class="st">"Target FC"</span>),</span>
-<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>]:</span>
-<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[key]</span>
-<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>    fc_plot <span class="op">=</span> np.copy(fc)</span>
-<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>    np.fill_diagonal(fc_plot, np.nan)</span>
-<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>    ax.imshow(fc_plot, cmap<span class="op">=</span><span class="st">"cividis"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.9</span>)</span>
-<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>    ax.<span class="bu">set</span>(xticks<span class="op">=</span>[], yticks<span class="op">=</span>[], title<span class="op">=</span>title)</span>
-<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a><span class="co"># G-H: Scatter Plots</span></span>
-<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>triu <span class="op">=</span> np.triu_indices_from(fc_target, k<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, fc, title <span class="kw">in</span> [</span>
-<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"G"</span>, results.optimization.global_optimization.simulation.observations.fc, <span class="st">"Global Fit"</span>),</span>
-<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"H"</span>, results.optimization.regional_optimization.simulation.observations.fc, <span class="st">"Regional Fit"</span>),</span>
-<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>]:</span>
-<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[key]</span>
-<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>    ax.scatter(fc_target[triu], np.array(fc)[triu], alpha<span class="op">=</span><span class="fl">0.3</span>, s<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">"royalblue"</span>)</span>
-<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>    ax.plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">"k--"</span>, lw<span class="op">=</span><span class="fl">1.5</span>)</span>
-<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>    ax.<span class="bu">set</span>(</span>
-<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>        xlabel<span class="op">=</span><span class="st">"Empirical FC"</span>,</span>
-<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a>        ylabel<span class="op">=</span><span class="st">"Simulated FC"</span>,</span>
-<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"r=</span><span class="sc">{</span>fc_corr(fc, fc_target)<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
-<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a>        aspect<span class="op">=</span><span class="st">"equal"</span>,</span>
-<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a><span class="co"># I: Fitted Regional Parameters (dual y-axis)</span></span>
-<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>mean_conn <span class="op">=</span> exp.network.weights.mean(axis<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a>opt_g, opt_r <span class="op">=</span> results.global_optimization, results.regional_optimization</span>
-<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> axes[<span class="st">"I"</span>]</span>
-<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> ax1.twinx()</span>
-<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a><span class="co"># Left axis: w (blue)</span></span>
-<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>ax1.scatter(</span>
-<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>    mean_conn,</span>
-<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>    opt_r.fitted_params.dynamics.w.value.flatten(),</span>
-<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.7</span>,</span>
-<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="dv">5</span>,</span>
-<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"royalblue"</span>,</span>
-<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>    edgecolors<span class="op">=</span><span class="st">"k"</span>,</span>
-<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">"w (regional)"</span>,</span>
-<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>ax1.axhline(</span>
-<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>    opt_g.fitted_params.dynamics.w.value,</span>
-<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"royalblue"</span>,</span>
-<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>    ls<span class="op">=</span><span class="st">"--"</span>,</span>
-<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="dv">2</span>,</span>
-<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="ss">f"w (global): </span><span class="sc">{</span><span class="bu">float</span>(opt_g.fitted_params.dynamics.w.value)<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
-<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a>ax1.set_xlabel(<span class="st">"Mean Connectivity"</span>)</span>
-<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">"w"</span>, color<span class="op">=</span><span class="st">"royalblue"</span>)</span>
-<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>ax1.tick_params(axis<span class="op">=</span><span class="st">"y"</span>, labelcolor<span class="op">=</span><span class="st">"royalblue"</span>)</span>
-<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a><span class="co"># Right axis: I_o (orange)</span></span>
-<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>ax2.scatter(</span>
-<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a>    mean_conn,</span>
-<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>    opt_r.fitted_params.dynamics.I_o.value.flatten(),</span>
-<span id="cb3-162"><a href="#cb3-162" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.7</span>,</span>
-<span id="cb3-163"><a href="#cb3-163" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="dv">5</span>,</span>
-<span id="cb3-164"><a href="#cb3-164" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"darkorange"</span>,</span>
-<span id="cb3-165"><a href="#cb3-165" aria-hidden="true" tabindex="-1"></a>    edgecolors<span class="op">=</span><span class="st">"k"</span>,</span>
-<span id="cb3-166"><a href="#cb3-166" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb3-167"><a href="#cb3-167" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">"I_o (regional)"</span>,</span>
-<span id="cb3-168"><a href="#cb3-168" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-169"><a href="#cb3-169" aria-hidden="true" tabindex="-1"></a>ax2.axhline(</span>
-<span id="cb3-170"><a href="#cb3-170" aria-hidden="true" tabindex="-1"></a>    opt_g.fitted_params.dynamics.I_o,</span>
-<span id="cb3-171"><a href="#cb3-171" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"darkorange"</span>,</span>
-<span id="cb3-172"><a href="#cb3-172" aria-hidden="true" tabindex="-1"></a>    ls<span class="op">=</span><span class="st">"--"</span>,</span>
-<span id="cb3-173"><a href="#cb3-173" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="dv">2</span>,</span>
-<span id="cb3-174"><a href="#cb3-174" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="ss">f"I_o (global): </span><span class="sc">{</span><span class="bu">float</span>(opt_g.fitted_params.dynamics.I_o)<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
-<span id="cb3-175"><a href="#cb3-175" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-176"><a href="#cb3-176" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">"I_o"</span>, color<span class="op">=</span><span class="st">"darkorange"</span>)</span>
-<span id="cb3-177"><a href="#cb3-177" aria-hidden="true" tabindex="-1"></a>ax2.tick_params(axis<span class="op">=</span><span class="st">"y"</span>, labelcolor<span class="op">=</span><span class="st">"darkorange"</span>)</span>
-<span id="cb3-178"><a href="#cb3-178" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-179"><a href="#cb3-179" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"Regional Parameters"</span>)</span>
-<span id="cb3-180"><a href="#cb3-180" aria-hidden="true" tabindex="-1"></a><span class="co"># lines1, labels1 = ax1.get_legend_handles_labels()</span></span>
-<span id="cb3-181"><a href="#cb3-181" aria-hidden="true" tabindex="-1"></a><span class="co"># lines2, labels2 = ax2.get_legend_handles_labels()</span></span>
-<span id="cb3-182"><a href="#cb3-182" aria-hidden="true" tabindex="-1"></a><span class="co"># ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8)</span></span>
-<span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-184"><a href="#cb3-184" aria-hidden="true" tabindex="-1"></a>plt.suptitle(</span>
-<span id="cb3-185"><a href="#cb3-185" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Reduced Wong-Wang BOLD FC Optimization"</span>, fontsize<span class="op">=</span><span class="dv">14</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>, y<span class="op">=</span><span class="dv">1</span></span>
-<span id="cb3-186"><a href="#cb3-186" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-187"><a href="#cb3-187" aria-hidden="true" tabindex="-1"></a>bsplot.style.format_fig(fig)</span>
-<span id="cb3-188"><a href="#cb3-188" aria-hidden="true" tabindex="-1"></a><span class="co">##</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-fig-rww-results" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># | fig-cap: "**RWW BOLD FC Optimization.** (A) Neural activity. (B) BOLD signal. (C) Parameter landscape with trajectory. (D-F) FC matrices: target, global, regional. (G-H) FC scatter plots. (I-J) Fitted regional parameters."</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> Normalize</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.patheffects <span class="im">as</span> path_effects</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvboptim.observations.observation <span class="im">import</span> fc_corr</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>mosaic <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="st">AABBCC</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="st">DDEEFF</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="st">GGHHII</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplot_mosaic(mosaic, layout<span class="op">=</span><span class="st">'tight'</span>, figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>cmap <span class="op">=</span> plt.cm.cividis</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>fc_target <span class="op">=</span> results.integration.observations.empirical_fc</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co"># A: Neural Activity</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"A"</span>]</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>t_max <span class="op">=</span> <span class="bu">int</span>(<span class="dv">1000</span> <span class="op">/</span> exp.integration.step_size)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> results.integration.data[:t_max, <span class="dv">0</span>, :]</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>norm <span class="op">=</span> Normalize(vmin<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">min</span>(), vmax<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">max</span>())</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(data.shape[<span class="dv">1</span>]):</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    ax.plot(</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        results.integration.time[:t_max],</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        data[:, i],</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])),</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"Time [ms]"</span>, ylabel<span class="op">=</span><span class="st">"S [a.u.]"</span>, title<span class="op">=</span><span class="st">"Neural Activity"</span>)</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co"># B: BOLD Signal</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"B"</span>]</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>bold <span class="op">=</span> results.integration.observations.bold</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> bold.data[:<span class="dv">60</span>, <span class="dv">0</span>, :]</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>norm <span class="op">=</span> Normalize(vmin<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">min</span>(), vmax<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">max</span>())</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(data.shape[<span class="dv">1</span>]):</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    ax.plot(bold.time[:<span class="dv">60</span>], data[:, i], color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])), lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"Time [s]"</span>, ylabel<span class="op">=</span><span class="st">"BOLD [a.u.]"</span>, title<span class="op">=</span><span class="st">"BOLD Signal"</span>)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="co"># C: Parameter Landscape with Trajectory</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"C"</span>]</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>expl <span class="op">=</span> results.exploration.parameter_landscape</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>pc <span class="op">=</span> expl.grid.collect()</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>G_vals, w_vals <span class="op">=</span> pc.coupling.FastLinearCoupling.G.flatten(), pc.dynamics.w.flatten()</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> ax.imshow(</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    jnp.stack(expl.results).reshape(<span class="dv">32</span>, <span class="dv">32</span>).T,</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span><span class="st">"cividis_r"</span>,</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    extent<span class="op">=</span>[G_vals.<span class="bu">min</span>(), G_vals.<span class="bu">max</span>(), w_vals.<span class="bu">min</span>(), w_vals.<span class="bu">max</span>()],</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>    origin<span class="op">=</span><span class="st">"lower"</span>,</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    aspect<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">"Loss"</span>, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial &amp; fitted points</span></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> label, G, w, dy <span class="kw">in</span> [</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>    (</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Initial"</span>,</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>        results.state.coupling.FastLinearCoupling.G,</span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>        results.state.dynamics.w,</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>        <span class="fl">0.03</span>,</span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a>    (</span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Optimized"</span>,</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>        results.global_optimization.fitted_params.coupling.FastLinearCoupling.G.value,</span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>        results.global_optimization.fitted_params.dynamics.w.value,</span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span><span class="fl">0.05</span>,</span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>    ax.scatter(</span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>        G, w, color<span class="op">=</span><span class="st">"white"</span>, s<span class="op">=</span><span class="dv">80</span>, marker<span class="op">=</span><span class="st">"o"</span>, edgecolors<span class="op">=</span><span class="st">"k"</span>, linewidths<span class="op">=</span><span class="dv">2</span>, zorder<span class="op">=</span><span class="dv">5</span></span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>    ax.annotate(</span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>        label,</span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a>        (G, w),</span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>        xytext<span class="op">=</span>(G, w <span class="op">+</span> dy),</span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span><span class="st">"white"</span>,</span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>        fontweight<span class="op">=</span><span class="st">"bold"</span>,</span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>        ha<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a>        path_effects<span class="op">=</span>[path_effects.withStroke(linewidth<span class="op">=</span><span class="dv">3</span>, foreground<span class="op">=</span><span class="st">"black"</span>)],</span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a><span class="co"># Trajectory</span></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>route <span class="op">=</span> results.optimization.global_optimization.state_trajectory</span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>ax.scatter(</span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>    [s.coupling.FastLinearCoupling.G.value <span class="cf">for</span> s <span class="kw">in</span> route],</span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>    [s.dynamics.w.value <span class="cf">for</span> s <span class="kw">in</span> route],</span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"white"</span>,</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>    marker<span class="op">=</span><span class="st">"o"</span>,</span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>    edgecolors<span class="op">=</span><span class="st">"k"</span>,</span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>    linewidths<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>    zorder<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"G"</span>, ylabel<span class="op">=</span><span class="st">"w"</span>, title<span class="op">=</span><span class="st">"Exploration"</span>)</span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a><span class="co"># D-F: FC Matrices</span></span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, fc, title <span class="kw">in</span> [</span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"D"</span>, np.array(results.optimization.global_optimization.simulation.observations.fc), <span class="ss">f"Global"</span>),</span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"E"</span>, np.array(results.optimization.regional_optimization.simulation.observations.fc), <span class="ss">f"Regional"</span>),</span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"F"</span>, fc_target, <span class="st">"Target FC"</span>),</span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[key]</span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a>    fc_plot <span class="op">=</span> np.copy(fc)</span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a>    np.fill_diagonal(fc_plot, np.nan)</span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a>    ax.imshow(fc_plot, cmap<span class="op">=</span><span class="st">"cividis"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.9</span>)</span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a>    ax.<span class="bu">set</span>(xticks<span class="op">=</span>[], yticks<span class="op">=</span>[], title<span class="op">=</span>title)</span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a><span class="co"># G-H: Scatter Plots</span></span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a>triu <span class="op">=</span> np.triu_indices_from(fc_target, k<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, fc, title <span class="kw">in</span> [</span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"G"</span>, results.optimization.global_optimization.simulation.observations.fc, <span class="st">"Global Fit"</span>),</span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"H"</span>, results.optimization.regional_optimization.simulation.observations.fc, <span class="st">"Regional Fit"</span>),</span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[key]</span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>    ax.scatter(fc_target[triu], np.array(fc)[triu], alpha<span class="op">=</span><span class="fl">0.3</span>, s<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">"royalblue"</span>)</span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a>    ax.plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">"k--"</span>, lw<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a>    ax.<span class="bu">set</span>(</span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a>        xlabel<span class="op">=</span><span class="st">"Empirical FC"</span>,</span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a>        ylabel<span class="op">=</span><span class="st">"Simulated FC"</span>,</span>
+<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="ss">f"r=</span><span class="sc">{</span>fc_corr(fc, fc_target)<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
+<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a>        aspect<span class="op">=</span><span class="st">"equal"</span>,</span>
+<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a><span class="co"># I: Fitted Regional Parameters (dual y-axis)</span></span>
+<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a>mean_conn <span class="op">=</span> exp.network.weights.mean(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a>opt_g, opt_r <span class="op">=</span> results.global_optimization, results.regional_optimization</span>
+<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-132"><a href="#cb4-132" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> axes[<span class="st">"I"</span>]</span>
+<span id="cb4-133"><a href="#cb4-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-134"><a href="#cb4-134" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> ax1.twinx()</span>
+<span id="cb4-135"><a href="#cb4-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-136"><a href="#cb4-136" aria-hidden="true" tabindex="-1"></a><span class="co"># Left axis: w (blue)</span></span>
+<span id="cb4-137"><a href="#cb4-137" aria-hidden="true" tabindex="-1"></a>ax1.scatter(</span>
+<span id="cb4-138"><a href="#cb4-138" aria-hidden="true" tabindex="-1"></a>    mean_conn,</span>
+<span id="cb4-139"><a href="#cb4-139" aria-hidden="true" tabindex="-1"></a>    opt_r.fitted_params.dynamics.w.value.flatten(),</span>
+<span id="cb4-140"><a href="#cb4-140" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.7</span>,</span>
+<span id="cb4-141"><a href="#cb4-141" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb4-142"><a href="#cb4-142" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"royalblue"</span>,</span>
+<span id="cb4-143"><a href="#cb4-143" aria-hidden="true" tabindex="-1"></a>    edgecolors<span class="op">=</span><span class="st">"k"</span>,</span>
+<span id="cb4-144"><a href="#cb4-144" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb4-145"><a href="#cb4-145" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">"w (regional)"</span>,</span>
+<span id="cb4-146"><a href="#cb4-146" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-147"><a href="#cb4-147" aria-hidden="true" tabindex="-1"></a>ax1.axhline(</span>
+<span id="cb4-148"><a href="#cb4-148" aria-hidden="true" tabindex="-1"></a>    opt_g.fitted_params.dynamics.w.value,</span>
+<span id="cb4-149"><a href="#cb4-149" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"royalblue"</span>,</span>
+<span id="cb4-150"><a href="#cb4-150" aria-hidden="true" tabindex="-1"></a>    ls<span class="op">=</span><span class="st">"--"</span>,</span>
+<span id="cb4-151"><a href="#cb4-151" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb4-152"><a href="#cb4-152" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="ss">f"w (global): </span><span class="sc">{</span><span class="bu">float</span>(opt_g.fitted_params.dynamics.w.value)<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
+<span id="cb4-153"><a href="#cb4-153" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-154"><a href="#cb4-154" aria-hidden="true" tabindex="-1"></a>ax1.set_xlabel(<span class="st">"Mean Connectivity"</span>)</span>
+<span id="cb4-155"><a href="#cb4-155" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">"w"</span>, color<span class="op">=</span><span class="st">"royalblue"</span>)</span>
+<span id="cb4-156"><a href="#cb4-156" aria-hidden="true" tabindex="-1"></a>ax1.tick_params(axis<span class="op">=</span><span class="st">"y"</span>, labelcolor<span class="op">=</span><span class="st">"royalblue"</span>)</span>
+<span id="cb4-157"><a href="#cb4-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-158"><a href="#cb4-158" aria-hidden="true" tabindex="-1"></a><span class="co"># Right axis: I_o (orange)</span></span>
+<span id="cb4-159"><a href="#cb4-159" aria-hidden="true" tabindex="-1"></a>ax2.scatter(</span>
+<span id="cb4-160"><a href="#cb4-160" aria-hidden="true" tabindex="-1"></a>    mean_conn,</span>
+<span id="cb4-161"><a href="#cb4-161" aria-hidden="true" tabindex="-1"></a>    opt_r.fitted_params.dynamics.I_o.value.flatten(),</span>
+<span id="cb4-162"><a href="#cb4-162" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.7</span>,</span>
+<span id="cb4-163"><a href="#cb4-163" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb4-164"><a href="#cb4-164" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"darkorange"</span>,</span>
+<span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a>    edgecolors<span class="op">=</span><span class="st">"k"</span>,</span>
+<span id="cb4-166"><a href="#cb4-166" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb4-167"><a href="#cb4-167" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">"I_o (regional)"</span>,</span>
+<span id="cb4-168"><a href="#cb4-168" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-169"><a href="#cb4-169" aria-hidden="true" tabindex="-1"></a>ax2.axhline(</span>
+<span id="cb4-170"><a href="#cb4-170" aria-hidden="true" tabindex="-1"></a>    opt_g.fitted_params.dynamics.I_o,</span>
+<span id="cb4-171"><a href="#cb4-171" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"darkorange"</span>,</span>
+<span id="cb4-172"><a href="#cb4-172" aria-hidden="true" tabindex="-1"></a>    ls<span class="op">=</span><span class="st">"--"</span>,</span>
+<span id="cb4-173"><a href="#cb4-173" aria-hidden="true" tabindex="-1"></a>    lw<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb4-174"><a href="#cb4-174" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="ss">f"I_o (global): </span><span class="sc">{</span><span class="bu">float</span>(opt_g.fitted_params.dynamics.I_o)<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
+<span id="cb4-175"><a href="#cb4-175" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-176"><a href="#cb4-176" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">"I_o"</span>, color<span class="op">=</span><span class="st">"darkorange"</span>)</span>
+<span id="cb4-177"><a href="#cb4-177" aria-hidden="true" tabindex="-1"></a>ax2.tick_params(axis<span class="op">=</span><span class="st">"y"</span>, labelcolor<span class="op">=</span><span class="st">"darkorange"</span>)</span>
+<span id="cb4-178"><a href="#cb4-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-179"><a href="#cb4-179" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"Regional Parameters"</span>)</span>
+<span id="cb4-180"><a href="#cb4-180" aria-hidden="true" tabindex="-1"></a><span class="co"># lines1, labels1 = ax1.get_legend_handles_labels()</span></span>
+<span id="cb4-181"><a href="#cb4-181" aria-hidden="true" tabindex="-1"></a><span class="co"># lines2, labels2 = ax2.get_legend_handles_labels()</span></span>
+<span id="cb4-182"><a href="#cb4-182" aria-hidden="true" tabindex="-1"></a><span class="co"># ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8)</span></span>
+<span id="cb4-183"><a href="#cb4-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-184"><a href="#cb4-184" aria-hidden="true" tabindex="-1"></a>plt.suptitle(</span>
+<span id="cb4-185"><a href="#cb4-185" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Reduced Wong-Wang BOLD FC Optimization"</span>, fontsize<span class="op">=</span><span class="dv">14</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>, y<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb4-186"><a href="#cb4-186" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-187"><a href="#cb4-187" aria-hidden="true" tabindex="-1"></a>bsplot.style.format_fig(fig)</span>
+<span id="cb4-188"><a href="#cb4-188" aria-hidden="true" tabindex="-1"></a><span class="co">##</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div id="fig-rww-results" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">

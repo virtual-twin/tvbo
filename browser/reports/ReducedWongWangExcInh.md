@@ -3,26 +3,6 @@
 ## ReducedWongWangExcInh
 Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.
 
-### Derived Variables
-$$
-J_{N S e} = J_{N}*S_{e}
-$$
-$$
-coupling = G*J_{N}*\left(c_{glob} + S_{e}*c_{local}\right)
-$$
-$$
-x_{e} = - b_{e} + a_{e}*\left(I_{ext} + coupling + I_{o}*W_{e} + J_{N S e}*w_{p} - J_{i}*S_{i}\right)
-$$
-$$
-x_{i} = - b_{i} + a_{i}*\left(J_{N S e} - S_{i} + I_{o}*W_{i} + coupling*\lambda\right)
-$$
-$$
-H_{e} = \frac{x_{e}}{1 - e^{- d_{e}*x_{e}}}
-$$
-$$
-H_{i} = \frac{x_{i}}{1 - e^{- d_{i}*x_{i}}}
-$$
-
 ### State Equations
 $$
 \dot{S_{e}} = - \frac{S_{e}}{\tau_{e}} + H_{e}*\gamma_{e}*\left(1 - S_{e}\right)
@@ -30,7 +10,6 @@ $$
 $$
 \dot{S_{i}} = H_{i}*\gamma_{i} - \frac{S_{i}}{\tau_{i}}
 $$
-
 
 ### Parameters
 
@@ -55,6 +34,28 @@ $$
 | $\tau_{e}$ | 100.0 | ms | Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al |
 | $\tau_{i}$ | 10.0 | ms | Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al |
 | $w_{p}$ | 1.4 | N/A | Excitatory population recurrence weight |
+
+### Derived Quantities
+#### Derived Variables
+$$
+J_{N S e} = J_{N}*S_{e}
+$$
+$$
+coupling = G*J_{N}*\left(c_{glob} + S_{e}*c_{local}\right)
+$$
+$$
+x_{e} = - b_{e} + a_{e}*\left(I_{ext} + coupling + I_{o}*W_{e} + J_{N S e}*w_{p} - J_{i}*S_{i}\right)
+$$
+$$
+x_{i} = - b_{i} + a_{i}*\left(J_{N S e} - S_{i} + I_{o}*W_{i} + coupling*\lambda\right)
+$$
+$$
+H_{e} = \frac{x_{e}}{1 - e^{- d_{e}*x_{e}}}
+$$
+$$
+H_{i} = \frac{x_{i}}{1 - e^{- d_{i}*x_{i}}}
+$$
+
 
 
 

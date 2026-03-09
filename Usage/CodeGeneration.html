@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Code Generation &amp; Export – TVB-O Documentation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../Usage/PDESimulation.html" rel="next">
+<link href="../Usage/Noise.html" rel="prev">
+<link href="../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
+<script src="//unpkg.com/3d-force-graph"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../_static/tvbo_python_square.svg" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">TVB-O Documentation</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../installation.html"> 
+<span class="menu-text">Installation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../api/index.html"> 
+<span class="menu-text">API Documentation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../datamodel/index.html"> 
+<span class="menu-text">Data Model</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../browser.html"> 
+<span class="menu-text">Knowledge Browser</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../Usage/index.html" aria-current="page"> 
+<span class="menu-text">Usage</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../Developer/contributing.html"> 
+<span class="menu-text">Developer</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/leon-k-martin/tvbo" title="tvbo GitHub" class="quarto-navigation-tool px-1" aria-label="tvbo GitHub"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/Events.html">Simulation Features</a></li><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Fundamentals</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/DefineDynamicalSystem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Defining Dynamical Systems</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/DefineNetworks.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Defining Networks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/SimulationExperiments.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simulation Experiments</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Observation &amp; Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/ObservationModels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation Models</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/ParameterExploration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Parameter Exploration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/ModelFitting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Fitting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/Algorithms.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Algorithms</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationAnalysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bifurcation Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Simulation Features</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/Events.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Events &amp; Stimulation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/Noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise &amp; Stochastic Integration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/CodeGeneration.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Code Generation &amp; Export</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Advanced</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PDE Simulation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/HeterogeneousNodes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Heterogeneous Node Dynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/HeterogeneousEdges.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Heterogeneous Edge Dynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/UnitValidation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Unit-Aware Computations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#code-generation" id="toc-code-generation" class="nav-link active" data-scroll-target="#code-generation">Code Generation</a>
+  <ul class="collapse">
+  <li><a href="#jax" id="toc-jax" class="nav-link" data-scroll-target="#jax">JAX</a></li>
+  <li><a href="#python-scipy" id="toc-python-scipy" class="nav-link" data-scroll-target="#python-scipy">Python (SciPy)</a></li>
+  <li><a href="#julia" id="toc-julia" class="nav-link" data-scroll-target="#julia">Julia</a></li>
+  </ul></li>
+  <li><a href="#all-code-generation-targets" id="toc-all-code-generation-targets" class="nav-link" data-scroll-target="#all-code-generation-targets">All Code Generation Targets</a>
+  <ul class="collapse">
+  <li><a href="#from-dynamics.render_codeformat" id="toc-from-dynamics.render_codeformat" class="nav-link" data-scroll-target="#from-dynamics.render_codeformat">From <code>Dynamics.render_code(format)</code></a></li>
+  <li><a href="#from-simulationexperiment.render_codeformat" id="toc-from-simulationexperiment.render_codeformat" class="nav-link" data-scroll-target="#from-simulationexperiment.render_codeformat">From <code>SimulationExperiment.render_code(format)</code></a></li>
+  </ul></li>
+  <li><a href="#export-formats" id="toc-export-formats" class="nav-link" data-scroll-target="#export-formats">Export Formats</a>
+  <ul class="collapse">
+  <li><a href="#yaml" id="toc-yaml" class="nav-link" data-scroll-target="#yaml">YAML</a></li>
+  <li><a href="#bids" id="toc-bids" class="nav-link" data-scroll-target="#bids">BIDS</a></li>
+  <li><a href="#openminds" id="toc-openminds" class="nav-link" data-scroll-target="#openminds">OpenMINDS</a></li>
+  </ul></li>
+  <li><a href="#model-reports" id="toc-model-reports" class="nav-link" data-scroll-target="#model-reports">Model Reports</a></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See Also</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/CodeGeneration.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/Events.html">Simulation Features</a></li><li class="breadcrumb-item"><a href="../Usage/CodeGeneration.html">Code Generation &amp; Export</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Code Generation &amp; Export</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Generate standalone simulation code in multiple languages and export experiments to standard formats.</p>
+<section id="code-generation" class="level2">
+<h2 class="anchored" data-anchor-id="code-generation">Code Generation</h2>
+<p>View the generated source code for any backend:</p>
+<div id="e5aec208" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Dynamics.from_file(<span class="st">"../../database/models/Generic2dOscillator.yaml"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(</code></pre>
+</div>
+</div>
+<section id="jax" class="level3">
+<h3 class="anchored" data-anchor-id="jax">JAX</h3>
+<div id="89f0e2b1" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(exp.render_code(<span class="st">'jax'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+
+import jax
+from tvbo.data.types import TimeSeries
+from tvbo.utils import Bunch
+import jax.numpy as jnp
+
+
+
+def cfun(weights, history, current_state, p, delay_indices, t):
+    n_node = weights.shape[0]
+    a, b = p.a, p.b
+
+
+    x_j = jnp.array([
+
+    current_state[0, delay_indices[1]],
+    
+    ])
+
+
+    pre = x_j
+    pre = pre.reshape(-1, n_node ,n_node)
+
+    def op(x): return jnp.sum(weights * x, axis=-1)
+    gx = jax.vmap(op, in_axes=0)(pre)
+    return b + a*gx
+
+
+
+
+
+
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    I = _p.I
+    a = _p.a
+    alpha = _p.alpha
+    b = _p.b
+    beta = _p.beta
+    c = _p.c
+    d = _p.d
+    e = _p.e
+    f = _p.f
+    g = _p.g
+    gamma = _p.gamma
+    tau = _p.tau
+
+    # Coupling
+    c_glob = cX[0]
+    c_pop0 = cX[1]
+    local_coupling = 0
+
+
+    # State variables
+    V = current_state[0]
+    W = current_state[1]
+
+
+    # Derivatives
+    dV_dt = d*tau*(I*gamma + V*g + V*local_coupling + W*alpha + c_glob*gamma + e*V**2 - f*V**3)
+    dW_dt = d*(a + V*b + c*V**2 - W*beta)/tau
+
+    derivatives = jnp.array([dV_dt, dW_dt])
+
+    return derivatives
+
+
+
+
+
+
+
+def integrate(state, weights, dt, params_integrate, delay_indices, external_input):
+    """
+    Heun Integration
+    ================
+    """
+    t, _ = external_input
+    noise = 0
+
+
+    params_dfun, params_cfun, params_stimulus = params_integrate
+
+    history, current_state = state
+    stimulus = 0
+
+
+    cX = jax.vmap(cfun, in_axes=(None, -1, -1, None, None, None), out_axes=-1)(weights, history, current_state, params_cfun, delay_indices, t)
+
+    dX0 = dfun(current_state, t, cX, params_dfun)
+
+    X = current_state
+
+
+
+    # Calculate intermediate step X1
+    X1 = X + dX0 * dt + noise + stimulus * dt
+
+    # Calculate derivative X1
+    dX1 = dfun(X1, t, cX, params_dfun)
+    # Calculate the state change dX
+    dX = (dX0 + dX1) * (dt / 2)
+    next_state = current_state + (dX)
+
+
+    return (history, next_state), next_state
+
+
+
+import jax
+import jax.numpy as jnp
+
+def g(dt, nt, n_svar, n_nodes, n_modes, seed=0, sigma_vec=None, sigma=0.0, state=None):
+    """Standard Gaussian white noise using xi ~ N(0,1).
+
+    Returns (nt, n_svar, n_nodes, n_modes): sqrt(dt) * sigma * xi.
+
+    - sigma_vec: optional per-state sigma (length n_svar).
+    - sigma: scalar fallback when sigma_vec is None.
+    - state: optional current state placeholder for future correlative noise.
+    """
+    key = jax.random.PRNGKey(int(seed))
+    xi = jax.random.normal(key, (nt, n_svar, n_nodes, n_modes))
+
+    if sigma_vec is not None:
+        sigma_b = jnp.asarray(sigma_vec)[None, ..., None, None]
+    else:
+        sigma_b = jnp.asarray(sigma)
+
+    noise = jnp.sqrt(dt) * sigma_b * xi
+    return noise
+
+
+
+
+
+
+def monitor_raw(time_steps, trace, params, t_offset = 0):
+    dt = 0.01220703125
+    return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw")
+
+
+def transform_parameters(_p):
+    I, a, alpha, b, beta, c, d, e, f, g, gamma, tau = _p.I, _p.a, _p.alpha, _p.b, _p.beta, _p.c, _p.d, _p.e, _p.f, _p.g, _p.gamma, _p.tau
+    
+    return _p
+
+c_vars = jnp.array([0]).astype(jnp.int32)
+
+def kernel(state):
+    # problem dimensions
+    n_nodes = 1
+    n_svar = 2
+    n_cvar = 1
+    n_modes = 1
+    nh = 1
+
+    current_state, history = (state.initial_conditions.data[-1], None) ## history = current_state
+
+    ics = (history, current_state)
+    weights = state.network.weights_matrix
+
+    dn = jnp.arange(int(n_nodes)) * jnp.ones((int(n_nodes), int(n_nodes))).astype(jnp.int32)
+    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(jnp.int32) if state.network.conduction_speed.value &gt; 0 else jnp.zeros((int(n_nodes), int(n_nodes)), dtype=jnp.int32)
+    di = -1 * idelays - 1
+    delay_indices = (di, dn)
+
+    dt = state.dt
+    nt = state.nt
+    time_steps = jnp.arange(0, nt)
+
+    # Generate batch noise using xi with per-state sigma_vec.
+    # Prefer state-provided sigma_vec (supports vmapped sweeps); fallback to experiment-level constants.
+    seed = getattr(state.noise, 'seed', 0) if hasattr(state.noise, 'seed') else 0
+    try:
+        sigma_vec_runtime = getattr(state.noise, 'sigma_vec', None)
+    except Exception:
+        sigma_vec_runtime = None
+    sigma_vec = sigma_vec_runtime if sigma_vec_runtime is not None else jnp.array([0.,0.])
+    noise = g(dt, nt, n_svar, n_nodes, n_modes, seed=seed, sigma_vec=sigma_vec)
+
+
+    p = transform_parameters(state.parameters.dynamics)
+    params_integrate = (p, state.parameters.coupling, state.stimulus)
+
+    op = lambda ics, external_input: integrate(ics, weights, dt, params_integrate, delay_indices, external_input)
+    latest_carry, res = jax.lax.scan(op, ics, (time_steps, noise))
+
+    trace = res
+
+
+    
+
+
+
+    trace = jnp.hstack((
+        trace[:, [0], :],
+        trace[:, [1], :],
+        ))
+
+    t_offset = 0
+    time_steps = time_steps + 1
+
+    
+    labels_dimensions = {
+        "Time": None,
+        "State Variable": ['V', 'W'],
+        "Space": ['0'],
+        "Mode": ['m0'],
+    }
+    return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw", sample_period=dt, labels_dimensions=labels_dimensions)
+</code></pre>
+</div>
+</div>
+</section>
+<section id="python-scipy" class="level3">
+<h3 class="anchored" data-anchor-id="python-scipy">Python (SciPy)</h3>
+<div id="f713b0de" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.render_code(<span class="st">'python'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>import numpy as np
+import scipy.special
+
+
+def Generic2dOscillator(
+    current_state,
+    t,
+    I=0.0,
+    a=-2.0,
+    alpha=1.0,
+    b=-10.0,
+    beta=1.0,
+    c=0.0,
+    d=0.02,
+    e=3.0,
+    f=1.0,
+    g=0.0,
+    gamma=1.0,
+    tau=1.0,
+    c_glob=0.0,
+    c_pop0=0.0,
+    stimulus=False,
+):
+    stim_t = stimulus(t) if stimulus else 0.0
+    local_coupling = 0.0
+
+    # State variables
+    V = current_state[0]
+    W = current_state[1]
+
+    # Derivatives
+    dV_dt = (
+        d
+        * tau
+        * (
+            I * gamma
+            + V * g
+            + V * local_coupling
+            + W * alpha
+            + c_glob * gamma
+            + e * V**2
+            - f * V**3
+        )
+    )
+    dW_dt = d * (a + V * b + c * V**2 - W * beta) / tau
+
+    derivatives = np.array([dV_dt, dW_dt])
+
+    return derivatives
+</code></pre>
+</div>
+</div>
+</section>
+<section id="julia" class="level3">
+<h3 class="anchored" data-anchor-id="julia">Julia</h3>
+<div id="15e2a1d8" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.render_code(<span class="st">'julia'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+
+
+
+
+
+
+
+function Generic2dOscillator!(dx, x, p, t = 0)
+
+    (;I, a, alpha, b, beta, c, d, e, f, g, gamma, tau, c_glob, c_pop0, local_coupling) = p
+
+    V, W = x
+
+
+
+
+    dx[1] = d .* tau .* (I .* gamma + V .* g + V .* local_coupling + W .* alpha + c_glob .* gamma + e .* V .^ 2 - f .* V .^ 3)
+    dx[2] = d .* (a + V .* b + c .* V .^ 2 - W .* beta) ./ tau
+    dx
+end
+
+
+# Parameter values
+p = (I = 0.0, a = -2.0, alpha = 1.0, b = -10.0, beta = 1.0, c = 0.0, d = 0.02, e = 3.0, f = 1.0, g = 0.0, gamma = 1.0, tau = 1.0, c_glob = 0.0, c_pop0 = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (scalar state vector)
+u0 = [
+        0.1, # Initial value for V
+        0.1, # Initial value for W
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Generic2dOscillator!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+
+</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="all-code-generation-targets" class="level2">
+<h2 class="anchored" data-anchor-id="all-code-generation-targets">All Code Generation Targets</h2>
+<section id="from-dynamics.render_codeformat" class="level3">
+<h3 class="anchored" data-anchor-id="from-dynamics.render_codeformat">From <code>Dynamics.render_code(format)</code></h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Format</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>'tvb'</code></td>
+<td>TVB model class</td>
+</tr>
+<tr class="even">
+<td><code>'python'</code> / <code>'scipy'</code></td>
+<td>SciPy ODE function</td>
+</tr>
+<tr class="odd">
+<td><code>'autodiff'</code> / <code>'jax'</code></td>
+<td>JAX dfun kernel</td>
+</tr>
+<tr class="even">
+<td><code>'julia'</code></td>
+<td>DifferentialEquations.jl</td>
+</tr>
+<tr class="odd">
+<td><code>'bifurcation-julia'</code></td>
+<td>BifurcationKit.jl</td>
+</tr>
+<tr class="even">
+<td><code>'bifurcation-numcont'</code></td>
+<td>MatCont-style</td>
+</tr>
+<tr class="odd">
+<td><code>'bifurcation-auto7p'</code></td>
+<td>AUTO-07p</td>
+</tr>
+<tr class="even">
+<td><code>'pde-fem'</code></td>
+<td>scikit-fem PDE solver</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="from-simulationexperiment.render_codeformat" class="level3">
+<h3 class="anchored" data-anchor-id="from-simulationexperiment.render_codeformat">From <code>SimulationExperiment.render_code(format)</code></h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Format</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>'jax'</code> / <code>'autodiff'</code></td>
+<td>Full JAX simulation</td>
+</tr>
+<tr class="even">
+<td><code>'tvboptim'</code></td>
+<td>tvboptim experiment</td>
+</tr>
+<tr class="odd">
+<td><code>'tvb'</code></td>
+<td>TVB model class</td>
+</tr>
+<tr class="even">
+<td><code>'networkdynamics'</code></td>
+<td>NetworkDynamics.jl</td>
+</tr>
+<tr class="odd">
+<td><code>'mtk'</code></td>
+<td>ModelingToolkit.jl</td>
+</tr>
+<tr class="even">
+<td><code>'rateml'</code></td>
+<td>RateML Python + Numba</td>
+</tr>
+<tr class="odd">
+<td><code>'cuda'</code></td>
+<td>CUDA kernel</td>
+</tr>
+<tr class="even">
+<td><code>'pde'</code></td>
+<td>scikit-fem PDE</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="export-formats" class="level2">
+<h2 class="anchored" data-anchor-id="export-formats">Export Formats</h2>
+<section id="yaml" class="level3">
+<h3 class="anchored" data-anchor-id="yaml">YAML</h3>
+<div id="d6358738" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> exp.to_yaml()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(yaml_str[:<span class="dv">300</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>id: 1
+model:
+  name: Generic2dOscillator
+  parameters:
+    I:
+      name: I
+      definition: Baseline shift of the cubic nullcline
+      value: 0.0
+      domain:
+        lo: '-5.0'
+        hi: '5.0'
+        step: '0.01'
+        log_scale: false
+      description: Baseline shift of the cubic nullcli</code></pre>
+</div>
+</div>
+</section>
+<section id="bids" class="level3">
+<h3 class="anchored" data-anchor-id="bids">BIDS</h3>
+<p>Export as a <a href="https://bids.neuroimaging.io/">BEP034</a> computational modeling derivative:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>exp.to_bids(<span class="st">"output/derivatives/tvbo"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="openminds" class="level3">
+<h3 class="anchored" data-anchor-id="openminds">OpenMINDS</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>exp.to_openminds(<span class="st">"output/experiment.jsonld"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="model-reports" class="level2">
+<h2 class="anchored" data-anchor-id="model-reports">Model Reports</h2>
+<p>Generate formatted documentation of a model:</p>
+<div id="031a20ae" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>report <span class="op">=</span> model.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>Markdown(report)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="6">
+<section id="generic2doscillator" class="level2">
+<h2 class="anchored" data-anchor-id="generic2doscillator">Generic2dOscillator</h2>
+<p>The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables (‘V’, ‘W’)) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.</p>
+<section id="state-equations" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations">State Equations</h3>
+<p><span class="math display">\[
+\dot{V} = d*\tau*\left(I*\gamma + V*g + V*c_{local} + W*\alpha + c_{glob}*\gamma + e*V^{2} - f*V^{3}\right)
+\]</span> <span class="math display">\[
+\dot{W} = \frac{d*\left(a + V*b + c*V^{2} - W*\beta\right)}{\tau}
+\]</span></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">Parameters</h3>
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 20%">
+<col style="width: 18%">
+<col style="width: 32%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Parameter</strong></th>
+<th><strong>Value</strong></th>
+<th><strong>Unit</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(I\)</span></td>
+<td>0.0</td>
+<td>N/A</td>
+<td>Baseline shift of the cubic nullcline</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(a\)</span></td>
+<td>-2.0</td>
+<td>N/A</td>
+<td>Vertical shift of the configurable nullcline</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\alpha\)</span></td>
+<td>1.0</td>
+<td>N/A</td>
+<td>Constant parameter to scale the rate of feedback from the slow variable to the fast variable.</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(b\)</span></td>
+<td>-10.0</td>
+<td>N/A</td>
+<td>Linear slope of the configurable nullcline</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\beta\)</span></td>
+<td>1.0</td>
+<td>N/A</td>
+<td>Constant parameter to scale the rate of feedback from the slow variable to itself</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(c\)</span></td>
+<td>0.0</td>
+<td>N/A</td>
+<td>Parabolic term of the configurable nullcline</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(d\)</span></td>
+<td>0.02</td>
+<td>N/A</td>
+<td>Temporal scale factor</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(e\)</span></td>
+<td>3.0</td>
+<td>N/A</td>
+<td>Coefficient of the quadratic term of the cubic nullcline</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(f\)</span></td>
+<td>1.0</td>
+<td>N/A</td>
+<td>Coefficient of the cubic term of the cubic nullcline</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(g\)</span></td>
+<td>0.0</td>
+<td>N/A</td>
+<td>Coefficient of the linear term of the cubic nullcline</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\gamma\)</span></td>
+<td>1.0</td>
+<td>N/A</td>
+<td>Constant parameter to reproduce FHN dynamics where excitatory input currents are negative</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\tau\)</span></td>
+<td>1.0</td>
+<td>N/A</td>
+<td>A time-scale hierarchy can be introduced for the state variables :math:<code>V</code> and :math:<code>W</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. <em>Biophysical Journal</em>, 1(6), 445-466.</p>
+<p>Nagumo, J., Arimoto, S., &amp; Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. <em>Proceedings of the IRE</em>, 50(10), 2061-2070.</p>
+</section>
+</div>
+</div>
+</section>
+<section id="see-also" class="level2">
+<h2 class="anchored" data-anchor-id="see-also">See Also</h2>
+<ul>
+<li><a href="../Usage/SimulationExperiments.html">Simulation Experiments</a> — running experiments</li>
+<li><a href="../Interoperability/BIDS/BIDS_Export.html">BIDS Export</a> — detailed BIDS workflow</li>
+<li><a href="../Interoperability/OpenMINDS.html">OpenMINDS</a> — OpenMINDS JSON-LD export</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../Usage/Noise.html" class="pagination-link" aria-label="Noise &amp; Stochastic Integration">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Noise &amp; Stochastic Integration</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../Usage/PDESimulation.html" class="pagination-link" aria-label="PDE Simulation">
+        <span class="nav-page-text">PDE Simulation</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2025 Charité - Universitätsmedizin Berlin</p>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/CodeGeneration.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/quarto_pub">
+      <i class="bi bi-twitter" role="img" aria-label="Quarto Twitter">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/quarto-dev/quarto-cli">
+      <i class="bi bi-github" role="img" aria-label="Quarto GitHub">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

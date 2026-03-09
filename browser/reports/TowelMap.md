@@ -4,7 +4,6 @@
 Folded-towel hyperchaotic map with two positive Lyapunov exponents, introduced by
 Rössler. Named for the towel-like appearance of its attractor projections.
 
-
 ### State Equations
 $$
 x = - \left(1 - 2*z\right)*\left(0.0175 + 0.05*y\right) + 3.8*x*\left(1 - x\right)
@@ -16,12 +15,13 @@ $$
 z = b*y + 3.78*z*\left(1 - z\right)
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
 | $b$ | 0.2 | N/A | Coupling coefficient b in z-update. |
+
+
 
 
 

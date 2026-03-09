@@ -19,7 +19,6 @@
 
     .. [Gastetal_2020] Gast, R., Schmidt, H., & Knösche, T. R. (2020). A mean-field description of bursting dynamics in spiking neural networks with short-term adaptation. *Neural Computation*, 32(9), 1615-1634.
 
-
 ### State Equations
 $$
 \dot{A} = \frac{B}{\tau_{A}}
@@ -34,7 +33,6 @@ $$
 \dot{r} = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -48,6 +46,8 @@ $$
 | $\eta$ | -6.0 | N/A | Mean of heterogeneous noise distribution |
 | $\tau_{A}$ | 10.0 | N/A | Adaptation time scale |
 | $\tau$ | 1.0 | N/A | Characteristic time |
+
+
 
 
 

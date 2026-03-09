@@ -116,90 +116,14 @@ ul.task-list li input[type="checkbox"] {
     <a class="nav-link" href="../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-    </ul>
-  </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Interoperability</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">tvboptim</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/index.html">
- <span class="dropdown-text">tvboptim Backend</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/JR_tvboptim.html">
- <span class="dropdown-text">JR Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/RWW_tvboptim.html">
- <span class="dropdown-text">RWW Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
- <span class="dropdown-text">EI Tuning</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">PyRates</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/index.html">
- <span class="dropdown-text">PyRates Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Analysis.html">
- <span class="dropdown-text">PyRates Analysis</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Bifurcation.html">
- <span class="dropdown-text">PyRates Bifurcation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
- <span class="dropdown-text">Heterogeneous Networks</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">BIDS</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/BIDS/index.html">
- <span class="dropdown-text">BIDS Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_Export.html">
- <span class="dropdown-text">BIDS Export</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_comp_modelling.md">
- <span class="dropdown-text">BIDS Computational Modelling</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">OpenMINDS</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
- <span class="dropdown-text">OpenMINDS Interoperability</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">ModelingToolkit.jl</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/ModelingToolkit.jl/index.html">
- <span class="dropdown-text">MTK Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/ModelingToolkit.jl/higher_order.html">
- <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../Developer/contributing.html"> 
 <span class="menu-text">Developer</span></a>
@@ -275,7 +199,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#tvbo.summary" id="toc-tvbo.summary" class="nav-link" data-scroll-target="#tvbo.summary">tvbo.summary</a></li>
   <li><a href="#templates" id="toc-templates" class="nav-link" data-scroll-target="#templates">Templates</a></li>
   <li><a href="#tvbo.templates.rateml" id="toc-tvbo.templates.rateml" class="nav-link" data-scroll-target="#tvbo.templates.rateml">tvbo.templates.rateml</a></li>
-  <li><a href="#tvb-optim-templates" id="toc-tvb-optim-templates" class="nav-link" data-scroll-target="#tvb-optim-templates">TVB-Optim Templates</a></li>
+  <li><a href="#mako-templates-for-generating-tvboptim-network-dynamics-code-from-tvbo-models." id="toc-mako-templates-for-generating-tvboptim-network-dynamics-code-from-tvbo-models." class="nav-link" data-scroll-target="#mako-templates-for-generating-tvboptim-network-dynamics-code-from-tvbo-models.">Mako templates for generating tvboptim network dynamics code from TVBO models.</a></li>
   <li><a href="#utilities-module-for-tvb-o" id="toc-utilities-module-for-tvb-o" class="nav-link" data-scroll-target="#utilities-module-for-tvb-o">Utilities Module for TVB-O</a></li>
   </ul></li>
   </ul>
@@ -302,6 +226,14 @@ ul.task-list li input[type="checkbox"] {
 <td>Base adapter for processing SimulationExperiment metadata.</td>
 </tr>
 <tr class="even">
+<td><a href="../api/bifurcationkit.html#tvbo.adapters.bifurcationkit">bifurcationkit</a></td>
+<td>BifurcationKit.jl backend adapter for SimulationExperiment.</td>
+</tr>
+<tr class="odd">
+<td><a href="../api/diffeq.html#tvbo.adapters.diffeq">diffeq</a></td>
+<td>DifferentialEquations.jl backend adapter for SimulationExperiment.</td>
+</tr>
+<tr class="even">
 <td><a href="../api/julia.html#tvbo.adapters.julia">julia</a></td>
 <td>Python ↔︎ Julia bridge using juliacall (PythonCall.jl).</td>
 </tr>
@@ -316,6 +248,10 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td><a href="../api/pyrates.html#tvbo.adapters.pyrates">pyrates</a></td>
 <td>PyRates backend adapter for SimulationExperiment.</td>
+</tr>
+<tr class="even">
+<td><a href="../api/pyrates_bifurcation.html#tvbo.adapters.pyrates_bifurcation">pyrates_bifurcation</a></td>
+<td>PyRates/PyCoBi bifurcation analysis backend adapter for SimulationExperiment.</td>
 </tr>
 </tbody>
 </table>
@@ -369,6 +305,18 @@ ul.task-list li input[type="checkbox"] {
 <table class="caption-top table">
 <tbody>
 <tr class="odd">
+<td><a href="../api/converters.html#tvbo.data.converters">converters</a></td>
+<td>Format converters: BEP017 export, TVB ZIP import.</td>
+</tr>
+<tr class="even">
+<td><a href="../api/matrix_io.html#tvbo.data.matrix_io">matrix_io</a></td>
+<td>Low-level matrix read/write for HDF5 groups and Zarr groups.</td>
+</tr>
+<tr class="odd">
+<td><a href="../api/network_io.html#tvbo.data.network_io">network_io</a></td>
+<td>High-level Network I/O. Dispatches by companion file extension.</td>
+</tr>
+<tr class="even">
 <td><a href="../api/types.html#tvbo.data.types">types</a></td>
 <td></td>
 </tr>
@@ -541,30 +489,34 @@ ul.task-list li input[type="checkbox"] {
 <table class="caption-top table">
 <tbody>
 <tr class="odd">
+<td><a href="../api/continuation.html#tvbo.knowledge.simulation.continuation">continuation</a></td>
+<td>Continuation</td>
+</tr>
+<tr class="even">
 <td><a href="../api/equations.html#tvbo.knowledge.simulation.equations">equations</a></td>
 <td># Handling Equations and Expressions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/integration.html#tvbo.knowledge.simulation.integration">integration</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/localdynamics.html#tvbo.knowledge.simulation.localdynamics">localdynamics</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/network.html#tvbo.knowledge.simulation.network">network</a></td>
 <td>TVB-O wrapper for Coupling functions</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/observation.html#tvbo.knowledge.simulation.observation">observation</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/parcellation.html#tvbo.knowledge.simulation.parcellation">parcellation</a></td>
 <td>This module provides functions for loading and accessing parcellation data.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/perturbation.html#tvbo.knowledge.simulation.perturbation">perturbation</a></td>
 <td></td>
 </tr>
@@ -683,9 +635,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </section>
-<section id="tvb-optim-templates" class="level2">
-<h2 class="anchored" data-anchor-id="tvb-optim-templates">TVB-Optim Templates</h2>
-<p>Mako templates for generating tvboptim Network Dynamics code from TVBO models. Templates: - tvbo-tvboptim-dfun.py.mako: Dynamics class generation - tvbo-tvboptim-cfun.py.mako: Coupling function generation - tvbo-tvboptim-solver.py.mako: Solver/integrator generation - tvbo-tvboptim-noise.py.mako: Noise model generation - tvbo-tvboptim-observation.py.mako: Observation/monitor generation (metadata-driven pipelines) - tvbo-tvboptim-optim.py.mako: Optimizer configuration generation - tvbo-tvboptim-exploration.py.mako: Parameter exploration (grid search) generation - tvbo-tvboptim-sim.py.mako: Full simulation workflow generation - tvbo-tvboptim-experiment.py.mako: Complete experiment generation (fully metadata-driven) Usage: —— From a TVBO SimulationExperiment: from tvbo import SimulationExperiment from tvbo.templates import lookup experiment = SimulationExperiment.from_file(“my_experiment.yaml”) template = lookup.get_template(“tvboptim/tvbo-tvboptim-sim.py.mako”) code = template.render(experiment=experiment) dfun_template = lookup.get_template(“tvboptim/tvbo-tvboptim-dfun.py.mako”) dfun_code = dfun_template.render(model=experiment.local_dynamics) expl_template = lookup.get_template(“tvboptim/tvbo-tvboptim-exploration.py.mako”) expl_code = expl_template.render(experiment=experiment) optim_template = lookup.get_template(“tvboptim/tvbo-tvboptim-optim.py.mako”) optim_code = optim_template.render(experiment=experiment) Template Context Variables: ————————— All templates accept: - experiment: SimulationExperiment instance Individual component templates also accept: - model: Dynamics instance (for dfun) - coupling: Coupling instance (for cfun) - integration: Integration instance (for solver, noise) - monitors: List of Monitor instances (for observation) - fitting: ModelFitting instance (for target, loss, optim) Output Format: ————– Templates generate Python code compatible with tvboptim.experimental.network_dynamics which provides: - JAX-based differentiable simulation - Support for both instantaneous and delayed coupling - Stochastic (SDE) and deterministic (ODE) modes - BOLD signal monitoring and FC computation - Integration with optax for parameter optimization - Grid exploration and parallel execution</p>
+<section id="mako-templates-for-generating-tvboptim-network-dynamics-code-from-tvbo-models." class="level2">
+<h2 class="anchored" data-anchor-id="mako-templates-for-generating-tvboptim-network-dynamics-code-from-tvbo-models.">Mako templates for generating tvboptim network dynamics code from TVBO models.</h2>
 <table class="caption-top table">
 <tbody>
 <tr class="odd">

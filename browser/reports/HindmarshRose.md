@@ -7,7 +7,6 @@ The x variable is the membrane potential; y the fast recovery (ionic current) va
 z a slow adaptation current. Parameter sets modulate transitions between quiescence,
 tonic spiking and bursting.
 
-
 ### State Equations
 $$
 \dot{x} = I + y - z + b*x^{2} - a*x^{3}
@@ -18,7 +17,6 @@ $$
 $$
 \dot{z} = r*\left(- z + s*\left(x - xr\right)\right)
 $$
-
 
 ### Parameters
 
@@ -32,6 +30,8 @@ $$
 | $s$ | 4.0 | N/A | Adaptation coupling strength s. |
 | $xr$ | -1.6 | N/A | Reference potential x_r. |
 | $I$ | 2.0 | N/A | External applied current I. |
+
+
 
 
 

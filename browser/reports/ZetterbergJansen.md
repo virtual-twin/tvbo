@@ -3,20 +3,6 @@
 ## ZetterbergJansen
 
 
-### Derived Variables
-$$
-coupled_{input} = \frac{2*e_{0}}{1 + e^{\rho_{1}*\left(\rho_{2} - c_{global} - c_{local}*v_{6}\right)}}
-$$
-$$
-\sigma_{v1} = \begin{cases} 0 & \text{for}\: \rho_{1}*\left(\rho_{2} - v_{1}\right) > 709 \\\frac{2*e_{0}}{e^{\rho_{1}*\left(\rho_{2} - v_{1}\right)} + 1} & \text{otherwise} \end{cases}
-$$
-$$
-\sigma_{v23} = \begin{cases} 0 & \text{for}\: \rho_{1}*\left(\rho_{2} - \left(v_{2} - v_{3}\right)\right) > 709 \\\frac{2*e_{0}}{e^{\rho_{1}*\left(\rho_{2} - \left(v_{2} - v_{3}\right)\right)} + 1} & \text{otherwise} \end{cases}
-$$
-$$
-\sigma_{v45} = \begin{cases} 0 & \text{for}\: \rho_{1}*\left(\rho_{2} - \left(v_{4} - v_{5}\right)\right) > 709 \\\frac{2*e_{0}}{e^{\rho_{1}*\left(\rho_{2} - \left(v_{4} - v_{5}\right)\right)} + 1} & \text{otherwise} \end{cases}
-$$
-
 ### State Equations
 $$
 \dot{v_{1}} = y_{1}
@@ -55,7 +41,6 @@ $$
 \dot{y_{5}} = - v_{5}*ke^{2} - 2*ki*y_{5} + Hi*\gamma_{5}*ki*\sigma_{v45}
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -78,6 +63,22 @@ $$
 | $ki$ | 0.05 | N/A | Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1] |
 | $\rho_{1}$ | 0.56 | N/A | Steepness of the sigmoidal transformation [mV^-1] |
 | $\rho_{2}$ | 6.0 | N/A | Firing threshold (PSP) for which a 50% firing rate is achieved |
+
+### Derived Quantities
+#### Derived Variables
+$$
+coupled_{input} = \frac{2*e_{0}}{1 + e^{\rho_{1}*\left(\rho_{2} - c_{global} - c_{local}*v_{6}\right)}}
+$$
+$$
+\sigma_{v1} = \begin{cases} 0 & \text{for}\: \rho_{1}*\left(\rho_{2} - v_{1}\right) > 709 \\\frac{2*e_{0}}{e^{\rho_{1}*\left(\rho_{2} - v_{1}\right)} + 1} & \text{otherwise} \end{cases}
+$$
+$$
+\sigma_{v23} = \begin{cases} 0 & \text{for}\: \rho_{1}*\left(\rho_{2} - \left(v_{2} - v_{3}\right)\right) > 709 \\\frac{2*e_{0}}{e^{\rho_{1}*\left(\rho_{2} - \left(v_{2} - v_{3}\right)\right)} + 1} & \text{otherwise} \end{cases}
+$$
+$$
+\sigma_{v45} = \begin{cases} 0 & \text{for}\: \rho_{1}*\left(\rho_{2} - \left(v_{4} - v_{5}\right)\right) > 709 \\\frac{2*e_{0}}{e^{\rho_{1}*\left(\rho_{2} - \left(v_{4} - v_{5}\right)\right)} + 1} & \text{otherwise} \end{cases}
+$$
+
 
 
 

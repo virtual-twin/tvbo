@@ -5,7 +5,6 @@ Four-dimensional hyperchaotic extension of the Rössler system introducing an
 additional variable that yields a second positive Lyapunov exponent over wide
 parameter ranges while preserving the spiral-type attractor structure.
 
-
 ### State Equations
 $$
 \dot{x} = - y - z
@@ -20,7 +19,6 @@ $$
 \dot{w} = w*y - d*z
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -29,6 +27,8 @@ $$
 | $b$ | 3.0 | N/A | Parameter b. |
 | $c$ | 0.5 | N/A | Parameter c. |
 | $d$ | 0.05 | N/A | Parameter d for fourth dimension coupling. |
+
+
 
 
 

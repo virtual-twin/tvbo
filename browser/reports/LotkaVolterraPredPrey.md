@@ -7,7 +7,6 @@ used independently in epidemics, ecology, and economics. The prey (x) grows
 exponentially in absence of predators; predation converts prey into predator growth;
 predator (y) declines without prey. Default parameters produce sustained oscillations.
 
-
 ### State Equations
 $$
 \dot{x} = \alpha*x - \beta*x*y
@@ -15,7 +14,6 @@ $$
 $$
 \dot{y} = - \gamma*y + \delta*x*y
 $$
-
 
 ### Parameters
 
@@ -25,6 +23,8 @@ $$
 | $\beta$ | 1.0 | N/A | Predation interaction coefficient β. |
 | $\delta$ | 1.0 | N/A | Predator growth efficiency δ. |
 | $\gamma$ | 3.0 | N/A | Predator mortality rate γ. |
+
+
 
 
 

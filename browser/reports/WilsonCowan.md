@@ -15,26 +15,6 @@ Note:
 - Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)
 - The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.
 
-### Derived Variables
-$$
-lc_{0} = E*c_{local}
-$$
-$$
-lc_{1} = I*c_{local}
-$$
-$$
-x_{e} = \alpha_{e}*\left(P + c_{global} + lc_{0} + lc_{1} - \theta_{e} + E*c_{ee} - I*c_{ei}\right)
-$$
-$$
-x_{i} = \alpha_{i}*\left(Q + lc_{0} + lc_{1} - \theta_{i} + E*c_{ie} - I*c_{ii}\right)
-$$
-$$
-s_{e} = \frac{c_{e}}{1.0 + e^{- a_{e}*\left(x_{e} - b_{e}\right)}} - \frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{e}*b_{e}}}
-$$
-$$
-s_{i} = \frac{c_{i}}{1.0 + e^{- a_{i}*\left(x_{i} - b_{i}\right)}} - \frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{i}*b_{i}}}
-$$
-
 ### State Equations
 $$
 \dot{E} = \frac{- E + s_{e}*\left(k_{e} - E*r_{e}\right)}{\tau_{e}}
@@ -42,7 +22,6 @@ $$
 $$
 \dot{I} = \frac{- I + s_{i}*\left(k_{i} - I*r_{i}\right)}{\tau_{i}}
 $$
-
 
 ### Parameters
 
@@ -71,6 +50,28 @@ $$
 | $\tau_{i}$ | 10.0 | ms | Inhibitory population, membrane time-constant (Wilson and Cowan, 1972) |
 | $\theta_{e}$ | 0.0 | N/A | Excitation threshold of excitatory population (Sanz-Leon et al |
 | $\theta_{i}$ | 0.0 | N/A | Excitation threshold of inhibitory population (Sanz-Leon et al |
+
+### Derived Quantities
+#### Derived Variables
+$$
+lc_{0} = E*c_{local}
+$$
+$$
+lc_{1} = I*c_{local}
+$$
+$$
+x_{e} = \alpha_{e}*\left(P + c_{global} + lc_{0} + lc_{1} - \theta_{e} + E*c_{ee} - I*c_{ei}\right)
+$$
+$$
+x_{i} = \alpha_{i}*\left(Q + lc_{0} + lc_{1} - \theta_{i} + E*c_{ie} - I*c_{ii}\right)
+$$
+$$
+s_{e} = \frac{c_{e}}{1.0 + e^{- a_{e}*\left(x_{e} - b_{e}\right)}} - \frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{e}*b_{e}}}
+$$
+$$
+s_{i} = \frac{c_{i}}{1.0 + e^{- a_{i}*\left(x_{i} - b_{i}\right)}} - \frac{1.0*shift_{sigmoid}}{1.0 + e^{a_{i}*b_{i}}}
+$$
+
 
 
 

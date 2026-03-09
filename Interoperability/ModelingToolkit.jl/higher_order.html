@@ -181,90 +181,14 @@ window.Quarto = {
     <a class="nav-link" href="../../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-    </ul>
-  </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Interoperability</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">tvboptim</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/index.html">
- <span class="dropdown-text">tvboptim Backend</span></a>
+  <li class="nav-item">
+    <a class="nav-link active" href="../../Interoperability/index.html" aria-current="page"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/JR_tvboptim.html">
- <span class="dropdown-text">JR Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/RWW_tvboptim.html">
- <span class="dropdown-text">RWW Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
- <span class="dropdown-text">EI Tuning</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">PyRates</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/index.html">
- <span class="dropdown-text">PyRates Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Analysis.html">
- <span class="dropdown-text">PyRates Analysis</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">
- <span class="dropdown-text">PyRates Bifurcation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
- <span class="dropdown-text">Heterogeneous Networks</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">BIDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/index.html">
- <span class="dropdown-text">BIDS Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_Export.html">
- <span class="dropdown-text">BIDS Export</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_comp_modelling.md">
- <span class="dropdown-text">BIDS Computational Modelling</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">OpenMINDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/OpenMINDS.html">
- <span class="dropdown-text">OpenMINDS Interoperability</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">ModelingToolkit.jl</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/index.html">
- <span class="dropdown-text">MTK Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/higher_order.html">
- <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../Developer/contributing.html"> 
 <span class="menu-text">Developer</span></a>
@@ -623,51 +547,224 @@ window.Quarto = {
 </section>
 <section id="step-1-load-and-inspect-the-sympy-equations" class="level2">
 <h2 class="anchored" data-anchor-id="step-1-load-and-inspect-the-sympy-equations">Step 1: Load and Inspect the SymPy Equations</h2>
-<div id="f6030fa6" class="cell" data-execution_count="1">
+<div id="cc173db3" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"yaml/lorenz_higher_order.yaml"</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Markdown(exp.local_dynamics.generate_report(derivative_notation<span class="op">=</span><span class="st">'dot'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Markdown(exp.dynamics.generate_report(derivative_notation<span class="op">=</span><span class="st">'dot'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(</code></pre>
+</div>
+<section id="lorenz63_higherorder" class="level2 cell-output cell-output-display cell-output-markdown" data-execution_count="1">
+<h2 class="anchored" data-anchor-id="lorenz63_higherorder">Lorenz63_HigherOrder</h2>
+<p>Second-order Lorenz variant from the MTK documentation. Variable x has equation_order=2, so d²x/dt² = σ(y-x).</p>
+<section id="state-equations" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations">State Equations</h3>
+<p><span class="math display">\[
+\ddot{x} = \sigma*\left(y - x\right)
+\]</span> <span class="math display">\[
+\dot{y} = - y + x*\left(\rho - z\right)
+\]</span> <span class="math display">\[
+\dot{z} = x*y - \beta*z
+\]</span></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">Parameters</h3>
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th><strong>Parameter</strong></th>
+<th><strong>Value</strong></th>
+<th><strong>Unit</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\beta\)</span></td>
+<td>2.6666666666666665</td>
+<td>N/A</td>
+<td>Geometric factor (8/3)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\rho\)</span></td>
+<td>28.0</td>
+<td>N/A</td>
+<td>Rayleigh number</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\sigma\)</span></td>
+<td>10.0</td>
+<td>N/A</td>
+<td>Prandtl number</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 </div>
 <p>tvbo correctly represents the second-order derivative</p>
 </section>
 <section id="step-2-render-mtk-code" class="level2">
 <h2 class="anchored" data-anchor-id="step-2-render-mtk-code">Step 2: Render MTK Code</h2>
-<div id="259b097b" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"mtk"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="1efb7893" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"mtk"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+
+
+
+
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as Dt
+using OrdinaryDiffEqTsit5
+
+
+@component function Lorenz63_HigherOrder(; name)
+    @parameters begin
+        beta = 2.6666666666666665, [description="Geometric factor (8/3)"]
+        rho = 28.0, [description="Rayleigh number"]
+        sigma = 10.0, [description="Prandtl number"]
+    end
+    @variables begin
+        x(t)=1.0, [description="Second-order state variable. The equation x'' = σ(y - x) is automatically lowered to two first-order equations by MTK."]
+        y(t)=0.0, [description="Temperature difference (horizontal)"]
+        z(t)=0.0, [description="Temperature difference (vertical)"]
+    end
+    eqs = [
+        Dt(Dt(x)) ~ sigma * (y - x),
+        Dt(y) ~ -y + x * (rho - z),
+        Dt(z) ~ x * y - beta * z,
+    ]
+    return System(eqs, t; name, checks=false)
+end
+
+@named sys_model = Lorenz63_HigherOrder()
+sys = mtkcompile(sys_model)
+
+u0 = [Dt(sys.x) =&gt; 2.0]
+
+tspan = (0.0, 100.0)
+prob = ODEProblem(sys, u0, tspan, jac=true)
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+using Plots
+plot(sol; title="Lorenz63_HigherOrder")
+</code></pre>
+</div>
 </div>
 <p>The template generates <code>Dt(Dt(x))</code> — MTK’s notation for <span class="math inline">\(\frac{d^2 x}{dt^2}\)</span></p>
 <p>The derivative initial condition is passed via:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> [<span class="fu">Dt</span>(sys.x) <span class="op">=&gt;</span> <span class="fl">2.0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> [<span class="fu">Dt</span>(sys.x) <span class="op">=&gt;</span> <span class="fl">2.0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="step-3-symbolic-round-trip-get-lowered-equations" class="level2">
 <h2 class="anchored" data-anchor-id="step-3-symbolic-round-trip-get-lowered-equations">Step 3: Symbolic Round-Trip — Get Lowered Equations</h2>
 <p>Here is the key feature: we send the higher-order system to Julia, let MTK’s <code>mtkcompile</code> do the structural transformation, and extract the lowered first-order equations back as SymPy.</p>
-<div id="62d4e8c4" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.modelingtoolkit <span class="im">import</span> ModelingToolkitAdapter</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> ModelingToolkitAdapter()</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>firstoder_ODE <span class="op">=</span> adapter.lower(exp.local_dynamics)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>Markdown(firstoder_ODE.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="fc35bf4b" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.modelingtoolkit <span class="im">import</span> ModelingToolkitAdapter</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> ModelingToolkitAdapter()</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>firstoder_ODE <span class="op">=</span> adapter.lower(exp.dynamics)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>Markdown(firstoder_ODE.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
+</div>
+<section id="lorenz63_higherorder_firstorder" class="level2 cell-output cell-output-display cell-output-markdown" data-execution_count="3">
+<h2 class="anchored" data-anchor-id="lorenz63_higherorder_firstorder">Lorenz63_HigherOrder_FirstOrder</h2>
+<p>First-order equivalent of Lorenz63_HigherOrder (lowered via MTK).</p>
+<section id="state-equations-1" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations-1">State Equations</h3>
+<p><span class="math display">\[
+\dot{x} = x_{t}
+\]</span> <span class="math display">\[
+\dot{y} = - y + x*\left(\rho - z\right)
+\]</span> <span class="math display">\[
+\dot{z} = x*y - \beta*z
+\]</span> <span class="math display">\[
+\dot{x_{t}} = \sigma*\left(y - x\right)
+\]</span></p>
+</section>
+<section id="parameters-1" class="level3">
+<h3 class="anchored" data-anchor-id="parameters-1">Parameters</h3>
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th><strong>Parameter</strong></th>
+<th><strong>Value</strong></th>
+<th><strong>Unit</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\beta\)</span></td>
+<td>2.6666666666666665</td>
+<td>N/A</td>
+<td>Geometric factor (8/3)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\rho\)</span></td>
+<td>28.0</td>
+<td>N/A</td>
+<td>Rayleigh number</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\sigma\)</span></td>
+<td>10.0</td>
+<td>N/A</td>
+<td>Prandtl number</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 </div>
 <p>To run the lowered system with backends that only support first-order ODEs:</p>
-<div id="cd5d983a" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>lowered_exp <span class="op">=</span> adapter.lower(exp)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>lowered_exp.integration.method<span class="op">=</span><span class="st">'Heun'</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> lowered_exp.run(<span class="st">"tvboptim"</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>result.integration.main.to_timeseries().get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="711579fd" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>lowered_exp <span class="op">=</span> adapter.lower(exp)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>lowered_exp.integration.method<span class="op">=</span><span class="st">'Heun'</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> lowered_exp.run(<span class="st">"tvboptim"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>result.integration.to_timeseries().get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+============================================================
+STEP 1: Running simulation...
+============================================================
+  Simulation period: 100.0 ms, dt: 0.01 ms
+  Transient period: 0.0 ms
+  Simulation complete.
+
+============================================================
+Experiment complete.
+============================================================</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<div>
+<figure class="figure">
+<p><img src="higher_order_files/figure-html/cell-5-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
 </div>
 <p>MTK introduced <code>x_t</code> (written as <code>xˍt</code> in Julia) and produced four first-order equations:</p>
 <p>The returned SymPy equations are standard <code>sympy.Eq</code> objects — they can be used for further symbolic analysis, code generation to other backends, or substitution.</p>
 </section>
 <section id="step-4-run-the-simulation" class="level2">
 <h2 class="anchored" data-anchor-id="step-4-run-the-simulation">Step 4: Run the Simulation</h2>
-<div id="83f856ad" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"mtk"</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>result.get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="3b447ab0" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"mtk"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>result.get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div>
+<figure class="figure">
+<p><img src="higher_order_files/figure-html/cell-6-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
 </div>
 <p>This matches the original MTK tutorial’s <span class="math inline">\(x\)</span>-<span class="math inline">\(y\)</span> state-space plot.</p>
 </section>

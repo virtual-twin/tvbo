@@ -3,7 +3,6 @@
 ## Generic2dOscillator
 The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.
 
-
 ### State Equations
 $$
 \dot{V} = d*\tau*\left(I*\gamma + V*g + V*c_{local} + W*\alpha + c_{glob}*\gamma + e*V^{2} - f*V^{3}\right)
@@ -11,7 +10,6 @@ $$
 $$
 \dot{W} = \frac{d*\left(a + V*b + c*V^{2} - W*\beta\right)}{\tau}
 $$
-
 
 ### Parameters
 
@@ -29,6 +27,8 @@ $$
 | $g$ | 0.0 | N/A | Coefficient of the linear term of the cubic nullcline |
 | $\gamma$ | 1.0 | N/A | Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative |
 | $\tau$ | 1.0 | N/A | A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W` |
+
+
 
 
 

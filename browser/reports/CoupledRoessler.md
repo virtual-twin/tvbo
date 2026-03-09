@@ -4,7 +4,6 @@
 Pair of diffusively coupled Rössler oscillators used to study phase and
 generalized synchronization, lag synchronization and coupling asymmetry effects.
 
-
 ### State Equations
 $$
 \dot{x_{1}} = - z_{1} - \omega_{1}*y_{1}
@@ -25,7 +24,6 @@ $$
 \dot{z_{2}} = b + z_{2}*\left(x_{2} - c\right)
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -37,6 +35,8 @@ $$
 | $c$ | 5.7 | N/A | Folding parameter c. |
 | $k_{1}$ | 0.115 | N/A | Diffusive coupling from oscillator 2 to 1. |
 | $k_{2}$ | 0.0 | N/A | Diffusive coupling from oscillator 1 to 2. |
+
+
 
 
 

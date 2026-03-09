@@ -5,14 +5,6 @@ Two-variable conductance-based neuron model capturing excitability via fast
 calcium and slower potassium dynamics; a simplification of Hodgkin-Huxley
 retaining rich bifurcation structure.
 
-### Derived Variables
-$$
-G = 0.5 + 0.5*\tanh{\left(\frac{V - V_{3}}{V_{4}} \right)}
-$$
-$$
-M = 0.5 + 0.5*\tanh{\left(\frac{V - V_{1}}{V_{2}} \right)}
-$$
-
 ### State Equations
 $$
 \dot{V} = I - gL*\left(V - VL\right) - M*gCa*\left(V - VCa\right) - N*gK*\left(V - VK\right)
@@ -20,7 +12,6 @@ $$
 $$
 \dot{N} = \frac{G - N}{\tau}
 $$
-
 
 ### Parameters
 
@@ -38,6 +29,16 @@ $$
 | $gK$ | 2.0 | N/A | Potassium conductance. |
 | $gL$ | 0.5 | N/A | Leak conductance. |
 | $\tau$ | 3.0 | N/A | Recovery time constant τ. |
+
+### Derived Quantities
+#### Derived Variables
+$$
+G = 0.5 + 0.5*\tanh{\left(\frac{V - V_{3}}{V_{4}} \right)}
+$$
+$$
+M = 0.5 + 0.5*\tanh{\left(\frac{V - V_{1}}{V_{2}} \right)}
+$$
+
 
 
 

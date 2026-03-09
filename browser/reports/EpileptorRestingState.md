@@ -5,23 +5,6 @@ Epileptor Resting-State (ERS) is an extension of the phenomenological neural mas
         
 This model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).
 
-### Derived Variables
-$$
-lc_{1} = c_{local}*x_{rs}
-$$
-$$
-output = p*\left(x_{2} - x_{1}\right) + x_{rs}*\left(1 - p\right)
-$$
-$$
-x1cond = \begin{cases} - a*x_{1}^{2} + b*x_{1} & \text{for}\: x_{1} < 0 \\slope - x_{2} + 0.6*\left(z - 1*4.0\right)^{2} & \text{otherwise} \end{cases}
-$$
-$$
-y2cond = \begin{cases} 0.0 & \text{for}\: x_{2} < -0.25 \\aa*\left(x_{2} + 0.25\right) & \text{otherwise} \end{cases}
-$$
-$$
-zcond = \begin{cases} - 0.1*z^{7} & \text{for}\: z < 0 \\0.0 & \text{otherwise} \end{cases}
-$$
-
 ### State Equations
 $$
 \dot{g} = tt*\left(0.001*x_{1} - 0.01*g\right)
@@ -47,7 +30,6 @@ $$
 $$
 \dot{z} = r*tt*\left(zcond - z - 4*x_{0} + 4*x_{1} + Ks*c_{global}\right)
 $$
-
 
 ### Parameters
 
@@ -82,9 +64,28 @@ $$
 | $tt$ | 1.0 | N/A | Time scaling of the Epileptor |
 | $x_{0}$ | -1.6 | N/A | Epileptogenicity parameter |
 
+### Derived Quantities
+#### Derived Variables
+$$
+lc_{1} = c_{local}*x_{rs}
+$$
+$$
+output = p*\left(x_{2} - x_{1}\right) + x_{rs}*\left(1 - p\right)
+$$
+$$
+x1cond = \begin{cases} - a*x_{1}^{2} + b*x_{1} & \text{for}\: x_{1} < 0 \\slope - x_{2} + 0.6*\left(z - 1*4.0\right)^{2} & \text{otherwise} \end{cases}
+$$
+$$
+y2cond = \begin{cases} 0.0 & \text{for}\: x_{2} < -0.25 \\aa*\left(x_{2} + 0.25\right) & \text{otherwise} \end{cases}
+$$
+$$
+zcond = \begin{cases} - 0.1*z^{7} & \text{for}\: z < 0 \\0.0 & \text{otherwise} \end{cases}
+$$
+
+
 
 
 ## References
-Citation key 'Courtiol2020' not found.
-
 Jirsa, V., Stacey, W., Quilichini, P., Ivanov, A., & Bernard, C. (2014). On the nature of seizure dynamics. *Brain*, 137(8), 2210-2230.
+
+Citation key 'Courtiol2020' not found.

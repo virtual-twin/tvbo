@@ -7,7 +7,35 @@ Fast activation/inactivation (m,h) of sodium and slower potassium activation (n)
 shape spike initiation, refractory period, and repetitive firing under sustained
 current injection.
 
-### Derived Variables
+### State Equations
+$$
+\dot{V} = \frac{Iext - gL*\left(V - EL\right) - gK*n^{4}*\left(V - EK\right) - gNa*h*m^{3}*\left(V - ENa\right)}{Cm}
+$$
+$$
+\dot{m} = \alpha_{m}*\left(1 - m\right) - \beta_{m}*m
+$$
+$$
+\dot{h} = \alpha_{h}*\left(1 - h\right) - \beta_{h}*h
+$$
+$$
+\dot{n} = \alpha_{n}*\left(1 - n\right) - \beta_{n}*n
+$$
+
+### Parameters
+
+| **Parameter** | **Value** | **Unit** | **Description** |
+|---------------|-----------|----------|-----------------|
+| $Cm$ | 1.0 | N/A | Membrane capacitance (uF/cm^2). |
+| $gNa$ | 120.0 | N/A | Maximum sodium conductance. |
+| $gK$ | 36.0 | N/A | Maximum potassium conductance. |
+| $gL$ | 0.3 | N/A | Leak conductance. |
+| $ENa$ | 50.0 | N/A | Sodium reversal potential (mV). |
+| $EK$ | -77.0 | N/A | Potassium reversal potential (mV). |
+| $EL$ | -54.387 | N/A | Leak reversal potential (mV). |
+| $Iext$ | 10.0 | N/A | External applied current (uA/cm^2). |
+
+### Derived Quantities
+#### Derived Variables
 $$
 IK = gK*n^{4}*\left(V - EK\right)
 $$
@@ -36,33 +64,6 @@ $$
 \beta_{n} = 0.125*e^{- \frac{13}{16} - \frac{V}{80}}
 $$
 
-### State Equations
-$$
-\dot{V} = \frac{Iext - gL*\left(V - EL\right) - gK*n^{4}*\left(V - EK\right) - gNa*h*m^{3}*\left(V - ENa\right)}{Cm}
-$$
-$$
-\dot{m} = \alpha_{m}*\left(1 - m\right) - \beta_{m}*m
-$$
-$$
-\dot{h} = \alpha_{h}*\left(1 - h\right) - \beta_{h}*h
-$$
-$$
-\dot{n} = \alpha_{n}*\left(1 - n\right) - \beta_{n}*n
-$$
-
-
-### Parameters
-
-| **Parameter** | **Value** | **Unit** | **Description** |
-|---------------|-----------|----------|-----------------|
-| $Cm$ | 1.0 | N/A | Membrane capacitance (uF/cm^2). |
-| $gNa$ | 120.0 | N/A | Maximum sodium conductance. |
-| $gK$ | 36.0 | N/A | Maximum potassium conductance. |
-| $gL$ | 0.3 | N/A | Leak conductance. |
-| $ENa$ | 50.0 | N/A | Sodium reversal potential (mV). |
-| $EK$ | -77.0 | N/A | Potassium reversal potential (mV). |
-| $EL$ | -54.387 | N/A | Leak reversal potential (mV). |
-| $Iext$ | 10.0 | N/A | External applied current (uA/cm^2). |
 
 
 

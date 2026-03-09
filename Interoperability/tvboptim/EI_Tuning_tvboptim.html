@@ -152,90 +152,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-    </ul>
-  </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Interoperability</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">tvboptim</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/index.html">
- <span class="dropdown-text">tvboptim Backend</span></a>
+  <li class="nav-item">
+    <a class="nav-link active" href="../../Interoperability/index.html" aria-current="page"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/JR_tvboptim.html">
- <span class="dropdown-text">JR Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/RWW_tvboptim.html">
- <span class="dropdown-text">RWW Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
- <span class="dropdown-text">EI Tuning</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">PyRates</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/index.html">
- <span class="dropdown-text">PyRates Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Analysis.html">
- <span class="dropdown-text">PyRates Analysis</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">
- <span class="dropdown-text">PyRates Bifurcation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
- <span class="dropdown-text">Heterogeneous Networks</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">BIDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/index.html">
- <span class="dropdown-text">BIDS Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_Export.html">
- <span class="dropdown-text">BIDS Export</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_comp_modelling.md">
- <span class="dropdown-text">BIDS Computational Modelling</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">OpenMINDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/OpenMINDS.html">
- <span class="dropdown-text">OpenMINDS Interoperability</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">ModelingToolkit.jl</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/index.html">
- <span class="dropdown-text">MTK Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/higher_order.html">
- <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../Developer/contributing.html"> 
 <span class="menu-text">Developer</span></a>
@@ -566,7 +490,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Reproducing the FIC+EIB tuning workflow from <a href="https://doi.org/10.1038/s41467-023-38626-y">Schirner et al.&nbsp;(2023)</a>. Fits local inhibitory weights (J_i) for E-I balance and dual coupling weights (wLRE, wFFI) to match empirical functional connectivity.</p>
-<div id="7cb58a60" class="cell" data-execution_count="2">
+<div id="818ee7a5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"XLA_FLAGS"</span>] <span class="op">=</span> <span class="st">"--xla_force_host_platform_device_count=8"</span></span>
@@ -581,7 +505,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(exp.render_code(<span class="st">'tvboptim'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="64ccb9b4" class="cell" data-execution_count="3">
+<div id="a099d4f2" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> exp.run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -671,54 +595,54 @@ Step 14: 0.256596
 Step 15: 0.252917
 Step 16: 0.248507
 Step 17: 0.244543
-Step 18: 0.241558
-Step 19: 0.237087
-Step 20: 0.229531
-Step 21: 0.223117
-Step 22: 0.220449
-Step 23: 0.213923
-Step 24: 0.203051
-Step 25: 0.195450
-Step 26: 0.188010
-Step 27: 0.178168
-Step 28: 0.170601
-Step 29: 0.163092
-Step 30: 0.155348
-Step 31: 0.147169
-Step 32: 0.144525
-Step 33: 0.139865
-Step 34: 0.134726
-Step 35: 0.130298
-Step 36: 0.127312
-Step 37: 0.122034
-Step 38: 0.119003
-Step 39: 0.117154
-Step 40: 0.115311
-Step 41: 0.113077
-Step 42: 0.112705
-Step 43: 0.109055
-Step 44: 0.107037
-Step 45: 0.105458
-Step 46: 0.104695
-Step 47: 0.103250
-Step 48: 0.103700
-Step 49: 0.102833
-Step 50: 0.102117
-Step 51: 0.099813
-Step 52: 0.100336
-Step 53: 0.100321
-Step 54: 0.100340
-Step 55: 0.097624
-Step 56: 0.099363
-Step 57: 0.096367
-Step 58: 0.097156
-Step 59: 0.096750
-Step 60: 0.095328
-Step 61: 0.095314
-Step 62: 0.095106
-Step 63: 0.093781
-Step 64: 0.094237
-Step 65: 0.093257
+Step 18: 0.241554
+Step 19: 0.237032
+Step 20: 0.239891
+Step 21: 0.239685
+Step 22: 0.234856
+Step 23: 0.227783
+Step 24: 0.224228
+Step 25: 0.223848
+Step 26: 0.221952
+Step 27: 0.215661
+Step 28: 0.206034
+Step 29: 0.199305
+Step 30: 0.197315
+Step 31: 0.191677
+Step 32: 0.181581
+Step 33: 0.177735
+Step 34: 0.175866
+Step 35: 0.167351
+Step 36: 0.159381
+Step 37: 0.157341
+Step 38: 0.152918
+Step 39: 0.152308
+Step 40: 0.157470
+Step 41: 0.161631
+Step 42: 0.159809
+Step 43: 0.154668
+Step 44: 0.153070
+Step 45: 0.153082
+Step 46: 0.151430
+Step 47: 0.143376
+Step 48: 0.140794
+Step 49: 0.140237
+Step 50: 0.138376
+Step 51: 0.135317
+Step 52: 0.131470
+Step 53: 0.125828
+Step 54: 0.129819
+Step 55: 0.126077
+Step 56: 0.122429
+Step 57: 0.121797
+Step 58: 0.121222
+Step 59: 0.121485
+Step 60: 0.119737
+Step 61: 0.117430
+Step 62: 0.115783
+Step 63: 0.114292
+Step 64: 0.114368
+Step 65: 0.113907
   Optimization complete.
 
 ============================================================
@@ -728,7 +652,7 @@ Experiment complete.
 </div>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="cell-fig-ei-tuning-results" class="cell" data-fig-height="12" data-execution_count="4">
+<div id="cell-fig-ei-tuning-results" class="cell" data-fig-height="12" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>cmap <span class="op">=</span> plt.cm.cividis</span>
@@ -737,7 +661,7 @@ Experiment complete.
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>accent_mid <span class="op">=</span> cmap(<span class="fl">0.6</span>)</span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Get FC matrices from result structure (observations attached to simulation results)</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>fc_target <span class="op">=</span> np.array(results.integration.main.observations.fc_target)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>fc_target <span class="op">=</span> np.array(results.integration.observations.fc_target)</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>fc_post_fic <span class="op">=</span> np.array(results.fic.post_tuning.observations.fc)</span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>fc_post_fic_eib <span class="op">=</span> np.array(results.fic_eib.post_tuning.observations.fc)</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>fc_gradient <span class="op">=</span> np.array(results.gradient_eib.simulation.observations.fc)</span>

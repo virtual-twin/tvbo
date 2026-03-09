@@ -5,7 +5,6 @@ Time-periodically forced four-dimensional system exhibiting riddled basins of
 attraction: arbitrarily small neighborhoods contain points converging to
 distinct attractors, illustrating extreme sensitivity in basin structure.
 
-
 ### State Equations
 $$
 \dot{x} = vx
@@ -20,7 +19,6 @@ $$
 \dot{vy} = - \gamma*vy - 2*y*\left(x + \bar{x}\right) + f_{0}*y_{0}*\sin{\left(\omega*t \right)}
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -31,6 +29,8 @@ $$
 | $\omega$ | 3.5 | N/A | Forcing angular frequency ω. |
 | $x_{0}$ | 1.0 | N/A | Forcing x-projection coefficient. |
 | $y_{0}$ | 0.0 | N/A | Forcing y-projection coefficient. |
+
+
 
 
 

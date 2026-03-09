@@ -3,7 +3,6 @@
 ## GastSchmidtKnosche_SF
 
 
-
 ### State Equations
 $$
 \dot{A} = \frac{B}{\tau_{A}}
@@ -18,7 +17,6 @@ $$
 \dot{r} = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -32,6 +30,8 @@ $$
 | $\eta$ | 1.0 | N/A | Mean of heterogeneous noise distribution |
 | $\tau_{A}$ | 10.0 | N/A | Adaptation time scale |
 | $\tau$ | 1.0 | N/A | Characteristic time |
+
+
 
 
 

@@ -3,7 +3,6 @@
 ## MontbrioPazoRoxin
 
 
-
 ### State Equations
 $$
 \dot{V} = \frac{I + \eta + V^{2} + c_{pop1}*cv + J*r*\tau + c_{global}*cr*\tau - \pi^{2}*r^{2}*\tau^{2}}{\tau}
@@ -11,7 +10,6 @@ $$
 $$
 \dot{r} = \frac{2*V*r + \frac{\Delta}{\pi*\tau}}{\tau}
 $$
-
 
 ### Parameters
 
@@ -24,6 +22,8 @@ $$
 | $cv$ | 0.0 | N/A | It is the weight on Coupling through variable V |
 | $\eta$ | -5.0 | N/A | Constant parameter to scale the rate of feedback from the firing rate variable to itself |
 | $\tau$ | 1.0 | N/A | Membrane time constant |
+
+
 
 
 

@@ -150,90 +150,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-    </ul>
-  </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Interoperability</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">tvboptim</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/index.html">
- <span class="dropdown-text">tvboptim Backend</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/JR_tvboptim.html">
- <span class="dropdown-text">JR Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/RWW_tvboptim.html">
- <span class="dropdown-text">RWW Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
- <span class="dropdown-text">EI Tuning</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">PyRates</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/index.html">
- <span class="dropdown-text">PyRates Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Analysis.html">
- <span class="dropdown-text">PyRates Analysis</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Bifurcation.html">
- <span class="dropdown-text">PyRates Bifurcation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
- <span class="dropdown-text">Heterogeneous Networks</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">BIDS</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/BIDS/index.html">
- <span class="dropdown-text">BIDS Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_Export.html">
- <span class="dropdown-text">BIDS Export</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/BIDS/BIDS_comp_modelling.md">
- <span class="dropdown-text">BIDS Computational Modelling</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">OpenMINDS</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/OpenMINDS.html">
- <span class="dropdown-text">OpenMINDS Interoperability</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">ModelingToolkit.jl</li>
-        <li>
-    <a class="dropdown-item" href="../Interoperability/ModelingToolkit.jl/index.html">
- <span class="dropdown-text">MTK Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../Interoperability/ModelingToolkit.jl/higher_order.html">
- <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../Developer/contributing.html"> 
 <span class="menu-text">Developer</span></a>
@@ -441,7 +365,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.data.types.ExperimentResult">ExperimentResult</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>data.types.ExperimentResult(results<span class="op">=</span><span class="va">None</span>, experiment_name<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Result from a complete experiment run.</p>
-<p>Wraps the raw results from code execution and provides: - Tree-structured view showing outputs with their contents - Schema-aligned access (results.integration.main, results.algorithms.fic, etc.)</p>
+<p>Wraps the raw results from code execution and provides: - Tree-structured view showing outputs with their contents - Schema-aligned access (results.integration.get_state(…), results.algorithms.fic, etc.)</p>
 </section>
 <section id="tvbo.data.types.ExplorationResult" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.types.ExplorationResult">ExplorationResult</h3>
@@ -451,14 +375,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    results<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    axes<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    observable<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    dt<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    output_names<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Result of parameter exploration (grid search).</p>
-<p>A thin wrapper around tvboptim exploration outputs that provides: - Access to raw results (flat or grid-shaped) - Axis information for parameter values - Utility methods for finding optimal points and slicing</p>
+<p>A thin wrapper around tvboptim exploration outputs that provides: - Access to raw results (flat or grid-shaped) - Axis information for parameter values - Utility methods for finding optimal points and slicing - Time series plotting for parameter sweeps (when observable returns time series)</p>
 <p>Designed to work with tvboptim’s Space and ParallelResult directly, while also supporting other exploration backends.</p>
+<p>Supports two result types: - <strong>Scalar results</strong>: Each grid point produces a scalar (e.g., loss function). Stored flat, reshaped via <code>as_grid()</code>, with <code>optimal</code> point tracking. - <strong>Time series results</strong>: Each grid point produces a time series (e.g., model output). Stored as <code>(n_grid, n_time, ...)</code>, with <code>plot()</code> support.</p>
 <section id="attributes-2" class="level4 doc-section doc-section-attributes">
 <h4 class="doc-section doc-section-attributes anchored" data-anchor-id="attributes-2">Attributes</h4>
-<p>name : str Exploration name grid : Space Parameter grid specification (tvboptim Space object) results : jnp.ndarray Observable values at each grid point (flat or grid-shaped) axes : list List of axis info (Bunch with name, lo, hi, n, values) observable : str Name of observable computed optimal : Bunch Best point found (parameters, value, index) shape : tuple Grid shape derived from axes</p>
+<p>name : str Exploration name grid : Space Parameter grid specification (tvboptim Space object) results : jnp.ndarray Observable values at each grid point (flat for scalars, multi-dim for time series) axes : list List of axis info (Bunch with name, lo, hi, n, values) observable : str Name of observable computed optimal : Bunch Best point found (parameters, value, index) — only for scalar results shape : tuple Grid shape derived from axes is_timeseries : bool True if results contain time series per grid point dt : float Time step for time series results (optional) output_names : list[str] Names of output variables (e.g., [‘v_pyr’]) for time series results</p>
 </section>
 <section id="methods-1" class="level4">
 <h4 class="anchored" data-anchor-id="methods-1">Methods</h4>
@@ -475,6 +402,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Reshape flat results to grid shape.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.data.types.ExplorationResult.plot">plot</a></td>
+<td>Plot exploration results.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.data.types.ExplorationResult.slice">slice</a></td>
 <td>Get a slice of results with some parameters fixed.</td>
 </tr>
@@ -486,12 +417,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Reshape flat results to grid shape.</p>
 <section id="returns-1" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
-<p>jnp.ndarray Results reshaped to (n_axis1, n_axis2, …) matching axes order</p>
+<p>jnp.ndarray Results reshaped to (n_axis1, n_axis2, …) matching axes order. For time series, returns (n_axis1, …, n_time, …) as-is.</p>
 </section>
+</section>
+<section id="tvbo.data.types.ExplorationResult.plot" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.data.types.ExplorationResult.plot">plot</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data.types.ExplorationResult.plot(figsize<span class="op">=</span><span class="va">None</span>, sharex<span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot exploration results.</p>
+<p>For time series results: subplots for each parameter value. For scalar results: line plot or heatmap over parameter space.</p>
 </section>
 <section id="tvbo.data.types.ExplorationResult.slice" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.types.ExplorationResult.slice">slice</h5>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data.types.ExplorationResult.<span class="bu">slice</span>(<span class="op">**</span>fixed_params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data.types.ExplorationResult.<span class="bu">slice</span>(<span class="op">**</span>fixed_params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get a slice of results with some parameters fixed.</p>
 <p>Example: result.slice(G=0.5) returns 1D slice at G=0.5</p>
 </section>
@@ -499,12 +436,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.types.LegacySimulationResult" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.types.LegacySimulationResult">LegacySimulationResult</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data.types.LegacySimulationResult()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>data.types.LegacySimulationResult()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Legacy simulation result class. Use SimulationResult instead.</p>
 </section>
 <section id="tvbo.data.types.ObservationResult" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.types.ObservationResult">ObservationResult</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>data.types.ObservationResult(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>data.types.ObservationResult(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Result from an observation pipeline with named outputs.</p>
 <p>Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies) while maintaining NativeSolution-like interface (.data, .time, .dt).</p>
 <section id="attributes-3" class="level4">
@@ -531,15 +468,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.types.OptimizationResult" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.types.OptimizationResult">OptimizationResult</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>data.types.OptimizationResult(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    state<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    history<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    simulation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    n_steps<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    hyperparameters<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>data.types.OptimizationResult(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    state<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    history<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    simulation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    n_steps<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    hyperparameters<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Result of gradient-based optimization.</p>
 <p>Provides structured access to optimization outputs including loss trajectory, parameter evolution, and final simulation.</p>
 <section id="attributes-4" class="level4 doc-section doc-section-attributes">
@@ -549,18 +486,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.types.SimulationResult" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult">SimulationResult</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    result<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    observations<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    state_names<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    result<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    observations<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    state_names<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    transient<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Wrapper for simulation result with attached observations.</p>
 <p>Mirrors the YAML structure by attaching observations to the simulation they derive from. This provides consistent access regardless of mode.</p>
 <p>Supports TimeSeries-like access via get_state() and plot(), converting the raw 3D data (time, state, nodes) to a full TimeSeries on demand.</p>
 <section id="attributes-5" class="level4 doc-section doc-section-attributes">
 <h4 class="doc-section doc-section-attributes anchored" data-anchor-id="attributes-5">Attributes</h4>
-<p>data : jnp.ndarray Raw simulation data (time, state, nodes) time : jnp.ndarray Time vector state_names : list[str] Names of state variables (e.g., [‘x’, ‘y’]) observations : Bunch Computed observations from this simulation (bold, fc, etc.)</p>
+<p>data : jnp.ndarray Raw simulation data (time, state, nodes) time : jnp.ndarray Time vector state_names : list[str] Names of state variables (e.g., [‘x’, ‘y’]) observations : Bunch Computed observations from this simulation (bold, fc, etc.) transient : SimulationResult or None Transient (warm-up) simulation result, if available.</p>
 </section>
 <section id="methods-2" class="level4">
 <h4 class="anchored" data-anchor-id="methods-2">Methods</h4>
@@ -588,7 +526,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.data.types.SimulationResult.get_state" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult.get_state">get_state</h5>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.get_state(sv_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.get_state(sv_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get state variable(s) as a TimeSeries, supporting plotting.</p>
 <section id="parameters-1" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
@@ -601,13 +539,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.types.SimulationResult.plot" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult.plot">plot</h5>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.plot(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.plot(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot the simulation result as a TimeSeries.</p>
 <p>Supports all TimeSeries plot types (timeseries, statespace, etc.).</p>
 </section>
 <section id="tvbo.data.types.SimulationResult.to_timeseries" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.types.SimulationResult.to_timeseries">to_timeseries</h5>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.to_timeseries()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>data.types.SimulationResult.to_timeseries()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert to a full TimeSeries object for plotting and analysis.</p>
 <section id="returns-3" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>

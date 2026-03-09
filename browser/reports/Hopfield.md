@@ -9,7 +9,6 @@ Various extensions of the initial model have been proposed, among which a noisel
 Note:
 - This model uses the modifications implemented by Golos et al. (2015).
 
-
 ### State Equations
 $$
 \dot{\theta} = \frac{c_{pop1} - \theta}{tauT}
@@ -17,7 +16,6 @@ $$
 $$
 \dot{x} = \frac{c_{global} - x}{taux}
 $$
-
 
 ### Parameters
 
@@ -28,7 +26,9 @@ $$
 
 
 
-## References
-Citation key 'Hopfield1982' not found.
 
+
+## References
 Citation key 'Hopfield1984' not found.
+
+Citation key 'Hopfield1982' not found.

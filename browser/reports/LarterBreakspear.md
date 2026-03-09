@@ -14,26 +14,6 @@ Note:
 - Equations and default parameters are taken from (Breakspear et al., 2003b), 
 - All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.
 
-### Derived Variables
-$$
-Q_{V} = 0.5*Q_{Vmax}*\left(1 + \tanh{\left(\frac{V - V_{T}}{\delta_{V}} \right)}\right)
-$$
-$$
-Q_{Z} = 0.5*Q_{Zmax}*\left(1 + \tanh{\left(\frac{Z - Z_{T}}{\delta_{Z}} \right)}\right)
-$$
-$$
-m_{Ca} = 0.5 + 0.5*\tanh{\left(\frac{V - T_{Ca}}{\delta_{Ca}} \right)}
-$$
-$$
-m_{K} = 0.5 + 0.5*\tanh{\left(\frac{V - T_{K}}{\delta_{K}} \right)}
-$$
-$$
-m_{Na} = 0.5 + 0.5*\tanh{\left(\frac{V - T_{Na}}{\delta_{Na}} \right)}
-$$
-$$
-lc_{0} = Q_{V}*c_{local}
-$$
-
 ### State Equations
 $$
 \dot{V} = t_{scale}*\left(I_{ext}*a_{ne} - g_{L}*\left(V - V_{L}\right) - \left(V - V_{Na}\right)*\left(g_{Na}*m_{Na} + C*a_{ee}*c_{global} + a_{ee}*\left(1.0 - C\right)*\left(Q_{V} + lc_{0}\right)\right) + m_{Ca}*\left(V - V_{Ca}\right)*\left(- g_{Ca} - C*a_{ee}*c_{global}*r_{NMDA} - a_{ee}*r_{NMDA}*\left(1.0 - C\right)*\left(Q_{V} + lc_{0}\right)\right) - Q_{Z}*Z*a_{ie} - W*g_{K}*\left(V - V_{K}\right)\right)
@@ -44,7 +24,6 @@ $$
 $$
 \dot{Z} = b*t_{scale}*\left(I_{ext}*a_{ni} + Q_{V}*V*a_{ei}\right)
 $$
-
 
 ### Parameters
 
@@ -83,11 +62,33 @@ $$
 | $t_{scale}$ | 1.0 | N/A | Time scale factor |
 | $\tau_{K}$ | 1.0 | N/A | Time constant for K relaxation time (ms) |
 
+### Derived Quantities
+#### Derived Variables
+$$
+Q_{V} = 0.5*Q_{Vmax}*\left(1 + \tanh{\left(\frac{V - V_{T}}{\delta_{V}} \right)}\right)
+$$
+$$
+Q_{Z} = 0.5*Q_{Zmax}*\left(1 + \tanh{\left(\frac{Z - Z_{T}}{\delta_{Z}} \right)}\right)
+$$
+$$
+m_{Ca} = 0.5 + 0.5*\tanh{\left(\frac{V - T_{Ca}}{\delta_{Ca}} \right)}
+$$
+$$
+m_{K} = 0.5 + 0.5*\tanh{\left(\frac{V - T_{K}}{\delta_{K}} \right)}
+$$
+$$
+m_{Na} = 0.5 + 0.5*\tanh{\left(\frac{V - T_{Na}}{\delta_{Na}} \right)}
+$$
+$$
+lc_{0} = Q_{V}*c_{local}
+$$
+
+
 
 
 ## References
-Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.
+Breakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.
 
 Breakspear, M., R., J., & J., K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics. *Neurocomputing*, 52–54, 151-158.
 
-Breakspear, M., Terry, J., & Friston, K. (2003). Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.. *Network (Bristol, England)*, 14, 703-732.
+Larter, R., Speelman, B., & Worth, R. (1999). A coupled ordinary differential equation lattice model for the simulation of epileptic seizures. *Chaos: An Interdisciplinary Journal of Nonlinear Science*, 9(3), 795-804.

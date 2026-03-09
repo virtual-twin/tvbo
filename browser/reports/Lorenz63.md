@@ -11,7 +11,6 @@ also associated with the term "butterfly effect" (a term which Lorenz himself di
 even though the effect applies generally to dynamical systems.
 Default values are the ones used in the original paper.
 
-
 ### State Equations
 $$
 \dot{X} = \sigma*\left(Y - X\right)
@@ -23,7 +22,6 @@ $$
 \dot{Z} = X*Y - Z*\beta
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -31,6 +29,8 @@ $$
 | $\sigma$ | 10.0 | N/A | Prandtl number (σ) controlling rate of convection. |
 | $\rho$ | 28.0 | N/A | Rayleigh number (ρ) scaled parameter driving convection. |
 | $\beta$ | 2.6666666666666665 | N/A | Geometric factor (β = 8/3) related to aspect ratio. |
+
+
 
 
 

@@ -181,90 +181,14 @@ window.Quarto = {
     <a class="nav-link" href="../../browser.html"> 
 <span class="menu-text">Knowledge Browser</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-    </ul>
-  </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-interoperability" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Interoperability</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-interoperability">    
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">tvboptim</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/index.html">
- <span class="dropdown-text">tvboptim Backend</span></a>
+  <li class="nav-item">
+    <a class="nav-link active" href="../../Interoperability/index.html" aria-current="page"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/JR_tvboptim.html">
- <span class="dropdown-text">JR Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/RWW_tvboptim.html">
- <span class="dropdown-text">RWW Workflow</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/tvboptim/EI_Tuning_tvboptim.html">
- <span class="dropdown-text">EI Tuning</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">PyRates</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/index.html">
- <span class="dropdown-text">PyRates Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Analysis.html">
- <span class="dropdown-text">PyRates Analysis</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">
- <span class="dropdown-text">PyRates Bifurcation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/Pyrates/PyRates_Heterogenous_Network.html">
- <span class="dropdown-text">Heterogeneous Networks</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">BIDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/index.html">
- <span class="dropdown-text">BIDS Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_Export.html">
- <span class="dropdown-text">BIDS Export</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/BIDS/BIDS_comp_modelling.md">
- <span class="dropdown-text">BIDS Computational Modelling</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">OpenMINDS</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/OpenMINDS.html">
- <span class="dropdown-text">OpenMINDS Interoperability</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">ModelingToolkit.jl</li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/index.html">
- <span class="dropdown-text">MTK Overview</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/ModelingToolkit.jl/higher_order.html">
- <span class="dropdown-text">Higher-Order ODE Lowering</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../Developer/contributing.html"> 
 <span class="menu-text">Developer</span></a>
@@ -606,7 +530,7 @@ window.Quarto = {
 
 
 <p>In this tutorial, you will learn how to perform a 1D numerical parameter continuation with automatic fold bifurcation detection using TVBO for model specification and PyRates/PyCoBi for the continuation analysis.</p>
-<div id="8e94fdc1" class="cell" data-execution_count="2">
+<div id="08d425eb" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -632,7 +556,7 @@ window.Quarto = {
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">    J:</span></span>
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">        value: 15.0</span></span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="st">        description: strength of the recurrent coupling inside the population</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">    </span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="st">state_variables:</span></span>
 <span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">    r:</span></span>
 <span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="st">        description:  Average firing rate</span></span>
@@ -651,15 +575,19 @@ window.Quarto = {
 <span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>Markdown(qif_model.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(</code></pre>
+</div>
 <section id="qif" class="level2 cell-output cell-output-display cell-output-markdown" data-execution_count="1">
 <h2 class="anchored" data-anchor-id="qif">QIF</h2>
 <p>Quadratic Integrate-and-Fire (QIF) population mean-field model.</p>
 <section id="state-equations" class="level3">
 <h3 class="anchored" data-anchor-id="state-equations">State Equations</h3>
 <p><span class="math display">\[
-\frac{d}{d t} r = 2*r*v + \frac{\Delta}{\pi*\tau}
+\dot{r} = 2*r*v + \frac{\Delta}{\pi*\tau}
 \]</span> <span class="math display">\[
-\frac{d}{d t} v = \eta + v^{2} + J*r*\tau - \pi^{2}*r^{2}*\tau^{2}
+\dot{v} = \eta + v^{2} + J*r*\tau - \pi^{2}*r^{2}*\tau^{2}
 \]</span></p>
 </section>
 <section id="parameters" class="level3">
@@ -709,14 +637,14 @@ window.Quarto = {
 </section>
 </section>
 </div>
-<div id="8cb1f35d" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export to PyRates YAML format</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_qif_model'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_qif_model/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    f.write(<span class="st">''</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>qif_model.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>, filepath<span class="op">=</span><span class="st">'_qif_model/qif.yaml'</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Model exported to PyRates format"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2cdb0c9e" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export to PyRates YAML format</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_qif_model'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_qif_model/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    f.write(<span class="st">''</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>qif_model.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>, filepath<span class="op">=</span><span class="st">'_qif_model/qif.yaml'</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Model exported to PyRates format"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Model exported to PyRates format</code></pre>
 </div>
@@ -724,22 +652,22 @@ window.Quarto = {
 <section id="step-2-generate-fortran-routines-for-auto-07p" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-generate-fortran-routines-for-auto-07p">Step 2: Generate Fortran Routines for AUTO-07p</h3>
 <p>Next, we translate the model into a Fortran file containing all subroutines required by AUTO-07p. This requires using the Fortran backend of PyRates with <code>vectorize=False</code>:</p>
-<div id="2350b54a" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the TVBO-exported model into PyRates</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>qif <span class="op">=</span> CircuitTemplate.from_yaml(<span class="st">"_qif_model.qif.QIF_circuit"</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate Fortran file with AUTO-07p subroutines</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Setting auto=True creates two files: .f90 (Fortran code) and c.ivp (AUTO constants)</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>qif.get_run_func(</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    func_name<span class="op">=</span><span class="st">'qif_rhs'</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    file_name<span class="op">=</span><span class="st">'qif'</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    step_size<span class="op">=</span><span class="fl">1e-4</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    auto<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'fortran'</span>,</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'scipy'</span>,</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    vectorize<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    float_precision<span class="op">=</span><span class="st">'float64'</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2cb14e19" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the TVBO-exported model into PyRates</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>qif <span class="op">=</span> CircuitTemplate.from_yaml(<span class="st">"_qif_model.qif.QIF_circuit"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate Fortran file with AUTO-07p subroutines</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Setting auto=True creates two files: .f90 (Fortran code) and c.ivp (AUTO constants)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>qif.get_run_func(</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    func_name<span class="op">=</span><span class="st">'qif_rhs'</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    file_name<span class="op">=</span><span class="st">'qif'</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    step_size<span class="op">=</span><span class="fl">1e-4</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    auto<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="st">'fortran'</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'scipy'</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    vectorize<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    float_precision<span class="op">=</span><span class="st">'float64'</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Compilation Progress
 --------------------
@@ -771,10 +699,10 @@ window.Quarto = {
 </div>
 </div>
 <p>Calling <code>get_run_func</code> with <code>auto=True</code> creates two files. The first is a <code>.f90</code> file containing the Fortran subroutines:</p>
-<div id="3a72ea60" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="bu">open</span>(<span class="st">'qif.f90'</span>, <span class="st">'r'</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f.read())</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>f.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="49ba723d" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="bu">open</span>(<span class="st">'qif.f90'</span>, <span class="st">'r'</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f.read())</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>f.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>module qif
 
@@ -861,10 +789,10 @@ end subroutine pvls
 </div>
 </div>
 <p>The second file contains the AUTO-07p parameters that determine how it performs parameter continuations:</p>
-<div id="bd18b01b" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="bu">open</span>(<span class="st">'c.ivp'</span>, <span class="st">'r'</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f.read())</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>f.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2b3a6575" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="bu">open</span>(<span class="st">'c.ivp'</span>, <span class="st">'r'</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f.read())</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>f.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>NDIM = 2
 NPAR = 4
@@ -906,8 +834,8 @@ STOP = {}</code></pre>
 <section id="step-3-generate-a-pycobi-instance" class="level3">
 <h3 class="anchored" data-anchor-id="step-3-generate-a-pycobi-instance">Step 3: Generate a PyCoBi Instance</h3>
 <p>Now that the model equations are compiled, we generate an instance of <code>pycobi.ODESystem</code>, which provides an interface to AUTO-07p:</p>
-<div id="3a8e373f" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>qif_auto <span class="op">=</span> ODESystem(eq_file<span class="op">=</span><span class="st">"qif"</span>, working_dir<span class="op">=</span><span class="va">None</span>, init_cont<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cb91a667" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>qif_auto <span class="op">=</span> ODESystem(eq_file<span class="op">=</span><span class="st">"qif"</span>, working_dir<span class="op">=</span><span class="va">None</span>, init_cont<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 -------------------------------------------------------------
@@ -924,23 +852,23 @@ This is probably because Tkinter is not enabled in your Python installation.
 <section id="step-1-time-continuation" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-time-continuation">Step 1: Time Continuation</h3>
 <p>In parameter continuations, we must start from an equilibrium or periodic orbit. We run a time continuation to let the system converge to an equilibrium:</p>
-<div id="e9fba017" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time continuation: integrate until system converges to equilibrium</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>t_sols, t_cont <span class="op">=</span> qif_auto.run(</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    c<span class="op">=</span><span class="st">'ivp'</span>, name<span class="op">=</span><span class="st">'time'</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    DS<span class="op">=</span><span class="fl">1e-4</span>, DSMIN<span class="op">=</span><span class="fl">1e-10</span>, DSMAX<span class="op">=</span><span class="fl">1e-2</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    EPSL<span class="op">=</span><span class="fl">1e-08</span>, EPSU<span class="op">=</span><span class="fl">1e-08</span>, EPSS<span class="op">=</span><span class="fl">1e-06</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    NMX<span class="op">=</span><span class="dv">1000</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    UZR<span class="op">=</span>{<span class="dv">14</span>: <span class="fl">4.0</span>},   <span class="co"># Create marker when time (PAR 14) reaches 4.0</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    STOP<span class="op">=</span>{<span class="st">'UZ1'</span>}     <span class="co"># Stop at first user marker</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot time evolution</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>qif_auto.plot_continuation(<span class="st">'PAR(14)'</span>, <span class="st">'U(1)'</span>, cont<span class="op">=</span><span class="st">'time'</span>)</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Time'</span>)</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'r (firing rate)'</span>)</span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Time Evolution to Equilibrium'</span>)</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="8eb9b4eb" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time continuation: integrate until system converges to equilibrium</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>t_sols, t_cont <span class="op">=</span> qif_auto.run(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    c<span class="op">=</span><span class="st">'ivp'</span>, name<span class="op">=</span><span class="st">'time'</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    DS<span class="op">=</span><span class="fl">1e-4</span>, DSMIN<span class="op">=</span><span class="fl">1e-10</span>, DSMAX<span class="op">=</span><span class="fl">1e-2</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    EPSL<span class="op">=</span><span class="fl">1e-08</span>, EPSU<span class="op">=</span><span class="fl">1e-08</span>, EPSS<span class="op">=</span><span class="fl">1e-06</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    NMX<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    UZR<span class="op">=</span>{<span class="dv">14</span>: <span class="fl">4.0</span>},   <span class="co"># Create marker when time (PAR 14) reaches 4.0</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    STOP<span class="op">=</span>{<span class="st">'UZ1'</span>}     <span class="co"># Stop at first user marker</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot time evolution</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>qif_auto.plot_continuation(<span class="st">'PAR(14)'</span>, <span class="st">'U(1)'</span>, cont<span class="op">=</span><span class="st">'time'</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Time'</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'r (firing rate)'</span>)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Time Evolution to Equilibrium'</span>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>gfortran -g -fopenmp -O -c qif.f90 -o qif.o
 gfortran -g -fopenmp -O qif.o -o qif.exe /Applications/auto-07p/lib/*.o
@@ -973,7 +901,7 @@ Starting qif ...
    1   460       24   3.85801E+00   1.96329E+00   8.11351E-02  -1.96161E+00
    1   475  UZ   25   4.00000E+00   1.96329E+00   8.11349E-02  -1.96162E+00
 
- Total Time    0.157E-01
+ Total Time    0.986E-02
 qif ... done</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
@@ -1002,23 +930,23 @@ qif ... done</code></pre>
 <section id="step-2-continuation-of-bareta" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-continuation-of-bareta">Step 2: Continuation of <span class="math inline">\(\bar\eta\)</span></h3>
 <p>Now we perform the parameter continuation in <span class="math inline">\(\bar\eta\)</span>:</p>
-<div id="f3b88a27" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter continuation in eta (parameter 4)</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>eta_sols, eta_cont <span class="op">=</span> qif_auto.run(</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    origin<span class="op">=</span>t_cont, starting_point<span class="op">=</span><span class="st">'UZ1'</span>, name<span class="op">=</span><span class="st">'eta'</span>,</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    bidirectional<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    ICP<span class="op">=</span><span class="dv">4</span>,              <span class="co"># Continue parameter 4 (eta)</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    RL0<span class="op">=-</span><span class="fl">20.0</span>,          <span class="co"># Lower bound for eta</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    RL1<span class="op">=</span><span class="fl">20.0</span>,           <span class="co"># Upper bound for eta</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    IPS<span class="op">=</span><span class="dv">1</span>,              <span class="co"># Equilibrium continuation</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    ILP<span class="op">=</span><span class="dv">1</span>,              <span class="co"># Detect fold bifurcations</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    ISP<span class="op">=</span><span class="dv">2</span>,              <span class="co"># Full automatic bifurcation detection</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    ISW<span class="op">=</span><span class="dv">1</span>, NTST<span class="op">=</span><span class="dv">400</span>, NCOL<span class="op">=</span><span class="dv">4</span>, IAD<span class="op">=</span><span class="dv">3</span>, IPLT<span class="op">=</span><span class="dv">0</span>, NBC<span class="op">=</span><span class="dv">0</span>, NINT<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    NMX<span class="op">=</span><span class="dv">2000</span>, NPR<span class="op">=</span><span class="dv">10</span>, MXBF<span class="op">=</span><span class="dv">5</span>, IID<span class="op">=</span><span class="dv">2</span>, ITMX<span class="op">=</span><span class="dv">40</span>, ITNW<span class="op">=</span><span class="dv">40</span>, NWTN<span class="op">=</span><span class="dv">12</span>, JAC<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    EPSL<span class="op">=</span><span class="fl">1e-06</span>, EPSU<span class="op">=</span><span class="fl">1e-06</span>, EPSS<span class="op">=</span><span class="fl">1e-04</span>,</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    DS<span class="op">=</span><span class="fl">1e-4</span>, DSMIN<span class="op">=</span><span class="fl">1e-8</span>, DSMAX<span class="op">=</span><span class="fl">5e-2</span>, IADS<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    THL<span class="op">=</span>{}, THU<span class="op">=</span>{}, UZR<span class="op">=</span>{}, STOP<span class="op">=</span>{}</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="89552416" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter continuation in eta (parameter 4)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>eta_sols, eta_cont <span class="op">=</span> qif_auto.run(</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    origin<span class="op">=</span>t_cont, starting_point<span class="op">=</span><span class="st">'UZ1'</span>, name<span class="op">=</span><span class="st">'eta'</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    bidirectional<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    ICP<span class="op">=</span><span class="dv">4</span>,              <span class="co"># Continue parameter 4 (eta)</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    RL0<span class="op">=-</span><span class="fl">20.0</span>,          <span class="co"># Lower bound for eta</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    RL1<span class="op">=</span><span class="fl">20.0</span>,           <span class="co"># Upper bound for eta</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    IPS<span class="op">=</span><span class="dv">1</span>,              <span class="co"># Equilibrium continuation</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    ILP<span class="op">=</span><span class="dv">1</span>,              <span class="co"># Detect fold bifurcations</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    ISP<span class="op">=</span><span class="dv">2</span>,              <span class="co"># Full automatic bifurcation detection</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    ISW<span class="op">=</span><span class="dv">1</span>, NTST<span class="op">=</span><span class="dv">400</span>, NCOL<span class="op">=</span><span class="dv">4</span>, IAD<span class="op">=</span><span class="dv">3</span>, IPLT<span class="op">=</span><span class="dv">0</span>, NBC<span class="op">=</span><span class="dv">0</span>, NINT<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    NMX<span class="op">=</span><span class="dv">2000</span>, NPR<span class="op">=</span><span class="dv">10</span>, MXBF<span class="op">=</span><span class="dv">5</span>, IID<span class="op">=</span><span class="dv">2</span>, ITMX<span class="op">=</span><span class="dv">40</span>, ITNW<span class="op">=</span><span class="dv">40</span>, NWTN<span class="op">=</span><span class="dv">12</span>, JAC<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    EPSL<span class="op">=</span><span class="fl">1e-06</span>, EPSU<span class="op">=</span><span class="fl">1e-06</span>, EPSS<span class="op">=</span><span class="fl">1e-04</span>,</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    DS<span class="op">=</span><span class="fl">1e-4</span>, DSMIN<span class="op">=</span><span class="fl">1e-8</span>, DSMAX<span class="op">=</span><span class="fl">5e-2</span>, IADS<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    THL<span class="op">=</span>{}, THU<span class="op">=</span>{}, UZR<span class="op">=</span>{}, STOP<span class="op">=</span>{}</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Starting qif ...
 
@@ -1090,7 +1018,7 @@ qif ... done</code></pre>
    1   630       90   1.99850E+01   2.37418E+00   2.37324E+00  -6.70624E-02
    1   631  EP   91   2.00350E+01   2.37575E+00   2.37480E+00  -6.70181E-02
 
- Total Time    0.188E-01
+ Total Time    0.210E-01
 qif ... done
 Starting qif ...
 
@@ -1128,7 +1056,7 @@ Starting qif ...
    1   310       56  -1.97750E+01   4.38692E+00   3.62806E-02  -4.38677E+00
    1   315  EP   57  -2.00234E+01   4.41552E+00   3.60457E-02  -4.41537E+00
 
- Total Time    0.954E-02
+ Total Time    0.971E-02
 qif ... done
 Merge done</code></pre>
 </div>
@@ -1150,24 +1078,24 @@ Merge done</code></pre>
 <section id="part-3-bifurcation-diagram" class="level2">
 <h2 class="anchored" data-anchor-id="part-3-bifurcation-diagram">Part 3: Bifurcation Diagram</h2>
 <p>We can visualize the full bifurcation diagram:</p>
-<div id="d7d8a566" class="cell" data-execution_count="10">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot bifurcation diagram</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, layout<span class="op">=</span><span class="st">"compressed"</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Firing rate vs eta</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>qif_auto.plot_continuation(<span class="st">"PAR(4)"</span>, <span class="st">"U(1)"</span>, cont<span class="op">=</span><span class="st">"eta"</span>, ax<span class="op">=</span>ax)</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"η (Background drive)"</span>)</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Firing rate r"</span>)</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"QIF Bifurcation Diagram: Firing Rate"</span>)</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Membrane potential vs eta</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>qif_auto.plot_continuation(<span class="st">"PAR(4)"</span>, <span class="st">"U(2)"</span>, cont<span class="op">=</span><span class="st">"eta"</span>, ax<span class="op">=</span>ax)</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"η (Background drive)"</span>)</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Membrane potential v"</span>)</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"QIF Bifurcation Diagram: Voltage"</span>)</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="10489a39" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot bifurcation diagram</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, layout<span class="op">=</span><span class="st">"compressed"</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Firing rate vs eta</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>qif_auto.plot_continuation(<span class="st">"PAR(4)"</span>, <span class="st">"U(1)"</span>, cont<span class="op">=</span><span class="st">"eta"</span>, ax<span class="op">=</span>ax)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"η (Background drive)"</span>)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Firing rate r"</span>)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"QIF Bifurcation Diagram: Firing Rate"</span>)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Membrane potential vs eta</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>qif_auto.plot_continuation(<span class="st">"PAR(4)"</span>, <span class="st">"U(2)"</span>, cont<span class="op">=</span><span class="st">"eta"</span>, ax<span class="op">=</span>ax)</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"η (Background drive)"</span>)</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Membrane potential v"</span>)</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"QIF Bifurcation Diagram: Voltage"</span>)</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1185,19 +1113,19 @@ Merge done</code></pre>
 <li><strong>Triangles (LP)</strong>: Fold (limit point) bifurcations</li>
 </ul>
 <p>At a fold bifurcation, the critical eigenvalue of the vector field crosses the imaginary axis (its real part changes sign), indicating a change of stability. A stable and unstable equilibrium approach and annihilate each other.</p>
-<div id="5f0e1c67" class="cell" data-execution_count="11">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up temporary files</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>qif.clear()</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(<span class="st">'_continuation'</span>, ignore_errors<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove generated files</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> [<span class="st">'qif.f90'</span>, <span class="st">'c.ivp'</span>]:</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> os.path.exists(f):</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        os.remove(f)</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Cleaned up temporary files"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="f66abf9e" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up temporary files</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>qif.clear()</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(<span class="st">'_continuation'</span>, ignore_errors<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove generated files</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> [<span class="st">'qif.f90'</span>, <span class="st">'c.ivp'</span>]:</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> os.path.exists(f):</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>        os.remove(f)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Cleaned up temporary files"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Cleaned up temporary files</code></pre>
 </div>

@@ -10,7 +10,68 @@ The model is derived as the mathematical limit of an infinite number of all-to-a
     :math:`K_g` represents the extracellular potassium buffering by the external bath
     """
 
-### Derived Variables
+### State Equations
+$$
+\dot{DKi} = - \frac{\gamma*\left(I_{K} - 2.0*I_{pump}\right)}{w_{i}}
+$$
+$$
+\dot{Kg} = \epsilon*\left(K_{bath} - K_{o}\right)
+$$
+$$
+\dot{V} = Vcond
+$$
+$$
+\dot{n} = \frac{ninf - n}{\tau_{n}}
+$$
+$$
+\dot{x} = xcond
+$$
+
+### Parameters
+
+| **Parameter** | **Value** | **Unit** | **Description** |
+|---------------|-----------|----------|-----------------|
+| $Cm$ | 1.0 | N/A | membrane capacitance |
+| $\Delta$ | 1.0 | N/A | HWHM heterogeneous noise |
+| $E$ | 0.0 | N/A | Reversal Potential |
+| $J$ | 0.1 | N/A | Mean Synaptic weight |
+| $K_{bath}$ | 5.5 | N/A | Potassium concentration in bath |
+| $R_{minus}$ | 0.5 | N/A | curvature left parabola |
+| $R_{plus}$ | -0.5 | N/A | curvature right parabola |
+| $Vstar$ | -31.0 | N/A | x-coordinate meeting point of parabolas |
+| $c_{minus}$ | -40.0 | N/A | x-coordinate left parabola |
+| $c_{plus}$ | -20.0 | N/A | x-coordinate right parabola |
+| $\epsilon$ | 0.001 | N/A | diffusion rate |
+| $\eta$ | 0.0 | N/A | Mean heterogeneous noise |
+| $\gamma$ | 0.04 | N/A | conversion factor |
+| $\tau_{n}$ | 4.0 | N/A | time constant of gating variable |
+| $Chn$ | 0.4 | N/A |  |
+| $Ckp$ | 5.5 | mol.m**-3 |  |
+| $Cl_{i0}$ | 4.8 | mMol/m**3 | initial concentration of intracellular Cl |
+| $Cl_{o0}$ | 112.0 | mMol/m**3 | initial concentration of extracellular Cl |
+| $Cmna$ | -24.0 | mV |  |
+| $Cnap$ | 21.0 | mol.m**-3 |  |
+| $Cnk$ | -19.0 | mV |  |
+| $DChn$ | -8.0 | N/A |  |
+| $DCkp$ | 1.0 | mol.m**-3 |  |
+| $DCmna$ | 12.0 | mV |  |
+| $DCnap$ | 21.0 | mol.m**-3 |  |
+| $DCnk$ | 18.0 | mV |  |
+| $K_{i0}$ | 130.0 | mMol/m**3 | initial concentration of intracellular K |
+| $K_{o0}$ | 4.8 | mMol/m**3 | initial concentration of extracellular K |
+| $Na_{i0}$ | 16.0 | mMol/m**3 | initial concentration of intracellular Na |
+| $Na_{o0}$ | 138.0 | mMol/m**3 | initial concentration of extracellular Na |
+| $g_{Cl}$ | 7.5 | nS | chloride conductance |
+| $g_{K}$ | 22.0 | nS | maximal potassium conductance |
+| $g_{Kl}$ | 0.12 | nS | potassium leak conductance |
+| $g_{Na}$ | 40.0 | nS | maximal sodiumconductance |
+| $g_{Nal}$ | 0.02 | nS | sodium leak conductance |
+| $\rho$ | 250.0 | pA | maximal Na/K pump current |
+| $w_{i}$ | 2160.0 | umeter**3 | intracellular volume |
+| $w_{o}$ | 720.0 | umeter**3 | extracellular volume |
+
+### Derived Quantities
+#### Derived Variables
 $$
 DNa_{i} = - DKi
 $$
@@ -69,70 +130,10 @@ $$
 Vcond = \begin{cases} \frac{R_{minus}*c_{global}*\left(- V + E\right)}{\pi} - R_{minus}*x^{2} + V_{temp} + \eta & \text{for}\: V \leq Vstar \\\frac{R_{minus}*c_{global}*\left(- V + E\right)}{\pi} - R_{plus}*x^{2} + V_{temp} + \eta & \text{otherwise} \end{cases}
 $$
 
-### State Equations
-$$
-\dot{DKi} = - \frac{\gamma*\left(I_{K} - 2.0*I_{pump}\right)}{w_{i}}
-$$
-$$
-\dot{Kg} = \epsilon*\left(K_{bath} - K_{o}\right)
-$$
-$$
-\dot{V} = Vcond
-$$
-$$
-\dot{n} = \frac{ninf - n}{\tau_{n}}
-$$
-$$
-\dot{x} = xcond
-$$
-
-
-### Parameters
-
-| **Parameter** | **Value** | **Unit** | **Description** |
-|---------------|-----------|----------|-----------------|
-| $Cm$ | 1.0 | N/A | membrane capacitance |
-| $\Delta$ | 1.0 | N/A | HWHM heterogeneous noise |
-| $E$ | 0.0 | N/A | Reversal Potential |
-| $J$ | 0.1 | N/A | Mean Synaptic weight |
-| $K_{bath}$ | 5.5 | N/A | Potassium concentration in bath |
-| $R_{minus}$ | 0.5 | N/A | curvature left parabola |
-| $R_{plus}$ | -0.5 | N/A | curvature right parabola |
-| $Vstar$ | -31.0 | N/A | x-coordinate meeting point of parabolas |
-| $c_{minus}$ | -40.0 | N/A | x-coordinate left parabola |
-| $c_{plus}$ | -20.0 | N/A | x-coordinate right parabola |
-| $\epsilon$ | 0.001 | N/A | diffusion rate |
-| $\eta$ | 0.0 | N/A | Mean heterogeneous noise |
-| $\gamma$ | 0.04 | N/A | conversion factor |
-| $\tau_{n}$ | 4.0 | N/A | time constant of gating variable |
-| $Chn$ | 0.4 | N/A |  |
-| $Ckp$ | 5.5 | mol.m**-3 |  |
-| $Cl_{i0}$ | 4.8 | mMol/m**3 | initial concentration of intracellular Cl |
-| $Cl_{o0}$ | 112.0 | mMol/m**3 | initial concentration of extracellular Cl |
-| $Cmna$ | -24.0 | mV |  |
-| $Cnap$ | 21.0 | mol.m**-3 |  |
-| $Cnk$ | -19.0 | mV |  |
-| $DChn$ | -8.0 | N/A |  |
-| $DCkp$ | 1.0 | mol.m**-3 |  |
-| $DCmna$ | 12.0 | mV |  |
-| $DCnap$ | 21.0 | mol.m**-3 |  |
-| $DCnk$ | 18.0 | mV |  |
-| $K_{i0}$ | 130.0 | mMol/m**3 | initial concentration of intracellular K |
-| $K_{o0}$ | 4.8 | mMol/m**3 | initial concentration of extracellular K |
-| $Na_{i0}$ | 16.0 | mMol/m**3 | initial concentration of intracellular Na |
-| $Na_{o0}$ | 138.0 | mMol/m**3 | initial concentration of extracellular Na |
-| $g_{Cl}$ | 7.5 | nS | chloride conductance |
-| $g_{K}$ | 22.0 | nS | maximal potassium conductance |
-| $g_{Kl}$ | 0.12 | nS | potassium leak conductance |
-| $g_{Na}$ | 40.0 | nS | maximal sodiumconductance |
-| $g_{Nal}$ | 0.02 | nS | sodium leak conductance |
-| $\rho$ | 250.0 | pA | maximal Na/K pump current |
-| $w_{i}$ | 2160.0 | umeter**3 | intracellular volume |
-| $w_{o}$ | 720.0 | umeter**3 | extracellular volume |
 
 
 
 ## References
-Citation key 'Bandyopadhyay2021' not found.
-
 Citation key 'Depannemaecker2023' not found.
+
+Citation key 'Bandyopadhyay2021' not found.

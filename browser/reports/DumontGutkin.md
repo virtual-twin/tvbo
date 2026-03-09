@@ -3,7 +3,6 @@
 ## DumontGutkin
 
 
-
 ### State Equations
 $$
 \dot{V_{e}} = \frac{I_{e} + \eta_{e} + V_{e}^{2} + s_{ee}*\tau_{e} - s_{ei}*\tau_{e} - \pi^{2}*r_{e}^{2}*\tau_{e}^{2}}{\tau_{e}}
@@ -30,7 +29,6 @@ $$
 \dot{s_{ii}} = \frac{- s_{ii} + J_{ii}*r_{i}}{\tau_{s}}
 $$
 
-
 ### Parameters
 
 | **Parameter** | **Value** | **Unit** | **Description** |
@@ -49,6 +47,8 @@ $$
 | $\tau_{e}$ | 10.0 | N/A | Characteristic time of excitatory population |
 | $\tau_{i}$ | 10.0 | N/A | Characteristic time of inhibitory population |
 | $\tau_{s}$ | 1.0 | N/A | Synaptic time constant |
+
+
 
 
 
