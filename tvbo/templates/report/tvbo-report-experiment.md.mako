@@ -202,7 +202,7 @@ parc_label = _p(parcellation, 'label', '') or _p(parcellation, 'name', '')
 parc_atlas = _p(parcellation, 'atlas', '')
 %>\
 % if parc_label:
-- **Parcellation:** ${parc_label}${ ' (' + parc_atlas + ')' if parc_atlas else ''}
+- **Parcellation:** ${parc_label}${ ' (' + parc_atlas.name + ')' if parc_atlas else ''}
 % endif
 % endif
 % if n_regions:
