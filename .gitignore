@@ -109,3 +109,4 @@ qif.cpython-313-darwin.so
 qif.f90
 docs/Interoperability/BIDS/derivatives/
 _*.py
+!__init__.py
