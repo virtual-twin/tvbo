@@ -7,7 +7,7 @@ jaxcode = lambda expr, parameters=None: render_expression(expr, format='jax', pa
 
 if 'coupling' not in context.keys():
     coupling = experiment.coupling
-    model = experiment.local_dynamics
+    model = experiment.dynamics
 else:
     coupling = context['coupling']
     model = context.get('model', None)

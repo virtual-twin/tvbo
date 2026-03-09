@@ -80,7 +80,7 @@ model:
       equation: { rhs: y1 - y2 }
 
   # Declare an optional coupling term name that experiments may enable by overriding y4
-  coupling_terms:
+  coupling_inputs:
     c_glob:
 
 # Experiments representing the study’s main figures/conditions

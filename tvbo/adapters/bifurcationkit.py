@@ -317,7 +317,7 @@ class BifurcationKitAdapter:
         Parameters
         ----------
         model : Dynamics, optional
-            The dynamics model. Defaults to ``experiment.local_dynamics``.
+            The dynamics model. Defaults to ``experiment.dynamics``.
         continuation : Continuation, optional
             The continuation spec. Defaults to first in experiment.
         **kwargs
@@ -325,7 +325,7 @@ class BifurcationKitAdapter:
         """
         from tvbo import templates
 
-        model = model or self.experiment.local_dynamics
+        model = model or self.experiment.dynamics
         if continuation is None:
             conts = getattr(self.experiment, "continuations", None) or {}
             if conts:
@@ -406,13 +406,20 @@ class BifurcationKitAdapter:
         """Resolve the Dynamics model for a continuation spec."""
         exp = self.experiment
         dyn_ref = getattr(cont, "dynamics", None)
-        if dyn_ref and str(dyn_ref) in exp.dynamics:
-            return exp.dynamics[str(dyn_ref)]
-        if exp.local_dynamics is not None:
-            return exp.local_dynamics
+        if dyn_ref:
+            dyn_name = str(dyn_ref)
+            # Check primary dynamics
+            if exp.dynamics and getattr(exp.dynamics, 'name', None) == dyn_name:
+                return exp.dynamics
+            # Check network dynamics dict
+            net_dyn = getattr(exp.network, 'dynamics', None) if exp.network else None
+            if isinstance(net_dyn, dict) and dyn_name in net_dyn:
+                return net_dyn[dyn_name]
+        if exp.dynamics is not None:
+            return exp.dynamics
         raise ValueError(
             f"Cannot resolve dynamics for continuation. "
-            f"dynamics='{dyn_ref}' not found in exp.dynamics."
+            f"dynamics='{dyn_ref}' not found."
         )
 
     def _extract_periodic_orbits(self, model, **kwargs) -> list:

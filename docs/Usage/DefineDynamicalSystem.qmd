@@ -91,9 +91,9 @@ Real-time animation of the pendulum motion alongside the time series data:
 
 ```{python}
 # | echo: false
-x = results.get_state_variable("x").data.squeeze()
-y = results.get_state_variable("y").data.squeeze()
-time = results.time
+x = results.integration.get_state('x').data.squeeze()
+y = results.integration.get_state('y').data.squeeze()
+time = results.integration.time
 dt = pendulum.integration.step_size
 
 target_fps = 20
@@ -112,7 +112,7 @@ ax_pendulum.set_ylabel("y")
 (line,) = ax_pendulum.plot([], [], "o-")
 
 ax_timeseries = axs[1]
-results.plot(ax=ax_timeseries)
+results.integration.plot(ax=ax_timeseries)
 time_line = ax_timeseries.axvline(x=0)
 
 def init():

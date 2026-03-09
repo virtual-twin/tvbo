@@ -528,7 +528,7 @@ derived_variables:
         lhs: Vcond
         rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
         latex: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
 state_variables:

@@ -83,18 +83,17 @@ Both Odoo models and Pydantic models are generated from the same LinkML schema. 
 
 **Data access should mirror YAML schema structure.** Users access results using the same path as the YAML definition:
 
-1. **Schema-Aligned Access:** Result structure mirrors YAML sections. E.g., `results.integration.main`, `results.algorithms.fic`, `results.optimization.loss_fc`.
+1. **Schema-Aligned Access:** Result structure mirrors YAML sections. E.g., `results.integration`, `results.algorithms.fic`, `results.optimization.loss_fc`.
 2. **No Implementation Details:** Never expose internal mechanisms via underscore prefixes (e.g., `._raw`). Users access `.data`, `.observations`, not internal representations.
 3. **Wrap at Boundaries:** Internal functions use raw data types; only final user-facing returns wrap in result classes (`SimulationResult`, `AlgorithmResult`, etc.).
-4. **Consistent Nesting:** `results.integration.main.observations.bold` - observations attached to the simulation that produced them.
+4. **Consistent Nesting:** `results.integration.observations.bold` - observations attached to the simulation that produced them.
 5. **Convenience Aliases:** For common access patterns, provide both nested and flat access: `results.algorithms.fic` and `results.fic`.
 
 Example - YAML to Python access:
 ```yaml
 # YAML
 integration:
-  main:
-    duration: 600000
+  duration: 600000
 algorithms:
   fic:
     n_iterations: 100
@@ -102,10 +101,11 @@ algorithms:
 
 ```python
 # Python - mirrors YAML structure
-results.integration.main.data        # Simulation data
-results.integration.main.observations.bold  # BOLD from main simulation
-results.algorithms.fic.state         # FIC tuned state
-results.algorithms.fic.history       # Per-iteration tracking
+results.integration.data              # Simulation data
+results.integration.observations.bold # BOLD from main simulation
+results.integration.transient         # Transient (warm-up) simulation
+results.algorithms.fic.state          # FIC tuned state
+results.algorithms.fic.history        # Per-iteration tracking
 ```
 
 ## Template & Code Generation Principles
@@ -225,9 +225,14 @@ uv pip install flake8 pytest pytest-xdist  # Test dependencies
 ### Testing
 ```bash
 source .venv/bin/activate            # ensure venv is active
-pytest -q                            # Run all tests (~22s)
-pytest tests/test_model_loading.py   # Test model YAML loading
-pytest tests/functional/             # Functional tests only
+pytest -x --dist=loadscope           # DEFAULT: fail-fast at first failure
+pytest -x --dist=loadscope tests/test_model_loading.py   # Test model YAML loading
+pytest -x --dist=loadscope tests/functional/             # Functional tests only
+pytest -x --dist=loadscope tests/functional -m backend_jax            # JAX-only backend tests
+pytest -x --dist=loadscope tests/functional -m backend_tvb            # TVB-only backend tests
+pytest -x --dist=loadscope tests/functional -m backend_pyrates        # PyRates-only backend tests
+pytest -x --dist=loadscope tests/functional -m backend_tvboptim       # tvboptim-only backend tests
+pytest -x --dist=loadscope tests/functional -m backend_networkdynamics # NetworkDynamics-only tests
 ```
 
 ### Linting (CI uses these exact commands)
@@ -317,7 +322,7 @@ container tests always use the freshly built image (`:latest` for main, `:dev` f
 2. Builds with `python -m build`
 3. Publishes via trusted publishing
 
-**Pre-commit validation:** Always run `flake8 . --select=E9,F63,F7,F82` and `pytest -q` before committing.
+**Pre-commit validation:** Always run `flake8 . --select=E9,F63,F7,F82` and `pytest -x --dist=loadscope` before committing.
 
 ## Key Classes & Entry Points
 
@@ -359,7 +364,7 @@ print(exp.render_code('jax'))
 Before submitting changes (always activate the venv first: `source .venv/bin/activate`):
 1. ✅ `uv pip install -e .` succeeds
 2. ✅ `flake8 . --select=E9,F63,F7,F82` returns 0 (no syntax errors)
-3. ✅ `pytest -q tests/functional/` passes
+3. ✅ `pytest -x --dist=loadscope tests/functional/` passes
 4. ✅ If schema changed: `make gen-linkml` and commit generated files
 5. ✅ `python -c "from tvbo import Dynamics, SimulationExperiment"` succeeds
 

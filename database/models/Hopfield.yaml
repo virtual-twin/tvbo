@@ -50,7 +50,7 @@ description: 'The Hopfield neural network is a discrete time dynamical system co
 references:
 - Hopfield1984
 - Hopfield1982
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   c_pop1:

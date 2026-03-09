@@ -210,7 +210,7 @@ derived_variables:
       rhs: 2.0*nu_max/(exp(r*(v0 - y1 + y2)) + 1.0)
       latex: false
     conditional: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   local_coupling:

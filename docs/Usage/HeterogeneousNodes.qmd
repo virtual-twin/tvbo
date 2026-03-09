@@ -138,16 +138,16 @@ network.plot_graph(
 ```
 
 ```{python}
+
+network.dynamics["SlowDriver"] = driver
+network.dynamics["Excitable"] = fhn
+network.dynamics["Relaxation"] = vdp
+
 # Create experiment with dynamics library and network
 exp = SimulationExperiment(
-    dynamics={
-        "SlowDriver": driver,
-        "Excitable": fhn,
-        "Relaxation": vdp,
-    },
     network=network,
 )
-res = exp.run('pyrates')
+res = exp.run("pyrates")
 ```
 
 ```{python}

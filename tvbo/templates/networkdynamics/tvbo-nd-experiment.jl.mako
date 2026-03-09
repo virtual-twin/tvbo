@@ -38,6 +38,7 @@ using NetworkDynamics
 # Map solver names to their OrdinaryDiffEq sub-packages
 _SOLVER_PKG = {
     'Tsit5': 'OrdinaryDiffEqTsit5',
+    'AutoTsit5': 'OrdinaryDiffEqTsit5',
     'Heun': 'OrdinaryDiffEqLowOrderRK',
     'Euler': 'OrdinaryDiffEqLowOrderRK',
     'Midpoint': 'OrdinaryDiffEqLowOrderRK',
@@ -235,7 +236,21 @@ rng = MersenneTwister(${dist_seed})
     dyn_name = node_dynamics_map.get(node.id, model.name)
     dyn = dynamics_dict[dyn_name]
     node_idx = node.id + 1
-    node_init = getattr(node, 'initial_state', None) or []
+    node_state = getattr(node, 'state', None) or []
+    state_items = node_state.values() if isinstance(node_state, dict) else node_state
+    state_map = {}
+    for state_entry in state_items:
+        if isinstance(state_entry, dict):
+            state_name = state_entry.get('name')
+            state_value = state_entry.get('value')
+        else:
+            state_name = getattr(state_entry, 'name', None)
+            state_value = getattr(state_entry, 'value', None)
+        if state_name is not None and state_value is not None:
+            state_map[str(state_name)] = state_value
+    node_init = [state_map.get(sv_name, None) for sv_name in (dyn.state_variables or {}).keys()]
+    if not any(v is not None for v in node_init):
+        node_init = getattr(node, 'initial_state', None) or []
     node_params = parse_node_parameters(node)
 %>
 % for i, sv in enumerate((dyn.state_variables or {}).values()):

@@ -75,7 +75,7 @@ lorenz = Dynamics(
     },
 )
 
-code = SimulationExperiment(local_dynamics=lorenz).render_code('jax')
+code = SimulationExperiment(dynamics=lorenz).render_code('jax')
 print(code)
 ```
 
@@ -101,7 +101,7 @@ lorenz = Dynamics(
 )
 
 # Run simulation and plot results
-SimulationExperiment(local_dynamics=lorenz).run(duration=1000).plot()
+SimulationExperiment(dynamics=lorenz).run(duration=1000).plot()
 ```
 
 </details>

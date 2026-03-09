@@ -68,7 +68,7 @@ parameters:
 description: ''
 references:
 - Montbrio2015
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   c_pop1:

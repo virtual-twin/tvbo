@@ -919,6 +919,8 @@ class Network(tvbo_datamodel.Network):
             i, j = edge.source, edge.target
             if 0 <= i < n and 0 <= j < n:
                 w = self._get_edge_param(edge, "weight")
+                if w is None:
+                    w = 1.0  # edge exists → default unit weight
                 W[i, j] = w
                 # Mirror for undirected edges (symmetric)
                 if not getattr(edge, "directed", False):
@@ -1060,6 +1062,9 @@ class Network(tvbo_datamodel.Network):
             W = self._weights_from_edges()
 
         if W is None:
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
+            if n > 0:
+                return np.zeros((n, n), dtype=np.float64)
             return None
 
         # Apply normalization if defined
@@ -1127,7 +1132,12 @@ class Network(tvbo_datamodel.Network):
             return self._cached_lengths
 
         # Compute from edges (fallback for networks built from explicit edges)
-        return self._lengths_from_edges()
+        L = self._lengths_from_edges()
+        if L is None:
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
+            if n > 0:
+                return np.zeros((n, n), dtype=np.float64)
+        return L
 
     @property
     def lengths(self):
@@ -2245,4 +2255,14 @@ class Network(tvbo_datamodel.Network):
 
 @register_pytree_node_class
 class Connectome(Network):
-    pass
+    """Deprecated alias for Network. Use Network instead."""
+
+    def __init__(self, *args, **kwargs):
+        import warnings
+        warnings.warn(
+            "Connectome is deprecated and will be removed in a future version. "
+            "Use tvbo.data.tvbo_data.connectomes.Network instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

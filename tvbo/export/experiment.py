@@ -32,6 +32,53 @@ from tvbo.utils import Bunch
 sessionid = 1
 
 
+def _sync_network_node_count(net):
+    """Sync number_of_nodes/number_of_regions from the nodes list.
+
+    When Network is created via LinkML deserialization + __class__ patching,
+    Network.__init__ never runs. This ensures node count is consistent.
+    """
+    if net.nodes:
+        n = len(net.nodes)
+        net.number_of_nodes = n
+        net.number_of_regions = n
+    elif (net.number_of_nodes or 0) > 1 and not net.nodes:
+        # number_of_nodes set but no nodes list — create default nodes
+        net.nodes = [
+            tvbo_datamodel.Node(id=i, label=f"node_{i}")
+            for i in range(net.number_of_nodes)
+        ]
+        net.number_of_regions = net.number_of_nodes
+
+
+def _upgrade_network_couplings(network, coupling_types=None):
+    """Upgrade network.coupling entries to runtime Coupling instances and
+    apply ``type``-based database/ontology fill.
+
+    Parameters
+    ----------
+    network : Network
+        The network whose coupling entries should be upgraded.
+    coupling_types : dict, optional
+        Mapping ``{coupling_key: type_ref}`` extracted from the raw YAML
+        before LinkML deserialization.  ``type_ref`` is a coupling function
+        name or CURIE (e.g. ``"KuramotoCoupling"`` or
+        ``"tvbo:KuramotoCoupling"``).
+    """
+    coupling_types = coupling_types or {}
+    coup_dict = getattr(network, 'coupling', None)
+    if not coup_dict:
+        return
+
+    for key, coup in coup_dict.items():
+        # Upgrade __class__ to runtime Coupling (skip if already runtime)
+        if not isinstance(coup, Coupling):
+            coup.__class__ = Coupling
+        # Apply type-based fill if a type reference was specified
+        if key in coupling_types:
+            coup.populate_from_type(coupling_types[key])
+
+
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def __init__(self, **kwargs):
         """Initialize like the datamodel, but auto-assign an id when missing.
@@ -42,19 +89,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - Keyword args matching the datamodel fields
         """
         global sessionid
-
-        if "dynamics" in kwargs and not isinstance(kwargs["dynamics"], dict):
-            # Convert list of Dynamics to dict keyed by name
-            dynamics_input = kwargs["dynamics"]
-            if isinstance(dynamics_input, list):
-                dynamics_dict = {}
-                for dyn in dynamics_input:
-                    if dyn is not None and hasattr(dyn, "name"):
-                        dynamics_dict[dyn.name] = dyn
-                kwargs["dynamics"] = dynamics_dict
-            elif hasattr(dynamics_input, "name"):
-                # Single Dynamics instance - wrap in dict
-                kwargs["dynamics"] = {dynamics_input.name: dynamics_input}
 
         # Ensure an id exists (the datamodel requires it in __post_init__)
         if kwargs.get("id") is None:
@@ -72,43 +106,63 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Pydantic v1
                 kwargs["network"] = net.dict(exclude_none=True)
 
+        # Extract non-schema fields from network sub-dicts before parent init.
+        # These are popped so the datamodel __init__ doesn't reject unknown kwargs.
+        _coupling_types = {}
+        net_kw = kwargs.get("network")
+        if isinstance(net_kw, dict):
+            # Extract `type` from network.coupling entries.
+            # `type` references a coupling function name/CURIE.
+            coup_dict = net_kw.get("coupling")
+            if isinstance(coup_dict, dict):
+                for key, val in coup_dict.items():
+                    if isinstance(val, dict) and "type" in val:
+                        _coupling_types[key] = val.pop("type")
+
+        # Allow coupling to be specified as a plain string name (e.g. "KuramotoCoupling")
+        # This implies "load from ontology/database", so we flag it for use_ontology
+        _coupling_from_name = False
+        if "coupling" in kwargs and isinstance(kwargs["coupling"], str):
+            kwargs["coupling"] = {"name": kwargs["coupling"]}
+            _coupling_from_name = True
+
         # Delegate to the parent dataclass initializer for normalization
         super().__init__(**kwargs)
 
         # Normalize and coerce fields while preserving original conditions
-        def _coerce(cls, obj):
+        def _coerce(cls, obj, **extra):
             if isinstance(obj, cls):
                 return obj
             if hasattr(obj, "_as_dict"):
-                return cls(**obj._as_dict)
+                return cls(**obj._as_dict, **extra)
             if isinstance(obj, dict):
-                return cls(**obj)
+                return cls(**obj, **extra)
             return obj
 
-        # Prefer `model` when `local_dynamics` is missing
-        if getattr(self, "model", None) and not getattr(self, "local_dynamics", None):
-            self.local_dynamics = self.model
+        # Prefer `model` (name string) when `dynamics` is missing
+        if getattr(self, "model", None) and not getattr(self, "dynamics", None):
+            self.dynamics = Dynamics(name=self.model)
 
-        # Ensure proper types
-        if getattr(self, "local_dynamics", None) and not isinstance(
-            self.local_dynamics, Dynamics
-        ):
-            self.local_dynamics = _coerce(Dynamics, self.local_dynamics)
+        # Coerce dynamics to enhanced Dynamics class
+        if getattr(self, "dynamics", None) and not isinstance(self.dynamics, Dynamics):
+            if isinstance(self.dynamics, tvbo_datamodel.Dynamics):
+                self.dynamics = Dynamics.from_datamodel(self.dynamics)
+            else:
+                self.dynamics = _coerce(Dynamics, self.dynamics)
+
+        # Mirror dynamics → model
+        if getattr(self, "dynamics", None):
+            self.model = self.dynamics
 
         if getattr(self, "coupling", None) and not isinstance(self.coupling, Coupling):
-            self.coupling = _coerce(Coupling, self.coupling)
+            self.coupling = _coerce(
+                Coupling, self.coupling, use_ontology=_coupling_from_name
+            )
 
         if getattr(self, "integration", None) and not isinstance(
             self.integration, Integrator
         ):
             self.integration = _coerce(Integrator, self.integration)
-
-        # Backward-compat aliasing for connectivity/network
-        if getattr(self, "connectivity", None) and not getattr(self, "network", None):
-            self.network = self.connectivity
-
-        if getattr(self, "network", None) and not isinstance(self.network, Network):
-            self.network = _coerce(Network, self.network)
 
         # Auto-upgrade continuations to runtime Continuation class
         conts = getattr(self, "continuations", None)
@@ -117,35 +171,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if val is not None and not isinstance(val, Continuation):
                     conts[key] = _coerce(Continuation, val)
 
-        # Mirror model/local_dynamics
-        self.model = self.local_dynamics
-
-        # If dynamics dict is empty, populate from local_dynamics
-        if not getattr(self, "dynamics", None) and getattr(
-            self, "local_dynamics", None
-        ):
-            ld = self.local_dynamics
-            self.dynamics[ld.name] = ld
-
-        # Coerce all dynamics dict entries to the enhanced Dynamics class
-        if getattr(self, "dynamics", None) and isinstance(self.dynamics, dict):
-            for key, val in list(self.dynamics.items()):
-                if val is not None and not isinstance(val, Dynamics):
-                    self.dynamics[key] = _coerce(Dynamics, val)
-
-        # If local_dynamics is empty but dynamics dict exists, use first entry
-        # This enables backwards-compatible single-model workflows
-        if not getattr(self, "local_dynamics", None) and getattr(
-            self, "dynamics", None
-        ):
-            dynamics_dict = self.dynamics
-            if isinstance(dynamics_dict, dict) and dynamics_dict:
-                first_key = next(iter(dynamics_dict))
-                self.local_dynamics = dynamics_dict[first_key]
-                self.model = self.local_dynamics
-
         if not getattr(self, "network", None):
             self.network = Network()
+        else:
+            self.network.__class__ = Network
+            # Network.__init__ doesn't run when class is patched, so sync here
+            _sync_network_node_count(self.network)
+
+        # Upgrade network.coupling entries to runtime Coupling + apply type fills
+        _upgrade_network_couplings(self.network, _coupling_types)
+
+        # If network defines couplings and experiment has no explicit coupling,
+        # use the first network coupling as the experiment-level default.
+        # This ensures the JAX template (which reads experiment.coupling) picks
+        # up the right coupling function.
+        net_coup = getattr(self.network, 'coupling', None)
+        if net_coup and len(net_coup) > 0:
+            first_coup = next(iter(net_coup.values()))
+            exp_coup = getattr(self, 'coupling', None)
+            # Override only if experiment coupling is the auto-generated default
+            if exp_coup is None or (
+                isinstance(exp_coup, Coupling)
+                and str(getattr(exp_coup, 'name', '')) == 'Linear'
+                and not _coupling_from_name
+            ):
+                self.coupling = first_coup
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, '_pending_source_file', None)
@@ -158,10 +208,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.integration = Integrator(method="Heun")
 
         if not getattr(self, "coupling", None):
-            self.coupling = Coupling(name="Linear")
-
-        if self.local_dynamics and not self.dynamics:
-            self.dynamics[self.local_dynamics.name] = self.local_dyanmics
+            self.coupling = Coupling(name="Linear", use_ontology=True)
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
@@ -199,8 +246,79 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_datamodel(
         cls, dm: tvbo_datamodel.SimulationExperiment
     ) -> "SimulationExperiment":
-        # Leverage the unified initializer
-        return cls(**dm._as_dict)
+        """Create from a datamodel instance by copying its already-normalized
+        state.
+
+        This avoids the ``_as_dict`` → re-init round-trip which breaks on
+        ``inlined_as_dict`` fields (the keyed dict is not valid ``**kwargs``
+        for the inner class constructor).  Instead we directly copy the
+        ``__dict__`` from the fully-normalised LinkML object and then set
+        the convenience aliases that ``__init__`` would normally provide.
+        """
+        obj = cls.__new__(cls)
+        # Copy all already-normalized state from the datamodel instance
+        obj.__dict__.update(dm.__dict__)
+
+        # -- Upgrade Dynamics via __class__ reassignment --
+        dyn = getattr(obj, "dynamics", None)
+        if isinstance(dyn, dict) and dyn:
+            for v in dyn.values():
+                if isinstance(v, tvbo_datamodel.Dynamics) \
+                        and not isinstance(v, Dynamics):
+                    v.__class__ = Dynamics
+                    v._ontology_class = None
+                    v.update_metadata()
+                    v.calculate_derived_parameters()
+            first = next(iter(dyn.values()))
+            obj.__dict__["dynamics"] = first
+            obj.__dict__["model"] = first
+        elif isinstance(dyn, tvbo_datamodel.Dynamics):
+            if not isinstance(dyn, Dynamics):
+                dyn.__class__ = Dynamics
+                dyn._ontology_class = None
+                dyn.update_metadata()
+                dyn.calculate_derived_parameters()
+            obj.__dict__["model"] = dyn
+        else:
+            obj.__dict__.setdefault("dynamics", None)
+
+        # -- Upgrade Integrator via __class__ reassignment --
+        integ = getattr(obj, "integration", None)
+        if integ is not None and not isinstance(integ, Integrator):
+            integ.__class__ = Integrator
+            integ._populate_from_ontology()
+        if not getattr(obj, "integration", None):
+            obj.__dict__["integration"] = Integrator(method="Heun")
+
+        # -- Upgrade Coupling via __class__ reassignment --
+        coup = getattr(obj, "coupling", None)
+        if coup is not None and not isinstance(coup, Coupling):
+            coup.__class__ = Coupling
+            # Only fill from ontology if coupling has name but no expressions
+            # (i.e. it's a name-only reference, not a fully-specified coupling)
+            if getattr(coup, "name", None) and not getattr(coup, "pre_expression", None):
+                coup._populate_from_ontology()
+        if not getattr(obj, "coupling", None):
+            obj.__dict__["coupling"] = Coupling(name="Linear", use_ontology=True)
+
+        # -- Upgrade Network via __class__ reassignment --
+        net = getattr(obj, "network", None)
+        if net is not None and not isinstance(net, Network):
+            net.__class__ = Network
+            _sync_network_node_count(net)
+            if not getattr(net, "conduction_speed", None):
+                net.conduction_speed = tvbo_datamodel.Parameter(
+                    name="conduction_speed", label="v",
+                    value=3.0, unit="mm/ms",
+                )
+        if not getattr(obj, "network", None):
+            obj.__dict__["network"] = Network()
+
+        # Upgrade network coupling entries (no type refs in from_datamodel path)
+        _upgrade_network_couplings(obj.network)
+
+        obj.__dict__["_source_file"] = None
+        return obj
 
     @classmethod
     def from_pyrates(cls, filepath: str) -> "SimulationExperiment":
@@ -217,12 +335,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Returns
         -------
         SimulationExperiment
-            New instance with dynamics dict populated from PyRates templates.
+            New instance with primary dynamics and network.dynamics for
+            multi-operator files.
 
         Example
         -------
         >>> exp = SimulationExperiment.from_pyrates("synaptic_plasticity.yaml")
-        >>> print(exp.dynamics.keys())  # ['tsodyks', 'depression', 'facilitation']
+        >>> print(exp.dynamics.name)  # 'tsodyks'
+        >>> print(list(exp.network.dynamics.keys()))  # ['tsodyks', 'depression', 'facilitation']
         """
         from tvbo.export.pyrates import from_pyrates_yaml_all
 
@@ -235,15 +355,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             dyn = Dynamics(_skip_ontology=True, **dyn_dict)
             dynamics[name] = dyn
 
-        # Use the first dynamics as local_dynamics if available
-        local_dynamics = None
+        # Use the first dynamics as the primary model
+        primary_dyn = None
         if dynamics:
             first_key = next(iter(dynamics))
-            local_dynamics = dynamics[first_key]
+            primary_dyn = dynamics[first_key]
+
+        # Store all dynamics in network.dynamics for heterogeneous support
+        network_kwargs = {}
+        if len(dynamics) > 1:
+            network_kwargs["dynamics"] = dynamics
 
         return cls(
-            dynamics=dynamics,
-            local_dynamics=local_dynamics,
+            dynamics=primary_dyn,
+            network=Network(**network_kwargs) if network_kwargs else None,
         )
 
     @classmethod
@@ -271,13 +396,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def from_file(cls, filepath: str):
-        from linkml_runtime.loaders import yaml_loader
         from pathlib import Path
+        from linkml_runtime.loaders import yaml_loader
+        import yaml
 
         # Store source file path BEFORE loading so __init__ can use it
         cls._pending_source_file = str(Path(filepath).resolve())
         try:
-            exp = yaml_loader.load(filepath, target_class=cls)
+            with open(filepath) as file_handle:
+                data_as_dict = yaml.safe_load(file_handle) or {}
+            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
             exp._source_file = cls._pending_source_file
         finally:
             cls._pending_source_file = None
@@ -305,15 +433,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         >>> exp = SimulationExperiment.from_string('''
         ... id: 1
         ... label: My Experiment
-        ... local_dynamics:
+        ... dynamics:
         ...   name: JansenRit
         ...   parameters:
         ...     A: {value: 3.25}
         ... ''')
         """
         from linkml_runtime.loaders import yaml_loader
+        import yaml
 
-        return yaml_loader.loads(yaml_string, target_class=cls)
+        data_as_dict = yaml.safe_load(yaml_string) or {}
+        return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
 
     @classmethod
     def from_bids(
@@ -365,7 +495,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ... )
 
         >>> # Access the experiment settings
-        >>> print(exp.local_dynamics.name)
+        >>> print(exp.dynamics.name)
         'Generic2dOscillator'
 
         Notes
@@ -394,14 +524,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         network = None
         if bids_data["network"] is not None:
             net_data = bids_data["network"]
-            network = Network(
-                weights=net_data["weights"],
-                tract_lengths=net_data.get("distances"),
-                region_labels=(
-                    np.array(net_data["region_labels"])
-                    if net_data["region_labels"]
+            labels = (
+                list(net_data["region_labels"])
+                if net_data["region_labels"]
+                else None
+            )
+            network = Network.from_matrix(
+                weights=np.asarray(net_data["weights"]),
+                lengths=(
+                    np.asarray(net_data["distances"])
+                    if net_data.get("distances") is not None
                     else None
                 ),
+                labels=labels,
             )
 
             # Add coordinates if available
@@ -413,7 +548,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # =====================================================================
         # 2. Reconstruct Dynamics model
         # =====================================================================
-        local_dynamics = None
+        dynamics = None
         if bids_data["equations"] is not None:
             eq_data = bids_data["equations"]
             model_type = eq_data.get("model_type", "Generic2dOscillator")
@@ -421,20 +556,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Try to load from ontology by name
             try:
-                local_dynamics = Dynamics.from_ontology(model_type)
+                dynamics = Dynamics.from_ontology(model_type)
                 # Apply stored parameters
                 for param_name, param_value in params.items():
                     if (
-                        hasattr(local_dynamics, "parameters")
-                        and param_name in local_dynamics.parameters
+                        hasattr(dynamics, "parameters")
+                        and param_name in dynamics.parameters
                     ):
-                        local_dynamics.parameters[param_name].value = param_value
+                        dynamics.parameters[param_name].value = param_value
             except Exception:
                 # Fallback: create minimal Dynamics
-                local_dynamics = Dynamics(name=model_type)
+                dynamics = Dynamics(name=model_type)
         else:
             # Default dynamics
-            local_dynamics = Dynamics.from_ontology("Generic2dOscillator")
+            dynamics = Dynamics.from_ontology("Generic2dOscillator")
 
         # =====================================================================
         # 3. Reconstruct Integration settings from sidecar provenance
@@ -508,10 +643,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         experiment = cls(
             label=f"Loaded from BIDS: sub-{subject}",
             description=f"Experiment reconstructed from BIDS dataset at {bids_dir}",
-            local_dynamics=local_dynamics,
+            dynamics=dynamics,
             network=network,
             integration=integration,
-            coupling=Coupling(name="Linear"),  # Default coupling
+            coupling=Coupling.from_ontology("Linear"),
         )
 
         # Store BIDS source info
@@ -553,6 +688,123 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def metadata(self):
         return self
 
+    def symbolic(self, integrate=False, indexed=False, delays=False):
+        """Symbolic representation of the full experiment equations.
+
+        Produces different styles of mathematical output depending on the
+        combination of flags:
+
+        +----------+--------+-------+--------------------------------------------+
+        | integrate| indexed| delays| Description                                |
+        +==========+========+=======+============================================+
+        | False    | False  | False | Dynamics separated, coupling terms as free |
+        |          |        |       | symbols.  Coupling equations shown in      |
+        |          |        |       | ``'coupling'`` dict.                       |
+        +----------+--------+-------+--------------------------------------------+
+        | True     | False  | False | Coupling substituted into dynamics.        |
+        |          |        |       | State vars remain ``y0(t)``.               |
+        +----------+--------+-------+--------------------------------------------+
+        | False    | True   | False | State vars indexed ``y0_i(t)``.            |
+        |          |        |       | Coupling shown separately with ``[i],[j]``. |
+        +----------+--------+-------+--------------------------------------------+
+        | True     | True   | False | Fully integrated with node indices.        |
+        |          |        |       | Ready for network presentation.            |
+        +----------+--------+-------+--------------------------------------------+
+        | *        | (True) | True  | Like above but incoming states carry       |
+        |          |        |       | ``y1[j, t - tau[i,j]]`` time delay.        |
+        |          |        |       | ``delays=True`` implies ``indexed=True``.  |
+        +----------+--------+-------+--------------------------------------------+
+
+        Parameters
+        ----------
+        integrate : bool
+            Substitute coupling expressions into state equations.
+        indexed : bool
+            Add node index ``_i`` to state / derived variables.
+        delays : bool
+            Show time delays on incoming coupling states.
+            Implies ``indexed=True``.
+
+        Returns
+        -------
+        dict
+            Keys: ``'state'``, ``'coupling'``, ``'functions'``,
+            ``'derived_parameters'``, ``'derived'``, ``'parameters'``.
+        """
+        import sympy as sp
+        from sympy import Symbol, Function
+
+        if delays:
+            indexed = True
+
+        # Start from local dynamics
+        dyn_sym = self.dynamics.symbolic
+
+        # Collect coupling input → Coupling object mapping
+        coupling_map = {}
+        net_coup = getattr(self.network, "coupling", {}) or {}
+        dyn_ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
+
+        for ci_name in dyn_ci:
+            if ci_name in net_coup:
+                coupling_map[ci_name] = net_coup[ci_name]
+            elif self.coupling and str(getattr(self.coupling, "name", "")) != "Linear":
+                # Fallback: single experiment-level coupling for any input
+                coupling_map[ci_name] = self.coupling
+
+        # If no coupling to resolve, return dynamics as-is
+        if not coupling_map:
+            dyn_sym["coupling"] = {}
+            return dyn_sym
+
+        # Build coupling symbolic expressions
+        t = Symbol("t")
+        coupling_exprs = {}
+        for ct_name, coup in coupling_map.items():
+            coupling_exprs[ct_name] = coup.symbolic(delays=delays)
+
+        # Substitution maps (built conditionally)
+        subs_index = {}
+        subs_coupling = {}
+
+        # Node-index substitution: y0(t) → y0_i(t)
+        if indexed:
+            for sv_name in self.dynamics.state_variables:
+                old_f = Function(str(sv_name))
+                new_f = Function(str(sv_name) + "_i")
+                subs_index[old_f(t)] = new_f(t)
+            for dv_name in getattr(self.dynamics, "derived_variables", {}) or {}:
+                old_f = Function(str(dv_name))
+                new_f = Function(str(dv_name) + "_i")
+                subs_index[old_f(t)] = new_f(t)
+
+        # Coupling substitution: Symbol(ct_name) → Sum(...)
+        if integrate:
+            for ct_name, expr in coupling_exprs.items():
+                subs_coupling[Symbol(str(ct_name))] = expr
+
+        # Apply substitutions to all equation lists
+        with sp.evaluate(False):
+            def _apply_subs(eq):
+                """Apply node indexing + coupling substitution to an Eq."""
+                lhs = eq.lhs.subs(subs_index)
+                rhs = eq.rhs.subs(subs_index).subs(subs_coupling)
+                return sp.Eq(lhs, rhs)
+
+            state_eqs = [_apply_subs(eq) for eq in dyn_sym["state"]]
+            dv_eqs = [_apply_subs(eq) for eq in dyn_sym["derived"]]
+            dp_eqs = list(dyn_sym["derived_parameters"])  # no state vars here
+            func_eqs = list(dyn_sym["functions"])  # no state vars here
+
+        return {
+            "state": state_eqs,
+            "coupling": coupling_exprs,
+            "functions": func_eqs,
+            "derived_parameters": dp_eqs,
+            "derived": dv_eqs,
+            "parameters": dyn_sym["parameters"],
+        }
+
     @property
     def noise_sigma_array(self) -> np.ndarray:
         """Per-state-variable noise sigma values.
@@ -566,7 +818,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         sigmas: list[float] = []
 
-        for sv in self.local_dynamics.state_variables.values():
+        for sv in self.dynamics.state_variables.values():
             sigma = 0.0
             if sv.noise:
                 try:
@@ -673,47 +925,35 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Get network
             network = getattr(self, "network", None)
 
-            # Handle dynamics based on whether we have a network or single model
-            if network is not None:
-                # Network case: pass dynamics as dict for heterogeneous networks
-                dynamics = self.dynamics
-                if dynamics is None:
-                    dynamics = {}
-                elif not isinstance(dynamics, dict):
-                    # Convert list to dict keyed by name
-                    if isinstance(dynamics, list):
-                        dynamics = {d.name: d for d in dynamics if d is not None}
-                    else:
-                        # Single model - wrap in dict
-                        dynamics = {dynamics.name: dynamics} if dynamics else {}
+            # Build dynamics dict: primary model + any network dynamics
+            dynamics = self.dynamics
 
-                # Convert all datamodel Dynamics to full Dynamics class with methods
-                dynamics_converted = {}
-                for name, dyn in dynamics.items():
-                    if dyn is not None and not hasattr(dyn, "render_equation"):
-                        dynamics_converted[name] = DynamicsClass.from_datamodel(dyn)
-                    else:
-                        dynamics_converted[name] = dyn
+            # Convert datamodel Dynamics to full Dynamics class with methods
+            if dynamics is not None and not hasattr(dynamics, "render_equation"):
+                dynamics = DynamicsClass.from_datamodel(dynamics)
+
+            # For network case, build full dynamics dict
+            if network is not None:
+                dynamics_dict = {}
+                if dynamics:
+                    dynamics_dict[dynamics.name] = dynamics
+
+                # Add any additional dynamics from network.dynamics
+                net_dynamics = getattr(network, 'dynamics', None)
+                if isinstance(net_dynamics, dict):
+                    for name, dyn in net_dynamics.items():
+                        if name not in dynamics_dict:
+                            if dyn is not None and not hasattr(dyn, "render_equation"):
+                                dynamics_dict[name] = DynamicsClass.from_datamodel(dyn)
+                            else:
+                                dynamics_dict[name] = dyn
 
                 return to_pyrates_yaml_string(
-                    dynamics=dynamics_converted,
+                    dynamics=dynamics_dict,
                     network=network,
                     filepath=filepath,
                 )
             else:
-                # Single model case (no network)
-                dynamics = getattr(self, "local_dynamics", None)
-                if dynamics is None:
-                    dynamics = self.dynamics
-                    if isinstance(dynamics, list) and len(dynamics) == 1:
-                        dynamics = dynamics[0]
-                    elif isinstance(dynamics, dict) and len(dynamics) == 1:
-                        dynamics = list(dynamics.values())[0]
-
-                # Convert datamodel Dynamics to full Dynamics class with methods
-                if dynamics is not None and not hasattr(dynamics, "render_equation"):
-                    dynamics = DynamicsClass.from_datamodel(dynamics)
-
                 return to_pyrates_yaml_string(
                     dynamics=dynamics,
                     network=network,
@@ -798,7 +1038,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             keys_to_exclude=[
                 "derived_parameters",
                 "conduction_speed",
-                "coupling_terms",
+                "coupling_inputs",
             ]
         )
         # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
@@ -821,7 +1061,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         # Attach state variable names for ergonomic noise setters
         try:
-            state._svar_names = list(self.local_dynamics.state_variables.keys())
+            state._svar_names = list(self.dynamics.state_variables.keys())
         except Exception:
             pass
         return state
@@ -907,7 +1147,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 f"Format {format} not supported. Valid formats: tvb, tvboptim, jax."
             )
 
-    def run(self, format="jax", initial_conditions=None, **kwargs):
+    def run(self, format="tvboptim", initial_conditions=None, **kwargs):
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 
@@ -1007,7 +1247,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ts = jax_model(state)
             # simulation_data = Bunch()
             # ts.labels_dimensions = {
-            #     "State Variable": list(self.local_dynamics.state_variables.keys()),
+            #     "State Variable": list(self.dynamics.state_variables.keys()),
             #     "Region": self.network.labels,
             # }
             # ts.sample_period = self.integration.step_size
@@ -1024,7 +1264,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format.lower() == "python":
             bnm = _Network(Network(self.network))
-            bnm.add_local_model(self.local_dynamics)
+            bnm.add_local_model(self.dynamics)
             bnm.add_coupling(self.coupling)
 
             ts = bnm.run(
@@ -1226,7 +1466,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if self.network and self.network.parcellation
             else ""
         )
-        return f"ses-{self.id}_desc-{self.local_dynamics.label}"
+        return f"ses-{self.id}_desc-{self.dynamics.label}"
 
     @property
     def max_delay(self) -> float:
@@ -1248,15 +1488,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def collect_initial_conditions(self, random=False):
         history = []
-        n_modes = getattr(self.local_dynamics, 'number_of_modes', 1) or 1
+        n_modes = getattr(self.dynamics, 'number_of_modes', 1) or 1
         n_nodes = self.network.number_of_regions
 
         if random:
             history.append(
-                self.local_dynamics.get_initial_values(random=True, N=n_nodes)
+                self.dynamics.get_initial_values(random=True, N=n_nodes)
             )
         else:
-            for sv in self.local_dynamics.state_variables.values():
+            for sv in self.dynamics.state_variables.values():
                 history.append(np.repeat(sv.initial_value, n_nodes).astype(float))
 
         history = np.vstack(history)
@@ -1286,7 +1526,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from lems.model.component import Text
         from lems.model.simulation import DataWriter, Run
 
-        model = self.local_dynamics.to_lems(initial_conditions=initial_conditions)
+        model = self.dynamics.to_lems(initial_conditions=initial_conditions)
 
         base_local_ct = next(iter(model.component_types), None)
         local_comp = next(iter(model.components), None)
@@ -1300,7 +1540,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if local_comp is not None:
                 local_comp.type = local_ct.name
 
-        sv_names = list(self.local_dynamics.state_variables.keys())
+        sv_names = list(self.dynamics.state_variables.keys())
         target_sv = sv_names[0] if sv_names else "V"
         coupling_ct = lems.ComponentType(name="Coupling")
         coupling_ct.add(lems.Parameter(name="global_coupling", dimension="none"))
@@ -1435,7 +1675,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "rateml/tvbo-rateml-python.py.mako"
             )
             rendered_code = format_code(
-                template.render(model=self.local_dynamics, experiment=self, **kwargs),
+                template.render(model=self.dynamics, experiment=self, **kwargs),
                 use_black=False,
             )
 
@@ -1445,7 +1685,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "rateml/tvbo-rateml-cuda.c.mako"
             )
             rendered_code = template.render(
-                model=self.local_dynamics,
+                model=self.dynamics,
                 experiment=self,
                 coupling=self.coupling,
                 **kwargs
@@ -1457,7 +1697,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "rateml/tvbo-rateml-driver.py.mako"
             )
             rendered_code = format_code(
-                template.render(model=self.local_dynamics, experiment=self, **kwargs),
+                template.render(model=self.dynamics, experiment=self, **kwargs),
                 use_black=False,
             )
 
@@ -1466,7 +1706,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "tvbo-julia-DifferentialEquations.jl.mako"
             )
             rendered_code = template.render(
-                experiment=self, model=self.local_dynamics, **kwargs
+                experiment=self, model=self.dynamics, **kwargs
             )
 
         elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
@@ -1521,7 +1761,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def get_parameters_collection(self, **kwargs):
         if keys_to_exclude := kwargs.get("keys_to_exclude", []):
-            keys_to_exclude = keys_to_exclude + ["connectivity", "coupling_terms"]
+            keys_to_exclude = keys_to_exclude + ["connectivity", "coupling_inputs"]
         parameters = Bunch()
         metadata.traverse_metadata(
             self,
@@ -1535,9 +1775,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return self.get_parameters_collection()
 
     # ---- Reporting utilities (paralleling Dynamics) ----
-    def generate_report(
+    def report(
         self,
-        format: str = "markdown",
+        format: str | None = "markdown",
         template_name: str = "tvbo-report-experiment",
         outputfile: str | None = None,
         derivative_notation: str = "dot",
@@ -1548,58 +1788,64 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - Summarizes integration, network/connectome, coupling, monitors, stimulation, and software info.
 
         Parameters
-        - format: 'markdown', 'html', or 'pdf' (pdf via pandoc)
+        - format: optional explicit fallback format ('markdown' or 'pdf')
         - template_name: base name of the template without extension
-        - outputfile: optional path to write the rendered report
+        - outputfile: optional path to write the rendered report;
+            when provided, extension defines output format (.md or .pdf)
         """
-        # Choose template
-        if format in ["markdown", "md", "pdf"]:
-            template = templates.lookup.get_template(f"report/{template_name}.md.mako")
-        elif format in ["html", "htm"]:
-            template = templates.lookup.get_template(
-                f"report/{template_name}.html.mako"
-            )
-        else:
-            raise ValueError("format must be one of: markdown, html, pdf")
+        normalized_format = format.lower() if isinstance(format, str) else None
 
-        # Render with full experiment context; the template will include the model template
-        render = template.render(
+        if outputfile:
+            ext = os.path.splitext(outputfile)[1].lower()
+            ext_to_format = {
+                ".md": "markdown",
+                ".markdown": "markdown",
+                ".pdf": "pdf",
+            }
+            if ext not in ext_to_format:
+                raise ValueError(
+                    "outputfile extension must be one of: .md, .pdf"
+                )
+            normalized_format = ext_to_format[ext]
+
+        if normalized_format is None:
+            normalized_format = "markdown"
+
+        if normalized_format not in ["markdown", "md", "pdf"]:
+            raise ValueError("format must be one of: markdown, pdf")
+
+        md_template = templates.lookup.get_template(f"report/{template_name}.md.mako")
+        md_render = md_template.render(
             experiment=self, derivative_notation=derivative_notation
         )
 
+        render = md_render
+
         # Persist if requested
         if outputfile:
-            if format in ["pdf"]:
+            if normalized_format in ["pdf"]:
                 from tvbo.export import report as _report
 
-                _report.to_pdf(render, outputfile)
+                _report.to_pdf(md_render, outputfile)
             else:
                 with open(outputfile, "w", encoding="utf-8") as f:
                     f.write(render)
 
         return render
 
-    def save_report(
-        self, opath: str, format: str = "markdown", filename: str | None = None
-    ):
-        """Save the report to a file in the given directory.
-
-        If filename is not provided, uses a sensible default based on experiment id and label.
-        """
-        os.makedirs(opath, exist_ok=True)
-        if filename is None:
-            base = f"experiment_{self.id}"
-            if getattr(self, "label", None):
-                base += f"_{self.label}"
-            filename = base
-        ext = (
-            "md"
-            if format in ["markdown", "md"]
-            else ("html" if format in ["html", "htm"] else "pdf")
-        )
-        fpath = join(opath, f"{filename}.{ext}")
-        self.generate_report(
-            format=format if format != "md" else "markdown", outputfile=fpath
+    def generate_report(
+        self,
+        format: str | None = "markdown",
+        template_name: str = "tvbo-report-experiment",
+        outputfile: str | None = None,
+        derivative_notation: str = "dot",
+    ) -> str:
+        """Backward-compatible alias for :meth:`report`."""
+        return self.report(
+            format=format,
+            template_name=template_name,
+            outputfile=outputfile,
+            derivative_notation=derivative_notation,
         )
 
     def to_bids(

@@ -1,0 +1,264 @@
+# Schirner2023: EIB Brain Network Model
+# DOI: 10.1016/j.patter.2023.100787
+
+key: Schirner2023
+title: "Brain simulation augments machine learning-based classification of dementia"
+year: 2023
+doi: "10.1016/j.patter.2023.100787"
+
+simulation_experiments:
+    - id: 1
+      label: "EIB full brain network model"
+      dynamics:
+          name: EIB_ReducedWongWangExcInh
+          system_type: continuous
+
+          parameters:
+              # Excitatory
+              a_e: { value: 310.0 }
+              b_e: { value: 125.0 }
+              d_e: { value: 0.160 }
+              gamma_e: { value: 0.000641 }
+              tau_e: { value: 100.0 }
+              w_p: { value: 1.4 }
+              J_N: { value: 0.15 }
+              W_e: { value: 1.0 }
+              # Inhibitory
+              a_i: { value: 615.0 }
+              b_i: { value: 177.0 }
+              d_i: { value: 0.087 }
+              gamma_i: { value: 0.001 }
+              tau_i: { value: 10.0 }
+              J_i: { value: 1.0 }
+              W_i: { value: 0.7 }
+              # External
+              I_o: { value: 0.382 }
+              I_ext: { value: 0.0 }
+              # EIB free parameters
+              G: { value: 2.0 }
+              lamda: { value: 1.0 }
+
+          derived_variables:
+              x_e_pre:
+                  {
+                      equation:
+                          {
+                              rhs: "w_p * J_N * S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext",
+                          },
+                  }
+              x_i_pre:
+                  {
+                      equation:
+                          {
+                              rhs: "J_N * S_e - S_i + W_i * I_o + lamda * J_N * c_ffi",
+                          },
+                  }
+              x_e: { equation: { rhs: "a_e * x_e_pre - b_e" } }
+              x_i: { equation: { rhs: "a_i * x_i_pre - b_i" } }
+              H_e: { equation: { rhs: "x_e / (1 - exp(-d_e * x_e))" } }
+              H_i: { equation: { rhs: "x_i / (1 - exp(-d_i * x_i))" } }
+
+          state_variables:
+              S_e:
+                  initial_value: 0.001
+                  boundaries: { lo: 0.0, hi: 1.0 }
+                  equation: { rhs: "-S_e / tau_e + (1 - S_e) * H_e * gamma_e" }
+                  coupling_variable: true
+                  noise:
+                      additive: true
+                      parameters:
+                          sigma: { value: 0.01 }
+              S_i:
+                  initial_value: 0.001
+                  boundaries: { lo: 0.0, hi: 1.0 }
+                  equation: { rhs: "-S_i / tau_i + H_i * gamma_i" }
+
+          coupling_inputs:
+              coupling: { dimension: 2 }
+
+          coupling_terms:
+              c_lre: {}
+              c_ffi: {}
+
+      coupling:
+          name: EIBLinearCoupling
+          parameters:
+              wLRE: { value: 1.0, shape: "(N, N)" }
+              wFFI: { value: 1.0, shape: "(N, N)" }
+          incoming_states: [S_e]
+          pre_expression: { rhs: "[S_e * wLRE, S_e * wFFI]" }
+          post_expression: { rhs: "gx" }
+
+      network:
+          number_of_regions: 379
+          parcellation: { atlas: { name: hcpmmp1 } }
+          tractogram: "dTOR"
+          global_coupling_strength: { name: "G", value: 2.0 }
+          conduction_speed: { name: "v", value: 6.0, unit: "m/s" }
+
+      integration:
+          method: Heun
+          step_size: 0.1
+          duration: 720
+          unit: "ms"
+
+      observations:
+          Bold:
+              description: >-
+                  BOLD fMRI signal derived from excitatory synaptic activity (S_e)
+                  via Balloon-Windkessel hemodynamic model convolution.
+              source: S_e  # Keyed reference to state variable
+              imaging_modality: BOLD
+              period: 720.0
+              pipeline:
+                  # Function 1: Convolve with Hemodynamic Response Function
+                  - name: BalloonWindkessel
+                    description: "Balloon-Windkessel hemodynamic model for BOLD signal"
+                    output: BOLD_raw
+                    operation_type: convolution
+                    callable:
+                        name: HemodynamicResponseFunctionTVB
+                        module: tvb.analyzers.fmri_balloon
+                        qualname: BalloonModel
+                        software:
+                            name: tvb-library
+                            version: ">=2.0"
+
+                  # Function 2: Downsample to fMRI TR
+                  - name: downsample
+                    input: BalloonWindkessel  # Keyed reference to previous function
+                    output: Bold
+                    operation_type: subsample
+                    equation:
+                        rhs: "(X[:-TR:TR] + X[TR::TR]) / 2"
+                    arguments:
+                        - { name: TR, value: 720.0, unit: "ms" }
+
+          # Functional Connectivity derived from BOLD
+          FC:
+              description: "Functional connectivity matrix (Pearson correlation)"
+              source_observation: Bold  # Keyed reference to Bold observation
+              pipeline:
+                  - name: corrcoef
+                    output: FC
+                    callable:
+                        module: numpy
+                        qualname: corrcoef
+                    arguments:
+                        - { name: rowvar, value: "False" }
+
+      modelfitting:
+          - targets:
+                - {
+                      symbol: "r_{FC}",
+                      equation: { rhs: "corr(FC_{sim}, FC_{emp})" },
+                  }
+            cost_function:
+                equation: { rhs: "1 - r_{FC}" }
+                parameters:
+                    G: { domain: { lo: 0.0, hi: 4.0, step: 0.1 } }
+                    lamda: { domain: { lo: 0.0, hi: 1.0, step: 0.1 } }
+
+      # ==========================================================================
+      # Iterative Tuning Algorithms
+      # ==========================================================================
+      tuning_algorithms:
+          # Feedback Inhibition Control (FIC)
+          # Maintains local E-I balance by adjusting J_i to keep S_e at target
+          - name: FIC
+            type: fic
+            description: >-
+                Feedback Inhibition Control maintains excitatory activity at a
+                target level by adaptively adjusting local inhibitory weights.
+
+            objective:
+                type: activity_target
+                target_variable: { name: S_e }
+                target_value: 0.25
+
+            observables:
+                - name: mean_S_e
+                  equation: { rhs: "mean(S_e, axis=0)" }
+                  source: state
+                  aggregation: mean
+                - name: mean_S_i
+                  equation: { rhs: "mean(S_i, axis=0)" }
+                  source: state
+                  aggregation: mean
+
+            update_rules:
+                - name: J_i_update
+                  target_parameter: { name: J_i }
+                  equation:
+                      rhs: "J_i + eta_fic * (mean_S_i * mean_S_e - target_fic * mean_S_i)"
+                  requires:
+                      - { name: mean_S_e }
+                      - { name: mean_S_i }
+
+            learning_rate: 0.5
+            n_iterations: 200
+            hyperparameters:
+                target_fic: { value: 0.25, description: "Target S_e activity" }
+
+            simulation_period: 720.0 # One BOLD TR per iteration
+
+          # Excitation-Inhibition Balance (EIB) Tuning
+          # Adjusts wLRE/wFFI to match empirical functional connectivity
+          - name: EIB
+            type: eib
+            description: >-
+                EIB tuning optimizes dual coupling weights (wLRE, wFFI) to match
+                empirical functional connectivity while maintaining local E-I balance.
+
+            objective:
+                type: fc_matching
+                target_data:
+                    name: fc_empirical
+                    source: empirical
+                metric: { rhs: "rmse(fc_pred, fc_target)" }
+
+            observables:
+                - name: fc_pred
+                  equation: { rhs: "compute_fc(bold_signal)" }
+                  source: bold
+                  aggregation: window
+                  window_size: 150
+                - name: diff_FC
+                  equation: { rhs: "fc_target - fc_pred" }
+                  source: fc
+                - name: rmse_FC
+                  equation: { rhs: "rmse(fc_target, fc_pred, axis=1)" }
+                  source: fc
+
+            update_rules:
+                - name: wLRE_update
+                  target_parameter: { name: wLRE }
+                  equation:
+                      rhs: "wLRE + eta_eib * diff_FC * rmse_FC"
+                  bounds: { lo: 0.0 }
+                  requires:
+                      - { name: diff_FC }
+                      - { name: rmse_FC }
+
+                - name: wFFI_update
+                  target_parameter: { name: wFFI }
+                  equation:
+                      rhs: "wFFI - eta_eib * diff_FC * rmse_FC"
+                  bounds: { lo: 0.0 }
+                  requires:
+                      - { name: diff_FC }
+                      - { name: rmse_FC }
+
+            hyperparameters:
+                window_size: { value: 150, description: "BOLD window for FC" }
+
+            learning_rate: 0.005
+            n_iterations: 2000
+            learning_rate_schedule: linear
+            simulation_period: 720.0
+            depends_on:
+                - { name: FIC } # EIB runs alongside FIC
+
+    # Reference to two-node model experiment
+    - file: Schirner2023_TwoNode.yaml
+      description: "Two-node EIB model for E/I balance studies"

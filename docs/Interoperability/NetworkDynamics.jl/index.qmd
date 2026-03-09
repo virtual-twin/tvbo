@@ -174,8 +174,8 @@ ani.save("diffusion.gif", writer="pillow", fps=20)
 
 | YAML Section | Julia Construct | Template |
 |-------------|----------------|----------|
-| `local_dynamics.state_variables` | `f!(dx, x, esum, p, t)` | vertex |
-| `local_dynamics.parameters` | `psym = [:a => 0.5, ...]` | vertex |
+| `dynamics.state_variables` | `f!(dx, x, esum, p, t)` | vertex |
+| `dynamics.parameters` | `psym = [:a => 0.5, ...]` | vertex |
 | `network.coupling.*.pre_expression` | `g!(e_dst, v_src, v_dst, p, t)` | edge |
 | `network.coupling.*.parameters` | `psym = [:K => 3.0, ...]` | edge |
 | `network.edges` | `SimpleDiGraph` / `complete_graph` | experiment |

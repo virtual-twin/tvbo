@@ -3,7 +3,7 @@
     from tvbo.export.code import render_expression
     jaxcode = lambda expr: render_expression(expr, format='jax')
     # For rendering model objects (DerivedParameter, DerivedVariable, etc.)
-    jaxcode_obj = lambda obj: experiment.local_dynamics.render_equation(obj, format='jax')
+    jaxcode_obj = lambda obj: experiment.dynamics.render_equation(obj, format='jax')
     import numpy as np
     import networkx as nx
     from sympy import Symbol
@@ -22,13 +22,13 @@
         monitors_seq = experiment.monitors() if callable(_mon) else (_mon.values() if hasattr(_mon, 'values') else (_mon or []))
     except TypeError:
         monitors_seq = _mon.values() if hasattr(_mon, 'values') else (_mon or [])
-    model = experiment.local_dynamics
+    model = experiment.dynamics
     coupling = experiment.coupling
     integration = experiment.integration
 
     dt = integration.step_size if integration is not None else 0.1
-    cvar = [i for i, sv in enumerate(experiment.local_dynamics.state_variables.values()) if sv.coupling_variable]
-    vois = [sv.name for sv in experiment.local_dynamics.state_variables.values() if sv.variable_of_interest]
+    cvar = [i for i, sv in enumerate(experiment.dynamics.state_variables.values()) if sv.coupling_variable]
+    vois = [sv.name for sv in experiment.dynamics.state_variables.values() if sv.variable_of_interest]
 
     svars = list(model.state_variables.keys())
     svars_is_vois = svars == vois
@@ -118,25 +118,25 @@ ${obs.create_all_observations(experiment)}
 
 ## Transformation for derived parameters
 def transform_parameters(_p):
-% if experiment.local_dynamics.parameters:
-    ${", ".join([p.name for p in experiment.local_dynamics.parameters.values()])} = _p.${", _p.".join([p.name for p in experiment.local_dynamics.parameters.values()])}
+% if experiment.dynamics.parameters:
+    ${", ".join([p.name for p in experiment.dynamics.parameters.values()])} = _p.${", _p.".join([p.name for p in experiment.dynamics.parameters.values()])}
 % endif
     \
-## % for par in [p.name for p in experiment.local_dynamics.parameters.values()]:
+## % for par in [p.name for p in experiment.dynamics.parameters.values()]:
 ## ${par}, \
 ## % endfor
 ## = params_dfun
 
-    % for par in experiment.local_dynamics.derived_parameters.values():
+    % for par in experiment.dynamics.derived_parameters.values():
     ${par.name} = ${jaxcode_obj(par)}
     % endfor
-    %if len(experiment.local_dynamics.derived_parameters.values()) > 0:
-    _p.${", _p.".join([p.name for p in experiment.local_dynamics.derived_parameters.values()])} = ${", ".join([p.name for p in experiment.local_dynamics.derived_parameters.values()])}
+    %if len(experiment.dynamics.derived_parameters.values()) > 0:
+    _p.${", _p.".join([p.name for p in experiment.dynamics.derived_parameters.values()])} = ${", ".join([p.name for p in experiment.dynamics.derived_parameters.values()])}
     % endif
     return _p
 
 ##     return (\
-## % for par in [p.name for p in experiment.local_dynamics.parameters.values()] + [p.name for p in experiment.local_dynamics.derived_parameters.values()]:
+## % for par in [p.name for p in experiment.dynamics.parameters.values()] + [p.name for p in experiment.dynamics.derived_parameters.values()]:
 ## ${par}, \
 ## % endfor
 ## )
@@ -147,10 +147,10 @@ c_vars = ${utils.array_input(np.array(cvar))}.astype(jnp.int32)
 ## TODO: provide def kernel_n(state, noise) for explicitly providing noise, ...
 def kernel(state):
     # problem dimensions
-    n_nodes = ${experiment.network.number_of_regions}
-    n_svar = ${len(experiment.local_dynamics.state_variables)}
-    n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.local_dynamics.state_variables)}
-    n_modes = ${experiment.local_dynamics.number_of_modes}
+    n_nodes = ${getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions}
+    n_svar = ${len(experiment.dynamics.state_variables)}
+    n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.dynamics.state_variables)}
+    n_modes = ${experiment.dynamics.number_of_modes}
     nh = ${experiment.horizon}
 
     %if is_delayed:
@@ -171,7 +171,7 @@ def kernel(state):
     weights = state.network.weights_matrix
 
     dn = jnp.arange(int(n_nodes)) * jnp.ones((int(n_nodes), int(n_nodes))).astype(jnp.int32)
-    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(jnp.int32)
+    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(jnp.int32) if state.network.conduction_speed.value > 0 else jnp.zeros((int(n_nodes), int(n_nodes)), dtype=jnp.int32)
     di = -1 * idelays - 1
     delay_indices = (di, dn)
 
@@ -191,8 +191,8 @@ def kernel(state):
 
     ## initial conditions go through the carry of scan
 
-% if experiment.local_dynamics.parameters or experiment.local_dynamics.derived_parameters:
-    p = transform_parameters(state.parameters.local_dynamics)
+% if experiment.dynamics.parameters or experiment.dynamics.derived_parameters:
+    p = transform_parameters(state.parameters.dynamics)
 % else:
     p = Bunch()  # No parameters for this model
 % endif
@@ -275,7 +275,7 @@ def kernel(state):
     %>
     % for dv_name in trace_derived_deps:
     <%
-        dv = experiment.local_dynamics.derived_variables[dv_name]
+        dv = experiment.dynamics.derived_variables[dv_name]
         rendered_eq = jaxcode_obj(dv)
     %>
     ${dv_name} = ${rendered_eq}
@@ -316,13 +316,13 @@ def kernel(state):
     ## Build labels for TimeSeries so indexing and plotting work robustly
     <%
     # Use output if specified, otherwise fall back to all state variables
-    output_labels = list(experiment.local_dynamics.output) if experiment.local_dynamics.output else [sv.name for sv in experiment.local_dynamics.state_variables.values()]
+    output_labels = list(experiment.dynamics.output) if experiment.dynamics.output else [sv.name for sv in experiment.dynamics.state_variables.values()]
     %>
     labels_dimensions = {
         "Time": None,
         "State Variable": ${output_labels},
-        "Space": ${list(experiment.network.parcellation.region_labels) if getattr(experiment.network.parcellation, 'region_labels', None) else [str(i) for i in range(experiment.network.number_of_regions)]},
-        "Mode": ${[f"m{i}" for i in range(experiment.local_dynamics.number_of_modes)]},
+        "Space": ${list(experiment.network.parcellation.region_labels) if getattr(experiment.network.parcellation, 'region_labels', None) else [str(i) for i in range(getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions)]},
+        "Mode": ${[f"m{i}" for i in range(experiment.dynamics.number_of_modes)]},
     }
     return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw", sample_period=dt, labels_dimensions=labels_dimensions)
     % else:

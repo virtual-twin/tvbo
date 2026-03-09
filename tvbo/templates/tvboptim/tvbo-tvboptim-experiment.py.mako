@@ -7,7 +7,8 @@ from tvbo.export.code import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
-    parse_exploration, get_param_info
+    parse_exploration, get_param_info, get_node_param_overrides,
+    get_node_state_overrides
 )
 import numpy as np
 
@@ -15,7 +16,7 @@ import numpy as np
 assert 'experiment' in context.keys(), "experiment required for experiment template"
 
 # Direct references to experiment components (LinkML guarantees these exist)
-model = experiment.local_dynamics
+model = experiment.dynamics
 integration = experiment.integration
 network = experiment.network
 
@@ -36,20 +37,21 @@ state_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
-# Extract state variable bounds (for BoundedSolver)
-# Collect lo/hi from state_variable.domain if present
-state_bounds_lo = []
-state_bounds_hi = []
-for sv_name, sv in model.state_variables.items():
-    lo, hi = None, None
-    if hasattr(sv, 'domain') and sv.domain:
-        lo = getattr(sv.domain, 'lo', None)
-        hi = getattr(sv.domain, 'hi', None)
-    state_bounds_lo.append(float(lo) if lo is not None else float('-inf'))
-    state_bounds_hi.append(float(hi) if hi is not None else float('inf'))
+# Model output variables (from model.output attribute)
+# These are the variables the model defines as its primary output (e.g., v_pyr = y1 - y2)
+model_output_vars = getattr(model, 'output', None) or []
+if isinstance(model_output_vars, str):
+    model_output_vars = [model_output_vars]
+model_derived_outputs = [v for v in model_output_vars if v in (model.derived_variables or {})]
+model_state_outputs = [v for v in model_output_vars if v in state_names]
+has_model_output = bool(model_output_vars)
 
-# Check if any state has finite bounds (needs BoundedSolver)
-has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
+# Extract state variable bounds (for BoundedSolver)
+# Uses SymPy oo so code printers emit the correct backend literal
+from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
+state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
+state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
+state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
 
 # Build coupling_inputs dict from model.coupling_inputs
 coupling_inputs_dict = {}
@@ -87,7 +89,7 @@ for ck, cobj in all_couplings.items():
                 all_coupling_param_shapes[(ck, p.name)] = str(p.shape)
 
 # Integration metadata
-SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4'}
+SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}
 method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
@@ -116,9 +118,13 @@ if not any(s > 0 for s in noise_sigma_per_state) and integration.noise and integ
 
 has_noise = any(s > 0 for s in noise_sigma_per_state)
 noise_sigma = noise_sigma_per_state if len(set(noise_sigma_per_state)) > 1 else [noise_sigma_per_state[0]] if noise_sigma_per_state else [0.0]
+# For targeted noise (apply_to), extract the sigma for the targeted states only
+# AdditiveNoise takes a single scalar sigma, so all targeted states share the same sigma
+noise_sigma_targeted = [s for s in noise_sigma_per_state if s > 0]
+noise_sigma_value = noise_sigma_targeted[0] if noise_sigma_targeted else 0.0
 
 # Network metadata
-n_nodes = N_nodes = network.number_of_regions
+n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
@@ -153,6 +159,51 @@ dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else
 
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
+
+# Per-node parameter overrides from network.nodes[].parameters
+# If nodes define e.g. B=17.6 on node 1, auto-promote B to heterogeneous array
+node_param_overrides = get_node_param_overrides(network, n_nodes, dyn_param_defaults)
+for _np_name in node_param_overrides:
+    if _np_name not in dyn_param_shapes:
+        dyn_param_shapes[_np_name] = '(n_nodes,)'
+
+# Per-node initial state overrides from node ``state:`` entries
+# e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
+_default_init = [float(sv.initial_value) if sv.initial_value is not None else 0.0
+                 for sv in model.state_variables.values()]
+node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _default_init)
+
+# Detect parameters with distribution.axis == 'time' — these are stochastic
+# time-varying inputs pre-generated as arrays and indexed per integration step.
+# Not regular params: excluded from DEFAULT_PARAMS, trajectories injected after prepare().
+stochastic_param_names = set()
+stochastic_param_info = {}  # name -> {dist, lo, hi, seed, default}
+for pname in list(dyn_param_names):
+    p_obj = model.parameters.get(pname) if model.parameters else None
+    if p_obj and getattr(p_obj, 'distribution', None):
+        dist = p_obj.distribution
+        axis = str(getattr(dist, 'axis', 'space'))
+        if axis == 'time' or 'time' in axis:
+            stochastic_param_names.add(pname)
+            domain = getattr(dist, 'domain', None)
+            dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+            stochastic_param_info[pname] = {
+                'dist': dist_name,
+                'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
+                'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
+                'default': float(p_obj.value) if p_obj.value is not None else 0.0,
+                'seed': int(getattr(dist, 'seed', None) or 42),
+                'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
+            }
+# Remove stochastic params from dynamics params (trajectories injected after prepare)
+dyn_param_names = [p for p in dyn_param_names if p not in stochastic_param_names]
+
+# === Events metadata (stimuli and other time-dependent inputs) ===
+# Schema: experiment.events is multivalued dict of Event objects
+# Each stimulus-type event becomes an AbstractExternalInput, available as a variable in dfun
+events_list = list(experiment.events.values()) if experiment.events else []
+stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+has_stimulus_events = len(stimulus_events) > 0
 
 # === Optimization metadata ===
 # Schema: experiment.optimization is multivalued dict, opt.stages is inlined_as_list
@@ -347,17 +398,28 @@ for expl in exploration_list:
         'mode': expl.mode or 'product',
         # n_parallel has schema ifabsent: integer(1)
         'n_parallel': int(expl.n_parallel) if expl.n_parallel is not None else 1,
+        # n_trials has schema ifabsent: integer(1)
+        'n_trials': int(expl.n_trials) if expl.n_trials is not None else 1,
+        # average: 'trials' to average over n_trials, None for individual results
+        'average': str(expl.average) if expl.average else None,
         'axes': [],
     }
     # Schema: parameters is multivalued dict
     params = expl.parameters
     assert params, f"exploration.parameters required in YAML for {expl.name}"
+    def _resolve_n(domain):
+        """Compute n from domain: prefer n, else compute from step, else default 50."""
+        if domain.n:
+            return int(domain.n)
+        if domain.step and domain.lo is not None and domain.hi is not None:
+            return int(round((float(domain.hi) - float(domain.lo)) / float(domain.step))) + 1
+        return 50
     for param in params.values():
         domain = param.domain
-        assert domain, f"exploration parameter domain required for {param.name}"
-        assert domain.lo is not None, f"domain.lo required for {param.name}"
-        assert domain.hi is not None, f"domain.hi required for {param.name}"
-        assert domain.n, f"domain.n required for {param.name}"
+        explored_values = param.explored_values
+        _el_domains = getattr(param, 'element_domains', None) or []
+        _has_el_ev = any(getattr(ed, 'explored_values', None) for ed in _el_domains)
+        assert domain or explored_values or _has_el_ev, f"exploration parameter requires domain, explored_values, or element_domains with explored_values for {param.name}"
         pname = str(param.name)
         # Check for dotted notation: ClassName.param_name
         # If prefix matches a coupling key → coupling param, else dynamics param
@@ -367,15 +429,75 @@ for expl in exploration_list:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = prefix in all_couplings
             source_key = prefix
-        exp_info['axes'].append({
-            'name': pname,
-            'lo': float(domain.lo),
-            'hi': float(domain.hi),
-            'n': int(domain.n),
-            'is_coupling': is_coupling_param,
-            'coupling_key': source_key if is_coupling_param else None,
-            'dynamics_key': source_key if not is_coupling_param and source_key else None,
-        })
+        # Auto-expand heterogeneous parameters: if pname matches a dynamics param
+        # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
+        # e.g., K with shape "(n_nodes,)" → K_el0, K_el1, ... K_el(n_nodes-1)
+        is_hetero_param = (not is_coupling_param and pname in dyn_param_shapes
+                           and 'n_nodes' in dyn_param_shapes[pname])
+        if is_hetero_param:
+            _n = n_nodes
+            _el_domains = getattr(param, 'element_domains', None) or []
+            # Build element→domain lookup: keyed by Range.element if set, else positional
+            _el_dom_map = {}
+            for _edi, _ed in enumerate(_el_domains):
+                _ek = getattr(_ed, 'element', None)
+                _ek = _ek if _ek is not None else _edi
+                _el_dom_map[_ek] = _ed
+            for _ei in range(_n):
+                ax_entry = {
+                    'name': pname,
+                    'is_coupling': False,
+                    'coupling_key': None,
+                    'dynamics_key': source_key if source_key else None,
+                    'element_idx': _ei,
+                }
+                # Per-element explored_values from element_domains override shared ones
+                _dom_ei = _el_dom_map.get(_ei, None)
+                _el_ev = getattr(_dom_ei, 'explored_values', None) if _dom_ei else None
+                if _el_ev:
+                    vals = [float(v) for v in _el_ev]
+                    ax_entry['values'] = vals
+                    ax_entry['n'] = len(vals)
+                elif explored_values:
+                    vals = [float(v) for v in explored_values]
+                    ax_entry['values'] = vals
+                    ax_entry['n'] = len(vals)
+                else:
+                    # Use per-element domain if available (by element key), else shared domain
+                    _dom = _el_dom_map.get(_ei, domain)
+                    assert _dom.lo is not None, f"domain.lo required for {param.name}[{_ei}]"
+                    assert _dom.hi is not None, f"domain.hi required for {param.name}[{_ei}]"
+                    n = _resolve_n(_dom)
+                    ax_entry['lo'] = float(_dom.lo)
+                    ax_entry['hi'] = float(_dom.hi)
+                    ax_entry['n'] = n
+                exp_info['axes'].append(ax_entry)
+        else:
+            if explored_values:
+                vals = [float(v) for v in explored_values]
+                exp_info['axes'].append({
+                    'name': pname,
+                    'values': vals,
+                    'n': len(vals),
+                    'is_coupling': is_coupling_param,
+                    'coupling_key': source_key if is_coupling_param else None,
+                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                    'element_idx': None,
+                })
+            else:
+                assert domain.lo is not None, f"domain.lo required for {param.name}"
+                assert domain.hi is not None, f"domain.hi required for {param.name}"
+                n = _resolve_n(domain)
+                exp_info['axes'].append({
+                    'name': pname,
+                    'lo': float(domain.lo),
+                    'hi': float(domain.hi),
+                    'n': n,
+                    'is_coupling': is_coupling_param,
+                    'coupling_key': source_key if is_coupling_param else None,
+                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                    'element_idx': None,
+                })
     observable = expl.observable
     if observable:
         # FunctionCall: function attribute references the function
@@ -450,9 +572,13 @@ import numpy as np
 from typing import Tuple, Dict, Any, Optional, Callable, List
 
 from tvboptim.experimental.network_dynamics import Network, prepare, solve
+from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
 from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling, DelayedCoupling
+% if has_stimulus_events:
+from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
+% endif
 % if has_delay:
 from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 % else:
@@ -462,6 +588,7 @@ from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, Boun
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
+
 % if has_optimization:
 import optax
 from tvboptim.types import Parameter, BoundedParameter
@@ -469,7 +596,7 @@ from tvboptim.optim.optax import OptaxOptimizer
 from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback, SavingParametersCallback
 % endif
 % if has_explorations:
-from tvboptim.types import Space, GridAxis
+from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution
 % endif
 % for mod in derived_obs_modules:
@@ -479,22 +606,92 @@ import ${mod}
 # Result classes from tvbo
 from tvbo.data.types import SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult
 
+% if stochastic_param_info:
+
+def _inject_stochastic_trajectories(state, t1, dt, key=None):
+    """Pre-generate stochastic parameter trajectories and inject into state.dynamics.
+
+    Pre-generated arrays are indexed per integration step inside dynamics(),
+    avoiding per-step RNG calls. Pure jnp.ndarray — safe for vmap/pmap.
+    """
+    if key is None:
+        key = jax.random.key(0)
+    n_steps = int(t1 / dt) + 2  # +2 for rounding safety
+    % for sp_name, sp_info in stochastic_param_info.items():
+<%
+    # Determine noise shape: (n_steps,) for scalar, (n_steps, n_nodes) for per-node
+    _sp_shape = sp_info.get('shape', '')
+    if _sp_shape and 'n_nodes' in _sp_shape:
+        _noise_shape = '(n_steps, n_nodes)'
+    else:
+        _noise_shape = '(n_steps,)'
+%>\
+    key, _subkey = jax.random.split(key)
+    % if sp_info['dist'] == 'uniform':
+    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
+    % elif sp_info['dist'] in ('gaussian', 'normal'):
+    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * jax.random.normal(_subkey, ${_noise_shape})
+    % elif sp_info['dist'] in ('truncated_normal', 'truncatednormal'):
+    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, upper=${(sp_info['hi'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, shape=${_noise_shape})
+    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * _raw
+    % else:
+    # Unsupported distribution '${sp_info['dist']}', using uniform fallback
+    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
+    % endif
+    % endfor
+    return state
+
+% endif
+
+% if stochastic_param_info:
+def _freeze_step_time(solver):
+    """Patch solver to freeze t for all sub-evaluations within a step.
+
+    Multi-stage solvers (RK4, Heun) evaluate dynamics at sub-step times
+    (t, t+dt/2, t+dt). Time-indexed stochastic inputs (pre-generated arrays
+    indexed by t) should be constant per integration step — the input is
+    sampled once per step, not interpolated across sub-steps.
+
+    This patches the solver's step method so all dynamics evaluations within
+    a single step see the same time value (the step-start time t), preventing
+    the k4 evaluation at t+dt from reading the next noise sample.
+    """
+    _original_step = solver.step
+
+    def _frozen_step(dynamics_fn, t, state, dt, params, noise_sample=0.0):
+        def frozen_dynamics(t_sub, state_sub, params_sub):
+            return dynamics_fn(t, state_sub, params_sub)
+        return _original_step(frozen_dynamics, t, state, dt, params, noise_sample)
+
+    solver.step = _frozen_step
+    return solver
+
+% endif
 
 def get_solver():
     base_solver = ${solver_class}()
 % if has_state_bounds:
-    return BoundedSolver(
+    solver = BoundedSolver(
         base_solver,
-        low=jnp.array(${state_bounds_lo})[:, None],
-        high=jnp.array(${state_bounds_hi})[:, None]
+        low=jnp.array(${state_bounds_lo_str})[:, None],
+        high=jnp.array(${state_bounds_hi_str})[:, None]
     )
 % else:
-    return base_solver
+    solver = base_solver
 % endif
+% if stochastic_param_info:
+    solver = _freeze_step_time(solver)
+% endif
+    return solver
 
 <%include file="tvbo-tvboptim-dfun.py.mako" />
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
+
+% if has_stimulus_events:
+<%include file="tvbo-tvboptim-stimulus.py.mako" />
+% endif
+
 
 def create_network(
     weights: jnp.ndarray,
@@ -504,7 +701,7 @@ def create_network(
     region_labels: list = None,
     dynamics_params: dict = None,
     coupling_params: dict = None,
-    noise_sigma: float = ${noise_sigma[0]},
+    noise_sigma: float = ${noise_sigma_value},
 ) -> Network:
 % if has_normalization:
     # Normalization: ${_norm.rhs}
@@ -525,7 +722,9 @@ def create_network(
 
     _dynamics_params = {
         % for name in dyn_param_names:
-        % if name in dyn_param_shapes:
+        % if name in node_param_overrides:
+        '${name}': jnp.array([${', '.join(str(v) for v in node_param_overrides[name])}]),
+        % elif name in dyn_param_shapes:
         '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
         '${name}': ${dyn_param_defaults.get(name, 1.0)},
@@ -568,11 +767,22 @@ def create_network(
     noise = None
     % endif
 
+    % if has_stimulus_events:
+    external_input = {
+        % for ev in stimulus_events:
+        '${ev.name}': ${ev.name}Input(),
+        % endfor
+    }
+    % endif
+
     return Network(
         dynamics=dynamics,
         coupling=coupling_dict,
         graph=graph,
         noise=noise,
+        % if has_stimulus_events:
+        external_input=external_input,
+        % endif
     )
 
 def run_simulation(
@@ -591,11 +801,43 @@ def run_simulation(
     # Run transient simulation to settle network dynamics
     if t_transient > 0:
         model_fn_init, state_init = prepare(network, solver, t0=t0, t1=t_transient, dt=dt)
+        % if node_state_overrides:
+        # Per-node initial state overrides for transient
+        % for sv_name, sv_vals in node_state_overrides.items():
+        state_init.initial_state.dynamics = state_init.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
+        % endfor
+        % endif
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
         result_transient = model_fn_init(state_init)
-        network.update_history(result_transient)
+        # update_history expects states-only (no auxiliaries).
+        # When VARIABLES_OF_INTEREST records all (states+aux), slice to states only.
+        _n_states = ${len(state_names)}
+        _hist = Bunch(ts=result_transient.ts, ys=result_transient.ys[:, :_n_states, :])
+        network.update_history(_hist)
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    % if node_state_overrides:
+    # Per-node initial state overrides (from node ``state:`` YAML entries)
+    # initial_state.dynamics is [n_states, n_nodes] — set per-state row
+    % for sv_name, sv_vals in node_state_overrides.items():
+    state.initial_state.dynamics = state.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
+    % endfor
+    % endif
+    % if stochastic_param_info:
+    _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+    % endif
+
+    % if has_transient:
+    # Initialize state variables from end of transient (settled dynamics)
+    if result_transient is not None:
+        _final = result_transient.data[-1]  # (n_states,) or (n_states, n_nodes)
+        % for i, sv_name in enumerate(state_names):
+        state.dynamics.${sv_name} = _final[${i}]
+        % endfor
+    % endif
 
     result = None
     observations = None
@@ -1116,12 +1358,62 @@ def run_optimization(
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
     """${expl['label']} - Grid: ${grid_desc} = ${total_points} points."""
-    grid_state = copy.deepcopy(state)
+    _network = kwargs.get('network')
+    if _network is not None:
+        _solver = get_solver()
+% if has_transient:
+        # Each grid point runs its own transient + main simulation.
+        # This ensures each parameter combination settles to its own steady state.
+        _t_transient = ${transient_time}
+        _t_total = _t_transient + ${t1_default}
+        _n_transient = int(_t_transient / ${dt})
+        _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
+        _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(_expl_state, _t_total, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
+        % if has_stimulus_events:
+        # Offset event t0 by transient time (events are defined relative to main sim)
+        for _ext_key in list(_expl_state.external.keys()):
+            if hasattr(_expl_state.external[_ext_key], 't0'):
+                _expl_state.external[_ext_key].t0 = _expl_state.external[_ext_key].t0 + _t_transient
+        % endif
+        # Wrap model_fn to trim transient — downstream observable code sees main sim only
+        def _expl_model_fn(s):
+            result = _expl_model_fn_raw(s)
+            return NativeSolution(result.ts[_n_transient:], result.data[_n_transient:], dt=${dt})
+% else:
+        _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=${t1_default}, dt=${dt})
+        _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(_expl_state, ${t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
+% endif
+    else:
+        _expl_model_fn = model_fn
+        _expl_state = state
+    grid_state = copy.deepcopy(_expl_state)
     % for ax in expl['axes']:
-    % if ax.get('is_coupling'):
+    % if ax.get('element_idx') is not None:
+    ## Element-indexed parameter: create dummy scalar slot for Space discovery
+    ## e.g., K[0] → grid_state.dynamics._K_el0 = GridAxis(...)
+    % if 'values' in ax:
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = DataAxis(${ax['values']})
+    % else:
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}_${ax['element_idx']}', ${ax['n']}))
+    % endif
+    % elif ax.get('is_coupling'):
+    % if 'values' in ax:
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(${ax['values']})
+    % else:
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    % endif
+    % else:
+    % if 'values' in ax:
+    grid_state.dynamics.${ax['name']} = DataAxis(${ax['values']})
     % else:
     grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    % endif
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
@@ -1150,7 +1442,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
 % for obs in sorted(simulated_obs):
         _${obs} = _${obs}_monitor(result)
 % endfor
@@ -1183,14 +1475,52 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % else:
 <%
     # Check if this is a derived observation (no class exists - computed from other obs)
-    is_derived_obs = obs_name in derived_observation_names
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+    is_derived_obs = obs_name in derived_observation_names if obs_name else False
+    obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
-% if is_derived_obs:
+% if not obs_name:
+% if has_model_output:
+    # Model output: ${', '.join(model_output_vars)}
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        ## Unpack parameters (may be needed by derived variable equations)
+        % for name in dyn_param_names:
+        ${name} = s.dynamics.${name}
+        % endfor
+        % for sp_name in stochastic_param_names:
+        ${sp_name} = ${dyn_param_defaults.get(sp_name, 0.0)}  # stochastic time-varying param (default for derived computation)
+        % endfor
+        % if derived_param_names:
+        % for dp in model.derived_parameters.values():
+        ${dp.name} = ${jaxcode_obj(dp)}
+        % endfor
+        % endif
+        ## Unpack state variables from simulation result
+        % for i, sv_name in enumerate(state_names):
+        ${sv_name} = result.data[:, ${i}]
+        % endfor
+        ## Compute derived output variables
+        % for dv_name in model_derived_outputs:
+        ${dv_name} = ${jaxcode_obj(model.derived_variables[dv_name])}
+        % endfor
+        % if len(model_output_vars) == 1:
+        return ${model_output_vars[0]}
+        % else:
+        return jnp.stack([${', '.join(model_output_vars)}], axis=-1)
+        % endif
+% else:
+    # No observable specified, no model output - return raw simulation data
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        return result.data
+% endif
+% elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
         all_obs = compute_all_observations(result, s, result_transient)
 % if output_key:
         obs_result = getattr(all_obs, '${obs_name}', None)
@@ -1209,7 +1539,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     @jax.jit
     def observable_fn(s):
-        result = model_fn(s)
+        result = _expl_model_fn(s)
         obs_result = _${obs_name}_monitor(result)
 % if output_key:
         return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result.data
@@ -1219,6 +1549,76 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endif
 % endif
 
+<%
+    element_axes = [ax for ax in expl['axes'] if ax.get('element_idx') is not None]
+%>
+% if element_axes:
+    ## Wrap observable_fn to reconstruct array parameters from element slots.
+    ## Space sweeps dummy scalar slots (_K_el0, _K_el1), which we pack back
+    ## into the original array parameter before running the simulation.
+    _element_base_fn = observable_fn
+    def observable_fn(s):
+        % for ax in element_axes:
+        s.dynamics.${ax['name']} = s.dynamics.${ax['name']}.at[${ax['element_idx']}].set(s.dynamics._${ax['name']}_el${ax['element_idx']})
+        % endfor
+        return _element_base_fn(s)
+% endif
+
+% if expl.get('n_trials', 1) > 1 and stochastic_param_info:
+<%
+    _sp_names = list(stochastic_param_info.keys())
+    _n_sp = len(_sp_names)
+%>\
+    # === Trial parallelization: ${expl['n_trials']} trials via jax.vmap ===
+    # Each trial uses a different random noise realization for stochastic parameters.
+    # vmap maps the observable over all trials in parallel on the same device.
+    _n_trials = ${expl['n_trials']}
+    % if has_transient:
+    _n_steps_stoch = int(_t_total / ${dt}) + 2
+    % else:
+    _n_steps_stoch = int(${t1_default} / ${dt}) + 2
+    % endif
+    _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
+    % for _sp_idx, _sp_name in enumerate(_sp_names):
+<%
+    _sp_info = stochastic_param_info[_sp_name]
+    _sp_shape = _sp_info.get('shape', '')
+    if _sp_shape and 'n_nodes' in _sp_shape:
+        _trial_noise_shape = f'(_n_steps_stoch, {n_nodes})'
+    else:
+        _trial_noise_shape = '(_n_steps_stoch,)'
+    # Distribution-specific noise generation
+    if _sp_info['dist'] in ('gaussian', 'normal'):
+        _mean = _sp_info['default']
+        _std = (_sp_info['hi'] - _sp_info['lo']) / 4.0
+        _noise_gen = f'{_mean} + {_std} * jax.random.normal(k, {_trial_noise_shape})'
+    else:
+        # Default: uniform
+        _noise_gen = f"jax.random.uniform(k, {_trial_noise_shape}, minval={_sp_info['lo']}, maxval={_sp_info['hi']})"
+    # For multiple stochastic params, split each trial key for independent sub-keys
+    if _n_sp > 1:
+        _noise_gen = _noise_gen.replace('(k,', f"(jax.random.split(k, {_n_sp + 1})[{_sp_idx + 1}],")
+%>\
+    _trial_noises_${_sp_name} = jax.vmap(lambda k: ${_noise_gen})(_trial_keys)
+    % endfor
+
+    _base_trial_observable = observable_fn
+
+    @jax.jit
+    def observable_fn(s):
+        def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
+    % for _sp_name in _sp_names:
+            s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
+    % endfor
+            return _base_trial_observable(s)
+        trial_results = jax.vmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
+    % if expl.get('average') == 'trials':
+        return jnp.mean(trial_results, axis=0)
+    % else:
+        return trial_results
+    % endif
+% endif
+
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     results = exec_runner.run()
 
@@ -1226,14 +1626,25 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     _axes_info = [
 % for ax in expl['axes']:
         Bunch(
+% if ax.get('element_idx') is not None:
+            name='${ax['name']}[${ax['element_idx']}]',
+% else:
             name='${ax['name']}',
+% endif
+% if 'values' in ax:
+            values=jnp.array(${ax['values']}),
+% else:
             lo=${ax['lo']},
             hi=${ax['hi']},
-            n=${ax['n']},
             values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
+% endif
+            n=${ax['n']},
 % if ax.get('is_coupling'):
             is_coupling=True,
             coupling_key='${ax['coupling_key']}',
+% endif
+% if ax.get('element_idx') is not None:
+            element_idx=${ax['element_idx']},
 % endif
         ),
 % endfor
@@ -1244,7 +1655,16 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         grid=grid,
         results=jnp.stack(results),
         axes=_axes_info,
-        observable='${obs_name if obs_name else obs_func}',
+<% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
+        observable='${_obs_label}',
+        dt=${dt},
+        output_names=${model_output_vars if has_model_output and not obs_name else []},
+% if expl.get('n_trials', 1) > 1:
+        n_trials=${expl['n_trials']},
+% if expl.get('average'):
+        average='${expl["average"]}',
+% endif
+% endif
     )
 
 
@@ -1273,10 +1693,10 @@ def run_experiment(
     print("=" * 60)
 
     % if has_delay:
-    delays = jnp.array(distances) / ${conduction_speed} if distances is not None else jnp.zeros_like(weights)
-    network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma[0]})
+    delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
+    network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma[0]})
+    network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Determine if we need to run main simulation or just transient
@@ -1360,8 +1780,17 @@ def run_experiment(
     # This is the starting point for optimization unless depends_on is specified
     initial_state = copy.deepcopy(state)
 
-    main_result = SimulationResult(result=result, observations=observations, state_names=${state_names}) if result is not None else None
-    transient_result = SimulationResult(result=transient, state_names=${state_names}) if transient is not None else None
+<%
+    # Result labels must match what the solver records.
+    # When auxiliaries exist, VARIABLES_OF_INTEREST records all (states + aux),
+    # so labels must include both state_names and aux_names.
+    _aux_names = [v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()]
+    if not _aux_names and model.derived_variables:
+        _aux_names = list(model.derived_variables.keys())
+    result_var_names = state_names + _aux_names
+%>
+    transient_result = SimulationResult(result=transient, state_names=${result_var_names}) if transient is not None else None
+    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, transient=transient_result) if result is not None else None
 
     results = Bunch(
         # Core simulation infrastructure (always present)
@@ -1369,11 +1798,9 @@ def run_experiment(
         state=state,
         network=network,
 
-        # Integration results (mirrors integration section in YAML)
-        integration=Bunch(
-            main=main_result,
-            transient=transient_result,
-        ),
+        # Integration result (mirrors integration section in YAML)
+        # Access: results.integration.get_state(...), results.integration.transient
+        integration=main_result,
 
     )
     print("  Simulation complete.")
@@ -1390,6 +1817,7 @@ def run_experiment(
         exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             result_transient=transient,
+            network=network,
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
         % endfor

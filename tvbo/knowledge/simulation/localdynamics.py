@@ -72,6 +72,41 @@ def _normalize_conditionals(model):
             dv.conditional = True
 
 
+def _migrate_coupling_terms(model):
+    """Bidirectional sync between coupling_terms and coupling_inputs.
+
+    coupling_terms (dict[str, Parameter]) is deprecated in favor of
+    coupling_inputs (dict[str, CouplingInput]).  This function:
+    1. Copies coupling_terms entries into coupling_inputs (forward migration)
+    2. Copies coupling_inputs entries back into coupling_terms as Parameters
+       (backward compat for templates that still read coupling_terms)
+    """
+    ct = getattr(model, 'coupling_terms', None) or {}
+    ci = getattr(model, 'coupling_inputs', None) or {}
+
+    # Forward: coupling_terms → coupling_inputs
+    if ct:
+        if model.coupling_inputs is None:
+            model.coupling_inputs = {}
+        for name, param in ct.items():
+            if name not in model.coupling_inputs:
+                model.coupling_inputs[name] = tvbo_datamodel.CouplingInput(
+                    name=str(name),
+                    description=getattr(param, 'description', None),
+                )
+
+    # Backward: coupling_inputs → coupling_terms (for template compat)
+    if model.coupling_inputs:
+        if model.coupling_terms is None:
+            model.coupling_terms = {}
+        for name, ci_obj in model.coupling_inputs.items():
+            if name not in model.coupling_terms:
+                model.coupling_terms[name] = tvbo_datamodel.Parameter(
+                    name=str(name),
+                    description=getattr(ci_obj, 'description', None),
+                )
+
+
 def order_by_equations(derived_variables, dependent_equations):
     """
     Orders the `derived_variables` dictionary based on the key order of the `dependent_equations` dictionary.
@@ -243,15 +278,15 @@ def class2metadata(ontoclass, metadata):
 
     # Only add ontology coupling terms if they are required in state equations
     # (onto_coupling_terms was fetched earlier for building local_dict)
+    # Store them in coupling_inputs (canonical) with fallback to coupling_terms
+    # for backward compat until coupling_terms is fully removed from schema.
+    ci_dict = metadata.coupling_inputs if metadata.coupling_inputs is not None else {}
+    ct_dict = metadata.coupling_terms if metadata.coupling_terms is not None else {}
     for k, v in onto_coupling_terms.items():
-        if k in required_symbols and k not in metadata.coupling_terms:
-            metadata.coupling_terms.update(
-                {
-                    k: tvbo_datamodel.Parameter(
-                        name=k,
-                    ),
-                }
-            )
+        if k in required_symbols and k not in ci_dict and k not in ct_dict:
+            if metadata.coupling_inputs is None:
+                metadata.coupling_inputs = {}
+            metadata.coupling_inputs[k] = tvbo_datamodel.CouplingInput(name=k)
 
     for r in ontoclass.has_reference:
         if r.name not in metadata.references:
@@ -578,7 +613,17 @@ class Dynamics(tvbo_datamodel.Dynamics):
     @classmethod
     def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics,
                        use_ontology: bool = False):
-        inst = cls(use_ontology=use_ontology, **model_meta._as_dict)
+        """Create from a datamodel Dynamics instance by copying its
+        already-normalized state (avoids ``_as_dict`` re-init crash on
+        ``inlined_as_dict`` fields)."""
+        inst = cls.__new__(cls)
+        inst.__dict__.update(model_meta.__dict__)
+        inst._ontology_class = None
+        if use_ontology:
+            inst._resolve_and_store_ontology_class()
+            inst._populate_from_ontology_if_available()
+        inst.update_metadata()
+        inst.calculate_derived_parameters()
         return inst
 
     @classmethod
@@ -755,6 +800,114 @@ class Dynamics(tvbo_datamodel.Dynamics):
             Symbol(p.name): p.value for p in getattr(self, "parameters", {}).values()
         }
 
+    @property
+    def symbolic(self):
+        """Full symbolic ODE system using proper SymPy conventions.
+
+        State variables are represented as ``Function(name)(t)`` so that
+        ``Derivative(theta(t), t)`` stays unevaluated.  Derived variables
+        and derived parameters are included as algebraic equations.
+
+        Returns
+        -------
+        dict
+            ``{'state': [...], 'derived': [...], 'parameters': {...}}``
+            where each list contains ``sympy.Eq`` objects and parameters
+            maps ``Symbol → value``.
+
+        Example
+        -------
+        >>> model.symbolic['state']
+        [Eq(Derivative(theta(t), t), I + omega)]
+        >>> model.symbolic['derived']
+        [Eq(signal(t), sin(theta(t)))]
+        """
+        import sympy as sp
+        from tvbo.parse.expression import parse_eq
+
+        t = Symbol("t")
+
+        # Build scope: state variables as Function(name)(t),
+        # everything else as Symbol
+        scope = {}
+        sv_funcs = {}
+        for name in self.state_variables:
+            f = Function(str(name))
+            sv_funcs[name] = f
+            scope[str(name)] = f(t)
+
+        for p in self.parameters.values():
+            scope[str(p.name)] = Symbol(str(p.name))
+        for ci in getattr(self, "coupling_inputs", {}).keys():
+            scope[str(ci)] = Symbol(str(ci))
+        for name in getattr(self, "derived_parameters", {}):
+            scope[str(name)] = Symbol(str(name))
+        for name in getattr(self, "derived_variables", {}):
+            # Derived variables that appear in state equations
+            # should resolve to their Function(t) form
+            scope[str(name)] = Function(str(name))(t)
+        for fname, f in getattr(self, "functions", {}).items():
+            scope[str(fname)] = Function(str(fname))
+            for arg in getattr(f, "arguments", []):
+                scope[str(arg.name)] = Symbol(str(arg.name))
+        scope["t"] = t
+        if "e" not in scope:
+            scope["e"] = sp.E
+
+        # Wrap all parsing in evaluate=False to preserve expression order
+        # (prevents SymPy from rewriting e.g. sin(v0-v) → -sin(v-v0))
+        with sp.evaluate(False):
+            # State equations: Eq(d/dt state(t), rhs)
+            state_eqs = []
+            for name, sv in self.state_variables.items():
+                rhs = parse_eq(sv.equation, local_dict=scope)
+                order = int(getattr(sv, 'equation_order', 1) or 1)
+                discrete = getattr(self, "system_type", "continuous") == "discrete"
+                if discrete:
+                    lhs = sv_funcs[name](t)
+                else:
+                    lhs = sp.Derivative(sv_funcs[name](t), *([t] * order))
+                state_eqs.append(sp.Eq(lhs, rhs))
+
+            # Derived parameter equations
+            dp_eqs = []
+            for name, dp in getattr(self, "derived_parameters", {}).items():
+                rhs = parse_eq(dp.equation, local_dict=scope)
+                dp_eqs.append(sp.Eq(Symbol(str(name)), rhs))
+
+            # Derived variable equations
+            dv_eqs = []
+            for name, dv in getattr(self, "derived_variables", {}).items():
+                has_conds = bool(getattr(dv.equation, "conditionals", None)) and \
+                    len(getattr(dv.equation, "conditionals", [])) > 0
+                if getattr(dv, "conditional", False) and has_conds:
+                    rhs = simulation.equations.conditionals2piecewise(dv.equation)
+                else:
+                    rhs = parse_eq(dv.equation, local_dict=scope)
+                dv_eqs.append(sp.Eq(Function(str(name))(t), rhs))
+
+            # Function definitions: Eq(Sigm(v), 2*e0/(1+exp(r*(v0-v))))
+            func_eqs = []
+            for fname, f in getattr(self, "functions", {}).items():
+                arguments = [Symbol(str(arg.name)) for arg in f.arguments]
+                lhs = Function(str(fname))(*arguments)
+                rhs = parse_eq(f.equation, local_dict=scope)
+                func_eqs.append(sp.Eq(lhs, rhs))
+
+        # Parameters: Symbol → numeric value
+        params = {
+            Symbol(str(p.name)): p.value
+            for p in self.parameters.values()
+        }
+
+        return {
+            'state': state_eqs,
+            'functions': func_eqs,
+            'derived_parameters': dp_eqs,
+            'derived': dv_eqs,
+            'parameters': params,
+        }
+
     def get_symbolic_elements(self, include_time_symbol: bool = True):
         """Build a unified local_dict for parsing model expressions.
 
@@ -776,10 +929,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Parameters as Symbols
         for p in getattr(self, "parameters", {}).values():
             scope[str(p.name)] = Symbol(str(p.name))
-
-        # Coupling terms (only those explicitly defined in the model)
-        for ct in getattr(self, "coupling_terms", {}).keys():
-            scope[str(ct)] = Symbol(str(ct))
 
         # Coupling inputs (named inputs from coupling function)
         for ci in getattr(self, "coupling_inputs", {}).keys():
@@ -816,8 +965,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Normalize dv.cases → dv.equation.conditionals (dv.cases is deprecated)
         _normalize_conditionals(self)
 
-        # Pre-compute coupling term symbols for fast set intersection
-        coupling_symbols = set(symbols(list(self.coupling_terms.keys())))
+        # Migrate coupling_terms → coupling_inputs (coupling_terms is deprecated)
+        _migrate_coupling_terms(self)
+
+        # Pre-compute coupling input symbols for fast set intersection
+        coupling_symbols = set(symbols(list(self.coupling_inputs.keys())))
 
         # If any state variable already has coupling_variable=True (from YAML),
         # respect explicit assignments and skip auto-detection
@@ -1107,12 +1259,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return self
 
     # Coupling and Output transforms
-    def add_coupling_term(
-        self, name: str, description: str | None = None, unit: str | None = None
+    def add_coupling_input(
+        self, name: str, description: str | None = None, unit: str | None = None,
+        dimension: int = 1, keys: list[str] | None = None,
     ):
         key = str(name)
-        self.coupling_terms[key] = tvbo_datamodel.Parameter(
-            name=key, description=description, unit=unit
+        if self.coupling_inputs is None:
+            self.coupling_inputs = {}
+        self.coupling_inputs[key] = tvbo_datamodel.CouplingInput(
+            name=key, description=description, dimension=dimension,
+            keys=keys or [],
         )
         # Keep parameters clean: remove any parameter with same name
         if key in self.parameters:
@@ -1128,6 +1284,15 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     self.state_variables[sv_name].coupling_variable = True
 
         return self
+
+    def add_coupling_term(self, name, description=None, unit=None):
+        """Deprecated. Use add_coupling_input() instead."""
+        import warnings
+        warnings.warn(
+            "add_coupling_term() is deprecated. Use add_coupling_input() instead.",
+            DeprecationWarning, stacklevel=2,
+        )
+        return self.add_coupling_input(name=name, description=description)
 
     def add_output(
         self,
@@ -1334,9 +1499,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Substitute parameters and defaults into equations (useful for fixed-point search)
         sub = self.keyed_parameters
         sub.update(kwargs)
-        # Set all coupling terms to 0 for fixed-point analysis
-        for ct in self.coupling_terms.keys():
-            sub[ct] = 0
+        # Set all coupling inputs to 0 for fixed-point analysis
+        for ci in getattr(self, 'coupling_inputs', {}).keys():
+            sub[ci] = 0
         return [eq.subs(sub) for eq in self.get_equations().values()]
 
     def calculate_derived_parameters(self):
@@ -1377,8 +1542,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         symbol_onto_mapping = {}
         onto_symbol_mapping = {}
-        # Coupling terms don't have model-specific suffixes in ontology
-        coupling_term_names = set(self.coupling_terms.keys())
+        # Coupling inputs don't have model-specific suffixes in ontology
+        coupling_term_names = set(getattr(self, 'coupling_inputs', {}).keys())
         for n in G.nodes:
             suffix = (
                 ontology.get_model_suffix(self.ontology or self.name)
@@ -1582,7 +1747,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 ) from e
 
             params = self.keyed_parameters
-            params.update({Symbol(str(cterm)): 0.0 for cterm in self.coupling_terms})
+            params.update({Symbol(str(ci)): 0.0 for ci in getattr(self, 'coupling_inputs', {})})
             params.update({Symbol("local_coupling"): 0.0})
 
             scope = self.get_symbolic_elements()
@@ -1786,7 +1951,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             )
             # Base derivative from ontology
             base_expr = str(equations.sympify_value(deriv)).replace("**", "^")
-            # Do not inject extra inputs here; global coupling is represented via coupling_terms (e.g., c_pop0)
+            # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_pop0)
 
             local_ct.dynamics.add(
                 lems.TimeDerivative(
@@ -2206,20 +2371,22 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
         derivative_notation: str = "dot",
     ):
         self.update_metadata()
-        if format in ["markdown", "pdf"]:
-            template = templates.lookup.get_template(f"{template_name}.md.mako")
-        elif format == "html":
-            template = templates.lookup.get_template(f"{template_name}.html.mako")
+        normalized_format = format.lower() if isinstance(format, str) else "markdown"
+        if normalized_format not in ["markdown", "md", "pdf"]:
+            raise ValueError("format must be one of: markdown, pdf")
 
-        render = (
-            template.render(model=self, derivative_notation=derivative_notation)
+        md_template = templates.lookup.get_template(f"{template_name}.md.mako")
+        md_render = (
+            md_template.render(model=self, derivative_notation=derivative_notation)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )
 
+        render = md_render
+
         if outputfile:
-            if format == "pdf":
-                report.to_pdf(render, outputfile)
+            if normalized_format == "pdf":
+                report.to_pdf(md_render, outputfile)
             else:
                 with open(outputfile, "w") as f:
                     f.write(render)

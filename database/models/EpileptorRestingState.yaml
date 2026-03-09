@@ -325,7 +325,7 @@ derived_variables:
         lhs: zcond
         rhs: '0.0'
         latex: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   c_pop1:

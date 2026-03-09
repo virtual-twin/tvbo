@@ -29,6 +29,7 @@ SOLVER_MAP = {
     'runge_kutta': 'RungeKutta4',
     'rungekutta': 'RungeKutta4',
     'rk4': 'RungeKutta4',
+    'rungekutta4thorder': 'RungeKutta4',
     'dopri5': 'DiffraxSolver',
     'tsit5': 'DiffraxSolver',
     'adaptive': 'DiffraxSolver',
@@ -37,7 +38,7 @@ SOLVER_MAP = {
 # Get integration and model from context
 if 'experiment' in context.keys():
     integration = experiment.integration
-    model = experiment.local_dynamics
+    model = experiment.dynamics
 else:
     integration = context.get('integration')
     model = context.get('model', None)
@@ -48,19 +49,10 @@ is_diffrax = solver_class == 'DiffraxSolver'
 dt = float(integration.step_size) if integration and integration.step_size else 0.1
 
 # Extract state variable bounds for BoundedSolver
-state_bounds_lo = []
-state_bounds_hi = []
-if model and hasattr(model, 'state_variables') and model.state_variables:
-    for sv_name, sv in model.state_variables.items():
-        lo, hi = None, None
-        if hasattr(sv, 'domain') and sv.domain:
-            lo = getattr(sv.domain, 'lo', None)
-            hi = getattr(sv.domain, 'hi', None)
-        state_bounds_lo.append(float(lo) if lo is not None else float('-inf'))
-        state_bounds_hi.append(float(hi) if hi is not None else float('inf'))
-
-# Check if any state has finite bounds (needs BoundedSolver)
-has_state_bounds = any(lo != float('-inf') for lo in state_bounds_lo) or any(hi != float('inf') for hi in state_bounds_hi)
+from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
+state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
+state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
+state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
 %>
 % if is_diffrax:
 import diffrax
@@ -97,8 +89,8 @@ def get_solver():
     # Shape (n_states, 1) broadcasts with state array (n_states, n_nodes)
     return BoundedSolver(
         base_solver,
-        low=jnp.array(${state_bounds_lo})[:, None],
-        high=jnp.array(${state_bounds_hi})[:, None]
+        low=jnp.array(${state_bounds_lo_str})[:, None],
+        high=jnp.array(${state_bounds_hi_str})[:, None]
     )
 % else:
     return base_solver

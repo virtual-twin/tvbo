@@ -38,7 +38,11 @@ nodes:
       y: 0.0
       z: 0.0
     region: "Left Frontal"
-    initial_state: [0.1, 0.0]
+    state:
+        V:
+            value: 0.1
+        W:
+            value: 0.0
 
   - id: 1
     label: "Node_B"
@@ -50,7 +54,11 @@ nodes:
       y: 10.0
       z: 0.0
     region: "Parietal"
-    initial_state: [-0.1, 0.0]
+    state:
+        V:
+            value: -0.1
+        W:
+            value: 0.0
 
   - id: 2
     label: "Node_C"
@@ -62,7 +70,11 @@ nodes:
       y: 0.0
       z: 0.0
     region: "Right Frontal"
-    initial_state: [0.0, 0.1]
+    state:
+        V:
+            value: 0.0
+        W:
+            value: 0.1
 
 # Network edges (connections)
 edges:

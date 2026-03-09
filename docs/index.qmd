@@ -100,7 +100,7 @@ lorenz = Dynamics(
     },
 )
 
-code = SimulationExperiment(local_dynamics=lorenz).render_code('jax')
+code = SimulationExperiment(dynamics=lorenz).render_code('jax')
 ```
 
 **output**:
@@ -126,7 +126,7 @@ lorenz = Dynamics(
     },
 )
 
-SimulationExperiment(local_dynamics=lorenz).run(duration=1000).plot()
+SimulationExperiment(dynamics=lorenz).run(duration=1000).integration.plot()
 ```
 
 ### Explore network dynamics with `tvboptim`
@@ -140,17 +140,18 @@ from tvboptim.execution import ParallelExecution
 import jax
 import bsplot
 
-c = Coupling.from_ontology("HyperbolicTangent")
+c = Coupling.from_ontology("Linear")
+c.parameters["a"].value = 1.0
 
 sc = Network(
     parcellation={"atlas": {"name": "DesikanKilliany"}},
     normalization={"rhs": "(W - W_min) / (W_max - W_min)"},
+    coupling=c,
 )
 
 exp = SimulationExperiment(
-    local_dynamics=Dynamics.from_ontology("Generic2dOscillator"),
+    dynamics=Dynamics.from_ontology("Generic2dOscillator"),
     network=sc,
-    coupling={"name": "Linear", "parameters": {"a": {"value": 1}}},
     integration={
         "method": "Heun",
         "duration": 3000,
@@ -165,8 +166,8 @@ state = exp.collect_state()
 n = 8
 # Explore a (controls Hopf bifurcation) and d (time scale separation)
 # a ~ 0 is the bifurcation point; d controls fast/slow dynamics
-state.parameters.local_dynamics.a = GridAxis(-2, 1.5, n)
-state.parameters.local_dynamics.d = GridAxis(0.01, 0.1, n)
+state.parameters.dynamics.a = GridAxis(-2, 1.5, n)
+state.parameters.dynamics.d = GridAxis(0.01, 0.1, n)
 grid = Space(state, mode="product")
 
 n_devices = jax.device_count()
@@ -188,8 +189,8 @@ data = data.reshape(-1, *data.shape[2:])  # (n_pmap*n_vmap, time, state_vars, no
 
 # Get parameter values directly from the grid (no redundant linspace!)
 axis_vals = grid._generate_axis_values()
-a_vals = axis_vals.parameters.local_dynamics.a
-d_vals = axis_vals.parameters.local_dynamics.d
+a_vals = axis_vals.parameters.dynamics.a
+d_vals = axis_vals.parameters.dynamics.d
 
 fig, axs = plt.subplots(n, n, figsize=(12, 12))
 for i in range(min(n * n, data.shape[0])):
@@ -209,9 +210,6 @@ bsplot.style.format_fig(fig)
 for ax in fig.axes:
     ax.set_xticks([])
     ax.set_yticks([])
-
-
-
 ```
 
 ::::

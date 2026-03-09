@@ -172,7 +172,8 @@ class TestCodeGeneration:
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         assert "StateMask(1:2)" in code
-        assert "sym = [:x, :phi]" in code
+        # State variable order follows LinkML normalized dict ordering
+        assert "sym = [:phi, :x]" in code
 
     def test_diffusion_2d_broadcast_esum(self):
         """2D diffusion: vertex uses broadcasting (dx .= esum) for multi-dim coupling."""
@@ -189,7 +190,7 @@ class TestCodeGeneration:
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         assert "e_dst .=" in code
-        assert "outsym = [:flow_x, :flow_phi]" in code
+        assert "outsym = [:flow_phi, :flow_x]" in code
 
     def test_diffusion_2d_no_variable_shadowing(self):
         """2D diffusion: function arg doesn't shadow state var 'x'."""
@@ -198,7 +199,7 @@ class TestCodeGeneration:
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         assert "function Diffusion2D_f!(dx, _x, esum" in code
-        assert "x, phi = _x" in code
+        assert "phi, x = _x" in code
 
     def test_diffusion_2d_uses_barabasi_albert_10(self):
         """2D diffusion: 10-node Barabási-Albert network."""
@@ -246,12 +247,12 @@ class TestCodeGeneration:
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
-        # KuramotoInertia has sym = [:theta, :omega] but g = StateMask(1:1)
-        assert "sym = [:theta, :omega]" in code
+        # KuramotoInertia has sym = [:omega, :theta] (alphabetical) but g = StateMask(2:2)
+        assert "sym = [:omega, :theta]" in code
         # Should be in the KuramotoInertia section
         inertia_section = code.split("vertex_KuramotoInertia")[1]
-        # g=1:1 means only theta is output
-        assert "StateMask(1:1)" in code
+        # g=2:2 means only theta (at index 2) is output
+        assert "StateMask(2:2)" in code
 
     def test_heterogeneous_kuramoto_per_node_params(self):
         """Per-node omega0 parameters are set via NWState."""
@@ -423,7 +424,7 @@ class TestYAMLSpecs:
         from tvbo import SimulationExperiment
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
-        svs = exp.local_dynamics.state_variables
+        svs = exp.dynamics.state_variables
         # du/dt = u - u^3/3 - v + coupling  (NOT divided by epsilon)
         u_rhs = svs["u"].equation.rhs
         assert "/ epsilon" not in u_rhs, \
@@ -440,7 +441,7 @@ class TestYAMLSpecs:
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 10
         assert exp.integration.duration == 3.0
-        svs = exp.local_dynamics.state_variables
+        svs = exp.dynamics.state_variables
         assert len(svs) == 2
         assert "x" in svs and "phi" in svs
         for sv in svs.values():
@@ -454,10 +455,10 @@ class TestYAMLSpecs:
         assert exp.network.number_of_nodes == 8
         assert exp.integration.duration == 10.0
         # Default dynamics is Kuramoto
-        assert exp.local_dynamics.name == "Kuramoto"
-        # Additional dynamics in library
-        assert "StaticNode" in exp.dynamics
-        assert "KuramotoInertia" in exp.dynamics
+        assert exp.dynamics.name == "Kuramoto"
+        # Additional dynamics in network library
+        assert "StaticNode" in exp.network.dynamics
+        assert "KuramotoInertia" in exp.network.dynamics
         # Nodes with per-node assignments
         nodes = exp.network.nodes
         assert len(nodes) == 8
@@ -473,7 +474,7 @@ class TestYAMLSpecs:
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 5
         assert exp.integration.duration == 6.0
-        assert exp.local_dynamics.name == "SwingEquation"
+        assert exp.dynamics.name == "SwingEquation"
         # Has events
         events = getattr(exp, 'events', [])
         assert len(events) >= 2
@@ -489,14 +490,14 @@ class TestYAMLSpecs:
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 11
         assert exp.integration.duration == 12.0
-        assert exp.local_dynamics.name == "FreeVertex"
-        # Has FixedVertex in dynamics library
-        assert "FixedVertex" in exp.dynamics
+        assert exp.dynamics.name == "FreeVertex"
+        # Has FixedVertex in network dynamics library
+        assert "FixedVertex" in exp.network.dynamics
         # Edges
         edges = exp.network.edges
         assert len(edges) == 18
         # FreeVertex has coupling_variables x and y
-        svs = exp.local_dynamics.state_variables
+        svs = exp.dynamics.state_variables
         assert svs["x"].coupling_variable is True
         assert svs["y"].coupling_variable is True
         assert getattr(svs["vx"], "coupling_variable", False) is not True

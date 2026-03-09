@@ -11,7 +11,7 @@ description: >
 # LOCAL DYNAMICS: Jansen-Rit Neural Mass Model (6-dimensional)
 # From tvboptim.experimental.network_dynamics.dynamics.tvb.JansenRit
 # --------------------------------------------------------
-local_dynamics:
+dynamics:
     name: JansenRit
     label: "Jansen-Rit Neural Mass Model"
     description: >
@@ -391,7 +391,7 @@ optimization:
           gradient. Target frequencies range from 11 Hz (visual cortex) to 7 Hz
           (most distant regions from lateral occipital gyrus).
 
-      # Free parameters to optimize (references to local_dynamics.parameters by name)
+      # Free parameters to optimize (references to dynamics.parameters by name)
       free_parameters:
           - name: a
             heterogeneous: true
