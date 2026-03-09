@@ -126,7 +126,7 @@ lorenz = Dynamics(
     },
 )
 
-SimulationExperiment(dynamics=lorenz).run(duration=1000).plot()
+SimulationExperiment(dynamics=lorenz).run(duration=1000).integration.plot()
 ```
 
 ### Explore network dynamics with `tvboptim`
@@ -140,17 +140,18 @@ from tvboptim.execution import ParallelExecution
 import jax
 import bsplot
 
-c = Coupling.from_ontology("HyperbolicTangent")
+c = Coupling.from_ontology("Linear")
+c.parameters["a"].value = 1.0
 
 sc = Network(
     parcellation={"atlas": {"name": "DesikanKilliany"}},
     normalization={"rhs": "(W - W_min) / (W_max - W_min)"},
+    coupling=c,
 )
 
 exp = SimulationExperiment(
     dynamics=Dynamics.from_ontology("Generic2dOscillator"),
     network=sc,
-    coupling={"name": "Linear", "parameters": {"a": {"value": 1}}},
     integration={
         "method": "Heun",
         "duration": 3000,
@@ -209,9 +210,6 @@ bsplot.style.format_fig(fig)
 for ax in fig.axes:
     ax.set_xticks([])
     ax.set_yticks([])
-
-
-
 ```
 
 ::::
