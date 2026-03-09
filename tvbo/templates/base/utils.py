@@ -7,13 +7,21 @@ Extracts Python logic from Mako templates for cleaner, testable code.
 
 
 def get_coupling_terms(model):
-    """Extract coupling terms from model, separating global from local.
+    """Extract coupling inputs from model, separating global from local.
 
     Returns:
         tuple: (all_terms, global_terms, has_local_coupling)
     """
-    all_terms = list(model.coupling_terms.keys()) if hasattr(model, 'coupling_terms') and model.coupling_terms else []
-    global_terms = [ct for ct in all_terms if ct != 'local_coupling']
+    # Prefer coupling_inputs; fall back to coupling_terms for backward compat
+    ci = getattr(model, 'coupling_inputs', None)
+    ct = getattr(model, 'coupling_terms', None)
+    if ci:
+        all_terms = list(ci.keys())
+    elif ct:
+        all_terms = list(ct.keys())
+    else:
+        all_terms = []
+    global_terms = [t for t in all_terms if t != 'local_coupling']
     has_local = 'local_coupling' in all_terms
     return all_terms, global_terms, has_local
 

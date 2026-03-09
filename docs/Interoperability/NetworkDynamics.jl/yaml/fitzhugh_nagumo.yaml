@@ -21,7 +21,7 @@ references:
     - "Tzourio-Mazoyer, N., et al. (2002). Automated anatomical labeling of activations in SPM. Neuroimage, 15(1), 273-289."
 
 # -- Local Dynamics ------------------------------------------------------------
-local_dynamics:
+dynamics:
     name: FitzHughNagumo
     label: "FitzHugh-Nagumo oscillator"
     description: >

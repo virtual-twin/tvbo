@@ -178,8 +178,9 @@
         equations.append(f"{display_dp} = {eq_str}")
         variables[display_dp] = "variable"
 
-    # Add coupling terms as inputs
-    for ct_name in (m.coupling_terms or {}).keys():
+    # Add coupling inputs as PyRates input variables
+    _ci = getattr(m, 'coupling_inputs', None) or getattr(m, 'coupling_terms', None) or {}
+    for ct_name in _ci.keys():
         variables[ct_name] = "input"
 
     description = (m.description or f"TVBO model: {name}").replace('\\', '\\\\').replace('"', "'")

@@ -63,7 +63,7 @@ functions:
             - v
         equation:
             rhs: 2*e0 / (1 + exp(r*(v0 - v)))
-coupling_terms:
+coupling_inputs:
     c_glob:
         description: "Long-range input to the pyramidal population (pre-filter)."
 state_variables:

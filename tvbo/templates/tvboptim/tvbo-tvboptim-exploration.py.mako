@@ -13,9 +13,9 @@ Output:
 </%doc>
 <%
 # Get experiment info
-model = experiment.local_dynamics
+model = experiment.dynamics
 network = experiment.network
-n_nodes = N_nodes = network.number_of_regions if network else 1
+n_nodes = N_nodes = (getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)) if network else 1
 
 # Get exploration specifications
 exploration_dict = getattr(experiment, 'explorations', None) or {}

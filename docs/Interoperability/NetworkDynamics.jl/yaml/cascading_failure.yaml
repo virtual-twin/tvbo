@@ -27,7 +27,7 @@ references:
     - "Schäfer, B., Witthaut, D., Timme, M., & Latora, V. (2018). Dynamically induced cascading failures in power grids. Nature Communications, 9(1), 1-13."
 
 # -- Local Dynamics ------------------------------------------------------------
-local_dynamics:
+dynamics:
     name: SwingEquation
     label: "Swing equation"
     description: >

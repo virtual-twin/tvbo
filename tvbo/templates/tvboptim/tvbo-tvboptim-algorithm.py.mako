@@ -115,7 +115,7 @@ _dobs_raw = experiment.derived_observations or {}
 derived_observations_dict = dict(_dobs_raw.items()) if hasattr(_dobs_raw, 'items') else {}
 
 # State variable names from model
-model = experiment.local_dynamics
+model = experiment.dynamics
 state_var_names = list(model.state_variables.keys()) if model and model.state_variables else []
 state_names = state_var_names
 
@@ -387,7 +387,7 @@ def run_${algo_name}(
             for _warmup_i in range(int(window_size) - _passed_len):
                 key, subkey = jax.random.split(key)
                 _warmup_result = model_fn(state)
-                state.initial_state.dynamics = _warmup_result.data[-1]
+                state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
                 if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
                     state._internal.noise_samples = jax.random.normal(
                         key=subkey, shape=state._internal.noise_samples.shape
@@ -418,7 +418,7 @@ def run_${algo_name}(
         for _warmup_i in range(int(window_size)):
             key, subkey = jax.random.split(key)
             _warmup_result = model_fn(state)
-            state.initial_state.dynamics = _warmup_result.data[-1]
+            state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
             if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
                 state._internal.noise_samples = jax.random.normal(
                     key=subkey, shape=state._internal.noise_samples.shape
@@ -450,7 +450,7 @@ def run_${algo_name}(
     for i in range(n_iterations):
         key, subkey = jax.random.split(key)
         result = model_fn(state)
-        state.initial_state.dynamics = result.data[-1]
+        state.initial_state.dynamics = result.data[-1][:${len(state_names)}]
         if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
             state._internal.noise_samples = jax.random.normal(
                 key=subkey, shape=state._internal.noise_samples.shape

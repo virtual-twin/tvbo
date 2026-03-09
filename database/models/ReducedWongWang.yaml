@@ -142,7 +142,7 @@ derived_variables:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
       latex: false
     conditional: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   local_coupling:

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-02-13T16:31:56
+# Generation date: 2026-03-03T20:29:30
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -89,6 +89,10 @@ class GraphGeneratorName(extended_str):
 
 
 class FileName(extended_str):
+    pass
+
+
+class StateValueName(extended_str):
     pass
 
 
@@ -241,6 +245,8 @@ class Range(YAMLRoot):
     step: Optional[str] = None
     n: Optional[int] = None
     log_scale: Optional[Union[bool, Bool]] = False
+    explored_values: Optional[Union[float, list[float]]] = empty_list()
+    element: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.lo is not None and not isinstance(self.lo, str):
@@ -257,6 +263,13 @@ class Range(YAMLRoot):
 
         if self.log_scale is not None and not isinstance(self.log_scale, Bool):
             self.log_scale = Bool(self.log_scale)
+
+        if not isinstance(self.explored_values, list):
+            self.explored_values = [self.explored_values] if self.explored_values is not None else []
+        self.explored_values = [v if isinstance(v, float) else float(v) for v in self.explored_values]
+
+        if self.element is not None and not isinstance(self.element, int):
+            self.element = int(self.element)
 
         super().__post_init__(**kwargs)
 
@@ -678,6 +691,7 @@ class Network(YAMLRoot):
     nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
+    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     number_of_regions: Optional[int] = 1
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
@@ -700,15 +714,13 @@ class Network(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if not isinstance(self.nodes, list):
-            self.nodes = [self.nodes] if self.nodes is not None else []
-        self.nodes = [v if isinstance(v, Node) else Node(**as_dict(v)) for v in self.nodes]
+        self._normalize_inlined_as_list(slot_name="nodes", slot_type=Node, key_name="id", keyed=False)
 
-        if not isinstance(self.edges, list):
-            self.edges = [self.edges] if self.edges is not None else []
-        self.edges = [v if isinstance(v, Edge) else Edge(**as_dict(v)) for v in self.edges]
+        self._normalize_inlined_as_list(slot_name="edges", slot_type=Edge, key_name="source", keyed=False)
 
         self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
         if self.number_of_regions is not None and not isinstance(self.number_of_regions, int):
             self.number_of_regions = int(self.number_of_regions)
@@ -859,7 +871,7 @@ class Node(YAMLRoot):
     dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
-    initial_state: Optional[Union[float, list[float]]] = empty_list()
+    state: Optional[Union[dict[Union[str, StateValueName], Union[dict, "StateValue"]], list[Union[dict, "StateValue"]]]] = empty_dict()
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -885,11 +897,36 @@ class Node(YAMLRoot):
         if self.region is not None and not isinstance(self.region, str):
             self.region = str(self.region)
 
-        if not isinstance(self.initial_state, list):
-            self.initial_state = [self.initial_state] if self.initial_state is not None else []
-        self.initial_state = [v if isinstance(v, float) else float(v) for v in self.initial_state]
+        self._normalize_inlined_as_dict(slot_name="state", slot_type=StateValue, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class StateValue(YAMLRoot):
+    """
+    A named state variable value for per-node initialization.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["StateValue"]
+    class_class_curie: ClassVar[str] = "tvbo:StateValue"
+    class_name: ClassVar[str] = "StateValue"
+    class_model_uri: ClassVar[URIRef] = TVBO.StateValue
+
+    name: Union[str, StateValueName] = None
+    value: Optional[float] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, StateValueName):
+            self.name = StateValueName(self.name)
+
+        if self.value is not None and not isinstance(self.value, float):
+            self.value = float(self.value)
 
         super().__post_init__(**kwargs)
 
@@ -1313,6 +1350,7 @@ class Distribution(YAMLRoot):
     domain: Optional[Union[dict, Range]] = None
     function: Optional[Union[dict, "Function"]] = None
     seed: Optional[int] = None
+    axis: Optional[Union[str, "SamplingAxis"]] = 'space'
     correlation: Optional[Union[dict, Matrix]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1331,6 +1369,9 @@ class Distribution(YAMLRoot):
 
         if self.seed is not None and not isinstance(self.seed, int):
             self.seed = int(self.seed)
+
+        if self.axis is not None and not isinstance(self.axis, SamplingAxis):
+            self.axis = getattr(SamplingAxis, self.axis)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -1364,6 +1405,7 @@ class Parameter(YAMLRoot):
     free: Optional[Union[bool, Bool]] = None
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
+    element_domains: Optional[Union[Union[dict, Range], list[Union[dict, Range]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1419,6 +1461,10 @@ class Parameter(YAMLRoot):
         if not isinstance(self.explored_values, list):
             self.explored_values = [self.explored_values] if self.explored_values is not None else []
         self.explored_values = [v if isinstance(v, float) else float(v) for v in self.explored_values]
+
+        if not isinstance(self.element_domains, list):
+            self.element_domains = [self.element_domains] if self.element_domains is not None else []
+        self.element_domains = [v if isinstance(v, Range) else Range(**as_dict(v)) for v in self.element_domains]
 
         super().__post_init__(**kwargs)
 
@@ -2119,6 +2165,8 @@ class Exploration(YAMLRoot):
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
+    n_trials: Optional[int] = 1
+    average: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2147,6 +2195,12 @@ class Exploration(YAMLRoot):
 
         if self.n_parallel is not None and not isinstance(self.n_parallel, int):
             self.n_parallel = int(self.n_parallel)
+
+        if self.n_trials is not None and not isinstance(self.n_trials, int):
+            self.n_trials = int(self.n_trials)
+
+        if self.average is not None and not isinstance(self.average, str):
+            self.average = str(self.average)
 
         super().__post_init__(**kwargs)
 
@@ -2989,8 +3043,7 @@ class SimulationExperiment(YAMLRoot):
     description: Optional[str] = None
     additional_equations: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     label: Optional[str] = None
-    local_dynamics: Optional[Union[dict, Dynamics]] = None
-    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]] = empty_dict()
+    dynamics: Optional[Union[dict, Dynamics]] = None
     integration: Optional[Union[dict, Integrator]] = None
     connectivity: Optional[Union[dict, Network]] = None
     network: Optional[Union[dict, Network]] = None
@@ -3029,10 +3082,8 @@ class SimulationExperiment(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        if self.local_dynamics is not None and not isinstance(self.local_dynamics, Dynamics):
-            self.local_dynamics = Dynamics(**as_dict(self.local_dynamics))
-
-        self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
+        if self.dynamics is not None and not isinstance(self.dynamics, Dynamics):
+            self.dynamics = Dynamics(**as_dict(self.dynamics))
 
         if self.integration is not None and not isinstance(self.integration, Integrator):
             self.integration = Integrator(**as_dict(self.integration))
@@ -3102,7 +3153,7 @@ class SimulationStudy(YAMLRoot):
     year: Optional[int] = None
     doi: Optional[str] = None
     sample: Optional[Union[dict, Sample]] = None
-    simulation_experiments: Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]] = empty_dict()
+    experiments: Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -3132,7 +3183,7 @@ class SimulationStudy(YAMLRoot):
         if self.sample is not None and not isinstance(self.sample, Sample):
             self.sample = Sample(**as_dict(self.sample))
 
-        self._normalize_inlined_as_list(slot_name="simulation_experiments", slot_type=SimulationExperiment, key_name="id", keyed=True)
+        self._normalize_inlined_as_list(slot_name="experiments", slot_type=SimulationExperiment, key_name="id", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -4585,6 +4636,22 @@ class OperatorType(EnumDefinitionImpl):
         name="OperatorType",
     )
 
+class SamplingAxis(EnumDefinitionImpl):
+    """
+    Dimension along which a distribution is sampled.
+    """
+    space = PermissibleValue(
+        text="space",
+        description="Sample once per node (heterogeneous parameter or spatially varying IC).")
+    time = PermissibleValue(
+        text="time",
+        description="Resample every integration timestep (stochastic time-varying input).")
+
+    _defn = EnumDefinition(
+        name="SamplingAxis",
+        description="Dimension along which a distribution is sampled.",
+    )
+
 class NoiseType(EnumDefinitionImpl):
 
     gaussian = PermissibleValue(text="gaussian")
@@ -4989,6 +5056,12 @@ slots.range__n = Slot(uri=TVBO.n, name="range__n", curie=TVBO.curie('n'),
 slots.range__log_scale = Slot(uri=TVBO.log_scale, name="range__log_scale", curie=TVBO.curie('log_scale'),
                    model_uri=TVBO.range__log_scale, domain=None, range=Optional[Union[bool, Bool]])
 
+slots.range__explored_values = Slot(uri=TVBO.explored_values, name="range__explored_values", curie=TVBO.curie('explored_values'),
+                   model_uri=TVBO.range__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.range__element = Slot(uri=TVBO.element, name="range__element", curie=TVBO.curie('element'),
+                   model_uri=TVBO.range__element, domain=None, range=Optional[int])
+
 slots.equation__lefthandside = Slot(uri=TVBO.lhs, name="equation__lefthandside", curie=TVBO.curie('lhs'),
                    model_uri=TVBO.equation__lefthandside, domain=None, range=Optional[str])
 
@@ -5112,6 +5185,9 @@ slots.network__edges = Slot(uri=TVBO.edges, name="network__edges", curie=TVBO.cu
 slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.network__coupling, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])
 
+slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.network__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+
 slots.network__number_of_regions = Slot(uri=TVBO.number_of_regions, name="network__number_of_regions", curie=TVBO.curie('number_of_regions'),
                    model_uri=TVBO.network__number_of_regions, domain=None, range=Optional[int])
 
@@ -5187,8 +5263,8 @@ slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO
 slots.node__region = Slot(uri=TVBO.region, name="node__region", curie=TVBO.curie('region'),
                    model_uri=TVBO.node__region, domain=None, range=Optional[str])
 
-slots.node__initial_state = Slot(uri=TVBO.initial_state, name="node__initial_state", curie=TVBO.curie('initial_state'),
-                   model_uri=TVBO.node__initial_state, domain=None, range=Optional[Union[float, list[float]]])
+slots.node__state = Slot(uri=TVBO.state, name="node__state", curie=TVBO.curie('state'),
+                   model_uri=TVBO.node__state, domain=None, range=Optional[Union[dict[Union[str, StateValueName], Union[dict, StateValue]], list[Union[dict, StateValue]]]])
 
 slots.node__events = Slot(uri=TVBO.events, name="node__events", curie=TVBO.curie('events'),
                    model_uri=TVBO.node__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
@@ -5349,6 +5425,9 @@ slots.distribution__function = Slot(uri=TVBO.function, name="distribution__funct
 slots.distribution__seed = Slot(uri=TVBO.seed, name="distribution__seed", curie=TVBO.curie('seed'),
                    model_uri=TVBO.distribution__seed, domain=None, range=Optional[int])
 
+slots.distribution__axis = Slot(uri=TVBO.axis, name="distribution__axis", curie=TVBO.curie('axis'),
+                   model_uri=TVBO.distribution__axis, domain=None, range=Optional[Union[str, "SamplingAxis"]])
+
 slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
                    model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])
 
@@ -5369,6 +5448,9 @@ slots.parameter__shape = Slot(uri=TVBO.shape, name="parameter__shape", curie=TVB
 
 slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="parameter__explored_values", curie=TVBO.curie('explored_values'),
                    model_uri=TVBO.parameter__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.parameter__element_domains = Slot(uri=TVBO.element_domains, name="parameter__element_domains", curie=TVBO.curie('element_domains'),
+                   model_uri=TVBO.parameter__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
 
 slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__dimension", curie=TVBO.curie('dimension'),
                    model_uri=TVBO.couplingInput__dimension, domain=None, range=Optional[int])
@@ -5564,6 +5646,12 @@ slots.exploration__observable = Slot(uri=TVBO.observable, name="exploration__obs
 
 slots.exploration__n_parallel = Slot(uri=TVBO.n_parallel, name="exploration__n_parallel", curie=TVBO.curie('n_parallel'),
                    model_uri=TVBO.exploration__n_parallel, domain=None, range=Optional[int])
+
+slots.exploration__n_trials = Slot(uri=TVBO.n_trials, name="exploration__n_trials", curie=TVBO.curie('n_trials'),
+                   model_uri=TVBO.exploration__n_trials, domain=None, range=Optional[int])
+
+slots.exploration__average = Slot(uri=TVBO.average, name="exploration__average", curie=TVBO.curie('average'),
+                   model_uri=TVBO.exploration__average, domain=None, range=Optional[str])
 
 slots.updateRule__target_parameter = Slot(uri=TVBO.target_parameter, name="updateRule__target_parameter", curie=TVBO.curie('target_parameter'),
                    model_uri=TVBO.updateRule__target_parameter, domain=None, range=Union[dict, Parameter])
@@ -5910,11 +5998,8 @@ slots.simulationExperiment__additional_equations = Slot(uri=TVBO.additional_equa
 slots.simulationExperiment__label = Slot(uri=TVBO.label, name="simulationExperiment__label", curie=TVBO.curie('label'),
                    model_uri=TVBO.simulationExperiment__label, domain=None, range=Optional[str])
 
-slots.simulationExperiment__local_dynamics = Slot(uri=TVBO.local_dynamics, name="simulationExperiment__local_dynamics", curie=TVBO.curie('local_dynamics'),
-                   model_uri=TVBO.simulationExperiment__local_dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
-
 slots.simulationExperiment__dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__dynamics", curie=TVBO.curie('dynamics'),
-                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
 
 slots.simulationExperiment__integration = Slot(uri=TVBO.integration, name="simulationExperiment__integration", curie=TVBO.curie('integration'),
                    model_uri=TVBO.simulationExperiment__integration, domain=None, range=Optional[Union[dict, Integrator]])
@@ -5985,7 +6070,7 @@ slots.simulationStudy__doi = Slot(uri=TVBO.doi, name="simulationStudy__doi", cur
 slots.simulationStudy__sample = Slot(uri=TVBO.sample, name="simulationStudy__sample", curie=TVBO.curie('sample'),
                    model_uri=TVBO.simulationStudy__sample, domain=None, range=Optional[Union[dict, Sample]])
 
-slots.simulationStudy__simulation_experiments = Slot(uri=TVBO.simulation_experiments, name="simulationStudy__simulation_experiments", curie=TVBO.curie('simulation_experiments'),
+slots.simulationStudy__simulation_experiments = Slot(uri=TVBO.experiments, name="simulationStudy__simulation_experiments", curie=TVBO.curie('experiments'),
                    model_uri=TVBO.simulationStudy__simulation_experiments, domain=None, range=Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]])
 
 slots.timeSeries__data = Slot(uri=TVBO.data, name="timeSeries__data", curie=TVBO.curie('data'),

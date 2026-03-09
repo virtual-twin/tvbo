@@ -19,7 +19,7 @@ references:
     - "Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators."
 
 # -- Local Dynamics ------------------------------------------------------------
-local_dynamics:
+dynamics:
     name: Kuramoto
     label: "Kuramoto phase oscillator"
     description: >

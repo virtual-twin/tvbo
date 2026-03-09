@@ -124,7 +124,7 @@ print(f"Output: {model.output}")
 ```{python}
 #| label: run-experiment
 #| warning: false
-exp = SimulationExperiment(local_dynamics=model)
+exp = SimulationExperiment(dynamics=model)
 
 # Run the simulation using JAX backend
 res = exp.run('jax')

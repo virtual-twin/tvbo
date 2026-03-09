@@ -80,6 +80,103 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     return param_names, param_defaults, param_shapes
 
 
+def get_node_state_overrides(
+    network, n_nodes: int, state_names: List[str],
+    default_initial_state: List[float]
+) -> Dict[str, List[float]]:
+    """Scan network.nodes for per-node initial state overrides.
+
+    When nodes define ``state: {theta: {value: 0.8}}`` in the YAML, build
+    per-node arrays for state variables that differ across nodes.
+
+    Args:
+        network: Network object with .nodes list
+        n_nodes: number of nodes
+        state_names: ordered list of state variable names
+        default_initial_state: default initial value per state variable
+
+    Returns:
+        dict of sv_name -> list of per-node values (length n_nodes)
+    """
+    if not network or not getattr(network, 'nodes', None):
+        return {}
+
+    nodes = list(network.nodes) if not isinstance(network.nodes, list) else network.nodes
+    if len(nodes) != n_nodes:
+        return {}
+
+    overrides = {}
+    for i, sv_name in enumerate(state_names):
+        default = default_initial_state[i]
+        arr = [default] * n_nodes
+        has_override = False
+        for node in nodes:
+            node_state = getattr(node, 'state', None)
+            if node_state and sv_name in node_state:
+                sv_obj = node_state[sv_name]
+                val = float(sv_obj.value) if hasattr(sv_obj, 'value') else float(sv_obj)
+                arr[int(node.id)] = val
+                has_override = True
+        if has_override:
+            overrides[sv_name] = arr
+
+    return overrides
+
+
+def get_node_param_overrides(
+    network, n_nodes: int, dyn_param_defaults: Dict[str, float]
+) -> Dict[str, List[float]]:
+    """Scan network.nodes for per-node parameter overrides.
+
+    When nodes define parameters that differ from the dynamics defaults,
+    build per-node arrays. Only parameters that differ on at least one
+    node are returned.
+
+    Args:
+        network: Network object with .nodes list
+        n_nodes: number of nodes
+        dyn_param_defaults: dict of param_name -> scalar default from dynamics
+
+    Returns:
+        dict of param_name -> list of per-node values (length n_nodes)
+    """
+    if not network or not getattr(network, 'nodes', None):
+        return {}
+
+    nodes = list(network.nodes) if not isinstance(network.nodes, list) else network.nodes
+    if len(nodes) != n_nodes:
+        return {}
+
+    # Collect per-node values for all parameters defined on any node
+    node_params = {}  # param_name -> {node_id: value}
+    for node in nodes:
+        node_id = int(node.id)
+        if not getattr(node, 'parameters', None):
+            continue
+        params = node.parameters
+        if hasattr(params, 'values'):
+            params = params.values()
+        for p in params:
+            pname = str(p.name)
+            val = float(p.value) if p.value is not None else None
+            if val is not None:
+                node_params.setdefault(pname, {})[node_id] = val
+
+    # Build per-node arrays using dynamics defaults as base
+    overrides = {}
+    for pname, node_vals in node_params.items():
+        base = dyn_param_defaults.get(pname, 1.0)
+        arr = [base] * n_nodes
+        for node_id, val in node_vals.items():
+            if 0 <= node_id < n_nodes:
+                arr[node_id] = val
+        # Only include if at least one node differs from default
+        if any(v != base for v in arr):
+            overrides[pname] = arr
+
+    return overrides
+
+
 def to_numeric(val: Any) -> Union[int, float, Any]:
     """Convert string to numeric if possible."""
     if isinstance(val, (int, float)):
@@ -90,6 +187,65 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
         except ValueError:
             return val
     return val
+
+
+# =============================================================================
+# State Variable Bounds
+# =============================================================================
+
+def get_state_bounds(model) -> Tuple[List, List, bool]:
+    """Extract state variable bounds as SymPy expressions.
+
+    Uses ``sympy.oo`` for unbounded dimensions so that code printers
+    automatically render the correct backend literal (``jnp.inf``,
+    ``np.inf``, ``Inf``, etc.).
+
+    Args:
+        model: Dynamics instance with ``.state_variables``
+
+    Returns:
+        tuple: (bounds_lo, bounds_hi, has_finite_bounds)
+            - bounds_lo: list of sympy expressions (Float or -oo)
+            - bounds_hi: list of sympy expressions (Float or oo)
+            - has_finite_bounds: True if any bound is finite
+    """
+    from sympy import oo, Float
+
+    bounds_lo: list = []
+    bounds_hi: list = []
+
+    if not model or not getattr(model, 'state_variables', None):
+        return bounds_lo, bounds_hi, False
+
+    for _sv_name, sv in model.state_variables.items():
+        lo, hi = None, None
+        if hasattr(sv, 'domain') and sv.domain:
+            lo = getattr(sv.domain, 'lo', None)
+            hi = getattr(sv.domain, 'hi', None)
+        bounds_lo.append(Float(lo) if lo is not None else -oo)
+        bounds_hi.append(Float(hi) if hi is not None else oo)
+
+    has_finite = any(v != -oo for v in bounds_lo) or any(v != oo for v in bounds_hi)
+    return bounds_lo, bounds_hi, has_finite
+
+
+def format_bounds_array(bounds: List, format: str = "jax") -> str:
+    """Render a list of SymPy bound values as a code-level list literal.
+
+    Uses the appropriate TVBO code printer so infinity is rendered
+    correctly for any backend (``jnp.inf``, ``np.inf``, ``Inf``, …).
+
+    Args:
+        bounds: list of sympy expressions (Float / oo / -oo)
+        format: target backend (``'jax'``, ``'numpy'``, ``'julia'``, …)
+
+    Returns:
+        String like ``[-10.0, -jnp.inf]`` ready for code generation.
+    """
+    from tvbo.export.code import get_printer
+    printer = get_printer(format)
+    parts = [printer.doprint(v) for v in bounds]
+    return '[' + ', '.join(parts) + ']'
 
 
 # =============================================================================

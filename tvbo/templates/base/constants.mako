@@ -22,7 +22,7 @@ NOT constants (these are experiment parameters):
 ## All Constants
 <%def name="all_constants(experiment)">
 <%
-    n_nodes = experiment.network.number_of_regions if experiment.network else 1
+    n_nodes = (getattr(experiment.network, 'number_of_nodes', None) or getattr(experiment.network, 'number_of_regions', 1)) if experiment.network else 1
     bids_obs = experiment.network.observations if hasattr(experiment.network, 'observations') else {}
 %>
 n_nodes = N_nodes = N_NODES = ${n_nodes}

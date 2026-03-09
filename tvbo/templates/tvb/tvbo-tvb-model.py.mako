@@ -5,7 +5,7 @@
 import numpy as np
 from tvbo.knowledge.simulation.equations import _clash1
 if 'experiment' in context.keys():
-    model = context['experiment'].local_dynamics.metadata
+    model = context['experiment'].dynamics.metadata
     standalone = False
 else:
     model = context['model'].metadata

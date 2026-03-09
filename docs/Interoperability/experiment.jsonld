@@ -369,7 +369,7 @@
   "description": "Whole-brain resting state simulation using the Jansen-Rit neural mass model with stochastic integration and linear diffusive coupling.\n",
   "additional_equations": [],
   "label": "Jansen-Rit Resting State Simulation",
-  "local_dynamics": {
+  "dynamics": {
     "name": "JansenRit",
     "label": "Jansen-Rit Neural Mass Model",
     "iri": "http://www.thevirtualbrain.org/tvb-o/JansenRit",

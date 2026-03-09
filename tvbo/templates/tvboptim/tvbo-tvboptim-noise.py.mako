@@ -18,7 +18,7 @@ import numpy as np
 # Get from context
 if 'experiment' in context.keys():
     integration = experiment.integration
-    model = experiment.local_dynamics
+    model = experiment.dynamics
     noise_sigma = np.asarray(experiment.noise_sigma_array) if hasattr(experiment, 'noise_sigma_array') else None
 else:
     integration = context.get('integration', None)

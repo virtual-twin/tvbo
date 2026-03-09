@@ -370,7 +370,7 @@ derived_variables:
       rhs: Q_V*local_coupling
       latex: false
     conditional: false
-coupling_terms:
+coupling_inputs:
   c_pop0:
     name: c_pop0
   local_coupling:

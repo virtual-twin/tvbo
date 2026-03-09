@@ -53,7 +53,7 @@ class DiffEqAdapter:
         from tvbo import templates
 
         exp = self.experiment
-        model = exp.local_dynamics
+        model = exp.dynamics
         model.update_metadata()
 
         ctx = {
@@ -89,7 +89,7 @@ class DiffEqAdapter:
         )
 
         exp = self.experiment
-        model = exp.local_dynamics
+        model = exp.dynamics
 
         # 1. Ensure required Julia packages
         ensure_packages(*REQUIRED_PACKAGES)

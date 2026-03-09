@@ -30,9 +30,9 @@ def latex_equation(eq, mul_symbol='*'):
     return latex(eq, mul_symbol=mul_symbol)
 
 if 'experiment' in context.keys():
-    model = context.get('experiment').local_dynamics
+    model = context.get('experiment').dynamics
 else:
-    model = context.get('local_dynamics', context.get('model'))
+    model = context.get('dynamics', context.get('model'))
 
 state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
 
@@ -57,32 +57,35 @@ functions = [Eq(Function(f.name)(*[Symbol(arg.name if hasattr(arg, 'name') else 
 ${'## ' + model.name}
 ${model.description if model.description else ""}
 
-% if derived_parameters:
-${"### Derived Parameters"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
-% endif
-% if functions:
-${"### Functions"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
-% endif
-% if derived_variables:
-${"### Derived Variables"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_variables])}
-% endif
-
 ${"### State Equations"}
 ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in state_equations])}
-
-% if output:
-${"### Output Transforms"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in output])}
-% endif
 
 ${"### Parameters"}
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
 ${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {p.unit if p.unit else 'N/A'} | {p.description} |" for p in model.parameters.values()])}
+
+% if derived_parameters or derived_variables or functions:
+${"### Derived Quantities"}
+% endif
+% if derived_parameters:
+${"#### Derived Parameters"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
+% endif
+% if derived_variables:
+${"#### Derived Variables"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_variables])}
+% endif
+% if functions:
+${"#### Functions"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
+% endif
+
+% if output:
+${"### Output Transforms"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in output])}
+% endif
 
 
 <%

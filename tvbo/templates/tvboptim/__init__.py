@@ -37,7 +37,7 @@ code = template.render(experiment=experiment)
 
 # Generate individual components
 dfun_template = lookup.get_template("tvboptim/tvbo-tvboptim-dfun.py.mako")
-dfun_code = dfun_template.render(model=experiment.local_dynamics)
+dfun_code = dfun_template.render(model=experiment.dynamics)
 
 # Generate exploration workflow
 expl_template = lookup.get_template("tvboptim/tvbo-tvboptim-exploration.py.mako")

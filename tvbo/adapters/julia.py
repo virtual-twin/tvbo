@@ -2,6 +2,10 @@
 
 Replaces the legacy pyjulia (``julia`` package) which is unmaintained
 and emits spurious MainInclude warnings on Julia ≥ 1.3.
+
+Julia package management is handled automatically by juliapkg via
+``tvbo/juliapkg.json``. When juliacall is first imported, juliapkg
+will install Julia (if needed) and all declared packages.
 """
 
 import re
@@ -13,6 +17,11 @@ _installed_packages = set()
 
 def get_julia(compiled_modules=True):
     """Return the Julia Main module (lazily initialized).
+
+    On first call, juliacall/juliapkg will automatically:
+    - Install Julia if not present
+    - Resolve and install packages declared in tvbo/juliapkg.json
+    - Precompile packages
 
     Parameters
     ----------

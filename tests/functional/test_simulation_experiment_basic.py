@@ -7,7 +7,7 @@ from tvbo.export.experiment import SimulationExperiment
 def test_simulation_experiment_auto_components():
     oc = ontology.get_model("JansenRit")
     dyn = Dynamics.from_ontology(oc)
-    exp = SimulationExperiment(local_dynamics=dyn)
+    exp = SimulationExperiment(dynamics=dyn)
 
     # Auto-filled components
     assert exp.integration is not None, "Integrator should be auto-created"

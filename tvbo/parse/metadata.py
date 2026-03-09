@@ -631,7 +631,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     # --- Assemble experiment ---
     exp = tvbo_datamodel.SimulationExperiment(
         id=experiment_id,
-        local_dynamics=model_metadata,
+        dynamics=model_metadata,
         coupling=coupling_metadata,
         integration=integration_metadata,
         network=network_metadata,

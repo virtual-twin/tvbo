@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from tvbo.adapters.base import BaseAdapter
+
 if TYPE_CHECKING:
     import pandas as pd
     from tvbo.data.types import TimeSeries
@@ -159,7 +161,7 @@ def _patch_pyrates_missing_funcs():
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
-class PyRatesAdapter:
+class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
     def __init__(self, experiment: "SimulationExperiment"):
@@ -170,7 +172,7 @@ class PyRatesAdapter:
         experiment : SimulationExperiment
             The experiment to run.
         """
-        self.experiment = experiment
+        super().__init__(experiment)
 
     def run(
         self,
@@ -313,13 +315,8 @@ class PyRatesAdapter:
         PyRates vectorize=True cannot handle circuits where different nodes
         have different operators (different parameter counts / state variables).
         """
-        exp = self.experiment
-        dynamics = getattr(exp, "dynamics", None)
-        if isinstance(dynamics, dict) and len(dynamics) > 1:
-            # Multiple distinct dynamics models
-            names = {getattr(d, "name", None) for d in dynamics.values() if d}
-            return len(names) > 1
-        return False
+        dynamics_dict = self.build_dynamics_dict()
+        return len(dynamics_dict) > 1
 
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
@@ -355,7 +352,7 @@ class PyRatesAdapter:
 
         # Get circuit name
         network = getattr(exp, "network", None)
-        dynamics = getattr(exp, "local_dynamics", None) or getattr(exp, "dynamics", None)
+        dynamics = getattr(exp, "dynamics", None)
 
         if network is not None:
             circuit_name = (
@@ -393,9 +390,7 @@ class PyRatesAdapter:
     def _add_edges_from_matrix(self, circuit, network) -> None:
         """Add edges to circuit using weight matrix (efficient for large networks)."""
         exp = self.experiment
-        dynamics_dict = exp.dynamics
-        if not isinstance(dynamics_dict, dict):
-            dynamics_dict = {d.name: d for d in (dynamics_dict or [])}
+        dynamics_dict = self.build_dynamics_dict()
 
         # Get node labels
         node_labels = []
@@ -419,9 +414,10 @@ class PyRatesAdapter:
         else:
             src_var = f"{dyn_name}_op/x"
 
-        # Target: coupling term
-        if first_dyn.coupling_terms:
-            tgt_var = f"{dyn_name}_op/{list(first_dyn.coupling_terms.keys())[0]}"
+        # Target: coupling input
+        ci = getattr(first_dyn, 'coupling_inputs', None) or getattr(first_dyn, 'coupling_terms', None)
+        if ci:
+            tgt_var = f"{dyn_name}_op/{list(ci.keys())[0]}"
         else:
             tgt_var = src_var
 
@@ -465,9 +461,7 @@ class PyRatesAdapter:
         exp = self.experiment
         outputs = {}
 
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        dynamics = self.build_dynamics_dict()
 
         default_dyn = next(iter(dynamics.values())) if dynamics else None
 
@@ -514,9 +508,7 @@ class PyRatesAdapter:
         import sympy as sp
 
         exp = self.experiment
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        dynamics = self.build_dynamics_dict()
 
         if not dynamics:
             return result

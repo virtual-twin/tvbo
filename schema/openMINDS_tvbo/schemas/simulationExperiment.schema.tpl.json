@@ -27,7 +27,7 @@
     "label": {
       "type": "string"
     },
-    "local_dynamics": {
+    "dynamics": {
       "_embeddedTypes": [
         "tvbo:Dynamics"
       ]

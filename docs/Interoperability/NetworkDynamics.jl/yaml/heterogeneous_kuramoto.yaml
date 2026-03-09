@@ -24,7 +24,7 @@ references:
     - "Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators."
 
 # -- Default (most common) vertex dynamics ------------------------------------
-local_dynamics:
+dynamics:
     name: Kuramoto
     label: "Kuramoto phase oscillator"
     description: >
@@ -53,66 +53,6 @@ local_dynamics:
             coupling_variable: true
             variable_of_interest: true
 
-# -- Additional vertex dynamics models ----------------------------------------
-dynamics:
-    StaticNode:
-        name: StaticNode
-        label: "Static vertex"
-        description: >
-            No internal dynamics.  Outputs a fixed phase value theta_fix as
-            its coupling output.  Used for boundary conditions or fixed
-            reference oscillators.  Has no state variables — it is a pure
-            algebraic output node (ND.jl: ff=NoFeedForward()).
-        system_type: continuous
-        autonomous: true
-        parameters:
-            theta_fix:
-                label: "Fixed phase output"
-                symbol: "theta_fix"
-                value: -0.4375
-                unit: "rad"
-                description: "Constant phase output of this vertex"
-        coupling_terms: {}
-        state_variables: {}
-
-    KuramotoInertia:
-        name: KuramotoInertia
-        label: "Kuramoto oscillator with inertia"
-        description: >
-            Second-order Kuramoto oscillator with damping:
-            dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum.
-            Only theta is the coupling output (g=1:1 in ND.jl).
-        system_type: continuous
-        autonomous: true
-        parameters:
-            omega0:
-                label: "Natural frequency"
-                symbol: "omega_0"
-                value: 0.0
-                unit: "rad/s"
-                description: "Intrinsic angular frequency"
-        coupling_terms:
-            c_coupling:
-                description: "Aggregated sinusoidal coupling from incident edges"
-        state_variables:
-            theta:
-                label: "Phase angle"
-                symbol: "theta"
-                equation:
-                    rhs: "omega"
-                initial_value: 0.0
-                unit: "rad"
-                coupling_variable: true
-                variable_of_interest: true
-            omega:
-                label: "Angular velocity"
-                symbol: "omega"
-                equation:
-                    rhs: "omega0 - 1.0*omega + c_coupling"
-                initial_value: 5.0
-                unit: "rad/s"
-                variable_of_interest: true
-
 # -- Network -------------------------------------------------------------------
 network:
     label: "8-node ring (Watts-Strogatz k=2, p=0)"
@@ -127,6 +67,66 @@ network:
         parameters:
             k: { name: k, value: 2 }
             p: { name: p, value: 0 }
+
+    # -- Additional vertex dynamics models ----------------------------------------
+    dynamics:
+        StaticNode:
+            name: StaticNode
+            label: "Static vertex"
+            description: >
+                No internal dynamics.  Outputs a fixed phase value theta_fix as
+                its coupling output.  Used for boundary conditions or fixed
+                reference oscillators.  Has no state variables — it is a pure
+                algebraic output node (ND.jl: ff=NoFeedForward()).
+            system_type: continuous
+            autonomous: true
+            parameters:
+                theta_fix:
+                    label: "Fixed phase output"
+                    symbol: "theta_fix"
+                    value: -0.4375
+                    unit: "rad"
+                    description: "Constant phase output of this vertex"
+            coupling_terms: {}
+            state_variables: {}
+
+        KuramotoInertia:
+            name: KuramotoInertia
+            label: "Kuramoto oscillator with inertia"
+            description: >
+                Second-order Kuramoto oscillator with damping:
+                dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum.
+                Only theta is the coupling output (g=1:1 in ND.jl).
+            system_type: continuous
+            autonomous: true
+            parameters:
+                omega0:
+                    label: "Natural frequency"
+                    symbol: "omega_0"
+                    value: 0.0
+                    unit: "rad/s"
+                    description: "Intrinsic angular frequency"
+            coupling_terms:
+                c_coupling:
+                    description: "Aggregated sinusoidal coupling from incident edges"
+            state_variables:
+                theta:
+                    label: "Phase angle"
+                    symbol: "theta"
+                    equation:
+                        rhs: "omega"
+                    initial_value: 0.0
+                    unit: "rad"
+                    coupling_variable: true
+                    variable_of_interest: true
+                omega:
+                    label: "Angular velocity"
+                    symbol: "omega"
+                    equation:
+                        rhs: "omega0 - 1.0*omega + c_coupling"
+                    initial_value: 5.0
+                    unit: "rad/s"
+                    variable_of_interest: true
 
     nodes:
         # Node 1: static vertex (fixed phase output)
@@ -143,19 +143,22 @@ network:
           parameters:
               - name: omega0
                 value: -0.3125
-          initial_state: [-0.3125]
+          state:
+              theta: -0.3125
         - id: 2
           dynamics: Kuramoto
           parameters:
               - name: omega0
                 value: -0.1875
-          initial_state: [-0.1875]
+          state:
+              theta: -0.1875
         - id: 3
           dynamics: Kuramoto
           parameters:
               - name: omega0
                 value: -0.0625
-          initial_state: [-0.0625]
+          state:
+              theta: -0.0625
 
         # Node 5: Kuramoto with inertia (2D)
         - id: 4
@@ -163,7 +166,9 @@ network:
           parameters:
               - name: omega0
                 value: 0.0625
-          initial_state: [0.0625, 5.0]
+          state:
+              theta: 0.0625
+              omega: 5.0
 
         # Nodes 6-8: standard Kuramoto
         - id: 5
@@ -171,19 +176,22 @@ network:
           parameters:
               - name: omega0
                 value: 0.1875
-          initial_state: [0.1875]
+          state:
+              theta: 0.1875
         - id: 6
           dynamics: Kuramoto
           parameters:
               - name: omega0
                 value: 0.3125
-          initial_state: [0.3125]
+          state:
+              theta: 0.3125
         - id: 7
           dynamics: Kuramoto
           parameters:
               - name: omega0
                 value: 0.4375
-          initial_state: [0.4375]
+          state:
+              theta: 0.4375
 
     coupling:
         KuramotoCoupling:

@@ -39,7 +39,7 @@ accent_gold = cmap(0.85)
 accent_mid = cmap(0.6)
 
 # Get FC matrices from result structure (observations attached to simulation results)
-fc_target = np.array(results.integration.main.observations.fc_target)
+fc_target = np.array(results.integration.observations.fc_target)
 fc_post_fic = np.array(results.fic.post_tuning.observations.fc)
 fc_post_fic_eib = np.array(results.fic_eib.post_tuning.observations.fc)
 fc_gradient = np.array(results.gradient_eib.simulation.observations.fc)

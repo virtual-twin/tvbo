@@ -69,7 +69,7 @@ class ModelingToolkitAdapter(BaseAdapter):
             return
         if isinstance(source, Dynamics):
             self._input_dynamics = source
-            source = SimulationExperiment(local_dynamics=source)
+            source = SimulationExperiment(dynamics=source)
         else:
             self._input_dynamics = None
         super().__init__(source)
@@ -206,7 +206,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         if source is not None:
             if isinstance(source, Dynamics):
                 self._input_dynamics = source
-                self.experiment = SimulationExperiment(local_dynamics=source)
+                self.experiment = SimulationExperiment(dynamics=source)
             else:
                 self._input_dynamics = None
                 self.experiment = source
@@ -230,7 +230,7 @@ class ModelingToolkitAdapter(BaseAdapter):
             if returns == "dynamics":
                 return dyn
             return self.experiment.copy(
-                local_dynamics=dyn,
+                dynamics=dyn,
                 model=dyn,
             )
 
@@ -297,7 +297,7 @@ class ModelingToolkitAdapter(BaseAdapter):
             StateVariableName,
         )
 
-        original = self.experiment.local_dynamics
+        original = self.experiment.dynamics
         dyn = deepcopy(original)
         dyn.name = f"{original.name}_FirstOrder"
         dyn.description = (
