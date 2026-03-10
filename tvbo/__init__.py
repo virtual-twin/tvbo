@@ -12,6 +12,22 @@ import logging
 import os
 import shutil
 import tempfile
+import warnings
+
+# ---------------------------------------------------------------------------
+# Suppress harmless requests dependency warning
+# ---------------------------------------------------------------------------
+# requests 2.32.x checks chardet<6 but pyshex installs chardet 6.x.
+# requests itself uses charset-normalizer (which *is* compatible); the
+# warning is a false positive.  Suppress it before anything imports
+# requests so the user never sees it.
+warnings.filterwarnings(
+    "ignore",
+    message=r"urllib3.*or chardet.*doesn't match a supported version",
+    category=Warning,
+    module=r"requests",
+)
+# ---------------------------------------------------------------------------
 
 ROOT = os.path.dirname(__file__)
 
