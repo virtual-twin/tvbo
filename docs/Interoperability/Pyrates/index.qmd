@@ -19,7 +19,7 @@ subtitle: "Bidirectional interoperability with PyRates dynamical systems toolbox
 | [PyRates Overview](PyRates.qmd) | Basic round-trip interoperability |
 | [Analysis](PyRates_Analysis.qmd) | Time series analysis and visualization |
 | [Bifurcation](PyRates_Bifurcation.qmd) | Bifurcation diagram analysis |
-| [Heterogeneous Networks](PyRates_Heterogenous_Network.qmd) | Spatially varying parameters |
+| [Heterogeneous Networks](PyRates_Heterogeneous_Network.qmd) | Spatially varying parameters |
 
 ## Quick Start
 
