@@ -536,7 +536,7 @@ window.Quarto = {
 </section>
 <section id="the-yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="the-yaml-specification">The YAML Specification</h2>
-<p>Mark a state variable with <code>equation_order: 2</code> to declare its equation as second-order. Provide the derivative initial condition separately with<code>derivative_initial_value: 2.0</code>:</p>
+<p>Mark a state variable with <code>equation_order: 2</code> to declare its equation as second-order. Provide the derivative initial condition separately with <code>derivative_initial_value: 2.0</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">state_variables</span><span class="kw">:</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">x</span><span class="kw">:</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> x</span></span>
@@ -548,17 +548,13 @@ window.Quarto = {
 </section>
 <section id="step-1-load-and-inspect-the-sympy-equations" class="level2">
 <h2 class="anchored" data-anchor-id="step-1-load-and-inspect-the-sympy-equations">Step 1: Load and Inspect the SymPy Equations</h2>
-<div id="cc173db3" class="cell" data-execution_count="2">
+<div id="d58735b6" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"yaml/lorenz_higher_order.yaml"</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Markdown(exp.dynamics.generate_report(derivative_notation<span class="op">=</span><span class="st">'dot'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
-  warnings.warn(</code></pre>
-</div>
 <section id="lorenz63_higherorder" class="level2 cell-output cell-output-display cell-output-markdown" data-execution_count="1">
 <h2 class="anchored" data-anchor-id="lorenz63_higherorder">Lorenz63_HigherOrder</h2>
 <p>Second-order Lorenz variant from the MTK documentation. Variable x has equation_order=2, so d²x/dt² = σ(y-x).</p>
@@ -611,9 +607,9 @@ window.Quarto = {
 </section>
 <section id="step-2-render-mtk-code" class="level2">
 <h2 class="anchored" data-anchor-id="step-2-render-mtk-code">Step 2: Render MTK Code</h2>
-<div id="1efb7893" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"mtk"</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="aea1f5f0" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"mtk"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 
@@ -660,17 +656,17 @@ plot(sol; title="Lorenz63_HigherOrder")
 </div>
 <p>The template generates <code>Dt(Dt(x))</code> — MTK’s notation for <span class="math inline">\(\frac{d^2 x}{dt^2}\)</span></p>
 <p>The derivative initial condition is passed via:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> [<span class="fu">Dt</span>(sys.x) <span class="op">=&gt;</span> <span class="fl">2.0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> [<span class="fu">Dt</span>(sys.x) <span class="op">=&gt;</span> <span class="fl">2.0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="step-3-symbolic-round-trip-get-lowered-equations" class="level2">
 <h2 class="anchored" data-anchor-id="step-3-symbolic-round-trip-get-lowered-equations">Step 3: Symbolic Round-Trip — Get Lowered Equations</h2>
 <p>Here is the key feature: we send the higher-order system to Julia, let MTK’s <code>mtkcompile</code> do the structural transformation, and extract the lowered first-order equations back as SymPy.</p>
-<div id="fc35bf4b" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.modelingtoolkit <span class="im">import</span> ModelingToolkitAdapter</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> ModelingToolkitAdapter()</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>firstoder_ODE <span class="op">=</span> adapter.lower(exp.dynamics)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>Markdown(firstoder_ODE.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="d8b281e4" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.modelingtoolkit <span class="im">import</span> ModelingToolkitAdapter</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> ModelingToolkitAdapter()</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>firstorder_ODE <span class="op">=</span> adapter.lower(exp.dynamics)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>Markdown(firstorder_ODE.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
@@ -725,11 +721,11 @@ plot(sol; title="Lorenz63_HigherOrder")
 </section>
 </div>
 <p>To run the lowered system with backends that only support first-order ODEs:</p>
-<div id="711579fd" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>lowered_exp <span class="op">=</span> adapter.lower(exp)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>lowered_exp.integration.method<span class="op">=</span><span class="st">'Heun'</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> lowered_exp.run(<span class="st">"tvboptim"</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>result.integration.to_timeseries().get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="a891d716" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>lowered_exp <span class="op">=</span> adapter.lower(exp)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>lowered_exp.integration.method<span class="op">=</span><span class="st">'Heun'</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> lowered_exp.run(<span class="st">"tvboptim"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>result.integration.to_timeseries().get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ============================================================
@@ -756,9 +752,9 @@ Experiment complete.
 </section>
 <section id="step-4-run-the-simulation" class="level2">
 <h2 class="anchored" data-anchor-id="step-4-run-the-simulation">Step 4: Run the Simulation</h2>
-<div id="3b447ab0" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"mtk"</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>result.get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="3f98f4e4" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"mtk"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>result.get_state([<span class="st">"x"</span>, <span class="st">"y"</span>]).plot(<span class="bu">type</span><span class="op">=</span><span class="st">"statespace"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
 <figure class="figure">

@@ -500,6 +500,17 @@ window.Quarto = {
   <li><a href="#model-report" id="toc-model-report" class="nav-link" data-scroll-target="#model-report">Model Report</a></li>
   <li><a href="#fitzhugh-nagumo-brain-synchronization" id="toc-fitzhugh-nagumo-brain-synchronization" class="nav-link" data-scroll-target="#fitzhugh-nagumo-brain-synchronization">FitzHugh-Nagumo Brain Synchronization</a>
   <ul class="collapse">
+  <li><a href="#brain-network-aal-90-directed-brain-network" id="toc-brain-network-aal-90-directed-brain-network" class="nav-link" data-scroll-target="#brain-network-aal-90-directed-brain-network">1. Brain Network: AAL-90 directed brain network</a>
+  <ul class="collapse">
+  <li><a href="#coupling-weighted-electrical-gap-junction-coupling" id="toc-coupling-weighted-electrical-gap-junction-coupling" class="nav-link" data-scroll-target="#coupling-weighted-electrical-gap-junction-coupling">Coupling: Weighted electrical gap-junction coupling</a></li>
+  </ul></li>
+  <li><a href="#local-dynamics-fitzhugh-nagumo-oscillator" id="toc-local-dynamics-fitzhugh-nagumo-oscillator" class="nav-link" data-scroll-target="#local-dynamics-fitzhugh-nagumo-oscillator">2. Local Dynamics: FitzHugh-Nagumo oscillator</a>
+  <ul class="collapse">
+  <li><a href="#state-equations" id="toc-state-equations" class="nav-link" data-scroll-target="#state-equations">2.1 State Equations</a></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">2.2 Parameters</a></li>
+  </ul></li>
+  <li><a href="#numerical-integration" id="toc-numerical-integration" class="nav-link" data-scroll-target="#numerical-integration">3. Numerical Integration</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   <li><a href="#generated-julia-code" id="toc-generated-julia-code" class="nav-link" data-scroll-target="#generated-julia-code">Generated Julia Code</a></li>
   <li><a href="#run-plot" id="toc-run-plot" class="nav-link" data-scroll-target="#run-plot">Run &amp; Plot</a></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
@@ -534,7 +545,7 @@ window.Quarto = {
 <p>Replicates the <a href="https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/">NetworkDynamics.jl Directed and Weighted Graphs tutorial</a> — FitzHugh-Nagumo oscillators on a 90-region AAL brain connectivity derived from DTI (Tzourio-Mazoyer et al., 2002). The structural connectivity matrix <code>Norm_G_DTI.txt</code> provides directed, weighted edges.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="c6651dd2" class="cell" data-execution_count="2">
+<div id="354d1403" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -633,7 +644,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Tzourio-Mazoyer,</span><span class="nv"> </span><span class="s">N.,</span><span class="nv"> </span><span class="s">et</span><span class="nv"> </span><span class="s">al.</span><span class="nv"> </span><span class="s">(2002).</span><span class="nv"> </span><span class="s">Automated</span><span class="nv"> </span><span class="s">anatomical</span><span class="nv"> </span><span class="s">labeling</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">activations</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">SPM.</span><span class="nv"> </span><span class="s">Neuroimage,</span><span class="nv"> </span><span class="s">15(1),</span><span class="nv"> </span><span class="s">273-289."</span>
 
 <span class="c1"># -- Local Dynamics ------------------------------------------------------------</span>
-<span class="nt">local_dynamics</span><span class="p">:</span>
+<span class="nt">dynamics</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FitzHughNagumo</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"FitzHugh-Nagumo</span><span class="nv"> </span><span class="s">oscillator"</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
@@ -759,9 +770,50 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <h1>FitzHugh-Nagumo Brain Synchronization</h1>
 <p>Neurodynamic model of synchronization: FitzHugh-Nagumo oscillators coupled through weighted, directed electrical gap junctions on a 90-region brain atlas (AAL, Tzourio-Mazoyer et al., 2002). Recreates the NetworkDynamics.jl Directed and Weighted Graphs tutorial.</p>
 <hr>
-<p>Two-variable relaxation oscillator. The model comprises <strong>2 state variables</strong> representing neural population activity.</p>
-<p><span class="math display">\[\frac{du}{dt} = c_{\mathcal{electri}} + u - v - \frac{u^{3}}{3}\]</span></p>
-<p><span class="math display">\[\frac{dv}{dt} = \epsilon \cdot \left(u - a\right)\]</span></p>
+<section id="brain-network-aal-90-directed-brain-network" class="level2">
+<h2 class="anchored" data-anchor-id="brain-network-aal-90-directed-brain-network">1. Brain Network: AAL-90 directed brain network</h2>
+<p>Directed, weighted structural connectivity from diffusion tensor imaging. 90 cortical regions from the Automated Anatomical Labeling (AAL) atlas (Tzourio-Mazoyer et al., 2002). Edge weights are set at runtime from the Norm_G_DTI.txt matrix.</p>
+<ul>
+<li><strong>Parcellation:</strong> AAL-90 (AAL)</li>
+<li><strong>Regions:</strong> 90</li>
+</ul>
+<section id="coupling-weighted-electrical-gap-junction-coupling" class="level3">
+<h3 class="anchored" data-anchor-id="coupling-weighted-electrical-gap-junction-coupling">Coupling: Weighted electrical gap-junction coupling</h3>
+<p>Directed coupling: each edge computes w * sigma * (u_src - u_dst), where w is the per-edge structural weight and sigma is a global coupling strength parameter.</p>
+<p><strong>Pre-synaptic:</strong> <span class="math inline">\(c_{\text{pre}} = \sigma \cdot w \cdot \left(x_{j} - x_{i}\right)\)</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\sigma\)</span></td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: left;">Global scaling of electrical gap-junction coupling</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(w\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">Structural connectivity weight (per-edge, from DTI)</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="local-dynamics-fitzhugh-nagumo-oscillator" class="level2">
+<h2 class="anchored" data-anchor-id="local-dynamics-fitzhugh-nagumo-oscillator">2. Local Dynamics: FitzHugh-Nagumo oscillator</h2>
+<p>Two-variable relaxation oscillator. The model comprises <strong>2 state variables</strong>.</p>
+<section id="state-equations" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations">2.1 State Equations</h3>
+<p><span class="math display">\[\dot{u} = c_{\mathcal{electri}} + u - v - \frac{u^{3}}{3}\]</span></p>
+<p><span class="math display">\[\dot{v} = \epsilon \cdot \left(u - a\right)\]</span></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">2.2 Parameters</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 29%">
@@ -792,47 +844,30 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </tr>
 </tbody>
 </table>
-<p><strong>Pre-synaptic transformation:</strong> <span class="math display">\[c_{\text{pre}} = x_{j}\]</span></p>
-<p><strong>Post-synaptic transformation:</strong> <span class="math display">\[c_{\text{post}} = b + a \cdot gx\]</span></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 35%">
-<col style="width: 22%">
-<col style="width: 41%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Parameter</th>
-<th style="text-align: right;">Value</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;"><span class="math inline">\(a\)</span></td>
-<td style="text-align: right;">0.00390625</td>
-<td style="text-align: left;">Linear scaling factor of the coupled (delayed) input.</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><span class="math inline">\(b\)</span></td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: left;">Shifts the base of the connection strength while maintaining the absolute difference between different values.</td>
-</tr>
-</tbody>
-</table>
+</section>
+</section>
+<section id="numerical-integration" class="level2">
+<h2 class="anchored" data-anchor-id="numerical-integration">3. Numerical Integration</h2>
 <ul>
-<li><p><strong>Regions:</strong> 90</p></li>
-<li><p><strong>Conduction velocity:</strong> 3.0 mm/ms</p></li>
-<li><p><strong>Method:</strong> AutoTsit5</p></li>
-<li><p><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.1\)</span> ms</p></li>
-<li><p><strong>Duration:</strong> 200.0 ms</p></li>
+<li><strong>Method:</strong> AutoTsit5</li>
+<li><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.1\)</span> ms</li>
+<li><strong>Duration:</strong> 200.0 ms</li>
 </ul>
+<hr>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/</li>
+<li>FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. Biophysical Journal, 1(6), 445-466.</li>
+<li>Nagumo, J., Arimoto, S., &amp; Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. Proceedings of the IRE, 50(10), 2061-2070.</li>
+<li>Tzourio-Mazoyer, N., et al.&nbsp;(2002). Automated anatomical labeling of activations in SPM. Neuroimage, 15(1), 273-289.</li>
+</ul>
+</section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="c7fd411f" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(<span class="st">"yaml/fitzhugh_nagumo.yaml"</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="93be597d" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -910,6 +945,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .output_html .vm { color: #19177C } /* Name.Variable.Magic */
 .output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Graphs</span>
 <span class="k">using</span><span class="w"> </span><span class="n">NetworkDynamics</span>
+
 <span class="k">using</span><span class="w"> </span><span class="n">OrdinaryDiffEqTsit5</span>
 <span class="k">using</span><span class="w"> </span><span class="n">OrdinaryDiffEqSDIRK</span>
 <span class="k">using</span><span class="w"> </span><span class="n">DelimitedFiles</span>
@@ -946,7 +982,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 
 
-<span class="k">function</span><span class="w"> </span><span class="n">ElectricalCoupling_edge_g!</span><span class="p">(</span><span class="n">e_dst</span><span class="p">,</span><span class="w"> </span><span class="n">v_src</span><span class="p">,</span><span class="w"> </span><span class="n">v_dst</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">sigma</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="k">function</span><span class="w"> </span><span class="n">ElectricalCoupling_edge_g!</span><span class="p">(</span><span class="n">e_dst</span><span class="p">,</span><span class="w"> </span><span class="n">v_src</span><span class="p">,</span><span class="w"> </span><span class="n">v_dst</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
 <span class="w">    </span><span class="n">e_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sigma</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="p">(</span><span class="n">v_src</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">v_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 <span class="w">    </span><span class="nb">nothing</span>
 <span class="k">end</span>
@@ -954,7 +990,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="n">edge_ElectricalCoupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EdgeModel</span><span class="p">(;</span>
 <span class="w">    </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Directed</span><span class="p">(</span><span class="n">ElectricalCoupling_edge_g!</span><span class="p">),</span>
 <span class="w">    </span><span class="n">outsym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:coupling</span><span class="p">],</span>
-<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:w</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="ss">:sigma</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
+<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:sigma</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="ss">:w</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">1.0</span><span class="p">],</span>
 <span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:ElectricalCoupling</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -1035,18 +1071,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="87955eff" class="cell" data-execution_count="5">
+<div id="df9a7aca" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>WARNING: Imported binding MainInclude.eval was undeclared at import time during import to Main.
-WARNING: import of MainInclude.eval into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.include was undeclared at import time during import to Main.
-WARNING: import of MainInclude.include into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.eval was undeclared at import time during import to Main.
-WARNING: import of MainInclude.eval into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.include was undeclared at import time during import to Main.
-WARNING: import of MainInclude.include into Main conflicts with an existing identifier; ignored.</code></pre>
+<div class="cell-output cell-output-stdout">
+<pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
@@ -1059,7 +1088,7 @@ WARNING: import of MainInclude.include into Main conflicts with an existing iden
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="ed3c9d62" class="cell" data-execution_count="6">
+<div id="07efbc2c" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Shape: (2001, 2, 90, 1)
 Time range: 0.0 – 200.0
@@ -1071,7 +1100,7 @@ Final u std across nodes: 0.8682
 </section>
 <section id="animate" class="level2">
 <h2 class="anchored" data-anchor-id="animate">Animate</h2>
-<div id="bcd2f31c" class="cell" data-execution_count="7">
+<div id="7a2dc5ca" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"u"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"fitzhugh_nagumo.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>

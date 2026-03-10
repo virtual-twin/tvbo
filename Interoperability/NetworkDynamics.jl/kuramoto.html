@@ -500,6 +500,17 @@ window.Quarto = {
   <li><a href="#model-report" id="toc-model-report" class="nav-link" data-scroll-target="#model-report">Model Report</a></li>
   <li><a href="#heterogeneous-kuramoto-oscillators" id="toc-heterogeneous-kuramoto-oscillators" class="nav-link" data-scroll-target="#heterogeneous-kuramoto-oscillators">Heterogeneous Kuramoto Oscillators</a>
   <ul class="collapse">
+  <li><a href="#brain-network-8-node-ring-watts-strogatz-k2-p0" id="toc-brain-network-8-node-ring-watts-strogatz-k2-p0" class="nav-link" data-scroll-target="#brain-network-8-node-ring-watts-strogatz-k2-p0">1. Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</a>
+  <ul class="collapse">
+  <li><a href="#coupling-kuramoto-sinusoidal-coupling" id="toc-coupling-kuramoto-sinusoidal-coupling" class="nav-link" data-scroll-target="#coupling-kuramoto-sinusoidal-coupling">Coupling: Kuramoto sinusoidal coupling</a></li>
+  </ul></li>
+  <li><a href="#local-dynamics-kuramoto-phase-oscillator" id="toc-local-dynamics-kuramoto-phase-oscillator" class="nav-link" data-scroll-target="#local-dynamics-kuramoto-phase-oscillator">2. Local Dynamics: Kuramoto phase oscillator</a>
+  <ul class="collapse">
+  <li><a href="#state-equations" id="toc-state-equations" class="nav-link" data-scroll-target="#state-equations">2.1 State Equations</a></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">2.2 Parameters</a></li>
+  </ul></li>
+  <li><a href="#numerical-integration" id="toc-numerical-integration" class="nav-link" data-scroll-target="#numerical-integration">3. Numerical Integration</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   <li><a href="#generated-julia-code" id="toc-generated-julia-code" class="nav-link" data-scroll-target="#generated-julia-code">Generated Julia Code</a></li>
   <li><a href="#run-plot" id="toc-run-plot" class="nav-link" data-scroll-target="#run-plot">Run &amp; Plot</a></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
@@ -534,7 +545,7 @@ window.Quarto = {
 <p>Replicates the <a href="https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/">NetworkDynamics.jl Heterogeneous System tutorial</a> — Kuramoto phase oscillators on an 8-node ring with heterogeneous natural frequencies.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="9ca23263" class="cell" data-execution_count="2">
+<div id="8d614279" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -631,7 +642,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Kuramoto,</span><span class="nv"> </span><span class="s">Y.</span><span class="nv"> </span><span class="s">(1975).</span><span class="nv"> </span><span class="s">Self-entrainment</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">population</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">coupled</span><span class="nv"> </span><span class="s">non-linear</span><span class="nv"> </span><span class="s">oscillators."</span>
 
 <span class="c1"># -- Local Dynamics ------------------------------------------------------------</span>
-<span class="nt">local_dynamics</span><span class="p">:</span>
+<span class="nt">dynamics</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Kuramoto</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">oscillator"</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
@@ -718,8 +729,43 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <h1>Heterogeneous Kuramoto Oscillators</h1>
 <p>Kuramoto model on an 8-node ring network. Each oscillator has a natural frequency omega_0 and is coupled to its nearest neighbours via K sin(theta_src - theta_dst). Demonstrates heterogeneous per-node parameters. Recreates the NetworkDynamics.jl Heterogeneous System tutorial.</p>
 <hr>
-<p>Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges). The model comprises <strong>1 state variables</strong> representing neural population activity.</p>
-<p><span class="math display">\[\frac{dtheta}{dt} = c_{coupling} + \omega_{0}\]</span></p>
+<section id="brain-network-8-node-ring-watts-strogatz-k2-p0" class="level2">
+<h2 class="anchored" data-anchor-id="brain-network-8-node-ring-watts-strogatz-k2-p0">1. Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</h2>
+<p>Regular ring lattice: each node is connected to its 2 nearest neighbours on each side. Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.</p>
+<ul>
+<li><strong>Regions:</strong> 8</li>
+</ul>
+<section id="coupling-kuramoto-sinusoidal-coupling" class="level3">
+<h3 class="anchored" data-anchor-id="coupling-kuramoto-sinusoidal-coupling">Coupling: Kuramoto sinusoidal coupling</h3>
+<p>Antisymmetric coupling: K sin(theta_src - theta_dst). The AntiSymmetric wrapper ensures g_src = -g_dst.</p>
+<p><strong>Pre-synaptic:</strong> <span class="math inline">\(c_{\text{pre}} = - K \cdot \sin{\left(x_{i} - x_{j} \right)}\)</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(K\)</span></td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: left;">Global coupling strength between oscillators</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="local-dynamics-kuramoto-phase-oscillator" class="level2">
+<h2 class="anchored" data-anchor-id="local-dynamics-kuramoto-phase-oscillator">2. Local Dynamics: Kuramoto phase oscillator</h2>
+<p>Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges). The model comprises <strong>1 state variables</strong>.</p>
+<section id="state-equations" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations">2.1 State Equations</h3>
+<p><span class="math display">\[\dot{\theta} = c_{coupling} + \omega_{0}\]</span></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">2.2 Parameters</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 29%">
@@ -744,51 +790,28 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </tr>
 </tbody>
 </table>
-<p><strong>Pre-synaptic transformation:</strong> <span class="math display">\[c_{\text{pre}} = x_{j}\]</span></p>
-<p><strong>Post-synaptic transformation:</strong> <span class="math display">\[c_{\text{post}} = b + a \cdot gx\]</span></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 35%">
-<col style="width: 22%">
-<col style="width: 41%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Parameter</th>
-<th style="text-align: right;">Value</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;"><span class="math inline">\(a\)</span></td>
-<td style="text-align: right;">0.00390625</td>
-<td style="text-align: left;">Linear scaling factor of the coupled (delayed) input.</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><span class="math inline">\(b\)</span></td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: left;">Shifts the base of the connection strength while maintaining the absolute difference between different values.</td>
-</tr>
-</tbody>
-</table>
+</section>
+</section>
+<section id="numerical-integration" class="level2">
+<h2 class="anchored" data-anchor-id="numerical-integration">3. Numerical Integration</h2>
 <ul>
-<li><p><strong>Regions:</strong> 8</p></li>
-<li><p><strong>Conduction velocity:</strong> 3.0 mm/ms</p></li>
-<li><p><strong>Method:</strong> Tsit5</p></li>
-<li><p><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.05\)</span> ms</p></li>
-<li><p><strong>Duration:</strong> 10.0 ms</p></li>
+<li><strong>Method:</strong> Tsit5</li>
+<li><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.05\)</span> ms</li>
+<li><strong>Duration:</strong> 10.0 ms</li>
 </ul>
 <hr>
-<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
 <p>Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators. <em>Lecture Notes in Physics</em>, 420-422.</p>
 <p>Cabral, J., Hugues, E., Sporns, O., &amp; Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. <em>NeuroImage</em>, 57(1), 130-139.</p>
+<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20. - https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/ - Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators.</p>
+</section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="c48c3783" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(<span class="st">"yaml/kuramoto.yaml"</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="af7a8b5d" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp is already loaded in the 'Model Report' section above</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -866,6 +889,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .output_html .vm { color: #19177C } /* Name.Variable.Magic */
 .output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Graphs</span>
 <span class="k">using</span><span class="w"> </span><span class="n">NetworkDynamics</span>
+
 <span class="k">using</span><span class="w"> </span><span class="n">OrdinaryDiffEqTsit5</span>
 
 
@@ -875,6 +899,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 
 <span class="k">function</span><span class="w"> </span><span class="n">Kuramoto_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">omega0</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">    </span><span class="n">theta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
 <span class="w">    </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">esum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 <span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">omega0</span>
@@ -978,18 +1003,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="a5838559" class="cell" data-execution_count="5">
+<div id="142f5a52" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>WARNING: Imported binding MainInclude.eval was undeclared at import time during import to Main.
-WARNING: import of MainInclude.eval into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.include was undeclared at import time during import to Main.
-WARNING: import of MainInclude.include into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.eval was undeclared at import time during import to Main.
-WARNING: import of MainInclude.eval into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.include was undeclared at import time during import to Main.
-WARNING: import of MainInclude.include into Main conflicts with an existing identifier; ignored.</code></pre>
+<div class="cell-output cell-output-stdout">
+<pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
@@ -1002,7 +1020,7 @@ WARNING: import of MainInclude.include into Main conflicts with an existing iden
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="15607753" class="cell" data-execution_count="6">
+<div id="7ae56486" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Shape: (201, 1, 8, 1)
 Time range: 0.0 – 10.0
@@ -1012,7 +1030,7 @@ Final theta range: [6.293, 12.570]</code></pre>
 </section>
 <section id="animate" class="level2">
 <h2 class="anchored" data-anchor-id="animate">Animate</h2>
-<div id="8ace1d8b" class="cell" data-execution_count="7">
+<div id="ff896a1a" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"theta"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"kuramoto.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>

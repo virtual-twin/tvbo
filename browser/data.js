@@ -39677,7 +39677,8 @@ window.searchData = [
     "bids.cohort": "HCPYA",
     "bids.reconstruction": "dTOR",
     "parcellation.atlas": {
-      "name": "virtualdbs"
+      "name": "virtualdbs",
+      "coordinateSpace": "MNI152NLin2009cAsym"
     },
     "tractogram.name": "dTOR",
     "type": "network",
@@ -43378,7 +43379,7 @@ window.searchData = [
     "thumbnail": "browser/imgs/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat.png"
   },
   {
-    "label": "Schaefer100017Networks (dTOR)",
+    "label": "Schaefer2018 17Networks scale-1000 (dTOR)",
     "descriptor": "SC",
     "number_of_nodes": 1000,
     "data_file": "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.h5",
@@ -50388,7 +50389,7 @@ window.searchData = [
     "thumbnail": "browser/imgs/networks/tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_desc-SC_relmat.png"
   },
   {
-    "label": "Destrieuxranked (dTOR)",
+    "label": "Destrieux ranked (dTOR)",
     "descriptor": "SC",
     "number_of_nodes": 167,
     "data_file": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Destrieux_seg-ranked_desc-SC_relmat.h5",
@@ -70416,7 +70417,7 @@ window.searchData = [
     "thumbnail": "browser/imgs/networks/tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat.png"
   },
   {
-    "label": "DesikanKillianyranked (MghUscHcp32)",
+    "label": "DesikanKilliany ranked (MghUscHcp32)",
     "descriptor": "SC",
     "number_of_nodes": 87,
     "data_file": "tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5",
