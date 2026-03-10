@@ -142,7 +142,7 @@ branches:
 
 cont_trap = Continuation.from_string(po_trapezoid)
 exp_trap = SimulationExperiment(dynamics=model, continuations=[cont_trap])
-result_trap = exp.run('bifurcationkit.jl')
+result_trap = exp_trap.run('bifurcationkit.jl')
 result_trap.plot()
 ```
 
