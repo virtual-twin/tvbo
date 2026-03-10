@@ -272,13 +272,38 @@ print(sc.bids_filename)
 ### Normalization
 
 Raw streamline counts vary over orders of magnitude. Apply min–max
-normalization to scale weights to [0, 1]:
+normalization to scale weights to $[0, 1]$:
 
 ```{python}
+print(
+    f"Before normalization: [{sc.weights_matrix.min():.2f}, {sc.weights_matrix.max():.2f}]"
+)
+
 sc.normalize()
-W_norm = sc.weights_matrix
-print(f"After normalization: [{W_norm.min():.2f}, {W_norm.max():.2f}]")
+
+print(
+    f"After normalization: [{sc.weights_matrix.min():.2f}, {sc.weights_matrix.max():.2f}]"
+)
 ```
+
+`normalize()` does **not** overwrite the stored matrix.  Instead it
+sets a `normalization` equation in the Network metadata — the
+transformation is applied lazily when accessing `weights_matrix`.
+Because the equation is written into the YAML sidecar, every
+processing step is recorded for reproducibility:
+
+```{python}
+# The YAML sidecar now contains the normalization equation
+import yaml
+
+meta = yaml.safe_load(sc.to_yaml())
+print(yaml.dump({"normalization": meta["normalization"]}, default_flow_style=False))
+```
+
+The `rhs` field captures *what* was done, not just the result.
+Anyone who loads this YAML gets the same normalized weights —
+no hidden in-memory mutations, and the raw matrix in HDF5 stays
+untouched.
 
 ## 6. Delays from Tract Lengths
 
@@ -577,26 +602,33 @@ co-simulation architecture, where:
 4. **Transformers** handle scale translation (e.g., spike trains
    → instantaneous firing rate → synaptic gating variable $S$)
 
-```
-┌─────────────────────────────────────────────────────┐
-│  multiscale_cortex.yaml + .h5                        │
-│                                                      │
-│   Node 0 (V1)  ─────────  Node 1 (V2, proxy)        │
-│   &rww                     &rww                      │
-│   ReducedWongWang          ↕ state replaced by       │
-│                            ↕ subnetwork aggregate    │
-│                            │                         │
-│            source_var: S ──┤── target_var: I          │
-│                            │                         │
-│              ┌─────────────┴─────────────┐           │
-│              │  Spiking subnetwork        │           │
-│              │  node_mapping: all → 1     │           │
-│              │                            │           │
-│              │  E₁─E₂─E₃─...─E₈  (&izh) │           │
-│              │       I₁─I₂        (&izh) │           │
-│              │  10×10 matrix in HDF5      │           │
-│              └────────────────────────────┘           │
-└─────────────────────────────────────────────────────┘
+```{mermaid}
+%%| fig-cap: "Multi-scale co-simulation architecture"
+%%| label: fig-multiscale-arch
+graph TD
+    subgraph NET["<b>multiscale_cortex.yaml + .h5</b>"]
+        V1["<b>Node 0 — V1</b><br/><i>ReducedWongWang</i>"]
+        V2["<b>Node 1 — V2 (proxy)</b><br/><i>ReducedWongWang</i><br/>state ↔ subnetwork aggregate"]
+
+        V1 -- "S → c_pop &ensp; w = 0.5" --> V2
+        V2 -- "S → c_pop &ensp; w = 0.3" --> V1
+
+        subgraph SUB["Spiking subnetwork &ensp;·&ensp; node_mapping: all → 1"]
+            direction LR
+            E["E₁ – E₂ – E₃ – … – E₈<br/><i>Izhikevich</i>"]
+            I["I₁ – I₂<br/><i>Izhikevich</i>"]
+            E <-- "10×10 weight matrix in HDF5" --> I
+        end
+
+        V2 -- "source_var: S → target_var: I<br/><i>I = gain · S · N_E</i>" --> SUB
+    end
+
+    style NET fill:#99999900,stroke:#333,stroke-width:2px
+    style SUB fill:#e8f4fd,stroke:#4a90d9,stroke-width:1px,stroke-dasharray:5
+    style V1 fill:#fff,stroke:#333
+    style V2 fill:#fff3cd,stroke:#856404
+    style E fill:#d4edda,stroke:#155724
+    style I fill:#f8d7da,stroke:#721c24
 ```
 
 #### Network Definition
@@ -612,107 +644,13 @@ coupling are defined once and referenced everywhere:
 - `parent_network` on the child points back to this file;
   `node_mapping` maps all 10 spiking neurons to parent node 1
 
-```yaml
-# multiscale_cortex.yaml — hybrid mean-field / spiking network
-label: Multi-Scale Cortex
+```{python}
+from IPython.display import Markdown
+from pathlib import Path
 
-# ── Dynamics (defined once, referenced by anchor) ───────────
-dynamics:
-  ReducedWongWang: &rww
-    name: ReducedWongWang
-  Izhikevich: &izh
-    name: Izhikevich
-    state_variables:
-      v:
-        equation:
-          rhs: "0.04*v*v + 5*v + 140 - u + I"
-      u:
-        equation:
-          rhs: "a * (b*v - u)"
-    parameters:
-      a: {value: 0.02}
-      b: {value: 0.2}
-      c: {value: -65}
-      d: {value: 8}
-
-# ── Coupling (defined once, referenced by anchor) ──────────
-coupling:
-  linear: &linear
-    name: linear
-  excitatory: &exc
-    name: excitatory
-  inhibitory: &inh
-    name: inhibitory
-
-# ── Macroscale nodes ────────────────────────────────────────
-nodes:
-  # Mean-field regions
-  - {id: 0, label: V1, dynamics: *rww}
-  - {id: 1, label: V2 (proxy), dynamics: *rww}
-  # Spiking subnetwork (children of node 1)
-  - {id: 2,  label: E1, dynamics: *izh}
-  - {id: 3,  label: E2, dynamics: *izh}
-  - {id: 4,  label: E3, dynamics: *izh}
-  - {id: 5,  label: E4, dynamics: *izh}
-  - {id: 6,  label: E5, dynamics: *izh}
-  - {id: 7,  label: E6, dynamics: *izh}
-  - {id: 8,  label: E7, dynamics: *izh}
-  - {id: 9,  label: E8, dynamics: *izh}
-  - {id: 10, label: I1, dynamics: *izh,
-     state: [{name: v, value: -65}, {name: u, value: -14}]}
-  - {id: 11, label: I2, dynamics: *izh,
-     state: [{name: v, value: -65}, {name: u, value: -14}]}
-
-# ── Node mapping: spiking neuron → parent proxy node ───────
-# int32 array of length 12: [–1, –1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-#   –1 = top-level node (no parent)
-#    1 = child of node 1 (the proxy)
-node_mapping: /nodes/parent_index
-
-# ── Edges ───────────────────────────────────────────────────
-edges:
-  # ── Macroscale edges (mean-field ↔ proxy) ──
-  - source: 0
-    target: 1
-    directed: true
-    source_var: S            # synaptic gating output
-    target_var: c_pop        # population coupling input
-    parameters:
-      weight: {value: 0.5}
-    coupling: *linear
-  - source: 1
-    target: 0
-    directed: true
-    source_var: S
-    target_var: c_pop
-    parameters:
-      weight: {value: 0.3}
-    coupling: *linear
-
-  # ── Subnetwork template edge (10×10 local connectivity) ──
-  - label: weights
-    format: dense
-    weighted: true
-    directed: true
-    valid_diagonal: false
-    non_negative: true
-
-  # ── Explicit E↔I edges within subnetwork ──
-  - {source: 2, target: 10, directed: true,
-     parameters: {weight: {value: 0.5}}, coupling: *exc}
-  - {source: 10, target: 2, directed: true,
-     parameters: {weight: {value: -0.3}}, coupling: *inh}
-
-  # ── Interface edges (proxy ↔ subnetwork) ──
-  - source: 1                 # proxy node (mean-field)
-    target: 2                 # first excitatory neuron
-    directed: true
-    source_var: S              # mean-field gating → spiking current
-    target_var: I
-    parameters:
-      weight: {value: 1.0}
-      gain: {value: 0.1}      # transformer scaling: I = gain · S · N_E
-    coupling: *linear
+ms_yaml_path = Path("multiscale_cortex.yaml")
+ms_yaml = ms_yaml_path.read_text()
+Markdown(f"```yaml\n{ms_yaml}```")
 ```
 
 #### Saving and Loading
@@ -747,79 +685,9 @@ print(f"Subnetwork: {N_sub}×{N_sub}, "
       f"fill: {np.count_nonzero(W_sub) / W_sub.size:.0%}")
 ```
 
-Create the network from the YAML definition and attach the matrix:
+Create the network from the YAML file and attach the matrix:
 
 ```{python}
-ms_yaml = """\
-label: Multi-Scale Cortex
-
-dynamics:
-  ReducedWongWang: &rww
-    name: ReducedWongWang
-  Izhikevich: &izh
-    name: Izhikevich
-    state_variables:
-      v: {equation: {rhs: "0.04*v*v + 5*v + 140 - u + I"}}
-      u: {equation: {rhs: "a * (b*v - u)"}}
-    parameters: {a: {value: 0.02}, b: {value: 0.2}, c: {value: -65}, d: {value: 8}}
-
-coupling:
-  linear: &linear {name: linear}
-  excitatory: &exc {name: excitatory}
-  inhibitory: &inh {name: inhibitory}
-
-nodes:
-  - {id: 0, label: V1, dynamics: *rww}
-  - {id: 1, label: V2 (proxy), dynamics: *rww}
-  - {id: 2,  label: E1, dynamics: *izh}
-  - {id: 3,  label: E2, dynamics: *izh}
-  - {id: 4,  label: E3, dynamics: *izh}
-  - {id: 5,  label: E4, dynamics: *izh}
-  - {id: 6,  label: E5, dynamics: *izh}
-  - {id: 7,  label: E6, dynamics: *izh}
-  - {id: 8,  label: E7, dynamics: *izh}
-  - {id: 9,  label: E8, dynamics: *izh}
-  - {id: 10, label: I1, dynamics: *izh,
-     state: [{name: v, value: -65}, {name: u, value: -14}]}
-  - {id: 11, label: I2, dynamics: *izh,
-     state: [{name: v, value: -65}, {name: u, value: -14}]}
-
-node_mapping: /nodes/parent_index
-
-edges:
-  - source: 0
-    target: 1
-    directed: true
-    source_var: S
-    target_var: c_pop
-    parameters: {weight: {value: 0.5}}
-    coupling: *linear
-  - source: 1
-    target: 0
-    directed: true
-    source_var: S
-    target_var: c_pop
-    parameters: {weight: {value: 0.3}}
-    coupling: *linear
-  - label: weights
-    format: dense
-    weighted: true
-    directed: true
-    valid_diagonal: false
-    non_negative: true
-  - {source: 2, target: 10, directed: true,
-     parameters: {weight: {value: 0.5}}, coupling: *exc}
-  - {source: 10, target: 2, directed: true,
-     parameters: {weight: {value: -0.3}}, coupling: *inh}
-  - source: 1
-    target: 2
-    directed: true
-    source_var: S
-    target_var: I
-    parameters: {weight: {value: 1.0}, gain: {value: 0.1}}
-    coupling: *linear
-"""
-
 net = Network.from_string(ms_yaml)
 print(f"Nodes:          {len(net.nodes)}")
 print(f"Template edges: {sum(1 for e in net.edges if not getattr(e, 'source', None))}")
