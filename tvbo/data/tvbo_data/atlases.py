@@ -1,3 +1,4 @@
+import os
 from os.path import basename, dirname, join
 
 try:
@@ -60,6 +61,10 @@ class Atlas(tvbo_datamodel.BrainAtlas):
     - Construct from a BrainAtlas instance, a string name, or nothing (defaults to 'wholebrain').
     - Access `metadata` to get a self-reference as a LinkML object.
     - Access properties: volume, volume_file, metadata_file, region_labels, centers.
+
+    SANDS entities are stored in ``self.terminology.entities`` — a schema-native
+    ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the LinkML
+    loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
     """
 
     def __init__(self, atlas=None, **kwargs):
@@ -73,7 +78,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         else:
             super().__init__(name="wholebrain")
 
-        # Automatically load metadata (if available) without keeping internal caches
+        # Automatically load metadata (if available)
         self._load_metadata()
 
     # Align to other wrappers
@@ -118,6 +123,8 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         return self._find_volume_path()
 
     def _load_metadata(self):
+        if getattr(self, '_metadata_loaded', False):
+            return
         metadata_files = atlas_data.get(
             atlas=self.name,
             suffix="dseg",
@@ -125,15 +132,34 @@ class Atlas(tvbo_datamodel.BrainAtlas):
             return_type="file",
         )
         if len(metadata_files) == 1:
+            # Load via LinkML — entities slot is inlined, so the loader
+            # produces a proper dict[ParcellationEntityName, ParcellationEntity].
             loaded = yaml_loader.load(metadata_files[0], tvbo_datamodel.BrainAtlas)
-            # Adopt fields from loaded metadata
             if getattr(loaded, "coordinateSpace", None) is not None:
                 self.coordinateSpace = loaded.coordinateSpace
             if getattr(loaded, "terminology", None) is not None:
                 self.terminology = loaded.terminology
+
+            # Fill in centers from companion centers.txt if missing
+            ents = getattr(self.terminology, "entities", None) or {}
+            has_any_center = any(
+                getattr(e, "center", None) is not None
+                for e in ents.values()
+            )
+            if not has_any_center:
+                centers_file = metadata_files[0].replace("_dseg.yaml", "_centers.txt")
+                if os.path.exists(centers_file):
+                    centers = np.loadtxt(centers_file)
+                    ent_list = list(ents.values())
+                    if len(centers) == len(ent_list):
+                        for ent, xyz in zip(ent_list, centers):
+                            ent.center = tvbo_datamodel.Coordinate(
+                                x=float(xyz[0]), y=float(xyz[1]), z=float(xyz[2]),
+                            )
         else:
             if getattr(self, "terminology", None) is None:
                 self.terminology = tvbo_datamodel.ParcellationTerminology(label="empty")
+        object.__setattr__(self, '_metadata_loaded', True)
 
     @property
     def metadata_file(self):
@@ -147,26 +173,19 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
     @property
     def region_labels(self):
-        # Build from metadata if present; otherwise derive from volume
+        """Region labels sorted by SANDS lookupLabel.
+
+        Reads from ParcellationTerminology.entities (SANDS schema, inlined).
+        Falls back to unique labels in the atlas volume.
+        """
         self._load_metadata()
-        labels = []
-        ids = []
-        ents = getattr(getattr(self, "terminology", None), "entities", None)
+        ents = getattr(getattr(self, "terminology", None), "entities", None) or {}
         if ents:
-            # dict-like: items(); list-like: iterate
-            iterator = ents.items() if hasattr(ents, "items") else enumerate(ents)
-            for k, v in iterator:
-                # k is label if dict-like, else v.name if object
-                label = k if hasattr(ents, "items") else getattr(v, "name", str(k))
-                ll = getattr(v, "lookupLabel", None)
-                if ll is None and isinstance(v, dict):
-                    ll = v.get("lookupLabel")
-                if label is not None and ll is not None:
-                    labels.append(label)
-                    ids.append(ll)
-        if labels and ids:
-            order = np.argsort(np.asarray(ids))
-            return np.asarray(labels)[order]
+            pairs = [(e.name, e.lookupLabel) for e in ents.values()
+                     if e.name is not None and e.lookupLabel is not None]
+            if pairs:
+                pairs.sort(key=lambda x: x[1])
+                return np.asarray([p[0] for p in pairs])
         # Fallback from the image
         vol = self.volume
         if vol is None:
@@ -175,8 +194,10 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         return np.unique(arr)[1:]
 
     def create_terminology(self):
+        """Build terminology entities from the atlas volume if not already populated."""
         self._load_metadata()
-        if getattr(self.terminology, "entities", None):
+        ents = getattr(getattr(self, "terminology", None), "entities", None) or {}
+        if ents:
             return self.terminology
         vol = self.volume
         if vol is None:
@@ -184,9 +205,8 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         lookup_ids = np.unique(vol.get_fdata())
         lookup_ids = sorted(lookup_ids[lookup_ids != 0])
         if self.terminology is None:
-            self.terminology = tvbo_datamodel.ParcellationTerminology(name="original")
-        if not getattr(self.terminology, "entities", None):
-            # prefer dict for name->entity
+            self.terminology = tvbo_datamodel.ParcellationTerminology(label="original")
+        if not isinstance(self.terminology.entities, dict):
             self.terminology.entities = {}
         for idx in lookup_ids:
             self.terminology.entities[str(int(idx))] = (
@@ -198,22 +218,23 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
     @property
     def centers(self):
+        """Region center coordinates as (N, 3) array.
+
+        Reads SANDS Coordinate from each ParcellationEntity.center.
+        Falls back to computing centers from the atlas volume.
+        """
         self._load_metadata()
-        ents = getattr(getattr(self, "terminology", None), "entities", None)
+        ents = getattr(getattr(self, "terminology", None), "entities", None) or {}
         if ents:
             centers_list = []
-            iterator = ents.items() if hasattr(ents, "items") else enumerate(ents)
-            for _, v in iterator:
-                coord = getattr(v, "center", None)
-                if coord is None and isinstance(v, dict):
-                    coord = v.get("center")
-                if coord is None:
-                    coord = tvbo_datamodel.Coordinate(x=0, y=0, z=0)
-                centers_list.append((coord.x, coord.y, coord.z))
+            for e in ents.values():
+                c = getattr(e, "center", None) or tvbo_datamodel.Coordinate(x=0, y=0, z=0)
+                centers_list.append((c.x, c.y, c.z))
             return np.array(centers_list)
         else:
-            terminology = self.create_terminology()
-            if not terminology:
+            self.create_terminology()
+            ents = getattr(self.terminology, "entities", None) or {}
+            if not ents:
                 return None
             try:
                 from nilearn.plotting import find_parcellation_cut_coords
@@ -225,48 +246,28 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                 centers = []
                 lookup_labels = []
                 print(
-                    "nilearn is required to compute atlas region centers. Setting to empty. Please install nilearn or provide atlas metadata."
+                    "nilearn is required to compute atlas region centers. "
+                    "Setting to empty. Install nilearn or provide atlas metadata."
                 )
 
             for center, lookup_label in zip(centers, lookup_labels):
-                ent = tvbo_datamodel.ParcellationEntity(
-                    name=str(int(lookup_label)), lookupLabel=int(lookup_label)
-                )
-                ent.center = tvbo_datamodel.Coordinate(
-                    x=float(center[0]), y=float(center[1]), z=float(center[2])
-                )
-                # ensure dict structure
-                if (
-                    not hasattr(self.terminology, "entities")
-                    or self.terminology.entities is None
-                ):
-                    self.terminology.entities = {}
-                self.terminology.entities[str(int(lookup_label))] = ent
-            # Build array from updated metadata
+                key = str(int(lookup_label))
+                if key in ents:
+                    ents[key].center = tvbo_datamodel.Coordinate(
+                        x=float(center[0]), y=float(center[1]), z=float(center[2]),
+                    )
             centers_list = []
-            for e in self.terminology.entities.values():
-                c = getattr(e, "center", None)
-                if c is None:
-                    c = tvbo_datamodel.Coordinate(x=0, y=0, z=0)
+            for e in ents.values():
+                c = getattr(e, "center", None) or tvbo_datamodel.Coordinate(x=0, y=0, z=0)
                 centers_list.append((c.x, c.y, c.z))
             return np.array(centers_list)
 
     def get_label_by_lookup(self, lookup_id):
         self._load_metadata()
-        ents = getattr(getattr(self, "terminology", None), "entities", None)
-        if not ents:
-            return None
-        iterator = ents.items() if hasattr(ents, "items") else enumerate(ents)
-        for _, e in iterator:
-            lbl = getattr(e, "lookupLabel", None)
-            if lbl is None and isinstance(e, dict):
-                lbl = e.get("lookupLabel")
-            if lbl == lookup_id:
-                return (
-                    getattr(e, "name", None)
-                    if not isinstance(e, dict)
-                    else e.get("name")
-                )
+        ents = getattr(getattr(self, "terminology", None), "entities", None) or {}
+        for e in ents.values():
+            if e.lookupLabel == lookup_id:
+                return e.name
         return None
 
     def to_yaml(self, fname=None):

@@ -10,43 +10,80 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
-from bids.layout import BIDSLayout
 from jax import Array as JaxArray
 from jax.tree_util import register_pytree_node_class
 from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from tvbo.data.tvbo_data import CONNECTOME_DIR, bids_utils
+from tvbo.data.tvbo_data import bids_utils
 from tvbo.datamodel import tvbo_datamodel
 
-connectome_data = BIDSLayout(
-    CONNECTOME_DIR,
-    validate=False,
-    is_derivative=True,
-)
+# HDF5+YAML network files in database/networks/
+NETWORK_DIR = Path(__file__).resolve().parent.parent.parent.parent / "database" / "networks"
 
-available_connectomes = bids_utils.get_unique_entity_values(connectome_data, "desc")
+# Legacy: CSV connectome directory (used by tractograms.py for output paths)
+_LEGACY_CONNECTOME_DIR = Path(__file__).resolve().parent / "connectome"
+try:
+    from bids.layout import BIDSLayout
+    if _LEGACY_CONNECTOME_DIR.exists():
+        connectome_data = BIDSLayout(
+            str(_LEGACY_CONNECTOME_DIR), validate=False, is_derivative=True)
+        available_connectomes = bids_utils.get_unique_entity_values(
+            connectome_data, "desc")
+    else:
+        connectome_data = None
+        available_connectomes = []
+except ImportError:
+    connectome_data = None
+    available_connectomes = []
+
+
+def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
+    """Find the YAML sidecar for a given atlas + tractogram combination.
+
+    Searches database/networks/ for files matching the atlas and rec- entities.
+    Falls back to partial matching if exact match fails.
+    """
+    for f in NETWORK_DIR.glob("*.yaml"):
+        stem = f.stem
+        if f"atlas-{atlas}" in stem and f"rec-{tractogram}" in stem:
+            # Skip ranked/ordered variants unless explicitly requested
+            if "seg-" not in stem:
+                return f
+    # Fallback: try with normalized atlas names
+    atlas_map = {
+        "Schaefer1000": "Schaefer2018",
+        "Schaefer100017Networks": "Schaefer2018",
+        "hcpmmp1": "HCPMMP1",
+        "hcpmmp1ordered": "HCPMMP1",
+        "DesikanKillianyranked": "DesikanKilliany",
+        "Destrieuxranked": "Destrieux",
+    }
+    mapped = atlas_map.get(atlas, atlas)
+    if mapped != atlas:
+        return _find_network_sidecar(mapped, tractogram)
+    return None
 
 
 def get_normative_connectome_data(
-    atlas: str, desc: str
-) -> Tuple[tvbo_datamodel.Matrix, tvbo_datamodel.Matrix]:
-    """Load normative connectivity matrices from BIDS dataset.
+    atlas: str, tractogram: str = "dTOR"
+) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """Load normative connectivity matrices from database/networks/ HDF5 files.
 
     Parameters
     ----------
     atlas : str
         Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux")
-    desc : str
-        Description/type of the connectome data (e.g., "dTOR", "dMRT")
+    tractogram : str
+        Tractogram/reconstruction pipeline (e.g., "dTOR", "MghUscHcp32", "PPMI85")
 
     Returns
     -------
-    weights : tvbo_datamodel.Matrix
-        Connection strength matrix
-    lengths : tvbo_datamodel.Matrix
-        Tract length matrix
+    weights : np.ndarray
+        Connection strength matrix (N x N)
+    lengths : np.ndarray or None
+        Tract length matrix (N x N), or None if not available
 
     Examples
     --------
@@ -54,22 +91,23 @@ def get_normative_connectome_data(
     weights, lengths = get_normative_connectome_data("DesikanKilliany", "dTOR")
     ```
     """
-    fweights = connectome_data.get(
-        suffix="weights",
-        extension="csv",
-        atlas=atlas,
-        desc=desc,
-        return_type="file",
-    )[0]
-    flengths = connectome_data.get(
-        suffix="lengths",
-        extension="csv",
-        atlas=atlas,
-        desc=desc,
-        return_type="file",
-    )[0]
-    weights = tvbo_datamodel.Matrix(dataLocation=fweights)
-    lengths = tvbo_datamodel.Matrix(dataLocation=flengths)
+    sidecar = _find_network_sidecar(atlas, tractogram)
+    if sidecar is None:
+        raise FileNotFoundError(
+            f"No network found for atlas={atlas}, tractogram={tractogram} "
+            f"in {NETWORK_DIR}")
+
+    from tvbo.data.network_io import load_network
+    net = load_network(sidecar)
+    store = getattr(net, "_store", None)
+    if store is None:
+        raise FileNotFoundError(
+            f"No companion data file for {sidecar.name}")
+    arrays = store.arrays
+    weights = arrays.get("weights")
+    lengths = arrays.get("lengths")
+    if weights is None:
+        raise ValueError(f"No 'weights' edge found in {sidecar.name}")
     return weights, lengths
 
 
@@ -144,68 +182,51 @@ class Network(tvbo_datamodel.Network):
                     super().__init__(**kwargs)
                     return
                 tractogram = kwargs.get("tractogram", "dTOR")
-                w_matrix, l_matrix = get_normative_connectome_data(
+                if isinstance(tractogram, dict):
+                    tractogram = tractogram.get("name", "dTOR")
+                elif hasattr(tractogram, "name"):
+                    tractogram = tractogram.name or "dTOR"
+                w_arr, l_arr = get_normative_connectome_data(
                     atlas_name, tractogram
                 )
 
-                # Load the actual arrays
-                if hasattr(w_matrix, "dataLocation") and w_matrix.dataLocation:
-                    w_arr = pd.read_csv(w_matrix.dataLocation, header=None).values
-                    l_arr = (
-                        pd.read_csv(l_matrix.dataLocation, header=None).values
-                        if hasattr(l_matrix, "dataLocation")
-                        else None
+                n_nodes = w_arr.shape[0]
+
+                # Handle mismatched weight/length matrix sizes
+                if l_arr is not None and l_arr.shape[0] != n_nodes:
+                    import warnings
+                    warnings.warn(
+                        f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
+                        f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
+                        f"Using minimum size."
                     )
-                    n_nodes = w_arr.shape[0]
+                    n_nodes = min(n_nodes, l_arr.shape[0])
+                    w_arr = w_arr[:n_nodes, :n_nodes]
+                    l_arr = l_arr[:n_nodes, :n_nodes]
 
-                    # Handle mismatched weight/length matrix sizes
-                    if l_arr is not None and l_arr.shape[0] != n_nodes:
-                        import warnings
-                        warnings.warn(
-                            f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
-                            f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
-                            f"Using minimum size."
-                        )
-                        n_nodes = min(n_nodes, l_arr.shape[0])
-                        w_arr = w_arr[:n_nodes, :n_nodes]
-                        l_arr = l_arr[:n_nodes, :n_nodes]
+                # Store matrices directly (avoid creating explicit edges for large networks)
+                kwargs["number_of_regions"] = n_nodes
+                kwargs["number_of_nodes"] = n_nodes
+                kwargs.setdefault("nodes", [
+                    tvbo_datamodel.Node(id=i, label=f"region_{i}")
+                    for i in range(n_nodes)
+                ])
+                kwargs.setdefault("edges", [])
 
-                    # Create nodes
-                    nodes = [
-                        tvbo_datamodel.Node(id=i, label=f"region_{i}")
-                        for i in range(n_nodes)
-                    ]
+                super().__init__(**kwargs)
 
-                    # Create edges from non-zero weights
-                    edges = []
-                    for i in range(n_nodes):
-                        for j in range(n_nodes):
-                            if w_arr[i, j] != 0:
-                                edge_kwargs = {
-                                    "source": i,
-                                    "target": j,
-                                    "parameters": (
-                                        [
-                                            tvbo_datamodel.Parameter(
-                                                name="weight", value=float(w_arr[i, j])
-                                            )
-                                        ]
-                                        + [
-                                            tvbo_datamodel.Parameter(
-                                                name="distance",
-                                                value=float(l_arr[i, j]),
-                                            )
-                                        ]
-                                        if l_arr is not None
-                                        else []
-                                    ),
-                                }
-                                edges.append(tvbo_datamodel.Edge(**edge_kwargs))
+                # Cache matrices for efficient access
+                self._cached_weights = w_arr
+                self._cached_lengths = l_arr
 
-                    kwargs["nodes"] = nodes
-                    kwargs["edges"] = edges
-                    kwargs["number_of_regions"] = n_nodes
-                    kwargs["number_of_nodes"] = n_nodes
+                # Ensure conduction_speed for early return path
+                if not self.parameters:
+                    self.parameters = {}
+                if 'conduction_speed' not in self.parameters:
+                    self.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
+                        name="conduction_speed", label="v", value=3.0, unit="mm/ms"
+                    )
+                return  # Skip rest of __init__ — already called super()
 
         # Infer n_nodes from nodes if present (authoritative source)
         if "nodes" in kwargs and kwargs["nodes"]:
@@ -241,10 +262,53 @@ class Network(tvbo_datamodel.Network):
                 for i in range(self.number_of_nodes)
             ]
 
-        if not self.conduction_speed:
-            self.conduction_speed = tvbo_datamodel.Parameter(
+        # Ensure conduction_speed exists in parameters dict
+        if not self.parameters:
+            self.parameters = {}
+        if 'conduction_speed' not in self.parameters:
+            self.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
                 name="conduction_speed", label="v", value=3.0, unit="mm/ms"
             )
+
+    # -- Backward-compat properties: conduction_speed, global_coupling_strength --
+    @property
+    def conduction_speed(self):
+        """Access conduction_speed from parameters dict."""
+        if self.parameters and 'conduction_speed' in self.parameters:
+            return self.parameters['conduction_speed']
+        return None
+
+    @conduction_speed.setter
+    def conduction_speed(self, val):
+        if not self.parameters:
+            self.parameters = {}
+        self.parameters['conduction_speed'] = val
+
+    @property
+    def global_coupling_strength(self):
+        """Access global_coupling_strength from parameters dict."""
+        if self.parameters and 'global_coupling_strength' in self.parameters:
+            return self.parameters['global_coupling_strength']
+        return None
+
+    @global_coupling_strength.setter
+    def global_coupling_strength(self, val):
+        if not self.parameters:
+            self.parameters = {}
+        self.parameters['global_coupling_strength'] = val
+
+    # -- Serialization: hide internal cached arrays from LinkML dumpers --
+    # JsonObj._items() controls what yaml_dumper / json_dumper / as_dict see.
+    # Without this, _cached_weights (numpy arrays) leak into yaml.SafeDumper.
+    _INTERNAL_ATTRS = frozenset({
+        "_cached_weights", "_cached_lengths", "_store",
+        "_arrays", "_edge_params", "_pytree_data",
+    })
+
+    def _items(self):
+        for k, v in super()._items():
+            if k not in self._INTERNAL_ATTRS:
+                yield k, v
 
     @classmethod
     def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Connectome":
@@ -695,12 +759,226 @@ class Network(tvbo_datamodel.Network):
         print(network.label)
         ```
         """
-        import yaml as yaml_module
+        from linkml_runtime.loaders import yaml_loader
+        return yaml_loader.loads(yaml_string, cls)
 
-        data = yaml_module.safe_load(yaml_string)
-        # Merge any additional kwargs
-        data.update(kwargs)
-        return cls(**data)
+    # ── File I/O (§12.4) ─────────────────────────────────────────
+
+    @classmethod
+    def from_file(cls, path: Union[str, Path], **kwargs) -> "Network":
+        """Load from YAML/JSON sidecar with lazy binary companion.
+
+        Supports YAML and JSON sidecars (auto-detected by extension).
+        Supports HDF5, Zarr, and CSV companions.
+        Arrays are NOT loaded into memory — loaded lazily on first access.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to YAML or JSON sidecar file.
+
+        Returns
+        -------
+        Network
+            Network with lazy array references.
+
+        Examples
+        --------
+        >>> net = Network.from_file("database/networks/dk87.yaml")
+        >>> net.number_of_nodes       # metadata: instant, no I/O
+        87
+        >>> net.weights_matrix.shape  # arrays: loaded on first access
+        (87, 87)
+        """
+        from tvbo.data.network_io import load_network
+        return load_network(path)
+
+    @classmethod
+    def from_tvb_zip(cls, zip_path: Union[str, Path]) -> "Network":
+        """Import from TVB connectivity ZIP (weights.txt + tract_lengths.txt).
+
+        Parameters
+        ----------
+        zip_path : str or Path
+            Path to TVB connectivity ZIP file.
+
+        Returns
+        -------
+        Network
+            Network with arrays loaded, ready for ``save()``.
+
+        Examples
+        --------
+        >>> net = Network.from_tvb_zip("connectivity_76.zip")
+        >>> net.number_of_nodes
+        76
+        """
+        from tvbo.data.converters import from_tvb_zip
+        return from_tvb_zip(zip_path)
+
+    # ── Save / Export ─────────────────────────────────────────────
+
+    def save(self, path: Union[str, Path], binary_format: str = "h5",
+             sidecar_format: str = "yaml"):
+        """Save as sidecar + binary companion.
+
+        Sidecar is written via LinkML yaml_dumper or json_dumper —
+        always schema-valid output, no manual serialization.
+
+        Parameters
+        ----------
+        path : str or Path
+            Output path for sidecar.
+        binary_format : str
+            "h5" (default), "zarr", or "csv".
+        sidecar_format : str
+            "yaml" (default) or "json".
+
+        Examples
+        --------
+        >>> net.save("output/dk87.yaml")                           # YAML + HDF5
+        >>> net.save("output/dk87.yaml", sidecar_format="json")     # JSON + HDF5
+        >>> net.save("output/dk87.yaml", binary_format="zarr")      # YAML + Zarr
+        >>> net.save("output/dk87.yaml", binary_format="csv")       # YAML + CSV
+        """
+        from tvbo.data.network_io import save_network
+        save_network(self, path, binary_format, sidecar_format)
+
+    def to_bep017(self, output_dir: Union[str, Path]):
+        """Export to BEP017-compatible per-measure files.
+
+        Each template edge becomes a separate TSV + JSON sidecar.
+
+        Parameters
+        ----------
+        output_dir : str or Path
+            Output directory for BEP017 files.
+        """
+        from tvbo.data.converters import to_bep017
+        to_bep017(self, output_dir)
+
+    # ── BIDS filename ─────────────────────────────────────────────
+
+    @property
+    def bids_filename(self) -> str:
+        """Generate BIDS-compliant filename using pybids build_path (§6.5).
+
+        Reads entities directly from Network attributes — no YAML
+        serialization round-trip needed.
+
+        Returns
+        -------
+        str
+            BIDS-compliant filename for this network.
+
+        Examples
+        --------
+        >>> net.bids_filename
+        'tpl-MNI152NLin2009cAsym_..._desc-SCFC_relmat.h5'
+        """
+        from bids.layout.writing import build_path
+        from tvbo.data.converters import relmat_entities
+        from tvbo.data.network_io import RELMAT_PATTERNS
+        return build_path(relmat_entities(self), RELMAT_PATTERNS)
+
+    # ── Platform retrieval (§12.8) ────────────────────────────────
+
+    TVBO_PLATFORM_URL = "https://tvbo.charite.de"
+
+    @classmethod
+    def from_platform(cls, atlas: str, tractogram: str = "dTOR",
+                      base_url: str = TVBO_PLATFORM_URL,
+                      cache_dir: Optional[Union[str, Path]] = None
+                      ) -> "Network":
+        """Download a normative connectivity network from the tvbo platform.
+
+        Fetches the sidecar (YAML) and companion (HDF5) from the tvbo API
+        and caches locally for subsequent loads.
+
+        Parameters
+        ----------
+        atlas : str
+            Atlas name (e.g., "DesikanKilliany", "Schaefer1000").
+        tractogram : str
+            Tractogram name (default: "dTOR").
+        base_url : str
+            Platform base URL.
+        cache_dir : str or Path or None
+            Local cache directory (default: ``~/.tvbo/networks``).
+
+        Returns
+        -------
+        Network
+            Network loaded from platform (cached locally).
+        """
+        import requests
+        from tvbo.data.network_io import load_network
+
+        if cache_dir is None:
+            cache_dir = Path.home() / ".tvbo" / "networks"
+        cache_dir = Path(cache_dir).expanduser()
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        api = f"{base_url.rstrip('/')}/api/v1/networks"
+
+        # Find network by atlas + tractogram
+        resp = requests.get(api, params={
+            "atlas": atlas, "tractogram": tractogram})
+        resp.raise_for_status()
+        matches = resp.json()
+        if not matches:
+            raise ValueError(
+                f"No network found for atlas={atlas}, "
+                f"tractogram={tractogram}")
+        net_id = matches[0]["id"]
+
+        # Check cache
+        cached_yaml = cache_dir / f"{net_id}.yaml"
+        cached_h5 = cache_dir / f"{net_id}.h5"
+        if cached_yaml.exists() and cached_h5.exists():
+            return load_network(cached_yaml)
+
+        # Download sidecar
+        r = requests.get(f"{api}/{net_id}/sidecar")
+        r.raise_for_status()
+        cached_yaml.write_text(r.text)
+
+        # Download binary companion
+        r = requests.get(f"{api}/{net_id}/data")
+        r.raise_for_status()
+        cached_h5.write_bytes(r.content)
+
+        # Patch data_file reference to point to local companion
+        import yaml as yaml_module
+        sidecar = yaml_module.safe_load(cached_yaml.read_text())
+        sidecar["data_file"] = cached_h5.name
+        cached_yaml.write_text(
+            yaml_module.dump(sidecar, sort_keys=False))
+
+        return load_network(cached_yaml)
+
+    @classmethod
+    def list_platform_networks(cls, base_url: str = TVBO_PLATFORM_URL,
+                               **filters) -> List[Dict]:
+        """List available normative networks on the tvbo platform.
+
+        Parameters
+        ----------
+        base_url : str
+            Platform base URL.
+        **filters
+            Filtering parameters (e.g., atlas="DesikanKilliany").
+
+        Returns
+        -------
+        list[dict]
+            List of network summaries.
+        """
+        import requests
+        api = f"{base_url.rstrip('/')}/api/v1/networks"
+        resp = requests.get(api, params=filters)
+        resp.raise_for_status()
+        return resp.json()
 
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
@@ -1057,6 +1335,14 @@ class Network(tvbo_datamodel.Network):
         # Check for cached matrix from from_matrix (performance optimization)
         if hasattr(self, "_cached_weights") and self._cached_weights is not None:
             W = self._cached_weights
+        elif hasattr(self, "_store") and self._store is not None:
+            # Lazy load from companion file (set by load_network)
+            arrays = self._store.arrays
+            if "weights" in arrays:
+                self._cached_weights = arrays["weights"]
+                W = self._cached_weights
+            else:
+                W = self._weights_from_edges()
         else:
             # Compute from edges (fallback for networks built from explicit edges)
             W = self._weights_from_edges()
@@ -1130,6 +1416,13 @@ class Network(tvbo_datamodel.Network):
         # Check for cached matrix from from_matrix (performance optimization)
         if hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
             return self._cached_lengths
+
+        if hasattr(self, "_store") and self._store is not None:
+            # Lazy load from companion file (set by load_network)
+            arrays = self._store.arrays
+            if "lengths" in arrays:
+                self._cached_lengths = arrays["lengths"]
+                return self._cached_lengths
 
         # Compute from edges (fallback for networks built from explicit edges)
         L = self._lengths_from_edges()

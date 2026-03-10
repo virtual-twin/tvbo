@@ -277,10 +277,11 @@ simulation_experiments:
           - 100
           - 100
           - 0    # ~100 mm pathways
-      conduction_speed:
-        name: conduction_speed
-        value: 3.0
-        unit: mm/ms                 # ~3 m/s ⇒ ~33 ms for 100 mm (consistent with a/3 branch latency)
+      parameters:
+        conduction_speed:
+          name: conduction_speed
+          value: 3.0
+          unit: mm/ms                 # ~3 m/s ⇒ ~33 ms for 100 mm (consistent with a/3 branch latency)
     # Per-source sigmoid BEFORE weighting (closer to Eq. 8), then summed and injected to c_in
     coupling:
       name: SigmoidalJansenRit

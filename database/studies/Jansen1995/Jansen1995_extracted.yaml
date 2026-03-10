@@ -327,10 +327,11 @@ experiments:
         Symmetric coupling, zero delay. Both columns in same cortical area
         with identical standard parameters producing alpha activity.
       # md:L233-234 — zero delay in intercolumn branches
-      conduction_speed:
-        name: conduction_speed
-        value: 0
-        description: "Zero delay: columns in same cortical area"
+      parameters:
+        conduction_speed:
+          name: conduction_speed
+          value: 0
+          description: "Zero delay: columns in same cortical area"
       nodes:
         - id: 0
           label: "Column 1 (visual)"
@@ -596,11 +597,12 @@ experiments:
         Feed-forward (K1: visual→prefrontal) ~10× stronger than feedback (K2).
         Inter-column delay via h_d(t) with a_d = 30 s⁻¹ (3-synapse pathway, Eq. 7).
       # md:L116-118 — "at least three neurons ... delays modeled by h_d(t)"
-      conduction_speed:
-        name: conduction_speed
-        value: 1.0
-        description: "Delay modelled by h_d(t) with a_d = 30 s⁻¹ (Eq. 7)"
-        # Delay is implemented via z0/z1 state variables, not conduction_speed
+      parameters:
+        conduction_speed:
+          name: conduction_speed
+          value: 1.0
+          description: "Delay modelled by h_d(t) with a_d = 30 s⁻¹ (Eq. 7)"
+          # Delay is implemented via z0/z1 state variables, not conduction_speed
       nodes:
         - id: 0
           label: "Column 1 (visual cortex)"
@@ -770,10 +772,11 @@ experiments:
     network:
       number_of_nodes: 2
       label: "Two identical visual cortex columns (no delay)"
-      conduction_speed:
-        name: conduction_speed
-        value: 0
-        description: "Zero delay"
+      parameters:
+        conduction_speed:
+          name: conduction_speed
+          value: 0
+          description: "Zero delay"
       nodes:
         - id: 0
           label: "Column 1 (visual, stimulus target)"
@@ -1077,10 +1080,11 @@ experiments:
       number_of_regions: 2
       number_of_nodes: 2
       label: "Visual cortex (col 1) ↔ Prefrontal cortex (col 2) with delay"
-      conduction_speed:
-        name: conduction_speed
-        value: 0
-        description: "Delay via h_d(t) with a_d = 30 s⁻¹ (Eq. 7), not modeled via conduction_speed"
+      parameters:
+        conduction_speed:
+          name: conduction_speed
+          value: 0
+          description: "Delay via h_d(t) with a_d = 30 s⁻¹ (Eq. 7), not modeled via conduction_speed"
       nodes:
         - id: 0
           label: "Column 1 (visual cortex, stimulus target)"

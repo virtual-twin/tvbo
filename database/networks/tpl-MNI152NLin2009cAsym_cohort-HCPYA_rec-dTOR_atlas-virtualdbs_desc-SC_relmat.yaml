@@ -1,0 +1,28 @@
+label: virtualdbs (dTOR)
+descriptor: SC
+number_of_nodes: 370
+data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-virtualdbs_desc-SC_relmat.h5
+edges:
+- label: weights
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+bids:
+  bids_version: "1.10.0"
+  dataset_type: derivative
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  reconstruction: dTOR
+parcellation:
+  atlas:
+    name: virtualdbs
+    coordinateSpace: MNI152NLin2009cAsym
+tractogram:
+  name: dTOR

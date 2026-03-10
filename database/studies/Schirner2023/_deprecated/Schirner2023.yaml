@@ -93,8 +93,9 @@ simulation_experiments:
           number_of_regions: 379
           parcellation: { atlas: { name: hcpmmp1 } }
           tractogram: "dTOR"
-          global_coupling_strength: { name: "G", value: 2.0 }
-          conduction_speed: { name: "v", value: 6.0, unit: "m/s" }
+          parameters:
+              G: { name: "G", value: 2.0 }
+              conduction_speed: { name: "v", value: 6.0, unit: "m/s" }
 
       integration:
           method: Heun

@@ -1,0 +1,2304 @@
+label: hcpmmp1ordered (PPMI85)
+descriptor: SC
+number_of_nodes: 379
+data_file: tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.h5
+edges:
+- label: weights
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+bids:
+  bids_version: 1.10.0
+  dataset_type: derivative
+  template: MNI152NLin2009bAsym
+  cohort: PPMI85
+  reconstruction: PPMI85
+  segmentation: ordered
+parcellation:
+  atlas:
+    name: HCPMMP1
+    coordinateSpace: MNI152NLin2009cAsym
+tractogram:
+  name: PPMI85
+nodes:
+- id: 1
+  label: L_V1
+  position:
+    x: -10.364
+    y: -84.1004
+    z: 1.6224
+- id: 2
+  label: L_MST
+  position:
+    x: -43.784
+    y: -66.8058
+    z: 11.9515
+- id: 3
+  label: L_V6
+  position:
+    x: -14.8822
+    y: -80.5731
+    z: 32.2153
+- id: 4
+  label: L_V2
+  position:
+    x: -10.5689
+    y: -82.3316
+    z: 4.0629
+- id: 5
+  label: L_V3
+  position:
+    x: -15.976
+    y: -86.1955
+    z: 7.9722
+- id: 6
+  label: L_V4
+  position:
+    x: -28.3751
+    y: -86.9758
+    z: -0.0061
+- id: 7
+  label: L_V8
+  position:
+    x: -30.3423
+    y: -76.8966
+    z: -12.8754
+- id: 8
+  label: L_4
+  position:
+    x: -28.4284
+    y: -20.3676
+    z: 54.6372
+- id: 9
+  label: L_3b
+  position:
+    x: -39.3971
+    y: -22.2953
+    z: 52.8104
+- id: 10
+  label: L_FEF
+  position:
+    x: -41.8243
+    y: -6.8251
+    z: 51.5479
+- id: 11
+  label: L_PEF
+  position:
+    x: -49.0095
+    y: -0.4517
+    z: 40.5917
+- id: 12
+  label: L_55b
+  position:
+    x: -48.9816
+    y: -1.5129
+    z: 50.1907
+- id: 13
+  label: L_V3A
+  position:
+    x: -15.0154
+    y: -91.6078
+    z: 28.2444
+- id: 14
+  label: L_RSC
+  position:
+    x: -4.8849
+    y: -36.571
+    z: 21.1122
+- id: 15
+  label: L_POS2
+  position:
+    x: -9.4942
+    y: -72.2524
+    z: 36.7902
+- id: 16
+  label: L_V7
+  position:
+    x: -24.0981
+    y: -87.0738
+    z: 29.6168
+- id: 17
+  label: L_IPS1
+  position:
+    x: -24.3039
+    y: -75.2696
+    z: 37.4596
+- id: 18
+  label: L_FFC
+  position:
+    x: -42.0212
+    y: -61.4224
+    z: -17.2907
+- id: 19
+  label: L_V3B
+  position:
+    x: -26.2942
+    y: -83.0281
+    z: 17.6529
+- id: 20
+  label: L_LO1
+  position:
+    x: -39.7809
+    y: -83.9116
+    z: 8.2445
+- id: 21
+  label: L_LO2
+  position:
+    x: -45.7787
+    y: -85.1696
+    z: 0.7286
+- id: 22
+  label: L_PIT
+  position:
+    x: -43.7057
+    y: -83.2109
+    z: -11.0143
+- id: 23
+  label: L_MT
+  position:
+    x: -42.7722
+    y: -69.9594
+    z: 14.452
+- id: 24
+  label: L_A1
+  position:
+    x: -43.1723
+    y: -25.3579
+    z: 12.3234
+- id: 25
+  label: L_PSL
+  position:
+    x: -58.5839
+    y: -47.2283
+    z: 25.4311
+- id: 26
+  label: L_SFL
+  position:
+    x: -8.6095
+    y: 17.5137
+    z: 63.9293
+- id: 27
+  label: L_PCV
+  position:
+    x: -6.298
+    y: -51.1579
+    z: 49.2086
+- id: 28
+  label: L_STV
+  position:
+    x: -61.089
+    y: -50.9521
+    z: 18.2324
+- id: 29
+  label: L_7Pm
+  position:
+    x: -4.2062
+    y: -70.4214
+    z: 50.3404
+- id: 30
+  label: L_7m
+  position:
+    x: -4.2845
+    y: -63.8785
+    z: 35.1841
+- id: 31
+  label: L_POS1
+  position:
+    x: -12.6035
+    y: -59.0019
+    z: 15.0424
+- id: 32
+  label: L_23d
+  position:
+    x: -2.8881
+    y: -20.6781
+    z: 39.3587
+- id: 33
+  label: L_v23ab
+  position:
+    x: -3.3636
+    y: -58.247
+    z: 18.2133
+- id: 34
+  label: L_d23ab
+  position:
+    x: -3.0438
+    y: -42.6808
+    z: 31.2975
+- id: 35
+  label: L_31pv
+  position:
+    x: -9.4073
+    y: -46.7604
+    z: 32.5419
+- id: 36
+  label: L_5m
+  position:
+    x: -6.2842
+    y: -41.9173
+    z: 63.3997
+- id: 37
+  label: L_5mv
+  position:
+    x: -13.7018
+    y: -37.1393
+    z: 50.3818
+- id: 38
+  label: L_23c
+  position:
+    x: -11.4488
+    y: -30.5269
+    z: 43.0083
+- id: 39
+  label: L_5L
+  position:
+    x: -14.7776
+    y: -48.6065
+    z: 72.5933
+- id: 40
+  label: L_24dd
+  position:
+    x: -5.8855
+    y: -16.0126
+    z: 50.5898
+- id: 41
+  label: L_24dv
+  position:
+    x: -8.3022
+    y: -0.3766
+    z: 44.8102
+- id: 42
+  label: L_7AL
+  position:
+    x: -20.4027
+    y: -51.9913
+    z: 65.6772
+- id: 43
+  label: L_SCEF
+  position:
+    x: -5.9317
+    y: 4.1342
+    z: 59.6032
+- id: 44
+  label: L_6ma
+  position:
+    x: -20.0984
+    y: 3.9694
+    z: 67.8903
+- id: 45
+  label: L_7Am
+  position:
+    x: -6.9458
+    y: -60.3173
+    z: 61.4581
+- id: 46
+  label: L_7PL
+  position:
+    x: -14.816
+    y: -73.7112
+    z: 56.0083
+- id: 47
+  label: L_7PC
+  position:
+    x: -37.4515
+    y: -46.7109
+    z: 60.6276
+- id: 48
+  label: L_LIPv
+  position:
+    x: -30.8546
+    y: -58.4029
+    z: 55.2323
+- id: 49
+  label: L_VIP
+  position:
+    x: -22.8218
+    y: -63.5048
+    z: 64.4746
+- id: 50
+  label: L_MIP
+  position:
+    x: -24.857
+    y: -67.1281
+    z: 47.1007
+- id: 51
+  label: L_1
+  position:
+    x: -47.0296
+    y: -26.3181
+    z: 56.3848
+- id: 52
+  label: L_2
+  position:
+    x: -38.8683
+    y: -32.9202
+    z: 51.957
+- id: 53
+  label: L_3a
+  position:
+    x: -35.2805
+    y: -20.5097
+    z: 42.8339
+- id: 54
+  label: L_6d
+  position:
+    x: -33.7943
+    y: -14.2162
+    z: 67.7344
+- id: 55
+  label: L_6mp
+  position:
+    x: -10.7334
+    y: -15.0087
+    z: 71.0262
+- id: 56
+  label: L_6v
+  position:
+    x: -59.5034
+    y: 3.7871
+    z: 31.9067
+- id: 57
+  label: L_p24pr
+  position:
+    x: -3.9615
+    y: -2.2441
+    z: 40.3761
+- id: 58
+  label: L_33pr
+  position:
+    x: -2.3983
+    y: 11.2592
+    z: 28.7215
+- id: 59
+  label: L_a24pr
+  position:
+    x: -5.3869
+    y: 18.3002
+    z: 30.9814
+- id: 60
+  label: L_p32pr
+  position:
+    x: -7.9292
+    y: 15.3954
+    z: 38.7959
+- id: 61
+  label: L_a24
+  position:
+    x: -6.1363
+    y: 41.965
+    z: -4.4968
+- id: 62
+  label: L_d32
+  position:
+    x: -8.0403
+    y: 42.4755
+    z: 24.9597
+- id: 63
+  label: L_8BM
+  position:
+    x: -4.7592
+    y: 32.5683
+    z: 45.1662
+- id: 64
+  label: L_p32
+  position:
+    x: -11.2759
+    y: 50.3924
+    z: -2.3392
+- id: 65
+  label: L_10r
+  position:
+    x: -6.0341
+    y: 51.6407
+    z: -10.6444
+- id: 66
+  label: L_47m
+  position:
+    x: -37.4924
+    y: 31.5348
+    z: -13.9227
+- id: 67
+  label: L_8Av
+  position:
+    x: -38.3312
+    y: 16.5889
+    z: 52.2792
+- id: 68
+  label: L_8Ad
+  position:
+    x: -23.3507
+    y: 28.996
+    z: 43.3465
+- id: 69
+  label: L_9m
+  position:
+    x: -6.0375
+    y: 55.1478
+    z: 24.2637
+- id: 70
+  label: L_8BL
+  position:
+    x: -11.6218
+    y: 37.1473
+    z: 53.8005
+- id: 71
+  label: L_9p
+  position:
+    x: -19.8944
+    y: 47.3057
+    z: 38.4792
+- id: 72
+  label: L_10d
+  position:
+    x: -11.1632
+    y: 66.2958
+    z: 8.4044
+- id: 73
+  label: L_8C
+  position:
+    x: -43.7036
+    y: 11.8118
+    z: 37.7097
+- id: 74
+  label: L_44
+  position:
+    x: -53.8786
+    y: 14.8412
+    z: 14.0097
+- id: 75
+  label: L_45
+  position:
+    x: -50.609
+    y: 25.5687
+    z: 3.2206
+- id: 76
+  label: L_47l
+  position:
+    x: -46.7708
+    y: 30.1001
+    z: -9.9578
+- id: 77
+  label: L_a47r
+  position:
+    x: -41.3563
+    y: 48.5638
+    z: -11.9072
+- id: 78
+  label: L_6r
+  position:
+    x: -52.4908
+    y: 6.6641
+    z: 17.7741
+- id: 79
+  label: L_IFJa
+  position:
+    x: -41.0068
+    y: 10.8526
+    z: 26.3856
+- id: 80
+  label: L_IFJp
+  position:
+    x: -41.3634
+    y: 2.2956
+    z: 30.0642
+- id: 81
+  label: L_IFSp
+  position:
+    x: -48.8016
+    y: 20.9089
+    z: 22.8515
+- id: 82
+  label: L_IFSa
+  position:
+    x: -48.1015
+    y: 32.1216
+    z: 10.6533
+- id: 83
+  label: L_p9-46v
+  position:
+    x: -47.1903
+    y: 28.8919
+    z: 25.9915
+- id: 84
+  label: L_46
+  position:
+    x: -38.4057
+    y: 37.8526
+    z: 32.9207
+- id: 85
+  label: L_a9-46v
+  position:
+    x: -40.0072
+    y: 51.6397
+    z: 9.1728
+- id: 86
+  label: L_9-46d
+  position:
+    x: -29.4487
+    y: 45.8579
+    z: 23.4636
+- id: 87
+  label: L_9a
+  position:
+    x: -21.7269
+    y: 57.5628
+    z: 24.1526
+- id: 88
+  label: L_10v
+  position:
+    x: -4.0071
+    y: 52.9119
+    z: -17.8343
+- id: 89
+  label: L_a10p
+  position:
+    x: -26.4781
+    y: 59.742
+    z: -6.8987
+- id: 90
+  label: L_10pp
+  position:
+    x: -12.7721
+    y: 62.2831
+    z: -16.2485
+- id: 91
+  label: L_11l
+  position:
+    x: -25.9362
+    y: 49.4761
+    z: -15.4714
+- id: 92
+  label: L_13l
+  position:
+    x: -23.3043
+    y: 30.0783
+    z: -19.8865
+- id: 93
+  label: L_OFC
+  position:
+    x: -10.8287
+    y: 33.539
+    z: -24.5052
+- id: 94
+  label: L_47s
+  position:
+    x: -34.5233
+    y: 22.1134
+    z: -19.1547
+- id: 95
+  label: L_LIPd
+  position:
+    x: -30.0745
+    y: -55.4435
+    z: 42.8996
+- id: 96
+  label: L_6a
+  position:
+    x: -25.3604
+    y: -4.9318
+    z: 55.5618
+- id: 97
+  label: L_i6-8
+  position:
+    x: -29.5765
+    y: 5.2274
+    z: 56.748
+- id: 98
+  label: L_s6-8
+  position:
+    x: -22.3087
+    y: 24.1516
+    z: 56.2966
+- id: 99
+  label: L_43
+  position:
+    x: -56.3831
+    y: -0.3366
+    z: 9.4767
+- id: 100
+  label: L_OP4
+  position:
+    x: -59.2233
+    y: -13.4846
+    z: 15.315
+- id: 101
+  label: L_OP1
+  position:
+    x: -46.9496
+    y: -22.3801
+    z: 19.1422
+- id: 102
+  label: L_OP2-3
+  position:
+    x: -40.4601
+    y: -17.2433
+    z: 19.0212
+- id: 103
+  label: L_52
+  position:
+    x: -38.0016
+    y: -22.3612
+    z: 1.9379
+- id: 104
+  label: L_RI
+  position:
+    x: -40.1846
+    y: -35.5219
+    z: 20.2432
+- id: 105
+  label: L_PFcm
+  position:
+    x: -50.4059
+    y: -32.309
+    z: 21.7463
+- id: 106
+  label: L_PoI2
+  position:
+    x: -40.4908
+    y: -2.9287
+    z: -0.0029
+- id: 107
+  label: L_TA2
+  position:
+    x: -50.3675
+    y: -0.1737
+    z: -5.4789
+- id: 108
+  label: L_FOP4
+  position:
+    x: -41.4917
+    y: 12.7776
+    z: 5.6919
+- id: 109
+  label: L_MI
+  position:
+    x: -36.2879
+    y: 11.1963
+    z: 3.3261
+- id: 110
+  label: L_Pir
+  position:
+    x: -32.039
+    y: 6.3815
+    z: -17.6798
+- id: 111
+  label: L_AVI
+  position:
+    x: -30.8608
+    y: 25.4027
+    z: -2.4888
+- id: 112
+  label: L_AAIC
+  position:
+    x: -35.4208
+    y: 14.345
+    z: -10.4385
+- id: 113
+  label: L_FOP1
+  position:
+    x: -49.8875
+    y: 1.6589
+    z: 4.5696
+- id: 114
+  label: L_FOP3
+  position:
+    x: -35.995
+    y: 2.1376
+    z: 13.4428
+- id: 115
+  label: L_FOP2
+  position:
+    x: -42.4128
+    y: -4.9531
+    z: 14.7998
+- id: 116
+  label: L_PFt
+  position:
+    x: -56.3928
+    y: -25.7538
+    z: 36.533
+- id: 117
+  label: L_AIP
+  position:
+    x: -39.7852
+    y: -39.0137
+    z: 42.2767
+- id: 118
+  label: L_EC
+  position:
+    x: -22.9398
+    y: -13.6461
+    z: -31.6681
+- id: 119
+  label: L_PreS
+  position:
+    x: -16.9281
+    y: -34.2994
+    z: -13.8604
+- id: 120
+  label: L_H
+  position:
+    x: -11.9167
+    y: -39.75
+    z: -2.9167
+- id: 121
+  label: L_ProS
+  position:
+    x: -22.0685
+    y: -57.0108
+    z: 4.6909
+- id: 122
+  label: L_PeEc
+  position:
+    x: -31.1356
+    y: -9.5889
+    z: -33.6028
+- id: 123
+  label: L_STGa
+  position:
+    x: -50.8535
+    y: 12.9215
+    z: -16.6696
+- id: 124
+  label: L_PBelt
+  position:
+    x: -52.7095
+    y: -26.0037
+    z: 9.006
+- id: 125
+  label: L_A5
+  position:
+    x: -62.9832
+    y: -15.2118
+    z: -1.1005
+- id: 126
+  label: L_PHA1
+  position:
+    x: -23.3494
+    y: -37.7192
+    z: -14.638
+- id: 127
+  label: L_PHA3
+  position:
+    x: -31.8398
+    y: -37.931
+    z: -17.7307
+- id: 128
+  label: L_STSda
+  position:
+    x: -54.8082
+    y: -4.1468
+    z: -11.5957
+- id: 129
+  label: L_STSdp
+  position:
+    x: -52.7884
+    y: -32.6386
+    z: 1.1349
+- id: 130
+  label: L_STSvp
+  position:
+    x: -54.8898
+    y: -34.8552
+    z: -3.4358
+- id: 131
+  label: L_TGd
+  position:
+    x: -38.1921
+    y: 12.305
+    z: -34.4727
+- id: 132
+  label: L_TE1a
+  position:
+    x: -59.7754
+    y: -5.2246
+    z: -23.1151
+- id: 133
+  label: L_TE1p
+  position:
+    x: -61.7726
+    y: -48.2135
+    z: -8.6963
+- id: 134
+  label: L_TE2a
+  position:
+    x: -57.2752
+    y: -24.3832
+    z: -27.7009
+- id: 135
+  label: L_TF
+  position:
+    x: -42.3942
+    y: -22.0097
+    z: -30.0052
+- id: 136
+  label: L_TE2p
+  position:
+    x: -49.3913
+    y: -43.4235
+    z: -20.5057
+- id: 137
+  label: L_PHT
+  position:
+    x: -58.3918
+    y: -60.6461
+    z: 3.2289
+- id: 138
+  label: L_PH
+  position:
+    x: -45.9845
+    y: -65.1466
+    z: -5.3422
+- id: 139
+  label: L_TPOJ1
+  position:
+    x: -54.1676
+    y: -46.3202
+    z: 10.26
+- id: 140
+  label: L_TPOJ2
+  position:
+    x: -51.9934
+    y: -62.363
+    z: 15.7838
+- id: 141
+  label: L_TPOJ3
+  position:
+    x: -45.9746
+    y: -72.674
+    z: 20.7012
+- id: 142
+  label: L_DVT
+  position:
+    x: -17.6379
+    y: -74.2901
+    z: 36.3106
+- id: 143
+  label: L_PGp
+  position:
+    x: -38.6978
+    y: -85.4329
+    z: 23.0889
+- id: 144
+  label: L_IP2
+  position:
+    x: -40.9491
+    y: -48.8004
+    z: 43.3753
+- id: 145
+  label: L_IP1
+  position:
+    x: -30.258
+    y: -70.6326
+    z: 39.1023
+- id: 146
+  label: L_IP0
+  position:
+    x: -30.8447
+    y: -79.0757
+    z: 24.2723
+- id: 147
+  label: L_PFop
+  position:
+    x: -62.9615
+    y: -23.7361
+    z: 24.0328
+- id: 148
+  label: L_PF
+  position:
+    x: -60.306
+    y: -37.2782
+    z: 37.9053
+- id: 149
+  label: L_PFm
+  position:
+    x: -49.516
+    y: -58.0483
+    z: 44.8952
+- id: 150
+  label: L_PGi
+  position:
+    x: -46.5455
+    y: -64.0108
+    z: 27.542
+- id: 151
+  label: L_PGs
+  position:
+    x: -39.1906
+    y: -78.071
+    z: 38.9904
+- id: 152
+  label: L_V6A
+  position:
+    x: -21.7836
+    y: -86.1888
+    z: 42.7225
+- id: 153
+  label: L_VMV1
+  position:
+    x: -18.6619
+    y: -55.9416
+    z: -5.522
+- id: 154
+  label: L_VMV3
+  position:
+    x: -27.7219
+    y: -62.6969
+    z: -11.2141
+- id: 155
+  label: L_PHA2
+  position:
+    x: -31.9234
+    y: -37.4482
+    z: -11.7815
+- id: 156
+  label: L_V4t
+  position:
+    x: -49.261
+    y: -77.1178
+    z: 7.8354
+- id: 157
+  label: L_FST
+  position:
+    x: -45.8253
+    y: -68.6921
+    z: 5.6201
+- id: 158
+  label: L_V3CD
+  position:
+    x: -35.65
+    y: -88.8457
+    z: 11.2729
+- id: 159
+  label: L_LO3
+  position:
+    x: -41.2095
+    y: -77.1728
+    z: 15.1551
+- id: 160
+  label: L_VMV2
+  position:
+    x: -27.3375
+    y: -54.8236
+    z: -6.411
+- id: 161
+  label: L_31pd
+  position:
+    x: -8.7
+    y: -53.4323
+    z: 34.6469
+- id: 162
+  label: L_31a
+  position:
+    x: -4.679
+    y: -37.7455
+    z: 43.5579
+- id: 163
+  label: L_VVC
+  position:
+    x: -31.0334
+    y: -53.2359
+    z: -17.3407
+- id: 164
+  label: L_25
+  position:
+    x: -4.275
+    y: 23.9379
+    z: -14.7562
+- id: 165
+  label: L_s32
+  position:
+    x: -7.5366
+    y: 35.6621
+    z: -15.0659
+- id: 166
+  label: L_pOFC
+  position:
+    x: -14.3972
+    y: 14.3564
+    z: -20.8892
+- id: 167
+  label: L_PoI1
+  position:
+    x: -39.1902
+    y: -12.1828
+    z: -2.2671
+- id: 168
+  label: L_Ig
+  position:
+    x: -35.5904
+    y: -16.1798
+    z: 15.9868
+- id: 169
+  label: L_FOP5
+  position:
+    x: -35.4105
+    y: 26.75
+    z: 5.1684
+- id: 170
+  label: L_p10p
+  position:
+    x: -24.0707
+    y: 62.9202
+    z: 2.3932
+- id: 171
+  label: L_p47r
+  position:
+    x: -45.6345
+    y: 43.0795
+    z: 0.9857
+- id: 172
+  label: L_TGv
+  position:
+    x: -37.3067
+    y: -1.3122
+    z: -44.4583
+- id: 173
+  label: L_MBelt
+  position:
+    x: -44.3888
+    y: -17.7063
+    z: 4.3489
+- id: 174
+  label: L_LBelt
+  position:
+    x: -45.2987
+    y: -27.4349
+    z: 9.0529
+- id: 175
+  label: L_A4
+  position:
+    x: -63.3197
+    y: -23.574
+    z: 9.17
+- id: 176
+  label: L_STSva
+  position:
+    x: -51.638
+    y: -7.7992
+    z: -16.9657
+- id: 177
+  label: L_TE1m
+  position:
+    x: -64.136
+    y: -26.1294
+    z: -14.9553
+- id: 178
+  label: L_PI
+  position:
+    x: -43.9474
+    y: -4.1449
+    z: -13.5724
+- id: 179
+  label: L_a32pr
+  position:
+    x: -7.6802
+    y: 30.6322
+    z: 28.6548
+- id: 180
+  label: L_p24
+  position:
+    x: -5.1704
+    y: 38.8593
+    z: 13.874
+- id: 181
+  label: R_V1
+  position:
+    x: 12.4486
+    y: -80.3925
+    z: 4.0572
+- id: 182
+  label: R_MST
+  position:
+    x: 48.0338
+    y: -64.2372
+    z: 7.2628
+- id: 183
+  label: R_V6
+  position:
+    x: 17.9109
+    y: -76.9513
+    z: 31.0297
+- id: 184
+  label: R_V2
+  position:
+    x: 12.2652
+    y: -79.2862
+    z: 6.878
+- id: 185
+  label: R_V3
+  position:
+    x: 17.422
+    y: -85.2411
+    z: 8.9125
+- id: 186
+  label: R_V4
+  position:
+    x: 30.754
+    y: -84.8834
+    z: -1.1632
+- id: 187
+  label: R_V8
+  position:
+    x: 30.4344
+    y: -75.2613
+    z: -11.879
+- id: 188
+  label: R_4
+  position:
+    x: 29.7796
+    y: -17.1529
+    z: 55.2073
+- id: 189
+  label: R_3b
+  position:
+    x: 40.1439
+    y: -19.37
+    z: 51.0025
+- id: 190
+  label: R_FEF
+  position:
+    x: 44.8025
+    y: -2.4317
+    z: 51.7016
+- id: 191
+  label: R_PEF
+  position:
+    x: 47.4893
+    y: 2.6073
+    z: 37.1363
+- id: 192
+  label: R_55b
+  position:
+    x: 50.355
+    y: 1.9929
+    z: 47.0793
+- id: 193
+  label: R_V3A
+  position:
+    x: 16.7601
+    y: -89.1821
+    z: 30.9474
+- id: 194
+  label: R_RSC
+  position:
+    x: 5.5622
+    y: -36.4378
+    z: 21.5635
+- id: 195
+  label: R_POS2
+  position:
+    x: 12.009
+    y: -70.2659
+    z: 38.2154
+- id: 196
+  label: R_V7
+  position:
+    x: 28.2829
+    y: -84.3952
+    z: 31.1622
+- id: 197
+  label: R_IPS1
+  position:
+    x: 27.3292
+    y: -72.735
+    z: 39.84
+- id: 198
+  label: R_FFC
+  position:
+    x: 40.8223
+    y: -53.4603
+    z: -19.1962
+- id: 199
+  label: R_V3B
+  position:
+    x: 29.7124
+    y: -77.2134
+    z: 20.855
+- id: 200
+  label: R_LO1
+  position:
+    x: 39.6977
+    y: -80.2326
+    z: 4.845
+- id: 201
+  label: R_LO2
+  position:
+    x: 44.5944
+    y: -83.4509
+    z: -0.8363
+- id: 202
+  label: R_PIT
+  position:
+    x: 42.7838
+    y: -80.5454
+    z: -11.879
+- id: 203
+  label: R_MT
+  position:
+    x: 51.9897
+    y: -69.6252
+    z: 10.796
+- id: 204
+  label: R_A1
+  position:
+    x: 42.7181
+    y: -21.674
+    z: 11.3995
+- id: 205
+  label: R_PSL
+  position:
+    x: 63.9626
+    y: -35.7187
+    z: 27.4379
+- id: 206
+  label: R_SFL
+  position:
+    x: 8.8271
+    y: 17.0075
+    z: 65.405
+- id: 207
+  label: R_PCV
+  position:
+    x: 5.5035
+    y: -52.2473
+    z: 51.218
+- id: 208
+  label: R_STV
+  position:
+    x: 60.0356
+    y: -44.0253
+    z: 20.4059
+- id: 209
+  label: R_7Pm
+  position:
+    x: 5.2416
+    y: -68.4553
+    z: 50.8443
+- id: 210
+  label: R_7m
+  position:
+    x: 4.523
+    y: -62.5104
+    z: 34.4648
+- id: 211
+  label: R_POS1
+  position:
+    x: 13.9837
+    y: -57.065
+    z: 17.4055
+- id: 212
+  label: R_23d
+  position:
+    x: 3.4704
+    y: -21.1334
+    z: 39.4247
+- id: 213
+  label: R_v23ab
+  position:
+    x: 4.3643
+    y: -55.0147
+    z: 18.8382
+- id: 214
+  label: R_d23ab
+  position:
+    x: 3.4887
+    y: -40.7114
+    z: 33.1083
+- id: 215
+  label: R_31pv
+  position:
+    x: 9.1273
+    y: -42.9801
+    z: 34.757
+- id: 216
+  label: R_5m
+  position:
+    x: 5.4319
+    y: -39.2363
+    z: 65.8784
+- id: 217
+  label: R_5mv
+  position:
+    x: 12.0772
+    y: -40.2585
+    z: 55.0079
+- id: 218
+  label: R_23c
+  position:
+    x: 11.2516
+    y: -33.0341
+    z: 44.1153
+- id: 219
+  label: R_5L
+  position:
+    x: 14.0538
+    y: -47.551
+    z: 74.551
+- id: 220
+  label: R_24dd
+  position:
+    x: 6.3501
+    y: -16.2504
+    z: 53.1445
+- id: 221
+  label: R_24dv
+  position:
+    x: 9.1272
+    y: -2.5587
+    z: 46.7573
+- id: 222
+  label: R_7AL
+  position:
+    x: 23.9706
+    y: -51.6995
+    z: 68.6683
+- id: 223
+  label: R_SCEF
+  position:
+    x: 6.1055
+    y: 4.0798
+    z: 61.3124
+- id: 224
+  label: R_6ma
+  position:
+    x: 21.0205
+    y: 5.2517
+    z: 67.207
+- id: 225
+  label: R_7Am
+  position:
+    x: 9.0168
+    y: -60.4508
+    z: 62.1322
+- id: 226
+  label: R_7PL
+  position:
+    x: 12.4214
+    y: -73.0975
+    z: 56.9243
+- id: 227
+  label: R_7PC
+  position:
+    x: 36.4209
+    y: -47.3008
+    z: 61.4182
+- id: 228
+  label: R_LIPv
+  position:
+    x: 28.3435
+    y: -57.3692
+    z: 53.8374
+- id: 229
+  label: R_VIP
+  position:
+    x: 21.8264
+    y: -63.6259
+    z: 63.3134
+- id: 230
+  label: R_MIP
+  position:
+    x: 25.6649
+    y: -68.1292
+    z: 50.8733
+- id: 231
+  label: R_1
+  position:
+    x: 48.9993
+    y: -21.151
+    z: 54.7363
+- id: 232
+  label: R_2
+  position:
+    x: 38.4988
+    y: -30.2372
+    z: 52.3331
+- id: 233
+  label: R_3a
+  position:
+    x: 32.6255
+    y: -19.9419
+    z: 46.9856
+- id: 234
+  label: R_6d
+  position:
+    x: 38.0044
+    y: -11.3205
+    z: 64.7474
+- id: 235
+  label: R_6mp
+  position:
+    x: 17.3891
+    y: -11.7631
+    z: 69.3736
+- id: 236
+  label: R_6v
+  position:
+    x: 59.5139
+    y: 6.6888
+    z: 30.6097
+- id: 237
+  label: R_p24pr
+  position:
+    x: 4.3647
+    y: -2.1376
+    z: 40.5612
+- id: 238
+  label: R_33pr
+  position:
+    x: 3.3875
+    y: 14.9531
+    z: 26.8608
+- id: 239
+  label: R_a24pr
+  position:
+    x: 4.3666
+    y: 19.4909
+    z: 32.1381
+- id: 240
+  label: R_p32pr
+  position:
+    x: 9.0316
+    y: 14.6212
+    z: 40.1911
+- id: 241
+  label: R_a24
+  position:
+    x: -0.5
+    y: 33.25
+    z: -6.575
+- id: 242
+  label: R_d32
+  position:
+    x: 7.2199
+    y: 39.4286
+    z: 26.991
+- id: 243
+  label: R_8BM
+  position:
+    x: 4.8658
+    y: 30.6518
+    z: 47.4365
+- id: 244
+  label: R_p32
+  position:
+    x: -0.5
+    y: 43.25
+    z: -12.75
+- id: 245
+  label: R_10r
+  position:
+    x: -0.5
+    y: 45.25
+    z: -11.75
+- id: 246
+  label: R_47m
+  position:
+    x: 33.7357
+    y: 32.5717
+    z: -15.8829
+- id: 247
+  label: R_8Av
+  position:
+    x: 39.8249
+    y: 18.8202
+    z: 49.0997
+- id: 248
+  label: R_8Ad
+  position:
+    x: 23.9837
+    y: 30.6051
+    z: 42.3136
+- id: 249
+  label: R_9m
+  position:
+    x: 6.7434
+    y: 55.0901
+    z: 20.9469
+- id: 250
+  label: R_8BL
+  position:
+    x: 13.2097
+    y: 41.9075
+    z: 49.5118
+- id: 251
+  label: R_9p
+  position:
+    x: 20.6326
+    y: 50.9359
+    z: 34.1932
+- id: 252
+  label: R_10d
+  position:
+    x: 9.5
+    y: 67.8472
+    z: 5.0731
+- id: 253
+  label: R_8C
+  position:
+    x: 39.5685
+    y: 18.1531
+    z: 36.715
+- id: 254
+  label: R_44
+  position:
+    x: 53.431
+    y: 18.9778
+    z: 12.591
+- id: 255
+  label: R_45
+  position:
+    x: 50.382
+    y: 26.5792
+    z: 3.3714
+- id: 256
+  label: R_47l
+  position:
+    x: 45.234
+    y: 33.282
+    z: -13.7013
+- id: 257
+  label: R_a47r
+  position:
+    x: 39.2721
+    y: 51.7682
+    z: -8.55
+- id: 258
+  label: R_6r
+  position:
+    x: 52.1951
+    y: 10.0254
+    z: 13.331
+- id: 259
+  label: R_IFJa
+  position:
+    x: 44.3623
+    y: 16.6019
+    z: 25.5586
+- id: 260
+  label: R_IFJp
+  position:
+    x: 38.6061
+    y: 7.4913
+    z: 27.1746
+- id: 261
+  label: R_IFSp
+  position:
+    x: 47.7224
+    y: 28.693
+    z: 18.9286
+- id: 262
+  label: R_IFSa
+  position:
+    x: 49.9917
+    y: 36.133
+    z: 3.711
+- id: 263
+  label: R_p9-46v
+  position:
+    x: 47.4775
+    y: 30.949
+    z: 27.2125
+- id: 264
+  label: R_46
+  position:
+    x: 36.7753
+    y: 39.899
+    z: 30.7436
+- id: 265
+  label: R_a9-46v
+  position:
+    x: 39.7225
+    y: 52.6637
+    z: 10.1349
+- id: 266
+  label: R_9-46d
+  position:
+    x: 29.2571
+    y: 49.3418
+    z: 23.4743
+- id: 267
+  label: R_9a
+  position:
+    x: 19.2701
+    y: 62.3271
+    z: 19.8617
+- id: 268
+  label: R_10v
+  position:
+    x: -0.5
+    y: 27.25
+    z: -24.375
+- id: 269
+  label: R_a10p
+  position:
+    x: 25.0974
+    y: 62.2746
+    z: -8.5039
+- id: 270
+  label: R_10pp
+  position:
+    x: 12.4893
+    y: 63.2321
+    z: -16.4082
+- id: 271
+  label: R_11l
+  position:
+    x: 25.7072
+    y: 48.1913
+    z: -16.2445
+- id: 272
+  label: R_13l
+  position:
+    x: 20.1407
+    y: 28.9822
+    z: -20.2606
+- id: 273
+  label: R_OFC
+  position:
+    x: -0.5
+    y: 23.1786
+    z: -23.9643
+- id: 274
+  label: R_47s
+  position:
+    x: 31.2879
+    y: 22.4318
+    z: -19.6222
+- id: 275
+  label: R_LIPd
+  position:
+    x: 31.1998
+    y: -54.4651
+    z: 45.1389
+- id: 276
+  label: R_6a
+  position:
+    x: 26.9379
+    y: -2.1452
+    z: 53.4619
+- id: 277
+  label: R_i6-8
+  position:
+    x: 32.9857
+    y: 8.1121
+    z: 58.0711
+- id: 278
+  label: R_s6-8
+  position:
+    x: 20.4722
+    y: 22.041
+    z: 59.118
+- id: 279
+  label: R_43
+  position:
+    x: 55.7014
+    y: 0.7986
+    z: 9.7493
+- id: 280
+  label: R_OP4
+  position:
+    x: 56.672
+    y: -11.1951
+    z: 14.1699
+- id: 281
+  label: R_OP1
+  position:
+    x: 41.9844
+    y: -19.7196
+    z: 19.1868
+- id: 282
+  label: R_OP2-3
+  position:
+    x: 38.6844
+    y: -13.5717
+    z: 18.4529
+- id: 283
+  label: R_52
+  position:
+    x: 38.2373
+    y: -20.5939
+    z: 2.6576
+- id: 284
+  label: R_RI
+  position:
+    x: 41.188
+    y: -30.8163
+    z: 19.7572
+- id: 285
+  label: R_PFcm
+  position:
+    x: 47.0206
+    y: -27.7562
+    z: 22.8386
+- id: 286
+  label: R_PoI2
+  position:
+    x: 41.0401
+    y: -1.3234
+    z: -0.3265
+- id: 287
+  label: R_TA2
+  position:
+    x: 50.6498
+    y: 1.1111
+    z: -5.5774
+- id: 288
+  label: R_FOP4
+  position:
+    x: 38.7014
+    y: 15.141
+    z: 7.4438
+- id: 289
+  label: R_MI
+  position:
+    x: 36.89
+    y: 12.3212
+    z: 3.0166
+- id: 290
+  label: R_Pir
+  position:
+    x: 33.209
+    y: 8.5452
+    z: -18.3559
+- id: 291
+  label: R_AVI
+  position:
+    x: 32.6765
+    y: 26.25
+    z: -3.3401
+- id: 292
+  label: R_AAIC
+  position:
+    x: 35.0712
+    y: 16.7672
+    z: -10.4889
+- id: 293
+  label: R_FOP1
+  position:
+    x: 46.1755
+    y: 4.6386
+    z: 5.7439
+- id: 294
+  label: R_FOP3
+  position:
+    x: 34.706
+    y: 8.0125
+    z: 12.0931
+- id: 295
+  label: R_FOP2
+  position:
+    x: 40.4563
+    y: -1.9126
+    z: 15.551
+- id: 296
+  label: R_PFt
+  position:
+    x: 56.2214
+    y: -20.3243
+    z: 37.2779
+- id: 297
+  label: R_AIP
+  position:
+    x: 38.6782
+    y: -38.671
+    z: 44.446
+- id: 298
+  label: R_EC
+  position:
+    x: 21.9653
+    y: -16.3076
+    z: -29.7914
+- id: 299
+  label: R_PreS
+  position:
+    x: 16.5333
+    y: -34.3921
+    z: -10.7781
+- id: 300
+  label: R_H
+  position:
+    x: 13.2115
+    y: -39.1346
+    z: -2.0192
+- id: 301
+  label: R_ProS
+  position:
+    x: 22.0104
+    y: -50.286
+    z: 3.0339
+- id: 302
+  label: R_PeEc
+  position:
+    x: 30.1558
+    y: -9.921
+    z: -34.3296
+- id: 303
+  label: R_STGa
+  position:
+    x: 50.1622
+    y: 15.2004
+    z: -19.0317
+- id: 304
+  label: R_PBelt
+  position:
+    x: 55.7916
+    y: -18.9197
+    z: 8.9682
+- id: 305
+  label: R_A5
+  position:
+    x: 62.3912
+    y: -14.1458
+    z: -1.8871
+- id: 306
+  label: R_PHA1
+  position:
+    x: 22.3286
+    y: -35.8067
+    z: -15.3268
+- id: 307
+  label: R_PHA3
+  position:
+    x: 33.4733
+    y: -37.2925
+    z: -14.9007
+- id: 308
+  label: R_STSda
+  position:
+    x: 53.1256
+    y: -0.6531
+    z: -14.8518
+- id: 309
+  label: R_STSdp
+  position:
+    x: 49.2487
+    y: -27.9362
+    z: -1.114
+- id: 310
+  label: R_STSvp
+  position:
+    x: 57.3578
+    y: -29.7056
+    z: -4.1428
+- id: 311
+  label: R_TGd
+  position:
+    x: 35.9692
+    y: 14.2698
+    z: -35.7327
+- id: 312
+  label: R_TE1a
+  position:
+    x: 58.8777
+    y: -0.5748
+    z: -26.1682
+- id: 313
+  label: R_TE1p
+  position:
+    x: 61.7643
+    y: -42.8111
+    z: -12.1323
+- id: 314
+  label: R_TE2a
+  position:
+    x: 55.1806
+    y: -18.1076
+    z: -30.153
+- id: 315
+  label: R_TF
+  position:
+    x: 41.3975
+    y: -20.0727
+    z: -30.0139
+- id: 316
+  label: R_TE2p
+  position:
+    x: 48.3043
+    y: -37.4086
+    z: -21.5332
+- id: 317
+  label: R_PHT
+  position:
+    x: 60.3208
+    y: -52.8903
+    z: -4.623
+- id: 318
+  label: R_PH
+  position:
+    x: 47.9129
+    y: -62.6316
+    z: -9.5152
+- id: 319
+  label: R_TPOJ1
+  position:
+    x: 54.4983
+    y: -43.9962
+    z: 12.3185
+- id: 320
+  label: R_TPOJ2
+  position:
+    x: 54.0637
+    y: -55.9967
+    z: 8.4856
+- id: 321
+  label: R_TPOJ3
+  position:
+    x: 46.514
+    y: -62.061
+    z: 18.2366
+- id: 322
+  label: R_DVT
+  position:
+    x: 20.2276
+    y: -71.1343
+    z: 36.5018
+- id: 323
+  label: R_PGp
+  position:
+    x: 44.5853
+    y: -77.6875
+    z: 25.4817
+- id: 324
+  label: R_IP2
+  position:
+    x: 43.2124
+    y: -41.7836
+    z: 46.2569
+- id: 325
+  label: R_IP1
+  position:
+    x: 34.1084
+    y: -67.1459
+    z: 41.9002
+- id: 326
+  label: R_IP0
+  position:
+    x: 34.1304
+    y: -74.7003
+    z: 27.4938
+- id: 327
+  label: R_PFop
+  position:
+    x: 61.991
+    y: -19.1475
+    z: 23.4041
+- id: 328
+  label: R_PF
+  position:
+    x: 60.7622
+    y: -28.5703
+    z: 37.1253
+- id: 329
+  label: R_PFm
+  position:
+    x: 52.6248
+    y: -48.012
+    z: 46.5486
+- id: 330
+  label: R_PGi
+  position:
+    x: 51.1735
+    y: -59.6045
+    z: 28.7867
+- id: 331
+  label: R_PGs
+  position:
+    x: 44.5803
+    y: -68.6269
+    z: 42.1399
+- id: 332
+  label: R_V6A
+  position:
+    x: 24.2369
+    y: -84.3861
+    z: 43.5123
+- id: 333
+  label: R_VMV1
+  position:
+    x: 18.1655
+    y: -54.5927
+    z: -6.3762
+- id: 334
+  label: R_VMV3
+  position:
+    x: 27.4959
+    y: -61.1176
+    z: -9.4297
+- id: 335
+  label: R_PHA2
+  position:
+    x: 31.1381
+    y: -35.282
+    z: -12.871
+- id: 336
+  label: R_V4t
+  position:
+    x: 50.1715
+    y: -74.1807
+    z: -0.2363
+- id: 337
+  label: R_FST
+  position:
+    x: 50.0233
+    y: -63.0782
+    z: 1.421
+- id: 338
+  label: R_V3CD
+  position:
+    x: 37.867
+    y: -83.5003
+    z: 12.1034
+- id: 339
+  label: R_LO3
+  position:
+    x: 43.5272
+    y: -74.2936
+    z: 13.2493
+- id: 340
+  label: R_VMV2
+  position:
+    x: 27.1853
+    y: -54.0215
+    z: -6.6275
+- id: 341
+  label: R_31pd
+  position:
+    x: 11.0481
+    y: -52.3633
+    z: 35.7534
+- id: 342
+  label: R_31a
+  position:
+    x: 6.6786
+    y: -41.3916
+    z: 42.7462
+- id: 343
+  label: R_VVC
+  position:
+    x: 28.9754
+    y: -48.2738
+    z: -17.6034
+- id: 344
+  label: R_25
+  position:
+    x: -0.5
+    y: 23.1848
+    z: -18.5326
+- id: 345
+  label: R_s32
+  position:
+    x: -0.5
+    y: 37.8952
+    z: -16.0887
+- id: 346
+  label: R_pOFC
+  position:
+    x: 13.1506
+    y: 15.4519
+    z: -19.9167
+- id: 347
+  label: R_PoI1
+  position:
+    x: 39.2738
+    y: -9.35
+    z: -4.6275
+- id: 348
+  label: R_Ig
+  position:
+    x: 36.5567
+    y: -12.947
+    z: 14.1143
+- id: 349
+  label: R_FOP5
+  position:
+    x: 36.9903
+    y: 27.5504
+    z: 4.8314
+- id: 350
+  label: R_p10p
+  position:
+    x: 24.2919
+    y: 60.9964
+    z: 3.7517
+- id: 351
+  label: R_p47r
+  position:
+    x: 46.3992
+    y: 44.2913
+    z: -4.2913
+- id: 352
+  label: R_TGv
+  position:
+    x: 35.207
+    y: -1.2092
+    z: -45.1935
+- id: 353
+  label: R_MBelt
+  position:
+    x: 45.4061
+    y: -16.026
+    z: 4.698
+- id: 354
+  label: R_LBelt
+  position:
+    x: 46.7576
+    y: -25.1332
+    z: 10.7439
+- id: 355
+  label: R_A4
+  position:
+    x: 64.4099
+    y: -15.491
+    z: 6.57
+- id: 356
+  label: R_STSva
+  position:
+    x: 54.1492
+    y: -8.5735
+    z: -16.9097
+- id: 357
+  label: R_TE1m
+  position:
+    x: 64.4446
+    y: -22.4579
+    z: -16.4575
+- id: 358
+  label: R_PI
+  position:
+    x: 44.2384
+    y: -3.3355
+    z: -12.7233
+- id: 359
+  label: R_a32pr
+  position:
+    x: 9.498
+    y: 28.6079
+    z: 30.5014
+- id: 360
+  label: R_p24
+  position:
+    x: 4.5403
+    y: 37.9601
+    z: 15.4066
+- id: 361
+  label: L_Cerebellum
+  position:
+    x: -24.4841
+    y: -62.9174
+    z: -36.8393
+- id: 362
+  label: L_Thalamus
+  position:
+    x: -11.4968
+    y: -19.2297
+    z: 6.6696
+- id: 363
+  label: L_Caudate
+  position:
+    x: -12.9359
+    y: 9.5888
+    z: 9.5779
+- id: 364
+  label: L_Putamen
+  position:
+    x: -26.3518
+    y: 0.0041
+    z: 0.1759
+- id: 365
+  label: L_Pallidum
+  position:
+    x: -20.5731
+    y: -5.126
+    z: -1.1612
+- id: 366
+  label: L_Hippocampus
+  position:
+    x: -25.4045
+    y: -22.4638
+    z: -14.298
+- id: 367
+  label: L_Amygdala
+  position:
+    x: -22.9962
+    y: -5.0696
+    z: -19.6654
+- id: 368
+  label: L_Accumbens
+  position:
+    x: -8.5215
+    y: 9.994
+    z: -8.4476
+- id: 369
+  label: L_VentralDC
+  position:
+    x: -10.5311
+    y: -15.4878
+    z: -10.5673
+- id: 370
+  label: R_Cerebellum
+  position:
+    x: -0.5
+    y: -55.7269
+    z: -48.0246
+- id: 371
+  label: R_Thalamus
+  position:
+    x: 11.2509
+    y: -17.528
+    z: 6.8822
+- id: 372
+  label: R_Caudate
+  position:
+    x: 13.0486
+    y: 11.0092
+    z: 9.6262
+- id: 373
+  label: R_Putamen
+  position:
+    x: 26.3425
+    y: 2.0114
+    z: -0.2748
+- id: 374
+  label: R_Pallidum
+  position:
+    x: 21.0138
+    y: -3.7858
+    z: -1.0325
+- id: 375
+  label: R_Hippocampus
+  position:
+    x: 26.0941
+    y: -21.3944
+    z: -14.0873
+- id: 376
+  label: R_Amygdala
+  position:
+    x: 23.24
+    y: -3.735
+    z: -19.8364
+- id: 377
+  label: R_Accumbens
+  position:
+    x: 7.9293
+    y: 11.3815
+    z: -7.4997
+- id: 378
+  label: R_VentralDC
+  position:
+    x: 10.5525
+    y: -14.6552
+    z: -10.1548
+- id: 379
+  label: Brain-Stem
+  position:
+    x: -6.0839
+    y: -30.9513
+    z: -33.0764
