@@ -1,5 +1,5 @@
 #
-# Module: network.py
+# Module: network_graph.py
 #
 # Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
@@ -217,7 +217,7 @@ def plot_graph_networkx(
     norm_in = _safe_norm(in_str)
 
     if node_size_by == "in-strength":
-        node_sizes = 300 + norm_in * node_size_scaling
+        node_sizes = 100 + norm_in * node_size_scaling
     else:
         node_sizes = np.full(len(G.nodes), 100 * float(node_size_by))
 
@@ -390,6 +390,54 @@ def plot_graph_bsplot(
 # 3.  Brain surface  (3-D spheres + tubes on cortex)
 # ---------------------------------------------------------------------------
 
+def _match_cortical_labels(region_labels, annot_dir, vertices_lh, vertices_rh):
+    """Match tvbo atlas labels to FreeSurfer ``aparc`` annotation centroids.
+
+    Parameters
+    ----------
+    region_labels : sequence of str
+        e.g. ``["ctx-lh-bankssts", "left-thalamus", ...]``
+    annot_dir : str or Path
+        Directory containing ``lh.aparc.annot`` / ``rh.aparc.annot``.
+    vertices_lh, vertices_rh : ndarray (V, 3)
+        Vertex coordinates for each hemisphere.
+
+    Returns
+    -------
+    centers_matched : dict  {matrix_idx: ndarray(3,)}
+    cortical_idx : list[int]
+    """
+    from nibabel.freesurfer.io import read_annot
+    from bsplot.graph import get_centers_from_surface_parc
+
+    labels_lh, _, names_lh = read_annot(f"{annot_dir}/lh.aparc.annot")
+    labels_rh, _, names_rh = read_annot(f"{annot_dir}/rh.aparc.annot")
+
+    centers_lh = get_centers_from_surface_parc(vertices_lh, labels_lh)
+    centers_rh = get_centers_from_surface_parc(vertices_rh, labels_rh)
+
+    name_to_idx = {
+        (n.decode() if isinstance(n, bytes) else str(n)): idx
+        for idx, n in enumerate(names_lh)
+    }
+
+    centers_matched = {}
+    cortical_idx = []
+
+    for i, label in enumerate(region_labels):
+        parts = str(label).split("-", 2)
+        if len(parts) == 3 and parts[0] == "ctx":
+            hemi, aparc_name = parts[1], parts[2]
+            if aparc_name in name_to_idx:
+                aparc_idx = name_to_idx[aparc_name]
+                src = centers_lh if hemi == "lh" else centers_rh
+                if aparc_idx in src:
+                    centers_matched[i] = src[aparc_idx]
+                    cortical_idx.append(i)
+
+    return centers_matched, cortical_idx
+
+
 def plot_graph_brain(
     network,
     *,
@@ -410,19 +458,20 @@ def plot_graph_brain(
     edge_cmap: Optional[str] = None,
     edge_data_key: str = "weight",
     edge_scale: Optional[dict] = None,
+    annot_dir: str = "/Applications/freesurfer/7.4.1/subjects/fsaverage/label",
     figsize: Tuple[float, float] = (6, 5),
     **kwargs,
 ) -> Tuple[Figure, Axes, dict]:
     """Render a network on the cortical brain surface using ``bsplot``.
 
-    Nodes are rendered as coloured spheres at their MNI coordinates
-    (from the atlas metadata); edges as coloured tubes between them.
+    Nodes are rendered as coloured spheres at parcel centroids; edges
+    as coloured tubes between them.  Only **cortical** parcels that can
+    be matched to the FreeSurfer ``aparc`` annotation are shown.
 
     Parameters
     ----------
     network : Network
-        Network object with a parcellation atlas whose entities have
-        ``center`` coordinates (x, y, z in MNI space).
+        Network object with a parcellation atlas.
     ax : Axes, optional
         If *None*, a new figure is created.
     template : str
@@ -457,6 +506,8 @@ def plot_graph_brain(
         Edge attribute for colour mapping.
     edge_scale : dict, optional
         Tube radius scaling, e.g. ``{"weight": 8, "mode": "exp"}``.
+    annot_dir : str
+        Path to FreeSurfer ``fsaverage/label/`` directory.
     figsize : tuple
         Figure size if no *ax* is given.
     **kwargs
@@ -469,37 +520,40 @@ def plot_graph_brain(
     mappables : dict
         ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).
     """
+    from bsplot.data.surface import get_surface_geometry
     from bsplot.graph import create_network, plot_network_on_surface
 
     if node_scale is None:
         node_scale = {node_data_key: 2, "mode": "exp"}
 
-    # Use MNI coordinates from atlas metadata
-    centers = network.get_centers()
+    # Load surface geometry
+    vertices_lh, _ = get_surface_geometry(template=template, hemi="lh", density=density)
+    vertices_rh, _ = get_surface_geometry(template=template, hemi="rh", density=density)
+
+    # Match atlas labels to surface parcels
     W = network.weights_matrix
+    region_labels = network.atlas.region_labels
 
-    # Filter out nodes with no valid coordinates (0,0,0)
-    valid_idx = [
-        i for i, coord in centers.items()
-        if not (coord[0] == 0 and coord[1] == 0 and coord[2] == 0)
-    ]
+    centers_matched, cortical_idx = _match_cortical_labels(
+        region_labels, annot_dir, vertices_lh, vertices_rh,
+    )
 
-    if not valid_idx:
+    if not cortical_idx:
         raise ValueError(
-            "No nodes with valid coordinates found. "
-            "Ensure the atlas metadata contains center coordinates."
+            "No cortical parcels could be matched to the aparc annotation. "
+            f"Check annot_dir={annot_dir!r} and atlas labels."
         )
 
-    # Extract sub-matrix for valid nodes
-    idx = np.array(valid_idx)
-    W_sub = W[np.ix_(idx, idx)]
+    # Extract cortical sub-matrix
+    idx = np.array(cortical_idx)
+    W_cortical = W[np.ix_(idx, idx)]
 
-    # Build sequential centers dict for create_network
-    seq_centers = {j: np.array(centers[i]) for j, i in enumerate(idx)}
+    # Relabel sequentially for create_network
+    seq_centers = {j: centers_matched[i] for j, i in enumerate(idx)}
     seq_labels = list(range(len(idx)))
 
     G = create_network(
-        seq_centers, W_sub,
+        seq_centers, W_cortical,
         labels=seq_labels,
         threshold_percentile=threshold_percentile,
     )

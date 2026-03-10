@@ -1343,9 +1343,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return self
 
     def plot_ontology(self, **kwargs):
-        from tvbo.plot import network
+        from tvbo.plot import ontology
 
-        return network.plot_model(self.ontology, **kwargs)
+        return ontology.plot_model(self.ontology, **kwargs)
 
     def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         from tvbo.export.code import render_equation
@@ -1587,7 +1587,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         import sympy
 
-        from tvbo.plot import network
+        from tvbo.plot import ontology as ontology_plot
 
         if not ax:
             fig, ax = plt.subplots(figsize=(12, 2))
@@ -1604,7 +1604,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 self.get_dependency_tree(ontomapping=True, include_state_equations=True)
             )
             edgecolor = None
-            cat_dict, categories = network.get_node_color_mapping(
+            cat_dict, categories = ontology_plot.get_node_color_mapping(
                 G_onto, color_nodes_by, return_categories=True
             )
             kwargs.update(
@@ -1638,7 +1638,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         else:
             pos = nx.kamada_kawai_layout(G)
 
-        network.draw_custom_nodes(
+        ontology_plot.draw_custom_nodes(
             G,
             pos,
             labels={node: f"${sympy.latex(node)}$" for node in G.nodes},

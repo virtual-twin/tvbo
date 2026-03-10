@@ -17,4 +17,4 @@ from tvbo.plot import graph
 graph.plot_model('JansenRit')
 ```
 """
-from . import functions, network
+from . import network, ontology, functions
