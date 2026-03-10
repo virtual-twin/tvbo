@@ -23,5 +23,6 @@ bids:
 parcellation:
   atlas:
     name: virtualdbs
+    coordinateSpace: MNI152NLin2009cAsym
 tractogram:
   name: dTOR
