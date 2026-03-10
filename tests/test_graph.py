@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from tvbo.plot.network import (
+from tvbo.plot.ontology import (
     get_categories_from_graph,
     get_category_from_graph,
     get_default_params,

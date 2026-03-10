@@ -2121,16 +2121,19 @@ class Network(tvbo_datamodel.Network):
         node_labels: bool = True,
         edge_labels: bool = True,
         log_in_strength: bool = True,
-        node_size_scaling: float = 100,
+        node_size_scaling: float = 0,
         edge_color: str = "weight",
         pos: Union[str, Dict[int, List[float]]] = "spring",
         plot_brain: Optional[str] = None,
         edge_kwargs: Optional[Dict[str, Any]] = None,
         node_kwargs: Optional[Dict[str, Any]] = None,
-        fontsize: float = 8,
+        fontsize: float = 12,
         format: str = "networkx",
     ) -> Union[Figure, cm.ScalarMappable]:
         """Visualize connectome as network graph.
+
+        Delegates to :func:`tvbo.plot.network_graph.plot_graph_networkx` or
+        :func:`tvbo.plot.network_graph.plot_graph_bsplot` depending on *format*.
 
         Parameters
         ----------
@@ -2170,9 +2173,7 @@ class Network(tvbo_datamodel.Network):
             Font size for labels
         format : str, default="networkx"
             Plotting format: "networkx" for standard plotting, "bsplot" for fancy
-            node/edge plotting with text boxes and curved edges. When using "bsplot",
-            node labels are displayed with neuron (🔵) and synapse (🔗) icons based
-            on node type.
+            node/edge plotting with text boxes and curved edges.
 
         Returns
         -------
@@ -2194,272 +2195,81 @@ class Network(tvbo_datamodel.Network):
         fig, ax = plt.subplots()
         sc.plot_graph(ax, plot_brain="horizontal", node_labels=False)
         ```
+
+        See Also
+        --------
+        plot_brain_surface : 3-D brain surface rendering with bsplot
+        tvbo.plot.network.plot_graph_networkx : NetworkX backend
+        tvbo.plot.network.plot_graph_bsplot : bsplot backend
         """
-
-        if edge_kwargs is None:
-            edge_kwargs = {}
-        if node_kwargs is None:
-            node_kwargs = {}
-
-        fig: Optional[Figure] = None
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 10))
-            return_fig = True
-        else:
-            return_fig = False
-
-        if isinstance(node_cmap, str):
-            node_cmap = plt.get_cmap(node_cmap)
-        if isinstance(edge_cmap, str):
-            edge_cmap = plt.get_cmap(edge_cmap)
-
-        # Build graph on demand
-        # Determine weight threshold based on explicit edges or weight matrix
-        nodes = getattr(self, "nodes", None)
-        edges = getattr(self, "edges", None)
+        from tvbo.plot.network import (
+            plot_graph_bsplot,
+            plot_graph_networkx,
+            _resolve_positions,
+            _threshold_graph,
+        )
 
         G = self.graph
 
+        # Threshold edges
         if threshold_percentile > 0:
-            # Remove edges below threshold
-            edges_to_remove = [
-                (u, v, k)
-                for u, v, k, data in G.edges(keys=True, data=True)
-                if abs(data.get("weight", 1.0))
-                < np.percentile(self.weights, threshold_percentile)
-            ]
-            G.remove_edges_from(edges_to_remove)
+            _threshold_graph(G, self.weights, threshold_percentile)
 
-        # Generate positions for nodes
-        # First, check if nodes have explicit position coordinates
-        nodes_obj = getattr(self, "nodes", None)
-        nodes_have_positions = False
-        if nodes_obj and len(nodes_obj) > 0:
-            # Check if any node has a position attribute with x, y coordinates
-            positions_from_nodes = {}
-            for i, node in enumerate(nodes_obj):
-                node_pos = getattr(node, "position", None)
-                if node_pos is not None:
-                    x = getattr(node_pos, "x", None)
-                    y = getattr(node_pos, "y", None)
-                    if x is not None and y is not None:
-                        node_id = getattr(node, "id", i) or i
-                        positions_from_nodes[node_id] = [float(x), float(y)]
-            if len(positions_from_nodes) == len(nodes_obj):
-                nodes_have_positions = True
-                pos = positions_from_nodes  # type: ignore[assignment]
-
-        if pos == "spring":
-            pos = nx.spring_layout(  # type: ignore[assignment]
-                G,
-                k=pos_scaling * (1 / np.sqrt(len(G.nodes))),
-                seed=1312,
-            )
-            ax.set_box_aspect(1)
-
-        if pos == "graphviz":
-            pos = nx.nx_agraph.graphviz_layout(G, prog="neato")  # type: ignore[assignment]
-            ax.set_box_aspect(1)
-
-        if plot_brain and not nodes_have_positions:
-            view = plot_brain
-
-            if view == "horizontal":
-                pos = {
-                    i: [center[0], center[1]]
-                    for i, center in self.get_centers().items()
-                }
-            elif view == "sagittal":
-                pos = {
-                    i: [center[1], center[2]]
-                    for i, center in self.get_centers().items()
-                }
-            elif view == "coronal":
-                pos = {
-                    i: [center[0], center[2]]
-                    for i, center in self.get_centers().items()
-                }
-
-            ax.set_aspect("equal")
-
-        # Helper for safe [0,1] normalization that handles empty/constant arrays
-        def _safe_norm(arr: Union[np.ndarray, JaxArray]) -> np.ndarray:
-            arr = np.asarray(arr, dtype=float)
-            if arr.size == 0:
-                return arr
-            vmin = float(np.min(arr))
-            vmax = float(np.max(arr))
-            if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
-                return np.zeros_like(arr)
-            return (arr - vmin) / (vmax - vmin)
-
-        # Materialize edge list once (include keys to distinguish parallel edges)
-        edges_list = list(G.edges(keys=True, data=True))  # (u, v, k, data)
-        edge_attr_vals = (
-            np.array(
-                [data.get(edge_color, 0.0) for _, _, _, data in edges_list], dtype=float
-            )
-            if edges_list
-            else np.array([])
+        # Resolve node positions
+        resolved_pos = _resolve_positions(
+            G, pos, network=self, plot_brain=plot_brain,
         )
 
-        norm_edge_attr = _safe_norm(edge_attr_vals)
-
-        # Choose edge colors: if all equal -> black, else colormap
-        if norm_edge_attr.size == 0:
-            edge_colors = []
-        elif np.all(norm_edge_attr == 0):
-            edge_colors = ["black"] * len(edges_list)
-        else:
-            edge_colors = edge_cmap(norm_edge_attr)
-
-        # Node strengths (incoming) - compute from graph edges for accuracy
-        node_list = list(G.nodes())
-        node_in_strength = np.zeros(len(node_list))
-        for i, node_id in enumerate(node_list):
-            in_edges = G.in_edges(node_id, data=True)
-            node_in_strength[i] = sum(abs(d.get("weight", 1.0)) for _, _, d in in_edges)
-        if log_in_strength:
-            node_in_strength = np.log1p(node_in_strength)
-        norm_node_in_strength = _safe_norm(node_in_strength)
-
-        if node_size == "in-strength":
-            node_sizes = 100 + norm_node_in_strength * node_size_scaling
-        else:
-            node_sizes = 100 * node_size_scaling
-
-        if node_colors == "in-strength":
-            node_coloring = norm_node_in_strength
-        elif node_colors == "node":
-            nodes_arr = np.array(node_list, dtype=float)
-            node_coloring = _safe_norm(nodes_arr)
-        else:
-            # constant color fallback
-            node_coloring = np.zeros(len(G.nodes)) if len(G.nodes) > 0 else np.array([])
-
-        node_colors = node_cmap(node_coloring)
-
-        # Branch based on format
         if format == "bsplot":
-            from bsplot.graph.edges import draw_custom_edges
-            from bsplot.graph.nodes import draw_custom_nodes
-
-            # Build label dict with neuron/synapse icons
-            label_dict = {}
-            node_colors_dict = {}
-            for i, node_id in enumerate(G.nodes()):
-                node_data = G.nodes[node_id]
-                label = node_data.get("label", None) or str(node_id)
-                label_dict[node_id] = label
-                node_colors_dict[node_id] = node_colors[i]
-
-            # Create a relabeled graph with string node IDs for bsplot compatibility
-            # bsplot expects string node IDs, not integers
-            G_str = nx.relabel_nodes(G, {n: str(n) for n in G.nodes()})
-            pos_str = {str(k): v for k, v in pos.items()}  # type: ignore[union-attr]
-            label_dict_str = {str(k): v for k, v in label_dict.items()}
-            node_colors_dict_str = {str(k): v for k, v in node_colors_dict.items()}
-
-            # Add 'type' attribute to edges if missing (bsplot requires it)
-            for u, v, k, d in G_str.edges(keys=True, data=True):
-                if "type" not in d:
-                    # Use edge label or weight as type for visualization
-                    d["type"] = d.get("label", f"w={d.get('weight', 1.0):.2f}")
-
-            # Draw edges with bsplot curved style
-            draw_custom_edges(
-                G_str,
-                pos_str,
-                ax=ax,
-                edge_labels=edge_labels,
-                edge_colors=edge_cmap.name if hasattr(edge_cmap, "name") else "viridis",
-                color_by="type",
-                edge_radius=0.1,
-                linewidth=1.5,
-                font_size=fontsize,
+            return plot_graph_bsplot(
+                G, ax=ax,
+                node_cmap=node_cmap, edge_cmap=edge_cmap,
+                node_color_by=node_colors, log_in_strength=log_in_strength,
+                pos=resolved_pos,
+                node_labels=node_labels, edge_labels=edge_labels,
+                fontsize=fontsize,
             )
 
-            # Draw nodes with bsplot text box style
-            draw_custom_nodes(
-                G_str,
-                pos_str,
-                labels=label_dict_str,
-                font_size=fontsize,
-                ax=ax,
-                node_colors=node_colors_dict_str,
-                alpha=0.9,
-            )
+        return plot_graph_networkx(
+            G, ax=ax,
+            node_cmap=node_cmap, edge_cmap=edge_cmap,
+            node_color_by=node_colors, node_size_by=node_size,
+            node_size_scaling=node_size_scaling,
+            log_in_strength=log_in_strength,
+            edge_color_by=edge_color,
+            pos=resolved_pos,
+            node_labels=node_labels, edge_labels=edge_labels,
+            fontsize=fontsize,
+            edge_kwargs=edge_kwargs, node_kwargs=node_kwargs,
+        )
 
-            ax.axis("off")
+    def plot_brain_surface(self, ax=None, **kwargs):
+        """Render the network on the cortical brain surface.
 
-        else:
-            # Standard networkx plotting
-            # Use explicit edgelist to keep color order aligned with edges_list
-            edgelist_draw = [(u, v, k) for (u, v, k, _) in edges_list]
-            nx.draw_networkx_edges(  # type: ignore[call-overload]
-                G,
-                pos,  # type: ignore[arg-type]
-                edgelist=edgelist_draw if edges_list else None,
-                edge_color=edge_colors,
-                edge_cmap=edge_cmap,
-                ax=ax,
-                **edge_kwargs,
-            )
-            nx.draw_networkx_nodes(  # type: ignore[call-overload]
-                G,
-                pos,  # type: ignore[arg-type]
-                node_size=node_sizes,  # Node size
-                node_color="white",  # No fill
-                edgecolors=node_colors,  # Outline color
-                linewidths=1,  # Outline width
-                ax=ax,
-                **node_kwargs,
-            )
-            if node_labels:
-                # Use node 'label' attribute if available, otherwise node id
-                label_dict = {}
-                for node_id in G.nodes():
-                    node_data = G.nodes[node_id]
-                    label = node_data.get("label", None)
-                    label_dict[node_id] = label if label else f"{node_id}"
-                nx.draw_networkx_labels(
-                    G,
-                    pos,  # type: ignore[arg-type]
-                    labels=label_dict,
-                    ax=ax,
-                    font_size=fontsize,
-                )
-            if edge_labels:
-                if edges_list:
-                    edge_labels_dict = {}
-                    for u, v, k, d in edges_list:
-                        val = d.get(edge_color, None)
-                        try:
-                            edge_labels_dict[(u, v, k)] = f"{float(val):.2f}"  # type: ignore[arg-type]
-                        except (TypeError, ValueError):
-                            edge_labels_dict[(u, v, k)] = str(val)
-                    nx.draw_networkx_edge_labels(
-                        G,
-                        pos,  # type: ignore[arg-type]
-                        edge_labels=edge_labels_dict,
-                        ax=ax,
-                        font_size=fontsize,
-                    )
-        if return_fig:
-            ax.axis('off')
-            assert fig is not None
-            plt.close()
-            return fig
+        Nodes are rendered as coloured spheres at their MNI coordinates
+        (from atlas metadata); edges as tubes.  Requires ``bsplot``.
 
-        # Build a ScalarMappable for colorbar; guard constant/empty cases
-        data = edge_attr_vals if edge_attr_vals.size > 0 else np.array([0.0])
-        vmin = float(np.min(data))
-        vmax = float(np.max(data))
-        if vmax <= vmin:
-            vmax = vmin + 1.0
-        norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-        mappable = cm.ScalarMappable(norm=norm, cmap=edge_cmap)
-        return mappable
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            If *None*, a new figure is created.
+        **kwargs
+            Forwarded to :func:`tvbo.plot.network.plot_graph_brain`.
+
+        Returns
+        -------
+        fig : Figure
+        ax : Axes
+        mappables : dict
+            ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).
+
+        See Also
+        --------
+        tvbo.plot.network.plot_graph_brain : Full parameter list
+        """
+        from tvbo.plot.network import plot_graph_brain
+
+        return plot_graph_brain(self, ax=ax, **kwargs)
 
     def plot_overview(
         self,
@@ -2467,12 +2277,18 @@ class Network(tvbo_datamodel.Network):
         lengths_kwargs: Optional[Dict[str, Any]] = None,
         graph_kwargs: Optional[Dict[str, Any]] = None,
         log_weights: bool = False,
-        plot_brain=False,
+        plot_brain: Optional[bool] = None,
+        brain_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Figure:
         """Create comprehensive visualization with graph and matrices.
 
         Produces a three-panel figure showing network graph, weights matrix,
         and lengths matrix with synchronized colorbars and formatting.
+
+        When ``bsplot`` is installed and the network has an atlas with MNI
+        coordinates, the first panel automatically uses a 3-D brain surface
+        rendering instead of the flat graph layout.  Set *plot_brain=False*
+        to force the flat layout.
 
         Parameters
         ----------
@@ -2484,11 +2300,19 @@ class Network(tvbo_datamodel.Network):
             Keyword arguments passed to `plot_graph`
         log_weights : bool, default=False
             Use logarithmic scale for weights
+        plot_brain : bool, optional
+            If *True*, render on brain surface (requires ``bsplot``).
+            If *False*, use flat graph layout.  If *None* (default),
+            auto-detect: use brain surface when ``bsplot`` is installed
+            and atlas coordinates are available.
+        brain_kwargs : dict, optional
+            Keyword arguments passed to `plot_brain_surface` when
+            the brain surface panel is used.
 
         Returns
         -------
         matplotlib.figure.Figure
-            Figure with three subplots (graph, weights, lengths)
+            Figure with three subplots (graph/brain, weights, lengths)
 
         Examples
         --------
@@ -2501,8 +2325,22 @@ class Network(tvbo_datamodel.Network):
         See Also
         --------
         plot_graph : Network graph visualization
+        plot_brain_surface : 3-D brain surface rendering
         plot_matrix : Side-by-side matrix visualization
         """
+
+        # Auto-detect brain surface capability
+        if plot_brain is None:
+            try:
+                import bsplot  # noqa: F401
+                centers = self.get_centers()
+                has_coords = any(
+                    not (c[0] == 0 and c[1] == 0 and c[2] == 0)
+                    for c in centers.values()
+                )
+                plot_brain = has_coords
+            except (ImportError, Exception):
+                plot_brain = False
 
         fig, axs = plt.subplots(ncols=3, layout="tight", figsize=(15, 5))
 
@@ -2513,11 +2351,34 @@ class Network(tvbo_datamodel.Network):
             lengths_kwargs = {}
         if graph_kwargs is None:
             graph_kwargs = {}
+        if brain_kwargs is None:
+            brain_kwargs = {}
 
-        if "edge_cmap" not in graph_kwargs:
-            graph_kwargs["edge_cmap"] = "magma"
+        if plot_brain:
+            brain_defaults = {
+                "view": "top",
+                "surface_alpha": 0.25,
+                "node_radius": 1.5,
+                "node_color": "auto",
+                "node_data_key": "strength",
+                "node_scale": {"strength": 2},
+                "edge_radius": 0.12,
+                "edge_color": "auto",
+                "edge_data_key": "weight",
+                "edge_cmap": "batlow",
+                "node_cmap": "batlow",
+                "edge_scale": {"weight": 6, "mode": "log"},
+            }
+            brain_defaults.update(brain_kwargs)
+            _, _, mappables = self.plot_brain_surface(
+                ax=axs[0], **brain_defaults
+            )
+            g = mappables.get("edges") or mappables.get("nodes")
+        else:
+            if "edge_cmap" not in graph_kwargs:
+                graph_kwargs["edge_cmap"] = "magma"
+            g = self.plot_graph(axs[0], **graph_kwargs)
 
-        g = self.plot_graph(axs[0], plot_brain=plot_brain, **graph_kwargs)
         axs[0].axis("off")
         w = self.plot_weights(axs[1], log=log_weights, **weights_kwargs)
         l = self.plot_lengths(axs[2], **lengths_kwargs)

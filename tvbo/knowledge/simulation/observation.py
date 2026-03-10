@@ -23,7 +23,7 @@ from tvbo.data.types import TimeSeries
 from tvbo.datamodel import tvbo_datamodel
 from tvbo.export.code import render_expression
 from tvbo.knowledge import ontology
-from tvbo.plot.network import draw_custom_arrows, draw_custom_edges, draw_custom_nodes
+from tvbo.plot.ontology import draw_custom_arrows, draw_custom_edges, draw_custom_nodes
 
 
 def expand_to_4d(array):

@@ -1,6 +1,6 @@
 ---
-title: "Defining Networks"
-description: "How to create, visualize, save, and load brain network connectivity"
+title: Defining Networks
+description: How to create, visualize, save, and load brain network connectivity
 jupyter: python3
 ---
 
@@ -86,7 +86,6 @@ edges:
 net_dir.plot_graph()
 ```
 
-
 ## 2. From Matrices
 
 For larger networks, pass NumPy weight and length matrices directly:
@@ -119,7 +118,6 @@ print(f"{net.number_of_nodes} nodes")
 print(f"Weights range: [{net.weights_matrix.min():.1f}, {net.weights_matrix.max():.1f}]")
 print(f"Mean length:   {net.lengths_matrix.mean():.0f} mm")
 ```
-
 
 ## 3. Saving and Loading
 
@@ -245,12 +243,6 @@ print(f"{sc.number_of_nodes} regions, atlas: {sc.atlas.name}")
 sc.plot_overview(log_weights=True)
 ```
 
-Inspect the weight distribution:
-
-```{python}
-sc.plot_matrix(log_weights=True)
-```
-
 ### BIDS-Compliant File Naming
 
 Network files in `database/networks/` follow the
@@ -288,7 +280,6 @@ W_norm = sc.weights_matrix
 print(f"After normalization: [{W_norm.min():.2f}, {W_norm.max():.2f}]")
 ```
 
-
 ## 6. Delays from Tract Lengths
 
 Transmission delays are computed from the lengths matrix and conduction
@@ -298,7 +289,6 @@ speed ($v$, default 3 mm/ms):
 delays = sc.compute_delays()
 print(f"Delay range: [{delays.min():.1f}, {delays.max():.1f}] ms")
 ```
-
 
 ## 7. Advanced: Multi-Layer Networks
 
@@ -310,165 +300,11 @@ and multi-scale simulations.
 
 Brain network simulations operate on a parcellated cortical surface:
 each node corresponds to a region of the cortical mesh, and edges
-represent white-matter tracts connecting them. TVBO provides the
-connectivity matrices and MNI coordinates; **bsplot** renders
-both the cortical surface and the network graph in 3D.
+represent white-matter tracts connecting them. When **bsplot** is
+installed, TVBO renders networks on the cortical surface using the
+MNI coordinates stored in the atlas metadata — no local FreeSurfer
+installation required.
 
-#### Load Network and Surface Geometry
-
-```{python}
-import matplotlib.pyplot as plt
-from nibabel.freesurfer.io import read_annot
-from bsplot.data.surface import get_surface_geometry
-from bsplot.graph import (
-    create_network,
-    get_centers_from_surface_parc,
-    plot_network_on_surface,
-)
-
-# Load the Desikan-Killiany structural connectome
-sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
-sc.normalize()
-W = sc.weights_matrix       # (87 × 87)
-region_labels = sc.atlas.region_labels  # sorted by lookupLabel
-print(f"{sc.number_of_nodes} regions, sample labels: {list(region_labels[:3])}")
-```
-
-#### Map Parcels to Surface Vertices
-
-The DK regions use FreeSurfer `ctx-lh-*` / `ctx-rh-*` naming.
-We load the `aparc` annotation on the fsaverage surface and map each
-parcellated region to its centroid vertex on the mesh:
-
-```{python}
-# Load fsaverage surface geometry
-vertices_lh, faces_lh = get_surface_geometry(
-    template="fsaverage", hemi="lh", density="164k"
-)
-vertices_rh, faces_rh = get_surface_geometry(
-    template="fsaverage", hemi="rh", density="164k"
-)
-
-# Load FreeSurfer aparc parcellation
-annot_dir = "/Applications/freesurfer/7.4.1/subjects/fsaverage/label"
-labels_lh, _, names_lh = read_annot(f"{annot_dir}/lh.aparc.annot")
-labels_rh, _, names_rh = read_annot(f"{annot_dir}/rh.aparc.annot")
-
-# Compute parcel centroids on the surface mesh
-centers_lh = get_centers_from_surface_parc(vertices_lh, labels_lh)
-centers_rh = get_centers_from_surface_parc(vertices_rh, labels_rh)
-```
-
-```{python}
-# Build lookup: aparc name → annotation label index
-name_to_idx = {
-    (n.decode() if isinstance(n, bytes) else str(n)): idx
-    for idx, n in enumerate(names_lh)
-}
-
-# Map tvbo region labels to surface parcel centers
-#   tvbo labels:  "ctx-lh-bankssts", "left-thalamus", ...
-#   aparc names:  "bankssts", "superiorfrontal", ...
-subcortical = {
-    "cerebellum-cortex", "thalamus", "caudate", "putamen",
-    "pallidum", "hippocampus", "amygdala", "accumbens-area",
-    "brain-stem",
-}
-
-centers_matched = {}
-cortical_idx = []
-
-for i, label in enumerate(region_labels):
-    parts = str(label).split("-", 2)           # "ctx-lh-bankssts" → ["ctx","lh","bankssts"]
-    if len(parts) == 3 and parts[0] == "ctx":
-        hemi, aparc_name = parts[1], parts[2]
-        if aparc_name in name_to_idx:
-            aparc_idx = name_to_idx[aparc_name]
-            src = centers_lh if hemi == "lh" else centers_rh
-            if aparc_idx in src:
-                centers_matched[i] = src[aparc_idx]
-                cortical_idx.append(i)
-
-print(f"Mapped {len(centers_matched)} cortical regions to surface centroids")
-```
-
-#### Plot Network on Brain Surface
-
-Render the structural connectome on the cortical surface.
-Node spheres sit at parcel centroids; tube edges show the
-strongest white-matter connections:
-
-```{python}
-# Extract cortical sub-matrix
-idx = np.array(cortical_idx)
-W_cortical = W[np.ix_(idx, idx)]
-
-# Relabel to sequential 0..N for create_network
-seq_centers = {j: centers_matched[i] for j, i in enumerate(idx)}
-seq_labels = list(range(len(idx)))
-
-# Build network graph (top 10% of connections)
-G = create_network(
-    seq_centers, W_cortical,
-    labels=seq_labels,
-    threshold_percentile=90,
-)
-
-# Annotate node strength
-for node in G.nodes():
-    G.nodes[node]["strength"] = sum(
-        d["weight"] for _, _, d in G.edges(node, data=True)
-    )
-
-print(f"Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-```
-
-```{python}
-#| fig-cap: "Desikan-Killiany structural connectome on fsaverage surface — left hemisphere, top view. Node size reflects connection strength; edge colour encodes tract weight."
-fig, ax = plt.subplots(figsize=(5, 5))
-
-plot_network_on_surface(
-    G, ax=ax,
-    template="fsaverage", density="164k",
-    hemi="lh", view="lateral",
-    surface_alpha=0.3,
-    node_radius=1.5,
-    node_color="auto",
-    node_data_key="strength",
-    node_cmap="YlOrRd",
-    node_scale={"strength": 2, "mode": "exp"},
-    edge_radius=0.15,
-    edge_cmap="magma",
-    edge_data_key="weight",
-    edge_scale={"weight": 8, "mode": "exp"},
-)
-ax.set_title("DK Connectome — LH lateral")
-ax.axis("off")
-plt.tight_layout()
-plt.show()
-```
-
-```{python}
-#| fig-cap: "Top-down view of both hemispheres."
-fig, ax = plt.subplots(figsize=(6, 5))
-
-plot_network_on_surface(
-    G, ax=ax,
-    template="fsaverage", density="164k",
-    hemi=("lh", "rh"), view="top",
-    surface_alpha=0.25,
-    node_radius=1.5,
-    node_color="crimson",
-    node_scale={"strength": 2},
-    edge_radius=0.12,
-    edge_color="steelblue",
-    edge_scale={"weight": 6, "mode": "log"},
-)
-ax.set_title("DK Connectome — top view")
-ax.axis("off")
-plt.tight_layout()
-plt.show()
-```
 
 #### Sparse Storage
 
@@ -476,9 +312,10 @@ For large surface meshes ($N > 500$, fill $< 30\%$) the companion
 HDF5 automatically selects CSR format:
 
 ```{python}
-net_surf = Network.from_matrix(W_cortical)
-fill = np.count_nonzero(W_cortical) / W_cortical.size
-print(f"Cortical sub-network: {net_surf.number_of_nodes} nodes, fill: {fill:.1%}")
+W = sc.weights_matrix
+net_surf = Network.from_matrix(W)
+fill = np.count_nonzero(W) / W.size
+print(f"Network: {net_surf.number_of_nodes} nodes, fill: {fill:.1%}")
 
 net_surf.save(tmpdir / "surface.yaml")
 
@@ -642,3 +479,4 @@ tractogram:                # Source tractography dataset
 normalization:             # Weight normalization equation
   rhs: "(W - W_min) / (W_max - W_min)"
 ```
+
