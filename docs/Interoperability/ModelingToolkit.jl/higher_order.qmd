@@ -15,7 +15,7 @@ $$
 
 ## The YAML Specification
 
-Mark a state variable with `equation_order: 2` to declare its equation as second-order. Provide the derivative initial condition separately with`derivative_initial_value: 2.0`:
+Mark a state variable with `equation_order: 2` to declare its equation as second-order. Provide the derivative initial condition separately with `derivative_initial_value: 2.0`:
 
 ```yaml
 state_variables:
