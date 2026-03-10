@@ -1,4 +1,4 @@
-label: DesikanKillianyranked (MghUscHcp32)
+label: DesikanKilliany ranked (MghUscHcp32)
 descriptor: SC
 number_of_nodes: 87
 data_file: tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5
@@ -15,7 +15,7 @@ edges:
   valid_diagonal: false
   non_negative: true
 bids:
-  bids_version: 1.10.0
+  bids_version: "1.10.0"
   dataset_type: derivative
   template: MNI152NLin2009cAsym
   cohort: MghUscHcp32
