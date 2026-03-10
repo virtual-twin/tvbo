@@ -491,10 +491,11 @@ network:
                   description: "Transmission delay"
 
     # Global parameters
-    global_coupling_strength:
-        name: "G"
-        value: 1.0
-        description: "Global coupling scaling (implicit in LRE/FFI)"
+    parameters:
+        G:
+            name: "G"
+            value: 1.0
+            description: "Global coupling scaling (implicit in LRE/FFI)"
 
 # ============================================================================
 # Integration

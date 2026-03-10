@@ -73,6 +73,12 @@ slots:
     derived_from:
     source:
         range: string
+    dataset_path:
+        range: string
+        description: >-
+            Dataset path for array-valued parameters. When set,
+            the parameter value is stored in the binary companion file
+            (HDF5 or Zarr) at this path. The value slot is omitted.
 
 enums:
     ImagingModality:
@@ -247,6 +253,15 @@ enums:
                 description: "Use the model's default initial values directly."
             from_branch:
                 description: "Start from a point on a previously computed branch."
+
+    SparseFormat:
+        permissible_values:
+            dense:
+                description: "Dense N×N array with gzip compression"
+            csr:
+                description: "Compressed Sparse Row (data, indices, indptr)"
+            coo:
+                description: "Coordinate list (data, row, col)"
 
 classes:
     Range:
@@ -445,12 +460,6 @@ classes:
         slots:
             - label
         attributes:
-            region_labels:
-                multivalued: true
-                range: string
-            center_coordinates:
-                multivalued: true
-                range: float
             data_source:
                 range: string
             atlas:
@@ -500,6 +509,17 @@ classes:
                 range: float
                 # implements:
                 #   - linkml:elements
+            format:
+                range: SparseFormat
+                description: "Storage format in binary companion (dense, csr, coo)"
+            shape:
+                multivalued: true
+                range: integer
+                description: "Matrix dimensions [N, M]"
+            dtype:
+                range: string
+                ifabsent: string(float32)
+                description: "Data type for matrix values"
         description: "Adjacency matrix of a network."
         slots:
             - label
@@ -517,6 +537,24 @@ classes:
                 # implements:
                 #   - linkml:elements
 
+    Provenance:
+        class_uri: prov:Entity
+        description: >-
+            W3C PROV-O aligned provenance. Reusable on any entity
+            (Network, TimeSeries, Dynamics, etc.).
+        slots:
+            - derived_from
+            - references
+        attributes:
+            date_created:
+                range: string
+                description: "ISO 8601 (prov:generatedAtTime)"
+            license:
+                range: string
+            generated_by:
+                range: string
+                description: "Software/agent identifier (prov:wasGeneratedBy)"
+
     Network:
         class_uri: tvbo:Network
         aliases:
@@ -527,6 +565,7 @@ classes:
         slots:
             - label
             - description
+            - parameters
         attributes:
             # New node/edge-based representation
             nodes:
@@ -564,24 +603,21 @@ classes:
                 description: "Brain parcellation/atlas reference"
                 inlined: true
             tractogram:
-                range: string
+                range: Tractogram
+                inlined: true
                 description: "Reference to tractography data"
             normalization:
                 range: Equation
                 description: "Normalization equation for connectivity weights"
                 inlined: true
 
-            # Shared global parameters
-            global_coupling_strength:
-                range: Parameter
-                description: "Global scaling factor for all coupling weights"
-                inlined: true
-            conduction_speed:
-                range: Parameter
-                description: "Conduction speed for computing delays from distances"
-                inlined: true
-
             # BIDS integration (BEP017)
+            data_file:
+                range: string
+                description: >-
+                    Path to companion data file. Supported extensions:
+                    .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix).
+                    Null if no companion data needed.
             descriptor:
                 range: string
                 description: >-
@@ -600,8 +636,25 @@ classes:
                 multivalued: true
                 description: "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
 
+            provenance:
+                range: Provenance
+                inlined: true
+                description: "W3C PROV-O aligned provenance"
+            parent_network:
+                range: string
+                description: >-
+                    Path/URI to parent (coarser) Network. When set,
+                    this network is a refinement where each node maps
+                    to exactly one parent node via node_mapping.
+            node_mapping:
+                range: string
+                description: >-
+                    HDF5 dataset path for node-to-parent mapping.
+                    Int32 array of shape (N,) where entry i is the
+                    parent node ID. Required when parent_network is set.
+
             distance_unit:
-                raNetwork:nge: string
+                range: string
                 description: "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
                 ifabsent: string(mm)
             time_unit:
@@ -710,7 +763,7 @@ classes:
 
     Edge:
         class_uri: tvbo:Edge
-        description: "A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance) are stored in the parameters slot with optional units."
+        description: "An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list."
         slots:
             - label
             - description
@@ -718,12 +771,30 @@ classes:
         attributes:
             source:
                 range: integer
-                required: true
-                description: "Source node ID"
+                required: false
+                description: "Source node ID (set for explicit edges, absent for template edges)"
             target:
                 range: integer
-                required: true
-                description: "Target node ID"
+                required: false
+                description: "Target node ID (set for explicit edges, absent for template edges)"
+            unit:
+                range: string
+                description: "Unit for matrix values (template edges only)"
+            format:
+                range: SparseFormat
+                description: "Storage format in HDF5 (template edges only)"
+            weighted:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "Matrix entries carry weights (not just 0/1)"
+            valid_diagonal:
+                range: boolean
+                ifabsent: boolean(false)
+                description: "Self-connections are meaningful"
+            non_negative:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "All values >= 0"
             source_var:
                 range: string
                 description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
@@ -1054,6 +1125,7 @@ classes:
             - description
             - equation
             - unit
+            - dataset_path
         attributes:
             comment:
                 range: string

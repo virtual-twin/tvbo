@@ -101,6 +101,7 @@ classes:
       - entities:
           range: ParcellationEntity
           multivalued: true
+          inlined: true
     slots:
       - label
       - dataLocation

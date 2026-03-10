@@ -17,6 +17,7 @@ tests/tvb_validation
 
 # Documentation
 docs/_build/
+docs/_site/
 docs/api/
 docs/auto_examples/
 docs/**/*.ipynb
@@ -24,6 +25,8 @@ docs/**/*.py
 docs/gen_modules/
 docs/_api/
 docs/apidocs/
+docs/**/.gen_stamp
+docs/**/.struct_stamp
 build
 .litellm_cache
 output

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-03T20:29:30
+# Generation date: 2026-03-09T19:37:48
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -531,8 +531,6 @@ class Parcellation(YAMLRoot):
 
     atlas: Union[dict, "BrainAtlas"] = None
     label: Optional[str] = None
-    region_labels: Optional[Union[str, list[str]]] = empty_list()
-    center_coordinates: Optional[Union[float, list[float]]] = empty_list()
     data_source: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -543,14 +541,6 @@ class Parcellation(YAMLRoot):
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
-
-        if not isinstance(self.region_labels, list):
-            self.region_labels = [self.region_labels] if self.region_labels is not None else []
-        self.region_labels = [v if isinstance(v, str) else str(v) for v in self.region_labels]
-
-        if not isinstance(self.center_coordinates, list):
-            self.center_coordinates = [self.center_coordinates] if self.center_coordinates is not None else []
-        self.center_coordinates = [v if isinstance(v, float) else float(v) for v in self.center_coordinates]
 
         if self.data_source is not None and not isinstance(self.data_source, str):
             self.data_source = str(self.data_source)
@@ -627,6 +617,9 @@ class Matrix(YAMLRoot):
     x: Optional[Union[dict, "BrainRegionSeries"]] = None
     y: Optional[Union[dict, "BrainRegionSeries"]] = None
     values: Optional[Union[float, list[float]]] = empty_list()
+    format: Optional[Union[str, "SparseFormat"]] = None
+    shape: Optional[Union[int, list[int]]] = empty_list()
+    dtype: Optional[str] = "float32"
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -647,6 +640,16 @@ class Matrix(YAMLRoot):
         if not isinstance(self.values, list):
             self.values = [self.values] if self.values is not None else []
         self.values = [v if isinstance(v, float) else float(v) for v in self.values]
+
+        if self.format is not None and not isinstance(self.format, SparseFormat):
+            self.format = SparseFormat(self.format)
+
+        if not isinstance(self.shape, list):
+            self.shape = [self.shape] if self.shape is not None else []
+        self.shape = [v if isinstance(v, int) else int(v) for v in self.shape]
+
+        if self.dtype is not None and not isinstance(self.dtype, str):
+            self.dtype = str(self.dtype)
 
         super().__post_init__(**kwargs)
 
@@ -674,6 +677,44 @@ class BrainRegionSeries(YAMLRoot):
 
 
 @dataclass(repr=False)
+class Provenance(YAMLRoot):
+    """
+    W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = PROV["Entity"]
+    class_class_curie: ClassVar[str] = "prov:Entity"
+    class_name: ClassVar[str] = "Provenance"
+    class_model_uri: ClassVar[URIRef] = TVBO.Provenance
+
+    derived_from: Optional[str] = None
+    references: Optional[Union[str, list[str]]] = empty_list()
+    date_created: Optional[str] = None
+    license: Optional[str] = None
+    generated_by: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.derived_from is not None and not isinstance(self.derived_from, str):
+            self.derived_from = str(self.derived_from)
+
+        if not isinstance(self.references, list):
+            self.references = [self.references] if self.references is not None else []
+        self.references = [v if isinstance(v, str) else str(v) for v in self.references]
+
+        if self.date_created is not None and not isinstance(self.date_created, str):
+            self.date_created = str(self.date_created)
+
+        if self.license is not None and not isinstance(self.license, str):
+            self.license = str(self.license)
+
+        if self.generated_by is not None and not isinstance(self.generated_by, str):
+            self.generated_by = str(self.generated_by)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class Network(YAMLRoot):
     """
     Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge
@@ -688,6 +729,7 @@ class Network(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
@@ -695,13 +737,16 @@ class Network(YAMLRoot):
     number_of_regions: Optional[int] = 1
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
-    tractogram: Optional[str] = None
+    tractogram: Optional[Union[dict, Tractogram]] = None
     normalization: Optional[Union[dict, Equation]] = None
-    global_coupling_strength: Optional[Union[dict, "Parameter"]] = None
-    conduction_speed: Optional[Union[dict, "Parameter"]] = None
+    data_file: Optional[str] = None
+    descriptor: Optional[str] = None
     bids_dir: Optional[str] = None
     structural_measures: Optional[Union[str, list[str]]] = empty_list()
     observational_measures: Optional[Union[str, list[str]]] = empty_list()
+    provenance: Optional[Union[dict, Provenance]] = None
+    parent_network: Optional[str] = None
+    node_mapping: Optional[str] = None
     distance_unit: Optional[str] = "mm"
     time_unit: Optional[str] = "ms"
     edge_matrix_files: Optional[Union[Union[str, FileName], list[Union[str, FileName]]]] = empty_list()
@@ -714,9 +759,13 @@ class Network(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
         self._normalize_inlined_as_list(slot_name="nodes", slot_type=Node, key_name="id", keyed=False)
 
-        self._normalize_inlined_as_list(slot_name="edges", slot_type=Edge, key_name="source", keyed=False)
+        if not isinstance(self.edges, list):
+            self.edges = [self.edges] if self.edges is not None else []
+        self.edges = [v if isinstance(v, Edge) else Edge(**as_dict(v)) for v in self.edges]
 
         self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
 
@@ -731,17 +780,17 @@ class Network(YAMLRoot):
         if self.parcellation is not None and not isinstance(self.parcellation, Parcellation):
             self.parcellation = Parcellation(**as_dict(self.parcellation))
 
-        if self.tractogram is not None and not isinstance(self.tractogram, str):
-            self.tractogram = str(self.tractogram)
+        if self.tractogram is not None and not isinstance(self.tractogram, Tractogram):
+            self.tractogram = Tractogram(**as_dict(self.tractogram))
 
         if self.normalization is not None and not isinstance(self.normalization, Equation):
             self.normalization = Equation(**as_dict(self.normalization))
 
-        if self.global_coupling_strength is not None and not isinstance(self.global_coupling_strength, Parameter):
-            self.global_coupling_strength = Parameter(**as_dict(self.global_coupling_strength))
+        if self.data_file is not None and not isinstance(self.data_file, str):
+            self.data_file = str(self.data_file)
 
-        if self.conduction_speed is not None and not isinstance(self.conduction_speed, Parameter):
-            self.conduction_speed = Parameter(**as_dict(self.conduction_speed))
+        if self.descriptor is not None and not isinstance(self.descriptor, str):
+            self.descriptor = str(self.descriptor)
 
         if self.bids_dir is not None and not isinstance(self.bids_dir, str):
             self.bids_dir = str(self.bids_dir)
@@ -753,6 +802,15 @@ class Network(YAMLRoot):
         if not isinstance(self.observational_measures, list):
             self.observational_measures = [self.observational_measures] if self.observational_measures is not None else []
         self.observational_measures = [v if isinstance(v, str) else str(v) for v in self.observational_measures]
+
+        if self.provenance is not None and not isinstance(self.provenance, Provenance):
+            self.provenance = Provenance(**as_dict(self.provenance))
+
+        if self.parent_network is not None and not isinstance(self.parent_network, str):
+            self.parent_network = str(self.parent_network)
+
+        if self.node_mapping is not None and not isinstance(self.node_mapping, str):
+            self.node_mapping = str(self.node_mapping)
 
         if self.distance_unit is not None and not isinstance(self.distance_unit, str):
             self.distance_unit = str(self.distance_unit)
@@ -934,8 +992,8 @@ class StateValue(YAMLRoot):
 @dataclass(repr=False)
 class Edge(YAMLRoot):
     """
-    A directed edge in a network with coupling and connectivity properties. Edge properties (weight, delay, distance)
-    are stored in the parameters slot with optional units.
+    An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no
+    source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -944,11 +1002,16 @@ class Edge(YAMLRoot):
     class_name: ClassVar[str] = "Edge"
     class_model_uri: ClassVar[URIRef] = TVBO.Edge
 
-    source: int = None
-    target: int = None
     label: Optional[str] = None
     description: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    source: Optional[int] = None
+    target: Optional[int] = None
+    unit: Optional[str] = None
+    format: Optional[Union[str, "SparseFormat"]] = None
+    weighted: Optional[Union[bool, Bool]] = True
+    valid_diagonal: Optional[Union[bool, Bool]] = False
+    non_negative: Optional[Union[bool, Bool]] = True
     source_var: Optional[str] = None
     target_var: Optional[str] = None
     coupling: Optional[Union[str, CouplingName]] = None
@@ -957,16 +1020,6 @@ class Edge(YAMLRoot):
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.source):
-            self.MissingRequiredField("source")
-        if not isinstance(self.source, int):
-            self.source = int(self.source)
-
-        if self._is_empty(self.target):
-            self.MissingRequiredField("target")
-        if not isinstance(self.target, int):
-            self.target = int(self.target)
-
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -974,6 +1027,27 @@ class Edge(YAMLRoot):
             self.description = str(self.description)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.source is not None and not isinstance(self.source, int):
+            self.source = int(self.source)
+
+        if self.target is not None and not isinstance(self.target, int):
+            self.target = int(self.target)
+
+        if self.unit is not None and not isinstance(self.unit, str):
+            self.unit = str(self.unit)
+
+        if self.format is not None and not isinstance(self.format, SparseFormat):
+            self.format = SparseFormat(self.format)
+
+        if self.weighted is not None and not isinstance(self.weighted, Bool):
+            self.weighted = Bool(self.weighted)
+
+        if self.valid_diagonal is not None and not isinstance(self.valid_diagonal, Bool):
+            self.valid_diagonal = Bool(self.valid_diagonal)
+
+        if self.non_negative is not None and not isinstance(self.non_negative, Bool):
+            self.non_negative = Bool(self.non_negative)
 
         if self.source_var is not None and not isinstance(self.source_var, str):
             self.source_var = str(self.source_var)
@@ -1399,6 +1473,7 @@ class Parameter(YAMLRoot):
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     unit: Optional[str] = None
+    dataset_path: Optional[str] = None
     comment: Optional[str] = None
     heterogeneous: Optional[Union[bool, Bool]] = None
     distribution: Optional[Union[dict, Distribution]] = None
@@ -1442,6 +1517,9 @@ class Parameter(YAMLRoot):
 
         if self.unit is not None and not isinstance(self.unit, str):
             self.unit = str(self.unit)
+
+        if self.dataset_path is not None and not isinstance(self.dataset_path, str):
+            self.dataset_path = str(self.dataset_path)
 
         if self.comment is not None and not isinstance(self.comment, str):
             self.comment = str(self.comment)
@@ -4096,7 +4174,7 @@ class ParcellationTerminology(YAMLRoot):
     dataLocation: Optional[str] = None
     ontologyIdentifier: Optional[Union[str, list[str]]] = empty_list()
     versionIdentifier: Optional[str] = None
-    entities: Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]] = empty_list()
+    entities: Optional[Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -4112,9 +4190,7 @@ class ParcellationTerminology(YAMLRoot):
         if self.versionIdentifier is not None and not isinstance(self.versionIdentifier, str):
             self.versionIdentifier = str(self.versionIdentifier)
 
-        if not isinstance(self.entities, list):
-            self.entities = [self.entities] if self.entities is not None else []
-        self.entities = [v if isinstance(v, ParcellationEntityName) else ParcellationEntityName(v) for v in self.entities]
+        self._normalize_inlined_as_dict(slot_name="entities", slot_type=ParcellationEntity, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -4899,6 +4975,22 @@ class InitialStateMethod(EnumDefinitionImpl):
         description="Strategy for obtaining the starting equilibrium or periodic orbit.",
     )
 
+class SparseFormat(EnumDefinitionImpl):
+
+    dense = PermissibleValue(
+        text="dense",
+        description="Dense N×N array with gzip compression")
+    csr = PermissibleValue(
+        text="csr",
+        description="Compressed Sparse Row (data, indices, indptr)")
+    coo = PermissibleValue(
+        text="coo",
+        description="Coordinate list (data, row, col)")
+
+    _defn = EnumDefinition(
+        name="SparseFormat",
+    )
+
 class SpecimenEnum(EnumDefinitionImpl):
     """
     A set of permissible types for specimens used in brain atlas creation.
@@ -4998,6 +5090,9 @@ slots.derived_from = Slot(uri=TVBO.derived_from, name="derived_from", curie=TVBO
 
 slots.source = Slot(uri=TVBO.source, name="source", curie=TVBO.curie('source'),
                    model_uri=TVBO.source, domain=None, range=Optional[str])
+
+slots.dataset_path = Slot(uri=TVBO.dataset_path, name="dataset_path", curie=TVBO.curie('dataset_path'),
+                   model_uri=TVBO.dataset_path, domain=None, range=Optional[str])
 
 slots.abbreviation = Slot(uri=ATOM.abbreviation, name="abbreviation", curie=ATOM.curie('abbreviation'),
                    model_uri=TVBO.abbreviation, domain=None, range=Optional[str])
@@ -5137,12 +5232,6 @@ slots.event__duration = Slot(uri=TVBO.duration, name="event__duration", curie=TV
 slots.temporalApplicableEquation__time_dependent = Slot(uri=TVBO.time_dependent, name="temporalApplicableEquation__time_dependent", curie=TVBO.curie('time_dependent'),
                    model_uri=TVBO.temporalApplicableEquation__time_dependent, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.parcellation__region_labels = Slot(uri=TVBO.region_labels, name="parcellation__region_labels", curie=TVBO.curie('region_labels'),
-                   model_uri=TVBO.parcellation__region_labels, domain=None, range=Optional[Union[str, list[str]]])
-
-slots.parcellation__center_coordinates = Slot(uri=TVBO.center_coordinates, name="parcellation__center_coordinates", curie=TVBO.curie('center_coordinates'),
-                   model_uri=TVBO.parcellation__center_coordinates, domain=None, range=Optional[Union[float, list[float]]])
-
 slots.parcellation__data_source = Slot(uri=TVBO.data_source, name="parcellation__data_source", curie=TVBO.curie('data_source'),
                    model_uri=TVBO.parcellation__data_source, domain=None, range=Optional[str])
 
@@ -5173,8 +5262,26 @@ slots.matrix__y = Slot(uri=TVBO.y, name="matrix__y", curie=TVBO.curie('y'),
 slots.matrix__values = Slot(uri=TVBO.values, name="matrix__values", curie=TVBO.curie('values'),
                    model_uri=TVBO.matrix__values, domain=None, range=Optional[Union[float, list[float]]])
 
+slots.matrix__format = Slot(uri=TVBO.format, name="matrix__format", curie=TVBO.curie('format'),
+                   model_uri=TVBO.matrix__format, domain=None, range=Optional[Union[str, "SparseFormat"]])
+
+slots.matrix__shape = Slot(uri=TVBO.shape, name="matrix__shape", curie=TVBO.curie('shape'),
+                   model_uri=TVBO.matrix__shape, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.matrix__dtype = Slot(uri=TVBO.dtype, name="matrix__dtype", curie=TVBO.curie('dtype'),
+                   model_uri=TVBO.matrix__dtype, domain=None, range=Optional[str])
+
 slots.brainRegionSeries__values = Slot(uri=TVBO.values, name="brainRegionSeries__values", curie=TVBO.curie('values'),
                    model_uri=TVBO.brainRegionSeries__values, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.provenance__date_created = Slot(uri=TVBO.date_created, name="provenance__date_created", curie=TVBO.curie('date_created'),
+                   model_uri=TVBO.provenance__date_created, domain=None, range=Optional[str])
+
+slots.provenance__license = Slot(uri=TVBO.license, name="provenance__license", curie=TVBO.curie('license'),
+                   model_uri=TVBO.provenance__license, domain=None, range=Optional[str])
+
+slots.provenance__generated_by = Slot(uri=TVBO.generated_by, name="provenance__generated_by", curie=TVBO.curie('generated_by'),
+                   model_uri=TVBO.provenance__generated_by, domain=None, range=Optional[str])
 
 slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.curie('nodes'),
                    model_uri=TVBO.network__nodes, domain=None, range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]])
@@ -5198,16 +5305,16 @@ slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcell
                    model_uri=TVBO.network__parcellation, domain=None, range=Optional[Union[dict, Parcellation]])
 
 slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
-                   model_uri=TVBO.network__tractogram, domain=None, range=Optional[str])
+                   model_uri=TVBO.network__tractogram, domain=None, range=Optional[Union[dict, Tractogram]])
 
 slots.network__normalization = Slot(uri=TVBO.normalization, name="network__normalization", curie=TVBO.curie('normalization'),
                    model_uri=TVBO.network__normalization, domain=None, range=Optional[Union[dict, Equation]])
 
-slots.network__global_coupling_strength = Slot(uri=TVBO.global_coupling_strength, name="network__global_coupling_strength", curie=TVBO.curie('global_coupling_strength'),
-                   model_uri=TVBO.network__global_coupling_strength, domain=None, range=Optional[Union[dict, Parameter]])
+slots.network__data_file = Slot(uri=TVBO.data_file, name="network__data_file", curie=TVBO.curie('data_file'),
+                   model_uri=TVBO.network__data_file, domain=None, range=Optional[str])
 
-slots.network__conduction_speed = Slot(uri=TVBO.conduction_speed, name="network__conduction_speed", curie=TVBO.curie('conduction_speed'),
-                   model_uri=TVBO.network__conduction_speed, domain=None, range=Optional[Union[dict, Parameter]])
+slots.network__descriptor = Slot(uri=TVBO.descriptor, name="network__descriptor", curie=TVBO.curie('descriptor'),
+                   model_uri=TVBO.network__descriptor, domain=None, range=Optional[str])
 
 slots.network__bids_dir = Slot(uri=TVBO.bids_dir, name="network__bids_dir", curie=TVBO.curie('bids_dir'),
                    model_uri=TVBO.network__bids_dir, domain=None, range=Optional[str])
@@ -5217,6 +5324,15 @@ slots.network__structural_measures = Slot(uri=TVBO.structural_measures, name="ne
 
 slots.network__observational_measures = Slot(uri=TVBO.observational_measures, name="network__observational_measures", curie=TVBO.curie('observational_measures'),
                    model_uri=TVBO.network__observational_measures, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.network__provenance = Slot(uri=TVBO.provenance, name="network__provenance", curie=TVBO.curie('provenance'),
+                   model_uri=TVBO.network__provenance, domain=None, range=Optional[Union[dict, Provenance]])
+
+slots.network__parent_network = Slot(uri=TVBO.parent_network, name="network__parent_network", curie=TVBO.curie('parent_network'),
+                   model_uri=TVBO.network__parent_network, domain=None, range=Optional[str])
+
+slots.network__node_mapping = Slot(uri=TVBO.node_mapping, name="network__node_mapping", curie=TVBO.curie('node_mapping'),
+                   model_uri=TVBO.network__node_mapping, domain=None, range=Optional[str])
 
 slots.network__distance_unit = Slot(uri=TVBO.distance_unit, name="network__distance_unit", curie=TVBO.curie('distance_unit'),
                    model_uri=TVBO.network__distance_unit, domain=None, range=Optional[str])
@@ -5270,10 +5386,25 @@ slots.node__events = Slot(uri=TVBO.events, name="node__events", curie=TVBO.curie
                    model_uri=TVBO.node__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
 slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie('source'),
-                   model_uri=TVBO.edge__source, domain=None, range=int)
+                   model_uri=TVBO.edge__source, domain=None, range=Optional[int])
 
 slots.edge__target = Slot(uri=TVBO.target, name="edge__target", curie=TVBO.curie('target'),
-                   model_uri=TVBO.edge__target, domain=None, range=int)
+                   model_uri=TVBO.edge__target, domain=None, range=Optional[int])
+
+slots.edge__unit = Slot(uri=TVBO.unit, name="edge__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.edge__unit, domain=None, range=Optional[str])
+
+slots.edge__format = Slot(uri=TVBO.format, name="edge__format", curie=TVBO.curie('format'),
+                   model_uri=TVBO.edge__format, domain=None, range=Optional[Union[str, "SparseFormat"]])
+
+slots.edge__weighted = Slot(uri=TVBO.weighted, name="edge__weighted", curie=TVBO.curie('weighted'),
+                   model_uri=TVBO.edge__weighted, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__valid_diagonal = Slot(uri=TVBO.valid_diagonal, name="edge__valid_diagonal", curie=TVBO.curie('valid_diagonal'),
+                   model_uri=TVBO.edge__valid_diagonal, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__non_negative = Slot(uri=TVBO.non_negative, name="edge__non_negative", curie=TVBO.curie('non_negative'),
+                   model_uri=TVBO.edge__non_negative, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.edge__source_var = Slot(uri=TVBO.source_var, name="edge__source_var", curie=TVBO.curie('source_var'),
                    model_uri=TVBO.edge__source_var, domain=None, range=Optional[str])
@@ -6368,7 +6499,7 @@ slots.parcellationEntity__color = Slot(uri=ATOM.color, name="parcellationEntity_
                    model_uri=TVBO.parcellationEntity__color, domain=None, range=Optional[str])
 
 slots.parcellationTerminology__entities = Slot(uri=ATOM.entities, name="parcellationTerminology__entities", curie=ATOM.curie('entities'),
-                   model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]])
+                   model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]])
 
 slots.dataset__dataset_id = Slot(uri=TVBO_DBS.dataset_id, name="dataset__dataset_id", curie=TVBO_DBS.curie('dataset_id'),
                    model_uri=TVBO.dataset__dataset_id, domain=None, range=Optional[str])

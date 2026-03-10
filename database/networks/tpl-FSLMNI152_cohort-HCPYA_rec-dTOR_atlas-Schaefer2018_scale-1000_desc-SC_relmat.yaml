@@ -1,0 +1,28 @@
+label: Schaefer1000 (dTOR)
+descriptor: SC
+number_of_nodes: 1000
+data_file: tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat.h5
+edges:
+- label: weights
+  format: csr
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: csr
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+bids:
+  bids_version: 1.10.0
+  dataset_type: derivative
+  template: FSLMNI152
+  cohort: HCPYA
+  reconstruction: dTOR
+  scale: '1000'
+parcellation:
+  atlas:
+    name: Schaefer2018
+tractogram:
+  name: dTOR

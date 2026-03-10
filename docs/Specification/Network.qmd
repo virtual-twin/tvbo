@@ -1,139 +1,95 @@
 ---
 title: "Defining Networks"
-description: "How to create networks with nodes, edges, and connectivity matrices"
+description: "How to create, visualize, save, and load brain network connectivity"
 jupyter: python3
 ---
 
-Networks define the connectivity structure between brain regions. TVBO supports
-human-readable YAML definitions using `Network.from_string()`.
+A `Network` describes the connectivity structure between brain regions:
+nodes (regions) connected by weighted edges (tracts). TVBO provides
+several ways to create networks — from inline YAML, from matrices,
+from files, or from the tvbo platform.
 
 ```{python}
 from tvbo import Network
-net = Network()
-net
 ```
 
-```{python}
-network_yaml="""\
-nodes:
-- id: 0
-  label: node_0
-- id: 1
-  label: node_1
-- id: 2
-  label: node_3
-edges:
-- source: 0
-  target: 1
-- source: 1
-  target: 2
-- source: 0
-  target: 2
-distance_unit: mm
-time_unit: ms"""
+## 1. From YAML Strings
 
-Network.from_string(network_yaml).plot_graph()
-```
-
-
-## 1. Simple Network (Undirected)
-
-By default, edges are **undirected** (symmetric) — connections go both ways.
+The simplest way to define a small network. Each node has an `id` and
+`label`; each edge connects a `source` to a `target` with optional
+parameters.
 
 ```{python}
-from tvbo import Network
-
 net = Network.from_string("""
-label: Simple Network
+label: Visual Pathway
 
 nodes:
-  - id: 0
-    label: Frontal
-    position: {x: -20, y: 40, z: 30}
-  - id: 1
-    label: Parietal
-    position: {x: 0, y: -30, z: 50}
-  - id: 2
-    label: Temporal
-    position: {x: 40, y: 10, z: -10}
+  - {id: 0, label: V1}
+  - {id: 1, label: V2}
+  - {id: 2, label: MT}
 
 edges:
   - source: 0
     target: 1
     parameters:
-      - {name: weight, value: 0.5}
-      - {name: distance, value: 50, unit: mm}
+      weight:
+        value: 0.7
+      distance:
+        value: 25
+        unit: mm
   - source: 1
     target: 2
     parameters:
-      - {name: weight, value: 0.8}
-      - {name: distance, value: 30, unit: mm}
+      weight:
+        value: 0.4
+      distance:
+        value: 40
+        unit: mm
   - source: 0
     target: 2
     parameters:
-      - {name: weight, value: 0.3}
-      - {name: distance, value: 80, unit: mm}
+      weight:
+        value: 0.2
+      distance:
+        value: 60
+        unit: mm
 """)
 
-net.plot_overview(plot_brain=True)
+net.plot_graph()
 ```
 
-Since edges are undirected by default, the graph has bidirectional connections:
-
-```{python}
-G = net.graph
-print(f"Edges: {G.number_of_edges()} (bidirectional)")
-for u, v, data in G.edges(data=True):
-    print(f"  {u} → {v}: weight={data.get('weight', 'N/A')}")
-```
-
-## 2. Directed Network (Asymmetric)
-
+Edges are **undirected** by default — the connection goes both ways.
 Set `directed: true` for one-way connections:
 
 ```{python}
 net_dir = Network.from_string("""
-label: Directed Network
+label: Feedforward Chain
 
 nodes:
-  - {id: 0, label: V1, position: {x: -30, y: -80, z: 0}}
-  - {id: 1, label: V2, position: {x: -20, y: -70, z: 10}}
-  - {id: 2, label: MT, position: {x: 40, y: -60, z: 5}}
+  - {id: 0, label: V1}
+  - {id: 1, label: V2}
+  - {id: 2, label: MT}
 
 edges:
   - source: 0
     target: 1
     directed: true
-    parameters: [{name: weight, value: 0.7}]
+    parameters:
+      weight: {value: 0.7}
   - source: 1
     target: 2
     directed: true
-    parameters: [{name: weight, value: 0.4}]
+    parameters:
+      weight: {value: 0.4}
 """)
 
-net_dir.plot_overview(plot_brain=True)
+net_dir.plot_graph()
 ```
 
-Mix directed and undirected in the same network:
 
-```{python}
-net_mixed = Network.from_string("""
-nodes:
-  - {id: 0, label: A}
-  - {id: 1, label: B}
-  - {id: 2, label: C}
+## 2. From Matrices
 
-edges:
-  - {source: 0, target: 1, directed: false, parameters: [{name: weight, value: 0.5}]}
-  - {source: 1, target: 2, directed: true, parameters: [{name: weight, value: 0.8}]}
-""")
-
-print(f"Mixed edges: {list(net_mixed.graph.edges())}")
-```
-
-## 3. Network from Matrix
-
-For large networks, use weight/length matrices:
+For larger networks, pass NumPy weight and length matrices directly:
 
 ```{python}
 import numpy as np
@@ -152,47 +108,537 @@ L = np.array([
     [0,  70, 40,  0],
 ])
 
-net_mat = Network.from_matrix(W, lengths=L, labels=["V1", "V2", "MT", "PFC"])
-print(f"Matrix: {net_mat.number_of_nodes} nodes, {net_mat.graph.number_of_edges()} edges")
+net = Network.from_matrix(W, lengths=L, labels=["V1", "V2", "MT", "PFC"])
+net.plot_overview()
+```
 
-net_mat.plot_overview()
+The weight and length matrices are accessible as properties:
+
+```{python}
+print(f"{net.number_of_nodes} nodes")
+print(f"Weights range: [{net.weights_matrix.min():.1f}, {net.weights_matrix.max():.1f}]")
+print(f"Mean length:   {net.lengths_matrix.mean():.0f} mm")
+```
+
+
+## 3. Saving and Loading
+
+Networks are stored as a YAML **sidecar** (metadata) paired with an
+HDF5 **companion** file (matrix data). This keeps metadata readable
+while storing large matrices efficiently.
+
+### Save
+
+```{python}
+import tempfile
+from pathlib import Path
+
+tmpdir = Path(tempfile.mkdtemp())
+
+net.save(tmpdir / "visual.yaml")
+print("Created files:")
+for f in sorted(tmpdir.iterdir()):
+    sz = f.stat().st_size
+    print(f"  {f.name:20s}  ({sz:,} bytes)")
+```
+
+The sidecar is plain YAML — human-readable and schema-valid:
+
+```{python}
+print((tmpdir / "visual.yaml").read_text())
+```
+
+### Load
+
+Loading is lazy: metadata is read immediately, but matrix data is only
+loaded from the HDF5 file on first access.
+
+```{python}
+loaded = Network.from_file(tmpdir / "visual.yaml")
+
+# Metadata — instant, no HDF5 I/O
+print(f"Nodes: {loaded.number_of_nodes}")
+
+# Arrays — loaded on first access
+print(f"Weights shape: {loaded.weights_matrix.shape}")
+np.testing.assert_allclose(loaded.weights_matrix, W)
+print("Roundtrip OK ✓")
+```
+
+## 4. Data Format
+
+The `save()` call produces two files:
+
+| File | Content | Format |
+|------|---------|--------|
+| YAML sidecar | Nodes, labels, schema fields | Human-readable text |
+| HDF5 companion | Weight/length matrices | Compressed binary |
+
+This **sidecar + companion** pattern keeps metadata inspectable while
+storing large matrices efficiently.
+
+### HDF5 Structure
+
+The companion file organizes matrices under an `edges/` hierarchy:
+
+```{python}
+import h5py
+
+with h5py.File(tmpdir / "visual.h5", "r") as f:
+    print(f"Root attributes:")
+    for k, v in f.attrs.items():
+        print(f"  {k}: {v}")
+    print()
+    def show(name, obj):
+        if isinstance(obj, h5py.Dataset):
+            print(f"  {name:40s}  shape={obj.shape}  dtype={obj.dtype}")
+        elif isinstance(obj, h5py.Group):
+            attrs = {k: str(v) for k, v in obj.attrs.items()}
+            if attrs:
+                print(f"  {name:40s}  {attrs}")
+    f.visititems(show)
+```
+
+Each edge group (`edges/weights`, `edges/lengths`) stores:
+
+- **`format`** attr — `"dense"`, `"csr"`, or `"coo"`
+- **`shape`** attr — matrix dimensions $[N, N]$
+- **`data`** dataset — matrix values (dense) or nonzero values (sparse)
+- For CSR: additional `indices` + `indptr` datasets
+- For COO: additional `row` + `col` datasets
+
+### Auto-Format Selection
+
+Storage format is chosen automatically from matrix properties:
+
+| Condition | Format | Rationale |
+|-----------|--------|----------|
+| $N < 500$ or fill $> 30\%$ | Dense + gzip | Compression beats sparse indexing |
+| $N \geq 500$ and fill $\leq 30\%$ | CSR | Sparse indexing wins at scale |
+
+### Supported Backends
+
+| Backend | Extension | Use case |
+|---------|-----------|----------|
+| **HDF5** | `.h5` | Default — best compression, random access |
+| **Zarr** | `.zarr/` | Cloud-native storage (S3, GCS) |
+| **CSV** | `.csv` | Legacy, single matrix only |
+
+```python
+net.save("out.yaml", binary_format="zarr")    # Zarr companion
+net.save("out.yaml", binary_format="csv")     # CSV, first matrix only
+net.save("out.yaml", sidecar_format="json")   # JSON sidecar + HDF5
+```
+
+
+## 5. Built-in Connectomes
+
+TVBO ships with normative connectomes from published tractography datasets.
+Load them by atlas name:
+
+```{python}
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+print(f"{sc.number_of_nodes} regions, atlas: {sc.atlas.name}")
 ```
 
 ```{python}
-print("Weights:\n", net_mat.weights_matrix)
+sc.plot_overview(log_weights=True)
 ```
 
-## Summary
+Inspect the weight distribution:
 
-| Method | Best For | Edge Default |
-|--------|----------|--------------|
-| `from_string()` | Small networks, readable specs | Undirected |
-| `directed: true` | Asymmetric connectivity | Directed |
-| `from_matrix()` | Large connectomes | Directed |
+```{python}
+sc.plot_matrix(log_weights=True)
+```
 
-### Node Properties
+### BIDS-Compliant File Naming
+
+Network files in `database/networks/` follow the
+[BEP017](https://bids.neuroimaging.io/bep017) naming convention:
+
+```
+tpl-<space>[_cohort-<source>]_rec-<pipeline>_atlas-<atlas>[_seg-<variant>][_scale-<N>]_desc-<modality>_relmat.<ext>
+```
+
+| Entity | Meaning | Example |
+|--------|---------|---------|
+| `tpl-` | Template/coordinate space | `MNI152NLin2009cAsym` |
+| `cohort-` | Population cohort | `HCPYA`, `MghUscHcp32`, `PPMI85` |
+| `rec-` | Reconstruction pipeline | `dTOR`, `MghUscHcp32` |
+| `atlas-` | Brain parcellation | `DesikanKilliany`, `Schaefer2018` |
+| `seg-` | Segmentation variant | `ranked`, `ordered`, `17Networks` |
+| `scale-` | Number of parcels | `1000` |
+| `desc-` | Descriptor | `SC` (structural connectivity) |
+| `_relmat` | BEP017 suffix | Relationship matrix |
+
+Access the BIDS filename programmatically:
+
+```{python}
+print(sc.bids_filename)
+```
+
+### Normalization
+
+Raw streamline counts vary over orders of magnitude. Apply min–max
+normalization to scale weights to [0, 1]:
+
+```{python}
+sc.normalize()
+W_norm = sc.weights_matrix
+print(f"After normalization: [{W_norm.min():.2f}, {W_norm.max():.2f}]")
+```
+
+
+## 6. Delays from Tract Lengths
+
+Transmission delays are computed from the lengths matrix and conduction
+speed ($v$, default 3 mm/ms):
+
+```{python}
+delays = sc.compute_delays()
+print(f"Delay range: [{delays.min():.1f}, {delays.max():.1f}] ms")
+```
+
+
+## 7. Advanced: Multi-Layer Networks
+
+The Network schema supports heterogeneous node dynamics, edge-level
+models, and variable routing — the building blocks for surface-based
+and multi-scale simulations.
+
+### Surface-Based Simulations
+
+Brain network simulations operate on a parcellated cortical surface:
+each node corresponds to a region of the cortical mesh, and edges
+represent white-matter tracts connecting them. TVBO provides the
+connectivity matrices and MNI coordinates; **bsplot** renders
+both the cortical surface and the network graph in 3D.
+
+#### Load Network and Surface Geometry
+
+```{python}
+import matplotlib.pyplot as plt
+from nibabel.freesurfer.io import read_annot
+from bsplot.data.surface import get_surface_geometry
+from bsplot.graph import (
+    create_network,
+    get_centers_from_surface_parc,
+    plot_network_on_surface,
+)
+
+# Load the Desikan-Killiany structural connectome
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.normalize()
+W = sc.weights_matrix       # (87 × 87)
+region_labels = sc.atlas.region_labels  # sorted by lookupLabel
+print(f"{sc.number_of_nodes} regions, sample labels: {list(region_labels[:3])}")
+```
+
+#### Map Parcels to Surface Vertices
+
+The DK regions use FreeSurfer `ctx-lh-*` / `ctx-rh-*` naming.
+We load the `aparc` annotation on the fsaverage surface and map each
+parcellated region to its centroid vertex on the mesh:
+
+```{python}
+# Load fsaverage surface geometry
+vertices_lh, faces_lh = get_surface_geometry(
+    template="fsaverage", hemi="lh", density="164k"
+)
+vertices_rh, faces_rh = get_surface_geometry(
+    template="fsaverage", hemi="rh", density="164k"
+)
+
+# Load FreeSurfer aparc parcellation
+annot_dir = "/Applications/freesurfer/7.4.1/subjects/fsaverage/label"
+labels_lh, _, names_lh = read_annot(f"{annot_dir}/lh.aparc.annot")
+labels_rh, _, names_rh = read_annot(f"{annot_dir}/rh.aparc.annot")
+
+# Compute parcel centroids on the surface mesh
+centers_lh = get_centers_from_surface_parc(vertices_lh, labels_lh)
+centers_rh = get_centers_from_surface_parc(vertices_rh, labels_rh)
+```
+
+```{python}
+# Build lookup: aparc name → annotation label index
+name_to_idx = {
+    (n.decode() if isinstance(n, bytes) else str(n)): idx
+    for idx, n in enumerate(names_lh)
+}
+
+# Map tvbo region labels to surface parcel centers
+#   tvbo labels:  "ctx-lh-bankssts", "left-thalamus", ...
+#   aparc names:  "bankssts", "superiorfrontal", ...
+subcortical = {
+    "cerebellum-cortex", "thalamus", "caudate", "putamen",
+    "pallidum", "hippocampus", "amygdala", "accumbens-area",
+    "brain-stem",
+}
+
+centers_matched = {}
+cortical_idx = []
+
+for i, label in enumerate(region_labels):
+    parts = str(label).split("-", 2)           # "ctx-lh-bankssts" → ["ctx","lh","bankssts"]
+    if len(parts) == 3 and parts[0] == "ctx":
+        hemi, aparc_name = parts[1], parts[2]
+        if aparc_name in name_to_idx:
+            aparc_idx = name_to_idx[aparc_name]
+            src = centers_lh if hemi == "lh" else centers_rh
+            if aparc_idx in src:
+                centers_matched[i] = src[aparc_idx]
+                cortical_idx.append(i)
+
+print(f"Mapped {len(centers_matched)} cortical regions to surface centroids")
+```
+
+#### Plot Network on Brain Surface
+
+Render the structural connectome on the cortical surface.
+Node spheres sit at parcel centroids; tube edges show the
+strongest white-matter connections:
+
+```{python}
+# Extract cortical sub-matrix
+idx = np.array(cortical_idx)
+W_cortical = W[np.ix_(idx, idx)]
+
+# Relabel to sequential 0..N for create_network
+seq_centers = {j: centers_matched[i] for j, i in enumerate(idx)}
+seq_labels = list(range(len(idx)))
+
+# Build network graph (top 10% of connections)
+G = create_network(
+    seq_centers, W_cortical,
+    labels=seq_labels,
+    threshold_percentile=90,
+)
+
+# Annotate node strength
+for node in G.nodes():
+    G.nodes[node]["strength"] = sum(
+        d["weight"] for _, _, d in G.edges(node, data=True)
+    )
+
+print(f"Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+```
+
+```{python}
+#| fig-cap: "Desikan-Killiany structural connectome on fsaverage surface — left hemisphere, top view. Node size reflects connection strength; edge colour encodes tract weight."
+fig, ax = plt.subplots(figsize=(5, 5))
+
+plot_network_on_surface(
+    G, ax=ax,
+    template="fsaverage", density="164k",
+    hemi="lh", view="lateral",
+    surface_alpha=0.3,
+    node_radius=1.5,
+    node_color="auto",
+    node_data_key="strength",
+    node_cmap="YlOrRd",
+    node_scale={"strength": 2, "mode": "exp"},
+    edge_radius=0.15,
+    edge_cmap="magma",
+    edge_data_key="weight",
+    edge_scale={"weight": 8, "mode": "exp"},
+)
+ax.set_title("DK Connectome — LH lateral")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+#| fig-cap: "Top-down view of both hemispheres."
+fig, ax = plt.subplots(figsize=(6, 5))
+
+plot_network_on_surface(
+    G, ax=ax,
+    template="fsaverage", density="164k",
+    hemi=("lh", "rh"), view="top",
+    surface_alpha=0.25,
+    node_radius=1.5,
+    node_color="crimson",
+    node_scale={"strength": 2},
+    edge_radius=0.12,
+    edge_color="steelblue",
+    edge_scale={"weight": 6, "mode": "log"},
+)
+ax.set_title("DK Connectome — top view")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+#### Sparse Storage
+
+For large surface meshes ($N > 500$, fill $< 30\%$) the companion
+HDF5 automatically selects CSR format:
+
+```{python}
+net_surf = Network.from_matrix(W_cortical)
+fill = np.count_nonzero(W_cortical) / W_cortical.size
+print(f"Cortical sub-network: {net_surf.number_of_nodes} nodes, fill: {fill:.1%}")
+
+net_surf.save(tmpdir / "surface.yaml")
+
+with h5py.File(tmpdir / "surface.h5", "r") as f:
+    fmt = f["edges/weights"].attrs["format"]
+    print(f"Storage format: {fmt}")
+    for ds in f["edges/weights"]:
+        d = f[f"edges/weights/{ds}"]
+        print(f"  {ds}: shape={d.shape}, dtype={d.dtype}")
+```
+
+### Multi-Scale Co-Simulation
+
+Multi-scale models run different dynamics at different nodes.
+`source_var` and `target_var` route specific state variables
+between scales:
 
 ```yaml
+label: Multi-Scale Cortex
+
 nodes:
-  - id: 0                    # Required: unique integer
-    label: Frontal           # Display name
-    region: frontal_lobe     # Anatomical region
-    dynamics: Oscillator     # Dynamics model reference
-    position:                # 3D coordinates
-      x: -20
-      y: 40
-      z: 30
+  - id: 0
+    label: Mean-field V1
+    dynamics:
+      name: ReducedWongWang
+  - id: 1
+    label: Detailed V2
+    dynamics:
+      name: JansenRit
+
+edges:
+  - source: 0
+    target: 1
+    directed: true
+    source_var: S        # ReducedWongWang output
+    target_var: c_in     # JansenRit coupling input
+    parameters:
+      weight:
+        value: 0.5
+    coupling:
+      name: linear
 ```
 
-### Edge Properties
+#### Schema Features for Multi-Scale
+
+| Feature | Schema Field | Purpose |
+|---------|-------------|--------|
+| Node-level models | `nodes[].dynamics` | Different ODE per region |
+| Variable routing | `source_var`, `target_var` | Connect specific state variables |
+| Edge dynamics | `edges[].dynamics` | Edges with own ODEs (e.g., STDP) |
+| Per-edge coupling | `edges[].coupling` | Different coupling per connection |
+
+#### Edge Dynamics
+
+Edges can carry their own state variables — useful for synaptic
+plasticity or adaptation:
 
 ```yaml
 edges:
-  - source: 0                # Source node ID
-    target: 1                # Target node ID
-    directed: false          # false=bidirectional (default), true=one-way
-    parameters:
-      - {name: weight, value: 0.5}
-      - {name: distance, value: 50, unit: mm}
-      - {name: delay, value: 10, unit: ms}
+  - source: 0
+    target: 1
+    dynamics:
+      name: STDP
+      state_variables:
+        w:
+          equation:
+            rhs: "A_plus * pre * post - A_minus * pre * post"
+      parameters:
+        A_plus:
+          value: 0.01
+        A_minus:
+          value: 0.012
+```
+
+Here the edge weight $w$ evolves according to its own ODE during
+simulation, implementing spike-timing-dependent plasticity.
+
+
+## Reference
+
+### Constructors
+
+| Method | Use case |
+|--------|----------|
+| `Network.from_string(yaml)` | Small networks, inline YAML |
+| `Network.from_matrix(W, L)` | Large connectomes from arrays |
+| `Network.from_file(path)` | Load saved network (lazy arrays) |
+| `Network.from_tvb_zip(path)` | Import TVB connectivity ZIP |
+| `Network(parcellation=...)` | Built-in normative connectome |
+
+### I/O
+
+| Method | Description |
+|--------|-------------|
+| `net.save(path)` | Save as YAML + HDF5 (or Zarr, CSV) |
+| `net.to_bep017(dir)` | Export to BIDS BEP017 format |
+| `net.bids_filename` | Generate BIDS-compliant filename |
+
+### Visualization
+
+| Method | Description |
+|--------|-------------|
+| `net.plot_graph()` | Force-directed graph layout |
+| `net.plot_matrix()` | Side-by-side weight/length heatmaps |
+| `net.plot_weights(ax)` | Weight matrix on a given axes |
+| `net.plot_lengths(ax)` | Length matrix on a given axes |
+| `net.plot_overview()` | Three-panel summary (graph + matrices) |
+
+### Properties
+
+| Property | Returns |
+|----------|---------|
+| `net.weights_matrix` | Weight array (N × N) |
+| `net.lengths_matrix` | Tract length array (N × N) |
+| `net.number_of_nodes` | Number of regions |
+| `net.node_labels` | List of region labels |
+| `net.graph` | NetworkX graph |
+
+### YAML Schema
+
+```yaml
+label: My Network          # Display name
+descriptor: SC             # "SC" (structural) or "FC" (functional)
+distance_unit: mm
+time_unit: ms
+data_file: my_network.h5   # HDF5 companion file
+
+bids:                      # BIDS BEP017 entities (optional)
+  bids_version: "1.10.0"
+  dataset_type: derivative
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  reconstruction: dTOR
+
+nodes:
+  - id: 0                  # Unique integer ID
+    label: V1              # Display label
+    position:              # MNI coordinates (optional)
+      x: -30
+      y: -80
+      z: 0
+
+edges:
+  - label: weights         # Template edge (matrix name)
+    format: dense           # "dense", "csr", or "coo"
+    weighted: true
+    valid_diagonal: false
+    non_negative: true
+  - label: lengths
+    unit: mm
+    format: dense
+
+parcellation:              # For built-in connectomes
+  atlas:
+    name: DesikanKilliany
+    coordinateSpace: MNI152NLin2009cAsym
+
+tractogram:                # Source tractography dataset
+  name: dTOR
+
+normalization:             # Weight normalization equation
+  rhs: "(W - W_min) / (W_max - W_min)"
 ```

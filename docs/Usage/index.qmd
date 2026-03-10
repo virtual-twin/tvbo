@@ -1,41 +1,356 @@
 ---
 title: "Usage Guide"
 sidebar: usage
+page-layout: full
+resources:
+  - thumbnails/**
 ---
 
 Learn how to use TVBO for defining, simulating, and analyzing brain network models.
 
-## Fundamentals
+```{=html}
+<style>
+.usage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.usage-filters button {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid #aaa;
+  border-radius: 2rem;
+  background: #f8f8f8;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+.usage-filters button.active,
+.usage-filters button:hover {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2.5rem;
+}
+.usage-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.usage-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.usage-card a { text-decoration: none; color: inherit; }
+.usage-card .card-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+.usage-card .card-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: #f8f8f8;
+  display: block;
+  margin: auto;
+}
+.usage-card .card-icon-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+.usage-card .card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  color: #fff;
+}
+.usage-card .card-body {
+  padding: 0.8rem 1rem;
+  flex: 1;
+}
+.usage-card .card-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+.usage-card .card-desc {
+  font-size: 0.82rem;
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+.usage-card .card-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.usage-card .cat-tag {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  background: #eef0f8;
+  color: #444;
+  cursor: pointer;
+}
+.usage-card.hidden { display: none; }
+.section-header {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2rem 0 0.8rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+</style>
 
-| Guide | Description |
-|-------|-------------|
-| [Defining Dynamical Systems](DefineDynamicalSystem.qmd) | Create neural mass models from YAML, Python, or the ontology |
-| [Defining Networks](DefineNetworks.qmd) | Build brain networks from matrices, YAML, connectome databases, or BIDS |
-| [Simulation Experiments](SimulationExperiments.qmd) | Combine components, run on multiple backends, inspect results |
+<div class="usage-filters" id="usage-filters">
+  <button class="active" data-cat="all">All</button>
+</div>
 
-## Observation & Analysis
+<div id="usage-gallery"></div>
 
-| Guide | Description |
-|-------|-------------|
-| [Observation Models](ObservationModels.qmd) | BOLD, FC, PSD — define what to measure from simulations |
-| [Parameter Exploration](ParameterExploration.qmd) | Systematic parameter sweeps and grid search |
-| [Model Fitting](ModelFitting.qmd) | Loss functions and gradient-based optimization |
-| [Algorithms](Algorithms.qmd) | Built-in tuning algorithms (FIC, EIB) |
-| [Bifurcation Analysis](BifurcationAnalysis.qmd) | Stability analysis and bifurcation diagrams |
+<script>
+const PAGES = [
+  // ── Fundamentals ──
+  { title: "Defining Dynamical Systems",
+    href: "DefineDynamicalSystem.html",
+    desc: "Create neural mass models from YAML, Python, or the ontology.",
+    cats: ["fundamentals","dynamics","YAML"],
+    img: "" },
+  { title: "Defining Networks",
+    href: "Network.html",
+    desc: "Build brain networks from matrices, YAML, connectome databases, or BIDS.",
+    cats: ["fundamentals","networks","connectome"],
+    img: "thumbnails/DefineNetworks.png" },
+  { title: "Simulation Experiments",
+    href: "SimulationExperiments.html",
+    desc: "Combine components, run on multiple backends, and inspect results.",
+    cats: ["fundamentals","simulation","backends"],
+    img: "" },
 
-## Simulation Features
+  // ── Code Generation ──
+  { title: "Code Generation & Export",
+    href: "CodeGeneration.html",
+    desc: "Generate standalone simulation code in JAX, Python, Julia, CUDA, and export to YAML/BIDS/OpenMINDS.",
+    cats: ["codegen","JAX","Julia","export"],
+    img: "" },
 
-| Guide | Description |
-|-------|-------------|
-| [Events & Stimulation](Events.qmd) | External stimuli, per-region input, time-varying parameters |
-| [Noise & Stochastic Integration](Noise.qmd) | Additive and multiplicative noise, Ornstein-Uhlenbeck processes |
-| [Code Generation & Export](CodeGeneration.qmd) | Generate standalone code, export to YAML/BIDS/NeuroML/OpenMINDS |
+  // ── Observation & Analysis ──
+  { title: "Observation Models",
+    href: "ObservationModels.html",
+    desc: "BOLD, FC, PSD — define what to measure from simulations.",
+    cats: ["analysis","observation","BOLD"],
+    img: "" },
+  { title: "Parameter Exploration",
+    href: "ParameterExploration.html",
+    desc: "Systematic parameter sweeps and grid search across state spaces.",
+    cats: ["analysis","optimization","sweeps"],
+    img: "" },
+  { title: "Model Fitting",
+    href: "ModelFitting.html",
+    desc: "Loss functions and gradient-based optimization for empirical data.",
+    cats: ["analysis","optimization","fitting"],
+    img: "" },
+  { title: "Algorithms",
+    href: "Algorithms.html",
+    desc: "Built-in tuning algorithms (FIC, EIB) for balanced network states.",
+    cats: ["analysis","algorithms","FIC"],
+    img: "" },
+  { title: "Bifurcation Analysis",
+    href: "BifurcationAnalysis.html",
+    desc: "Stability analysis and bifurcation diagrams for dynamical systems.",
+    cats: ["analysis","bifurcation","stability"],
+    img: "thumbnails/BifurcationAnalysis.png" },
 
-## Advanced
+  // ── Simulation Features ──
+  { title: "Events & Stimulation",
+    href: "Events.html",
+    desc: "External stimuli, per-region input, and time-varying parameters.",
+    cats: ["simulation","stimulation","events"],
+    img: "" },
+  { title: "Noise & Stochastic Integration",
+    href: "Noise.html",
+    desc: "Additive and multiplicative noise, Ornstein-Uhlenbeck processes.",
+    cats: ["simulation","noise","stochastic"],
+    img: "thumbnails/Noise.png" },
 
-| Guide | Description |
-|-------|-------------|
-| [PDE Simulation](PDESimulation.qmd) | Surface-based PDE solving with finite elements (scikit-fem) |
-| [Heterogeneous Node Dynamics](HeterogeneousNodes.qmd) | Different dynamics per network node |
-| [Heterogeneous Edge Dynamics](HeterogeneousEdges.qmd) | Synaptic plasticity and edge-level dynamics |
-| [Unit-Aware Computations](UnitValidation.qmd) | Physical units across simulation components |
+  // ── Advanced ──
+  { title: "PDE Simulation",
+    href: "PDESimulation.html",
+    desc: "Surface-based PDE solving with finite elements (scikit-fem).",
+    cats: ["advanced","PDE","surface"],
+    img: "" },
+  { title: "Heterogeneous Node Dynamics",
+    href: "HeterogeneousNodes.html",
+    desc: "Different dynamics at each network node for multi-population models.",
+    cats: ["advanced","heterogeneous","networks"],
+    img: "thumbnails/HeterogeneousNodes.png" },
+  { title: "Heterogeneous Edge Dynamics",
+    href: "HeterogeneousEdges.html",
+    desc: "Synaptic plasticity and edge-level dynamics on network connections.",
+    cats: ["advanced","heterogeneous","plasticity"],
+    img: "thumbnails/HeterogeneousEdges.png" },
+  { title: "Unit-Aware Computations",
+    href: "UnitValidation.html",
+    desc: "Physical units across simulation components for dimensionally consistent models.",
+    cats: ["advanced","units","validation"],
+    img: "" },
+];
+
+// Enrich PAGES with icon/gradient from shared registry
+PAGES.forEach(p => {
+  const slug = p.href.replace('.html', '');
+  const info = TVBO_ICONS[slug] || {};
+  p.icon = info.icon || "fa-solid fa-file";
+  p.gradient = info.gradient || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+});
+
+// ── build filter buttons ──
+const allCats = [...new Set(PAGES.flatMap(p => p.cats))].sort();
+const filterBar = document.getElementById('usage-filters');
+allCats.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.textContent = cat;
+  btn.dataset.cat = cat;
+  btn.addEventListener('click', () => setFilter(cat));
+  filterBar.appendChild(btn);
+});
+
+// ── build gallery sections ──
+const sections = [
+  { label: "Fundamentals",          cats: new Set(["fundamentals"]) },
+  { label: "Code Generation",       cats: new Set(["codegen"]) },
+  { label: "Observation & Analysis", cats: new Set(["analysis","observation","optimization","bifurcation","algorithms"]) },
+  { label: "Simulation Features",   cats: new Set(["simulation","stimulation","noise","stochastic","events"]) },
+  { label: "Advanced",              cats: new Set(["advanced"]) },
+];
+
+const gallery = document.getElementById('usage-gallery');
+
+sections.forEach(sec => {
+  const pages = PAGES.filter(p => p.cats.some(c => sec.cats.has(c)));
+  if (!pages.length) return;
+
+  const h = document.createElement('div');
+  h.className = 'section-header';
+  h.textContent = sec.label;
+  h.dataset.section = sec.label;
+  gallery.appendChild(h);
+
+  const grid = document.createElement('div');
+  grid.className = 'usage-grid';
+  grid.dataset.section = sec.label;
+  gallery.appendChild(grid);
+
+  pages.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'usage-card';
+    card.dataset.cats = JSON.stringify(p.cats);
+
+    // image or icon placeholder
+    const imgWrap = document.createElement('a');
+    imgWrap.href = p.href;
+
+    const visual = document.createElement('div');
+    visual.className = 'card-visual';
+
+    if (p.img) {
+      const img = document.createElement('img');
+      img.className = 'card-img';
+      img.loading = 'lazy';
+      img.alt = p.title;
+      img.src = p.img;
+      img.onerror = function () {
+        const ph = document.createElement('div');
+        ph.className = 'card-img-placeholder';
+        ph.style.background = p.gradient;
+        ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+        this.replaceWith(ph);
+      };
+      visual.appendChild(img);
+      // icon badge overlay on thumbnail
+      const badge = document.createElement('div');
+      badge.className = 'card-icon-badge';
+      badge.style.background = p.gradient;
+      badge.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+      visual.appendChild(badge);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'card-img-placeholder';
+      ph.style.background = p.gradient;
+      ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+      visual.appendChild(ph);
+    }
+
+    imgWrap.appendChild(visual);
+    card.appendChild(imgWrap);
+
+    // body
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    const title = document.createElement('a');
+    title.href = p.href;
+    title.innerHTML = `<div class="card-title">${p.title}</div>`;
+    body.appendChild(title);
+    const desc = document.createElement('div');
+    desc.className = 'card-desc';
+    desc.textContent = p.desc;
+    body.appendChild(desc);
+    const cats = document.createElement('div');
+    cats.className = 'card-cats';
+    p.cats.forEach(c => {
+      const tag = document.createElement('span');
+      tag.className = 'cat-tag';
+      tag.textContent = c;
+      tag.addEventListener('click', () => setFilter(c));
+      cats.appendChild(tag);
+    });
+    body.appendChild(cats);
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+});
+
+// ── filter logic ──
+let activeFilter = 'all';
+
+function setFilter(cat) {
+  activeFilter = cat;
+  document.querySelectorAll('.usage-filters button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  document.querySelectorAll('.usage-card').forEach(card => {
+    const cardCats = JSON.parse(card.dataset.cats);
+    card.classList.toggle('hidden', cat !== 'all' && !cardCats.includes(cat));
+  });
+  document.querySelectorAll('.section-header').forEach(h => {
+    const grid = h.nextElementSibling;
+    const visible = [...grid.querySelectorAll('.usage-card')].some(c => !c.classList.contains('hidden'));
+    h.style.display = visible ? '' : 'none';
+    grid.style.display = visible ? '' : 'none';
+  });
+}
+</script>
+```
