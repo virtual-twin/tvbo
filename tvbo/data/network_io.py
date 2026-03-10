@@ -94,9 +94,9 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
         edge_meta[e.get("name") or e.get("label")] = e
 
     store.attrs["tvbo_class"] = "tvbo:Network"
-    store.attrs["sidecar_file"] = meta.get("_sidecar_name", "")
-    store.attrs["schema_version"] = meta.get(
-        "schema_version", "tvb-datamodel/0.7.0")
+    store.attrs["sidecar_file"] = str(meta.get("_sidecar_name", ""))
+    store.attrs["schema_version"] = str(meta.get(
+        "schema_version", "tvb-datamodel/0.7.0"))
 
     for name, matrix in arrays.items():
         m = edge_meta.get(name, {})
@@ -105,8 +105,14 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
         grp.attrs["tvbo_class"] = "tvbo:Matrix"
         for attr in ("directed", "unit"):
             if attr in m:
-                grp.attrs[attr] = m[attr]
-        write_matrix(grp, matrix, fmt=fmt)
+                # Cast to native Python types — LinkML extended_str
+                # and extended_bool are not directly serializable by h5py.
+                val = m[attr]
+                if isinstance(val, bool):
+                    grp.attrs[attr] = val
+                else:
+                    grp.attrs[attr] = str(val)
+        write_matrix(grp, matrix, fmt=str(fmt))
 
         for pname, pmatrix in edge_params.get(name, {}).items():
             pg = grp.require_group("edge_parameters").create_group(pname)
