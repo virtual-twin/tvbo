@@ -76,9 +76,9 @@ def write_matrix(grp, matrix, fmt: str = "dense"):
     fmt : str
         Storage format: "dense", "csr", or "coo".
     """
-    grp.attrs["format"] = fmt
+    grp.attrs["format"] = str(fmt)
     grp.attrs["shape"] = list(np.asarray(matrix).shape)
-    _WRITERS[fmt](grp, matrix)
+    _WRITERS[str(fmt)](grp, matrix)
 
 
 # ── Read ──────────────────────────────────────────────────────────────

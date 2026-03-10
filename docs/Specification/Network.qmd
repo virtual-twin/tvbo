@@ -296,77 +296,641 @@ The Network schema supports heterogeneous node dynamics, edge-level
 models, and variable routing — the building blocks for surface-based
 and multi-scale simulations.
 
-### Surface-Based Simulations
+### 7.1. Surface-Based Simulations
 
-Brain network simulations operate on a parcellated cortical surface:
-each node corresponds to a region of the cortical mesh, and edges
-represent white-matter tracts connecting them. When **bsplot** is
-installed, TVBO renders networks on the cortical surface using the
-MNI coordinates stored in the atlas metadata — no local FreeSurfer
-installation required.
+In surface-based simulations **every vertex of the cortical mesh is
+a node**.  The simulation runs dynamics at vertex resolution — each
+of the ~10 000–160 000 vertices executes its own copy of the neural
+mass model.  Two coupling mechanisms operate at different spatial
+scales:
 
+| Mechanism | Scale | Matrix | Delays |
+|-----------|-------|--------|--------|
+| **Local connectivity** | vertex ↔ vertex | Sparse, based on geodesic distance kernel | instantaneous |
+| **Long-range SC** | region ↔ region | Dense, from tractography | proportional to tract length |
 
-#### Sparse Storage
+A **region mapping** (= `node_mapping`) array bridges the two
+scales: vertex states are averaged into region states for SC
+computation, and regional coupling is broadcast back to vertices.
 
-For large surface meshes ($N > 500$, fill $< 30\%$) the companion
-HDF5 automatically selects CSR format:
+#### TVBO representation
 
-```{python}
-W = sc.weights_matrix
-net_surf = Network.from_matrix(W)
-fill = np.count_nonzero(W) / W.size
-print(f"Network: {net_surf.number_of_nodes} nodes, fill: {fill:.1%}")
+TVBO uses **hierarchical network composition** to represent both
+scales in one consistent structure:
 
-net_surf.save(tmpdir / "surface.yaml")
+- **Parent Network** — region-level SC ($N_\text{regions}$ nodes,
+  weight and tract-length matrices).
+- **Child Network** — vertex-level local connectivity
+  ($N_\text{vertices}$ nodes, sparse LC matrix).
+    - `parent_network` → path to the parent SC file.
+    - `node_mapping` → HDF5 dataset `/nodes/parent_index`, the
+      $\text{int32}(N_\text{vertices},)$ region-mapping array.
 
-with h5py.File(tmpdir / "surface.h5", "r") as f:
-    fmt = f["edges/weights"].attrs["format"]
-    print(f"Storage format: {fmt}")
-    for ds in f["edges/weights"]:
-        d = f[f"edges/weights/{ds}"]
-        print(f"  {ds}: shape={d.shape}, dtype={d.dtype}")
+```
+Parent Network (dk_sc.yaml + dk_sc.h5)
+├── 87 DK region nodes
+├── edges/weights/data    (87 × 87)   dense
+└── edges/lengths/data    (87 × 87)   dense
+
+Child Network (surface_rh.yaml + surface_rh.h5)
+├── parent_network: dk_sc.yaml
+├── 2 562 vertex nodes  (fsaverage 3k, RH)
+├── edges/weights/       CSR sparse  (2 562 × 2 562, fill ~10 %)
+│   ├── data      (nnz,)
+│   ├── indices   (nnz,)
+│   └── indptr    (2 563,)
+└── nodes/parent_index   int32 (2 562,)   ← region_mapping
 ```
 
-### Multi-Scale Co-Simulation
+#### Loading the surface and parcellation
 
-Multi-scale models run different dynamics at different nodes.
-`source_var` and `target_var` route specific state variables
-between scales:
+The `fsaverage` pial surface and the Desikan–Killiany parcellation
+labels are fetched from
+[templateflow](https://www.templateflow.org/).  The parcellation
+labels *are* the `region_mapping` — each integer assigns a vertex
+to a DK region:
+
+```{python}
+from templateflow import api as tflow
+import nibabel as nib
+from bsplot.data.surface import get_surface_geometry
+import numpy as np
+
+# --- Surface mesh (3k ≈ 2 562 vertices per hemisphere) ---
+vertices_rh, faces_rh = get_surface_geometry(
+    template="fsaverage", hemi="rh", density="3k", suffix="pial",
+)
+n_vertices = vertices_rh.shape[0]
+
+# --- Parcellation labels = region_mapping ---
+gii = nib.load(
+    tflow.get("fsaverage", hemi="R", density="3k",
+              atlas="Desikan2006", suffix="dseg", extension=".label.gii")
+)
+region_mapping = gii.darrays[0].data.astype(np.int32)
+label_names = gii.labeltable.get_labels_as_dict()
+n_regions = len([k for k in label_names if k != 0])
+
+print(f"Surface: {n_vertices:,} vertices (nodes)")
+print(f"Parcellation: {n_regions} cortical regions")
+print(f"region_mapping: int32({n_vertices},) — maps every vertex to its DK region")
+print(f"  e.g. vertex 0 → region {region_mapping[0]} ({label_names[region_mapping[0]]})")
+```
+
+#### Building the local connectivity
+
+Local connectivity encodes lateral cortical coupling — a sparse
+kernel based on geodesic distance along the surface mesh (typically
+Gaussian with $\sigma \approx 10\,$mm, truncated at 30–40 mm).
+Here we approximate with Euclidean distance for demonstration:
+
+```{python}
+from scipy.spatial import cKDTree
+from scipy.sparse import coo_matrix
+
+cutoff_mm = 30.0   # only connect vertices within 30 mm
+sigma_mm = 10.0    # Gaussian kernel width
+
+tree = cKDTree(vertices_rh)
+pairs = np.array(list(tree.query_pairs(r=cutoff_mm)))  # (n_pairs, 2)
+dists = np.linalg.norm(
+    vertices_rh[pairs[:, 0]] - vertices_rh[pairs[:, 1]], axis=1,
+)
+weights = np.exp(-dists**2 / (2 * sigma_mm**2))
+
+# Build symmetric sparse matrix (COO → CSR)
+rows = np.concatenate([pairs[:, 0], pairs[:, 1]])
+cols = np.concatenate([pairs[:, 1], pairs[:, 0]])
+data = np.concatenate([weights, weights])
+LC = coo_matrix((data, (rows, cols)), shape=(n_vertices, n_vertices)).tocsr()
+
+fill = LC.nnz / n_vertices**2
+print(f"Local connectivity: {n_vertices} × {n_vertices}, "
+      f"nnz = {LC.nnz:,}, fill = {fill:.1%}")
+print(f"Storage: {(LC.nnz * 12 + (n_vertices + 1) * 4) / 1024:.0f} KB (CSR)")
+```
+
+#### Creating the hierarchical Network
+
+The region-level SC is the **parent**.  The vertex-level LC is the
+**child**, linked via `parent_network` and `node_mapping`:
+
+```{python}
+import h5py
+
+# --- Parent: region-level SC ---
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+
+# --- Child: vertex-level local connectivity ---
+surface_net = Network.from_matrix(LC.toarray())
+surface_net.label = "fsaverage 3k Surface Network (RH)"
+surface_net.parent_network = "dk_sc.yaml"
+surface_net.node_mapping = "/nodes/parent_index"
+
+# Save both Networks
+sc.save(tmpdir / "dk_sc.yaml")
+surface_net.save(tmpdir / "surface_rh.yaml")
+
+# Write the region_mapping into the child HDF5
+with h5py.File(tmpdir / "surface_rh.h5", "a") as hf:
+    if "nodes" not in hf:
+        hf.create_group("nodes")
+    hf["nodes"].create_dataset("parent_index", data=region_mapping, dtype="int32")
+
+print("Parent SC:")
+print(f"  {sc.number_of_nodes} region nodes")
+print(f"Child surface Network:")
+print(f"  {surface_net.number_of_nodes} vertex nodes")
+print(f"  parent_network: {surface_net.parent_network}")
+print(f"  node_mapping:   {surface_net.node_mapping}")
+```
+
+#### HDF5 companion structure
+
+The parent stores dense SC matrices; the child stores the sparse
+LC matrix and the `parent_index` region-mapping array:
+
+```{python}
+for name in ["dk_sc.h5", "surface_rh.h5"]:
+    path = tmpdir / name
+    print(f"\n--- {name} ({path.stat().st_size / 1024:.0f} KB) ---")
+    with h5py.File(path, "r") as hf:
+        def _show(dset_name, obj):
+            if isinstance(obj, h5py.Dataset):
+                print(f"  {dset_name:40s}  {obj.shape}  {obj.dtype}")
+            elif isinstance(obj, h5py.Group):
+                for k, v in obj.attrs.items():
+                    print(f"  {dset_name:40s}  [{k}={v}]")
+        hf.visititems(_show)
+```
+
+#### Visualizing the two-scale structure
+
+The parcellation colours show which vertices belong to each region
+(= one row/column of the parent SC matrix).  The network overlay
+shows the long-range structural connections between regions:
+
+```{python}
+import matplotlib.pyplot as plt
+from bsplot.surface import plot_surf
+from bsplot.graph import (
+    get_centers_from_surface_parc, create_network,
+    create_node_mesh, create_edge_mesh,
+)
+
+# --- Use 10k surface for sharper rendering ---
+verts_10k, _ = get_surface_geometry(
+    template="fsaverage", hemi="rh", density="10k", suffix="pial",
+)
+labels_10k = nib.load(
+    tflow.get("fsaverage", hemi="R", density="10k",
+              atlas="Desikan2006", suffix="dseg", extension=".label.gii")
+).darrays[0].data
+
+# Region centroids on the surface (for node placement)
+centers = get_centers_from_surface_parc(verts_10k, labels_10k)
+
+# Build a NetworkX graph from the SC matrix (RH cortical regions only)
+sc.normalize()
+W = sc.weights_matrix
+rh_ids = sorted(k for k in centers.keys() if k != 0)
+n_rh = len(rh_ids)
+rh_centers = {i: centers[rh_ids[i]] for i in range(n_rh)}
+W_rh = np.zeros((n_rh, n_rh))
+for i, ri in enumerate(rh_ids):
+    for j, rj in enumerate(rh_ids):
+        if ri < W.shape[0] and rj < W.shape[0]:
+            W_rh[i, j] = W[ri, rj]
+
+G = create_network(rh_centers, W_rh, threshold_percentile=90)
+
+# Assign each node its DK region label (for colour matching)
+for i, rid in enumerate(rh_ids):
+    if i in G:
+        G.nodes[i]["region_id"] = float(rid)
+
+# Node mesh coloured by region ID (same colormap as the surface)
+cmap = plt.cm.tab20
+max_label = float(max(rh_ids))
+node_mesh, node_overlay = create_node_mesh(
+    G, radius=1.8, resolution=16, data_key="region_id",
+)
+edge_mesh = create_edge_mesh(G, radius=0.08, resolution=8)
+
+# --- Plot: parcellated surface + colour-matched SC network ---
+fig, ax = plt.subplots(figsize=(5, 5))
+plot_surf(
+    "fsaverage",
+    hemi="rh",
+    view="lateral",
+    ax=ax,
+    surface_density="10k",
+    surface_suffix="pial",
+    alpha=0.3,
+    overlay=labels_10k.astype(float),
+    cmap="tab20",
+    parcellated=True,
+    additional_surfaces=[node_mesh, edge_mesh],
+    additional_overlays=[node_overlay, None],
+    additional_cmaps=["tab20", None],
+    additional_vmins=[0.0, None],
+    additional_vmaxs=[max_label, None],
+    additional_colors=[None, "steelblue"],
+    additional_alphas=[1.0, 0.6],
+)
+ax.set_title("Surface simulation: parcellation + SC network", fontsize=10)
+ax.axis("off")
+plt.show()
+```
+
+Each coloured surface patch is the territory of one region node.
+All vertices within a patch share the same long-range SC input
+(broadcast via `region_mapping`), while local connectivity couples
+each vertex to its cortical neighbours.
+
+### 7.2 Multi-Scale Co-Simulation
+
+Multi-scale brain simulations couple a macroscale mean-field network
+with a microscale spiking subnetwork. A selected region node acts
+as a **proxy** — its mean-field dynamics are replaced by the
+aggregate activity of a detailed spiking population. The remaining
+network stays mean-field, exchanging firing rates and coupling
+currents with the spiking subnetwork through interface edges.
+
+TVBO represents this in a **single YAML + HDF5 file pair** using
+hierarchical network composition: macroscale (mean-field) and
+microscale (spiking) nodes coexist in one network, linked by
+`node_mapping`. The proxy node's state is driven by the
+aggregate output of its child subnetwork.
+
+#### Architecture
+
+The proxy pattern used here is compatible with tvb-multiscale's
+co-simulation architecture, where:
+
+1. **Proxy nodes** in the mean-field network are not simulated
+   locally — their state is replaced by spiking network output
+2. **Input proxies** (TVB → spiking) inject mean-field activity
+   as stimulation into the spiking population
+3. **Output proxies** (spiking → TVB) record aggregate spiking
+   activity and transform it back to mean-field state variables
+4. **Transformers** handle scale translation (e.g., spike trains
+   → instantaneous firing rate → synaptic gating variable $S$)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  multiscale_cortex.yaml + .h5                        │
+│                                                      │
+│   Node 0 (V1)  ─────────  Node 1 (V2, proxy)        │
+│   &rww                     &rww                      │
+│   ReducedWongWang          ↕ state replaced by       │
+│                            ↕ subnetwork aggregate    │
+│                            │                         │
+│            source_var: S ──┤── target_var: I          │
+│                            │                         │
+│              ┌─────────────┴─────────────┐           │
+│              │  Spiking subnetwork        │           │
+│              │  node_mapping: all → 1     │           │
+│              │                            │           │
+│              │  E₁─E₂─E₃─...─E₈  (&izh) │           │
+│              │       I₁─I₂        (&izh) │           │
+│              │  10×10 matrix in HDF5      │           │
+│              └────────────────────────────┘           │
+└─────────────────────────────────────────────────────┘
+```
+
+#### Network Definition
+
+The entire multi-scale setup lives in a single YAML file. YAML
+anchors (`&`) and aliases (`*`) eliminate redundancy — dynamics and
+coupling are defined once and referenced everywhere:
+
+- Node 0 is a regular mean-field region (ReducedWongWang)
+- Node 1 is a **proxy** — during co-simulation its mean-field
+  state is replaced by the aggregate output of the child
+  subnetwork (10 Izhikevich spiking neurons)
+- `parent_network` on the child points back to this file;
+  `node_mapping` maps all 10 spiking neurons to parent node 1
 
 ```yaml
+# multiscale_cortex.yaml — hybrid mean-field / spiking network
 label: Multi-Scale Cortex
 
+# ── Dynamics (defined once, referenced by anchor) ───────────
+dynamics:
+  ReducedWongWang: &rww
+    name: ReducedWongWang
+  Izhikevich: &izh
+    name: Izhikevich
+    state_variables:
+      v:
+        equation:
+          rhs: "0.04*v*v + 5*v + 140 - u + I"
+      u:
+        equation:
+          rhs: "a * (b*v - u)"
+    parameters:
+      a: {value: 0.02}
+      b: {value: 0.2}
+      c: {value: -65}
+      d: {value: 8}
+
+# ── Coupling (defined once, referenced by anchor) ──────────
+coupling:
+  linear: &linear
+    name: linear
+  excitatory: &exc
+    name: excitatory
+  inhibitory: &inh
+    name: inhibitory
+
+# ── Macroscale nodes ────────────────────────────────────────
 nodes:
-  - id: 0
-    label: Mean-field V1
-    dynamics:
-      name: ReducedWongWang
-  - id: 1
-    label: Detailed V2
-    dynamics:
-      name: JansenRit
+  # Mean-field regions
+  - {id: 0, label: V1, dynamics: *rww}
+  - {id: 1, label: V2 (proxy), dynamics: *rww}
+  # Spiking subnetwork (children of node 1)
+  - {id: 2,  label: E1, dynamics: *izh}
+  - {id: 3,  label: E2, dynamics: *izh}
+  - {id: 4,  label: E3, dynamics: *izh}
+  - {id: 5,  label: E4, dynamics: *izh}
+  - {id: 6,  label: E5, dynamics: *izh}
+  - {id: 7,  label: E6, dynamics: *izh}
+  - {id: 8,  label: E7, dynamics: *izh}
+  - {id: 9,  label: E8, dynamics: *izh}
+  - {id: 10, label: I1, dynamics: *izh,
+     state: [{name: v, value: -65}, {name: u, value: -14}]}
+  - {id: 11, label: I2, dynamics: *izh,
+     state: [{name: v, value: -65}, {name: u, value: -14}]}
+
+# ── Node mapping: spiking neuron → parent proxy node ───────
+# int32 array of length 12: [–1, –1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+#   –1 = top-level node (no parent)
+#    1 = child of node 1 (the proxy)
+node_mapping: /nodes/parent_index
+
+# ── Edges ───────────────────────────────────────────────────
+edges:
+  # ── Macroscale edges (mean-field ↔ proxy) ──
+  - source: 0
+    target: 1
+    directed: true
+    source_var: S            # synaptic gating output
+    target_var: c_pop        # population coupling input
+    parameters:
+      weight: {value: 0.5}
+    coupling: *linear
+  - source: 1
+    target: 0
+    directed: true
+    source_var: S
+    target_var: c_pop
+    parameters:
+      weight: {value: 0.3}
+    coupling: *linear
+
+  # ── Subnetwork template edge (10×10 local connectivity) ──
+  - label: weights
+    format: dense
+    weighted: true
+    directed: true
+    valid_diagonal: false
+    non_negative: true
+
+  # ── Explicit E↔I edges within subnetwork ──
+  - {source: 2, target: 10, directed: true,
+     parameters: {weight: {value: 0.5}}, coupling: *exc}
+  - {source: 10, target: 2, directed: true,
+     parameters: {weight: {value: -0.3}}, coupling: *inh}
+
+  # ── Interface edges (proxy ↔ subnetwork) ──
+  - source: 1                 # proxy node (mean-field)
+    target: 2                 # first excitatory neuron
+    directed: true
+    source_var: S              # mean-field gating → spiking current
+    target_var: I
+    parameters:
+      weight: {value: 1.0}
+      gain: {value: 0.1}      # transformer scaling: I = gain · S · N_E
+    coupling: *linear
+```
+
+#### Saving and Loading
+
+The only custom code is the random subnetwork connectivity.
+Everything else — YAML sidecar, HDF5 companion, matrix storage
+format — is handled automatically by `Network`:
+
+```{python}
+N_sub = 10   # spiking subnetwork size (8E + 2I)
+
+# Random sparse local connectivity (E→E, E→I, I→E)
+rng = np.random.default_rng(42)
+W_sub = np.zeros((N_sub, N_sub))
+# E→E: sparse random (p=0.3)
+for i in range(8):
+    for j in range(8):
+        if i != j and rng.random() < 0.3:
+            W_sub[i, j] = rng.uniform(0.1, 0.5)
+# E→I
+for i in range(8):
+    for j in range(8, 10):
+        if rng.random() < 0.5:
+            W_sub[i, j] = rng.uniform(0.2, 0.6)
+# I→E (inhibitory)
+for i in range(8, 10):
+    for j in range(8):
+        if rng.random() < 0.4:
+            W_sub[i, j] = rng.uniform(0.1, 0.4)
+
+print(f"Subnetwork: {N_sub}×{N_sub}, "
+      f"fill: {np.count_nonzero(W_sub) / W_sub.size:.0%}")
+```
+
+Create the network from the YAML definition and attach the matrix:
+
+```{python}
+ms_yaml = """\
+label: Multi-Scale Cortex
+
+dynamics:
+  ReducedWongWang: &rww
+    name: ReducedWongWang
+  Izhikevich: &izh
+    name: Izhikevich
+    state_variables:
+      v: {equation: {rhs: "0.04*v*v + 5*v + 140 - u + I"}}
+      u: {equation: {rhs: "a * (b*v - u)"}}
+    parameters: {a: {value: 0.02}, b: {value: 0.2}, c: {value: -65}, d: {value: 8}}
+
+coupling:
+  linear: &linear {name: linear}
+  excitatory: &exc {name: excitatory}
+  inhibitory: &inh {name: inhibitory}
+
+nodes:
+  - {id: 0, label: V1, dynamics: *rww}
+  - {id: 1, label: V2 (proxy), dynamics: *rww}
+  - {id: 2,  label: E1, dynamics: *izh}
+  - {id: 3,  label: E2, dynamics: *izh}
+  - {id: 4,  label: E3, dynamics: *izh}
+  - {id: 5,  label: E4, dynamics: *izh}
+  - {id: 6,  label: E5, dynamics: *izh}
+  - {id: 7,  label: E6, dynamics: *izh}
+  - {id: 8,  label: E7, dynamics: *izh}
+  - {id: 9,  label: E8, dynamics: *izh}
+  - {id: 10, label: I1, dynamics: *izh,
+     state: [{name: v, value: -65}, {name: u, value: -14}]}
+  - {id: 11, label: I2, dynamics: *izh,
+     state: [{name: v, value: -65}, {name: u, value: -14}]}
+
+node_mapping: /nodes/parent_index
 
 edges:
   - source: 0
     target: 1
     directed: true
-    source_var: S        # ReducedWongWang output
-    target_var: c_in     # JansenRit coupling input
-    parameters:
-      weight:
-        value: 0.5
-    coupling:
-      name: linear
+    source_var: S
+    target_var: c_pop
+    parameters: {weight: {value: 0.5}}
+    coupling: *linear
+  - source: 1
+    target: 0
+    directed: true
+    source_var: S
+    target_var: c_pop
+    parameters: {weight: {value: 0.3}}
+    coupling: *linear
+  - label: weights
+    format: dense
+    weighted: true
+    directed: true
+    valid_diagonal: false
+    non_negative: true
+  - {source: 2, target: 10, directed: true,
+     parameters: {weight: {value: 0.5}}, coupling: *exc}
+  - {source: 10, target: 2, directed: true,
+     parameters: {weight: {value: -0.3}}, coupling: *inh}
+  - source: 1
+    target: 2
+    directed: true
+    source_var: S
+    target_var: I
+    parameters: {weight: {value: 1.0}, gain: {value: 0.1}}
+    coupling: *linear
+"""
+
+net = Network.from_string(ms_yaml)
+print(f"Nodes:          {len(net.nodes)}")
+print(f"Template edges: {sum(1 for e in net.edges if not getattr(e, 'source', None))}")
+print(f"Explicit edges: {sum(1 for e in net.edges if getattr(e, 'source', None) is not None)}")
 ```
+
+Attach the subnetwork weight matrix and save — `Network.save()`
+writes the YAML sidecar and HDF5 companion automatically:
+
+```{python}
+# Attach matrix (matches template edge label: weights)
+net._cached_weights = W_sub
+
+# Save → creates .yaml sidecar + .h5 companion
+net.save(tmpdir / "multiscale_cortex.yaml")
+
+for f in sorted(tmpdir.glob("multiscale*")):
+    print(f"  {f.name:30s}  ({f.stat().st_size:,} bytes)")
+```
+
+Roundtrip — load the saved network and verify the matrix:
+
+```{python}
+loaded = Network.from_file(tmpdir / "multiscale_cortex.yaml")
+
+# Metadata — instant (no HDF5 I/O)
+print(f"Nodes: {len(loaded.nodes)}")
+print(f"Edges: {len(loaded.edges)}")
+print(f"Node mapping: {loaded.node_mapping}")
+
+# Matrix — lazy-loaded on first access
+np.testing.assert_allclose(loaded.weights_matrix, W_sub)
+print(f"Matrix shape: {loaded.weights_matrix.shape}")
+print(f"Roundtrip OK ✓")
+```
+
+Inspect the HDF5 companion structure:
+
+```{python}
+import h5py
+
+with h5py.File(tmpdir / "multiscale_cortex.h5", "r") as f:
+    def show(name, obj):
+        if isinstance(obj, h5py.Dataset):
+            print(f"  {name:40s}  shape={obj.shape}  dtype={obj.dtype}")
+        elif isinstance(obj, h5py.Group):
+            attrs = {k: str(v) for k, v in obj.attrs.items()}
+            if attrs:
+                print(f"  {name:40s}  {attrs}")
+    f.visititems(show)
+```
+
+The template edge `label: weights` tells `save()` to write the
+matrix at `edges/weights/data` in HDF5. On load, the same label
+routes the lazy reader back to the right dataset. No manual
+`h5py` code needed — the Network API handles the full
+sidecar + companion lifecycle.
+
+#### Interface Variables
+
+The interface edges between the proxy (node 1) and the subnetwork
+route specific state variables across scales. This is where the
+**transformer** logic lives — converting between mean-field and
+spiking representations:
+
+| Direction | Source Variable | Target Variable | Transformation |
+|-----------|---------------|-----------------|----------------|
+| TVB → spiking | `S` (synaptic gating) | `I` (input current) | $I = g \cdot S \cdot N_E$ |
+| Spiking → TVB | spike trains | `S`, `R` (gating, rate) | $\frac{dS}{dt} = -\frac{S}{\tau_s} + (1-S) R \gamma$ |
+
+The transformer converts spike trains to instantaneous firing
+rates (via kernel convolution or binning), then integrates
+the mean-field synaptic ODE to produce $S$ and $R$ values
+compatible with the parent network's state space.
 
 #### Schema Features for Multi-Scale
 
 | Feature | Schema Field | Purpose |
 |---------|-------------|--------|
 | Node-level models | `nodes[].dynamics` | Different ODE per region |
-| Variable routing | `source_var`, `target_var` | Connect specific state variables |
-| Edge dynamics | `edges[].dynamics` | Edges with own ODEs (e.g., STDP) |
+| Proxy identification | `node_mapping[i] >= 0` | Region replaced by spiking detail |
+| Hierarchical nesting | `node_mapping` | Maps child nodes → parent proxy node |
+| Variable routing | `source_var`, `target_var` | Connect specific state variables across scales |
 | Per-edge coupling | `edges[].coupling` | Different coupling per connection |
+| Per-node state | `nodes[].state` | Initial conditions per neuron |
+| YAML anchors | `&rww`, `*rww`, `&izh`, `*izh` | Define once, reuse everywhere |
+
+#### Framework Interoperability
+
+The single-file network representation maps naturally to
+multiple simulation backends:
+
+| Framework | Mean-Field Nodes | Spiking Subnetwork | Interface |
+|-----------|-----------------|-------------------|-----------|
+| **tvb-multiscale** | TVB `CoSimulator` with `proxy_inds=[1]` | NEST/ANNarchy `SpikingNetwork` | Proxy devices + transformers |
+| **JAX / tvb-optim** | Vectorized mean-field ODE | Vectorized Izhikevich ODE (10 neurons) | Differentiable rate↔spike transform |
+| **NeuroML** | `<population>` of rate neurons | `<population>` of `<izhikevichCell>` | `<continuousProjection>` for rate coupling |
+| **NetworkDynamics.jl** | `ODEVertex` per mean-field node | `ODEVertex` per spiking neuron | `StaticEdge` or `ODEEdge` with routing |
+
+Each backend adapter reads the same YAML + HDF5 pair and
+generates backend-specific code:
+
+- **tvb-multiscale**: `node_mapping` identifies proxy nodes,
+  `source_var`/`target_var` on interface edges configure VOI
+  mappings and transformer selection
+- **JAX**: generates a combined ODE system where the subnetwork
+  neurons are additional state dimensions, coupled via
+  differentiable transformers
+- **NeuroML**: exports `<population>` elements per dynamics
+  type with `<continuousProjection>` connections routing the
+  declared variables between populations
 
 #### Edge Dynamics
 
