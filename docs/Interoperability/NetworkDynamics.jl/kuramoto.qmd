@@ -26,8 +26,7 @@ Markdown(exp.generate_report())
 ## Generated Julia Code
 
 ```{python}
-from tvbo import SimulationExperiment
-exp = SimulationExperiment.from_file("yaml/kuramoto.yaml")
+# exp is already loaded in the 'Model Report' section above
 Code(exp.render_code("networkdynamics"), language='julia')
 ```
 
