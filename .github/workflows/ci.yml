@@ -74,7 +74,9 @@ jobs:
                   python-version: "3.12"
                   cache: "pip"
             - name: Configure git for private repos
-              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+              env:
+                  PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+              run: git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$PRIVATE_REPO_TOKEN"; }; f'
             - name: Install with all extras
               run: pip install -e ".[all]" pytest pytest-xdist
             - name: Run tests (no doc tests)
