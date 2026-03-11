@@ -117,6 +117,37 @@ def get_normative_connectome_data(
     return weights, lengths
 
 
+def _network_ref_string(net: "Network") -> str:
+    """Extract a serializable reference string from a Network object.
+
+    Resolution order:
+    1. ``_save_path`` — filename from the most recent ``save()`` call
+    2. ``data_file`` — companion filename (strip extension, add ``.yaml``)
+    3. ``label`` — human-readable label
+    4. Raise ``ValueError`` — can't derive a reference
+    """
+    # 1. Explicit save path (set by save())
+    try:
+        sp = object.__getattribute__(net, "_save_path")
+        if sp:
+            return str(sp)
+    except AttributeError:
+        pass
+    # 2. data_file companion (dk_sc.h5 → dk_sc.yaml)
+    df = getattr(net, "data_file", None)
+    if df:
+        return str(Path(df).with_suffix(".yaml").name)
+    # 3. Label
+    lbl = getattr(net, "label", None)
+    if lbl:
+        return str(lbl)
+    raise ValueError(
+        "Cannot derive a reference string for the parent Network. "
+        "Either save it first (net.save(...)), set its label, or pass "
+        "a string path instead."
+    )
+
+
 @register_pytree_node_class
 class Network(tvbo_datamodel.Network):
     def __init__(self, **kwargs: Any) -> None:
@@ -324,8 +355,23 @@ class Network(tvbo_datamodel.Network):
             "_arrays",
             "_edge_params",
             "_pytree_data",
+            "_node_mapping_data",
+            "_parent_network_obj",
+            "_save_path",
         }
     )
+
+    @property
+    def parent_network_obj(self) -> Optional["Network"]:
+        """The parent Network object, if assigned via object reference.
+
+        Returns ``None`` when ``parent_network`` was set as a plain
+        string path or was never set.
+        """
+        try:
+            return object.__getattribute__(self, "_parent_network_obj")
+        except AttributeError:
+            return None
 
     def _items(self):
         for k, v in super()._items():
@@ -409,8 +455,13 @@ class Network(tvbo_datamodel.Network):
         network = Network.from_matrix(W, lengths=L)
         ```
         """
-        weights = np.asarray(weights)
-        n_nodes = weights.shape[0]
+        from scipy import sparse
+
+        if sparse.issparse(weights):
+            n_nodes = weights.shape[0]
+        else:
+            weights = np.asarray(weights)
+            n_nodes = weights.shape[0]
 
         if labels is None:
             labels = [f"node_{i}" for i in range(n_nodes)]
@@ -427,9 +478,10 @@ class Network(tvbo_datamodel.Network):
             **kwargs,
         )
 
-        # Store matrices directly for efficient access (not in schema, runtime only)
-        instance._cached_weights = weights
-        instance._cached_lengths = lengths if lengths is not None else None
+        # Store matrices via set_matrix for unified storage
+        instance.set_matrix("weights", weights)
+        if lengths is not None:
+            instance.set_matrix("lengths", lengths)
         return instance
 
     @classmethod
@@ -882,6 +934,8 @@ class Network(tvbo_datamodel.Network):
         from tvbo.data.network_io import save_network
 
         save_network(self, path, binary_format, sidecar_format)
+        # Remember save path so it can be used as a reference string
+        object.__setattr__(self, "_save_path", str(Path(path).name))
 
     def to_bep017(self, output_dir: Union[str, Path]):
         """Export to BEP017-compatible per-measure files.
@@ -1027,6 +1081,12 @@ class Network(tvbo_datamodel.Network):
 
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
+        # Accept Network objects for parent_network
+        if name == "parent_network" and value is not None:
+            if isinstance(value, Network):
+                object.__setattr__(self, "_parent_network_obj", value)
+                value = _network_ref_string(value)
+
         super_setattr = super().__setattr__
 
         super_setattr(name, value)
@@ -1377,9 +1437,19 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
+        # Check _arrays (set by set_matrix / add_edges)
+        _arrs = self._get_arrays()
+        if "weights" in _arrs:
+            from scipy import sparse as _sp
+            W = _arrs["weights"]
+            if _sp.issparse(W):
+                W = W.toarray()
         # Check for cached matrix from from_matrix (performance optimization)
-        if hasattr(self, "_cached_weights") and self._cached_weights is not None:
+        elif hasattr(self, "_cached_weights") and self._cached_weights is not None:
             W = self._cached_weights
+            from scipy import sparse as _sp
+            if _sp.issparse(W):
+                W = W.toarray()
         elif hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
@@ -1461,6 +1531,13 @@ class Network(tvbo_datamodel.Network):
         # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
+
+        # Check _arrays (set by set_matrix / add_edges)
+        _arrs = self._get_arrays()
+        if "lengths" in _arrs:
+            from scipy import sparse as _sp
+            L = _arrs["lengths"]
+            return L.toarray() if _sp.issparse(L) else L
 
         # Check for cached matrix from from_matrix (performance optimization)
         if hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
@@ -1564,9 +1641,15 @@ class Network(tvbo_datamodel.Network):
                 G.add_node(i, label=f"node_{i}")
 
         # Step 2: Add edges (prefer explicit edges, fall back to matrix)
-        if self.edges:
+        # Filter out template edges (no source/target) — those represent
+        # matrix measures stored in the HDF5 companion, not graph edges.
+        explicit_edges = [
+            e for e in (self.edges or [])
+            if getattr(e, "source", None) is not None
+        ]
+        if explicit_edges:
             # Use explicit edges
-            for edge in self.edges:
+            for edge in explicit_edges:
                 edge_attrs = {
                     "directed": getattr(edge, "directed", True),
                     "source_var": edge.source_var,
@@ -2433,6 +2516,347 @@ class Network(tvbo_datamodel.Network):
         self.normalization = tvbo_datamodel.Equation(
             rhs="(W - W_min) / (W_max - W_min)"
         )
+
+    # ── Node mapping (hierarchical composition) ─────────────────────
+
+    def set_node_mapping(
+        self,
+        mapping,
+        parent_network=None,
+        dataset_path: str = "/nodes/parent_index",
+    ) -> None:
+        """Set the node-to-parent mapping array.
+
+        This stores the mapping data internally so that :func:`save`
+        writes it into the HDF5 companion automatically — no manual
+        ``h5py`` code required.
+
+        Parameters
+        ----------
+        mapping : array-like of int
+            Int32 array of shape ``(N,)`` where entry *i* is the parent
+            node index that node *i* maps to (e.g. a region mapping
+            that assigns each cortical vertex to a parcellation region).
+        parent_network : str or Network, optional
+            Path/URI of the parent Network YAML sidecar, **or** the
+            parent Network object itself.  When a Network is passed
+            its reference string is derived automatically (see
+            :func:`_network_ref_string`).
+        dataset_path : str
+            HDF5 dataset path written into ``self.node_mapping``
+            (default ``"/nodes/parent_index"``).
+
+        Examples
+        --------
+        >>> surface_net.set_node_mapping(region_mapping,
+        ...                             parent_network="dk_sc.yaml")
+        >>> # or pass the Network object directly:
+        >>> surface_net.set_node_mapping(region_mapping,
+        ...                             parent_network=sc)
+        >>> surface_net.save(tmpdir / "surface_rh.yaml")
+        """
+        data = np.asarray(mapping, dtype=np.int32)
+        object.__setattr__(self, "_node_mapping_data", data)
+        self.node_mapping = dataset_path
+        if parent_network is not None:
+            self.parent_network = parent_network  # __setattr__ handles Network→str
+
+    @property
+    def node_mapping_data(self):
+        """The node-to-parent mapping array, or ``None``.
+
+        Resolution order: in-memory (set via :meth:`set_node_mapping`)
+        → lazy load from HDF5 companion (if ``node_mapping`` is set).
+        """
+        # 1. In-memory (set by user or by load_network)
+        try:
+            data = object.__getattribute__(self, "_node_mapping_data")
+            if data is not None:
+                return data
+        except AttributeError:
+            pass
+
+        # 2. Lazy load from companion file via _store
+        store = getattr(self, "_store", None)
+        nm_path = getattr(self, "node_mapping", None)
+        if store is not None and nm_path:
+            # Convert "/nodes/parent_index" → "nodes/parent_index"
+            key = nm_path.lstrip("/")
+            try:
+                data = store.read_dataset(key)
+                object.__setattr__(self, "_node_mapping_data", data)
+                return data
+            except (KeyError, AttributeError):
+                pass
+
+        return None
+
+    # ── Generalized edge / matrix API ─────────────────────────────
+
+    def _get_arrays(self) -> dict:
+        """Access the internal ``_arrays`` dict, bypassing JsonObj."""
+        try:
+            d = object.__getattribute__(self, "_arrays")
+            if isinstance(d, dict):
+                return d
+        except AttributeError:
+            pass
+        d: dict = {}
+        object.__setattr__(self, "_arrays", d)
+        return d
+
+    def set_matrix(
+        self,
+        name: str,
+        data,
+    ) -> None:
+        """Set a named edge matrix.
+
+        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.),
+        or any array-like that can be converted. The matrix is stored
+        internally and a template edge is created/updated automatically
+        so that ``save()`` writes it to the HDF5 companion.
+
+        Parameters
+        ----------
+        name : str
+            Matrix name (e.g. ``"weights"``, ``"lengths"``,
+            ``"local_connectivity"``). Used as the HDF5 group name
+            under ``edges/``.
+        data : array-like or scipy.sparse matrix
+            The edge matrix to store.
+
+        Examples
+        --------
+        >>> net.set_matrix("weights", W_dense)
+        >>> net.set_matrix("local_connectivity", LC_sparse_csr)
+        """
+        from scipy import sparse
+
+        arrays = self._get_arrays()
+
+        if sparse.issparse(data):
+            arrays[name] = data
+        else:
+            arrays[name] = np.asarray(data)
+
+        # Backward compat: sync legacy caches
+        if name == "weights":
+            self._cached_weights = arrays[name]
+        elif name == "lengths":
+            self._cached_lengths = arrays[name]
+
+        self._ensure_template_edge(name)
+
+    def matrix(
+        self,
+        name: str,
+        format: Optional[str] = None,
+    ):
+        """Get a named edge matrix, optionally in a specific format.
+
+        Resolution order: ``_arrays`` (user-set) → ``_store`` (lazy file)
+        → ``_cached_*`` (legacy) → ``None``.
+
+        Parameters
+        ----------
+        name : str
+            Matrix name (e.g. ``"weights"``, ``"lengths"``).
+        format : str, optional
+            Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
+            If ``None``, returns the matrix in whatever format it is
+            currently stored in.
+
+        Returns
+        -------
+        np.ndarray or scipy.sparse matrix or None
+        """
+        from scipy import sparse
+        from scipy.sparse import csr_matrix, coo_matrix, lil_matrix
+
+        mat = None
+        # 1. User-set matrices (highest priority)
+        arrays = self._get_arrays()
+        if name in arrays:
+            mat = arrays[name]
+        # 2. Lazy store (from file)
+        elif hasattr(self, "_store") and self._store is not None and name in self._store:
+            mat = self._store[name]
+        # 3. Legacy caches
+        elif name == "weights" and hasattr(self, "_cached_weights") and self._cached_weights is not None:
+            mat = self._cached_weights
+        elif name == "lengths" and hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
+            mat = self._cached_lengths
+
+        if mat is None:
+            return None
+
+        if format is None:
+            return mat
+        elif format == "dense":
+            return mat.toarray() if sparse.issparse(mat) else np.asarray(mat)
+        elif format == "csr":
+            return csr_matrix(mat)
+        elif format == "coo":
+            return coo_matrix(mat)
+        elif format == "lil":
+            return lil_matrix(mat)
+        else:
+            raise ValueError(f"Unknown format: {format!r}")
+
+    def add_edge(
+        self,
+        source: int,
+        target: int,
+        symmetric: bool = True,
+        **params: float,
+    ) -> None:
+        """Add a single edge with named parameter values.
+
+        Convenience wrapper around :meth:`add_edges` for one edge.
+
+        Parameters
+        ----------
+        source, target : int
+            Node indices.
+        symmetric : bool
+            If ``True`` (default), also adds the reverse edge.
+        **params : float
+            Named parameter values. Each name becomes a matrix name
+            (e.g. ``weight=0.5`` → stored in the ``"weights"`` matrix,
+            ``length=30.0`` → stored in ``"lengths"``).
+
+        Examples
+        --------
+        >>> net.add_edge(0, 1, weight=0.5, length=30.0)
+        """
+        # Map common singular → plural names to match template edge conventions
+        _SINGULAR_TO_PLURAL = {"weight": "weights", "length": "lengths",
+                               "delay": "delays", "distance": "lengths"}
+        mapped = {_SINGULAR_TO_PLURAL.get(k, k): np.array([v])
+                  for k, v in params.items()}
+        self.add_edges(
+            np.array([source]),
+            np.array([target]),
+            symmetric=symmetric,
+            **mapped,
+        )
+
+    def add_edges(
+        self,
+        sources,
+        targets,
+        symmetric: bool = True,
+        **matrices,
+    ) -> None:
+        """Add edges in bulk using COO-style index arrays.
+
+        Each keyword argument is a named matrix (e.g. ``weights=vals``)
+        whose entries are being added at the given ``(source, target)``
+        positions. Internally the data is kept in COO format for fast
+        incremental building; call :meth:`matrix` with
+        ``format="csr"`` when you need efficient row-slicing.
+
+        Parameters
+        ----------
+        sources, targets : array-like of int
+            Source and target node index arrays (same length).
+        symmetric : bool
+            If ``True`` (default), each ``(i, j)`` entry is mirrored
+            to ``(j, i)``, producing a symmetric matrix.
+        **matrices : array-like of float
+            Named value arrays, one per matrix to update. Length must
+            match ``sources`` and ``targets``.
+
+        Examples
+        --------
+        >>> # Build local connectivity from index pairs + kernel weights
+        >>> net.add_edges(pairs[:, 0], pairs[:, 1],
+        ...              symmetric=True, weights=kernel_vals)
+        """
+        from scipy import sparse
+        from scipy.sparse import coo_matrix
+
+        sources = np.asarray(sources, dtype=np.int32)
+        targets = np.asarray(targets, dtype=np.int32)
+
+        arrays = self._get_arrays()
+
+        n = self.number_of_nodes or int(max(sources.max(), targets.max())) + 1
+
+        for name, values in matrices.items():
+            values = np.asarray(values, dtype=np.float64)
+
+            if symmetric:
+                new_rows = np.concatenate([sources, targets])
+                new_cols = np.concatenate([targets, sources])
+                new_data = np.concatenate([values, values])
+            else:
+                new_rows, new_cols, new_data = sources, targets, values
+
+            existing = arrays.get(name)
+
+            if existing is None:
+                mat = coo_matrix(
+                    (new_data, (new_rows, new_cols)), shape=(n, n)
+                )
+            else:
+                # Convert existing to COO for fast append
+                if not sparse.issparse(existing):
+                    existing = coo_matrix(existing)
+                elif existing.format != "coo":
+                    existing = existing.tocoo()
+                rows = np.concatenate([existing.row, new_rows])
+                cols = np.concatenate([existing.col, new_cols])
+                data = np.concatenate([existing.data, new_data])
+                mat = coo_matrix(
+                    (data, (rows, cols)), shape=existing.shape
+                )
+
+            arrays[name] = mat
+
+            # Backward compat
+            if name == "weights":
+                self._cached_weights = mat
+            elif name == "lengths":
+                self._cached_lengths = mat
+
+            self._ensure_template_edge(name)
+
+    def _ensure_template_edge(self, name: str) -> None:
+        """Ensure a template edge (no source/target) exists for *name*.
+
+        Template edges are the link between the ``edges`` list visible
+        in the YAML sidecar and the HDF5 datasets under ``edges/<name>/``.
+        """
+        from scipy import sparse
+
+        arrays = self._get_arrays()
+        mat = arrays.get(name)
+
+        for e in self.edges or []:
+            lbl = getattr(e, "label", None) or getattr(e, "name", None)
+            if lbl == name:
+                # Update format hint
+                if mat is not None:
+                    if sparse.issparse(mat):
+                        from tvbo.data.matrix_io import auto_format
+                        e.format = auto_format(mat)
+                    elif isinstance(mat, np.ndarray):
+                        from tvbo.data.matrix_io import auto_format
+                        e.format = auto_format(mat)
+                return
+
+        # Create new template edge
+        fmt = "dense"
+        if mat is not None:
+            from tvbo.data.matrix_io import auto_format
+            fmt = auto_format(mat)
+
+        edge = tvbo_datamodel.Edge(label=name, format=fmt, weighted=True)
+        if not self.edges:
+            self.edges = []
+        self.edges.append(edge)
 
 
 @register_pytree_node_class

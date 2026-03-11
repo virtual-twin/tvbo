@@ -20,9 +20,12 @@ def auto_format(matrix) -> str:
     - N < 500 or fill > 30%: dense + gzip wins
     - Otherwise: CSR
 
+    Handles both dense arrays and scipy sparse matrices without
+    densifying the input.
+
     Parameters
     ----------
-    matrix : array-like
+    matrix : array-like or scipy.sparse matrix
         Matrix to analyze.
 
     Returns
@@ -30,9 +33,14 @@ def auto_format(matrix) -> str:
     str
         "dense" or "csr"
     """
-    arr = np.asarray(matrix)
-    n = max(arr.shape)
-    fill = np.count_nonzero(arr) / arr.size if arr.size > 0 else 0
+    from scipy import sparse
+    if sparse.issparse(matrix):
+        n = max(matrix.shape)
+        fill = matrix.nnz / (matrix.shape[0] * matrix.shape[1]) if matrix.shape[0] > 0 else 0
+    else:
+        arr = np.asarray(matrix)
+        n = max(arr.shape)
+        fill = np.count_nonzero(arr) / arr.size if arr.size > 0 else 0
     if n < 500 or fill > 0.30:
         return "dense"
     return "csr"
@@ -41,7 +49,11 @@ def auto_format(matrix) -> str:
 # ── Write ─────────────────────────────────────────────────────────────
 
 def _write_dense(grp, matrix):
-    arr = np.asarray(matrix, dtype="float32")
+    from scipy import sparse
+    if sparse.issparse(matrix):
+        arr = matrix.toarray().astype("float32")
+    else:
+        arr = np.asarray(matrix, dtype="float32")
     chunks = tuple(min(s, 128) for s in arr.shape)
     grp.create_dataset("data", data=arr, compression="gzip",
                        compression_opts=4, chunks=chunks)
@@ -193,6 +205,20 @@ class LazyArrayStore:
     def __getitem__(self, key: str) -> np.ndarray:
         self._ensure_loaded()
         return self._cache[key]
+
+    def read_dataset(self, key: str) -> np.ndarray:
+        """Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``)."""
+        if self._ext in (".h5", ".hdf5"):
+            import h5py
+            with h5py.File(self._path, "r") as f:
+                if key in f:
+                    return f[key][()]
+                raise KeyError(key)
+        elif self._ext == ".zarr" or self._path.is_dir():
+            import zarr
+            z = zarr.open(str(self._path), "r")
+            return np.asarray(z[key])
+        raise KeyError(key)
 
 
 def _read_edges_from_store(store, template_edges: list) -> tuple[dict, dict]:
