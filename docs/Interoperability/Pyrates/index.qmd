@@ -92,4 +92,3 @@ from pyrates import grid_search
 ## See Also
 
 - [PyRates Documentation](https://pyrates.readthedocs.io/)
-- [TVB-O Model Database](../../browser.qmd)
