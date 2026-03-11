@@ -1,4 +1,5 @@
 name: DumontGutkin
+iri: tvbo:DumontGutkin
 parameters:
   Delta_e:
     name: Delta_e

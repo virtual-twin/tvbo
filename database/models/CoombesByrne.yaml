@@ -1,4 +1,5 @@
 name: CoombesByrne
+iri: tvbo:CoombesByrne
 description: |
   4D model describing the Ott-Antonsen reduction of infinite all-to-all
   coupled QIF neurons (Theta-neurons).

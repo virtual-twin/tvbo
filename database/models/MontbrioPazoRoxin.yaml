@@ -1,4 +1,5 @@
 name: MontbrioPazoRoxin
+iri: tvbo:MontbrioPazoRoxin
 parameters:
   Delta:
     name: Delta

@@ -32,7 +32,7 @@ simulation_experiments:
     # connectivity:
     #   parcellation: { parcellation_scheme }
     #   data: { link_to_connectivity_data }
-    #   number_of_regions: { number_of_regions }
+    #   number_of_nodes: { number_of_nodes }
 
     coupling:
       name: "Linear"

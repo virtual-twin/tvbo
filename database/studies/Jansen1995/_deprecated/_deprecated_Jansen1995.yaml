@@ -157,7 +157,7 @@ simulation_experiments:
     model:
       name: ModelJansen1995
     connectivity:
-      number_of_regions: 2
+      number_of_nodes: 2
       weights:
         x:
           values:
@@ -247,7 +247,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + flash + C2*Sigm(C1*y0) + z0) - 2*a*y4 - a**2*y1
     connectivity:
-      number_of_regions: 2
+      number_of_nodes: 2
       # Visual (node 1) → Prefrontal (node 2): K1 large; feedback K2 smaller (Pandya & Yeterian, 1990)
       weights:
         x:

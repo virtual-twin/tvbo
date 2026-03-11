@@ -12,8 +12,6 @@ description: >-
     Commonly used to characterize the statistical dependencies between
     brain regions from fMRI or simulated neural activity.
 
-imaging_modality: FC
-
 # Source: defined by the study that uses this observation model
 # (typically BOLD signal or neural activity time series)
 
@@ -34,10 +32,9 @@ pipeline:
     # Function 1: Bandpass filter the time series
     - name: bandpass_filter
       output: filtered
-      operation_type: filter
       callable:
           module: scipy.signal
-          qualname: butter
+          name: butter
       equation:
           rhs: "bandpass(X, low_freq, high_freq, fs)"
       arguments:
@@ -58,10 +55,9 @@ pipeline:
     - name: zscore
       input: bandpass_filter
       output: normalized
-      operation_type: normalization
       callable:
           module: scipy.stats
-          qualname: zscore
+          name: zscore
       equation:
           rhs: "(X - mean(X)) / std(X)"
       arguments:
@@ -74,10 +70,9 @@ pipeline:
     - name: correlation
       input: zscore
       output: fc_matrix
-      operation_type: correlation
       callable:
           module: numpy
-          qualname: corrcoef
+          name: corrcoef
       equation:
           rhs: "corrcoef(X.T)"
       arguments:
@@ -89,10 +84,9 @@ pipeline:
     - name: fisher_z_transform
       input: correlation
       output: FC
-      operation_type: custom_transform
       callable:
           module: numpy
-          qualname: arctanh
+          name: arctanh
       equation:
           rhs: "arctanh(X)"
           parameters:

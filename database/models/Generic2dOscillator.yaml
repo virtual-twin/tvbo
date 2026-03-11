@@ -1,4 +1,5 @@
 name: Generic2dOscillator
+iri: tvbo:Generic2dOscillator
 parameters:
   I:
     name: I

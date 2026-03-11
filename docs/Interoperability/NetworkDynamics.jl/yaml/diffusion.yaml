@@ -52,7 +52,7 @@ network:
         Undirected Barabási-Albert scale-free random graph with 20 nodes
         and average degree 4.  Matches the original tutorial.
     number_of_nodes: 20
-    number_of_regions: 20
+    number_of_nodes: 20
     graph_generator:
         name: barabasi_albert
         type: BarabasiAlbert

@@ -1,5 +1,6 @@
 # QIF population model — reproduces Montbrió et al. (2015) Fig 2
 
+id: 104
 label: "QIF neural mass — bifurcation in η̄"
 description: >-
   Quadratic integrate-and-fire population model.

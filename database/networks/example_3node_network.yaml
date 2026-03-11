@@ -113,6 +113,6 @@ parameters:
     name: "G"
     value: 1.0
   conduction_speed:
-    name: "speed"
+    name: "conduction_speed"
     value: 3.0
     unit: "mm/ms"

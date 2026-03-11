@@ -56,7 +56,7 @@ simulation_experiments:
                           label: "aparc"
                           atlas:
                                   name: "Desikan-Killiany"
-                  number_of_regions: 68
+                  number_of_nodes: 68
 
           integration:
                   noise:

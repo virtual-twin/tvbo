@@ -1,4 +1,5 @@
 name: KIonEx
+iri: tvbo:KIonEx
 parameters:
   Cm:
     name: Cm

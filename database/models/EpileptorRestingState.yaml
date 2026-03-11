@@ -1,4 +1,5 @@
 name: EpileptorRestingState
+iri: tvbo:EpileptorRestingState
 parameters:
   I_rs:
     name: I_rs

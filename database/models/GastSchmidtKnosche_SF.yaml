@@ -1,4 +1,5 @@
 name: GastSchmidtKnosche_SF
+iri: tvbo:GastSchmidtKnosche_SF
 parameters:
   Delta:
     name: Delta

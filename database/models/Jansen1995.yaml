@@ -1,4 +1,5 @@
 name: ModelJansen1995
+iri: tvbo:ModelJansen1995
 has_reference: "Jansen1995"
 label: "Jansen-Rit Neural Mass Model (single column)"
 description: "JR model with canonical parameters; long-range input is injected via a coupling term. Output is pyramidal potential difference."
