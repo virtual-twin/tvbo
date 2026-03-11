@@ -180,6 +180,8 @@ storing large matrices efficiently.
 The companion file organizes matrices under an `edges/` hierarchy:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Inspect HDF5 companion structure"
 import h5py
 
 with h5py.File(tmpdir / "visual.h5", "r") as f:
@@ -376,6 +378,8 @@ labels *are* the `region_mapping` — each integer assigns a vertex
 to a DK region:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Load surface mesh and parcellation from templateflow"
 from templateflow import api as tflow
 import nibabel as nib
 from bsplot.data.surface import get_surface_geometry
@@ -410,6 +414,8 @@ Gaussian with $\sigma \approx 10\,$mm, truncated at 30–40 mm).
 Here we approximate with Euclidean distance for demonstration:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Build sparse local connectivity matrix (Gaussian kernel)"
 from scipy.spatial import cKDTree
 from scipy.sparse import coo_matrix
 
@@ -441,26 +447,21 @@ The region-level SC is the **parent**.  The vertex-level LC is the
 **child**, linked via `parent_network` and `node_mapping`:
 
 ```{python}
-import h5py
-
 # --- Parent: region-level SC ---
 sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.save(tmpdir / "dk_sc.yaml")
 
 # --- Child: vertex-level local connectivity ---
 surface_net = Network.from_matrix(LC.toarray())
 surface_net.label = "fsaverage 3k Surface Network (RH)"
-surface_net.parent_network = "dk_sc.yaml"
-surface_net.node_mapping = "/nodes/parent_index"
 
-# Save both Networks
-sc.save(tmpdir / "dk_sc.yaml")
+# Link child → parent and attach the region mapping.
+# parent_network accepts a Network object — the filepath
+# reference is derived automatically from the parent's save path.
+surface_net.set_node_mapping(region_mapping, parent_network=sc)
+
+# Save — node_mapping is written to HDF5 automatically
 surface_net.save(tmpdir / "surface_rh.yaml")
-
-# Write the region_mapping into the child HDF5
-with h5py.File(tmpdir / "surface_rh.h5", "a") as hf:
-    if "nodes" not in hf:
-        hf.create_group("nodes")
-    hf["nodes"].create_dataset("parent_index", data=region_mapping, dtype="int32")
 
 print("Parent SC:")
 print(f"  {sc.number_of_nodes} region nodes")
@@ -476,6 +477,8 @@ The parent stores dense SC matrices; the child stores the sparse
 LC matrix and the `parent_index` region-mapping array:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Inspect HDF5 companion structure"
 for name in ["dk_sc.h5", "surface_rh.h5"]:
     path = tmpdir / name
     print(f"\n--- {name} ({path.stat().st_size / 1024:.0f} KB) ---")
@@ -496,6 +499,8 @@ The parcellation colours show which vertices belong to each region
 shows the long-range structural connections between regions:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Visualize parcellation + SC network on cortical surface"
 import matplotlib.pyplot as plt
 from bsplot.surface import plot_surf
 from bsplot.graph import (
@@ -660,6 +665,8 @@ Everything else — YAML sidecar, HDF5 companion, matrix storage
 format — is handled automatically by `Network`:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Generate random sparse subnetwork connectivity (8E + 2I)"
 N_sub = 10   # spiking subnetwork size (8E + 2I)
 
 # Random sparse local connectivity (E→E, E→I, I→E)
@@ -727,6 +734,8 @@ print(f"Roundtrip OK ✓")
 Inspect the HDF5 companion structure:
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Inspect HDF5 companion structure"
 import h5py
 
 with h5py.File(tmpdir / "multiscale_cortex.h5", "r") as f:

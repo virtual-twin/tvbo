@@ -125,6 +125,30 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
             write_matrix(pg, pmatrix, fmt=pfmt)
 
 
+def _write_nodes(store, network):
+    """Write node-level data (e.g. ``nodes/parent_index``) to a store.
+
+    Called after ``_write_edges`` during ``save_network``.
+    """
+    try:
+        data = object.__getattribute__(network, "_node_mapping_data")
+    except AttributeError:
+        data = None
+    if data is None:
+        return
+
+    nm_path = getattr(network, "node_mapping", None) or "/nodes/parent_index"
+    # Strip leading "/" and split into group + dataset name
+    key = nm_path.lstrip("/")
+    parts = key.rsplit("/", 1)
+    if len(parts) == 2:
+        grp_path, ds_name = parts
+        grp = store.require_group(grp_path)
+        grp.create_dataset(ds_name, data=data, dtype="int32")
+    else:
+        store.create_dataset(key, data=data, dtype="int32")
+
+
 # ── Load ──────────────────────────────────────────────────────────────
 
 def load_network(yaml_path):
@@ -205,10 +229,13 @@ def save_network(network, yaml_path, binary_format: str = "h5",
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    # Get arrays from lazy store or direct cache
+    # Get arrays: merge lazy store with user-set _arrays (user wins)
     store = getattr(network, "_store", None)
-    arrays = store.arrays if store else getattr(network, "_arrays", {})
-    edge_params = (store.edge_params if store
+    base_arrays = dict(store.arrays) if store else {}
+    user_arrays = getattr(network, "_arrays", {})
+    arrays = {**base_arrays, **user_arrays}
+
+    edge_params = (dict(store.edge_params) if store
                    else getattr(network, "_edge_params", {}))
 
     # Also pick up _cached_weights / _cached_lengths from from_matrix()
@@ -239,11 +266,13 @@ def save_network(network, yaml_path, binary_format: str = "h5",
         import h5py
         with h5py.File(companion, "w") as f:
             _write_edges(f, meta, arrays, edge_params)
+            _write_nodes(f, network)
 
     elif binary_format == "zarr":
         import zarr
         z = zarr.open(str(companion), mode="w")
         _write_edges(z, meta, arrays, edge_params)
+        _write_nodes(z, network)
 
     elif binary_format == "csv":
         # CSV: one file = one matrix = first template edge only

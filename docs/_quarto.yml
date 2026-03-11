@@ -3,7 +3,9 @@ project:
   pre-render:
     - python scripts/tvbo_package_struct.py
     - python -m quartodoc build --config api/_quartodoc_config.yml
+    - python scripts/update_toc_api.py
     - python scripts/generate_datamodel_docs.py
+    - python scripts/update_toc_datamodel.py
     # - python scripts/generate_yaml_examples.py
     - python scripts/fix_mermaid_blocks.py
     - python scripts/tvbo_package_struct.py --post
@@ -12,6 +14,7 @@ project:
   render:
     - index.qmd
     - installation.md
+    - platform.qmd
     - browser.qmd
     - api/**/*.qmd
     - datamodel/**/*.qmd
@@ -40,34 +43,73 @@ website:
     page-navigation: true
 
     navbar:
-        logo: _static/tvbo_python_square.svg
-        logo-altg: "tvbo-python logo"
+        logo: _static/tvbo_favicon.png
+        logo-alt: "TVB-O logo"
 
         left:
             - href: index.qmd
               text: Home
-            - href: installation.md
-              text: Installation
             - text: "Usage"
-              href: Usage/index.qmd
-
-            - text: "API Documentation"
-              href: api/index.qmd
+              menu:
+                - text: "Overview"
+                  href: Usage/index.qmd
+                - text: "---"
+                - text: "Defining Dynamical Systems"
+                  href: Usage/DefineDynamicalSystem.qmd
+                - text: "Simulation Experiments"
+                  href: Usage/SimulationExperiments.qmd
+                - text: "Code Generation"
+                  href: Usage/CodeGeneration.qmd
+                - text: "---"
+                - text: "Observation & Analysis"
+                - text: "Observation Models"
+                  href: Usage/ObservationModels.qmd
+                - text: "Parameter Exploration"
+                  href: Usage/ParameterExploration.qmd
+                - text: "Model Fitting"
+                  href: Usage/ModelFitting.qmd
+                - text: "Bifurcation Analysis"
+                  href: Usage/BifurcationAnalysis.qmd
+                - text: "---"
+                - text: "Simulation Features"
+                - text: "Events & Stimulation"
+                  href: Usage/Events.qmd
+                - text: "Noise & Stochastic Integration"
+                  href: Usage/Noise.qmd
+                - text: "---"
+                - text: "Advanced"
+                - text: "PDE Simulation"
+                  href: Usage/PDESimulation.qmd
+                - text: "Heterogeneous Nodes"
+                  href: Usage/HeterogeneousNodes.qmd
+                - text: "Heterogeneous Edges"
+                  href: Usage/HeterogeneousEdges.qmd
+                - text: "Unit-Aware Computations"
+                  href: Usage/UnitValidation.qmd
+                - text: "---"
+                - text: "Specification"
+                - text: "Networks"
+                  href: Specification/Network.qmd
+                - text: "Algorithms"
+                  href: Specification/Algorithms.qmd
+                - text: "Loss Functions"
+                  href: Specification/LossFunction.qmd
+                - text: "Output"
+                  href: Specification/Output.qmd
+                - text: "---"
+                - text: "Interoperability"
+                  href: Interoperability/index.qmd
             - text: "Data Model"
               href: datamodel/index.qmd
-            - text: "Knowledge Browser"
-              href: browser.qmd
-            - text: "Interoperability"
-              href: Interoperability/index.qmd
-            - text: "Developer"
-              href: Developer/contributing.md
+            - text: "Platform"
+              href: platform.qmd
 
         tools:
             - icon: github
               href: https://github.com/leon-k-martin/tvbo
               text: tvbo GitHub
 
-    sidebar: []  # defined in _toc.yml
+    sidebar: []  # merged from _toc.yml and api/_sidebar.yml
 
     page-footer:
         center: |

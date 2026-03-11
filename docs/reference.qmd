@@ -1,0 +1,77 @@
+---
+title: "Quick Reference"
+subtitle: "Most-used data model classes and API entry points"
+---
+
+## Core Data Model Classes
+
+The most important classes for specifying and running a simulation:
+
+| Class | Purpose | Data Model | API |
+|-------|---------|-----------|-----|
+| `SimulationExperiment` | Top-level experiment specification | [schema](datamodel/classes/SimulationExperiment.qmd) | [api](api/experiment.qmd) |
+| `Dynamics` | Neural mass model (ODE / rate equations) | [schema](datamodel/classes/Dynamics.qmd) | [api](api/localdynamics.qmd) |
+| `Network` | Brain network (nodes, weights, delays) | [schema](datamodel/classes/Network.qmd) | [api](api/network.qmd) |
+| `Connectome` | Structural connectivity matrix + tracts | [schema](datamodel/classes/Connectome.qmd) | [api](api/connectomes.qmd) |
+| `Coupling` | Inter-node coupling function | [schema](datamodel/classes/Coupling.qmd) | — |
+| `Integrator` | Numerical integrator (Euler, Heun, …) | [schema](datamodel/classes/Integrator.qmd) | [api](api/integration.qmd) |
+| `Noise` | Stochastic noise specification | [schema](datamodel/classes/Noise.qmd) | [api](api/integration.qmd) |
+| `ObservationModel` | Maps state variables to observables | [schema](datamodel/classes/ObservationModel.qmd) | [api](api/observation.qmd) |
+| `Parameter` | Model parameter with units + shape | [schema](datamodel/classes/Parameter.qmd) | — |
+| `StateVariable` | ODE state variable definition | [schema](datamodel/classes/StateVariable.qmd) | — |
+| `LossFunction` | Symbolic loss for model fitting | [schema](datamodel/classes/LossFunction.qmd) | — |
+| `ModelFitting` | Fitting / optimization specification | [schema](datamodel/classes/ModelFitting.qmd) | — |
+| `Exploration` | Parameter exploration specification | [schema](datamodel/classes/Exploration.qmd) | — |
+| `Algorithm` | Iterative tuning algorithm (FIC, …) | [schema](datamodel/classes/Algorithm.qmd) | — |
+| `Stimulus` | Stimulation / perturbation protocol | [schema](datamodel/classes/Stimulus.qmd) | — |
+| `Event` | Discrete event during simulation | [schema](datamodel/classes/Event.qmd) | — |
+
+## Key API Entry Points
+
+The most commonly called functions and classes:
+
+| Module | What it provides |
+|--------|-----------------|
+| [experiment](api/experiment.qmd) | `SimulationExperiment` — load, configure, run, and render code |
+| [localdynamics](api/localdynamics.qmd) | `Dynamics` — load neural mass models from YAML / ontology |
+| [network](api/network_api.qmd) | Network construction helpers and I/O |
+| [integration](api/integration.qmd) | `Integrator` and `Noise` runtime classes |
+| [observation](api/observation.qmd) | Observation model utilities |
+| [connectomes](api/connectomes.qmd) | Load / browse structural connectomes |
+| [code](api/code.qmd) | Code generation (JAX, Julia, …) |
+| [main](api/main.qmd) | REST API (`RunExperimentRequest`, `RunExperimentResponse`) |
+| [bifurcation](api/bifurcation.qmd) | Bifurcation analysis result containers |
+| [analysis](api/analysis.qmd) | Simulation analysis utilities |
+
+## Backends (Code Generation)
+
+| Backend | Adapter | Interoperability docs |
+|---------|---------|----------------------|
+| **tvboptim** (JAX) | [experiment.render_code('jax')](api/experiment.qmd) | [tvboptim docs](Interoperability/tvboptim/index.qmd) |
+| **PyRates** | [pyrates](api/pyrates.qmd) | [PyRates docs](Interoperability/Pyrates/index.qmd) |
+| **NetworkDynamics.jl** | [networkdynamics](api/networkdynamics.qmd) | [NetworkDynamics docs](Interoperability/NetworkDynamics.jl/index.qmd) |
+| **BifurcationKit.jl** | [bifurcationkit](api/bifurcationkit.qmd) | [BifurcationKit docs](Interoperability/BifurcationKit.jl/index.qmd) |
+| **ModelingToolkit.jl** | [modelingtoolkit](api/modelingtoolkit.qmd) | [ModelingToolkit docs](Interoperability/ModelingToolkit.jl/index.qmd) |
+| **BIDS** | [tvbids](api/tvbids.qmd) | [BIDS docs](Interoperability/BIDS/index.qmd) |
+| **openMINDS** | [openminds](api/openminds.qmd) | [openMINDS docs](Interoperability/OpenMINDS.qmd) |
+
+## Typical Workflow
+
+```python
+from tvbo import SimulationExperiment
+
+# 1. Load experiment from YAML
+exp = SimulationExperiment.from_file("database/studies/Schirner2023.yaml")
+
+# 2. Run
+result = exp.run()
+
+# 3. Inspect
+result.plot()
+result.integration.observations.bold   # BOLD time series
+result.algorithms.fic.state            # FIC-tuned state
+
+# 4. Generate code for a backend
+print(exp.render_code("jax"))          # JAX/tvboptim
+print(exp.render_code("networkdynamics-julia"))
+```
