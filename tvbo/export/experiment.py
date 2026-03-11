@@ -33,22 +33,23 @@ sessionid = 1
 
 
 def _sync_network_node_count(net):
-    """Sync number_of_nodes/number_of_regions from the nodes list.
+    """Sync number_of_nodes from the nodes list.
 
     When Network is created via LinkML deserialization + __class__ patching,
     Network.__init__ never runs. This ensures node count is consistent.
     """
+    # Migrate deprecated number_of_regions -> number_of_nodes
+    if getattr(net, 'number_of_regions', None) and not getattr(net, 'number_of_nodes', None):
+        net.number_of_nodes = net.number_of_regions
     if net.nodes:
         n = len(net.nodes)
         net.number_of_nodes = n
-        net.number_of_regions = n
     elif (net.number_of_nodes or 0) > 1 and not net.nodes:
         # number_of_nodes set but no nodes list — create default nodes
         net.nodes = [
             tvbo_datamodel.Node(id=i, label=f"node_{i}")
             for i in range(net.number_of_nodes)
         ]
-        net.number_of_regions = net.number_of_nodes
 
 
 def _upgrade_network_couplings(network, coupling_types=None):
@@ -1549,7 +1550,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def collect_initial_conditions(self, random=False):
         history = []
         n_modes = getattr(self.dynamics, 'number_of_modes', 1) or 1
-        n_nodes = self.network.number_of_regions
+        n_nodes = getattr(self.network, 'number_of_nodes', None) or 1
 
         if random:
             history.append(

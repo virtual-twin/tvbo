@@ -150,12 +150,20 @@ def _network_ref_string(net: "Network") -> str:
 
 @register_pytree_node_class
 class Network(tvbo_datamodel.Network):
+    @property
+    def number_of_regions(self) -> int:
+        """Deprecated alias for number_of_nodes."""
+        return self.number_of_nodes
+
+    @number_of_regions.setter
+    def number_of_regions(self, value: int) -> None:
+        self.number_of_nodes = value
+
     def __init__(self, **kwargs: Any) -> None:
-        # Sync number_of_regions and number_of_nodes early
-        if "number_of_regions" in kwargs and "number_of_nodes" not in kwargs:
-            kwargs["number_of_nodes"] = kwargs["number_of_regions"]
-        elif "number_of_nodes" in kwargs and "number_of_regions" not in kwargs:
-            kwargs["number_of_regions"] = kwargs["number_of_nodes"]
+        # Resolve deprecated number_of_regions -> number_of_nodes
+        if "number_of_regions" in kwargs:
+            kwargs.setdefault("number_of_nodes", kwargs.pop("number_of_regions"))
+            kwargs.pop("number_of_regions", None)
 
         # Check if nodes/edges or edge_matrix_files are already provided
         has_nodes = "nodes" in kwargs and kwargs["nodes"]
@@ -198,7 +206,6 @@ class Network(tvbo_datamodel.Network):
                         )
             kwargs["edges"] = edges
             kwargs["number_of_nodes"] = n_nodes
-            kwargs["number_of_regions"] = n_nodes
             has_edges = True
 
         # Load normative data if parcellation/atlas specified and no explicit connectivity
@@ -248,7 +255,6 @@ class Network(tvbo_datamodel.Network):
                     l_arr = l_arr[:n_nodes, :n_nodes]
 
                 # Store matrices directly (avoid creating explicit edges for large networks)
-                kwargs["number_of_regions"] = n_nodes
                 kwargs["number_of_nodes"] = n_nodes
                 kwargs.setdefault(
                     "nodes",
@@ -286,7 +292,6 @@ class Network(tvbo_datamodel.Network):
                     f"Using {n_nodes} from nodes list."
                 )
             kwargs["number_of_nodes"] = n_nodes
-            kwargs["number_of_regions"] = n_nodes
         # Create default nodes if number_of_nodes is set but nodes list is empty
         elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
             n_nodes = kwargs["number_of_nodes"]
@@ -301,7 +306,6 @@ class Network(tvbo_datamodel.Network):
             n_nodes = len(self.nodes)
             if self.number_of_nodes != n_nodes:
                 self.number_of_nodes = n_nodes
-                self.number_of_regions = n_nodes
         # Create default nodes if number_of_nodes is set but nodes list is empty
         elif self.number_of_nodes and not self.nodes:
             self.nodes = [
@@ -1091,23 +1095,6 @@ class Network(tvbo_datamodel.Network):
 
         super_setattr(name, value)
 
-        # Keep number_of_regions and number_of_nodes in sync
-        if name == "number_of_regions":
-            try:
-                nodes = getattr(self, "number_of_nodes", None)
-                # Only convert if value is int-like
-                if isinstance(value, (int, np.integer)):
-                    new_val: Optional[int] = int(value)
-                elif value is None:
-                    new_val = None
-                else:
-                    return  # Skip sync for non-numeric values
-                if nodes != new_val:
-                    super_setattr("number_of_nodes", new_val)
-            except Exception:
-                # Don't block attribute setting on sync errors
-                pass
-
     def to_yaml(self, filepath: Optional[str] = None, format: str = "tvbo") -> str:
         """Serialize Connectome to YAML format.
 
@@ -1197,7 +1184,7 @@ class Network(tvbo_datamodel.Network):
             lengths_arr = self.lengths_matrix
 
             # Fallback to zeros if properties return None
-            n = self.number_of_regions or 1
+            n = self.number_of_nodes or 1
             if weights_arr is None:
                 weights_arr = np.zeros((n, n))
             else:

@@ -80,7 +80,6 @@ def list_networks(
             "atlas": atlas_name,
             "tractogram": tract_name,
             "number_of_nodes": getattr(net, "number_of_nodes", None),
-            "number_of_regions": getattr(net, "number_of_regions", None),
             "descriptor": getattr(net, "descriptor", None),
             "bids_filename": getattr(net, "bids_filename", None),
         })
