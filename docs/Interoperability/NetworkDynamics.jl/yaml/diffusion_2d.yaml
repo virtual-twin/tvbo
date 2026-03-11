@@ -66,7 +66,7 @@ network:
         Undirected Barabasi-Albert scale-free random graph with 10 nodes
         and attachment parameter k=4.  Matches the 2D tutorial section.
     number_of_nodes: 10
-    number_of_regions: 10
+    number_of_nodes: 10
     graph_generator:
         name: barabasi_albert
         type: BarabasiAlbert

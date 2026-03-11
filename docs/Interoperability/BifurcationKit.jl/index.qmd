@@ -99,7 +99,7 @@ branches:                             # branch switching from bifurcation points
       bothside: true
 ```
 
-See [Generic2dOscillator-bifurcation-full.yaml](../../../database/studies/bifurcation/Generic2dOscillator-bifurcation-full.yaml)
+See [Generic2dOscillator-bifurcation-full.yaml](../../../database/continuations/Generic2dOscillator-bifurcation-full.yaml)
 for a comprehensive reference of all available settings.
 
 ## Supported Features

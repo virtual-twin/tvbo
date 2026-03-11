@@ -1,4 +1,5 @@
 name: Epileptor2D
+iri: tvbo:Epileptor2D
 parameters:
   Iext:
     name: Iext

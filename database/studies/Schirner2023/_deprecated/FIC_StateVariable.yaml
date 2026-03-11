@@ -449,7 +449,7 @@ coupling:
 # ============================================================================
 network:
     number_of_nodes: 2
-    number_of_regions: 2
+    number_of_nodes: 2
     description: "Two-node network with symmetric coupling"
 
     # Node definitions

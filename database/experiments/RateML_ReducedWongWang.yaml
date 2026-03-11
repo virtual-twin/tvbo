@@ -19,7 +19,7 @@ coupling:
 
 # Network (small test network)
 network:
-  number_of_regions: 4
+  number_of_nodes: 4
 
 # Integration settings
 integration:

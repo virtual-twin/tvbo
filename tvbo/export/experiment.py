@@ -447,6 +447,62 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         data_as_dict = yaml.safe_load(yaml_string) or {}
         return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
 
+    # ── Platform retrieval ────────────────────────────────────────
+
+    TVBO_PLATFORM_URL = "https://tvbo.charite.de"
+
+    @classmethod
+    def from_platform(
+        cls,
+        name: str,
+        base_url: str = TVBO_PLATFORM_URL,
+    ) -> "SimulationExperiment":
+        """Load a simulation experiment from the tvbo platform API.
+
+        Fetches the full LinkML-valid YAML definition from the platform.
+
+        Parameters
+        ----------
+        name : str
+            Experiment label/ID (e.g., "RWW_BOLD_FC_Optimization").
+        base_url : str
+            Platform base URL.
+
+        Returns
+        -------
+        SimulationExperiment
+            Experiment loaded from the platform.
+        """
+        import requests
+
+        api = f"{base_url.rstrip('/')}/api/v1/experiments"
+        resp = requests.get(f"{api}/{name}/sidecar", params={"format": "yaml"})
+        resp.raise_for_status()
+        return cls.from_string(resp.text)
+
+    @classmethod
+    def list_platform_experiments(
+        cls, base_url: str = TVBO_PLATFORM_URL,
+    ) -> list:
+        """List available experiments on the tvbo platform.
+
+        Parameters
+        ----------
+        base_url : str
+            Platform base URL.
+
+        Returns
+        -------
+        list[dict]
+            List of experiment summaries.
+        """
+        import requests
+
+        api = f"{base_url.rstrip('/')}/api/v1/experiments"
+        resp = requests.get(api)
+        resp.raise_for_status()
+        return resp.json()
+
     @classmethod
     def from_bids(
         cls,

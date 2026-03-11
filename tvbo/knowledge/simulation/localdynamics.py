@@ -663,6 +663,65 @@ class Dynamics(tvbo_datamodel.Dynamics):
         inst.calculate_derived_parameters()
         return inst
 
+    # ── Platform retrieval ────────────────────────────────────────
+
+    TVBO_PLATFORM_URL = "https://tvbo.charite.de"
+
+    @classmethod
+    def from_platform(
+        cls,
+        name: str,
+        base_url: str = TVBO_PLATFORM_URL,
+    ) -> "Dynamics":
+        """Load a dynamics model from the tvbo platform API.
+
+        Fetches the full LinkML-valid YAML definition from the platform
+        and constructs a Dynamics instance.
+
+        Parameters
+        ----------
+        name : str
+            Model name (e.g., "JansenRit", "ReducedWongWang").
+        base_url : str
+            Platform base URL.
+
+        Returns
+        -------
+        Dynamics
+            Dynamics instance loaded from the platform.
+        """
+        import requests
+
+        api = f"{base_url.rstrip('/')}/api/v1/dynamics"
+        resp = requests.get(f"{api}/{name}/sidecar", params={"format": "yaml"})
+        resp.raise_for_status()
+        return cls.from_string(resp.text)
+
+    @classmethod
+    def list_platform_models(
+        cls, base_url: str = TVBO_PLATFORM_URL, **filters
+    ) -> list:
+        """List available dynamics models on the tvbo platform.
+
+        Parameters
+        ----------
+        base_url : str
+            Platform base URL.
+        **filters
+            Filtering parameters (e.g., system_type="continuous").
+
+        Returns
+        -------
+        list[dict]
+            List of model summaries.
+        """
+        import requests
+
+        api = f"{base_url.rstrip('/')}/api/v1/dynamics"
+        resp = requests.get(api, params=filters)
+        resp.raise_for_status()
+        return resp.json()
+
     @classmethod
     def from_pyrates(cls, path: str, operator_key: str | None = None) -> "Dynamics":
         """Load a Dynamics model from a PyRates YAML template file.

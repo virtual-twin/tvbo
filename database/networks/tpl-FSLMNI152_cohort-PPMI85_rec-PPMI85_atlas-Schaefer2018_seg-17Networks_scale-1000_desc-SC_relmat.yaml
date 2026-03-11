@@ -15,8 +15,6 @@ edges:
   valid_diagonal: false
   non_negative: true
 bids:
-  bids_version: 1.10.0
-  dataset_type: derivative
   template: FSLMNI152
   cohort: PPMI85
   reconstruction: PPMI85

@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 from tvbo.api.ontology_api import OntologyAPI
 from tvbo.api.network_api import router as network_router
+from tvbo.api.dynamics_api import router as dynamics_router
+from tvbo.api.experiment_api import router as experiment_router
 
 app = FastAPI(
     title="TVBO API",
@@ -15,6 +17,8 @@ api = OntologyAPI()
 
 # Register sub-routers
 app.include_router(network_router)
+app.include_router(dynamics_router)
+app.include_router(experiment_router)
 
 
 # ============================================
