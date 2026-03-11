@@ -621,6 +621,9 @@ classes:
                 range: integer
                 ifabsent: integer(1)
                 description: "Number of nodes in the network (derived from nodes if not set)"
+                aliases:
+                    - number_of_nodes
+                    - number_of_regions
             parcellation:
                 range: Parcellation
                 description: "Brain parcellation/atlas reference"

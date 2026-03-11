@@ -179,7 +179,7 @@ class BaseAdapter:
         """Extract network metadata: n_nodes, graph generator, edges, etc."""
         network = self.experiment.network
         n_nodes = (getattr(network, 'number_of_nodes', None)
-                   or getattr(network, 'number_of_regions', 1))
+                   or getattr(network, 'number_of_regions', 1))  # number_of_regions deprecated
 
         graph_gen = getattr(network, 'graph_generator', None)
         nodes = getattr(network, 'nodes', None) or []
