@@ -5,6 +5,8 @@ subtitle: "Web-based knowledge base and model configurator for brain simulation"
 
 The **TVB-O Platform** is a web application hosted at [tvbo.charite.de](https://tvbo.charite.de/) that provides browser-based access to the TVB-O knowledge base, model database, and simulation configurator — no local installation required.
 
+![Alt text](_static/platform_screenshot.png)
+
 ## What the Platform Offers
 
 | Feature | Description |

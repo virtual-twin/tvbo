@@ -17,6 +17,8 @@ website:
                 href: index.qmd
               - text: "Installation"
                 href: installation.md
+              - text: "Quick Reference"
+                href: reference.qmd
 
               - section: "Usage"
                 contents:
@@ -68,13 +70,11 @@ website:
                         href: Specification/Output.qmd
 
               - section: "Interoperability"
+                href: Interoperability/index.qmd
                 contents:
-                  - text: "Overview"
-                    href: Interoperability/index.qmd
                   - section: "tvboptim Backend"
+                    href: Interoperability/tvboptim/index.qmd
                     contents:
-                      - text: "Overview"
-                        href: Interoperability/tvboptim/index.qmd
                       - text: "Jansen-Rit"
                         href: Interoperability/tvboptim/JR_tvboptim.qmd
                       - text: "Reduced Wong-Wang"
@@ -82,9 +82,8 @@ website:
                       - text: "EI Tuning"
                         href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
                   - section: "PyRates"
+                    href: Interoperability/Pyrates/index.qmd
                     contents:
-                      - text: "Overview"
-                        href: Interoperability/Pyrates/index.qmd
                       - text: "Round-Trip Demo"
                         href: Interoperability/Pyrates/PyRates.qmd
                       - text: "Analysis"
@@ -94,9 +93,8 @@ website:
                       - text: "Heterogeneous Networks"
                         href: Interoperability/Pyrates/PyRates_Heterogeneous_Network.qmd
                   - section: "NetworkDynamics.jl"
+                    href: Interoperability/NetworkDynamics.jl/index.qmd
                     contents:
-                      - text: "Overview"
-                        href: Interoperability/NetworkDynamics.jl/index.qmd
                       - text: "Network Diffusion"
                         href: Interoperability/NetworkDynamics.jl/diffusion.qmd
                       - text: "2D Network Diffusion"
@@ -112,23 +110,20 @@ website:
                       - text: "Stress on Truss"
                         href: Interoperability/NetworkDynamics.jl/stress_on_truss.qmd
                   - section: "BifurcationKit.jl"
+                    href: Interoperability/BifurcationKit.jl/index.qmd
                     contents:
-                      - text: "Overview"
-                        href: Interoperability/BifurcationKit.jl/index.qmd
                       - text: "Tsodyks-Markram Model"
                         href: Interoperability/BifurcationKit.jl/TMModel.qmd
                       - text: "CO Oxidation Model"
                         href: Interoperability/BifurcationKit.jl/COModel.qmd
                   - section: "ModelingToolkit.jl"
+                    href: Interoperability/ModelingToolkit.jl/index.qmd
                     contents:
-                      - text: "Overview"
-                        href: Interoperability/ModelingToolkit.jl/index.qmd
                       - text: "Higher-Order ODE Lowering"
                         href: Interoperability/ModelingToolkit.jl/higher_order.qmd
                   - section: "BIDS"
+                    href: Interoperability/BIDS/index.qmd
                     contents:
-                      - text: "Overview"
-                        href: Interoperability/BIDS/index.qmd
                       - text: "BIDS Export"
                         href: Interoperability/BIDS/BIDS_Export.qmd
                       - text: "Computational Modelling"
@@ -397,195 +392,212 @@ website:
                   - text: "Overview"
                     href: api/index.qmd
                   - section: "Adapters"
+                    href: api/adapters/index.qmd
                     contents:
                       - text: "Base"
-                        href: api/base.qmd
+                        href: api/adapters/base.qmd
                       - text: "Bifurcationkit"
-                        href: api/bifurcationkit.qmd
+                        href: api/adapters/bifurcationkit.qmd
                       - text: "Diffeq"
-                        href: api/diffeq.qmd
+                        href: api/adapters/diffeq.qmd
                       - text: "Julia"
-                        href: api/julia.qmd
+                        href: api/adapters/julia.qmd
                       - text: "Modelingtoolkit"
-                        href: api/modelingtoolkit.qmd
+                        href: api/adapters/modelingtoolkit.qmd
                       - text: "Networkdynamics"
-                        href: api/networkdynamics.qmd
+                        href: api/adapters/networkdynamics.qmd
                       - text: "Pyrates"
-                        href: api/pyrates.qmd
+                        href: api/adapters/pyrates.qmd
                       - text: "Pyrates Bifurcation"
-                        href: api/pyrates_bifurcation.qmd
+                        href: api/adapters/pyrates_bifurcation.qmd
                   - section: "Analysis"
+                    href: api/analysis/index.qmd
                     contents:
                       - text: "Bifurcation"
-                        href: api/bifurcation.qmd
+                        href: api/analysis/bifurcation.qmd
                   - section: "API"
+                    href: api/api/index.qmd
                     contents:
                       - text: "Direct Ontology Api"
-                        href: api/direct_ontology_api.qmd
+                        href: api/api/direct_ontology_api.qmd
                       - text: "Main"
-                        href: api/main.qmd
+                        href: api/api/main.qmd
                       - text: "Network Api"
-                        href: api/network_api.qmd
+                        href: api/api/network_api.qmd
                       - text: "Ontology Api"
-                        href: api/ontology_api.qmd
+                        href: api/api/ontology_api.qmd
                   - section: "Benchmark"
+                    href: api/benchmark/index.qmd
                     contents:
                       - text: "Utils"
-                        href: api/utils.qmd
+                        href: api/benchmark/utils.qmd
                   - section: "Data"
+                    href: api/data/index.qmd
                     contents:
                       - text: "Converters"
-                        href: api/converters.qmd
+                        href: api/data/converters.qmd
                       - text: "Matrix Io"
-                        href: api/matrix_io.qmd
+                        href: api/data/matrix_io.qmd
                       - text: "Network Io"
-                        href: api/network_io.qmd
+                        href: api/data/network_io.qmd
                       - text: "Types"
-                        href: api/types.qmd
+                        href: api/data/types.qmd
                   - section: "Data — TVB-O"
+                    href: api/data/tvbo_data/index.qmd
                     contents:
                       - text: "Atlases"
-                        href: api/atlases.qmd
+                        href: api/data/tvbo_data/atlases.qmd
                       - text: "Bids Utils"
-                        href: api/bids_utils.qmd
+                        href: api/data/tvbo_data/bids_utils.qmd
                       - text: "Connectomes"
-                        href: api/connectomes.qmd
+                        href: api/data/tvbo_data/connectomes.qmd
                       - text: "Tractograms"
-                        href: api/tractograms.qmd
+                        href: api/data/tvbo_data/tractograms.qmd
                   - section: "Data Model"
+                    href: api/datamodel/index.qmd
                     contents:
                       - text: "Tvbo Datamodel"
-                        href: api/tvbo_datamodel.qmd
+                        href: api/datamodel/tvbo_datamodel.qmd
                       - text: "Tvbopydantic"
-                        href: api/tvbopydantic.qmd
+                        href: api/datamodel/tvbopydantic.qmd
                   - section: "Export"
+                    href: api/export/index.qmd
                     contents:
                       - text: "Code"
-                        href: api/code.qmd
+                        href: api/export/code.qmd
                       - text: "Cuda"
-                        href: api/cuda.qmd
+                        href: api/export/cuda.qmd
                       - text: "Experiment"
-                        href: api/experiment.qmd
+                        href: api/export/experiment.qmd
                       - text: "Functions"
-                        href: api/functions.qmd
+                        href: api/export/functions.qmd
                       - text: "Lemsgenerator"
-                        href: api/lemsgenerator.qmd
+                        href: api/export/lemsgenerator.qmd
                       - text: "Openminds"
-                        href: api/openminds.qmd
+                        href: api/export/openminds.qmd
                       - text: "Pyrates"
-                        href: api/pyrates.qmd
+                        href: api/export/pyrates.qmd
                       - text: "Report"
-                        href: api/report.qmd
+                        href: api/export/report.qmd
                       - text: "Templater"
-                        href: api/templater.qmd
+                        href: api/export/templater.qmd
                       - text: "Tvbids"
-                        href: api/tvbids.qmd
+                        href: api/export/tvbids.qmd
                   - section: "Knowledge"
+                    href: api/knowledge/index.qmd
                     contents:
                       - text: "Config"
-                        href: api/config.qmd
+                        href: api/knowledge/config.qmd
                       - text: "Constants"
-                        href: api/constants.qmd
+                        href: api/knowledge/constants.qmd
                       - text: "Db"
-                        href: api/db.qmd
+                        href: api/knowledge/db.qmd
                       - text: "Function"
-                        href: api/function.qmd
+                        href: api/knowledge/function.qmd
                       - text: "Graph"
-                        href: api/graph.qmd
+                        href: api/knowledge/graph.qmd
                       - text: "Ontology"
-                        href: api/ontology.qmd
+                        href: api/knowledge/ontology.qmd
                       - text: "Query"
-                        href: api/query.qmd
+                        href: api/knowledge/query.qmd
                       - text: "Study"
-                        href: api/study.qmd
+                        href: api/knowledge/study.qmd
                   - section: "Knowledge — Atlas"
+                    href: api/knowledge/atlas/index.qmd
                     contents:
                       - text: "Freesurfer"
-                        href: api/freesurfer.qmd
+                        href: api/knowledge/atlas/freesurfer.qmd
                   - section: "Knowledge — Semantic Web"
+                    href: api/knowledge/semanticweb/index.qmd
                     contents:
                       - text: "Tvbgo"
-                        href: api/tvbgo.qmd
+                        href: api/knowledge/semanticweb/tvbgo.qmd
                   - section: "Knowledge — Simulation"
+                    href: api/knowledge/simulation/index.qmd
                     contents:
                       - text: "Continuation"
-                        href: api/continuation.qmd
+                        href: api/knowledge/simulation/continuation.qmd
                       - text: "Equations"
-                        href: api/equations.qmd
+                        href: api/knowledge/simulation/equations.qmd
                       - text: "Integration"
-                        href: api/integration.qmd
+                        href: api/knowledge/simulation/integration.qmd
                       - text: "Localdynamics"
-                        href: api/localdynamics.qmd
+                        href: api/knowledge/simulation/localdynamics.qmd
                       - text: "Network"
-                        href: api/network.qmd
+                        href: api/knowledge/simulation/network.qmd
                       - text: "Observation"
-                        href: api/observation.qmd
+                        href: api/knowledge/simulation/observation.qmd
                       - text: "Parcellation"
-                        href: api/parcellation.qmd
+                        href: api/knowledge/simulation/parcellation.qmd
                       - text: "Perturbation"
-                        href: api/perturbation.qmd
+                        href: api/knowledge/simulation/perturbation.qmd
                   - section: "Parse"
+                    href: api/parse/index.qmd
                     contents:
                       - text: "Expression"
-                        href: api/expression.qmd
+                        href: api/parse/expression.qmd
                       - text: "Lems Loader"
-                        href: api/lems_loader.qmd
+                        href: api/parse/lems_loader.qmd
                       - text: "Literature"
-                        href: api/literature.qmd
+                        href: api/parse/literature.qmd
                       - text: "Llm"
-                        href: api/llm.qmd
+                        href: api/parse/llm.qmd
                       - text: "Metadata"
-                        href: api/metadata.qmd
+                        href: api/parse/metadata.qmd
                       - text: "Misc Loader"
-                        href: api/misc_loader.qmd
+                        href: api/parse/misc_loader.qmd
                       - text: "Nlp"
-                        href: api/nlp.qmd
+                        href: api/parse/nlp.qmd
                       - text: "Pdf"
-                        href: api/pdf.qmd
+                        href: api/parse/pdf.qmd
                   - section: "Plot"
+                    href: api/plot/index.qmd
                     contents:
                       - text: "Analysis"
-                        href: api/analysis.qmd
+                        href: api/plot/analysis.qmd
                       - text: "Bifurcation Diagram"
-                        href: api/bifurcation_diagram.qmd
+                        href: api/plot/bifurcation_diagram.qmd
                       - text: "Functions"
-                        href: api/functions.qmd
+                        href: api/plot/functions.qmd
                       - text: "Network"
-                        href: api/network.qmd
+                        href: api/plot/network.qmd
                       - text: "Network Graph"
-                        href: api/network_graph.qmd
+                        href: api/plot/network_graph.qmd
                       - text: "Ontology"
-                        href: api/ontology.qmd
+                        href: api/plot/ontology.qmd
                       - text: "Utils"
-                        href: api/utils.qmd
+                        href: api/plot/utils.qmd
                   - section: "Run"
+                    href: api/run/index.qmd
                     contents:
                       - text: "Compgraph"
-                        href: api/compgraph.qmd
+                        href: api/run/compgraph.qmd
                       - text: "Julia"
-                        href: api/julia.qmd
+                        href: api/run/julia.qmd
                   - section: "Summary"
+                    href: api/summary/index.qmd
                     contents:
                       - text: "Properties"
-                        href: api/properties.qmd
+                        href: api/summary/properties.qmd
                       - text: "Summary Table"
-                        href: api/summary_table.qmd
+                        href: api/summary/summary_table.qmd
                   - section: "Templates — RateML"
+                    href: api/templates/rateml/index.qmd
                     contents:
                       - text: "Utils"
-                        href: api/utils.qmd
+                        href: api/templates/rateml/utils.qmd
                   - section: "Templates — tvboptim"
+                    href: api/templates/tvboptim/index.qmd
                     contents:
                       - text: "Utils"
-                        href: api/utils.qmd
+                        href: api/templates/tvboptim/utils.qmd
                   - section: "Utilities"
+                    href: api/utils/index.qmd
                     contents:
                       - text: "Computation Utils"
-                        href: api/computation_utils.qmd
+                        href: api/utils/computation_utils.qmd
                       - text: "Ontology Utils"
-                        href: api/ontology_utils.qmd
+                        href: api/utils/ontology_utils.qmd
 # END:api-autogen
-              - text: "Knowledge Browser"
-                href: browser.qmd
               - text: "Developer"
                 href: Developer/contributing.md

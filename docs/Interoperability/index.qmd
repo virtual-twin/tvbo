@@ -8,42 +8,72 @@ TVBO provides seamless interoperability with various neuroimaging tools, optimiz
 ## Integration Overview
 
 ```{mermaid}
-%%| fig-width: 8
-%%| theme: neutral
+%%| fig-width: 10
 flowchart LR
     subgraph TVBO["TVBO Core"]
         D[Dynamics]
         S[SimulationExperiment]
         N[Network]
+        D --> S
+        N --> S
     end
 
-    subgraph Optimization["Optimization"]
-        O[tvboptim]
+    subgraph Simulation["Simulation Backends"]
+        tvboptim
+        ND["NetworkDynamics.jl"]
+        DiffEq["DifferentialEquations.jl"]
+        MTK["ModelingToolkit.jl"]
     end
 
-    subgraph Analysis["Analysis"]
-        P[PyRates]
+    subgraph Analysis["Analysis Backends"]
+        PR[PyRates]
+        BK["BifurcationKit.jl"]
+        PyCoBi["PyCoBi / AUTO-07p"]
     end
 
-    subgraph Standards["Standards"]
-        B[BIDS]
-        M[OpenMINDS]
+    subgraph Standards["Standards & Schemas"]
+        BIDS
+        OpenMINDS
+        LEMS["NeuroML / LEMS"]
     end
 
-    TVBO <--> O
-    TVBO <--> P
-    TVBO --> B
-    TVBO --> M
+    S --> Simulation
+    S --> Analysis
+    S --> Standards
+
+
+    style TVBO fill:none,stroke:#333
+    style Simulation fill:none,stroke:#333
+    style Analysis fill:none,stroke:#333
+    style Standards fill:none,stroke:#333
 ```
 
 ## Available Integrations
 
-| Integration | Direction | Description |
-|-------------|-----------|-------------|
-| [tvboptim](tvboptim/index.qmd) | Bidirectional | JAX-based optimization and parameter fitting |
-| [PyRates](Pyrates/index.qmd) | Bidirectional | Dynamical systems analysis and bifurcation |
-| [BIDS](BIDS/index.qmd) | Export | Brain Imaging Data Structure (BEP034) |
-| [OpenMINDS](OpenMINDS.qmd) | Export | EBRAINS Knowledge Graph metadata |
+### Simulation Backends
+
+| Integration | Input | Direction | Description |
+|-------------|-------|-----------|-------------|
+| [tvboptim](tvboptim/index.qmd) | SimulationExperiment | Bidirectional | JAX-compiled simulation with autodiff optimization |
+| [NetworkDynamics.jl](NetworkDynamics.jl/index.qmd) | SimulationExperiment + Network | Export | Julia graph-based network simulation |
+| [ModelingToolkit.jl](ModelingToolkit.jl/index.qmd) | SimulationExperiment or Dynamics | Export | Symbolic ODE system via Julia MTK |
+| DifferentialEquations.jl | SimulationExperiment | Export | Julia ODE/SDE solvers |
+
+### Analysis Backends
+
+| Integration | Input | Direction | Description |
+|-------------|-------|-----------|-------------|
+| [PyRates](Pyrates/index.qmd) | SimulationExperiment or Dynamics | Bidirectional | Dynamical systems analysis and simulation |
+| [BifurcationKit.jl](BifurcationKit.jl/index.qmd) | Dynamics + Continuation | Export | Julia bifurcation analysis (equilibria, Hopf, periodic orbits) |
+| PyCoBi / AUTO-07p | Dynamics + Continuation | Export | Fortran-based numerical continuation via PyRates |
+
+### Standards & Schemas
+
+| Integration | Input | Direction | Description |
+|-------------|-------|-----------|-------------|
+| [BIDS](BIDS/index.qmd) | SimulationExperiment | Export | Brain Imaging Data Structure (BEP034) |
+| [OpenMINDS](OpenMINDS.qmd) | SimulationExperiment | Bidirectional | EBRAINS Knowledge Graph metadata (JSON-LD) |
+| NeuroML / LEMS | Dynamics | Export | LEMS ComponentType definitions |
 
 ## Quick Start
 

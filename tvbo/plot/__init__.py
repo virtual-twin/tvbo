@@ -12,9 +12,9 @@ This module contains utilities for plotting TVB-O models.
 
 
 ```{python}
-from tvbo.plot import graph
+from tvbo import plot
 
-graph.plot_model('JansenRit')
+plot.ontology.plot_model('JansenRit')
 ```
 """
 from . import network, ontology, functions

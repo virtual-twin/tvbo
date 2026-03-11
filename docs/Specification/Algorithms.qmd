@@ -81,5 +81,5 @@ result.fic_eib.post_tuning.observations.fc
 
 ## See Also
 
-- [Model Fitting](ModelFitting.qmd) — gradient optimization after tuning
+- [Model Fitting](/Usage/ModelFitting.qmd) — gradient optimization after tuning
 - [EI Tuning tvboptim workflow](/Interoperability/tvboptim/EI_Tuning_tvboptim.qmd) — complete FIC+EIB example

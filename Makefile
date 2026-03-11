@@ -5,7 +5,47 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-publish pypi-release release gen-linkml gen-openminds all
+.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish pypi-release release gen-linkml gen-openminds all
+
+help: ## Show this help
+	@echo "TVBO Makefile"
+	@echo "============="
+	@echo ""
+	@echo "Docker:"
+	@echo "  make build              Build Docker image"
+	@echo "  make save               Save Docker image to tarball"
+	@echo "  make run                Run Docker container (Jupyter mode)"
+	@echo ""
+	@echo "Schema Generation:"
+	@echo "  make gen-linkml         Generate Python datamodel from LinkML schema"
+	@echo "  make gen-openminds      Generate openMINDS schemas from LinkML"
+	@echo "  make gen-all            Run all schema generators"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  make docs-preview       Preview docs (pre-render once, then live reload)"
+	@echo "  make docs-render        Full Quarto render"
+	@echo "  make docs-clean         Remove generated docs (api/, datamodel/, _site/)"
+	@echo "  make docs-publish       Publish docs to GitHub Pages"
+	@echo "  make docs-gen-datamodel Generate LinkML datamodel documentation"
+	@echo "  make docs-quarto        Convert Usage notebooks (.ipynb) to .qmd"
+	@echo "  make docs-jupyter       Convert Usage .qmd files to .ipynb"
+	@echo "  make docs-to-py         Convert Usage notebooks to .py (percent format)"
+	@echo "  make docs-rm-py         Remove .py files from Usage"
+	@echo ""
+	@echo "Documentation Testing:"
+	@echo "  make docs-test          Test all .qmd files (parallel execution)"
+	@echo "  make docs-pytest        Run doc tests with pytest (fail-fast)"
+	@echo "  make docs-pytest-all    Run all doc tests with pytest (no early exit)"
+	@echo "  make docs-test-all      Full test pipeline (jupyter → test → quarto)"
+	@echo "  make docs-test-to-debug Test and move fixed notebooks from to_debug/"
+	@echo ""
+	@echo "Release:"
+	@echo "  make pypi-release       Build and upload to PyPI"
+	@echo "  make release            Create GitHub release + trigger PyPI publish"
+	@echo ""
+	@echo "Shortcuts:"
+	@echo "  make all                Build + save Docker image"
+
 all: build save
 
 # LinkML schema generation
@@ -123,9 +163,16 @@ docs-gen-datamodel:
 	@cd docs && python scripts/generate_datamodel_docs.py
 	@echo "✓ DataModel documentation generated in docs/datamodel/"
 
+docs-clean:
+	@echo "Cleaning generated docs..."
+	rm -rf docs/api/ docs/datamodel/ docs/_site/ docs/.quarto/
+	rm -f docs/api/.struct_stamp
+	@echo "✓ Cleaned: api/, datamodel/, _site/, .quarto/, api/.struct_stamp"
+
 docs-preview:
-	@echo "Starting Quarto preview (freeze: auto caches notebooks)..."
-	@cd docs && quarto preview
+	@echo "Starting Quarto preview (pre-render runs once, then skipped)..."
+	@cd docs && quarto render --no-serve 2>&1 | tail -1
+	@cd docs && TVBO_SKIP_PRERENDER=1 quarto preview
 
 docs-render:
 	@echo "Full Quarto render..."
