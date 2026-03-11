@@ -321,7 +321,6 @@ experiments:
     # --- Network with 2 identical nodes, linear coupling ---
     network:
       number_of_nodes: 2
-      number_of_nodes: 2
       label: "Two identical visual cortex columns"
       description: >-
         Symmetric coupling, zero delay. Both columns in same cortical area

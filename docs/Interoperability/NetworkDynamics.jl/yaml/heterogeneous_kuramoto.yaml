@@ -60,7 +60,6 @@ network:
         Regular ring lattice: each node connected to 2 nearest neighbours.
         Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.
     number_of_nodes: 8
-    number_of_nodes: 8
     graph_generator:
         name: watts_strogatz
         type: WattsStrogatz

@@ -61,7 +61,6 @@ network:
         neighbours on each side.  Equivalent to watts_strogatz(8, 2, 0)
         in Graphs.jl.
     number_of_nodes: 8
-    number_of_nodes: 8
     graph_generator:
         name: watts_strogatz
         type: WattsStrogatz
