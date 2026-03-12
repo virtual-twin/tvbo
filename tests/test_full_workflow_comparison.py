@@ -131,7 +131,7 @@ def run_tvbo_workflow():
     )
     weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
     exp.network = TvboNetwork.from_matrix(
-        weights, lengths, region_labels, normalization=exp.network.normalization
+        weights, lengths, region_labels, transforms=exp.network.transforms
     )
 
     fc_target = load_functional_connectivity(name="dk_average")

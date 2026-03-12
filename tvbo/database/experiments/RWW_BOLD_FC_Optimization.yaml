@@ -90,8 +90,10 @@ network:
     bids_dir: "../networks/bids/dk_average"
     structural_measures: [streamlineCount, tractLength]
     observational_measures: [BoldCorrelation]
-    normalization:
-        rhs: "W / max(W)"
+    transforms:
+        - name: weight
+          equation:
+            rhs: "W / max(W)"
 
     # Coupling functions: key == class name == coupling_input key
     coupling:

@@ -2201,10 +2201,12 @@ class Network(ConfiguredBaseModel):
                        'Edge',
                        'Continuation',
                        'SimulationExperiment']} })
-    number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'integer(1)'} })
+    number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'aliases': ['number_of_nodes', 'number_of_regions'],
+         'domain_of': ['Network'],
+         'ifabsent': 'integer(1)'} })
     parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     tractogram: Optional[Tractogram] = Field(default=None, description="""Reference to tractography data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    normalization: Optional[Equation] = Field(default=None, description="""Normalization equation for connectivity weights""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    transforms: Optional[list[Function]] = Field(default=None, description="""Ordered list of transforms applied to edge property matrices. Each Function's name identifies the target edge property (e.g. 'weight', 'length'). Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     data_file: Optional[str] = Field(default=None, description="""Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix). Null if no companion data needed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     descriptor: Optional[str] = Field(default=None, description="""Short alphanumeric identifier for the BIDS desc- filename entity (e.g., SC, FC, EC, SCFC). Classifies the connectivity modality of the network's edge measures.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     bids_dir: Optional[str] = Field(default=None, description="""Path to BEP017-compliant BIDS directory for loading connectivity matrices""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })

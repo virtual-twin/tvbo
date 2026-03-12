@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-11T13:47:59
+# Generation date: 2026-03-12T18:10:45
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -779,7 +779,7 @@ class Network(YAMLRoot):
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[Union[dict, Tractogram]] = None
-    normalization: Optional[Union[dict, Equation]] = None
+    transforms: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     data_file: Optional[str] = None
     descriptor: Optional[str] = None
     bids_dir: Optional[str] = None
@@ -822,8 +822,7 @@ class Network(YAMLRoot):
         if self.tractogram is not None and not isinstance(self.tractogram, Tractogram):
             self.tractogram = Tractogram(**as_dict(self.tractogram))
 
-        if self.normalization is not None and not isinstance(self.normalization, Equation):
-            self.normalization = Equation(**as_dict(self.normalization))
+        self._normalize_inlined_as_list(slot_name="transforms", slot_type=Function, key_name="name", keyed=True)
 
         if self.data_file is not None and not isinstance(self.data_file, str):
             self.data_file = str(self.data_file)
@@ -5396,8 +5395,8 @@ slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcell
 slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
                    model_uri=TVBO.network__tractogram, domain=None, range=Optional[Union[dict, Tractogram]])
 
-slots.network__normalization = Slot(uri=TVBO.normalization, name="network__normalization", curie=TVBO.curie('normalization'),
-                   model_uri=TVBO.network__normalization, domain=None, range=Optional[Union[dict, Equation]])
+slots.network__transforms = Slot(uri=TVBO.transforms, name="network__transforms", curie=TVBO.curie('transforms'),
+                   model_uri=TVBO.network__transforms, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
 
 slots.network__data_file = Slot(uri=TVBO.data_file, name="network__data_file", curie=TVBO.curie('data_file'),
                    model_uri=TVBO.network__data_file, domain=None, range=Optional[str])

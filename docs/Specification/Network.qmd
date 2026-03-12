@@ -271,39 +271,40 @@ Access the BIDS filename programmatically:
 print(sc.bids_filename)
 ```
 
-### Normalization
+### Transforms
 
 Raw streamline counts vary over orders of magnitude. Apply min–max
 normalization to scale weights to $[0, 1]$:
 
 ```{python}
 print(
-    f"Before normalization: [{sc.weights_matrix.min():.2f}, {sc.weights_matrix.max():.2f}]"
+    f"Before transform: [{sc.weights_matrix.min():.2f}, {sc.weights_matrix.max():.2f}]"
 )
 
 sc.normalize()
 
 print(
-    f"After normalization: [{sc.weights_matrix.min():.2f}, {sc.weights_matrix.max():.2f}]"
+    f"After transform: [{sc.weights_matrix.min():.2f}, {sc.weights_matrix.max():.2f}]"
 )
 ```
 
 `normalize()` does **not** overwrite the stored matrix.  Instead it
-sets a `normalization` equation in the Network metadata — the
+appends a `Function` transform to the Network's `transforms` list — the
 transformation is applied lazily when accessing `weights_matrix`.
-Because the equation is written into the YAML sidecar, every
+Multiple transforms on the same target are applied in order.
+Because the transforms are written into the YAML sidecar, every
 processing step is recorded for reproducibility:
 
 ```{python}
-# The YAML sidecar now contains the normalization equation
+# The YAML sidecar now contains the transforms
 import yaml
 
 meta = yaml.safe_load(sc.to_yaml())
-print(yaml.dump({"normalization": meta["normalization"]}, default_flow_style=False))
+print(yaml.dump({"transforms": meta.get("transforms")}, default_flow_style=False))
 ```
 
 The `rhs` field captures *what* was done, not just the result.
-Anyone who loads this YAML gets the same normalized weights —
+Anyone who loads this YAML gets the same transformed weights —
 no hidden in-memory mutations, and the raw matrix in HDF5 stays
 untouched.
 

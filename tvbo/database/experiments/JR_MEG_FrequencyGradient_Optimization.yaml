@@ -131,8 +131,10 @@ network:
             name: conduction_speed
             value: 3.0
             unit: mm/ms
-    normalization:
-        rhs: "W / W_max"
+    transforms:
+        - name: weight
+          equation:
+            rhs: "W / W_max"
 
     # Coupling functions: key == class name == coupling_input key
     coupling:

@@ -468,9 +468,11 @@ network:
             value: 0.5
             description: "Global scaling factor for connectivity weights"
 
-    normalization:
-        rhs: "W * G * J_NMDA"
-        description: "SC weights scaled by global coupling and NMDA strength"
+    transforms:
+        - name: weight
+          equation:
+            rhs: "W * G * J_NMDA"
+            description: "SC weights scaled by global coupling and NMDA strength"
 
     coupling:
         EIBCoupling:

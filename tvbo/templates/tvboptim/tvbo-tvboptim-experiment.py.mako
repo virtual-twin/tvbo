@@ -128,10 +128,11 @@ n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
-# Normalization (optional)
-_norm = getattr(network, 'normalization', None)
-has_normalization = _norm is not None and hasattr(_norm, 'rhs') and _norm.rhs
-normalization_jax = jaxcode(_norm.rhs) if has_normalization else None
+# Transforms (optional)
+_transforms = getattr(network, 'transforms', None) or []
+_weight_transforms = [t for t in _transforms if t.name == 'weight']
+has_weight_transforms = len(_weight_transforms) > 0
+weight_transform_jax = [jaxcode(t.equation.rhs) for t in _weight_transforms] if has_weight_transforms else []
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -703,11 +704,19 @@ def create_network(
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma_value},
 ) -> Network:
-% if has_normalization:
-    # Normalization: ${_norm.rhs}
+% if has_weight_transforms:
+    # Weight transforms
     W = weights
     W_min, W_max = jnp.min(W), jnp.max(W)
-    weights = ${normalization_jax}
+    M = W
+    M_min, M_max = W_min, W_max
+    % for expr in weight_transform_jax:
+    weights = ${expr}
+    W = weights
+    M = W
+    W_min, W_max = jnp.min(W), jnp.max(W)
+    M_min, M_max = W_min, W_max
+    % endfor
 % endif
 
     % if has_delay:
