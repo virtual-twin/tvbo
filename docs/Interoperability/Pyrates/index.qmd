@@ -29,7 +29,7 @@ subtitle: "Bidirectional interoperability with PyRates dynamical systems toolbox
 from tvbo import Dynamics
 
 # Load a TVBO model
-model = Dynamics.from_file("../../../database/models/JansenRit.yaml")
+model = Dynamics.from_db("JansenRit")
 
 # Export to PyRates YAML format
 model.to_yaml(format="pyrates", path="jr_pyrates.yaml")

@@ -15,7 +15,9 @@ _HAVE_TVBOPTIM = _has("tvboptim")
 _HAVE_JULIACALL = _has("juliacall")
 
 
-DATABASE_MODELS_DIR = Path(__file__).parent.parent.parent / "database" / "models"
+from tvbo import database_path
+
+DATABASE_MODELS_DIR = database_path / "models"
 JULIA_MODELS_DIR = DATABASE_MODELS_DIR / "julia"
 
 

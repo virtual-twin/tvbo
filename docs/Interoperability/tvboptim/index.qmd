@@ -26,7 +26,7 @@ The **tvboptim** backend provides high-performance simulation and optimization c
 from tvbo import SimulationExperiment
 
 # Load experiment from YAML
-exp = SimulationExperiment.from_file("database/studies/JR_MEG_FrequencyGradient_Optimization.yaml")
+exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
 
 # Run optimization
 results = exp.run()

@@ -99,7 +99,7 @@ Observation pipelines chain functions sequentially. Each step's output becomes t
 
 ## Available Observation Models
 
-Pre-defined observation models in `database/observation_models/`:
+Pre-defined observation models in `tvbo/database/observation_models/`:
 
 | Model | File | Description |
 |-------|------|-------------|

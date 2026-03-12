@@ -140,6 +140,7 @@ _patch_pyrates_networkx_backend()
 # ---------------------------------------------------------------------------
 
 from .data import tvbo_data
+from .data.registry import DATABASE_ROOT as database_path
 from .data.tvbo_data.connectomes import Connectome, Network
 from .data.tvbo_data.atlases import Atlas
 from .export.experiment import SimulationExperiment

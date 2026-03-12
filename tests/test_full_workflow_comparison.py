@@ -125,8 +125,9 @@ def run_tvbo_workflow():
     from tvbo import SimulationExperiment, Network as TvboNetwork
 
     # Load experiment
+    from tvbo import database_path
     exp = SimulationExperiment.from_file(
-        '/Users/leonmartin_bih/tools/tvbo/database/experiments/RWW_BOLD_FC_Optimization.yaml'
+        str(database_path / 'experiments' / 'RWW_BOLD_FC_Optimization.yaml')
     )
     weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
     exp.network = TvboNetwork.from_matrix(

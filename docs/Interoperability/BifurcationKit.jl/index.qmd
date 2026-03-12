@@ -37,7 +37,7 @@ from tvbo import Dynamics
 from tvbo.knowledge.simulation.continuation import Continuation
 
 # Load model + bifurcation spec from YAML
-model = Dynamics.from_file("database/models/TsodyksMarkram.yaml")
+model = Dynamics.from_db("TsodyksMarkram")
 cont = Continuation.from_file("yaml/TMModel-bifurcation.yaml")
 
 # Generate BifurcationKit.jl code
@@ -68,7 +68,7 @@ The code generation pipeline:
 
 ## YAML Schema
 
-### Model YAML (in `database/models/`)
+### Model YAML (in `tvbo/database/models/`)
 
 Defines the dynamical system:
 
@@ -99,7 +99,7 @@ branches:                             # branch switching from bifurcation points
       bothside: true
 ```
 
-See [Generic2dOscillator-bifurcation-full.yaml](../../../database/continuations/Generic2dOscillator-bifurcation-full.yaml)
+See [Generic2dOscillator-bifurcation-full.yaml](../../../tvbo/database/continuations/Generic2dOscillator-bifurcation-full.yaml)
 for a comprehensive reference of all available settings.
 
 ## Supported Features
