@@ -505,6 +505,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return resp.json()
 
     @classmethod
+    def from_db(cls, name: str) -> "SimulationExperiment":
+        """Load a SimulationExperiment by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("SimulationExperiment", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available experiments in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("SimulationExperiment")
+
+    @classmethod
     def from_bids(
         cls,
         bids_dir: str,
