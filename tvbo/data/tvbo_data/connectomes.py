@@ -24,8 +24,8 @@ NETWORK_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "database" / "networks"
 )
 
-# Legacy: CSV connectome directory (used by tractograms.py for output paths)
-_LEGACY_CONNECTOME_DIR = Path(__file__).resolve().parent / "connectome"
+# Legacy: CSV connectome directory (archived, used by tractograms.py for output paths)
+_LEGACY_CONNECTOME_DIR = Path(__file__).resolve().parent / "_archive_connectome"
 try:
     from bids.layout import BIDSLayout
 
@@ -1082,6 +1082,18 @@ class Network(tvbo_datamodel.Network):
         resp = requests.get(api, params=filters)
         resp.raise_for_status()
         return resp.json()
+
+    @classmethod
+    def from_db(cls, name: str) -> "Network":
+        """Load a Network by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Network", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available networks in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Network")
 
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
