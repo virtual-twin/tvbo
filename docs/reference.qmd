@@ -61,7 +61,7 @@ The most commonly called functions and classes:
 from tvbo import SimulationExperiment
 
 # 1. Load experiment from YAML
-exp = SimulationExperiment.from_file("database/studies/Schirner2023.yaml")
+exp = SimulationExperiment.from_db("Schirner2023_MultiscaleBNM_DM")
 
 # 2. Run
 result = exp.run()

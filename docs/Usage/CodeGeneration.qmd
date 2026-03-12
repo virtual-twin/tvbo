@@ -13,7 +13,7 @@ View the generated source code for any backend:
 ```{python}
 from tvbo import Dynamics, SimulationExperiment
 
-model = Dynamics.from_file("../../database/models/Generic2dOscillator.yaml")
+model = Dynamics.from_db("Generic2dOscillator")
 exp = SimulationExperiment(dynamics=model)
 ```
 

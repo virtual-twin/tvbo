@@ -2,16 +2,14 @@
 
 import pytest
 import os
-from pathlib import Path
 
 pytest.importorskip("tvboptim", reason="tvboptim not installed")
 
 os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
-from tvbo import SimulationExperiment
+from tvbo import SimulationExperiment, database_path
 
-REPO_ROOT = Path(__file__).parent.parent
-EXPERIMENTS_DIR = REPO_ROOT / "database" / "experiments"
+EXPERIMENTS_DIR = database_path / "experiments"
 
 EXPERIMENTS = [
     "EI_Tuning_FIC_EIB_Optimization",

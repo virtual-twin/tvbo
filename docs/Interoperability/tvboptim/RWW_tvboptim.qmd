@@ -11,9 +11,7 @@ os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment, Network
 
-exp = SimulationExperiment.from_file(
-    "../../../database/experiments/RWW_BOLD_FC_Optimization.yaml"
-)
+exp = SimulationExperiment.from_db("RWW_BOLD_FC_Optimization")
 results = exp.run("tvboptim")
 ```
 

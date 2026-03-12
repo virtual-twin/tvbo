@@ -247,7 +247,7 @@ sc.plot_overview(log_weights=True)
 
 ### BIDS-Compliant File Naming
 
-Network files in `database/networks/` follow the
+Network files in `tvbo/database/networks/` follow the
 [BEP017](https://bids.neuroimaging.io/bep017) naming convention:
 
 ```

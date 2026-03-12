@@ -83,8 +83,9 @@ def load_schema_model():
     """Load schema-driven BOLD model."""
     print("Loading schema-driven model...")
 
+    from tvbo import database_path
     observation = yaml_loader.load(
-        "/Users/leonmartin_bih/tools/tvbo/database/observation_models/bold_tvb.yaml",
+        str(database_path / "observation_models" / "bold_tvb.yaml"),
         target_class=Observation,
     )
 
