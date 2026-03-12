@@ -116,3 +116,6 @@ _*.py
 tvbo/data/tvbo_data/atlas/schaefer2018_original_mni
 tvbo/data/tvbo_data/atlas/*.nii.gz
 tvbo/data/tvbo_data/_archive_connectome
+replication_studies
+
+_archive/database

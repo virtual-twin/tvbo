@@ -17,12 +17,11 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from tvbo.data.tvbo_data import bids_utils
+from tvbo.data.registry import database_dir
 from tvbo.datamodel import tvbo_datamodel
 
-# HDF5+YAML network files in database/networks/
-NETWORK_DIR = (
-    Path(__file__).resolve().parent.parent.parent.parent / "database" / "networks"
-)
+# HDF5+YAML network files — resolved via registry (works for pip & editable installs)
+NETWORK_DIR = database_dir("Network")
 
 # Legacy: CSV connectome directory (archived, used by tractograms.py for output paths)
 _LEGACY_CONNECTOME_DIR = Path(__file__).resolve().parent / "_archive_connectome"
@@ -69,6 +68,26 @@ def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
     if mapped != atlas:
         return _find_network_sidecar(mapped, tractogram)
     return None
+
+
+def _parse_bids_entities(stem: str) -> Dict[str, str]:
+    """Extract BIDS key-value entities from a filename stem.
+
+    E.g. ``"tpl-MNI_atlas-DK_rec-dTOR_scale-100_desc-SC_relmat"``
+    → ``{"tpl": "MNI", "atlas": "DK", "rec": "dTOR", "scale": "100", "desc": "SC"}``
+    """
+    import re
+    return dict(re.findall(r"(?:^|_)([a-zA-Z]+)-([^_]+)", stem))
+
+
+def _filter_networks_by_entities(entities: Dict[str, str]) -> list:
+    """Return network YAML paths whose BIDS entities match all given filters."""
+    matches = []
+    for f in NETWORK_DIR.glob("*.yaml"):
+        file_ents = _parse_bids_entities(f.stem)
+        if all(file_ents.get(k) == str(v) for k, v in entities.items()):
+            matches.append(f)
+    return matches
 
 
 def get_normative_connectome_data(
@@ -1084,16 +1103,77 @@ class Network(tvbo_datamodel.Network):
         return resp.json()
 
     @classmethod
-    def from_db(cls, name: str) -> "Network":
-        """Load a Network by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-        return cls.from_file(str(resolve("Network", name)))
+    def from_db(cls, name: Optional[str] = None, **entities) -> Union["Network", list["Network"]]:
+        """Load a Network from the tvbo database by name or BIDS entities.
+
+        Supports two modes:
+
+        1. **By name** (existing): ``Network.from_db("DesikanKilliany")``
+        2. **By BIDS key-values**: ``Network.from_db(atlas="DesikanKilliany", rec="dTOR")``
+
+        BIDS entity keys match the ``key-value`` pairs in filenames, e.g.
+        ``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
+
+        When entities match a single file, returns a Network.
+        When multiple match, returns a list of Networks.
+
+        Parameters
+        ----------
+        name : str, optional
+            Short name or atlas name (legacy mode). Ignored when entities
+            are given.
+        **entities
+            BIDS key-value filters. All specified entities must match.
+
+        Returns
+        -------
+        Network or list[Network]
+
+        Examples
+        --------
+        >>> sc = Network.from_db("DesikanKilliany")        # by name
+        >>> sc = Network.from_db(atlas="DesikanKilliany", rec="dTOR")
+        >>> scs = Network.from_db(atlas="Schaefer2018", scale="100")  # list
+        """
+        if not entities:
+            from tvbo.data.registry import resolve
+            return cls.from_file(str(resolve("Network", name)))
+
+        matches = _filter_networks_by_entities(entities)
+        if len(matches) == 0:
+            available = [f.stem for f in NETWORK_DIR.glob("*.yaml")]
+            raise FileNotFoundError(
+                f"No network matching {entities}. "
+                f"Available: {sorted(available)}"
+            )
+        if len(matches) == 1:
+            return cls.from_file(str(matches[0]))
+        return [cls.from_file(str(m)) for m in sorted(matches)]
 
     @classmethod
-    def list_db(cls) -> list[str]:
-        """List available networks in the tvbo database."""
-        from tvbo.data.registry import list_entries
-        return list_entries("Network")
+    def list_db(cls, **entities) -> list[str]:
+        """List available networks in the tvbo database, optionally filtered.
+
+        Parameters
+        ----------
+        **entities
+            BIDS key-value filters (e.g. ``atlas="Schaefer2018"``).
+
+        Returns
+        -------
+        list[str]
+            Sorted list of matching network stems.
+
+        Examples
+        --------
+        >>> Network.list_db()                            # all networks
+        >>> Network.list_db(atlas="Schaefer2018")        # only Schaefer
+        >>> Network.list_db(rec="dTOR", scale="100")     # dTOR at scale 100
+        """
+        if not entities:
+            from tvbo.data.registry import list_entries
+            return list_entries("Network")
+        return sorted(m.stem for m in _filter_networks_by_entities(entities))
 
     # Keep nodes and regions synchronized on assignment
     def __setattr__(self, name: str, value: Any) -> None:
@@ -2128,6 +2208,11 @@ class Network(tvbo_datamodel.Network):
     def get_centers(self) -> Dict[int, Tuple[float, float, float]]:
         """Get 3D spatial coordinates of brain region centers.
 
+        Resolution order:
+        1. ``Node.position`` on ``self.nodes`` (in-memory)
+        2. ``nodes/coordinates`` dataset in the HDF5/Zarr companion
+        3. Atlas metadata (``terminology.entities[*].center``)
+
         Returns
         -------
         dict of int to tuple of float
@@ -2142,6 +2227,27 @@ class Network(tvbo_datamodel.Network):
             print(f"Region {idx}: ({x:.1f}, {y:.1f}, {z:.1f})")
         ```
         """
+        # --- Source 1: Node.position on self.nodes ---
+        nodes = getattr(self, "nodes", None) or []
+        if nodes:
+            coords = {}
+            for i, node in enumerate(nodes):
+                pos = getattr(node, "position", None)
+                if pos is not None:
+                    coords[i] = (float(pos.x), float(pos.y), float(pos.z))
+            if coords:
+                return coords
+
+        # --- Source 2: nodes/coordinates in companion file ---
+        store = getattr(self, "_store", None)
+        if store is not None:
+            try:
+                arr = store.read_dataset("nodes/coordinates")
+                return {i: tuple(row) for i, row in enumerate(arr)}
+            except (KeyError, FileNotFoundError):
+                pass
+
+        # --- Source 3: Atlas metadata (fallback) ---
         labels = []
         ids = []
         centers = []
@@ -2466,7 +2572,7 @@ class Network(tvbo_datamodel.Network):
         l = self.plot_lengths(axs[2], **lengths_kwargs)
         axs[2].sharey(axs[1])
 
-        c1 = fig.colorbar(g, ax=axs[0], shrink=0.5, pad=-0.05)  # type: ignore[arg-type]
+        c1 = fig.colorbar(g, ax=axs[0], shrink=0.5)  # type: ignore[arg-type]
         c2 = fig.colorbar(w, ax=axs[1], shrink=0.5)
         c3 = fig.colorbar(l, ax=axs[2], shrink=0.5)
 
