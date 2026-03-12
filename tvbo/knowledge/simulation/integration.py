@@ -144,6 +144,24 @@ class Integrator(tvbo_datamodel.Integrator):
 
         self._populate_from_ontology()
 
+    @classmethod
+    def from_file(cls, filepath: str) -> "Integrator":
+        """Load an Integrator from a YAML file."""
+        from linkml_runtime.loaders import yaml_loader
+        return yaml_loader.load(str(filepath), target_class=cls)
+
+    @classmethod
+    def from_db(cls, name: str) -> "Integrator":
+        """Load an Integrator by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Integrator", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available integrators in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Integrator")
+
     # Back-compat: expose .metadata pointing to self
     @property
     def metadata(self):

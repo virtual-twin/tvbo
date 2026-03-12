@@ -555,9 +555,36 @@ classes:
                 range: string
                 description: "Software/agent identifier (prov:wasGeneratedBy)"
 
+    BidsEntities:
+        class_uri: tvbo:BidsEntities
+        description: >-
+            BIDS filename entities (BEP017-aligned) for provenance and data
+            discovery. Reusable on Network, BrainAtlas, Tractogram, or any
+            dataset with BIDS-conformant naming.
+        attributes:
+            template:
+                range: string
+                description: "BIDS tpl- entity (e.g., FSLMNI152, MNI152NLin2009cAsym)"
+            cohort:
+                range: string
+                description: "BIDS cohort- entity (e.g., HCPYA, PPMI85)"
+            reconstruction:
+                range: string
+                description: "BIDS rec- entity (e.g., dTOR)"
+            segmentation:
+                range: string
+                description: "BIDS seg- entity (e.g., ordered, ranked, 17Networks)"
+            scale:
+                range: string
+                description: "BIDS scale- entity (BEP017, e.g., 1000)"
+            atlas:
+                range: string
+                description: "BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)"
+
     Network:
         class_uri: tvbo:Network
         aliases:
+            - Network
             - Connectome
             - Graph
             - Connectivity
@@ -590,14 +617,13 @@ classes:
                 description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
 
             # Network metadata
-            number_of_regions:
-                range: integer
-                ifabsent: integer(1)
-                description: "Number of regions (derived from nodes if not set)"
             number_of_nodes:
                 range: integer
                 ifabsent: integer(1)
                 description: "Number of nodes in the network (derived from nodes if not set)"
+                aliases:
+                    - number_of_nodes
+                    - number_of_regions
             parcellation:
                 range: Parcellation
                 description: "Brain parcellation/atlas reference"
@@ -627,6 +653,10 @@ classes:
             bids_dir:
                 range: string
                 description: "Path to BEP017-compliant BIDS directory for loading connectivity matrices"
+            bids:
+                range: BidsEntities
+                inlined: true
+                description: "BIDS filename entities for this dataset"
             structural_measures:
                 range: string
                 multivalued: true
@@ -1281,10 +1311,18 @@ classes:
     FunctionCall:
         description: >-
             Invocation of a function in a pipeline. Can reference a defined Function by name,
-            OR inline a callable directly for external library functions.
-            OR inline a class_call for classes that need instantiation then calling.
-            Use arguments to specify inputs by name (referencing previous outputs or values).
+            OR inline a callable directly for external library functions,
+            OR inline an equation, OR use class_call for class instantiation.
+            Mirrors Function attributes so pipeline steps can be self-contained.
+        slots:
+            - acronym
+            - label
+            - equation
+            - description
         attributes:
+            name:
+                range: string
+                description: "Optional name for this pipeline step"
             function:
                 description: "Reference to a defined Function (by name)"
                 range: Function
@@ -1300,6 +1338,9 @@ classes:
                     Example: Bold monitor from tvboptim.
                 range: ClassReference
                 inlined: true
+            input:
+                description: "Reference to previous function's output in pipeline (by name)"
+                range: string
             output:
                 description: "Name for this step's output (referenced by subsequent functions)"
                 range: string
@@ -1317,6 +1358,12 @@ classes:
                 range: Argument
                 multivalued: true
                 inlined_as_list: true
+            time_range:
+                description: "Time range for generated TimeSeries (for kernel generators)"
+                range: Range
+                inlined: true
+            source_code:
+                range: string
 
     Callable:
         slots:

@@ -1,4 +1,5 @@
 name: Hopfield
+iri: tvbo:Hopfield
 parameters:
   tauT:
     name: tauT

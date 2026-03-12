@@ -1,5 +1,6 @@
 # Jansen-Rit bifurcation analysis — reproduces Jansen1995 Figure 3
 
+id: 103
 label: "Jansen-Rit — bifurcation in external input p"
 description: >-
   Reproduce the bifurcation diagram from Jansen & Rit (1995) Figure 3.
@@ -7,8 +8,7 @@ description: >-
   continuation parameter. Two fold bifurcations and a Hopf bifurcation
   delimit the oscillatory regime.
 
-model:
-  name: JansenRit
+model: JansenRit
 
 continuations:
   # ── Codim-1 in p ──────────────────────────────────────────────
@@ -46,6 +46,7 @@ continuations:
             - name: degree
               value: 4
         continuation:
+          name: po_alpha_continuation
           max_steps: 200
 
   # ── Codim-2: fold curve in (p, C) ────────────────────────────
@@ -57,6 +58,9 @@ continuations:
       eq_in_p. Traces the saddle-node boundary in the (p, C) plane.
     free_parameters:
       - name: p
+        domain:
+          lo: "0"
+          hi: "0.5"
       - name: C
         domain:
           lo: "10"
@@ -76,6 +80,9 @@ continuations:
     label: "Hopf curve in (p, C) plane"
     free_parameters:
       - name: p
+        domain:
+          lo: "0"
+          hi: "0.5"
       - name: C
         domain:
           lo: "10"

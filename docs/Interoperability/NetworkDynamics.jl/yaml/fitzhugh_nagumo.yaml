@@ -92,7 +92,6 @@ network:
         (AAL) atlas (Tzourio-Mazoyer et al., 2002).  Edge weights are set
         at runtime from the Norm_G_DTI.txt matrix.
     number_of_nodes: 90
-    number_of_regions: 90
     edge_matrix_files:
         - ../Norm_G_DTI.txt
     parcellation:

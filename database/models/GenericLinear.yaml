@@ -1,4 +1,5 @@
 name: GenericLinear
+iri: tvbo:GenericLinear
 parameters:
   gamma:
     name: gamma

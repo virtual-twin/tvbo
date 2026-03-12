@@ -1,7 +1,20 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
 label: Schaefer100017Networks (MghUscHcp32)
-descriptor: SC
 number_of_nodes: 1000
+descriptor: SC
 data_file: tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.h5
+bids:
+  template: FSLMNI152
+  cohort: MghUscHcp32
+  reconstruction: MghUscHcp32
+  segmentation: 17Networks
+  scale: '1000'
+parcellation:
+  atlas:
+    name: Schaefer2018
+tractogram:
+  name: MghUscHcp32
 edges:
 - label: weights
   format: csr
@@ -14,16 +27,3 @@ edges:
   weighted: true
   valid_diagonal: false
   non_negative: true
-bids:
-  bids_version: 1.10.0
-  dataset_type: derivative
-  template: FSLMNI152
-  cohort: MghUscHcp32
-  reconstruction: MghUscHcp32
-  segmentation: 17Networks
-  scale: '1000'
-parcellation:
-  atlas:
-    name: Schaefer2018
-tractogram:
-  name: MghUscHcp32
