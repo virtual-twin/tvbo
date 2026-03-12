@@ -1539,6 +1539,7 @@ class Network(tvbo_datamodel.Network):
             arrays = self._store.arrays
             if "weight" in arrays:
                 self._cached_weights = arrays["weight"]
+                W = self._cached_weights
             elif "weights" in arrays:
                 self._cached_weights = arrays["weights"]
                 W = self._cached_weights
@@ -1638,6 +1639,7 @@ class Network(tvbo_datamodel.Network):
             arrays = self._store.arrays
             if "length" in arrays:
                 self._cached_lengths = arrays["length"]
+                return self._cached_lengths
             elif "lengths" in arrays:
                 self._cached_lengths = arrays["lengths"]
                 return self._cached_lengths
