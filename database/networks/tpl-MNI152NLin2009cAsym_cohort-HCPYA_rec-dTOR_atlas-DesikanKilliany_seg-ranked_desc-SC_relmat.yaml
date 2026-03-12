@@ -1,19 +1,9 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
 label: DesikanKillianyranked (dTOR)
-descriptor: SC
 number_of_nodes: 87
+descriptor: SC
 data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5
-edges:
-- label: weights
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-- label: lengths
-  unit: mm
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
 bids:
   template: MNI152NLin2009cAsym
   cohort: HCPYA
@@ -548,3 +538,15 @@ nodes:
     x: 34.8554
     y: 3.4149
     z: -2.5363
+edges:
+- label: weights
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
