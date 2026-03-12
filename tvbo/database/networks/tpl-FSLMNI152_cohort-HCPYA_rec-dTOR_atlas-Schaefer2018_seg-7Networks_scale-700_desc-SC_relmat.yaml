@@ -4225,13 +4225,13 @@ nodes:
     y: -42.0
     z: 43.0
 edges:
-- label: weights
+- label: weight
   format: csr
   weighted: true
   valid_diagonal: false
   non_negative: true
   directed: false
-- label: lengths
+- label: length
   format: csr
   weighted: true
   valid_diagonal: false

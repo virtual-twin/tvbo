@@ -3,11 +3,18 @@ schema_version: tvb-datamodel/0.7.0
 label: Yeo17 (dTOR)
 number_of_nodes: 17
 descriptor: SC
+distance_unit: mm
+time_unit: ms
 data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat.h5
 bids:
   template: MNI152NLin2009cAsym
   cohort: HCPYA
   reconstruction: dTOR
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm/ms
 parcellation:
   atlas:
     name: Yeo17
@@ -118,14 +125,16 @@ nodes:
     y: -12.537
     z: -18.7785
 edges:
-- label: weights
+- label: weight
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
-- label: lengths
+  directed: false
+- label: length
   unit: mm
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
+  directed: false

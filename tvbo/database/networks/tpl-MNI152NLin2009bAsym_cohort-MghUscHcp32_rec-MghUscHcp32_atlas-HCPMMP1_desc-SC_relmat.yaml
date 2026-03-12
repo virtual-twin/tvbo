@@ -3,11 +3,18 @@ schema_version: tvb-datamodel/0.7.0
 label: hcpmmp1 (MghUscHcp32)
 number_of_nodes: 379
 descriptor: SC
+distance_unit: mm
+time_unit: ms
 data_file: tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5
 bids:
   template: MNI152NLin2009bAsym
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm/ms
 parcellation:
   atlas:
     name: HCPMMP1
@@ -2290,14 +2297,16 @@ nodes:
     y: -30.9513
     z: -33.0764
 edges:
-- label: weights
+- label: weight
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
-- label: lengths
+  directed: false
+- label: length
   unit: mm
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
+  directed: false

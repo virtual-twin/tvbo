@@ -394,6 +394,7 @@ def plot_graph_brain(
     network,
     *,
     ax: Optional[Axes] = None,
+    weight_matrix: Optional[np.ndarray] = None,
     template: str = "fsaverage",
     density: str = "164k",
     hemi: Union[str, Tuple[str, str]] = ("lh", "rh"),
@@ -476,7 +477,7 @@ def plot_graph_brain(
 
     # Use MNI coordinates from atlas metadata
     centers = network.get_centers()
-    W = network.weights_matrix
+    W = weight_matrix if weight_matrix is not None else network.weights_matrix
 
     # Filter out nodes with no valid coordinates (0,0,0)
     valid_idx = [

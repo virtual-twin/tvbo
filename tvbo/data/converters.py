@@ -181,8 +181,8 @@ def from_tvb_zip(zip_path):
         edges=[],
         number_of_nodes=n,
     )
-    net.set_matrix("weights", weights)
-    net.set_matrix("lengths", lengths)
+    net.set_matrix("weight", weights)
+    net.set_matrix("length", lengths)
     net.label = zip_path.stem
     net.descriptor = "SC"  # TVB connectivity = structural
     object.__setattr__(net, '_arrays', {"streamlineCount": weights})
