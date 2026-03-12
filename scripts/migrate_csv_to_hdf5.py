@@ -10,10 +10,11 @@ Usage:
 import sys
 import numpy as np
 from pathlib import Path
+from tvbo import database_path
 
 ROOT = Path(__file__).resolve().parent.parent
 CSV_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "connectome"
-NETWORK_DIR = ROOT / "database" / "networks"
+NETWORK_DIR = database_path / "networks"
 
 # Map existing YAML sidecars to their CSV sources
 # Parse sidecar filenames to find matching CSV files

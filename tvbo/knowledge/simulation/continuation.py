@@ -17,7 +17,7 @@ continuation specification can be loaded from YAML just like ``Dynamics``.
 Usage
 -----
 >>> from tvbo import Continuation
->>> cont = Continuation.from_file("database/continuations/Generic2dOscillator-bifurcation.yaml")
+>>> cont = Continuation.from_db("Generic2dOscillator-bifurcation")
 >>> print(cont.name)
 eq_in_I
 

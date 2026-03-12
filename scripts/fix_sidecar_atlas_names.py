@@ -7,8 +7,9 @@ to the bids: section where applicable.
 import re
 import yaml
 from pathlib import Path
+from tvbo import database_path
 
-NET_DIR = Path(__file__).resolve().parent.parent / "database" / "networks"
+NET_DIR = database_path / "networks"
 
 # Atlas name normalization: old → new
 ATLAS_NORMALIZE = {
