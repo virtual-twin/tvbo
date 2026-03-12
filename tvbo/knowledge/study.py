@@ -31,6 +31,18 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     def from_datamodel(cls, datamodel: tvbo_datamodel.SimulationStudy):
         return cls(**datamodel._as_dict)
 
+    @classmethod
+    def from_db(cls, name: str) -> "SimulationStudy":
+        """Load a SimulationStudy by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("SimulationStudy", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available studies in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("SimulationStudy")
+
     def cite(self):
         return report.get_citation(self.key)
 

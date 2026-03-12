@@ -127,8 +127,6 @@ network:
         Hanging: (6,−1). Nodes 1 and 4 are fixed supports.
         18 beams connecting adjacent nodes.
     number_of_nodes: 11
-    number_of_regions: 11
-
     nodes:
         # Bottom row (nodes 1-5, indices 0-4)
         - id: 0

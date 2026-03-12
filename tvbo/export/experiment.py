@@ -33,22 +33,23 @@ sessionid = 1
 
 
 def _sync_network_node_count(net):
-    """Sync number_of_nodes/number_of_regions from the nodes list.
+    """Sync number_of_nodes from the nodes list.
 
     When Network is created via LinkML deserialization + __class__ patching,
     Network.__init__ never runs. This ensures node count is consistent.
     """
+    # Migrate deprecated number_of_regions -> number_of_nodes
+    if getattr(net, 'number_of_regions', None) and not getattr(net, 'number_of_nodes', None):
+        net.number_of_nodes = net.number_of_regions
     if net.nodes:
         n = len(net.nodes)
         net.number_of_nodes = n
-        net.number_of_regions = n
     elif (net.number_of_nodes or 0) > 1 and not net.nodes:
         # number_of_nodes set but no nodes list — create default nodes
         net.nodes = [
             tvbo_datamodel.Node(id=i, label=f"node_{i}")
             for i in range(net.number_of_nodes)
         ]
-        net.number_of_regions = net.number_of_nodes
 
 
 def _upgrade_network_couplings(network, coupling_types=None):
@@ -446,6 +447,74 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         data_as_dict = yaml.safe_load(yaml_string) or {}
         return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
+
+    # ── Platform retrieval ────────────────────────────────────────
+
+    TVBO_PLATFORM_URL = "https://tvbo.charite.de"
+
+    @classmethod
+    def from_platform(
+        cls,
+        name: str,
+        base_url: str = TVBO_PLATFORM_URL,
+    ) -> "SimulationExperiment":
+        """Load a simulation experiment from the tvbo platform API.
+
+        Fetches the full LinkML-valid YAML definition from the platform.
+
+        Parameters
+        ----------
+        name : str
+            Experiment label/ID (e.g., "RWW_BOLD_FC_Optimization").
+        base_url : str
+            Platform base URL.
+
+        Returns
+        -------
+        SimulationExperiment
+            Experiment loaded from the platform.
+        """
+        import requests
+
+        api = f"{base_url.rstrip('/')}/api/v1/experiments"
+        resp = requests.get(f"{api}/{name}/sidecar", params={"format": "yaml"})
+        resp.raise_for_status()
+        return cls.from_string(resp.text)
+
+    @classmethod
+    def list_platform_experiments(
+        cls, base_url: str = TVBO_PLATFORM_URL,
+    ) -> list:
+        """List available experiments on the tvbo platform.
+
+        Parameters
+        ----------
+        base_url : str
+            Platform base URL.
+
+        Returns
+        -------
+        list[dict]
+            List of experiment summaries.
+        """
+        import requests
+
+        api = f"{base_url.rstrip('/')}/api/v1/experiments"
+        resp = requests.get(api)
+        resp.raise_for_status()
+        return resp.json()
+
+    @classmethod
+    def from_db(cls, name: str) -> "SimulationExperiment":
+        """Load a SimulationExperiment by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("SimulationExperiment", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available experiments in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("SimulationExperiment")
 
     @classmethod
     def from_bids(
@@ -1493,7 +1562,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def collect_initial_conditions(self, random=False):
         history = []
         n_modes = getattr(self.dynamics, 'number_of_modes', 1) or 1
-        n_nodes = self.network.number_of_regions
+        n_nodes = getattr(self.network, 'number_of_nodes', None) or 1
 
         if random:
             history.append(

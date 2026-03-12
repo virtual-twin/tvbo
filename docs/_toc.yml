@@ -21,9 +21,8 @@ website:
                 href: reference.qmd
 
               - section: "Usage"
+                href: Usage/index.qmd
                 contents:
-                  - text: "Overview"
-                    href: Usage/index.qmd
                   - text: "Defining Dynamical Systems"
                     href: Usage/DefineDynamicalSystem.qmd
                   - text: "Simulation Experiments"

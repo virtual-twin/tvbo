@@ -1,22 +1,10 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
 label: hcpmmp1 (dTOR)
-descriptor: SC
 number_of_nodes: 379
+descriptor: SC
 data_file: tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5
-edges:
-- label: weights
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-- label: lengths
-  unit: mm
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
 bids:
-  bids_version: 1.10.0
-  dataset_type: derivative
   template: MNI152NLin2009bAsym
   cohort: HCPYA
   reconstruction: dTOR
@@ -2301,3 +2289,15 @@ nodes:
     x: -6.0839
     y: -30.9513
     z: -33.0764
+edges:
+- label: weights
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true

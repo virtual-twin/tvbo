@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-09T19:37:48
+# Generation date: 2026-03-11T13:47:59
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -715,6 +715,48 @@ class Provenance(YAMLRoot):
 
 
 @dataclass(repr=False)
+class BidsEntities(YAMLRoot):
+    """
+    BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas,
+    Tractogram, or any dataset with BIDS-conformant naming.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["BidsEntities"]
+    class_class_curie: ClassVar[str] = "tvbo:BidsEntities"
+    class_name: ClassVar[str] = "BidsEntities"
+    class_model_uri: ClassVar[URIRef] = TVBO.BidsEntities
+
+    template: Optional[str] = None
+    cohort: Optional[str] = None
+    reconstruction: Optional[str] = None
+    segmentation: Optional[str] = None
+    scale: Optional[str] = None
+    atlas: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.template is not None and not isinstance(self.template, str):
+            self.template = str(self.template)
+
+        if self.cohort is not None and not isinstance(self.cohort, str):
+            self.cohort = str(self.cohort)
+
+        if self.reconstruction is not None and not isinstance(self.reconstruction, str):
+            self.reconstruction = str(self.reconstruction)
+
+        if self.segmentation is not None and not isinstance(self.segmentation, str):
+            self.segmentation = str(self.segmentation)
+
+        if self.scale is not None and not isinstance(self.scale, str):
+            self.scale = str(self.scale)
+
+        if self.atlas is not None and not isinstance(self.atlas, str):
+            self.atlas = str(self.atlas)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class Network(YAMLRoot):
     """
     Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge
@@ -734,7 +776,6 @@ class Network(YAMLRoot):
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
     dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
-    number_of_regions: Optional[int] = 1
     number_of_nodes: Optional[int] = 1
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[Union[dict, Tractogram]] = None
@@ -742,6 +783,7 @@ class Network(YAMLRoot):
     data_file: Optional[str] = None
     descriptor: Optional[str] = None
     bids_dir: Optional[str] = None
+    bids: Optional[Union[dict, BidsEntities]] = None
     structural_measures: Optional[Union[str, list[str]]] = empty_list()
     observational_measures: Optional[Union[str, list[str]]] = empty_list()
     provenance: Optional[Union[dict, Provenance]] = None
@@ -771,9 +813,6 @@ class Network(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
 
-        if self.number_of_regions is not None and not isinstance(self.number_of_regions, int):
-            self.number_of_regions = int(self.number_of_regions)
-
         if self.number_of_nodes is not None and not isinstance(self.number_of_nodes, int):
             self.number_of_nodes = int(self.number_of_nodes)
 
@@ -794,6 +833,9 @@ class Network(YAMLRoot):
 
         if self.bids_dir is not None and not isinstance(self.bids_dir, str):
             self.bids_dir = str(self.bids_dir)
+
+        if self.bids is not None and not isinstance(self.bids, BidsEntities):
+            self.bids = BidsEntities(**as_dict(self.bids))
 
         if not isinstance(self.structural_measures, list):
             self.structural_measures = [self.structural_measures] if self.structural_measures is not None else []
@@ -1765,8 +1807,8 @@ class LossFunction(Function):
 class FunctionCall(YAMLRoot):
     """
     Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly
-    for external library functions. OR inline a class_call for classes that need instantiation then calling. Use
-    arguments to specify inputs by name (referencing previous outputs or values).
+    for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function
+    attributes so pipeline steps can be self-contained.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1775,15 +1817,38 @@ class FunctionCall(YAMLRoot):
     class_name: ClassVar[str] = "FunctionCall"
     class_model_uri: ClassVar[URIRef] = TVBO.FunctionCall
 
+    acronym: Optional[str] = None
+    label: Optional[str] = None
+    equation: Optional[Union[dict, Equation]] = None
+    description: Optional[str] = None
+    name: Optional[str] = None
     function: Optional[Union[str, FunctionName]] = None
     callable: Optional[Union[dict, "Callable"]] = None
     class_call: Optional[Union[dict, "ClassReference"]] = None
+    input: Optional[str] = None
     output: Optional[str] = None
     apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
     aggregate: Optional[Union[dict, Aggregation]] = None
     arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
+    time_range: Optional[Union[dict, Range]] = None
+    source_code: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self.acronym is not None and not isinstance(self.acronym, str):
+            self.acronym = str(self.acronym)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.equation is not None and not isinstance(self.equation, Equation):
+            self.equation = Equation(**as_dict(self.equation))
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.name is not None and not isinstance(self.name, str):
+            self.name = str(self.name)
+
         if self.function is not None and not isinstance(self.function, FunctionName):
             self.function = FunctionName(self.function)
 
@@ -1792,6 +1857,9 @@ class FunctionCall(YAMLRoot):
 
         if self.class_call is not None and not isinstance(self.class_call, ClassReference):
             self.class_call = ClassReference(**as_dict(self.class_call))
+
+        if self.input is not None and not isinstance(self.input, str):
+            self.input = str(self.input)
 
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
@@ -1803,6 +1871,12 @@ class FunctionCall(YAMLRoot):
             self.aggregate = Aggregation(**as_dict(self.aggregate))
 
         self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
+
+        if self.time_range is not None and not isinstance(self.time_range, Range):
+            self.time_range = Range(**as_dict(self.time_range))
+
+        if self.source_code is not None and not isinstance(self.source_code, str):
+            self.source_code = str(self.source_code)
 
         super().__post_init__(**kwargs)
 
@@ -5283,6 +5357,24 @@ slots.provenance__license = Slot(uri=TVBO.license, name="provenance__license", c
 slots.provenance__generated_by = Slot(uri=TVBO.generated_by, name="provenance__generated_by", curie=TVBO.curie('generated_by'),
                    model_uri=TVBO.provenance__generated_by, domain=None, range=Optional[str])
 
+slots.bidsEntities__template = Slot(uri=TVBO.template, name="bidsEntities__template", curie=TVBO.curie('template'),
+                   model_uri=TVBO.bidsEntities__template, domain=None, range=Optional[str])
+
+slots.bidsEntities__cohort = Slot(uri=TVBO.cohort, name="bidsEntities__cohort", curie=TVBO.curie('cohort'),
+                   model_uri=TVBO.bidsEntities__cohort, domain=None, range=Optional[str])
+
+slots.bidsEntities__reconstruction = Slot(uri=TVBO.reconstruction, name="bidsEntities__reconstruction", curie=TVBO.curie('reconstruction'),
+                   model_uri=TVBO.bidsEntities__reconstruction, domain=None, range=Optional[str])
+
+slots.bidsEntities__segmentation = Slot(uri=TVBO.segmentation, name="bidsEntities__segmentation", curie=TVBO.curie('segmentation'),
+                   model_uri=TVBO.bidsEntities__segmentation, domain=None, range=Optional[str])
+
+slots.bidsEntities__scale = Slot(uri=TVBO.scale, name="bidsEntities__scale", curie=TVBO.curie('scale'),
+                   model_uri=TVBO.bidsEntities__scale, domain=None, range=Optional[str])
+
+slots.bidsEntities__atlas = Slot(uri=TVBO.atlas, name="bidsEntities__atlas", curie=TVBO.curie('atlas'),
+                   model_uri=TVBO.bidsEntities__atlas, domain=None, range=Optional[str])
+
 slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.curie('nodes'),
                    model_uri=TVBO.network__nodes, domain=None, range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]])
 
@@ -5294,9 +5386,6 @@ slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curi
 
 slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curie=TVBO.curie('dynamics'),
                    model_uri=TVBO.network__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
-
-slots.network__number_of_regions = Slot(uri=TVBO.number_of_regions, name="network__number_of_regions", curie=TVBO.curie('number_of_regions'),
-                   model_uri=TVBO.network__number_of_regions, domain=None, range=Optional[int])
 
 slots.network__number_of_nodes = Slot(uri=TVBO.number_of_nodes, name="network__number_of_nodes", curie=TVBO.curie('number_of_nodes'),
                    model_uri=TVBO.network__number_of_nodes, domain=None, range=Optional[int])
@@ -5318,6 +5407,9 @@ slots.network__descriptor = Slot(uri=TVBO.descriptor, name="network__descriptor"
 
 slots.network__bids_dir = Slot(uri=TVBO.bids_dir, name="network__bids_dir", curie=TVBO.curie('bids_dir'),
                    model_uri=TVBO.network__bids_dir, domain=None, range=Optional[str])
+
+slots.network__bids = Slot(uri=TVBO.bids, name="network__bids", curie=TVBO.curie('bids'),
+                   model_uri=TVBO.network__bids, domain=None, range=Optional[Union[dict, BidsEntities]])
 
 slots.network__structural_measures = Slot(uri=TVBO.structural_measures, name="network__structural_measures", curie=TVBO.curie('structural_measures'),
                    model_uri=TVBO.network__structural_measures, domain=None, range=Optional[Union[str, list[str]]])
@@ -5634,6 +5726,9 @@ slots.aggregation__type = Slot(uri=TVBO.type, name="aggregation__type", curie=TV
 slots.lossFunction__aggregate = Slot(uri=TVBO.aggregate, name="lossFunction__aggregate", curie=TVBO.curie('aggregate'),
                    model_uri=TVBO.lossFunction__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
 
+slots.functionCall__name = Slot(uri=TVBO.name, name="functionCall__name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.functionCall__name, domain=None, range=Optional[str])
+
 slots.functionCall__function = Slot(uri=TVBO.function, name="functionCall__function", curie=TVBO.curie('function'),
                    model_uri=TVBO.functionCall__function, domain=None, range=Optional[Union[str, FunctionName]])
 
@@ -5642,6 +5737,9 @@ slots.functionCall__callable = Slot(uri=TVBO.callable, name="functionCall__calla
 
 slots.functionCall__class_call = Slot(uri=TVBO.class_call, name="functionCall__class_call", curie=TVBO.curie('class_call'),
                    model_uri=TVBO.functionCall__class_call, domain=None, range=Optional[Union[dict, ClassReference]])
+
+slots.functionCall__input = Slot(uri=TVBO.input, name="functionCall__input", curie=TVBO.curie('input'),
+                   model_uri=TVBO.functionCall__input, domain=None, range=Optional[str])
 
 slots.functionCall__output = Slot(uri=TVBO.output, name="functionCall__output", curie=TVBO.curie('output'),
                    model_uri=TVBO.functionCall__output, domain=None, range=Optional[str])
@@ -5654,6 +5752,12 @@ slots.functionCall__aggregate = Slot(uri=TVBO.aggregate, name="functionCall__agg
 
 slots.functionCall__arguments = Slot(uri=TVBO.arguments, name="functionCall__arguments", curie=TVBO.curie('arguments'),
                    model_uri=TVBO.functionCall__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.functionCall__time_range = Slot(uri=TVBO.time_range, name="functionCall__time_range", curie=TVBO.curie('time_range'),
+                   model_uri=TVBO.functionCall__time_range, domain=None, range=Optional[Union[dict, Range]])
+
+slots.functionCall__source_code = Slot(uri=TVBO.source_code, name="functionCall__source_code", curie=TVBO.curie('source_code'),
+                   model_uri=TVBO.functionCall__source_code, domain=None, range=Optional[str])
 
 slots.callable__module = Slot(uri=TVBO.module, name="callable__module", curie=TVBO.curie('module'),
                    model_uri=TVBO.callable__module, domain=None, range=Optional[str])

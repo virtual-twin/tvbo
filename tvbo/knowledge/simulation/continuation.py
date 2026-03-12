@@ -17,7 +17,7 @@ continuation specification can be loaded from YAML just like ``Dynamics``.
 Usage
 -----
 >>> from tvbo import Continuation
->>> cont = Continuation.from_file("database/studies/bifurcation/Generic2dOscillator-bifurcation.yaml")
+>>> cont = Continuation.from_file("database/continuations/Generic2dOscillator-bifurcation.yaml")
 >>> print(cont.name)
 eq_in_I
 
@@ -97,3 +97,15 @@ class Continuation(tvbo_datamodel.Continuation):
         Continuation
         """
         return yaml_loader.loads(yaml_string, target_class=cls)
+
+    @classmethod
+    def from_db(cls, name: str) -> "Continuation":
+        """Load a Continuation by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Continuation", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available continuations in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Continuation")

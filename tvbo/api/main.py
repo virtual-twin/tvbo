@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 from tvbo.api.ontology_api import OntologyAPI
 from tvbo.api.network_api import router as network_router
+from tvbo.api.dynamics_api import router as dynamics_router
+from tvbo.api.experiment_api import router as experiment_router
 
 app = FastAPI(
     title="TVBO API",
@@ -15,6 +17,8 @@ api = OntologyAPI()
 
 # Register sub-routers
 app.include_router(network_router)
+app.include_router(dynamics_router)
+app.include_router(experiment_router)
 
 
 # ============================================
@@ -137,7 +141,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         logger.info(f"network type: {type(experiment.network)}")
         logger.info(f"network: {experiment.network}")
         if experiment.network:
-            logger.info(f"  - number_of_regions: {getattr(experiment.network, 'number_of_regions', 'N/A')}")
+            logger.info(f"  - number_of_nodes: {getattr(experiment.network, 'number_of_nodes', 'N/A')}")
 
         # Run simulation
         logger.info("Starting simulation run...")
@@ -159,7 +163,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         if hasattr(experiment.network, 'region_labels') and experiment.network.region_labels is not None:
             region_labels = list(experiment.network.region_labels)
         else:
-            n_reg = experiment.network.number_of_regions if hasattr(experiment.network, 'number_of_regions') else ts.data.shape[2]
+            n_reg = getattr(experiment.network, 'number_of_nodes', None) or ts.data.shape[2]
             region_labels = [f'Region_{i}' for i in range(n_reg)]
         logger.info(f"region_labels: {region_labels}")
 

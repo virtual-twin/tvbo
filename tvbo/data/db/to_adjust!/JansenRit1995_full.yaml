@@ -121,7 +121,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [col1, col2]
       weights:
         x: { values: [0, 1] }
@@ -170,7 +170,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [visual, prefrontal]
       weights:
         x: { values: [0, 1] }
@@ -208,7 +208,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [col1, col2]
       weights:
         x: { values: [0, 1] }
@@ -262,7 +262,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [visual, prefrontal]
       weights:
         x: { values: [0, 1] }

@@ -1,4 +1,5 @@
 name: SupHopf
+iri: tvbo:SupHopf
 parameters:
   a:
     name: a

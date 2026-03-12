@@ -1,22 +1,10 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
 label: Yeo17 (MghUscHcp32)
-descriptor: SC
 number_of_nodes: 17
+descriptor: SC
 data_file: tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Yeo17_desc-SC_relmat.h5
-edges:
-- label: weights
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-- label: lengths
-  unit: mm
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
 bids:
-  bids_version: 1.10.0
-  dataset_type: derivative
   template: MNI152NLin2009cAsym
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
@@ -129,3 +117,15 @@ nodes:
     x: -56.0317
     y: -12.537
     z: -18.7785
+edges:
+- label: weights
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+- label: lengths
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true

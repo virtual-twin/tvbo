@@ -164,11 +164,27 @@ def from_tvb_zip(zip_path):
         coords.append([float(x) for x in parts[1:4]])
 
     n = weights.shape[0]
-    net = Network.from_matrix(weights, lengths, labels)
+    from tvbo.datamodel import tvbo_datamodel
+    nodes = [
+        tvbo_datamodel.Node(
+            id=i, label=labels[i],
+            position=tvbo_datamodel.Coordinate(
+                x=float(coords[i][0]),
+                y=float(coords[i][1]),
+                z=float(coords[i][2]),
+            ),
+        )
+        for i in range(n)
+    ]
+    net = Network(
+        nodes=nodes,
+        edges=[],
+        number_of_nodes=n,
+    )
+    net.set_matrix("weights", weights)
+    net.set_matrix("lengths", lengths)
     net.label = zip_path.stem
-    net.number_of_nodes = n
     net.descriptor = "SC"  # TVB connectivity = structural
-    net._arrays = {"streamlineCount": weights}
-    net._edge_params = {"streamlineCount": {"tractLength": lengths}}
-    net._coords = np.array(coords, dtype="float32")
+    object.__setattr__(net, '_arrays', {"streamlineCount": weights})
+    object.__setattr__(net, '_edge_params', {"streamlineCount": {"tractLength": lengths}})
     return net

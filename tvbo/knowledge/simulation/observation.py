@@ -202,6 +202,18 @@ class Function(tvbo_datamodel.Function):
 
         return yaml_loader.load(filepath, target_class=cls)
 
+    @classmethod
+    def from_db(cls, name: str) -> "Function":
+        """Load a Function by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Function", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available observation models in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Function")
+
     # ---- Properties for runtime-only attributes ----
     @property
     def function(self):

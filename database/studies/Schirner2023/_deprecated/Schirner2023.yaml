@@ -90,7 +90,7 @@ simulation_experiments:
           post_expression: { rhs: "gx" }
 
       network:
-          number_of_regions: 379
+          number_of_nodes: 379
           parcellation: { atlas: { name: hcpmmp1 } }
           tractogram: "dTOR"
           parameters:

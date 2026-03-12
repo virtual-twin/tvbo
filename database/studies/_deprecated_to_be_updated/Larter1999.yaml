@@ -87,4 +87,4 @@ model:
 simulation_experiments:
     - id: 1
       network:
-          number_of_regions: 6
+          number_of_nodes: 6

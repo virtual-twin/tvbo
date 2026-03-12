@@ -113,3 +113,6 @@ qif.f90
 docs/Interoperability/BIDS/derivatives/
 _*.py
 !__init__.py
+tvbo/data/tvbo_data/atlas/schaefer2018_original_mni
+tvbo/data/tvbo_data/atlas/*.nii.gz
+tvbo/data/tvbo_data/_archive_connectome
