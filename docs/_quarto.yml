@@ -10,6 +10,7 @@ project:
     - api/**/*.qmd
     - datamodel/**/*.qmd
     - Usage/*.qmd
+    - examples/**/*.qmd
     - Specification/*.qmd
     - Interoperability/**/*.qmd
     - Developer/*.md
