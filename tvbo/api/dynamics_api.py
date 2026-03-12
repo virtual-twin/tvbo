@@ -4,7 +4,6 @@ Endpoints:
   GET /api/v1/dynamics              — list available models (filterable)
   GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON
 """
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -12,9 +11,11 @@ from fastapi.responses import Response
 
 from linkml_runtime.dumpers import yaml_dumper, json_dumper
 
+from tvbo.data.registry import database_dir
+
 router = APIRouter(prefix="/api/v1/dynamics", tags=["dynamics"])
 
-MODEL_DIR = Path(__file__).parents[2] / "database" / "models"
+MODEL_DIR = database_dir("Dynamics")
 
 
 def _index_models() -> dict:

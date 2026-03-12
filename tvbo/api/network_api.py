@@ -15,10 +15,12 @@ from fastapi.responses import FileResponse, Response
 
 from linkml_runtime.dumpers import yaml_dumper, json_dumper
 
+from tvbo.data.registry import database_dir
+
 router = APIRouter(prefix="/api/v1/networks", tags=["networks"])
 
 # Networks are loaded from database/networks/ YAML files
-NETWORK_DIR = Path(__file__).parents[2] / "database" / "networks"
+NETWORK_DIR = database_dir("Network")
 
 
 def _index_networks() -> dict:
