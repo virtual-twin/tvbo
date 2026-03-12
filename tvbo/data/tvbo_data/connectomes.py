@@ -1492,8 +1492,8 @@ class Network(tvbo_datamodel.Network):
         """Connection weights matrix as numpy/JAX array.
 
         Returns cached matrix if available (from from_matrix), otherwise
-        computes from edges. If normalization is defined, applies the
-        normalization equation.
+        computes from edges. If transforms are defined, applies them
+        sequentially.
 
         Returns
         -------
@@ -1559,34 +1559,10 @@ class Network(tvbo_datamodel.Network):
                 return np.zeros((n, n), dtype=np.float64)
             return None
 
-        # Apply normalization if defined
-        norm = getattr(self, "normalization", None)
-        if norm is not None:
-
-            from tvbo.export.code import parse_eq, render_expression
-
-            exp = parse_eq(norm)
-            # Substitute known parameter values
-            if exp is not None:
-                subs_map = {}
-                for s in exp.free_symbols:  # type: ignore[attr-defined]
-                    name = str(s)
-                    if hasattr(norm, "parameters") and name in norm.parameters:  # type: ignore[attr-defined]
-                        value = norm.parameters[name].value  # type: ignore[attr-defined,index]
-                        subs_map[s] = value
-                if subs_map:
-                    exp = exp.subs(subs_map)  # type: ignore[attr-defined]
-            env = {
-                "W": W,
-                "W_min": jnp.nanmin(W),
-                "W_max": jnp.nanmax(W),
-                "jnp": jnp,
-                "np": jnp,
-                "jsp": jsp,
-            }
-            code_str = render_expression(exp, format=format)
-            if isinstance(code_str, str):
-                W = eval(code_str, env)
+        # Apply transforms targeting "weight"
+        for t in self.transforms or []:
+            if t.name == "weight":
+                W = self._apply_transform(W, t)
         return W
 
     @property
@@ -1940,30 +1916,31 @@ class Network(tvbo_datamodel.Network):
             return tvb_conn
 
     def normalize_weights(
-        self, equation_rhs: str = "(W - W_min) / (W_max - W_min)"
+        self, equation_rhs: str = "(M - M_min) / (M_max - M_min)"
     ) -> None:
-        """Set normalization equation for connection weights.
+        """Add a normalization transform for connection weights.
+
+        Convenience wrapper for ``add_transform("weight", ...)``.
 
         Parameters
         ----------
-        equation_rhs : str, default="(W - W_min) / (W_max - W_min)"
-            Right-hand side of normalization equation. Can reference W, W_min, W_max
+        equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
+            Right-hand side of normalization equation. Can reference
+            M (matrix), M_min, M_max.
 
         Examples
         --------
         ```{python}
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        sc.normalize_weights("W / W_max")  # Normalize to [0, 1]
+        sc.normalize_weights("M / M_max")  # Normalize to [0, 1]
         normalized = sc.weights_matrix  # Returns normalized weights
         ```
 
-        Notes
-        -----
-        The normalization is applied when accessing `weights_matrix` property.
+        See Also
+        --------
+        add_transform : Add a transform on any edge property
         """
-        from tvbo.datamodel.tvbo_datamodel import Equation
-
-        self.normalization = Equation(rhs=equation_rhs)
+        self.add_transform("weight", equation_rhs)
 
     def plot_weights(self, ax: Axes, cmap: str = "magma", log: bool = False) -> Any:
         """Plot connection weights matrix as heatmap.
@@ -2657,10 +2634,10 @@ class Network(tvbo_datamodel.Network):
         return fig
 
     def normalize(self) -> None:
-        """Add min-max normalization of connection weights to metadata.
+        """Add min-max normalization of connection weights.
 
-        Sets normalization equation to scale weights to [0, 1] range.
-        Equivalent to `normalize_weights("(W - W_min) / (W_max - W_min)")`.
+        Appends a transform to scale weights to [0, 1] range.
+        Equivalent to ``add_transform("weight", "(M - M_min) / (M_max - M_min)")``.
 
         Examples
         --------
@@ -2672,11 +2649,10 @@ class Network(tvbo_datamodel.Network):
 
         See Also
         --------
+        add_transform : Add a transform on any edge property
         normalize_weights : Set custom normalization equation
         """
-        self.normalization = tvbo_datamodel.Equation(
-            rhs="(W - W_min) / (W_max - W_min)"
-        )
+        self.add_transform("weight", "(M - M_min) / (M_max - M_min)")
 
     # ── Node mapping (hierarchical composition) ─────────────────────
 
@@ -2852,6 +2828,14 @@ class Network(tvbo_datamodel.Network):
         if mat is None:
             return None
 
+        # Apply transforms targeting this matrix
+        for t in self.transforms or []:
+            if t.name == name:
+                mat = self._apply_transform(
+                    mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
+                    t,
+                )
+
         if format is None:
             return mat
         elif format == "dense":
@@ -2984,6 +2968,88 @@ class Network(tvbo_datamodel.Network):
                 self._cached_lengths = mat
 
             self._ensure_template_edge(name)
+
+    def _get_edge(self, name: str):
+        """Return the template Edge with the given label, or None."""
+        for e in self.edges or []:
+            lbl = getattr(e, "label", None) or getattr(e, "name", None)
+            if lbl == name:
+                return e
+        return None
+
+    def _apply_transform(self, M, func):
+        """Apply a Function transform to matrix *M*.
+
+        Supports equation-based (symbolic) or callable-based (software)
+        transforms via the Function class.
+        """
+        # Callable-based transform
+        c = getattr(func, 'callable', None)
+        if c is not None:
+            import importlib
+            mod = importlib.import_module(c.module)
+            fn = getattr(mod, c.name)
+            return fn(M)
+
+        # Equation-based transform
+        eq = getattr(func, 'equation', None)
+        if eq is None:
+            return M
+        from tvbo.export.code import parse_eq, render_expression
+
+        exp = parse_eq(eq)
+        if exp is not None:
+            subs_map = {}
+            for s in exp.free_symbols:
+                sname = str(s)
+                if hasattr(eq, "parameters") and sname in eq.parameters:
+                    subs_map[s] = eq.parameters[sname].value
+            if subs_map:
+                exp = exp.subs(subs_map)
+        env = {
+            "M": M, "W": M,
+            "M_min": jnp.nanmin(M), "W_min": jnp.nanmin(M),
+            "M_max": jnp.nanmax(M), "W_max": jnp.nanmax(M),
+            "jnp": jnp, "np": jnp, "jsp": jsp,
+        }
+        code_str = render_expression(exp, format="jax")
+        if isinstance(code_str, str):
+            M = eval(code_str, env)
+        return M
+
+    def add_transform(
+        self,
+        target: str,
+        equation_rhs: str = "(M - M_min) / (M_max - M_min)",
+    ) -> None:
+        """Append a matrix transform for a named edge property.
+
+        Transforms are applied in order when the matrix is accessed
+        via ``matrix()`` or ``weights_matrix``.
+
+        Parameters
+        ----------
+        target : str
+            Edge property name (e.g. ``"weight"``, ``"length"``, ``"fc"``).
+        equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
+            Right-hand side of the transform equation. Can reference
+            M (matrix), M_min, M_max.
+
+        Examples
+        --------
+        ```{python}
+        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc.add_transform("weight", "M / M_max")
+        ```
+        """
+        if self.transforms is None:
+            self.transforms = []
+        self.transforms.append(
+            tvbo_datamodel.Function(
+                name=target,
+                equation=tvbo_datamodel.Equation(rhs=equation_rhs),
+            )
+        )
 
     def _ensure_template_edge(self, name: str) -> None:
         """Ensure a template edge (no source/target) exists for *name*.

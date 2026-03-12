@@ -182,7 +182,7 @@ s = sec()
 n_regions = _p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', None)
 cond_speed = _p(net, 'conduction_speed', None)
 gcs = _p(net, 'global_coupling_strength', None)
-norm = _p(net, 'normalization', None)
+transforms = _p(net, 'transforms', None) or []
 net_label = _p(net, 'label', '')
 net_desc = _p(net, 'description', '')
 parcellation = _p(net, 'parcellation', None)
@@ -214,8 +214,10 @@ parc_atlas = _p(parcellation, 'atlas', '')
 % if gcs:
 - **Global coupling strength:** $${latex(Symbol(_p(gcs, 'name', 'G')))} = ${_p(gcs, 'value', '?')}$
 % endif
-% if norm and hasattr(norm, 'rhs') and norm.rhs:
-- **Normalization:** $W_{\text{norm}} = ${safe_latex(str(norm.rhs), ['W', 'W_max', 'W_min', 'max', 'min'])}$
+% if transforms:
+% for t in transforms:
+- **Transform (${t.name}):** $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['W', 'M', 'W_max', 'W_min', 'M_max', 'M_min', 'max', 'min'])}$
+% endfor
 % endif
 % if structural:
 - **Structural measures:** ${', '.join(structural) if isinstance(structural, list) else structural}

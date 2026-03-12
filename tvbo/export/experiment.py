@@ -127,7 +127,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             kwargs["coupling"] = {"name": kwargs["coupling"]}
             _coupling_from_name = True
 
-        # Delegate to the parent dataclass initializer for normalization
+        # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
 
         # Normalize and coerce fields while preserving original conditions

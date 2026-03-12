@@ -145,7 +145,7 @@ c.parameters["a"].value = 1.0
 
 sc = Network(
     parcellation={"atlas": {"name": "DesikanKilliany"}},
-    normalization={"rhs": "(W - W_min) / (W_max - W_min)"},
+    transforms=[{"name": "weight", "equation": {"rhs": "(W - W_min) / (W_max - W_min)"}}],
     coupling=c,
 )
 

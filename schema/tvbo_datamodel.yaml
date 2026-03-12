@@ -632,10 +632,16 @@ classes:
                 range: Tractogram
                 inlined: true
                 description: "Reference to tractography data"
-            normalization:
-                range: Equation
-                description: "Normalization equation for connectivity weights"
-                inlined: true
+            transforms:
+                range: Function
+                multivalued: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of transforms applied to edge property matrices.
+                    Each Function's name identifies the target edge property
+                    (e.g. 'weight', 'length'). Supports equation-based (symbolic)
+                    or callable-based (software) transforms. Multiple transforms
+                    on the same target are applied sequentially.
 
             # BIDS integration (BEP017)
             data_file:

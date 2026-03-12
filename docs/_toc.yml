@@ -254,6 +254,8 @@ website:
                         href: datamodel/classes/LossFunction.qmd
                       - text: "Matrix"
                         href: datamodel/classes/Matrix.qmd
+                      - text: "Matrix Transform"
+                        href: datamodel/classes/MatrixTransform.qmd
                       - text: "Mesh"
                         href: datamodel/classes/Mesh.qmd
                       - text: "Model Fitting"
