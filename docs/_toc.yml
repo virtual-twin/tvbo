@@ -151,6 +151,8 @@ website:
                         href: datamodel/classes/Argument.qmd
                       - text: "Argument Mapping"
                         href: datamodel/classes/ArgumentMapping.qmd
+                      - text: "Bids Entities"
+                        href: datamodel/classes/BidsEntities.qmd
                       - text: "Boundary Condition"
                         href: datamodel/classes/BoundaryCondition.qmd
                       - text: "Brain Atlas"
@@ -419,6 +421,10 @@ website:
                     contents:
                       - text: "Direct Ontology Api"
                         href: api/api/direct_ontology_api.qmd
+                      - text: "Dynamics Api"
+                        href: api/api/dynamics_api.qmd
+                      - text: "Experiment Api"
+                        href: api/api/experiment_api.qmd
                       - text: "Main"
                         href: api/api/main.qmd
                       - text: "Network Api"
@@ -439,6 +445,8 @@ website:
                         href: api/data/matrix_io.qmd
                       - text: "Network Io"
                         href: api/data/network_io.qmd
+                      - text: "Registry"
+                        href: api/data/registry.qmd
                       - text: "Types"
                         href: api/data/types.qmd
                   - section: "Data — TVB-O"
