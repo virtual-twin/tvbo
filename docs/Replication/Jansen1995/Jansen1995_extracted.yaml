@@ -1077,7 +1077,6 @@ experiments:
     # --- Network: 2 different columns with delay ---
     network:
       number_of_nodes: 2
-      number_of_nodes: 2
       label: "Visual cortex (col 1) ↔ Prefrontal cortex (col 2) with delay"
       parameters:
         conduction_speed:
