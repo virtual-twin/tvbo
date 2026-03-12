@@ -135,99 +135,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../../Usage/index.html">
- <span class="dropdown-text">Overview</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/SimulationExperiments.html">
- <span class="dropdown-text">Simulation Experiments</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/CodeGeneration.html">
- <span class="dropdown-text">Code Generation</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Observation &amp; Analysis</li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/ObservationModels.html">
- <span class="dropdown-text">Observation Models</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/ParameterExploration.html">
- <span class="dropdown-text">Parameter Exploration</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/ModelFitting.html">
- <span class="dropdown-text">Model Fitting</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/BifurcationAnalysis.html">
- <span class="dropdown-text">Bifurcation Analysis</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Simulation Features</li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/Events.html">
- <span class="dropdown-text">Events &amp; Stimulation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/Noise.html">
- <span class="dropdown-text">Noise &amp; Stochastic Integration</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Advanced</li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/PDESimulation.html">
- <span class="dropdown-text">PDE Simulation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/HeterogeneousNodes.html">
- <span class="dropdown-text">Heterogeneous Nodes</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/HeterogeneousEdges.html">
- <span class="dropdown-text">Heterogeneous Edges</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/UnitValidation.html">
- <span class="dropdown-text">Unit-Aware Computations</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Specification</li>
-        <li>
-    <a class="dropdown-item" href="../../Specification/Network.html">
- <span class="dropdown-text">Networks</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Specification/Algorithms.html">
- <span class="dropdown-text">Algorithms</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Specification/LossFunction.html">
- <span class="dropdown-text">Loss Functions</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Specification/Output.html">
- <span class="dropdown-text">Output</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/index.html">
- <span class="dropdown-text">Interoperability</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
 <span class="menu-text">Data Model</span></a>
@@ -293,6 +204,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
+<td>Defines how a parameter is updated based on observables</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Noise.html">Noise</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/FunctionCall.html">FunctionCall</a></td>
+<td>Invocation of a function in a pipeline</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
+<td>A loss function for optimization with optional aggregation</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Case.html">Case</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
 <td></td>
 <td>no</td>
@@ -303,67 +274,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Noise.html">Noise</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Event.html">Event</a></td>
-<td>A discrete or continuous event that modifies the system during simulation</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
-<td>Defines how a parameter is updated based on observables</td>
-<td>no</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/DifferentialOperator.html">DifferentialOperator</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
-<td>Observation derived from one or more other observations</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
-<td>A loss function for optimization with optional aggregation</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Case.html">Case</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -388,7 +304,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>Domain Of</td>
-<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a>, <a href="../../datamodel/classes/Event.html">Event</a>, <a href="../../datamodel/classes/Observation.html">Observation</a>, <a href="../../datamodel/classes/StateVariable.html">StateVariable</a>, <a href="../../datamodel/classes/Parameter.html">Parameter</a>, <a href="../../datamodel/classes/Function.html">Function</a>, <a href="../../datamodel/classes/Case.html">Case</a>, <a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a>, <a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a>, <a href="../../datamodel/classes/Noise.html">Noise</a>, <a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a>, <a href="../../datamodel/classes/DifferentialOperator.html">DifferentialOperator</a></td>
+<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a>, <a href="../../datamodel/classes/Event.html">Event</a>, <a href="../../datamodel/classes/Observation.html">Observation</a>, <a href="../../datamodel/classes/StateVariable.html">StateVariable</a>, <a href="../../datamodel/classes/Parameter.html">Parameter</a>, <a href="../../datamodel/classes/Function.html">Function</a>, <a href="../../datamodel/classes/FunctionCall.html">FunctionCall</a>, <a href="../../datamodel/classes/Case.html">Case</a>, <a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a>, <a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a>, <a href="../../datamodel/classes/Noise.html">Noise</a>, <a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a>, <a href="../../datamodel/classes/DifferentialOperator.html">DifferentialOperator</a></td>
 </tr>
 <tr class="odd">
 <td>Slot URI</td>
@@ -456,14 +372,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> StateVariable</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Parameter</span></span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Function</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Case</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Noise</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> UpdateRule</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DifferentialOperator</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> Equation</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> FunctionCall</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Case</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Noise</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> UpdateRule</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DifferentialOperator</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> Equation</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 

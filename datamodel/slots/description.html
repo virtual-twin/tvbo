@@ -135,99 +135,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-usage" role="link" data-bs-toggle="dropdown" aria-expanded="false">
- <span class="menu-text">Usage</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-usage">    
-        <li>
-    <a class="dropdown-item" href="../../Usage/index.html">
- <span class="dropdown-text">Overview</span></a>
+  <li class="nav-item">
+    <a class="nav-link" href="../../Usage/index.html"> 
+<span class="menu-text">Usage</span></a>
   </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/DefineDynamicalSystem.html">
- <span class="dropdown-text">Defining Dynamical Systems</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/SimulationExperiments.html">
- <span class="dropdown-text">Simulation Experiments</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/CodeGeneration.html">
- <span class="dropdown-text">Code Generation</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Observation &amp; Analysis</li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/ObservationModels.html">
- <span class="dropdown-text">Observation Models</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/ParameterExploration.html">
- <span class="dropdown-text">Parameter Exploration</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/ModelFitting.html">
- <span class="dropdown-text">Model Fitting</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/BifurcationAnalysis.html">
- <span class="dropdown-text">Bifurcation Analysis</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Simulation Features</li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/Events.html">
- <span class="dropdown-text">Events &amp; Stimulation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/Noise.html">
- <span class="dropdown-text">Noise &amp; Stochastic Integration</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Advanced</li>
-        <li>
-    <a class="dropdown-item" href="../../Usage/PDESimulation.html">
- <span class="dropdown-text">PDE Simulation</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/HeterogeneousNodes.html">
- <span class="dropdown-text">Heterogeneous Nodes</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/HeterogeneousEdges.html">
- <span class="dropdown-text">Heterogeneous Edges</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Usage/UnitValidation.html">
- <span class="dropdown-text">Unit-Aware Computations</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li class="dropdown-header">Specification</li>
-        <li>
-    <a class="dropdown-item" href="../../Specification/Network.html">
- <span class="dropdown-text">Networks</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Specification/Algorithms.html">
- <span class="dropdown-text">Algorithms</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Specification/LossFunction.html">
- <span class="dropdown-text">Loss Functions</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="../../Specification/Output.html">
- <span class="dropdown-text">Output</span></a>
-  </li>  
-        <li><hr class="dropdown-divider"></li>
-        <li>
-    <a class="dropdown-item" href="../../Interoperability/index.html">
- <span class="dropdown-text">Interoperability</span></a>
-  </li>  
-    </ul>
-  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
 <span class="menu-text">Data Model</span></a>
@@ -293,6 +204,56 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="../../datamodel/classes/RandomStream.html">RandomStream</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
+<td>Metadata about a clinical score or scale</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DataSource.html">DataSource</a></td>
+<td>Specification for loading external/empirical data</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Exploration.html">Exploration</a></td>
+<td>Parameter space exploration (grid search, sweep)</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a></td>
+<td>Time series data from simulations or measurements</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/FunctionCall.html">FunctionCall</a></td>
+<td>Invocation of a function in a pipeline</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/BranchSwitch.html">BranchSwitch</a></td>
+<td>Specification for switching from a detected bifurcation point to a new branch…</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
+<td>Adjacency matrix of a network</td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/Edge.html">Edge</a></td>
 <td>An edge in a network</td>
 <td>no</td>
@@ -303,38 +264,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Argument.html">Argument</a></td>
-<td>A function argument with explicit value specification</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/File.html">File</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/ClassReference.html">ClassReference</a></td>
-<td>Reference to a class that can be instantiated and called</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/RegionMapping.html">RegionMapping</a></td>
 <td>Maps vertices to parent regions for hierarchical/aggregated coupling</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/SpatialField.html">SpatialField</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
-<td>Observation derived from one or more other observations</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -343,28 +274,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/BranchSwitch.html">BranchSwitch</a></td>
-<td>Specification for switching from a detected bifurcation point to a new branch…</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Network.html">Network</a></td>
-<td>Network specification with nodes, edges, and reusable coupling configurations</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/BoundaryCondition.html">BoundaryCondition</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a></td>
+<td>Specification of a coupling input channel for multi-coupling dynamics</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -373,22 +284,112 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
+<td><a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
+<td>Defines how a parameter is updated based on observables</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Callable.html">Callable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/TuningObjective.html">TuningObjective</a></td>
+<td>Defines what the tuning algorithm optimizes for</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Argument.html">Argument</a></td>
+<td>A function argument with explicit value specification</td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/RandomStream.html">RandomStream</a></td>
+<td><a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a></td>
+<td>Backend-agnostic graph generator specification</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/OptimizationStage.html">OptimizationStage</a></td>
+<td>A single stage in a multi-stage optimization workflow</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/SpatialField.html">SpatialField</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
+<td><a href="../../datamodel/classes/Network.html">Network</a></td>
+<td>Network specification with nodes, edges, and reusable coupling configurations</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ClassReference.html">ClassReference</a></td>
+<td>Reference to a class that can be instantiated and called</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
+<td><a href="../../datamodel/classes/Integrator.html">Integrator</a></td>
+<td>Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr…</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
+<td>A loss function for optimization with optional aggregation</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/PDE.html">PDE</a></td>
+<td>Partial differential equation problem definition</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/TemporalApplicableEquation.html">TemporalApplicableEquation</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -398,12 +399,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/DataSource.html">DataSource</a></td>
-<td>Specification for loading external/empirical data</td>
+<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
+<td><a href="../../datamodel/classes/Coupling.html">Coupling</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/BoundaryCondition.html">BoundaryCondition</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Node.html">Node</a></td>
+<td>A node in a network with its own dynamics and properties</td>
+<td>no</td>
+</tr>
+<tr class="even">
 <td><a href="../../datamodel/classes/SimulationStudy.html">SimulationStudy</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
+<td>Identity information about a software package independent of a specific versi…</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -413,28 +444,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Callable.html">Callable</a></td>
+<td><a href="../../datamodel/classes/File.html">File</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a></td>
-<td>Specification of a coupling input channel for multi-coupling dynamics</td>
+<td><a href="../../datamodel/classes/Optimization.html">Optimization</a></td>
+<td>Configuration for parameter optimization</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
+<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
 <td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
-<td>Adjacency matrix of a network</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -443,112 +464,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a></td>
-<td>Defines how a parameter is updated based on observables</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Coupling.html">Coupling</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
-<td>Metadata about a clinical score or scale</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a></td>
-<td>Identity information about a software package independent of a specific versi…</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Optimization.html">Optimization</a></td>
-<td>Configuration for parameter optimization</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Integrator.html">Integrator</a></td>
-<td>Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr…</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/TemporalApplicableEquation.html">TemporalApplicableEquation</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a></td>
-<td>Time series data from simulations or measurements</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/OptimizationStage.html">OptimizationStage</a></td>
-<td>A single stage in a multi-stage optimization workflow</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/TuningObjective.html">TuningObjective</a></td>
-<td>Defines what the tuning algorithm optimizes for</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Exploration.html">Exploration</a></td>
-<td>Parameter space exploration (grid search, sweep)</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/PDE.html">PDE</a></td>
-<td>Partial differential equation problem definition</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a></td>
-<td>Backend-agnostic graph generator specification</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
-<td>A loss function for optimization with optional aggregation</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Event.html">Event</a></td>
-<td>A discrete or continuous event that modifies the system during simulation</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Node.html">Node</a></td>
-<td>A node in a network with its own dynamics and properties</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -573,7 +489,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>Domain Of</td>
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a>, <a href="../../datamodel/classes/Equation.html">Equation</a>, <a href="../../datamodel/classes/Stimulus.html">Stimulus</a>, <a href="../../datamodel/classes/Event.html">Event</a>, <a href="../../datamodel/classes/Tractogram.html">Tractogram</a>, <a href="../../datamodel/classes/Matrix.html">Matrix</a>, <a href="../../datamodel/classes/Network.html">Network</a>, <a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a>, <a href="../../datamodel/classes/File.html">File</a>, <a href="../../datamodel/classes/Node.html">Node</a>, <a href="../../datamodel/classes/Edge.html">Edge</a>, <a href="../../datamodel/classes/Observation.html">Observation</a>, <a href="../../datamodel/classes/Dynamics.html">Dynamics</a>, <a href="../../datamodel/classes/StateVariable.html">StateVariable</a>, <a href="../../datamodel/classes/Parameter.html">Parameter</a>, <a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a>, <a href="../../datamodel/classes/Argument.html">Argument</a>, <a href="../../datamodel/classes/Function.html">Function</a>, <a href="../../datamodel/classes/Callable.html">Callable</a>, <a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a>, <a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a>, <a href="../../datamodel/classes/RandomStream.html">RandomStream</a>, <a href="../../datamodel/classes/DataSource.html">DataSource</a>, <a href="../../datamodel/classes/OptimizationStage.html">OptimizationStage</a>, <a href="../../datamodel/classes/Exploration.html">Exploration</a>, <a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a>, <a href="../../datamodel/classes/TuningObjective.html">TuningObjective</a>, <a href="../../datamodel/classes/Algorithm.html">Algorithm</a>, <a href="../../datamodel/classes/BranchSwitch.html">BranchSwitch</a>, <a href="../../datamodel/classes/Continuation.html">Continuation</a>, <a href="../../datamodel/classes/Integrator.html">Integrator</a>, <a href="../../datamodel/classes/Coupling.html">Coupling</a>, <a href="../../datamodel/classes/RegionMapping.html">RegionMapping</a>, <a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a>, <a href="../../datamodel/classes/SimulationStudy.html">SimulationStudy</a>, <a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a>, <a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a>, <a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a>, <a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a>, <a href="../../datamodel/classes/NDArray.html">NDArray</a>, <a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a>, <a href="../../datamodel/classes/Mesh.html">Mesh</a>, <a href="../../datamodel/classes/SpatialField.html">SpatialField</a>, <a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a>, <a href="../../datamodel/classes/BoundaryCondition.html">BoundaryCondition</a>, <a href="../../datamodel/classes/PDESolver.html">PDESolver</a>, <a href="../../datamodel/classes/PDE.html">PDE</a></td>
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a>, <a href="../../datamodel/classes/Equation.html">Equation</a>, <a href="../../datamodel/classes/Stimulus.html">Stimulus</a>, <a href="../../datamodel/classes/Event.html">Event</a>, <a href="../../datamodel/classes/Tractogram.html">Tractogram</a>, <a href="../../datamodel/classes/Matrix.html">Matrix</a>, <a href="../../datamodel/classes/Network.html">Network</a>, <a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a>, <a href="../../datamodel/classes/File.html">File</a>, <a href="../../datamodel/classes/Node.html">Node</a>, <a href="../../datamodel/classes/Edge.html">Edge</a>, <a href="../../datamodel/classes/Observation.html">Observation</a>, <a href="../../datamodel/classes/Dynamics.html">Dynamics</a>, <a href="../../datamodel/classes/StateVariable.html">StateVariable</a>, <a href="../../datamodel/classes/Parameter.html">Parameter</a>, <a href="../../datamodel/classes/CouplingInput.html">CouplingInput</a>, <a href="../../datamodel/classes/Argument.html">Argument</a>, <a href="../../datamodel/classes/Function.html">Function</a>, <a href="../../datamodel/classes/FunctionCall.html">FunctionCall</a>, <a href="../../datamodel/classes/Callable.html">Callable</a>, <a href="../../datamodel/classes/DerivedParameter.html">DerivedParameter</a>, <a href="../../datamodel/classes/DerivedVariable.html">DerivedVariable</a>, <a href="../../datamodel/classes/RandomStream.html">RandomStream</a>, <a href="../../datamodel/classes/DataSource.html">DataSource</a>, <a href="../../datamodel/classes/OptimizationStage.html">OptimizationStage</a>, <a href="../../datamodel/classes/Exploration.html">Exploration</a>, <a href="../../datamodel/classes/UpdateRule.html">UpdateRule</a>, <a href="../../datamodel/classes/TuningObjective.html">TuningObjective</a>, <a href="../../datamodel/classes/Algorithm.html">Algorithm</a>, <a href="../../datamodel/classes/BranchSwitch.html">BranchSwitch</a>, <a href="../../datamodel/classes/Continuation.html">Continuation</a>, <a href="../../datamodel/classes/Integrator.html">Integrator</a>, <a href="../../datamodel/classes/Coupling.html">Coupling</a>, <a href="../../datamodel/classes/RegionMapping.html">RegionMapping</a>, <a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a>, <a href="../../datamodel/classes/SimulationStudy.html">SimulationStudy</a>, <a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a>, <a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a>, <a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a>, <a href="../../datamodel/classes/SoftwarePackage.html">SoftwarePackage</a>, <a href="../../datamodel/classes/NDArray.html">NDArray</a>, <a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a>, <a href="../../datamodel/classes/Mesh.html">Mesh</a>, <a href="../../datamodel/classes/SpatialField.html">SpatialField</a>, <a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a>, <a href="../../datamodel/classes/BoundaryCondition.html">BoundaryCondition</a>, <a href="../../datamodel/classes/PDESolver.html">PDESolver</a>, <a href="../../datamodel/classes/PDE.html">PDE</a></td>
 </tr>
 </tbody>
 </table>
@@ -648,36 +564,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> CouplingInput</span></span>
 <span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Argument</span></span>
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Function</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Callable</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> RandomStream</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DataSource</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> OptimizationStage</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Exploration</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> UpdateRule</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> TuningObjective</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Algorithm</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> BranchSwitch</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Continuation</span></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Integrator</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Coupling</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> RegionMapping</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SimulationStudy</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> TimeSeries</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareEnvironment</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareRequirement</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwarePackage</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> NDArray</span></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SpatialDomain</span></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Mesh</span></span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SpatialField</span></span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> FieldStateVariable</span></span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> BoundaryCondition</span></span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> PDESolver</span></span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> PDE</span></span>
-<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> FunctionCall</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Callable</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> RandomStream</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> DataSource</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> OptimizationStage</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Exploration</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> UpdateRule</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> TuningObjective</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Algorithm</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> BranchSwitch</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Continuation</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Integrator</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Coupling</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> RegionMapping</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SimulationStudy</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> TimeSeries</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareEnvironment</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwareRequirement</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SoftwarePackage</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> NDArray</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SpatialDomain</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Mesh</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SpatialField</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> FieldStateVariable</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> BoundaryCondition</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> PDESolver</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> PDE</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 
