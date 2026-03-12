@@ -288,6 +288,24 @@ class Coupling(tvbo_datamodel.Coupling):
             )
         return cls(metadata=datamodel_instance)
 
+    @classmethod
+    def from_file(cls, filepath: str) -> "Coupling":
+        """Load a Coupling from a YAML file."""
+        from linkml_runtime.loaders import yaml_loader
+        return yaml_loader.load(str(filepath), target_class=cls)
+
+    @classmethod
+    def from_db(cls, name: str) -> "Coupling":
+        """Load a Coupling by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Coupling", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available coupling functions in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Coupling")
+
     # Back-compat: expose  pointing to self
     @property
     def metadata(self):
