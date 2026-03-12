@@ -23842,7 +23842,8 @@ When &apos;a=0&apos;, the SUPH has a supercritical bifurcation. So for &apos;a &
 
     <owl:Class rdf:about="http://www.thevirtualbrain.org/tvb-o/a_cHT">
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/HyperbolicTangent"/>
-        <default rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</default>
+        <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/Parameter"/>
+        <defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.0</defaultValue>
         <identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string">000968</identifier>
         <range rdf:datatype="http://www.w3.org/2001/XMLSchema#string">lo=-1000.0, hi=1000.0, step=10.0</range>
         <symbol rdf:datatype="http://www.w3.org/2001/XMLSchema#string">a</symbol>
@@ -25568,6 +25569,8 @@ In the original publication, the parameter &apos;b&apos; is set in Hz. In TVB, t
 
     <owl:Class rdf:about="http://www.thevirtualbrain.org/tvb-o/b_cHT">
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/HyperbolicTangent"/>
+        <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/Parameter"/>
+        <defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.0</defaultValue>
         <identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string">001021</identifier>
         <range rdf:datatype="http://www.w3.org/2001/XMLSchema#string">lo=-1.0, hi=1.0, step=10.0</range>
         <symbol rdf:datatype="http://www.w3.org/2001/XMLSchema#string">b</symbol>
@@ -32023,6 +32026,7 @@ Describes relationship between membrane voltage and channel conductance.</skos:d
 
     <owl:Class rdf:about="http://www.thevirtualbrain.org/tvb-o/midpoint_cHT">
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/HyperbolicTangent"/>
+        <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/Parameter"/>
         <defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</defaultValue>
         <identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string">001228</identifier>
         <range rdf:datatype="http://www.w3.org/2001/XMLSchema#string">lo=-1000.0, hi=1000.0, step=10.0</range>
@@ -36460,6 +36464,7 @@ into an average firing rate to the PCs.</skos:definition>
 
     <owl:Class rdf:about="http://www.thevirtualbrain.org/tvb-o/sigma_cHT">
         <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/HyperbolicTangent"/>
+        <rdfs:subClassOf rdf:resource="http://www.thevirtualbrain.org/tvb-o/Parameter"/>
         <defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</defaultValue>
         <identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string">001401</identifier>
         <range rdf:datatype="http://www.w3.org/2001/XMLSchema#string">lo=0.01, hi=1000.0, step=10.0</range>
