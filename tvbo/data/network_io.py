@@ -223,6 +223,17 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str,
                        allow_unicode=True)
 
 
+def _create_ds(grp, name, *, data, **kwargs):
+    """Create a dataset compatible with both h5py and zarr v3."""
+    try:
+        import zarr
+        if isinstance(grp, zarr.Group):
+            return grp.create_array(name, data=data, **kwargs)
+    except ImportError:
+        pass
+    return grp.create_dataset(name, data=data, **kwargs)
+
+
 def _write_nodes(store, network):
     """Write node-level data to a store.
 
@@ -244,9 +255,9 @@ def _write_nodes(store, network):
         if len(parts) == 2:
             grp_path, ds_name = parts
             grp = store.require_group(grp_path)
-            grp.create_dataset(ds_name, data=data, dtype="int32")
+            _create_ds(grp, ds_name, data=data, dtype="int32")
         else:
-            store.create_dataset(key, data=data, dtype="int32")
+            _create_ds(store, key, data=data, dtype="int32")
 
     # Node coordinates from Node.position
     nodes = getattr(network, "nodes", None) or []
@@ -258,8 +269,8 @@ def _write_nodes(store, network):
     if coords:
         import numpy as _np
         grp = store.require_group("nodes")
-        grp.create_dataset(
-            "coordinates", data=_np.array(coords, dtype="float32"),
+        _create_ds(
+            grp, "coordinates", data=_np.array(coords, dtype="float32"),
         )
 
 

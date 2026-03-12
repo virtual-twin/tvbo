@@ -11,6 +11,17 @@ from pathlib import Path
 from scipy.sparse import csr_matrix, coo_matrix
 
 
+def _create_ds(grp, name, *, data, **kwargs):
+    """Create a dataset compatible with both h5py and zarr v3."""
+    try:
+        import zarr
+        if isinstance(grp, zarr.Group):
+            return grp.create_array(name, data=data, **kwargs)
+    except ImportError:
+        pass
+    return grp.create_dataset(name, data=data, **kwargs)
+
+
 # ── Format selection ──────────────────────────────────────────────────
 
 def auto_format(matrix) -> str:
@@ -55,22 +66,21 @@ def _write_dense(grp, matrix):
     else:
         arr = np.asarray(matrix, dtype="float32")
     chunks = tuple(min(s, 128) for s in arr.shape)
-    grp.create_dataset("data", data=arr, compression="gzip",
-                       compression_opts=4, chunks=chunks)
+    _create_ds(grp, "data", data=arr, chunks=chunks)
 
 
 def _write_csr(grp, matrix):
     m = csr_matrix(matrix).astype("float32")
-    grp.create_dataset("data",    data=m.data)
-    grp.create_dataset("indices", data=m.indices.astype("int32"))
-    grp.create_dataset("indptr",  data=m.indptr.astype("int32"))
+    _create_ds(grp, "data",    data=m.data)
+    _create_ds(grp, "indices", data=m.indices.astype("int32"))
+    _create_ds(grp, "indptr",  data=m.indptr.astype("int32"))
 
 
 def _write_coo(grp, matrix):
     m = coo_matrix(matrix).astype("float32")
-    grp.create_dataset("data", data=m.data)
-    grp.create_dataset("row",  data=m.row.astype("int32"))
-    grp.create_dataset("col",  data=m.col.astype("int32"))
+    _create_ds(grp, "data", data=m.data)
+    _create_ds(grp, "row",  data=m.row.astype("int32"))
+    _create_ds(grp, "col",  data=m.col.astype("int32"))
 
 
 _WRITERS = {"dense": _write_dense, "csr": _write_csr, "coo": _write_coo}
