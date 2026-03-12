@@ -23,6 +23,11 @@ website:
               - section: "Usage"
                 href: Usage/index.qmd
                 contents:
+                  - section: "Examples"
+                    href: examples/index.qmd
+                    contents:
+                      - text: "Normative Networks"
+                        href: examples/network_from_db.qmd
                   - text: "Defining Dynamical Systems"
                     href: Usage/DefineDynamicalSystem.qmd
                   - text: "Simulation Experiments"
