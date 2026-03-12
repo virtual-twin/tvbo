@@ -756,6 +756,18 @@ class Dynamics(tvbo_datamodel.Dynamics):
             inst.calculate_derived_parameters()
         return inst
 
+    @classmethod
+    def from_db(cls, name: str) -> "Dynamics":
+        """Load a Dynamics model by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Dynamics", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available models in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Dynamics")
+
     # -------  Ontology enrichment  -------
 
     def enrich_from_ontology(self):
