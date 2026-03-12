@@ -19,12 +19,12 @@ from tvbo.data.registry import database_dir
 
 router = APIRouter(prefix="/api/v1/networks", tags=["networks"])
 
-# Networks are loaded from database/networks/ YAML files
+# Networks are loaded from tvbo/database/networks/ YAML files
 NETWORK_DIR = database_dir("Network")
 
 
 def _index_networks() -> dict:
-    """Build {id: Network} index from database/networks/ directory.
+    """Build {id: Network} index from tvbo/database/networks/ directory.
 
     Cached at startup. Metadata only — arrays are lazy.
     """
@@ -110,7 +110,7 @@ def get_data(network_id: str, format: str = Query("h5")):
     if not net:
         raise HTTPException(404, f"Network '{network_id}' not found")
 
-    # Serve existing HDF5 companion from database/networks/
+    # Serve existing HDF5 companion from tvbo/database/networks/
     data_file = getattr(net, "data_file", None)
     if data_file:
         companion = NETWORK_DIR / data_file

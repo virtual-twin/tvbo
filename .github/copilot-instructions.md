@@ -275,13 +275,13 @@ tvbo/
 │   │   └── autodiff/        # JAX templates (primary backend)
 │   ├── api/                 # FastAPI server (optional [api] extra)
 │   ├── data/                # Data loading utilities
+│   ├── database/            # YAML knowledge base (shipped with package)
+│   │   ├── models/          # Neural mass model definitions (*.yaml)
+│   │   ├── studies/         # Complete simulation experiment specs
+│   │   ├── coupling_functions/  # Coupling function definitions
+│   │   ├── integrators/     # Numerical integrator definitions
+│   │   └── networks/, atlases/  # Connectome and atlas data
 │   └── plot/, analysis/, parse/, utils/
-├── database/                # YAML knowledge base
-│   ├── models/              # Neural mass model definitions (*.yaml)
-│   ├── studies/             # Complete simulation experiment specs
-│   ├── coupling_functions/  # Coupling function definitions
-│   ├── integrators/         # Numerical integrator definitions
-│   └── networks/, atlases/  # Connectome and atlas data
 ├── schema/                  # LinkML schema source
 │   └── tvbo_datamodel.yaml  # Master schema (edit this, run make gen-linkml)
 ├── tests/                   # Pytest test suite
@@ -329,11 +329,11 @@ container tests always use the freshly built image (`:latest` for main, `:dev` f
 ```python
 from tvbo import Dynamics, SimulationExperiment
 
-# Load model from YAML
-model = Dynamics.from_file("database/models/JansenRit.yaml")
+# Load model from database
+model = Dynamics.from_db("JansenRit")
 
 # Load full experiment
-exp = SimulationExperiment.from_file("database/studies/Schirner2023.yaml")
+exp = SimulationExperiment.from_db("Schirner2023_MultiscaleBNM_DM")
 result = exp.run()
 result.plot()
 
@@ -343,13 +343,13 @@ print(exp.render_code('jax'))
 
 ## Important Conventions
 
-1. **YAML Model Files:** Located in `database/models/`. Each file defines a `Dynamics` with `name`, `parameters`, `state_variables`, each with `equation.rhs`.
+1. **YAML Model Files:** Located in `tvbo/database/models/`. Each file defines a `Dynamics` with `name`, `parameters`, `state_variables`, each with `equation.rhs`.
 
 2. **LinkML Schema:** `schema/tvbo_datamodel.yaml` is the source of truth for data model. After changes, run `make gen-linkml` to regenerate `tvbo/datamodel/`.
 
 3. **Templates:** Code generation uses Mako templates in `tvbo/templates/`. The primary backend is `autodiff/` (JAX).
 
-4. **Tests:** Parametrized tests in `test_model_loading.py` load every YAML model in `database/models/`. Add new models there and they'll be tested automatically.
+4. **Tests:** Parametrized tests in `test_model_loading.py` load every YAML model in `tvbo/database/models/`. Add new models there and they'll be tested automatically.
 
 5. **Version:** Defined in `tvbo/__init__.py` as `__version__`. Hatch reads this via `[tool.hatch.version] path = "tvbo/__init__.py"`.
 
@@ -372,7 +372,7 @@ Before submitting changes (always activate the venv first: `source .venv/bin/act
 
 | Extension | Purpose | Location |
 |-----------|---------|----------|
-| `.yaml` | Model/experiment definitions | `database/` |
+| `.yaml` | Model/experiment definitions | `tvbo/database/` |
 | `.py.mako` | Code generation templates | `tvbo/templates/` |
 | `.owl` | OWL ontology (read-only) | accessed via owlready2 |
 | `.qmd` | Quarto documentation | `docs/` |

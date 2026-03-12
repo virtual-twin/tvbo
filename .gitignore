@@ -82,7 +82,7 @@ docs/datamodel
 docs/_site_libs
 .quarto
 docs/_freeze
-database/_extra
+tvbo/database/_extra
 manuscript/_notes
 
 manuscript
@@ -105,8 +105,8 @@ docs/Interoperability/Pyrates/_*
 uv.lock
 pyrates_run.py
 pyrates_run_*.py
-database/studies/**/*.md
-database/studies/**/*.png
+tvbo/database/studies/**/*.md
+tvbo/database/studies/**/*.png
 c.ivp
 qif.cpython-313-darwin.so
 qif.f90

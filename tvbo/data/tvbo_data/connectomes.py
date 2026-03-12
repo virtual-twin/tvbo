@@ -46,7 +46,7 @@ except ImportError:
 def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
     """Find the YAML sidecar for a given atlas + tractogram combination.
 
-    Searches database/networks/ for files matching the atlas and rec- entities.
+    Searches tvbo/database/networks/ for files matching the atlas and rec- entities.
     Falls back to partial matching if exact match fails.
     """
     for f in NETWORK_DIR.glob("*.yaml"):
@@ -93,7 +93,7 @@ def _filter_networks_by_entities(entities: Dict[str, str]) -> list:
 def get_normative_connectome_data(
     atlas: str, tractogram: str = "dTOR"
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
-    """Load normative connectivity matrices from database/networks/ HDF5 files.
+    """Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
 
     Parameters
     ----------
@@ -551,7 +551,7 @@ class Network(tvbo_datamodel.Network):
 
         # Load network from BEP017 directory
         network = Network.from_bids(
-            "database/networks/bids/dk_average",
+            "tvbo/database/networks/bids/dk_average",
             structural_measures=["streamlineCount", "tractLength"],
             observational_measures=["correlation"],
         )
@@ -700,11 +700,11 @@ class Network(tvbo_datamodel.Network):
         -------
         >>> network = Network()
         >>> network.load_from_bids(
-        ...     "database/networks/bids/dk_average",
+        ...     "tvbo/database/networks/bids/dk_average",
         ...     structural_measures=["streamlineCount", "tractLength"],
         ... )
         >>> network.load_from_bids(
-        ...     "database/networks/bids/dk_average",
+        ...     "tvbo/database/networks/bids/dk_average",
         ...     observational_measures=["BoldCorrelation"],
         ... )
         """
@@ -891,7 +891,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        >>> net = Network.from_file("database/networks/dk87.yaml")
+        >>> net = Network.from_db("dk87")
         >>> net.number_of_nodes       # metadata: instant, no I/O
         87
         >>> net.weights_matrix.shape  # arrays: loaded on first access

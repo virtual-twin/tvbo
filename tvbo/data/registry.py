@@ -8,12 +8,9 @@ from pathlib import Path
 
 # --- Path resolution ---
 _pkg_db = Path(files("tvbo")) / "database"
-_repo_db = Path(__file__).resolve().parent.parent.parent / "database"
 
 if _pkg_db.is_dir():
     DATABASE_ROOT = _pkg_db
-elif _repo_db.is_dir():
-    DATABASE_ROOT = _repo_db
 else:
     DATABASE_ROOT = None
 

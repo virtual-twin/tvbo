@@ -45,7 +45,7 @@ _COUPLING_DB_DIR = os.path.join(
 def _load_coupling_from_database(name, coupling):
     """Fill coupling metadata from a database YAML file.
 
-    Looks for ``database/coupling_functions/<name>.yaml`` and fills
+    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills
     missing ``pre_expression``, ``post_expression``, ``parameters``,
     and ``delayed`` on the coupling instance.
 

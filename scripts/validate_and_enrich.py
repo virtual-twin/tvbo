@@ -9,9 +9,10 @@ import h5py
 import numpy as np
 import yaml
 
+from tvbo import database_path
 
 ATLAS_DIR = os.path.join(os.path.dirname(__file__), '..', 'tvbo', 'data', 'tvbo_data', 'atlas')
-NETWORKS_DIR = os.path.join(os.path.dirname(__file__), '..', 'database', 'networks')
+NETWORKS_DIR = str(database_path / 'networks')
 
 # Map network atlas names to dseg.yaml files
 ATLAS_DSEG_MAP = {

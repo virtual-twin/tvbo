@@ -19,7 +19,7 @@ MODEL_DIR = database_dir("Dynamics")
 
 
 def _index_models() -> dict:
-    """Build {name: (Dynamics, yaml_path)} index from database/models/."""
+    """Build {name: (Dynamics, yaml_path)} index from tvbo/database/models/."""
     from tvbo.knowledge.simulation.localdynamics import Dynamics
 
     models = {}
