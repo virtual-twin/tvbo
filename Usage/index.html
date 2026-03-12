@@ -2250,6 +2250,7 @@ PAGES.forEach(p => {
 // ── build filter buttons ──
 const allCats = [...new Set(PAGES.flatMap(p => p.cats))].sort();
 const filterBar = document.getElementById('usage-filters');
+filterBar.querySelector('[data-cat="all"]').addEventListener('click', () => setFilter('all'));
 allCats.forEach(cat => {
   const btn = document.createElement('button');
   btn.textContent = cat;
