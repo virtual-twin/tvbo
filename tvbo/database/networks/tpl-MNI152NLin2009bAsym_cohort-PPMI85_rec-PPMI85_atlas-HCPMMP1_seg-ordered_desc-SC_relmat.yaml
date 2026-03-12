@@ -3,12 +3,19 @@ schema_version: tvb-datamodel/0.7.0
 label: hcpmmp1ordered (PPMI85)
 number_of_nodes: 379
 descriptor: SC
+distance_unit: mm
+time_unit: ms
 data_file: tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_seg-ordered_desc-SC_relmat.h5
 bids:
   template: MNI152NLin2009bAsym
   cohort: PPMI85
   reconstruction: PPMI85
   segmentation: ordered
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm/ms
 parcellation:
   atlas:
     name: HCPMMP1
@@ -2291,14 +2298,16 @@ nodes:
     y: -30.9513
     z: -33.0764
 edges:
-- label: weights
+- label: weight
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
-- label: lengths
+  directed: false
+- label: length
   unit: mm
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
+  directed: false

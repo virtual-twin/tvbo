@@ -383,9 +383,9 @@ def save_network(network, yaml_path, binary_format: str = "h5",
         cw = getattr(network, "_cached_weights", None)
         cl = getattr(network, "_cached_lengths", None)
         if cw is not None:
-            arrays = {"weights": cw}
+            arrays = {"weight": cw}
             if cl is not None:
-                arrays["lengths"] = cl
+                arrays["length"] = cl
 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))

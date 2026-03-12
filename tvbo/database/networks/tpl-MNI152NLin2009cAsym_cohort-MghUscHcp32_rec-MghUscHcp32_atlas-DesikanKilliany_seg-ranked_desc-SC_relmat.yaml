@@ -3,12 +3,19 @@ schema_version: tvb-datamodel/0.7.0
 label: DesikanKilliany ranked (MghUscHcp32)
 number_of_nodes: 87
 descriptor: SC
+distance_unit: mm
+time_unit: ms
 data_file: tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-DesikanKilliany_seg-ranked_desc-SC_relmat.h5
 bids:
   template: MNI152NLin2009cAsym
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
   segmentation: ranked
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm/ms
 parcellation:
   atlas:
     name: DesikanKilliany
@@ -539,14 +546,16 @@ nodes:
     y: 3.4149
     z: -2.5363
 edges:
-- label: weights
+- label: weight
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
-- label: lengths
+  directed: false
+- label: length
   unit: mm
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
+  directed: false

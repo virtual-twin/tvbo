@@ -1825,13 +1825,13 @@ nodes:
     y: -43.0
     z: 26.0
 edges:
-- label: weights
+- label: weight
   format: dense
   weighted: true
   valid_diagonal: false
   non_negative: true
   directed: false
-- label: lengths
+- label: length
   format: dense
   weighted: true
   valid_diagonal: false

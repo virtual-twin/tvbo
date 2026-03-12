@@ -129,10 +129,10 @@ def get_normative_connectome_data(
     if store is None:
         raise FileNotFoundError(f"No companion data file for {sidecar.name}")
     arrays = store.arrays
-    weights = arrays.get("weights")
-    lengths = arrays.get("lengths")
+    weights = arrays.get("weight") or arrays.get("weights")
+    lengths = arrays.get("length") or arrays.get("lengths")
     if weights is None:
-        raise ValueError(f"No 'weights' edge found in {sidecar.name}")
+        raise ValueError(f"No 'weight' edge found in {sidecar.name}")
     return weights, lengths
 
 
@@ -502,9 +502,9 @@ class Network(tvbo_datamodel.Network):
         )
 
         # Store matrices via set_matrix for unified storage
-        instance.set_matrix("weights", weights)
+        instance.set_matrix("weight", weights)
         if lengths is not None:
-            instance.set_matrix("lengths", lengths)
+            instance.set_matrix("length", lengths)
         return instance
 
     @classmethod
@@ -1304,8 +1304,8 @@ class Network(tvbo_datamodel.Network):
             for k, v in meta_dict.items()
             if k
             not in (
-                "weights",
-                "lengths",
+                "weight",
+                "length",
                 "parcellation",
                 "edges",
                 "_pytree_data",
@@ -1518,7 +1518,12 @@ class Network(tvbo_datamodel.Network):
 
         # Check _arrays (set by set_matrix / add_edges)
         _arrs = self._get_arrays()
-        if "weights" in _arrs:
+        if "weight" in _arrs:
+            from scipy import sparse as _sp
+            W = _arrs["weight"]
+            if _sp.issparse(W):
+                W = W.toarray()
+        elif "weights" in _arrs:
             from scipy import sparse as _sp
             W = _arrs["weights"]
             if _sp.issparse(W):
@@ -1532,7 +1537,9 @@ class Network(tvbo_datamodel.Network):
         elif hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
-            if "weights" in arrays:
+            if "weight" in arrays:
+                self._cached_weights = arrays["weight"]
+            elif "weights" in arrays:
                 self._cached_weights = arrays["weights"]
                 W = self._cached_weights
             else:
@@ -1613,7 +1620,11 @@ class Network(tvbo_datamodel.Network):
 
         # Check _arrays (set by set_matrix / add_edges)
         _arrs = self._get_arrays()
-        if "lengths" in _arrs:
+        if "length" in _arrs:
+            from scipy import sparse as _sp
+            L = _arrs["length"]
+            return L.toarray() if _sp.issparse(L) else L
+        elif "lengths" in _arrs:
             from scipy import sparse as _sp
             L = _arrs["lengths"]
             return L.toarray() if _sp.issparse(L) else L
@@ -1625,7 +1636,9 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
-            if "lengths" in arrays:
+            if "length" in arrays:
+                self._cached_lengths = arrays["length"]
+            elif "lengths" in arrays:
                 self._cached_lengths = arrays["lengths"]
                 return self._cached_lengths
 
@@ -1993,7 +2006,7 @@ class Network(tvbo_datamodel.Network):
         else:
             norm = None
         im = ax.imshow(weights, cmap=cmap, interpolation="none", norm=norm)  # type: ignore[arg-type]
-        ax.set_title("weights")
+        ax.set_title("weight")
         ax.set_box_aspect(1)
         return im
 
@@ -2026,7 +2039,7 @@ class Network(tvbo_datamodel.Network):
         if lengths is None:
             lengths = np.zeros((1, 1))
         im = ax.imshow(lengths, cmap=cmap, interpolation="none")  # type: ignore[arg-type]
-        ax.set_title("lengths")
+        ax.set_title("length")
         ax.set_box_aspect(1)
         return im
 
@@ -2431,7 +2444,7 @@ class Network(tvbo_datamodel.Network):
             edge_kwargs=edge_kwargs, node_kwargs=node_kwargs,
         )
 
-    def plot_brain_surface(self, ax=None, **kwargs):
+    def plot_brain_surface(self, ax=None, weight_matrix=None, **kwargs):
         """Render the network on the cortical brain surface.
 
         Nodes are rendered as coloured spheres at their MNI coordinates
@@ -2441,6 +2454,9 @@ class Network(tvbo_datamodel.Network):
         ----------
         ax : matplotlib.axes.Axes, optional
             If *None*, a new figure is created.
+        weight_matrix : ndarray, optional
+            Custom matrix for edge colouring.  If *None*, uses the
+            default weights matrix.
         **kwargs
             Forwarded to :func:`tvbo.plot.network.plot_graph_brain`.
 
@@ -2457,57 +2473,64 @@ class Network(tvbo_datamodel.Network):
         """
         from tvbo.plot.network import plot_graph_brain
 
-        return plot_graph_brain(self, ax=ax, **kwargs)
+        return plot_graph_brain(self, ax=ax, weight_matrix=weight_matrix,
+                                **kwargs)
 
     def plot_overview(
         self,
+        edge_properties: Optional[List[str]] = None,
         weights_kwargs: Optional[Dict[str, Any]] = None,
         lengths_kwargs: Optional[Dict[str, Any]] = None,
         graph_kwargs: Optional[Dict[str, Any]] = None,
         log_weights: bool = False,
         plot_brain: Optional[bool] = None,
         brain_kwargs: Optional[Dict[str, Any]] = None,
+        cmap: str = "magma",
     ) -> Figure:
-        """Create comprehensive visualization with graph and matrices.
+        """Create comprehensive visualization with brain surface and matrices.
 
-        Produces a three-panel figure showing network graph, weights matrix,
-        and lengths matrix with synchronized colorbars and formatting.
-
-        When ``bsplot`` is installed and the network has an atlas with MNI
-        coordinates, the first panel automatically uses a 3-D brain surface
-        rendering instead of the flat graph layout.  Set *plot_brain=False*
-        to force the flat layout.
+        Produces a multi-panel figure with one row per edge property.
+        Each row contains either a brain surface + matrix heatmap
+        (when *plot_brain* is True) or just a matrix heatmap, both
+        coloured by the same property.
 
         Parameters
         ----------
+        edge_properties : list of str, optional
+            Names of edge matrices to plot (e.g. ``["weight", "length"]``
+            or ``["weight", "length", "fc"]``).  Each name must match a
+            matrix stored in the network (see ``set_matrix`` /
+            ``matrix``).  If *None*, auto-discovers all available edge
+            properties.
         weights_kwargs : dict, optional
-            Keyword arguments passed to `plot_weights`
+            *Deprecated* — use ``edge_properties`` instead.
         lengths_kwargs : dict, optional
-            Keyword arguments passed to `plot_lengths`
+            *Deprecated* — use ``edge_properties`` instead.
         graph_kwargs : dict, optional
             Keyword arguments passed to `plot_graph`
         log_weights : bool, default=False
-            Use logarithmic scale for weights
+            Use logarithmic scale for the ``"weight"`` panel
         plot_brain : bool, optional
             If *True*, render on brain surface (requires ``bsplot``).
-            If *False*, use flat graph layout.  If *None* (default),
+            If *False*, use matrix-only layout.  If *None* (default),
             auto-detect: use brain surface when ``bsplot`` is installed
             and atlas coordinates are available.
         brain_kwargs : dict, optional
             Keyword arguments passed to `plot_brain_surface` when
             the brain surface panel is used.
+        cmap : str, default="magma"
+            Default colormap for matrix heatmaps.
 
         Returns
         -------
         matplotlib.figure.Figure
-            Figure with three subplots (graph/brain, weights, lengths)
+            Figure with subplots
 
         Examples
         --------
         ```{python}
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        sc.plot_overview(
-            log_weights=True)
+        sc.plot_overview(log_weights=True)
         ```
 
         See Also
@@ -2516,6 +2539,15 @@ class Network(tvbo_datamodel.Network):
         plot_brain_surface : 3-D brain surface rendering
         plot_matrix : Side-by-side matrix visualization
         """
+        from matplotlib.colors import LogNorm
+
+        # Auto-discover all edge properties when not specified
+        if edge_properties is None:
+            edge_properties = [
+                getattr(e, "label", None) or getattr(e, "name", None)
+                for e in (self.edges or [])
+            ]
+            edge_properties = [p for p in edge_properties if p]
 
         # Auto-detect brain surface capability
         if plot_brain is None:
@@ -2530,72 +2562,94 @@ class Network(tvbo_datamodel.Network):
             except (ImportError, Exception):
                 plot_brain = False
 
-        fig, axs = plt.subplots(ncols=3, layout="tight", figsize=(15, 5))
+        n_props = len(edge_properties)
+        n_cols = 2 if plot_brain else 1
+        fig, axs = plt.subplots(
+            nrows=n_props, ncols=n_cols, layout="tight",
+            figsize=(5 * n_cols, 5 * n_props),
+            squeeze=False,
+        )
 
-        # Ensure kwargs are not None before unpacking
-        if weights_kwargs is None:
-            weights_kwargs = {}
-        if lengths_kwargs is None:
-            lengths_kwargs = {}
-        if graph_kwargs is None:
-            graph_kwargs = {}
         if brain_kwargs is None:
             brain_kwargs = {}
 
-        if plot_brain:
-            brain_defaults = {
-                "view": "top",
-                "surface_alpha": 0.25,
-                "node_radius": 1.5,
-                "node_color": "auto",
-                "node_data_key": "strength",
-                "node_scale": {"strength": 2},
-                "edge_radius": 0.12,
-                "edge_color": "auto",
-                "edge_data_key": "weight",
-                "edge_cmap": "batlow",
-                "node_cmap": "batlow",
-                "edge_scale": {"weight": 6, "mode": "log"},
-            }
-            brain_defaults.update(brain_kwargs)
-            _, _, mappables = self.plot_brain_surface(
-                ax=axs[0], **brain_defaults
-            )
-            g = mappables.get("edges") or mappables.get("nodes")
-        else:
-            if "edge_cmap" not in graph_kwargs:
-                graph_kwargs["edge_cmap"] = "magma"
-            g = self.plot_graph(axs[0], **graph_kwargs)
+        # Build edge label → metadata lookup from template edges
+        edge_meta = {}
+        for e in (self.edges or []):
+            lbl = getattr(e, "label", None) or getattr(e, "name", None)
+            if lbl:
+                edge_meta[lbl] = e
 
-        axs[0].axis("off")
-        w = self.plot_weights(axs[1], log=log_weights, **weights_kwargs)
-        l = self.plot_lengths(axs[2], **lengths_kwargs)
-        axs[2].sharey(axs[1])
+        for row, prop in enumerate(edge_properties):
+            mat = self.matrix(prop)
+            if mat is None:
+                mat = np.zeros((1, 1))
 
-        c1 = fig.colorbar(g, ax=axs[0], shrink=0.5)  # type: ignore[arg-type]
-        c2 = fig.colorbar(w, ax=axs[1], shrink=0.5)
-        c3 = fig.colorbar(l, ax=axs[2], shrink=0.5)
+            use_log = (prop == "weight" and log_weights)
+            norm = None
+            if use_log:
+                nonzero = mat[mat > 0]
+                vmin = float(nonzero.min()) if nonzero.size > 0 else 1e-10
+                vmax = float(mat.max()) if mat.max() > 0 else 1.0
+                norm = LogNorm(vmin=vmin, vmax=vmax)
 
+            # Colorbar label from edge metadata unit
+            emeta = edge_meta.get(prop)
+            unit = getattr(emeta, "unit", None) if emeta else None
+            if use_log:
+                label = f"log({unit})" if unit else f"log({prop})"
+            else:
+                label = str(unit) if unit else prop
+
+            col = 0
+
+            # --- Brain surface panel ---
+            if plot_brain:
+                brain_defaults = {
+                    "view": "top",
+                    "surface_alpha": 0.25,
+                    "node_radius": 1.5,
+                    "node_color": "auto",
+                    "node_data_key": "strength",
+                    "node_scale": {"strength": 2},
+                    "edge_radius": 0.12,
+                    "edge_color": "auto",
+                    "edge_data_key": "weight",
+                    "edge_cmap": cmap,
+                    "node_cmap": cmap,
+                    "edge_scale": {"weight": 6, "mode": "log"},
+                }
+                brain_defaults.update(brain_kwargs)
+                _, _, mappables = self.plot_brain_surface(
+                    ax=axs[row, 0], weight_matrix=mat,
+                    **brain_defaults,
+                )
+                g = mappables.get("edges") or mappables.get("nodes")
+                axs[row, 0].axis("off")
+                cb = fig.colorbar(g, ax=axs[row, 0], shrink=0.5,
+                                  label=label)
+                cb.outline.set_visible(False)
+                col = 1
+
+            # --- Matrix panel ---
+            ax_mat = axs[row, col]
+            im = ax_mat.imshow(mat, cmap=cmap, interpolation="none",
+                               norm=norm)
+            ax_mat.set_title(prop)
+            ax_mat.set_box_aspect(1)
+            cb = fig.colorbar(im, ax=ax_mat, shrink=0.5, label=label)
+            cb.outline.set_visible(False)
+
+        # --- Font scaling ---
         fontsize_scaler = 1.5
-
-        for c in [c1, c2, c3]:
-            c.outline.set_visible(False)  # type: ignore[misc]
-            for label in c.ax.get_yticklabels():
-                label.set_fontsize(float(c.ax.yaxis.label.get_fontsize()) * fontsize_scaler)  # type: ignore[arg-type]
-
-        for ax in axs:
-            for label in ax.get_xticklabels() + ax.get_yticklabels():
-                label.set_fontsize(label.get_fontsize() * fontsize_scaler)
+        for ax in axs.flat:
+            for lbl in ax.get_xticklabels() + ax.get_yticklabels():
+                lbl.set_fontsize(lbl.get_fontsize() * fontsize_scaler)
             ax.title.set_fontsize(ax.title.get_fontsize() * fontsize_scaler)
-            ax.xaxis.label.set_fontsize(ax.xaxis.label.get_fontsize() * fontsize_scaler)
-            ax.yaxis.label.set_fontsize(ax.yaxis.label.get_fontsize() * fontsize_scaler)
-
-        c1.set_label("ms", fontsize=float(c1.ax.yaxis.label.get_fontsize()) * fontsize_scaler)  # type: ignore[arg-type]
-        c2.set_label(
-            "log1p(weight)" if log_weights else "weight",
-            fontsize=float(c2.ax.yaxis.label.get_fontsize()) * fontsize_scaler,  # type: ignore[arg-type]
-        )
-        c3.set_label("mm", fontsize=float(c3.ax.yaxis.label.get_fontsize()) * fontsize_scaler)  # type: ignore[arg-type]
+            ax.xaxis.label.set_fontsize(
+                ax.xaxis.label.get_fontsize() * fontsize_scaler)
+            ax.yaxis.label.set_fontsize(
+                ax.yaxis.label.get_fontsize() * fontsize_scaler)
 
         plt.close()
         return fig
@@ -2725,7 +2779,7 @@ class Network(tvbo_datamodel.Network):
         Parameters
         ----------
         name : str
-            Matrix name (e.g. ``"weights"``, ``"lengths"``,
+            Matrix name (e.g. ``"weight"``, ``"length"``,
             ``"local_connectivity"``). Used as the HDF5 group name
             under ``edges/``.
         data : array-like or scipy.sparse matrix
@@ -2733,7 +2787,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        >>> net.set_matrix("weights", W_dense)
+        >>> net.set_matrix("weight", W_dense)
         >>> net.set_matrix("local_connectivity", LC_sparse_csr)
         """
         from scipy import sparse
@@ -2746,9 +2800,9 @@ class Network(tvbo_datamodel.Network):
             arrays[name] = np.asarray(data)
 
         # Backward compat: sync legacy caches
-        if name == "weights":
+        if name in ("weight", "weights"):
             self._cached_weights = arrays[name]
-        elif name == "lengths":
+        elif name in ("length", "lengths"):
             self._cached_lengths = arrays[name]
 
         self._ensure_template_edge(name)
@@ -2766,7 +2820,7 @@ class Network(tvbo_datamodel.Network):
         Parameters
         ----------
         name : str
-            Matrix name (e.g. ``"weights"``, ``"lengths"``).
+            Matrix name (e.g. ``"weight"``, ``"length"``).
         format : str, optional
             Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
             If ``None``, returns the matrix in whatever format it is
@@ -2788,9 +2842,9 @@ class Network(tvbo_datamodel.Network):
         elif hasattr(self, "_store") and self._store is not None and name in self._store:
             mat = self._store[name]
         # 3. Legacy caches
-        elif name == "weights" and hasattr(self, "_cached_weights") and self._cached_weights is not None:
+        elif name in ("weight", "weights") and hasattr(self, "_cached_weights") and self._cached_weights is not None:
             mat = self._cached_weights
-        elif name == "lengths" and hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
+        elif name in ("length", "lengths") and hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
             mat = self._cached_lengths
 
         if mat is None:
@@ -2828,17 +2882,18 @@ class Network(tvbo_datamodel.Network):
             If ``True`` (default), also adds the reverse edge.
         **params : float
             Named parameter values. Each name becomes a matrix name
-            (e.g. ``weight=0.5`` → stored in the ``"weights"`` matrix,
-            ``length=30.0`` → stored in ``"lengths"``).
+            (e.g. ``weight=0.5`` → stored in the ``"weight"`` matrix,
+            ``length=30.0`` → stored in ``"length"``).
 
         Examples
         --------
         >>> net.add_edge(0, 1, weight=0.5, length=30.0)
         """
         # Map common singular → plural names to match template edge conventions
-        _SINGULAR_TO_PLURAL = {"weight": "weights", "length": "lengths",
-                               "delay": "delays", "distance": "lengths"}
-        mapped = {_SINGULAR_TO_PLURAL.get(k, k): np.array([v])
+        _NORMALIZE = {"weights": "weight", "lengths": "length",
+                      "delays": "delay", "distance": "length",
+                      "distances": "length"}
+        mapped = {_NORMALIZE.get(k, k): np.array([v])
                   for k, v in params.items()}
         self.add_edges(
             np.array([source]),
@@ -2877,7 +2932,7 @@ class Network(tvbo_datamodel.Network):
         --------
         >>> # Build local connectivity from index pairs + kernel weights
         >>> net.add_edges(pairs[:, 0], pairs[:, 1],
-        ...              symmetric=True, weights=kernel_vals)
+        ...              symmetric=True, weight=kernel_vals)
         """
         from scipy import sparse
         from scipy.sparse import coo_matrix
@@ -2921,9 +2976,9 @@ class Network(tvbo_datamodel.Network):
             arrays[name] = mat
 
             # Backward compat
-            if name == "weights":
+            if name in ("weight", "weights"):
                 self._cached_weights = mat
-            elif name == "lengths":
+            elif name in ("length", "lengths"):
                 self._cached_lengths = mat
 
             self._ensure_template_edge(name)
