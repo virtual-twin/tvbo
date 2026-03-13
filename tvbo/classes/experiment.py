@@ -250,9 +250,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 bids_dir = (Path.cwd() / bids_dir).resolve()
 
         # Get measures from network attributes
-        structural = getattr(self.network, "structural_measures", None) or [
-            "streamlineCount", "tractLength"
-        ]
+        structural = getattr(self.network, "structural_measures", None) or []
+        if not structural:
+            from tvbo.classes.network import _discover_bids_measures
+            structural = _discover_bids_measures(bids_dir)
         observational = getattr(self.network, "observational_measures", None) or []
 
         # Use Network.load_from_bids to load data into self.network

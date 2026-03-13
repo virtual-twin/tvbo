@@ -274,6 +274,65 @@ def _write_nodes(store, network):
         )
 
 
+def _write_mesh(store, network):
+    """Write mesh data (vertices, elements, normals) to ``/mesh/`` group.
+
+    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``,
+    ``_mesh_normals`` attributes on the network. These are set by
+    ``from_tvb_surface()`` or directly by user code.
+
+    Called after ``_write_nodes`` during ``save_network``.
+    """
+    import numpy as _np
+
+    try:
+        vertices = object.__getattribute__(network, "_mesh_vertices")
+    except AttributeError:
+        return  # No mesh data — nothing to write
+
+    mesh_grp = store.require_group("mesh")
+
+    # Mesh metadata
+    mesh_obj = getattr(network, "mesh", None)
+    if mesh_obj:
+        mesh_grp.attrs["tvbo_class"] = "tvbo:Mesh"
+        et = getattr(mesh_obj, "element_type", None)
+        if et:
+            mesh_grp.attrs["element_type"] = str(getattr(et, "text", et)).encode("utf-8")
+        nv = getattr(mesh_obj, "number_of_vertices", None)
+        if nv is not None:
+            mesh_grp.attrs["number_of_vertices"] = int(nv)
+        ne = getattr(mesh_obj, "number_of_elements", None)
+        if ne is not None:
+            mesh_grp.attrs["number_of_elements"] = int(ne)
+
+    # Vertices (V, 3)
+    v = _np.asarray(vertices, dtype="float32")
+    v_chunks = (min(v.shape[0], 4096), 3)
+    _create_ds(mesh_grp, "vertices", data=v,
+               chunks=v_chunks, compression="gzip")
+
+    # Elements (E, K)
+    try:
+        elements = object.__getattribute__(network, "_mesh_elements")
+        e = _np.asarray(elements, dtype="int32")
+        e_chunks = (min(e.shape[0], 4096), e.shape[1])
+        _create_ds(mesh_grp, "elements", data=e,
+                   chunks=e_chunks, compression="gzip")
+    except AttributeError:
+        pass
+
+    # Normals (V, 3) — optional
+    try:
+        normals = object.__getattribute__(network, "_mesh_normals")
+        n = _np.asarray(normals, dtype="float32")
+        n_chunks = (min(n.shape[0], 4096), 3)
+        _create_ds(mesh_grp, "normals", data=n,
+                   chunks=n_chunks, compression="gzip")
+    except AttributeError:
+        pass
+
+
 # ── Load ──────────────────────────────────────────────────────────────
 
 def load_network(yaml_path):
@@ -403,9 +462,17 @@ def save_network(network, yaml_path, binary_format: str = "h5",
                 arrays[l_name] = arrays.pop("length")
 
     if not arrays:
-        # Metadata-only sidecar (no companion file)
-        _write_v07_sidecar(network, sidecar_path, sidecar_format)
-        return
+        # Check if there's mesh data that needs a companion file
+        has_mesh = False
+        try:
+            object.__getattribute__(network, "_mesh_vertices")
+            has_mesh = True
+        except AttributeError:
+            pass
+        if not has_mesh:
+            # Metadata-only sidecar (no companion file)
+            _write_v07_sidecar(network, sidecar_path, sidecar_format)
+            return
 
     companion = sidecar_path.with_suffix(f".{binary_format}")
     meta["data_file"] = companion.name
@@ -416,12 +483,14 @@ def save_network(network, yaml_path, binary_format: str = "h5",
         with h5py.File(companion, "w") as f:
             _write_edges(f, meta, arrays, edge_params)
             _write_nodes(f, network)
+            _write_mesh(f, network)
 
     elif binary_format == "zarr":
         import zarr
         z = zarr.open(str(companion), mode="w")
         _write_edges(z, meta, arrays, edge_params)
         _write_nodes(z, network)
+        _write_mesh(z, network)
 
     elif binary_format == "csv":
         # CSV: one file = one matrix = first template edge only

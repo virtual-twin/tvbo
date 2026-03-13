@@ -51,8 +51,8 @@ The most commonly called functions and classes:
 | **NetworkDynamics.jl** | [networkdynamics](api/adapters/networkdynamics.qmd) | [NetworkDynamics docs](Interoperability/NetworkDynamics.jl/index.qmd) |
 | **BifurcationKit.jl** | [bifurcationkit](api/adapters/bifurcationkit.qmd) | [BifurcationKit docs](Interoperability/BifurcationKit.jl/index.qmd) |
 | **ModelingToolkit.jl** | [modelingtoolkit](api/adapters/modelingtoolkit.qmd) | [ModelingToolkit docs](Interoperability/ModelingToolkit.jl/index.qmd) |
-| **BIDS** | [bids](api/bids/bids.qmd) | [BIDS docs](Interoperability/BIDS/index.qmd) |
-| **openMINDS** | [openminds](api/export/openminds.qmd) | [openMINDS docs](Interoperability/OpenMINDS.qmd) |
+| **BIDS** | — | [BIDS docs](Interoperability/BIDS/index.qmd) |
+| **openMINDS** | — | [openMINDS docs](Interoperability/OpenMINDS.qmd) |
 
 ## Typical Workflow
 

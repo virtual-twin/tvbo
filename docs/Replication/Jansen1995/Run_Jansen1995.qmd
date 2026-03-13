@@ -4,6 +4,8 @@ description: "Replication of electroencephalogram and evoked potential simulatio
 jupyter: python3
 ---
 
+Replication of the simulation experiments from @Jansen1995.
+
 ```{python}
 from tvbo import SimulationStudy
 import bsplot
