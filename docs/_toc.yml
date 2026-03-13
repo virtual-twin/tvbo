@@ -1329,6 +1329,11 @@ website:
                         href: api/datamodel/pydantic.qmd
                       - text: "Schema"
                         href: api/datamodel/schema.qmd
+                  - section: "Export"
+                    href: api/export/index.qmd
+                    contents:
+                      - text: "Report"
+                        href: api/export/report.qmd
                   - section: "TVB-O Ontology"
                     href: api/ontology/index.qmd
                     contents:
@@ -1359,6 +1364,10 @@ website:
                     contents:
                       - text: "Expression"
                         href: api/parse/expression.qmd
+                      - text: "Lems Loader"
+                        href: api/parse/lems_loader.qmd
+                      - text: "Metadata"
+                        href: api/parse/metadata.qmd
                       - text: "Tvb Converter"
                         href: api/parse/tvb_converter.qmd
                   - section: "Plot"
