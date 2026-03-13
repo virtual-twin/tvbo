@@ -9,26 +9,14 @@
 Utilities Module for TVB-O
 ==========================
 
-This module provides a set of utility functions for various tasks related to TVB-O simulations.
-It includes functions to:
+Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O,
+and metadata traversal helpers.
 
-- Retrieve the TVB-O logo.
-- Convert color formats.
-- Compute postsynaptic potential (PSP) for the Jansen-Rit model.
-- Define hierarchical positions for nodes in a graph.
-- Generate specific colormaps.
-- Display multiple views of brain regions.
+Plotting utilities (colors, colormaps, ``multiview``) have moved to
+``tvbo.plot.utils`` and are re-exported here for backward compatibility.
 
-Usage:
-------
-    >>> from utils import get_logo
-    >>> logo = get_logo()
-
-Author:
-    Leon K. Martin (2023)
-
-Copyright:
-    Copyright (c) 2023 Charité Universitätsmedizin Berlin
+Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have
+moved to ``tvbo.analysis``.
 """
 
 from os.path import abspath, dirname, join
@@ -39,262 +27,18 @@ cm = 1 / 2.54
 ROOT_DIR = abspath(dirname(__file__))
 
 
-def get_logo() -> np.ndarray:
-    """
-    Retrieve the TVB-O logo.
-
-    Returns:
-        np.ndarray: Image array of the TVB-O logo.
-    """
-    from matplotlib import pyplot as plt
-    return plt.imread(join(ROOT_DIR, "../tvbo_logo.png"))
-
-
-def hex2rgba(hex: str, alpha: int = 1, max: int = 1) -> tuple:
-    """
-    Convert a hex color code to RGBA.
-
-    Args:
-        hex (str): Hexadecimal color code.
-        alpha (float, optional): Alpha value for the color. Defaults to 1.
-        max (int, optional): Scaling factor. Defaults to 1.
-
-    Returns:
-        tuple: RGBA values.
-    """
-    hex = hex.replace("#", "")
-    rgb = []
-    for i in (0, 2, 4):
-        decimal = int(hex[i : i + 2], 16)
-        rgb.append(decimal / (255 / max))
-    if max == 255:
-        rgb = [int(c) for c in rgb]
-    rgb.append(alpha)
-    return tuple(rgb)
-
-
-def is_class(search_string: str, ontology: "owlready2.Ontology") -> bool:
-    """Check if a search string is in any of the labels of classes in the given ontology.
-
-    Args:
-        search_string: The string to search for within the ontology labels.
-        ontology: The loaded ontology where to perform the search.
-
-    Returns:
-        A boolean indicating if the string is found in any label.
-    """
-    for cls in ontology.classes():
-        for label in cls.label:
-            if search_string in label:
-                return True
-    return False
-
-
-tvb_colors = ["#2E9795", "#935495", "#4EA8E5", "#E58221"]
-
-
-def get_cmap(colors=None):
-    """
-    Get a colormap based on the given colors.
-
-    Parameters
-    ----------
-    colors : list, optional
-        List of colors. Defaults to tvb_colors.
-
-    Returns
-    -------
-    ListedColormap
-        Colormap based on the input colors.
-    """
-    from matplotlib.colors import ListedColormap
-    return ListedColormap(colors or tvb_colors)
-
-
-def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
-    """
-    Display multiple views of brain regions.
-    Copied from https://github.com/the-virtual-brain/tvb-root/blob/master/tvb_documentation/tutorials/utils.py
-
-    Parameters
-    ----------
-    data : ndarray
-        Data for the regions.
-    cortex : Cortex
-        Brain cortex information.
-    suptitle : str, optional
-        Super title for the plots, by default "".
-    figsize : tuple, optional
-        Figure size, by default (15, 10).
-    **kwds
-        Additional keyword arguments.
-    """
-    from matplotlib import pyplot as plt
-    from matplotlib.tri import Triangulation
-
-    vtx = cortex.vertices
-    tri = cortex.triangles
-    rm = cortex.region_mapping
-    x, y, z = vtx.T
-    lh_tri = tri[(rm[tri] < 38).any(axis=1)]
-    lh_vtx = vtx[rm < 38]
-    lh_x, lh_y, lh_z = lh_vtx.T  # TODO: not used, remove?
-    lh_tx, lh_ty, lh_tz = lh_vtx[lh_tri].mean(axis=1).T
-    rh_tri = tri[(rm[tri] >= 38).any(axis=1)]
-    rh_vtx = vtx[rm < 38]
-    rh_x, rh_y, rh_z = rh_vtx.T  # TODO: not used, remove?
-    rh_tx, rh_ty, rh_tz = vtx[rh_tri].mean(axis=1).T
-    tx, ty, tz = vtx[tri].mean(axis=1).T
-
-    views = {
-        "lh-lateral": Triangulation(-x, z, lh_tri[np.argsort(lh_ty)[::-1]]),
-        "lh-medial": Triangulation(x, z, lh_tri[np.argsort(lh_ty)]),
-        "rh-medial": Triangulation(-x, z, rh_tri[np.argsort(rh_ty)[::-1]]),
-        "rh-lateral": Triangulation(x, z, rh_tri[np.argsort(rh_ty)]),
-        "both-superior": Triangulation(y, x, tri[np.argsort(tz)]),
+# Backward-compatible re-exports (moved to tvbo.plot.utils)
+def __getattr__(name):
+    _plot_names = {
+        'get_logo', 'hex2rgba', 'get_cmap', 'get_continuous_cmap', 'multiview',
+        'tvb_colors',
     }
-
-    def plotview(
-        i,
-        j,
-        k,
-        viewkey,
-        z=None,
-        zlim=None,
-        zthresh=None,
-        suptitle="",
-        shaded=True,
-        cmap=plt.cm.coolwarm,
-        viewlabel=False,
-    ):
-        v = views[viewkey]
-        ax = plt.subplot(i, j, k)
-        if z is None:
-            z = np.rand(v.x.shape[0])
-        if not viewlabel:
-            plt.axis("off")
-        kwargs = (
-            {"shading": "gouraud"} if shaded else {"edgecolors": "k", "linewidth": 0.1}
-        )
-        if zthresh:
-            z = z.copy() * (abs(z) > zthresh)
-        tc = ax.tripcolor(v, z, cmap=cmap, **kwargs)
-        if zlim:
-            tc.set_clim(vmin=-zlim, vmax=zlim)
-        ax.set_aspect("equal")
-        if suptitle:
-            ax.set_title(suptitle, fontsize=24)
-        if viewlabel:
-            plt.xlabel(viewkey)
-
-    plt.figure(figsize=figsize)
-    plotview(2, 3, 1, "lh-lateral", data, **kwds)
-    plotview(2, 3, 4, "lh-medial", data, **kwds)
-    plotview(2, 3, 3, "rh-lateral", data, **kwds)
-    plotview(2, 3, 6, "rh-medial", data, **kwds)
-    plotview(1, 3, 2, "both-superior", data, suptitle=suptitle, **kwds)
-    plt.subplots_adjust(left=0.0, right=1.0, bottom=0.0, top=1.0, wspace=0, hspace=0)
-
-
-def get_continuous_cmap(hex_list, float_list=None):
-    """
-    Get a continuous colormap based on a list of hex codes.
-
-    Parameters
-    ----------
-    hex_list : list
-        List of hex code strings.
-    float_list : list, optional
-        List of floats between 0 and 1 of the same length as hex_list, by default None.
-
-    Returns
-    -------
-    LinearSegmentedColormap
-        A colormap based on the input hex codes.
-    """
-    import matplotlib as mpl
-    import numpy as np
-    from matplotlib.colors import LinearSegmentedColormap
-
-    def rgb_to_dec(value):
-        """Converts rgb to decimal colours (i.e. divides each value by 256)
-
-        :param value: rgb values
-        :type value: tuple
-        :return: decimal rgb values
-        :rtype: tuple
-        """
-        return [v / 256 for v in value]
-
-    def hex_to_rgb(value):
-        """Converts hex to rgb colours
-        value: string of 6 characters representing a hex colour.
-        Returns: list length 3 of RGB values
-
-        :param value: hexcode
-        :type value: str
-        :return: rgba value
-        :rtype: tuple
-        """
-        value = value.strip("#")  # removes hash symbol if present
-        lv = len(value)
-        return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
-    """creates and returns a color map that can be used in heat map figures.
-    If float_list is not provided, colour map graduates linearly between each color in hex_list.
-    If float_list is provided, each color in hex_list is mapped to the respective location in float_list.
-
-    :param hex_list: list of hex code strings
-    :type hex_list: list
-    :param float_list: list of floats between 0 and 1, same length as hex_list. Must start with 0 and
-    end with 1., defaults to None
-    :type float_list: list, optional
-    :return: color map
-    :rtype: matplotlib.colors.LinearSegmentedColormap
-    """
-    rgb_list = [rgb_to_dec(hex_to_rgb(i)) for i in hex_list]
-    if float_list:
-        pass
-    else:
-        float_list = list(np.linspace(0, 1, len(rgb_list)))
-
-    cdict = dict()
-    for num, col in enumerate(["red", "green", "blue"]):
-        col_list = [
-            [float_list[i], rgb_list[i][num], rgb_list[i][num]]
-            for i in range(len(float_list))
-        ]
-        cdict[col] = col_list
-    cmp = mpl.colors.LinearSegmentedColormap("my_cmp", segmentdata=cdict, N=256)
-    return cmp
-
-
-def flatten_list(nested_list):
-    """
-    Flatten a nested list.
-
-    Parameters:
-    -----------
-    nested_list : list
-        The nested list to be flattened.
-
-    Returns:
-    --------
-    list
-        The flattened list.
-
-    """
-    flat_list = []
-    for item in nested_list:
-        if isinstance(item, list):
-            flat_list.extend(flatten_list(item))
-        else:
-            flat_list.append(item)
-    return flat_list
-
-
-def custom_get(d, key, default=None):
-    return d.get(key, default) if d.get(key, default) is not None else default
+    if name in _plot_names:
+        from tvbo.plot import utils as _plot_utils
+        if name == 'tvb_colors':
+            return _plot_utils.tvb_colors_simple
+        return getattr(_plot_utils, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 
@@ -553,53 +297,6 @@ def pretty_print_pytree(
         pytree, name, prefix, False, show_numerical_only, True, hide_none
     )
     print(formatted_string)
-
-
-def per_window_fc(tv, xv, window=1e3):
-    """
-    Calculate per-window functional connectivity.
-
-    Parameters
-    ----------
-    tv : ndarray
-        Time vector.
-    xv : ndarray
-        Data vector.
-    window : float, optional
-        Time window for calculation. Default is 1e3.
-
-    Returns
-    -------
-    ndarray
-        Correlation coefficients for each window.
-    """
-    cs = []
-    for i in range(int(tv[-1] / window)):
-        cs.append(np.corrcoef(xv[(tv > (i * 1e3)) * (tv < (1e3 * (i + 1)))].T))
-    cs = np.array(cs)
-    return cs
-
-
-def ttest_correlation_strength(cs):
-    """
-    Perform a t-test on the strength of the correlation.
-
-    Parameters
-    ----------
-    cs : ndarray
-        Correlation coefficients.
-
-    Returns
-    -------
-    ndarray
-        P-values of the t-test for each correlation coefficient.
-    """
-    cs_z = np.arctanh(cs)
-    for i in range(cs.shape[1]):
-        cs_z[:, i, i] = 0.0
-    _, p = stats.ttest_1samp(cs, 0.0)
-
-    return p
 
 
 # ---- YAML utilities ----

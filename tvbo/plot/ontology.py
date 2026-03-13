@@ -41,7 +41,7 @@ from sympy import latex, symbols
 from tvbo.ontology import graph
 from tvbo.ontology import owl as ontology
 from tvbo.classes import equation as equations
-from tvbo.utils import get_cmap, get_continuous_cmap, tvb_colors
+from tvbo.plot.utils import get_cmap, get_continuous_cmap, tvb_colors_simple as tvb_colors
 
 ######################
 # Default Parameters #
