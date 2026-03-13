@@ -2706,6 +2706,18 @@ classes:
                 range: string
             coordinate_space:
                 range: CommonCoordinateSpace
+            mesh_file:
+                description: "Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.)."
+                range: string
+            mesh_format:
+                description: "Explicit format override (gifti, freesurfer, meshio, vtk, gmsh). Auto-detected from extension if null."
+                range: string
+            number_of_vertices:
+                description: "Number of vertices in the mesh."
+                range: integer
+            number_of_elements:
+                description: "Number of elements (triangles, quads, tetrahedra, etc.)."
+                range: integer
         slots:
             - label
             - description
@@ -2794,7 +2806,6 @@ classes:
             dt:
                 description: "Time step (s)."
                 range: float
-                alias: step_size
             tolerances:
                 description: "Abs/rel tolerances."
                 range: string
@@ -2817,6 +2828,7 @@ classes:
             # Prefer state_variables for PDEs; keep single 'field' for backward compatibility
             state_variables:
                 multivalued: true
+                inlined_as_list: true
                 range: FieldStateVariable
             field:
                 description: "Primary field being solved for (deprecated; use state_variables)."

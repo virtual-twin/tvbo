@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from linkml_runtime.loaders import yaml_loader
-from tvbo.datamodel.tvbo_datamodel import Observation
+from tvbo.datamodel.schema import Observation
 from tvbo.data.types import TimeSeries
 from mako.template import Template
 from mako.lookup import TemplateLookup
