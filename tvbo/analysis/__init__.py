@@ -7,7 +7,54 @@ import numpy as np
 
 from .bifurcation import BifurcationResult, PyRatesBifurcationResult  # re-export
 
-__all__ = ["BifurcationResult", "PyRatesBifurcationResult", "compare_timeseries"]
+__all__ = [
+    "BifurcationResult", "PyRatesBifurcationResult", "compare_timeseries",
+    "per_window_fc", "ttest_correlation_strength",
+]
+
+
+def per_window_fc(tv, xv, window=1e3):
+    """Calculate per-window functional connectivity.
+
+    Parameters
+    ----------
+    tv : ndarray
+        Time vector.
+    xv : ndarray
+        Data vector.
+    window : float, optional
+        Time window for calculation. Default is 1e3.
+
+    Returns
+    -------
+    ndarray
+        Correlation coefficients for each window.
+    """
+    cs = []
+    for i in range(int(tv[-1] / window)):
+        cs.append(np.corrcoef(xv[(tv > (i * 1e3)) * (tv < (1e3 * (i + 1)))].T))
+    return np.array(cs)
+
+
+def ttest_correlation_strength(cs):
+    """Perform a t-test on the strength of the correlation.
+
+    Parameters
+    ----------
+    cs : ndarray
+        Correlation coefficients.
+
+    Returns
+    -------
+    ndarray
+        P-values of the t-test for each correlation coefficient.
+    """
+    from scipy import stats
+    cs_z = np.arctanh(cs)
+    for i in range(cs.shape[1]):
+        cs_z[:, i, i] = 0.0
+    _, p = stats.ttest_1samp(cs, 0.0)
+    return p
 
 
 def compare_timeseries(exp: "SimulationExperiment", ts1: "Any", ts2: "Any", atol: float = 1e-10):
