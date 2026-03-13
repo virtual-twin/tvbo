@@ -9,18 +9,18 @@ The most important classes for specifying and running a simulation:
 
 | Class | Purpose | Data Model | API |
 |-------|---------|-----------|-----|
-| `SimulationExperiment` | Top-level experiment specification | [schema](datamodel/classes/SimulationExperiment.qmd) | [api](api/export/experiment.qmd) |
-| `Dynamics` | Neural mass model (ODE / rate equations) | [schema](datamodel/classes/Dynamics.qmd) | [api](api/knowledge/simulation/localdynamics.qmd) |
-| `Network` | Brain network (nodes, weights, delays) | [schema](datamodel/classes/Network.qmd) | [sim](api/knowledge/simulation/network.qmd) · [plot](api/plot/network.qmd) |
-| `Connectome` | Structural connectivity matrix + tracts | [schema](datamodel/classes/Connectome.qmd) | [api](api/data/tvbo_data/connectomes.qmd) |
+| `SimulationExperiment` | Top-level experiment specification | [schema](datamodel/classes/SimulationExperiment.qmd) | [api](api/classes/experiment.qmd) |
+| `Dynamics` | Neural mass model (ODE / rate equations) | [schema](datamodel/classes/Dynamics.qmd) | [api](api/classes/dynamics.qmd) |
+| `Network` | Brain network (nodes, weights, delays) | [schema](datamodel/classes/Network.qmd) | [sim](api/classes/network.qmd) · [plot](api/plot/network.qmd) |
+| `Connectome` | Structural connectivity matrix + tracts | [schema](datamodel/classes/Network.qmd) | [api](api/data/network_io.qmd) |
 | `Coupling` | Inter-node coupling function | [schema](datamodel/classes/Coupling.qmd) | — |
-| `Integrator` | Numerical integrator (Euler, Heun, …) | [schema](datamodel/classes/Integrator.qmd) | [api](api/knowledge/simulation/integration.qmd) |
-| `Noise` | Stochastic noise specification | [schema](datamodel/classes/Noise.qmd) | [api](api/knowledge/simulation/integration.qmd) |
-| `ObservationModel` | Maps state variables to observables | [schema](datamodel/classes/ObservationModel.qmd) | [api](api/knowledge/simulation/observation.qmd) |
+| `Integrator` | Numerical integrator (Euler, Heun, …) | [schema](datamodel/classes/Integrator.qmd) | — |
+| `Noise` | Stochastic noise specification | [schema](datamodel/classes/Noise.qmd) | [api](api/classes/noise.qmd) |
+| `ObservationModel` | Maps state variables to observables | [schema](datamodel/classes/Observation.qmd) | [api](api/classes/observation.qmd) |
 | `Parameter` | Model parameter with units + shape | [schema](datamodel/classes/Parameter.qmd) | — |
 | `StateVariable` | ODE state variable definition | [schema](datamodel/classes/StateVariable.qmd) | — |
 | `LossFunction` | Symbolic loss for model fitting | [schema](datamodel/classes/LossFunction.qmd) | — |
-| `ModelFitting` | Fitting / optimization specification | [schema](datamodel/classes/ModelFitting.qmd) | — |
+| `ModelFitting` | Fitting / optimization specification | [schema](datamodel/classes/Optimization.qmd) | — |
 | `Exploration` | Parameter exploration specification | [schema](datamodel/classes/Exploration.qmd) | — |
 | `Algorithm` | Iterative tuning algorithm (FIC, …) | [schema](datamodel/classes/Algorithm.qmd) | — |
 | `Stimulus` | Stimulation / perturbation protocol | [schema](datamodel/classes/Stimulus.qmd) | — |
@@ -32,13 +32,12 @@ The most commonly called functions and classes:
 
 | Module | What it provides |
 |--------|-----------------|
-| [experiment](api/export/experiment.qmd) | `SimulationExperiment` — load, configure, run, and render code |
-| [localdynamics](api/knowledge/simulation/localdynamics.qmd) | `Dynamics` — load neural mass models from YAML / ontology |
+| [experiment](api/classes/experiment.qmd) | `SimulationExperiment` — load, configure, run, and render code |
+| [dynamics](api/classes/dynamics.qmd) | `Dynamics` — load neural mass models from YAML / ontology |
 | [network\_io](api/data/network_io.qmd) | Network construction helpers and I/O |
-| [integration](api/knowledge/simulation/integration.qmd) | `Integrator` and `Noise` runtime classes |
-| [observation](api/knowledge/simulation/observation.qmd) | Observation model utilities |
-| [connectomes](api/data/tvbo_data/connectomes.qmd) | Load / browse structural connectomes |
-| [code](api/export/code.qmd) | Code generation (JAX, Julia, …) |
+| [noise](api/classes/noise.qmd) | `Noise` runtime class |
+| [observation](api/classes/observation.qmd) | Observation model utilities |
+| [code](api/codegen/code.qmd) | Code generation (JAX, Julia, …) |
 | [main](api/api/main.qmd) | REST API (`RunExperimentRequest`, `RunExperimentResponse`) |
 | [bifurcation](api/analysis/bifurcation.qmd) | Bifurcation analysis result containers |
 | [plot/analysis](api/plot/analysis.qmd) | Simulation analysis plot utilities |
@@ -47,12 +46,12 @@ The most commonly called functions and classes:
 
 | Backend | Adapter | Interoperability docs |
 |---------|---------|----------------------|
-| **tvboptim** (JAX) | [experiment.render\_code('jax')](api/export/experiment.qmd) | [tvboptim docs](Interoperability/tvboptim/index.qmd) |
-| **PyRates** | [pyrates](api/adapters/pyrates.qmd) · [export](api/export/pyrates.qmd) | [PyRates docs](Interoperability/Pyrates/index.qmd) |
+| **tvboptim** (JAX) | [experiment.render\_code('jax')](api/classes/experiment.qmd) | [tvboptim docs](Interoperability/tvboptim/index.qmd) |
+| **PyRates** | [pyrates](api/adapters/pyrates.qmd) · [export](api/codegen/pyrates.qmd) | [PyRates docs](Interoperability/Pyrates/index.qmd) |
 | **NetworkDynamics.jl** | [networkdynamics](api/adapters/networkdynamics.qmd) | [NetworkDynamics docs](Interoperability/NetworkDynamics.jl/index.qmd) |
 | **BifurcationKit.jl** | [bifurcationkit](api/adapters/bifurcationkit.qmd) | [BifurcationKit docs](Interoperability/BifurcationKit.jl/index.qmd) |
 | **ModelingToolkit.jl** | [modelingtoolkit](api/adapters/modelingtoolkit.qmd) | [ModelingToolkit docs](Interoperability/ModelingToolkit.jl/index.qmd) |
-| **BIDS** | [tvbids](api/export/tvbids.qmd) | [BIDS docs](Interoperability/BIDS/index.qmd) |
+| **BIDS** | [bids](api/bids/bids.qmd) | [BIDS docs](Interoperability/BIDS/index.qmd) |
 | **openMINDS** | [openminds](api/export/openminds.qmd) | [openMINDS docs](Interoperability/OpenMINDS.qmd) |
 
 ## Typical Workflow

@@ -64,7 +64,7 @@ import numpy as np
 
 # Import TVB-O components
 from tvbo import Coupling
-from tvbo.knowledge import Integrator
+from tvbo.classes.noise import Integrator
 from tvbo import Network,SimulationExperiment,Dynamics
 ```
 
@@ -74,7 +74,7 @@ First, let's set up a simulation experiment using the Wilson-Cowan model with
 a sample connectome.
 
 ```{python}
-from tvbo.datamodel.tvbo_datamodel import CouplingInput, Parameter
+from tvbo.datamodel.schema import CouplingInput, Parameter
 # | label: create-experiment
 # Load a sample connectome
 connectome = Network(number_of_nodes=3)
