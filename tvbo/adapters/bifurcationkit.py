@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
 # Schema attr → Julia kwarg name mapping for ContinuationPar
 _CONT_FIELDS = [
@@ -158,7 +158,7 @@ class BifurcationKitAdapter:
         ctx["p_start"] = p_default
 
         # -- Initial state (use schema defaults when unspecified) --
-        from tvbo.datamodel.tvbo_datamodel import InitialState
+        from tvbo.datamodel.schema import InitialState
         iss = (cont.initial_state if cont else None) or InitialState()
         ctx["iss_duration"] = _get(iss, "duration")
         ctx["iss_solver"] = _str(_get(iss, "solver.method"))
@@ -248,7 +248,7 @@ class BifurcationKitAdapter:
             hopf_idx = None
 
         # Discretization (use schema defaults when unspecified)
-        from tvbo.datamodel.tvbo_datamodel import Discretization
+        from tvbo.datamodel.schema import Discretization
         disc = br.discretization or Discretization()
         method = _str(_get(disc, "method"))
 

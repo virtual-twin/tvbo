@@ -8,6 +8,10 @@ This module contains adapters for different simulation backends:
 - networkdynamics: NetworkDynamics.jl backend adapter
 - modelingtoolkit: ModelingToolkit.jl backend adapter
 - bifurcationkit: BifurcationKit.jl backend adapter
+
+Standards adapters:
+- bids: BIDS BEP034 export/import
+- openminds: openMINDS JSON-LD conversion
 """
 
 from tvbo.adapters.base import BaseAdapter

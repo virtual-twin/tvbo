@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
 from tvbo.templates.base.utils import (
     collect_param_distributions,

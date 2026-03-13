@@ -22,7 +22,7 @@ from tvbo.adapters.base import BaseAdapter
 if TYPE_CHECKING:
     import pandas as pd
     from tvbo.data.types import TimeSeries
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
 
 # PyRates supported solvers and TVBO-to-PyRates mapping
