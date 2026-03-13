@@ -173,6 +173,7 @@ classes:
         range: float
 
   Equation:
+    class_uri: tvbo:Equation
     slots:
       - label
       - definition
@@ -210,6 +211,7 @@ classes:
         range: string
 
   Stimulus:
+    class_uri: tvbo:Stimulus
     slots:
       - equation
       - parameters
@@ -326,6 +328,7 @@ classes:
         range: string
 
   Network:
+    class_uri: tvbo:Network
     # tree_root: true[]
     description: "Complete network specification combining dynamics, graph topology, and coupling configurations"
     slots:
@@ -751,6 +754,7 @@ classes:
         range: CostFunction
 
   Integrator:
+    class_uri: tvbo:Integrator
     slots:
       - time_scale
       - unit
@@ -950,6 +954,7 @@ classes:
         range: string
 
   SimulationStudy:
+    class_uri: tvbo:SimulationStudy
     # tree_root: true
     slots:
       - label
@@ -973,6 +978,7 @@ classes:
         range: SimulationExperiment
 
   TimeSeries:
+    class_uri: tvbo:TimeSeries
     slots:
       - label
       - description

@@ -1,5 +1,7 @@
+/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2025-11-07T13:55:02
+# Generation date: 2026-03-13T13:50:18
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -441,13 +443,13 @@ class Network(YAMLRoot):
         if self.dynamics is not None and not isinstance(self.dynamics, Dynamics):
             self.dynamics = Dynamics(**as_dict(self.dynamics))
 
-        self._normalize_inlined_as_dict(slot_name="node_dynamics", slot_type=Dynamics, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="node_dynamics", slot_type=Dynamics, key_name="name", keyed=False)
 
         if not isinstance(self.node_dynamics_mapping, list):
             self.node_dynamics_mapping = [self.node_dynamics_mapping] if self.node_dynamics_mapping is not None else []
         self.node_dynamics_mapping = [v if isinstance(v, int) else int(v) for v in self.node_dynamics_mapping]
 
-        self._normalize_inlined_as_dict(slot_name="couplings", slot_type=Coupling, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="couplings", slot_type=Coupling, key_name="name", keyed=False)
 
         super().__post_init__(**kwargs)
 
@@ -500,11 +502,11 @@ class ObservationModel(YAMLRoot):
             self.pipeline = [self.pipeline] if self.pipeline is not None else []
         self.pipeline = [v if isinstance(v, ProcessingStep) else ProcessingStep(**as_dict(v)) for v in self.pipeline]
 
-        self._normalize_inlined_as_dict(slot_name="data_injections", slot_type=DataInjection, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="data_injections", slot_type=DataInjection, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="argument_mappings", slot_type=ArgumentMapping, key_name="function_argument", keyed=False)
+        self._normalize_inlined_as_list(slot_name="argument_mappings", slot_type=ArgumentMapping, key_name="function_argument", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="derivatives", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="derivatives", slot_type=DerivedVariable, key_name="name", keyed=False)
 
         super().__post_init__(**kwargs)
 
@@ -542,7 +544,7 @@ class ProcessingStep(YAMLRoot):
         if self.type is not None and not isinstance(self.type, OperationType):
             self.type = OperationType(self.type)
 
-        self._normalize_inlined_as_dict(slot_name="input_mapping", slot_type=ArgumentMapping, key_name="function_argument", keyed=False)
+        self._normalize_inlined_as_list(slot_name="input_mapping", slot_type=ArgumentMapping, key_name="function_argument", keyed=False)
 
         if self.output_alias is not None and not isinstance(self.output_alias, str):
             self.output_alias = str(self.output_alias)
@@ -553,7 +555,7 @@ class ProcessingStep(YAMLRoot):
         if self.ensure_shape is not None and not isinstance(self.ensure_shape, str):
             self.ensure_shape = str(self.ensure_shape)
 
-        self._normalize_inlined_as_dict(slot_name="variables_of_interest", slot_type=StateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="variables_of_interest", slot_type=StateVariable, key_name="name", keyed=False)
 
         super().__post_init__(**kwargs)
 
@@ -710,20 +712,20 @@ class Dynamics(YAMLRoot):
             self.references = [self.references] if self.references is not None else []
         self.references = [v if isinstance(v, str) else str(v) for v in self.references]
 
-        self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="coupling_terms", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="coupling_terms", slot_type=Parameter, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="coupling_inputs", slot_type=CouplingInput, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="coupling_inputs", slot_type=CouplingInput, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="state_variables", slot_type=StateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="state_variables", slot_type=StateVariable, key_name="name", keyed=False)
 
         if self.modified is not None and not isinstance(self.modified, Bool):
             self.modified = Bool(self.modified)
 
-        self._normalize_inlined_as_dict(slot_name="output_transforms", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="output_transforms", slot_type=DerivedVariable, key_name="name", keyed=False)
 
         if self.derived_from_model is not None and not isinstance(self.derived_from_model, NeuralMassModel):
             self.derived_from_model = NeuralMassModel(**as_dict(self.derived_from_model))
@@ -734,12 +736,12 @@ class Dynamics(YAMLRoot):
         if self.local_coupling_term is not None and not isinstance(self.local_coupling_term, Parameter):
             self.local_coupling_term = Parameter(**as_dict(self.local_coupling_term))
 
-        self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="functions", slot_type=Function, key_name="name", keyed=False)
 
         if self.stimulus is not None and not isinstance(self.stimulus, Stimulus):
             self.stimulus = Stimulus(**as_dict(self.stimulus))
 
-        self._normalize_inlined_as_dict(slot_name="modes", slot_type=NeuralMassModel, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="modes", slot_type=NeuralMassModel, key_name="name", keyed=False)
 
         if self.system_type is not None and not isinstance(self.system_type, SystemType):
             self.system_type = SystemType(self.system_type)
@@ -784,7 +786,6 @@ class StateVariable(YAMLRoot):
     stimulation_variable: Optional[Union[bool, Bool]] = None
     boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
-    initial_conditions: Optional[Union[float, list[float]]] = empty_list()
     history: Optional[Union[dict, "TimeSeries"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -832,10 +833,6 @@ class StateVariable(YAMLRoot):
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
 
-        if not isinstance(self.initial_conditions, list):
-            self.initial_conditions = [self.initial_conditions] if self.initial_conditions is not None else []
-        self.initial_conditions = [v if isinstance(v, float) else float(v) for v in self.initial_conditions]
-
         if self.history is not None and not isinstance(self.history, TimeSeries):
             self.history = TimeSeries(**as_dict(self.history))
 
@@ -868,7 +865,7 @@ class Distribution(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="dependencies", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="dependencies", slot_type=Parameter, key_name="name", keyed=False)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -1031,7 +1028,7 @@ class Function(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
 
         if self.iri is not None and not isinstance(self.iri, str):
             self.iri = str(self.iri)
@@ -1039,7 +1036,7 @@ class Function(YAMLRoot):
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
 
-        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=False)
 
         if self.output is not None and not isinstance(self.output, Equation):
             self.output = Equation(**as_dict(self.output))
@@ -1247,7 +1244,7 @@ class Noise(YAMLRoot):
         if self.pycode is not None and not isinstance(self.pycode, str):
             self.pycode = str(self.pycode)
 
-        self._normalize_inlined_as_dict(slot_name="targets", slot_type=StateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="targets", slot_type=StateVariable, key_name="name", keyed=False)
 
         super().__post_init__(**kwargs)
 
@@ -1429,7 +1426,7 @@ class Integrator(YAMLRoot):
         if self.number_of_stages is not None and not isinstance(self.number_of_stages, int):
             self.number_of_stages = int(self.number_of_stages)
 
-        self._normalize_inlined_as_dict(slot_name="intermediate_expressions", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="intermediate_expressions", slot_type=DerivedVariable, key_name="name", keyed=False)
 
         if self.update_expression is not None and not isinstance(self.update_expression, DerivedVariable):
             self.update_expression = DerivedVariable(**as_dict(self.update_expression))
@@ -1704,7 +1701,7 @@ class SimulationExperiment(YAMLRoot):
         if self.coupling is not None and not isinstance(self.coupling, Coupling):
             self.coupling = Coupling(**as_dict(self.coupling))
 
-        self._normalize_inlined_as_dict(slot_name="monitors", slot_type=Monitor, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="monitors", slot_type=Monitor, key_name="name", keyed=False)
 
         if self.stimulation is not None and not isinstance(self.stimulation, Stimulus):
             self.stimulation = Stimulus(**as_dict(self.stimulation))
@@ -2127,7 +2124,7 @@ class SpatialField(YAMLRoot):
     mesh: Optional[Union[dict, Mesh]] = None
     values: Optional[Union[dict, NDArray]] = None
     time_dependent: Optional[Union[bool, Bool]] = False
-    initial_value: Optional[float] = None
+    initial_value: Optional[float] = 0.1
     initial_expression: Optional[Union[dict, Equation]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2299,7 +2296,7 @@ class PDESolver(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=False)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -2364,7 +2361,7 @@ class PDE(YAMLRoot):
         if self.mesh is not None and not isinstance(self.mesh, Mesh):
             self.mesh = Mesh(**as_dict(self.mesh))
 
-        self._normalize_inlined_as_dict(slot_name="state_variables", slot_type=FieldStateVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="state_variables", slot_type=FieldStateVariable, key_name="name", keyed=False)
 
         if self.field is not None and not isinstance(self.field, SpatialField):
             self.field = SpatialField(**as_dict(self.field))
@@ -2384,11 +2381,11 @@ class PDE(YAMLRoot):
         if self.solver is not None and not isinstance(self.solver, PDESolver):
             self.solver = PDESolver(**as_dict(self.solver))
 
-        self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=False)
 
-        self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="functions", slot_type=Function, key_name="name", keyed=False)
 
         super().__post_init__(**kwargs)
 
@@ -2567,7 +2564,7 @@ class ParcellationEntity(YAMLRoot):
         if self.lookupLabel is not None and not isinstance(self.lookupLabel, int):
             self.lookupLabel = int(self.lookupLabel)
 
-        self._normalize_inlined_as_dict(slot_name="hasParent", slot_type=ParcellationEntity, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="hasParent", slot_type=ParcellationEntity, key_name="name", keyed=False)
 
         if not isinstance(self.ontologyIdentifier, list):
             self.ontologyIdentifier = [self.ontologyIdentifier] if self.ontologyIdentifier is not None else []
@@ -2626,7 +2623,7 @@ class ParcellationTerminology(YAMLRoot):
         if self.versionIdentifier is not None and not isinstance(self.versionIdentifier, str):
             self.versionIdentifier = str(self.versionIdentifier)
 
-        self._normalize_inlined_as_dict(slot_name="entities", slot_type=ParcellationEntity, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="entities", slot_type=ParcellationEntity, key_name="name", keyed=False)
 
         super().__post_init__(**kwargs)
 
@@ -2706,7 +2703,7 @@ class Subject(YAMLRoot):
         if self.handedness is not None and not isinstance(self.handedness, str):
             self.handedness = str(self.handedness)
 
-        self._normalize_inlined_as_dict(slot_name="protocols", slot_type=DBSProtocol, key_name="name", keyed=False)
+        self._normalize_inlined_as_list(slot_name="protocols", slot_type=DBSProtocol, key_name="name", keyed=False)
 
         if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
             self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
@@ -3583,9 +3580,6 @@ slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable_
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
 
-slots.stateVariable__initial_conditions = Slot(uri=TVBO.initial_conditions, name="stateVariable__initial_conditions", curie=TVBO.curie('initial_conditions'),
-                   model_uri=TVBO.stateVariable__initial_conditions, domain=None, range=Optional[Union[float, list[float]]])
-
 slots.stateVariable__history = Slot(uri=TVBO.history, name="stateVariable__history", curie=TVBO.curie('history'),
                    model_uri=TVBO.stateVariable__history, domain=None, range=Optional[Union[dict, TimeSeries]])
 
@@ -4284,3 +4278,4 @@ slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_ty
 
 slots.Coupling_name = Slot(uri=ATOM['atlas/hasName'], name="Coupling_name", curie=ATOM.curie('atlas/hasName'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=str)
+
