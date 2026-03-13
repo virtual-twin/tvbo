@@ -79,6 +79,55 @@ def _filter_networks_by_entities(entities: Dict[str, str]) -> list:
     return matches
 
 
+# Known BEP017 weight-like and length-like measure names for auto-classification
+_WEIGHT_MEASURES = {"streamlinecount", "streamlinedensity", "weight", "weights"}
+_LENGTH_MEASURES = {"tractlength", "tractlengths", "length", "lengths",
+                    "tract_length", "tract_lengths"}
+
+
+def _discover_bids_measures(bids_dir) -> list[str]:
+    """Auto-discover structural measures from BEP017 relmat files.
+
+    Parses ``meas-<name>`` from filenames and classifies into
+    [weight_measure, length_measure] order by matching against known
+    naming conventions.  Falls back to file order if names are unknown.
+    """
+    import re
+    bids_dir = Path(bids_dir)
+    relmat_files = (
+        list(bids_dir.glob("*_relmat.dense.tsv"))
+        + list(bids_dir.glob("*_relmat.tsv"))
+    )
+    # Extract unique measure names
+    measures = []
+    seen = set()
+    for f in relmat_files:
+        m = re.search(r"meas-([^_]+)", f.name)
+        if m and m.group(1) not in seen:
+            seen.add(m.group(1))
+            measures.append(m.group(1))
+
+    if not measures:
+        return ["weight", "tract_length"]  # default canonical names
+
+    # Classify: put weight-like first, length-like second
+    weight_names = [m for m in measures if m.lower() in _WEIGHT_MEASURES]
+    length_names = [m for m in measures if m.lower() in _LENGTH_MEASURES]
+    other = [m for m in measures
+             if m.lower() not in _WEIGHT_MEASURES
+             and m.lower() not in _LENGTH_MEASURES]
+
+    result = []
+    if weight_names:
+        result.append(weight_names[0])
+    if length_names:
+        result.append(length_names[0])
+    # Append any remaining (unknown measures in file order)
+    result.extend(other)
+    # If no known names matched, return all in file order
+    return result or measures
+
+
 def get_normative_connectome_data(
     atlas: str, tractogram: str = "dTOR"
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
@@ -366,6 +415,10 @@ class Network(tvbo_datamodel.Network):
             "_node_mapping_data",
             "_parent_network_obj",
             "_save_path",
+            "_orientations",
+            "_mesh_vertices",
+            "_mesh_elements",
+            "_mesh_normals",
         }
     )
 
@@ -515,8 +568,9 @@ class Network(tvbo_datamodel.Network):
             Atlas name to filter files (e.g., "DesikanKilliany").
             If None, uses the first atlas found.
         structural_measures : list of str, optional
-            Measures to use for structural network (default: ["streamlineCount", "tractLength"]).
+            Measures to use for structural network.
             First is used as weights, second (if present) as lengths.
+            If None, auto-discovered from available ``meas-*`` relmat files.
         observational_measures : list of str, optional
             Measures to load as observational targets for optimization
             (e.g., ["correlation"] for FC). Stored in network._observations.
@@ -534,18 +588,18 @@ class Network(tvbo_datamodel.Network):
         ```python
         from tvbo import Network
 
-        # Load network from BEP017 directory
+        # Auto-discover measures from directory
+        network = Network.from_bids("tvbo/database/networks/bids/dk_average")
+
+        # Or specify measures explicitly
         network = Network.from_bids(
             "tvbo/database/networks/bids/dk_average",
             structural_measures=["streamlineCount", "tractLength"],
-            observational_measures=["correlation"],
+            observational_measures=["BoldCorrelation"],
         )
 
         # Access structural connectivity
         print(network.weights_matrix.shape)  # (84, 84)
-
-        # Access observational target (FC)
-        fc_target = network.observations["correlation"]
         ```
         """
         from pathlib import Path
@@ -553,7 +607,7 @@ class Network(tvbo_datamodel.Network):
         bids_dir = Path(bids_dir)
 
         if structural_measures is None:
-            structural_measures = ["streamlineCount", "tractLength"]
+            structural_measures = _discover_bids_measures(bids_dir)
         if observational_measures is None:
             observational_measures = []
 
@@ -668,8 +722,8 @@ class Network(tvbo_datamodel.Network):
         bids_dir : str or Path
             Path to BEP017-compliant BIDS directory.
         structural_measures : list of str, optional
-            Measures for structural connectivity (e.g., ["streamlineCount", "tractLength"]).
-            If None, does not load structural data.
+            Measures for structural connectivity.
+            If None, auto-discovered from available ``meas-*`` relmat files.
         observational_measures : list of str, optional
             Measures for observational targets (e.g., ["BoldCorrelation"]).
             If None, does not load observational data.
@@ -686,7 +740,6 @@ class Network(tvbo_datamodel.Network):
         >>> network = Network()
         >>> network.load_from_bids(
         ...     "tvbo/database/networks/bids/dk_average",
-        ...     structural_measures=["streamlineCount", "tractLength"],
         ... )
         >>> network.load_from_bids(
         ...     "tvbo/database/networks/bids/dk_average",
@@ -694,6 +747,9 @@ class Network(tvbo_datamodel.Network):
         ... )
         """
         bids_dir = Path(bids_dir)
+
+        if structural_measures is None:
+            structural_measures = _discover_bids_measures(bids_dir)
 
         # Find relmat files
         relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(
@@ -909,6 +965,73 @@ class Network(tvbo_datamodel.Network):
         from tvbo.data.converters import from_tvb_zip
 
         return from_tvb_zip(zip_path)
+
+    @classmethod
+    def from_tvb(cls, connectivity) -> "Network":
+        """Import a live TVB Connectivity object.
+
+        Lossless conversion preserving all TVB fields (weights, lengths,
+        centres, cortical flags, areas, hemispheres, conduction speed).
+
+        Parameters
+        ----------
+        connectivity : tvb.datatypes.connectivity.Connectivity
+            Configured TVB Connectivity instance.
+
+        Returns
+        -------
+        Network
+            Network with arrays loaded, ready for ``save()``.
+
+        Examples
+        --------
+        >>> from tvb.datatypes.connectivity import Connectivity
+        >>> conn = Connectivity.from_file()
+        >>> net = Network.from_tvb(conn)
+        >>> net.number_of_nodes
+        76
+        """
+        from tvbo.data.converters import from_tvb
+
+        return from_tvb(connectivity)
+
+    @classmethod
+    def from_tvb_surface(cls, connectivity, surface, region_mapping):
+        """Create a multi-level Network from TVB surface simulation data.
+
+        Produces two linked networks:
+
+        1. **Region-level** (parent): from TVB Connectivity
+        2. **Vertex-level** (child): mesh + region_mapping linking
+           vertices to regions via hierarchical ``node_mapping``
+
+        Parameters
+        ----------
+        connectivity : tvb.datatypes.connectivity.Connectivity
+            Configured TVB Connectivity (region-level).
+        surface : tvb.datatypes.surfaces.Surface
+            TVB CorticalSurface with vertices and triangles.
+        region_mapping : tvb.datatypes.region_mapping.RegionMapping
+            TVB RegionMapping (vertex → region).
+
+        Returns
+        -------
+        tuple[Network, Network]
+            ``(region_network, surface_network)``
+
+        Examples
+        --------
+        >>> from tvb.datatypes.connectivity import Connectivity
+        >>> from tvb.datatypes.surfaces import CorticalSurface
+        >>> from tvb.datatypes.region_mapping import RegionMapping
+        >>> conn = Connectivity.from_file()
+        >>> surf = CorticalSurface.from_file()
+        >>> rmap = RegionMapping.from_file()
+        >>> region_net, surface_net = Network.from_tvb_surface(conn, surf, rmap)
+        """
+        from tvbo.data.converters import from_tvb_surface
+
+        return from_tvb_surface(connectivity, surface, region_mapping)
 
     # ── Save / Export ─────────────────────────────────────────────
 

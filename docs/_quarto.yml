@@ -86,6 +86,9 @@ format:
           margin-width: 300px
         out-width: "100%"
 
+bibliography: references.bib
+csl: https://raw.githubusercontent.com/citation-style-language/styles/master/ieee.csl
+
 fig-align: center
 
 # Cache notebook execution results. 'auto' only re-executes when source changes.
