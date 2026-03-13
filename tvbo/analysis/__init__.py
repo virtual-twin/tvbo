@@ -3,7 +3,14 @@
 Houses analysis result container classes (e.g., BifurcationResult) and related
 APIs that are logically distinct from plotting utilities or simulation drivers.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from tvbo.export.experiment import SimulationExperiment
 
 from .bifurcation import BifurcationResult, PyRatesBifurcationResult  # re-export
 
@@ -57,7 +64,7 @@ def ttest_correlation_strength(cs):
     return p
 
 
-def compare_timeseries(exp: "SimulationExperiment", ts1: "Any", ts2: "Any", atol: float = 1e-10):
+def compare_timeseries(exp: SimulationExperiment, ts1: Any, ts2: Any, atol: float = 1e-10):
     """Compare state variables between two time series using multiple measures.
 
     Args:
