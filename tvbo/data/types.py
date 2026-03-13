@@ -6,9 +6,9 @@ import numpy as np
 from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
-from tvbo.knowledge.simulation import equations
+from tvbo.classes import equation as equations
 from tvbo.utils import Bunch
-from tvbo.data.tvbo_data.connectomes import Network
+from tvbo.classes.network import Network
 from tvbo.utils import format_pytree_as_string
 
 import jax
@@ -1817,7 +1817,7 @@ class TimeSeries(BaseTimeSeries):
         import pandas as pd
 
         # Import BEP034 module
-        from tvbo.export.bids import (
+        from tvbo.adapters.bids import (
             H5PY_AVAILABLE,
             BEP034PathBuilder,
             CoordinateSidecar,

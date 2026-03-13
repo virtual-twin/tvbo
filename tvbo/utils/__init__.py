@@ -33,14 +33,7 @@ Copyright:
 
 from os.path import abspath, dirname, join
 
-import jax
-import jax.numpy as jnp
 import numpy as np
-import owlready2
-from matplotlib import pyplot as plt
-from matplotlib.colors import ListedColormap
-from matplotlib.tri import Triangulation
-from scipy import stats
 
 cm = 1 / 2.54
 ROOT_DIR = abspath(dirname(__file__))
@@ -53,6 +46,7 @@ def get_logo() -> np.ndarray:
     Returns:
         np.ndarray: Image array of the TVB-O logo.
     """
+    from matplotlib import pyplot as plt
     return plt.imread(join(ROOT_DIR, "../tvbo_logo.png"))
 
 
@@ -79,7 +73,7 @@ def hex2rgba(hex: str, alpha: int = 1, max: int = 1) -> tuple:
     return tuple(rgb)
 
 
-def is_class(search_string: str, ontology: owlready2.Ontology) -> bool:
+def is_class(search_string: str, ontology: "owlready2.Ontology") -> bool:
     """Check if a search string is in any of the labels of classes in the given ontology.
 
     Args:
@@ -97,24 +91,24 @@ def is_class(search_string: str, ontology: owlready2.Ontology) -> bool:
 
 
 tvb_colors = ["#2E9795", "#935495", "#4EA8E5", "#E58221"]
-cmap = ListedColormap(tvb_colors)
 
 
-def get_cmap(colors):
+def get_cmap(colors=None):
     """
     Get a colormap based on the given colors.
 
     Parameters
     ----------
-    colors : list
-        List of colors.
+    colors : list, optional
+        List of colors. Defaults to tvb_colors.
 
     Returns
     -------
     ListedColormap
         Colormap based on the input colors.
     """
-    return ListedColormap(colors)
+    from matplotlib.colors import ListedColormap
+    return ListedColormap(colors or tvb_colors)
 
 
 def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
@@ -135,6 +129,8 @@ def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
     **kwds
         Additional keyword arguments.
     """
+    from matplotlib import pyplot as plt
+    from matplotlib.tri import Triangulation
 
     vtx = cortex.vertices
     tri = cortex.triangles
@@ -301,42 +297,64 @@ def custom_get(d, key, default=None):
     return d.get(key, default) if d.get(key, default) is not None else default
 
 
-from jax.tree_util import register_pytree_node_class
 
-
-@register_pytree_node_class
 class Bunch(dict):
-    """Container object exposing keys as attributes.
+    """Dictionary with attribute access and optional JAX PyTree support.
 
-    Bunch objects are sometimes used as an output for functions and methods.
-    They extend dictionaries by enabling values to be accessed by key,
-    `bunch["value_key"]`, or by an attribute, `bunch.value_key`.
+    Extends dict to allow both ``bunch["key"]`` and ``bunch.key`` access.
+    If JAX is installed, registered as a PyTree via ``register_pytree_node_class``
+    with deterministic (sorted-key) traversal order.
+
+    Based on scikit-learn's ``sklearn.utils.Bunch``.
+
+    See Also:
+        https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(kwargs)
-
-    def __getitem__(self, key):
-        return super().__getitem__(key)
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-    def __dir__(self):
-        return self.keys()
 
     def __getattr__(self, key):
         try:
             return self[key]
         except KeyError:
-            raise AttributeError(key)
+            raise AttributeError(
+                f"'{type(self).__name__}' has no attribute '{key}'"
+            )
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def __delattr__(self, key):
+        try:
+            del self[key]
+        except KeyError:
+            raise AttributeError(
+                f"'{type(self).__name__}' has no attribute '{key}'"
+            )
+
+    def __dir__(self):
+        return list(super().__dir__()) + list(self.keys())
+
+    def __repr__(self):
+        items = ", ".join(f"{k}={v!r}" for k, v in self.items())
+        return f"{type(self).__name__}({items})"
+
+    def copy(self):
+        return Bunch(self)
 
     def tree_flatten(self):
-        return (tuple(self.values()), tuple(self.keys()))
+        keys = tuple(sorted(self.keys()))
+        values = tuple(self[k] for k in keys)
+        return values, keys
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        return cls(**dict(zip(aux_data, children)))
+        return cls(zip(aux_data, children))
+
+
+try:
+    from jax.tree_util import register_pytree_node_class
+    register_pytree_node_class(Bunch)
+except ImportError:
+    pass
 
 
 def numbered_print(text):
@@ -344,9 +362,6 @@ def numbered_print(text):
     max_line_num = len(str(len(lines)))
     for i, line in enumerate(lines, start=1):
         print(f"{i:0{max_line_num}} {line}")
-
-
-import equinox as eqx
 
 
 def format_pytree_as_string(
@@ -375,6 +390,9 @@ def format_pytree_as_string(
     Returns:
         str: The formatted string representation of the pytree.
     """
+    import jax
+    import jax.numpy as jnp
+    import equinox as eqx
     # Unicode box-drawing characters for the tree structure
     space = "    "
     branch = "│   "
@@ -625,3 +643,78 @@ def from_yaml(filepath: str, cls) -> object:
         raise RuntimeError("linkml_runtime is required for YAML loading") from e
     md = yaml_loader.load(filepath, target_class=cls)
     return md
+
+
+def add_to_parameters_collection(key, value, path, parameters):
+    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level."""
+    current_level = parameters
+    for part in path:
+        if part == "parameters":
+            continue
+        part_key = str(part) if isinstance(part, int) else part
+        if part_key not in current_level:
+            current_level[part_key] = Bunch()
+        if part != key:
+            current_level = current_level[part_key]
+    final_key = str(key) if isinstance(key, int) else key
+    current_level[final_key] = value.value
+
+
+def traverse_metadata(
+    metadata,
+    target_instance=None,
+    path=None,
+    callback=None,
+    callback_kwargs=None,
+    keys_to_exclude=(),
+):
+    """Recursively traverses the attributes of a metadata object, calling a callback on each Parameter."""
+    if target_instance is None:
+        from tvbo.datamodel import schema as tvbo_datamodel
+        target_instance = tvbo_datamodel.Parameter
+    if callback is None:
+        callback = add_to_parameters_collection
+    if callback_kwargs is None:
+        callback_kwargs = {}
+    if path is None:
+        path = []
+
+    def _is_datamodel_like(obj):
+        try:
+            mod = getattr(type(obj), "__module__", "")
+            if mod.startswith("tvbo.datamodel."):
+                return True
+            for base in type(obj).mro():
+                if getattr(base, "__module__", "").startswith("tvbo.datamodel."):
+                    return True
+        except Exception:
+            pass
+        return False
+
+    if hasattr(metadata, "__dict__"):
+        if isinstance(metadata, target_instance):
+            if callback:
+                callback(path[-1], metadata, path, **callback_kwargs)
+
+        for attr_name, attr_value in metadata.__dict__.items():
+            if attr_name in keys_to_exclude or attr_value is None:
+                continue
+
+            current_path = path + [attr_name]
+            if _is_datamodel_like(attr_value):
+                traverse_metadata(
+                    attr_value, target_instance, current_path,
+                    callback, callback_kwargs, keys_to_exclude,
+                )
+            elif isinstance(attr_value, list):
+                for i, item in enumerate(attr_value):
+                    traverse_metadata(
+                        item, target_instance, current_path + [i],
+                        callback, callback_kwargs, keys_to_exclude,
+                    )
+            elif isinstance(attr_value, dict):
+                for key, value in attr_value.items():
+                    traverse_metadata(
+                        value, target_instance, current_path + [key],
+                        callback, callback_kwargs, keys_to_exclude,
+                    )

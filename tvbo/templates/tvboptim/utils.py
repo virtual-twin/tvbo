@@ -81,7 +81,7 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
 
 
 def get_node_state_overrides(
-    network, n_nodes: int, state_names: List[str],
+    network: Any, n_nodes: int, state_names: List[str],
     default_initial_state: List[float]
 ) -> Dict[str, List[float]]:
     """Scan network.nodes for per-node initial state overrides.
@@ -124,7 +124,7 @@ def get_node_state_overrides(
 
 
 def get_node_param_overrides(
-    network, n_nodes: int, dyn_param_defaults: Dict[str, float]
+    network: Any, n_nodes: int, dyn_param_defaults: Dict[str, float]
 ) -> Dict[str, List[float]]:
     """Scan network.nodes for per-node parameter overrides.
 
@@ -193,7 +193,7 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
 # State Variable Bounds
 # =============================================================================
 
-def get_state_bounds(model) -> Tuple[List, List, bool]:
+def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
     """Extract state variable bounds as SymPy expressions.
 
     Uses ``sympy.oo`` for unbounded dimensions so that code printers
@@ -242,7 +242,7 @@ def format_bounds_array(bounds: List, format: str = "jax") -> str:
     Returns:
         String like ``[-10.0, -jnp.inf]`` ready for code generation.
     """
-    from tvbo.export.code import get_printer
+    from tvbo.codegen.code import get_printer
     printer = get_printer(format)
     parts = [printer.doprint(v) for v in bounds]
     return '[' + ', '.join(parts) + ']'

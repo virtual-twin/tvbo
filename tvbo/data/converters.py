@@ -149,7 +149,7 @@ def from_tvb_zip(zip_path):
     """
     import zipfile
     import io
-    from tvbo.data.tvbo_data.connectomes import Network
+    from tvbo.classes.network import Network
 
     zip_path = Path(zip_path)
     with zipfile.ZipFile(zip_path, "r") as zf:
@@ -164,7 +164,7 @@ def from_tvb_zip(zip_path):
         coords.append([float(x) for x in parts[1:4]])
 
     n = weights.shape[0]
-    from tvbo.datamodel import tvbo_datamodel
+    from tvbo.datamodel import schema as tvbo_datamodel
     nodes = [
         tvbo_datamodel.Node(
             id=i, label=labels[i],

@@ -7,7 +7,7 @@ try:
 except ImportError:
     tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
 
-from tvbo.knowledge.simulation.observation import expand_to_4d
+from tvbo.classes.observation import expand_to_4d
 from tvbo.data.types import TimeSeries
 
 

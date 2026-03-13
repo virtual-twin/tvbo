@@ -52,10 +52,10 @@ def _template_edges(edges) -> list:
     result = []
     for e in edges:
         if isinstance(e, dict):
-            if not e.get("source"):
+            if e.get("source") is None:
                 result.append(e)
         else:
-            if not getattr(e, "source", None):
+            if getattr(e, "source", None) is None:
                 result.append(e)
     return result
 
@@ -295,7 +295,7 @@ def load_network(yaml_path):
     Network
         Fully constructed tvbo.Network with lazy array references.
     """
-    from tvbo.data.tvbo_data.connectomes import Network
+    from tvbo.classes.network import Network
 
     yaml_path = Path(yaml_path)
     ext = yaml_path.suffix.lower()
@@ -389,6 +389,18 @@ def save_network(network, yaml_path, binary_format: str = "h5",
 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
+
+    # Align array keys with template edge names from metadata
+    if arrays:
+        tedges = _template_edges(meta.get("edges", []))
+        if tedges and "weight" in arrays:
+            w_name = tedges[0].get("name") or tedges[0].get("label") or "weight"
+            if w_name != "weight":
+                arrays[w_name] = arrays.pop("weight")
+        if len(tedges) > 1 and "length" in arrays:
+            l_name = tedges[1].get("name") or tedges[1].get("label") or "length"
+            if l_name != "length":
+                arrays[l_name] = arrays.pop("length")
 
     if not arrays:
         # Metadata-only sidecar (no companion file)

@@ -6,7 +6,7 @@ from sympy.parsing.sympy_parser import (
 )
 from sympy.parsing.latex import parse_latex
 
-from tvbo.datamodel.tvbo_datamodel import Equation
+from tvbo.datamodel.schema import Equation
 
 
 # =============================================================================
@@ -38,7 +38,7 @@ class Mean(Function):
 #   Sum(x[i]*y[i], (i, 0, n-1))  ->  translates to jnp.sum(x*y)
 #
 # Index variables are detected dynamically from Sum/Product limits.
-# The code printers in tvbo.export.code handle the translation.
+# The code printers in tvbo.codegen.code handle the translation.
 
 
 # =============================================================================
@@ -52,7 +52,7 @@ class Mean(Function):
 # which require explicit index variables. Our versions are for array reduction
 # operations (like numpy's sum/mean) that reduce over all elements.
 #
-# For printer mappings (jnp.sum, np.mean, etc.), see tvbo.export.code
+# For printer mappings (jnp.sum, np.mean, etc.), see tvbo.codegen.code
 
 ARRAY_FUNCTIONS = {
     "sum": Function("sum"),

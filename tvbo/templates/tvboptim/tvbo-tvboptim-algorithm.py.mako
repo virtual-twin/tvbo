@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 <%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment).</%doc>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams

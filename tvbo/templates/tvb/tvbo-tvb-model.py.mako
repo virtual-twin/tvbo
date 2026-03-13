@@ -3,7 +3,7 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.knowledge.simulation.equations import _clash1
+from tvbo.classes.equation import _clash1
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics.metadata
     standalone = False
@@ -16,7 +16,7 @@ render = lambda obj: model.render_equation(obj, format='numpy')
 # Use the ontology to identify which coupling terms are global (part of coupling array)
 # vs local (passed as separate dfun argument). This correctly handles models like SupHopf
 # that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
-from tvbo.knowledge import ontology as _onto
+from tvbo.ontology import owl as _onto
 try:
     _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
     global_coupling_terms = {k: v for k, v in model.coupling_terms.items() if k in _global_names}

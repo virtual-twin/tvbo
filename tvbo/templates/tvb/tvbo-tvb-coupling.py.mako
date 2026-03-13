@@ -1,7 +1,7 @@
 <%!
     import numpy as np
-    from tvbo.export.code import render_expression
-    from tvbo.knowledge.simulation.equations import _clash1
+    from tvbo.codegen import render_expression
+    from tvbo.classes.equation import _clash1
 
     # Generic pycode - pass parameters on each call
     pycode = lambda expr, parameters=None: render_expression(expr, format='python', parameters=parameters)

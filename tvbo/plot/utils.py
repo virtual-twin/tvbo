@@ -12,7 +12,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from tvbo.knowledge import constants
+from tvbo.ontology import constants
 
 ROOT = abspath(dirname(__file__))
 

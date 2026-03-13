@@ -23,7 +23,7 @@ Context Variables:
 </%doc>
 <%
 from sympy import latex, Eq, Symbol
-from tvbo.export import report
+from tvbo.utils import report
 from tvbo.parse.expression import parse_eq
 
 # ── Short-hands ──
