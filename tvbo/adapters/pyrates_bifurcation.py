@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
 # Same reserved-name mapping used by the PyRates YAML template
 PYRATES_REPL = {
@@ -123,7 +123,7 @@ import os, re, shutil, sys, tempfile, uuid
 from pycobi import ODESystem
 from pyrates import clear
 from pyrates.frontend import CircuitTemplate
-from tvbo.export.pyrates import to_pyrates_yaml_string
+from tvbo.codegen.pyrates import to_pyrates_yaml_string
 from tvbo import Dynamics
 
 # Load model
@@ -535,7 +535,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         """Load a PyRates CircuitTemplate from a TVBO Dynamics model."""
         from pyrates.frontend import CircuitTemplate
 
-        from tvbo.export.pyrates import to_pyrates_yaml_string
+        from tvbo.codegen.pyrates import to_pyrates_yaml_string
 
         yaml_content = to_pyrates_yaml_string(model)
 
