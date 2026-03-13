@@ -143,11 +143,9 @@ import bsplot
 c = Coupling.from_ontology("Linear")
 c.parameters["a"].value = 1.0
 
-sc = Network(
-    parcellation={"atlas": {"name": "DesikanKilliany"}},
-    transforms=[{"name": "weight", "equation": {"rhs": "(W - W_min) / (W_max - W_min)"}}],
-    coupling=c,
-)
+sc = Network.from_db("DesikanKilliany")
+sc.add_transform("weight", "(W - W_min) / (W_max - W_min)")
+sc.coupling["Linear"] = c
 
 exp = SimulationExperiment(
     dynamics=Dynamics.from_ontology("Generic2dOscillator"),

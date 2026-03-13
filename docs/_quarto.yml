@@ -8,11 +8,14 @@ project:
     - reference.qmd
     - platform.qmd
     - api/**/*.qmd
+    - datamodel/*.qmd
     - datamodel/**/*.qmd
     - Usage/*.qmd
     - examples/**/*.qmd
     - Specification/*.qmd
     - Interoperability/**/*.qmd
+    - Replication/*.qmd
+    - Replication/**/*.qmd
     - Developer/*.md
     - "!_archive/*"
   output-dir: _site

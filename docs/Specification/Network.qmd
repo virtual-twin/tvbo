@@ -237,7 +237,7 @@ TVBO ships with normative connectomes from published tractography datasets.
 Load them by atlas name:
 
 ```{python}
-sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc = Network.from_db("DesikanKilliany")
 print(f"{sc.number_of_nodes} regions, atlas: {sc.atlas.name}")
 ```
 
@@ -449,7 +449,7 @@ The region-level SC is the **parent**.  The vertex-level LC is the
 
 ```{python}
 # --- Parent: region-level SC ---
-sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc = Network.from_db("DesikanKilliany")
 sc.save(tmpdir / "dk_sc.yaml")
 
 # --- Child: vertex-level local connectivity ---
@@ -698,7 +698,7 @@ Create the network from the YAML file and attach the matrix:
 ```{python}
 net = Network.from_string(ms_yaml)
 print(f"Nodes:          {len(net.nodes)}")
-print(f"Template edges: {sum(1 for e in net.edges if not getattr(e, 'source', None))}")
+print(f"Template edges: {sum(1 for e in net.edges if getattr(e, 'source', None) is None)}")
 print(f"Explicit edges: {sum(1 for e in net.edges if getattr(e, 'source', None) is not None)}")
 ```
 
@@ -707,7 +707,11 @@ writes the YAML sidecar and HDF5 companion automatically:
 
 ```{python}
 # Attach matrix (matches template edge label: weights)
-net._cached_weights = W_sub
+# Embed the 10×10 subnetwork into the full 12×12 node space
+# Nodes 0–1 are mean-field; nodes 2–11 are the spiking subnetwork
+W_full = np.zeros((12, 12))
+W_full[2:, 2:] = W_sub
+net._cached_weights = W_full
 
 # Save → creates .yaml sidecar + .h5 companion
 net.save(tmpdir / "multiscale_cortex.yaml")
@@ -727,7 +731,7 @@ print(f"Edges: {len(loaded.edges)}")
 print(f"Node mapping: {loaded.node_mapping}")
 
 # Matrix — lazy-loaded on first access
-np.testing.assert_allclose(loaded.weights_matrix, W_sub)
+np.testing.assert_allclose(loaded.weights_matrix, W_full)
 print(f"Matrix shape: {loaded.weights_matrix.shape}")
 print(f"Roundtrip OK ✓")
 ```
@@ -846,7 +850,7 @@ simulation, implementing spike-timing-dependent plasticity.
 | `Network.from_matrix(W, L)` | Large connectomes from arrays |
 | `Network.from_file(path)` | Load saved network (lazy arrays) |
 | `Network.from_tvb_zip(path)` | Import TVB connectivity ZIP |
-| `Network(parcellation=...)` | Built-in normative connectome |
+| `Network.from_db(name)` | Built-in normative connectome |
 
 ### I/O
 

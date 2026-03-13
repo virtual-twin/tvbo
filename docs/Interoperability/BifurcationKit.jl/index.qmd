@@ -34,7 +34,7 @@ using TVBO's declarative YAML format.
 
 ```python
 from tvbo import Dynamics
-from tvbo.knowledge.simulation.continuation import Continuation
+from tvbo.classes.continuation import Continuation
 
 # Load model + bifurcation spec from YAML
 model = Dynamics.from_db("TsodyksMarkram")
