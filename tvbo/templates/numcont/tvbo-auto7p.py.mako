@@ -1,7 +1,7 @@
 <%
 import re
-from tvbo.export.code import render_equation as render_eq
-from tvbo.knowledge.simulation.equations import _clash1
+from tvbo.codegen.code import render_equation as render_eq
+from tvbo.classes.equation import _clash1
 model = context['model']
 params = model.metadata.parameters.values()
 

@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from sympy import parse_expr, pycode, symbols
 
-from tvbo.knowledge.simulation import equations  # for VOI parsing consistency
+from tvbo.classes import equation as equations  # for VOI parsing consistency
 
 
 # ── Publication-quality color palette (tvbo viridis cycle) ──────────

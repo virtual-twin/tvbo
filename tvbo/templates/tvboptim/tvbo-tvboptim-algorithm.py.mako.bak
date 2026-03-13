@@ -12,7 +12,7 @@ values will cause template rendering to fail with clear error messages.
 Context: experiment (SimulationExperiment instance)
 </%doc>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 
 # Define jaxcode locally (same as parent template)
 _exp_functions = getattr(experiment, 'functions', None) or {}

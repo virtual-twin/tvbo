@@ -13,7 +13,7 @@ Output:
 - Complete Python script for running a tvboptim simulation
 </%doc>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 import numpy as np
 
 # Must have experiment

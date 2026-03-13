@@ -1,7 +1,7 @@
 <%
 
 from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
-from tvbo.export import report
+from tvbo.utils import report
 from tvbo import Dynamics
 
 derivative_notation = context.get('derivative_notation', 'd')

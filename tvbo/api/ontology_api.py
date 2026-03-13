@@ -15,9 +15,10 @@ import owlready2 as owl
 from sympy import latex, symbols
 
 import tvbo.data.db as db
-from tvbo.export.experiment import SimulationExperiment
-from tvbo.knowledge import graph, ontology, query
-from tvbo.parse import metadata
+from tvbo.classes.experiment import SimulationExperiment
+from tvbo.ontology import graph
+from tvbo.ontology import owl as ontology
+from tvbo.ontology import query
 
 # exp = SimulationExperiment(
 #     id=1,

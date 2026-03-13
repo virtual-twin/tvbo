@@ -139,15 +139,43 @@ def _patch_pyrates_networkx_backend():
 _patch_pyrates_networkx_backend()
 # ---------------------------------------------------------------------------
 
-from .data import tvbo_data
-from .data.registry import DATABASE_ROOT as database_path
-from .data.tvbo_data.connectomes import Connectome, Network
-from .data.tvbo_data.atlases import Atlas
-from .export.experiment import SimulationExperiment
-from .knowledge.study import SimulationStudy
-from .knowledge.simulation import localdynamics
-from .knowledge.simulation.continuation import Continuation
-from .knowledge.simulation.localdynamics import Dynamics
-from .knowledge.simulation.network import Coupling
-from .knowledge.simulation.integration import Noise
-from .knowledge.function import Function, LossFunction
+# ---------------------------------------------------------------------------
+# Lazy public API — imports happen on first attribute access
+# ---------------------------------------------------------------------------
+_LAZY_IMPORTS = {
+    "database_path": ".data.registry",
+    "Connectome": ".classes.network",
+    "Network": ".classes.network",
+    "Atlas": ".classes.atlas",
+    "SimulationExperiment": ".classes",
+    "SimulationStudy": ".classes",
+    "Dynamics": ".classes.dynamics",
+    "Continuation": ".classes.continuation",
+    "Coupling": ".classes.coupling",
+    "Noise": ".classes.noise",
+    "Function": ".classes.function",
+    "LossFunction": ".classes.function",
+}
+
+# Special renames for backward compatibility
+_LAZY_ALIASES = {
+    "Model": ("Dynamics", ".classes.dynamics"),
+    "LocalDynamics": ("Dynamics", ".classes.dynamics"),
+}
+
+
+def __getattr__(name):
+    if name in _LAZY_IMPORTS:
+        import importlib
+        mod = importlib.import_module(_LAZY_IMPORTS[name], __name__)
+        attr = getattr(mod, name if name != "database_path" else "DATABASE_ROOT")
+        globals()[name] = attr
+        return attr
+    if name in _LAZY_ALIASES:
+        real_name, module = _LAZY_ALIASES[name]
+        import importlib
+        mod = importlib.import_module(module, __name__)
+        attr = getattr(mod, real_name)
+        globals()[name] = attr
+        return attr
+    raise AttributeError(f"module 'tvbo' has no attribute {name!r}")

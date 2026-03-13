@@ -4,7 +4,7 @@ if 'experiment' in context.keys():
 else:
     stimulus = context['stimulus'].metadata
 
-from tvbo.knowledge.simulation.equations import (
+from tvbo.classes.equation import (
     conditionals2piecewise,
     piecewise2numpy,
     _clash1,

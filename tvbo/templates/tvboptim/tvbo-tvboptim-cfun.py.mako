@@ -16,7 +16,7 @@ Output:
 - Python class(es) inheriting from InstantaneousCoupling or DelayedCoupling
 </%doc>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import get_param_info
 
 # Get network and model from experiment

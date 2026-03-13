@@ -3,7 +3,7 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%namespace name="const" file="/base/constants.mako"/>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
@@ -101,7 +101,7 @@ noise_targets = []
 for sv_name, sv in model.state_variables.items():
     sigma = 0.0
     if sv.noise and sv.noise.parameters:
-        sigma_param = sv.noise.parameters.get('sigma')
+        sigma_param = sv.noise.parameters['sigma'] if 'sigma' in sv.noise.parameters else None
         if sigma_param:
             sigma = float(sigma_param.value if sigma_param.value is not None else sigma_param)
         if sigma > 0:
@@ -110,7 +110,7 @@ for sv_name, sv in model.state_variables.items():
 
 # Integration-level noise applies to all states if no per-state noise
 if not any(s > 0 for s in noise_sigma_per_state) and integration.noise and integration.noise.parameters:
-    sigma_param = integration.noise.parameters.get('sigma')
+    sigma_param = integration.noise.parameters['sigma'] if 'sigma' in integration.noise.parameters else None
     if sigma_param:
         sigma = float(sigma_param.value if sigma_param.value is not None else sigma_param)
         noise_sigma_per_state = [sigma] * len(model.state_variables)
@@ -180,7 +180,7 @@ node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _
 stochastic_param_names = set()
 stochastic_param_info = {}  # name -> {dist, lo, hi, seed, default}
 for pname in list(dyn_param_names):
-    p_obj = model.parameters.get(pname) if model.parameters else None
+    p_obj = (model.parameters[pname] if pname in model.parameters else None) if model.parameters else None
     if p_obj and getattr(p_obj, 'distribution', None):
         dist = p_obj.distribution
         axis = str(getattr(dist, 'axis', 'space'))
@@ -882,7 +882,7 @@ def run_simulation(
 <%include file="tvbo-tvboptim-observation.py.mako" />
 
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 
 # Schema: experiment.functions is multivalued dict
 exp_funcs = dict(experiment.functions) if experiment.functions else {}

@@ -13,15 +13,31 @@ Data Module
 Access and manage TVB-O data.
 """
 from .db import *
-from .tvbo_data import *
+from .tvbo_data import ATLAS_DIR
 
-from .tvbo_data.connectomes import Network
-from .tvbo_data.atlases import Atlas
+__all__ = [
+    "SimulationResult",
+    "AlgorithmResult",
+    "OptimizationResult",
+    "ExplorationResult",
+    "ATLAS_DIR",
+]
 
-# Result classes for simulation experiments
-from .types import (
-    SimulationResult,
-    AlgorithmResult,
-    OptimizationResult,
-    ExplorationResult,
-)
+
+def __getattr__(name):
+    if name in ("SimulationResult", "AlgorithmResult",
+                "OptimizationResult", "ExplorationResult"):
+        from .types import (
+            SimulationResult,
+            AlgorithmResult,
+            OptimizationResult,
+            ExplorationResult,
+        )
+        globals().update({
+            "SimulationResult": SimulationResult,
+            "AlgorithmResult": AlgorithmResult,
+            "OptimizationResult": OptimizationResult,
+            "ExplorationResult": ExplorationResult,
+        })
+        return globals()[name]
+    raise AttributeError(f"module 'tvbo.data' has no attribute {name!r}")

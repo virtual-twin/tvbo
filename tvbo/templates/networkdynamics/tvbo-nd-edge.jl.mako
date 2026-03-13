@@ -20,7 +20,7 @@ Context: coupling (Coupling instance), outdim (int), outsym_names (list[str])
 </%doc>
 <%page args="coupling, is_directed=False, outdim=1, outsym_names=None"/>
 <%!
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 %>
 <%
 cparam_names = list(coupling.parameters.keys()) if coupling.parameters else []
