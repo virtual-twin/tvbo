@@ -65,7 +65,7 @@ observations:
     - name: bold
       state_variable: S
       pipeline:
-          - function: tvbo.knowledge.simulation.observation.bold_windkessel
+          - function: bold_balloon_windkessel
             parameters: {TR: {value: 2000}}
     - name: fc
       pipeline:
