@@ -1,7 +1,5 @@
-/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
-  warnings.warn(
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-13T13:50:18
+# Generation date: 2026-03-13T13:57:07
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo

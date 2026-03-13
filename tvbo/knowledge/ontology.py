@@ -432,7 +432,7 @@ def get_type(c: owlready2.ThingClass) -> owlready2.ThingClass:
     types = [
         onto.Coupling,
         onto.NeuralMassModel,
-        onto.integration,
+        onto.IntegrationMethod,
         onto.Noise,
         onto.TVBGO,
         onto.JournalArticle,
