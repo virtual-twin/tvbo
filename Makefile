@@ -56,8 +56,8 @@ OPENMINDS_DIR = schema/openMINDS_tvbo
 gen-linkml:
 	@echo "Generating Python datamodel from LinkML schema..."
 	@mkdir -p $(DATAMODEL_DIR)
-	@gen-pydantic $(SCHEMA_PATH) > $(DATAMODEL_DIR)/tvbopydantic.py
-	@gen-python $(SCHEMA_PATH) > $(DATAMODEL_DIR)/tvbo_datamodel.py
+	@gen-pydantic $(SCHEMA_PATH) > $(DATAMODEL_DIR)/pydantic.py
+	@gen-python $(SCHEMA_PATH) > $(DATAMODEL_DIR)/schema.py
 	@echo "✓ LinkML datamodel generated in $(DATAMODEL_DIR)/"
 
 gen-openminds:
