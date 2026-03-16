@@ -5,7 +5,7 @@ subtitle: "Brain Imaging Data Structure export for computational modeling"
 
 ## Overview
 
-TVBO supports export to the [Brain Imaging Data Structure (BIDS)](https://bids.neuroimaging.io/) format, specifically following **BEP034: Computational Modeling Extension v1.0.0**.
+TVBO supports export to the [Brain Imaging Data Structure (BIDS)](https://bids.neuroimaging.io/) [@Poldrack2024] format, specifically following **BEP034: Computational Modeling Extension v1.0.0** [@Schirner2021].
 
 This enables:
 

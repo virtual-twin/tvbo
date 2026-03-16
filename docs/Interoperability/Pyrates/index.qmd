@@ -5,7 +5,7 @@ subtitle: "Bidirectional interoperability with PyRates dynamical systems toolbox
 
 ## Overview
 
-[PyRates](https://pyrates.readthedocs.io/) is a Python framework for numerical simulation and analysis of dynamical systems. TVBO provides full round-trip interoperability:
+[PyRates](https://pyrates.readthedocs.io/) [@Gast2023] is a Python framework for numerical simulation and analysis of dynamical systems. TVBO provides full round-trip interoperability:
 
 | Direction | Method | Use Case |
 |-----------|--------|----------|
