@@ -7,6 +7,8 @@ number_of_nodes: 588
 descriptor: sensors
 distance_unit: mm
 time_unit: ms
+bids:
+  acquisition: SEEG588
 parameters:
   conduction_speed:
     label: v

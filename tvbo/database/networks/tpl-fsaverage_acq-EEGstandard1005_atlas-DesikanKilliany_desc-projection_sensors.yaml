@@ -7,7 +7,11 @@ number_of_nodes: 61
 descriptor: sensors
 distance_unit: mm
 time_unit: ms
-data_file: sensors_eeg_standard1005_fsaverage_aparc_projection.h5
+data_file: tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.h5
+bids:
+  template: fsaverage
+  acquisition: EEGstandard1005
+  atlas: DesikanKilliany
 parameters:
   conduction_speed:
     label: v

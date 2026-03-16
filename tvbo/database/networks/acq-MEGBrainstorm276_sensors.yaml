@@ -7,7 +7,9 @@ number_of_nodes: 276
 descriptor: sensors
 distance_unit: mm
 time_unit: ms
-data_file: sensors_meg_brainstorm_276.h5
+data_file: acq-MEGBrainstorm276_sensors.h5
+bids:
+  acquisition: MEGBrainstorm276
 parameters:
   conduction_speed:
     label: v
