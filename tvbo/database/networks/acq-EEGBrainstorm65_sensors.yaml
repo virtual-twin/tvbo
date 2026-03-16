@@ -7,7 +7,9 @@ number_of_nodes: 65
 descriptor: sensors
 distance_unit: mm
 time_unit: ms
-data_file: sensors_eeg_brainstorm_65.h5
+data_file: acq-EEGBrainstorm65_sensors.h5
+bids:
+  acquisition: EEGBrainstorm65
 parameters:
   conduction_speed:
     label: v
