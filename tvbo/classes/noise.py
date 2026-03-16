@@ -162,7 +162,7 @@ class Integrator(tvbo_datamodel.Integrator):
         from tvbo.data.registry import list_entries
         return list_entries("Integrator")
 
-    # Back-compat: expose .metadata pointing to self
+    # Back-compat: expose  pointing to self
     @property
     def metadata(self):
         return self

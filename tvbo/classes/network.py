@@ -416,11 +416,20 @@ class Network(tvbo_datamodel.Network):
             "_parent_network_obj",
             "_save_path",
             "_orientations",
+            "_mesh",
             "_mesh_vertices",
             "_mesh_elements",
             "_mesh_normals",
         }
     )
+
+    @property
+    def mesh(self):
+        """Mesh metadata object, if assigned via ``from_tvb_surface``."""
+        try:
+            return object.__getattribute__(self, "_mesh")
+        except AttributeError:
+            return None
 
     @property
     def parent_network_obj(self) -> Optional["Network"]:
@@ -962,7 +971,7 @@ class Network(tvbo_datamodel.Network):
         >>> net.number_of_nodes
         76
         """
-        from tvbo.data.converters import from_tvb_zip
+        from tvbo.adapters.tvb import from_tvb_zip
 
         return from_tvb_zip(zip_path)
 
@@ -991,7 +1000,7 @@ class Network(tvbo_datamodel.Network):
         >>> net.number_of_nodes
         76
         """
-        from tvbo.data.converters import from_tvb
+        from tvbo.adapters.tvb import from_tvb
 
         return from_tvb(connectivity)
 
@@ -1029,7 +1038,7 @@ class Network(tvbo_datamodel.Network):
         >>> rmap = RegionMapping.from_file()
         >>> region_net, surface_net = Network.from_tvb_surface(conn, surf, rmap)
         """
-        from tvbo.data.converters import from_tvb_surface
+        from tvbo.adapters.tvb import from_tvb_surface
 
         return from_tvb_surface(connectivity, surface, region_mapping)
 
@@ -1089,7 +1098,9 @@ class Network(tvbo_datamodel.Network):
         """Generate BIDS-compliant filename using pybids build_path (§6.5).
 
         Reads entities directly from Network attributes — no YAML
-        serialization round-trip needed.
+        serialization round-trip needed.  Sensor networks (descriptor
+        ``"sensors"``) use ``SENSOR_PATTERNS``; all others use
+        ``RELMAT_PATTERNS``.
 
         Returns
         -------
@@ -1102,6 +1113,12 @@ class Network(tvbo_datamodel.Network):
         'tpl-MNI152NLin2009cAsym_..._desc-SCFC_relmat.h5'
         """
         from bids.layout.writing import build_path
+
+        if getattr(self, "descriptor", None) == "sensors":
+            from tvbo.data.converters import sensor_entities
+            from tvbo.data.network_io import SENSOR_PATTERNS
+            return build_path(sensor_entities(self), SENSOR_PATTERNS)
+
         from tvbo.data.converters import relmat_entities
         from tvbo.data.network_io import RELMAT_PATTERNS
 
@@ -1779,10 +1796,10 @@ class Network(tvbo_datamodel.Network):
         ```
         """
         atlas = self.get_atlas()
-        if atlas.metadata.terminology:
+        if atlas.terminology:
             return {
                 e.name: e.lookupLabel
-                for k, e in atlas.metadata.terminology.entities.items()
+                for k, e in atlas.terminology.entities.items()
             }
         return {}
 
@@ -1818,9 +1835,13 @@ class Network(tvbo_datamodel.Network):
                     "region": node.region,
                 }
                 if node.position:
-                    node_attrs["x"] = node.position.x
-                    node_attrs["y"] = node.position.y
-                    node_attrs["z"] = getattr(node.position, "z", None)
+                    x = node.position.x
+                    y = node.position.y
+                    z = getattr(node.position, "z", 0) or 0
+                    node_attrs["x"] = x
+                    node_attrs["y"] = y
+                    node_attrs["z"] = z
+                    node_attrs["pos"] = np.array([x, y, z])
                 if node.parameters:
                     for name, param in node.parameters.items():
                         node_attrs[f"param_{name}"] = param.value
@@ -1993,48 +2014,157 @@ class Network(tvbo_datamodel.Network):
 
         return lengths / cs.value * factor
 
-    def execute(self, format: str = "tvb") -> Any:
+    def execute(
+        self,
+        format: str = "tvb",
+        target=None,
+        threshold_percentile: float = 85,
+    ) -> Any:
         """Convert connectome to simulator-specific format.
 
         Parameters
         ----------
         format : str, default="tvb"
-            Target format. Currently supports "tvb" (The Virtual Brain)
+            Target format: ``"tvb"`` or ``"networkx"``.
+        target : Network, optional
+            Target network for bipartite projection graphs
+            (used with ``format="networkx"`` when a gain matrix exists).
+        threshold_percentile : float, default=85
+            Keep only gain edges above this percentile (networkx only).
 
         Returns
         -------
         Any
-            Connectivity object in the specified format
-
-        Examples
-        --------
-        ```{python}
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        tvb_conn = sc.execute(format="tvb")
-        # Use with TVB simulator
-        ```
+            Connectivity object in the specified format.
         """
         if format == "tvb":
-            from tvb.datatypes.connectivity import (
-                Connectivity,
-            )  # type: ignore[import-not-found]
+            from tvbo.adapters.tvb import to_tvb
 
-            # Ensure TVB receives plain NumPy arrays (no JAX tracers)
-            _weights = np.asarray(self.weights_matrix, dtype=float)
-            _lengths = np.asarray(self.lengths_matrix, dtype=float)
-            _centres = np.asarray(list(self.get_centers().values()), dtype=float)
-            cs_param = getattr(self, "conduction_speed", None)
-            cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0  # type: ignore[attr-defined]
-            _speed = np.asarray([cs_value], dtype=float)
-            tvb_conn = Connectivity(  # type: ignore[attr-defined]
-                weights=_weights,
-                tract_lengths=_lengths,
-                centres=_centres,
-                region_labels=self.atlas.region_labels,
-                speed=_speed,
+            return to_tvb(self)
+        elif format == "networkx":
+            return self._build_networkx_graph(
+                target=target,
+                threshold_percentile=threshold_percentile,
             )
-            tvb_conn.configure()
-            return tvb_conn
+
+    def _build_networkx_graph(
+        self,
+        target=None,
+        threshold_percentile: float = 85,
+    ) -> nx.MultiDiGraph:
+        """Build a NetworkX graph, optionally bipartite for projection networks.
+
+        When the network contains a rectangular gain matrix and a *target*
+        network is provided, a bipartite graph is built with sensor nodes
+        from ``self`` and region nodes from *target*.
+
+        If *target* is ``None``, the method looks for a ``target_network``
+        reference on the gain edge and loads it automatically.  Failing
+        that, it falls back to ``dimension_labels`` stored on the edge to
+        create label-only region nodes (no positions).
+
+        Parameters
+        ----------
+        target : Network, optional
+            Target brain network whose nodes receive the projection columns.
+        threshold_percentile : float, default=85
+            Keep only gain edges above this percentile of nonzero values.
+        """
+        gain = self.matrix("gain")
+        if gain is None:
+            return self.graph
+
+        gain = np.asarray(gain)
+
+        # Auto-resolve target from edge metadata when not provided
+        if target is None:
+            gain_edge = next(
+                (e for e in (self.edges or [])
+                 if getattr(e, "label", None) == "gain"),
+                None,
+            )
+            if gain_edge is not None:
+                ref = getattr(gain_edge, "target_network", None)
+                if ref:
+                    target = Network.from_file(str(NETWORK_DIR / ref))
+
+        if target is not None:
+            return self._build_projection_graph(
+                target, gain, threshold_percentile,
+            )
+
+        return self.graph
+
+    def _build_projection_graph(
+        self,
+        target,
+        gain: np.ndarray,
+        threshold_percentile: float = 85,
+    ) -> nx.MultiDiGraph:
+        """Build a bipartite sensor-region projection graph from a gain matrix."""
+        G = nx.MultiDiGraph()
+
+        # --- sensor nodes (from self) ---
+        sensor_labels = []
+        for node in self.nodes:
+            lbl = f"S:{node.label}"
+            sensor_labels.append(lbl)
+            if node.position:
+                pos = np.array([
+                    node.position.x, node.position.y,
+                    getattr(node.position, "z", 0) or 0,
+                ])
+            else:
+                pos = np.zeros(3)
+            G.add_node(lbl, pos=pos, x=pos[0], y=pos[1], z=pos[2],
+                       color="red", node_type="sensor",
+                       label=str(node.label))
+
+        # --- region nodes (from target, cortical subset) ---
+        n_sensors, n_cols = gain.shape
+        target_nodes = list(target.nodes)
+        # If gain columns < total target nodes, select cortical subset
+        if len(target_nodes) > n_cols:
+            cortical = [n for n in target_nodes
+                        if n.label and str(n.label).startswith("ctx-")]
+            if len(cortical) == n_cols:
+                target_nodes = cortical
+            else:
+                target_nodes = target_nodes[-n_cols:]
+
+        region_labels = []
+        for node in target_nodes[:n_cols]:
+            lbl = f"R:{node.label}"
+            region_labels.append(lbl)
+            if node.position:
+                pos = np.array([
+                    node.position.x, node.position.y,
+                    getattr(node.position, "z", 0) or 0,
+                ])
+            else:
+                pos = np.zeros(3)
+            G.add_node(lbl, pos=pos, x=pos[0], y=pos[1], z=pos[2],
+                       color="blue", node_type="region",
+                       label=str(node.label))
+
+        # --- gain edges (thresholded) ---
+        vals = np.abs(gain)
+        nonzero = vals[vals > 0]
+        threshold = (
+            np.percentile(nonzero, threshold_percentile)
+            if nonzero.size > 0 and threshold_percentile > 0
+            else 0.0
+        )
+        for i in range(n_sensors):
+            for j in range(n_cols):
+                v = float(vals[i, j])
+                if v > threshold:
+                    G.add_edge(
+                        region_labels[j], sensor_labels[i],
+                        gain=v, weight=v,
+                    )
+
+        return G
 
     def normalize_weights(
         self, equation_rhs: str = "(M - M_min) / (M_max - M_min)"
@@ -2364,7 +2494,7 @@ class Network(tvbo_datamodel.Network):
         labels = []
         ids = []
         centers = []
-        entities = self.get_atlas().metadata.terminology.entities
+        entities = self.get_atlas().terminology.entities
         # Handle both dict and list formats
         if hasattr(entities, "items"):
             entity_items = entities.items()
@@ -2663,7 +2793,7 @@ class Network(tvbo_datamodel.Network):
                 plot_brain = False
 
         n_props = len(edge_properties)
-        n_cols = 2 if plot_brain else 1
+        n_cols = 2
         fig, axs = plt.subplots(
             nrows=n_props, ncols=n_cols, layout="tight",
             figsize=(5 * n_cols, 5 * n_props),
@@ -2672,6 +2802,8 @@ class Network(tvbo_datamodel.Network):
 
         if brain_kwargs is None:
             brain_kwargs = {}
+        if graph_kwargs is None:
+            graph_kwargs = {}
 
         # Build edge label → metadata lookup from template edges
         edge_meta = {}
@@ -2714,10 +2846,10 @@ class Network(tvbo_datamodel.Network):
                     "node_scale": {"strength": 2},
                     "edge_radius": 0.12,
                     "edge_color": "auto",
-                    "edge_data_key": "weight",
+                    "edge_data_key": prop,
                     "edge_cmap": cmap,
                     "node_cmap": cmap,
-                    "edge_scale": {"weight": 6, "mode": "log"},
+                    "edge_scale": {prop: 6, "mode": "log"},
                 }
                 brain_defaults.update(brain_kwargs)
                 _, _, mappables = self.plot_brain_surface(
@@ -2729,6 +2861,18 @@ class Network(tvbo_datamodel.Network):
                 cb = fig.colorbar(g, ax=axs[row, 0], shrink=0.5,
                                   label=label)
                 cb.outline.set_visible(False)
+                col = 1
+            else:
+                # --- Graph panel (networkx) ---
+                graph_defaults = {
+                    "node_labels": False,
+                    "edge_labels": False,
+                    "threshold_percentile": 90,
+                    "edge_color": prop,
+                }
+                graph_defaults.update(graph_kwargs)
+                self.plot_graph(ax=axs[row, 0], **graph_defaults)
+                axs[row, 0].set_title(prop)
                 col = 1
 
             # --- Matrix panel ---

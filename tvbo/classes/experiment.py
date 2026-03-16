@@ -27,7 +27,7 @@ from tvbo.classes.noise import Integrator
 from tvbo.classes.continuation import Continuation
 from tvbo.classes.dynamics import Dynamics
 from tvbo.run.graph import GraphRunner as _Network
-from tvbo.parse.tvb_converter import simulator2metadata
+from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.utils import traverse_metadata
 from tvbo.utils import Bunch
 
@@ -133,12 +133,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if isinstance(val, dict) and "type" in val:
                         _coupling_types[key] = val.pop("type")
 
-        # Allow coupling to be specified as a plain string name (e.g. "KuramotoCoupling")
-        # This implies "load from ontology/database", so we flag it for use_ontology
-        _coupling_from_name = False
+        # Allow coupling to be specified as a plain string name (e.g. "SigmoidalJansenRit")
+        # Set iri to trigger ontology population
         if "coupling" in kwargs and isinstance(kwargs["coupling"], str):
-            kwargs["coupling"] = {"name": kwargs["coupling"]}
-            _coupling_from_name = True
+            _cname = kwargs["coupling"]
+            kwargs["coupling"] = {"name": _cname, "iri": f"tvbo:{_cname}"}
 
         # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
@@ -164,14 +163,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             else:
                 self.dynamics = _coerce(Dynamics, self.dynamics)
 
-        # Mirror dynamics → model
+        # Mirror dynamics name → model (schema field is a string, not an object)
         if getattr(self, "dynamics", None):
-            self.model = self.dynamics
+            self.model = self.dynamics.name
 
         if getattr(self, "coupling", None) and not isinstance(self.coupling, Coupling):
-            self.coupling = _coerce(
-                Coupling, self.coupling, use_ontology=_coupling_from_name
-            )
+            self.coupling = _coerce(Coupling, self.coupling)
 
         if getattr(self, "integration", None) and not isinstance(
             self.integration, Integrator
@@ -213,7 +210,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if exp_coup is None or (
                 isinstance(exp_coup, Coupling)
                 and str(getattr(exp_coup, 'name', '')) == 'Linear'
-                and not _coupling_from_name
+                and not getattr(exp_coup, 'iri', None)
             ):
                 self.coupling = first_coup
 
@@ -228,7 +225,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.integration = Integrator(method="Heun")
 
         if not getattr(self, "coupling", None):
-            self.coupling = Coupling(name="Linear", use_ontology=True)
+            self.coupling = Coupling(name="Linear", iri="tvbo:Linear")
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
@@ -287,19 +284,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if isinstance(v, tvbo_datamodel.Dynamics) \
                         and not isinstance(v, Dynamics):
                     v.__class__ = Dynamics
-                    v._ontology_class = None
-                    v.update_metadata()
-                    v.calculate_derived_parameters()
+                    v.enrich_from_ontology()
             first = next(iter(dyn.values()))
             obj.__dict__["dynamics"] = first
-            obj.__dict__["model"] = first
+            obj.__dict__["model"] = first.name
         elif isinstance(dyn, tvbo_datamodel.Dynamics):
             if not isinstance(dyn, Dynamics):
                 dyn.__class__ = Dynamics
-                dyn._ontology_class = None
-                dyn.update_metadata()
-                dyn.calculate_derived_parameters()
-            obj.__dict__["model"] = dyn
+                dyn.enrich_from_ontology()
+            obj.__dict__["model"] = dyn.name
         else:
             obj.__dict__.setdefault("dynamics", None)
 
@@ -315,12 +308,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         coup = getattr(obj, "coupling", None)
         if coup is not None and not isinstance(coup, Coupling):
             coup.__class__ = Coupling
-            # Only fill from ontology if coupling has name but no expressions
-            # (i.e. it's a name-only reference, not a fully-specified coupling)
-            if getattr(coup, "name", None) and not getattr(coup, "pre_expression", None):
+            # Populate from ontology if iri is set and expressions are missing
+            if getattr(coup, 'iri', None) and not getattr(coup, 'pre_expression', None):
                 coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
-            obj.__dict__["coupling"] = Coupling(name="Linear", use_ontology=True)
+            obj.__dict__["coupling"] = Coupling(name="Linear")
 
         # -- Upgrade Network via __class__ reassignment --
         net = getattr(obj, "network", None)
@@ -328,8 +320,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             net.__class__ = Network
             _sync_network_node_count(net)
             if not getattr(net, "conduction_speed", None):
-                if not net.parameters:
-                    net.parameters = {}
                 net.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
                     name="conduction_speed", label="v",
                     value=3.0, unit="mm/ms",
@@ -415,7 +405,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def from_tvb_simulator(cls, tvb_simulator):
-        return cls.from_datamodel(simulator2metadata(tvb_simulator))
+        return cls.from_datamodel(_from_tvb_simulator(tvb_simulator))
 
     @classmethod
     def from_file(cls, filepath: str):
@@ -1068,11 +1058,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         monitors_ = kwargs.get("monitors", [])
         meta_list = []
         if isinstance(monitors_, monitoring.Monitor):
-            meta_list = [monitors_.metadata]
+            meta_list = [monitors_]
         else:
             for m in monitors_:
                 if isinstance(m, monitoring.Monitor):
-                    meta_list.append(m.metadata)
+                    meta_list.append(m)
                 elif isinstance(m, dict):
                     meta_list.append(tvbo_datamodel.Observation(**m))
         if meta_list:
