@@ -1,0 +1,70 @@
+# MEG - magnetoencephalography forward model
+
+name: MEG
+label: MEG
+description: >-
+    Forward solution for magnetoencephalography. Projects source neural
+    activity through a lead field matrix to MEG sensor locations using
+    oriented gradiometers. If no precomputed gain is available, uses the
+    single-sphere analytic formula (Sarvas 1987, Eq. 25) for the magnetic
+    field produced by current dipoles in a conducting sphere.
+
+imaging_modality: MEG
+period: 0.9765625  # ms (~1024 Hz default)
+
+class_reference:
+    name: MEG
+    module: tvb.simulator.monitors
+
+data_source:
+    name: sensor_network
+    description: >-
+        MEG sensor array network. Each node is a SQUID sensor with spatial
+        coordinates and orientation vector. The associated data file stores
+        the precomputed lead field matrix (gain).
+    path: sensors_meg_brainstorm_276.yaml
+
+parameters:
+    permeability:
+        value: 1.25663706e-6
+        unit: H/m
+        description: "Magnetic constant (permeability of free space)"
+
+pipeline:
+    - name: compute_gain
+      output: gain
+      description: >-
+          Construct the MEG lead field matrix using Sarvas 1987 Eq. 25.
+      equation:
+          rhs: "(mu / (4 * pi * F**2)) * (cross(F * Q, r_0) - sum(cross(Q, r_0) * (r_s * dF), axis=1))"
+          parameters:
+              mu:
+                  value: 1.25663706e-6
+                  unit: H/m
+      arguments:
+          - name: Q
+            description: "Source dipole orientations (n_sources, 3)"
+          - name: r_0
+            description: "Source dipole positions (n_sources, 3)"
+          - name: r_s
+            description: "Sensor positions (n_sensors, 3)"
+
+    - name: lead_field_projection
+      output: projected
+      equation:
+          rhs: "gain @ sum(X, axis=-1) / period_steps"
+      arguments:
+          - name: gain
+            description: "Lead field matrix (n_sensors, n_sources)"
+          - name: period_steps
+            description: "Number of integration steps per sampling period"
+      apply_on_dimension: node
+
+    - name: add_noise
+      input: lead_field_projection
+      output: MEG
+      equation:
+          rhs: "X + noise"
+      arguments:
+          - name: noise
+            description: "Observation noise (n_sensors, 1)"

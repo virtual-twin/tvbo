@@ -452,7 +452,8 @@ network:
 
     parameters:
         conduction_speed:
-            name: global_trans_v
+            name: conduction_speed
+            label: global_trans_v
             value: 1.0
             unit: m/s
             description: "Global transmission velocity for computing delays"

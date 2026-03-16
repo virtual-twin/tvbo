@@ -1,0 +1,3543 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: SEEG 588 contacts
+description: 588-contact stereo-EEG array (TVB default). Intracranial depth electrodes.
+  No precomputed projection — gain is computed analytically.
+number_of_nodes: 588
+descriptor: sensors
+distance_unit: mm
+time_unit: ms
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm/ms
+nodes:
+- id: 0
+  label: TP1
+  position:
+    x: 32.039555
+    y: -27.669507
+    z: -52.725906
+- id: 1
+  label: TP2
+  position:
+    x: 32.039555
+    y: -31.169507
+    z: -52.725906
+- id: 2
+  label: TP3
+  position:
+    x: 32.039555
+    y: -34.669507
+    z: -52.725906
+- id: 3
+  label: TP4
+  position:
+    x: 32.039555
+    y: -38.169507
+    z: -52.725906
+- id: 4
+  label: TP5
+  position:
+    x: 32.039555
+    y: -41.669507
+    z: -52.725906
+- id: 5
+  label: TP6
+  position:
+    x: 32.039555
+    y: -45.169507
+    z: -52.725906
+- id: 6
+  label: TP7
+  position:
+    x: 32.039555
+    y: -48.669507
+    z: -52.725906
+- id: 7
+  label: TP8
+  position:
+    x: 32.039555
+    y: -52.169507
+    z: -52.725906
+- id: 8
+  label: TP9
+  position:
+    x: 32.039555
+    y: -55.669507
+    z: -52.725906
+- id: 9
+  label: TB1
+  position:
+    x: 10.139555
+    y: -28.669507
+    z: -50.725906
+- id: 10
+  label: TB2
+  position:
+    x: 10.139555
+    y: -32.169507
+    z: -50.725906
+- id: 11
+  label: TB3
+  position:
+    x: 10.139555
+    y: -35.669507
+    z: -50.725906
+- id: 12
+  label: TB4
+  position:
+    x: 10.139555
+    y: -39.169507
+    z: -50.725906
+- id: 13
+  label: TB5
+  position:
+    x: 10.139555
+    y: -42.669507
+    z: -50.725906
+- id: 14
+  label: TB6
+  position:
+    x: 10.139555
+    y: -46.169507
+    z: -50.725906
+- id: 15
+  label: TB7
+  position:
+    x: 10.139555
+    y: -49.669507
+    z: -50.725906
+- id: 16
+  label: TB8
+  position:
+    x: 10.139555
+    y: -53.169507
+    z: -50.725906
+- id: 17
+  label: TB9
+  position:
+    x: 10.139555
+    y: -56.669507
+    z: -50.725906
+- id: 18
+  label: A1
+  position:
+    x: 14.539555
+    y: -26.469507
+    z: -40.925906
+- id: 19
+  label: A2
+  position:
+    x: 14.539555
+    y: -29.969507
+    z: -40.925906
+- id: 20
+  label: A3
+  position:
+    x: 14.539555
+    y: -33.469507
+    z: -40.925906
+- id: 21
+  label: A4
+  position:
+    x: 14.539555
+    y: -36.969507
+    z: -40.925906
+- id: 22
+  label: A5
+  position:
+    x: 14.539555
+    y: -40.469507
+    z: -40.925906
+- id: 23
+  label: A6
+  position:
+    x: 14.539555
+    y: -43.969507
+    z: -40.925906
+- id: 24
+  label: A7
+  position:
+    x: 14.539555
+    y: -47.469507
+    z: -40.925906
+- id: 25
+  label: A8
+  position:
+    x: 14.539555
+    y: -50.969507
+    z: -40.925906
+- id: 26
+  label: A9
+  position:
+    x: 14.539555
+    y: -54.469507
+    z: -40.925906
+- id: 27
+  label: B1
+  position:
+    x: 6.639555
+    y: -23.469507
+    z: -40.625906
+- id: 28
+  label: B2
+  position:
+    x: 6.639555
+    y: -26.969507
+    z: -40.625906
+- id: 29
+  label: B3
+  position:
+    x: 6.639555
+    y: -30.469507
+    z: -40.625906
+- id: 30
+  label: B4
+  position:
+    x: 6.639555
+    y: -33.969507
+    z: -40.625906
+- id: 31
+  label: B5
+  position:
+    x: 6.639555
+    y: -37.469507
+    z: -40.625906
+- id: 32
+  label: B6
+  position:
+    x: 6.639555
+    y: -40.969507
+    z: -40.625906
+- id: 33
+  label: B7
+  position:
+    x: 6.639555
+    y: -44.469507
+    z: -40.625906
+- id: 34
+  label: B8
+  position:
+    x: 6.639555
+    y: -47.969507
+    z: -40.625906
+- id: 35
+  label: B9
+  position:
+    x: 6.639555
+    y: -51.469507
+    z: -40.625906
+- id: 36
+  label: C1
+  position:
+    x: -11.860445
+    y: -32.369507
+    z: -28.625906
+- id: 37
+  label: C2
+  position:
+    x: -11.860445
+    y: -35.869507
+    z: -28.625906
+- id: 38
+  label: C3
+  position:
+    x: -11.860445
+    y: -39.369507
+    z: -28.625906
+- id: 39
+  label: C4
+  position:
+    x: -11.860445
+    y: -42.869507
+    z: -28.625906
+- id: 40
+  label: C5
+  position:
+    x: -11.860445
+    y: -46.369507
+    z: -28.625906
+- id: 41
+  label: C6
+  position:
+    x: -11.860445
+    y: -49.869507
+    z: -28.625906
+- id: 42
+  label: C7
+  position:
+    x: -11.860445
+    y: -53.369507
+    z: -28.625906
+- id: 43
+  label: C8
+  position:
+    x: -11.860445
+    y: -56.869507
+    z: -28.625906
+- id: 44
+  label: C9
+  position:
+    x: -11.860445
+    y: -60.369507
+    z: -28.625906
+- id: 45
+  label: GPH1
+  position:
+    x: -18.060445
+    y: -28.469507
+    z: -33.425906
+- id: 46
+  label: GPH2
+  position:
+    x: -18.060445
+    y: -31.969507
+    z: -33.425906
+- id: 47
+  label: GPH3
+  position:
+    x: -18.060445
+    y: -35.469507
+    z: -33.425906
+- id: 48
+  label: GPH4
+  position:
+    x: -18.060445
+    y: -38.969507
+    z: -33.425906
+- id: 49
+  label: GPH5
+  position:
+    x: -18.060445
+    y: -42.469507
+    z: -33.425906
+- id: 50
+  label: GPH6
+  position:
+    x: -18.060445
+    y: -45.969507
+    z: -33.425906
+- id: 51
+  label: GPH7
+  position:
+    x: -18.060445
+    y: -49.469507
+    z: -33.425906
+- id: 52
+  label: GPH8
+  position:
+    x: -18.060445
+    y: -52.969507
+    z: -33.425906
+- id: 53
+  label: GPH9
+  position:
+    x: -18.060445
+    y: -56.469507
+    z: -33.425906
+- id: 54
+  label: OT1
+  position:
+    x: -44.060445
+    y: -29.369507
+    z: -31.125906
+- id: 55
+  label: OT2
+  position:
+    x: -44.060445
+    y: -32.869507
+    z: -31.125906
+- id: 56
+  label: OT3
+  position:
+    x: -44.060445
+    y: -36.369507
+    z: -31.125906
+- id: 57
+  label: OT4
+  position:
+    x: -44.060445
+    y: -39.869507
+    z: -31.125906
+- id: 58
+  label: OT5
+  position:
+    x: -44.060445
+    y: -43.369507
+    z: -31.125906
+- id: 59
+  label: OT6
+  position:
+    x: -44.060445
+    y: -46.869507
+    z: -31.125906
+- id: 60
+  label: OT7
+  position:
+    x: -44.060445
+    y: -50.369507
+    z: -31.125906
+- id: 61
+  label: OT8
+  position:
+    x: -44.060445
+    y: -53.869507
+    z: -31.125906
+- id: 62
+  label: OT9
+  position:
+    x: -44.060445
+    y: -57.369507
+    z: -31.125906
+- id: 63
+  label: FCA1
+  position:
+    x: -38.860445
+    y: -12.069507
+    z: -7.625906
+- id: 64
+  label: FCA2
+  position:
+    x: -38.860445
+    y: -15.569507
+    z: -7.625906
+- id: 65
+  label: FCA3
+  position:
+    x: -38.860445
+    y: -19.069507
+    z: -7.625906
+- id: 66
+  label: FCA4
+  position:
+    x: -38.860445
+    y: -22.569507
+    z: -7.625906
+- id: 67
+  label: FCA5
+  position:
+    x: -38.860445
+    y: -26.069507
+    z: -7.625906
+- id: 68
+  label: FCA6
+  position:
+    x: -38.860445
+    y: -29.569507
+    z: -7.625906
+- id: 69
+  label: FCA7
+  position:
+    x: -38.860445
+    y: -33.069507
+    z: -7.625906
+- id: 70
+  label: FCA8
+  position:
+    x: -38.860445
+    y: -36.569507
+    z: -7.625906
+- id: 71
+  label: FCA9
+  position:
+    x: -38.860445
+    y: -40.069507
+    z: -7.625906
+- id: 72
+  label: GL1
+  position:
+    x: -58.160445
+    y: -5.169507
+    z: -11.825906
+- id: 73
+  label: GL2
+  position:
+    x: -58.160445
+    y: -8.669507
+    z: -11.825906
+- id: 74
+  label: GL3
+  position:
+    x: -58.160445
+    y: -12.169507
+    z: -11.825906
+- id: 75
+  label: GL4
+  position:
+    x: -58.160445
+    y: -15.669507
+    z: -11.825906
+- id: 76
+  label: GL5
+  position:
+    x: -58.160445
+    y: -19.169507
+    z: -11.825906
+- id: 77
+  label: GL6
+  position:
+    x: -58.160445
+    y: -22.669507
+    z: -11.825906
+- id: 78
+  label: GL7
+  position:
+    x: -58.160445
+    y: -26.169507
+    z: -11.825906
+- id: 79
+  label: GL8
+  position:
+    x: -58.160445
+    y: -29.669507
+    z: -11.825906
+- id: 80
+  label: GL9
+  position:
+    x: -58.160445
+    y: -33.169507
+    z: -11.825906
+- id: 81
+  label: Cu1
+  position:
+    x: -65.360445
+    y: -4.969507
+    z: 4.574094
+- id: 82
+  label: Cu2
+  position:
+    x: -65.360445
+    y: -8.469507
+    z: 4.574094
+- id: 83
+  label: Cu3
+  position:
+    x: -65.360445
+    y: -11.969507
+    z: 4.574094
+- id: 84
+  label: Cu4
+  position:
+    x: -65.360445
+    y: -15.469507
+    z: 4.574094
+- id: 85
+  label: Cu5
+  position:
+    x: -65.360445
+    y: -18.969507
+    z: 4.574094
+- id: 86
+  label: Cu6
+  position:
+    x: -65.360445
+    y: -22.469507
+    z: 4.574094
+- id: 87
+  label: Cu7
+  position:
+    x: -65.360445
+    y: -25.969507
+    z: 4.574094
+- id: 88
+  label: Cu8
+  position:
+    x: -65.360445
+    y: -29.469507
+    z: 4.574094
+- id: 89
+  label: Cu9
+  position:
+    x: -65.360445
+    y: -32.969507
+    z: 4.574094
+- id: 90
+  label: PFG1
+  position:
+    x: -41.060445
+    y: -3.869507
+    z: 9.474094
+- id: 91
+  label: PFG2
+  position:
+    x: -41.060445
+    y: -7.369507
+    z: 9.474094
+- id: 92
+  label: PFG3
+  position:
+    x: -41.060445
+    y: -10.869507
+    z: 9.474094
+- id: 93
+  label: PFG4
+  position:
+    x: -41.060445
+    y: -14.369507
+    z: 9.474094
+- id: 94
+  label: PFG5
+  position:
+    x: -41.060445
+    y: -17.869507
+    z: 9.474094
+- id: 95
+  label: PFG6
+  position:
+    x: -41.060445
+    y: -21.369507
+    z: 9.474094
+- id: 96
+  label: PFG7
+  position:
+    x: -41.060445
+    y: -24.869507
+    z: 9.474094
+- id: 97
+  label: PFG8
+  position:
+    x: -41.060445
+    y: -28.369507
+    z: 9.474094
+- id: 98
+  label: PFG9
+  position:
+    x: -41.060445
+    y: -31.869507
+    z: 9.474094
+- id: 99
+  label: PP1
+  position:
+    x: -46.960445
+    y: -2.669507
+    z: 34.674094
+- id: 100
+  label: PP2
+  position:
+    x: -46.960445
+    y: -6.169507
+    z: 34.674094
+- id: 101
+  label: PP3
+  position:
+    x: -46.960445
+    y: -9.669507
+    z: 34.674094
+- id: 102
+  label: PP4
+  position:
+    x: -46.960445
+    y: -13.169507
+    z: 34.674094
+- id: 103
+  label: PP5
+  position:
+    x: -46.960445
+    y: -16.669507
+    z: 34.674094
+- id: 104
+  label: PP6
+  position:
+    x: -46.960445
+    y: -20.169507
+    z: 34.674094
+- id: 105
+  label: PP7
+  position:
+    x: -46.960445
+    y: -23.669507
+    z: 34.674094
+- id: 106
+  label: PP8
+  position:
+    x: -46.960445
+    y: -27.169507
+    z: 34.674094
+- id: 107
+  label: PP9
+  position:
+    x: -46.960445
+    y: -30.669507
+    z: 34.674094
+- id: 108
+  label: PA1
+  position:
+    x: -39.660445
+    y: -5.569507
+    z: 39.474094
+- id: 109
+  label: PA2
+  position:
+    x: -39.660445
+    y: -9.069507
+    z: 39.474094
+- id: 110
+  label: PA3
+  position:
+    x: -39.660445
+    y: -12.569507
+    z: 39.474094
+- id: 111
+  label: PA4
+  position:
+    x: -39.660445
+    y: -16.069507
+    z: 39.474094
+- id: 112
+  label: PA5
+  position:
+    x: -39.660445
+    y: -19.569507
+    z: 39.474094
+- id: 113
+  label: PA6
+  position:
+    x: -39.660445
+    y: -23.069507
+    z: 39.474094
+- id: 114
+  label: PA7
+  position:
+    x: -39.660445
+    y: -26.569507
+    z: 39.474094
+- id: 115
+  label: PA8
+  position:
+    x: -39.660445
+    y: -30.069507
+    z: 39.474094
+- id: 116
+  label: PA9
+  position:
+    x: -39.660445
+    y: -33.569507
+    z: 39.474094
+- id: 117
+  label: GC1
+  position:
+    x: -34.260445
+    y: -2.969507
+    z: 6.074094
+- id: 118
+  label: GC2
+  position:
+    x: -34.260445
+    y: -6.469507
+    z: 6.074094
+- id: 119
+  label: GC3
+  position:
+    x: -34.260445
+    y: -9.969507
+    z: 6.074094
+- id: 120
+  label: GC4
+  position:
+    x: -34.260445
+    y: -13.469507
+    z: 6.074094
+- id: 121
+  label: GC5
+  position:
+    x: -34.260445
+    y: -16.969507
+    z: 6.074094
+- id: 122
+  label: GC6
+  position:
+    x: -34.260445
+    y: -20.469507
+    z: 6.074094
+- id: 123
+  label: GC7
+  position:
+    x: -34.260445
+    y: -23.969507
+    z: 6.074094
+- id: 124
+  label: GC8
+  position:
+    x: -34.260445
+    y: -27.469507
+    z: 6.074094
+- id: 125
+  label: GC9
+  position:
+    x: -34.260445
+    y: -30.969507
+    z: 6.074094
+- id: 126
+  label: PI1
+  position:
+    x: -26.660445
+    y: -1.769507
+    z: 17.774094
+- id: 127
+  label: PI2
+  position:
+    x: -26.660445
+    y: -5.269507
+    z: 17.774094
+- id: 128
+  label: PI3
+  position:
+    x: -26.660445
+    y: -8.769507
+    z: 17.774094
+- id: 129
+  label: PI4
+  position:
+    x: -26.660445
+    y: -12.269507
+    z: 17.774094
+- id: 130
+  label: PI5
+  position:
+    x: -26.660445
+    y: -15.769507
+    z: 17.774094
+- id: 131
+  label: PI6
+  position:
+    x: -26.660445
+    y: -19.269507
+    z: 17.774094
+- id: 132
+  label: PI7
+  position:
+    x: -26.660445
+    y: -22.769507
+    z: 17.774094
+- id: 133
+  label: PI8
+  position:
+    x: -26.660445
+    y: -26.269507
+    z: 17.774094
+- id: 134
+  label: PI9
+  position:
+    x: -26.660445
+    y: -29.769507
+    z: 17.774094
+- id: 135
+  label: CP1
+  position:
+    x: -3.760445
+    y: -4.869507
+    z: 16.674094
+- id: 136
+  label: CP2
+  position:
+    x: -3.760445
+    y: -8.369507
+    z: 16.674094
+- id: 137
+  label: CP3
+  position:
+    x: -3.760445
+    y: -11.869507
+    z: 16.674094
+- id: 138
+  label: CP4
+  position:
+    x: -3.760445
+    y: -15.369507
+    z: 16.674094
+- id: 139
+  label: CP5
+  position:
+    x: -3.760445
+    y: -18.869507
+    z: 16.674094
+- id: 140
+  label: CP6
+  position:
+    x: -3.760445
+    y: -22.369507
+    z: 16.674094
+- id: 141
+  label: CP7
+  position:
+    x: -3.760445
+    y: -25.869507
+    z: 16.674094
+- id: 142
+  label: CP8
+  position:
+    x: -3.760445
+    y: -29.369507
+    z: 16.674094
+- id: 143
+  label: CP9
+  position:
+    x: -3.760445
+    y: -32.869507
+    z: 16.674094
+- id: 144
+  label: CC1
+  position:
+    x: 25.939555
+    y: -3.969507
+    z: 8.274094
+- id: 145
+  label: CC2
+  position:
+    x: 25.939555
+    y: -7.469507
+    z: 8.274094
+- id: 146
+  label: CC3
+  position:
+    x: 25.939555
+    y: -10.969507
+    z: 8.274094
+- id: 147
+  label: CC4
+  position:
+    x: 25.939555
+    y: -14.469507
+    z: 8.274094
+- id: 148
+  label: CC5
+  position:
+    x: 25.939555
+    y: -17.969507
+    z: 8.274094
+- id: 149
+  label: CC6
+  position:
+    x: 25.939555
+    y: -21.469507
+    z: 8.274094
+- id: 150
+  label: CC7
+  position:
+    x: 25.939555
+    y: -24.969507
+    z: 8.274094
+- id: 151
+  label: CC8
+  position:
+    x: 25.939555
+    y: -28.469507
+    z: 8.274094
+- id: 152
+  label: CC9
+  position:
+    x: 25.939555
+    y: -31.969507
+    z: 8.274094
+- id: 153
+  label: LP1
+  position:
+    x: -12.460445
+    y: -2.469507
+    z: 44.074094
+- id: 154
+  label: LP2
+  position:
+    x: -12.460445
+    y: -5.969507
+    z: 44.074094
+- id: 155
+  label: LP3
+  position:
+    x: -12.460445
+    y: -9.469507
+    z: 44.074094
+- id: 156
+  label: LP4
+  position:
+    x: -12.460445
+    y: -12.969507
+    z: 44.074094
+- id: 157
+  label: LP5
+  position:
+    x: -12.460445
+    y: -16.469507
+    z: 44.074094
+- id: 158
+  label: LP6
+  position:
+    x: -12.460445
+    y: -19.969507
+    z: 44.074094
+- id: 159
+  label: LP7
+  position:
+    x: -12.460445
+    y: -23.469507
+    z: 44.074094
+- id: 160
+  label: LP8
+  position:
+    x: -12.460445
+    y: -26.969507
+    z: 44.074094
+- id: 161
+  label: LP9
+  position:
+    x: -12.460445
+    y: -30.469507
+    z: 44.074094
+- id: 162
+  label: SA1
+  position:
+    x: -2.560445
+    y: -1.569507
+    z: 41.674094
+- id: 163
+  label: SA2
+  position:
+    x: -2.560445
+    y: -5.069507
+    z: 41.674094
+- id: 164
+  label: SA3
+  position:
+    x: -2.560445
+    y: -8.569507
+    z: 41.674094
+- id: 165
+  label: SA4
+  position:
+    x: -2.560445
+    y: -12.069507
+    z: 41.674094
+- id: 166
+  label: SA5
+  position:
+    x: -2.560445
+    y: -15.569507
+    z: 41.674094
+- id: 167
+  label: SA6
+  position:
+    x: -2.560445
+    y: -19.069507
+    z: 41.674094
+- id: 168
+  label: SA7
+  position:
+    x: -2.560445
+    y: -22.569507
+    z: 41.674094
+- id: 169
+  label: SA8
+  position:
+    x: -2.560445
+    y: -26.069507
+    z: 41.674094
+- id: 170
+  label: SA9
+  position:
+    x: -2.560445
+    y: -29.569507
+    z: 41.674094
+- id: 171
+  label: PM1
+  position:
+    x: 16.339555
+    y: -1.569507
+    z: 39.774094
+- id: 172
+  label: PM2
+  position:
+    x: 16.339555
+    y: -5.069507
+    z: 39.774094
+- id: 173
+  label: PM3
+  position:
+    x: 16.339555
+    y: -8.569507
+    z: 39.774094
+- id: 174
+  label: PM4
+  position:
+    x: 16.339555
+    y: -12.069507
+    z: 39.774094
+- id: 175
+  label: PM5
+  position:
+    x: 16.339555
+    y: -15.569507
+    z: 39.774094
+- id: 176
+  label: PM6
+  position:
+    x: 16.339555
+    y: -19.069507
+    z: 39.774094
+- id: 177
+  label: PM7
+  position:
+    x: 16.339555
+    y: -22.569507
+    z: 39.774094
+- id: 178
+  label: PM8
+  position:
+    x: 16.339555
+    y: -26.069507
+    z: 39.774094
+- id: 179
+  label: PM9
+  position:
+    x: 16.339555
+    y: -29.569507
+    z: 39.774094
+- id: 180
+  label: FD1
+  position:
+    x: 43.839555
+    y: -2.669507
+    z: 27.474094
+- id: 181
+  label: FD2
+  position:
+    x: 43.839555
+    y: -6.169507
+    z: 27.474094
+- id: 182
+  label: FD3
+  position:
+    x: 43.839555
+    y: -9.669507
+    z: 27.474094
+- id: 183
+  label: FD4
+  position:
+    x: 43.839555
+    y: -13.169507
+    z: 27.474094
+- id: 184
+  label: FD5
+  position:
+    x: 43.839555
+    y: -16.669507
+    z: 27.474094
+- id: 185
+  label: FD6
+  position:
+    x: 43.839555
+    y: -20.169507
+    z: 27.474094
+- id: 186
+  label: FD7
+  position:
+    x: 43.839555
+    y: -23.669507
+    z: 27.474094
+- id: 187
+  label: FD8
+  position:
+    x: 43.839555
+    y: -27.169507
+    z: 27.474094
+- id: 188
+  label: FD9
+  position:
+    x: 43.839555
+    y: -30.669507
+    z: 27.474094
+- id: 189
+  label: FP1
+  position:
+    x: 77.039555
+    y: -5.169507
+    z: -11.125906
+- id: 190
+  label: FP2
+  position:
+    x: 77.039555
+    y: -8.669507
+    z: -11.125906
+- id: 191
+  label: FP3
+  position:
+    x: 77.039555
+    y: -12.169507
+    z: -11.125906
+- id: 192
+  label: FP4
+  position:
+    x: 77.039555
+    y: -15.669507
+    z: -11.125906
+- id: 193
+  label: FP5
+  position:
+    x: 77.039555
+    y: -19.169507
+    z: -11.125906
+- id: 194
+  label: FP6
+  position:
+    x: 77.039555
+    y: -22.669507
+    z: -11.125906
+- id: 195
+  label: FP7
+  position:
+    x: 77.039555
+    y: -26.169507
+    z: -11.125906
+- id: 196
+  label: FP8
+  position:
+    x: 77.039555
+    y: -29.669507
+    z: -11.125906
+- id: 197
+  label: FP9
+  position:
+    x: 77.039555
+    y: -33.169507
+    z: -11.125906
+- id: 198
+  label: CR1
+  position:
+    x: 48.939555
+    y: -9.169507
+    z: -13.225906
+- id: 199
+  label: CR2
+  position:
+    x: 48.939555
+    y: -12.669507
+    z: -13.225906
+- id: 200
+  label: CR3
+  position:
+    x: 48.939555
+    y: -16.169507
+    z: -13.225906
+- id: 201
+  label: CR4
+  position:
+    x: 48.939555
+    y: -19.669507
+    z: -13.225906
+- id: 202
+  label: CR5
+  position:
+    x: 48.939555
+    y: -23.169507
+    z: -13.225906
+- id: 203
+  label: CR6
+  position:
+    x: 48.939555
+    y: -26.669507
+    z: -13.225906
+- id: 204
+  label: CR7
+  position:
+    x: 48.939555
+    y: -30.169507
+    z: -13.225906
+- id: 205
+  label: CR8
+  position:
+    x: 48.939555
+    y: -33.669507
+    z: -13.225906
+- id: 206
+  label: CR9
+  position:
+    x: 48.939555
+    y: -37.169507
+    z: -13.225906
+- id: 207
+  label: R1
+  position:
+    x: 60.939555
+    y: -5.469507
+    z: -35.325906
+- id: 208
+  label: R2
+  position:
+    x: 60.939555
+    y: -8.969507
+    z: -35.325906
+- id: 209
+  label: R3
+  position:
+    x: 60.939555
+    y: -12.469507
+    z: -35.325906
+- id: 210
+  label: R4
+  position:
+    x: 60.939555
+    y: -15.969507
+    z: -35.325906
+- id: 211
+  label: R5
+  position:
+    x: 60.939555
+    y: -19.469507
+    z: -35.325906
+- id: 212
+  label: R6
+  position:
+    x: 60.939555
+    y: -22.969507
+    z: -35.325906
+- id: 213
+  label: R7
+  position:
+    x: 60.939555
+    y: -26.469507
+    z: -35.325906
+- id: 214
+  label: R8
+  position:
+    x: 60.939555
+    y: -29.969507
+    z: -35.325906
+- id: 215
+  label: R9
+  position:
+    x: 60.939555
+    y: -33.469507
+    z: -35.325906
+- id: 216
+  label: OR1
+  position:
+    x: 33.939555
+    y: -4.369507
+    z: -33.125906
+- id: 217
+  label: OR2
+  position:
+    x: 36.499555
+    y: -4.409507
+    z: -30.735906
+- id: 218
+  label: OR3
+  position:
+    x: 39.059555
+    y: -4.439507
+    z: -28.355906
+- id: 219
+  label: OR4
+  position:
+    x: 41.619555
+    y: -4.479507
+    z: -25.965906
+- id: 220
+  label: OR5
+  position:
+    x: 44.179555
+    y: -4.509507
+    z: -23.575906
+- id: 221
+  label: OR6
+  position:
+    x: 50.759555
+    y: -4.599507
+    z: -17.435906
+- id: 222
+  label: OR7
+  position:
+    x: 53.319555
+    y: -4.639507
+    z: -15.055906
+- id: 223
+  label: OR8
+  position:
+    x: 55.879555
+    y: -4.679507
+    z: -12.665906
+- id: 224
+  label: OR9
+  position:
+    x: 58.439555
+    y: -4.709507
+    z: -10.275906
+- id: 225
+  label: OR10
+  position:
+    x: 60.999555
+    y: -4.749507
+    z: -7.895906
+- id: 226
+  label: OR11
+  position:
+    x: 67.579555
+    y: -4.839507
+    z: -1.755906
+- id: 227
+  label: OR12
+  position:
+    x: 70.139555
+    y: -4.879507
+    z: 0.634094
+- id: 228
+  label: OR13
+  position:
+    x: 72.699555
+    y: -4.909507
+    z: 3.014094
+- id: 229
+  label: OR14
+  position:
+    x: 75.259555
+    y: -4.949507
+    z: 5.404094
+- id: 230
+  label: OR15
+  position:
+    x: 77.819555
+    y: -4.979507
+    z: 7.794094
+- id: 231
+  label: FT1
+  position:
+    x: 48.539555
+    y: -3.269507
+    z: -21.825906
+- id: 232
+  label: FT2
+  position:
+    x: 48.539555
+    y: -6.769507
+    z: -21.825906
+- id: 233
+  label: FT3
+  position:
+    x: 48.539555
+    y: -10.269507
+    z: -21.825906
+- id: 234
+  label: FT4
+  position:
+    x: 48.539555
+    y: -13.769507
+    z: -21.825906
+- id: 235
+  label: FT5
+  position:
+    x: 48.539555
+    y: -17.269507
+    z: -21.825906
+- id: 236
+  label: FT6
+  position:
+    x: 48.539555
+    y: -20.769507
+    z: -21.825906
+- id: 237
+  label: FT7
+  position:
+    x: 48.539555
+    y: -24.269507
+    z: -21.825906
+- id: 238
+  label: FT8
+  position:
+    x: 48.539555
+    y: -27.769507
+    z: -21.825906
+- id: 239
+  label: FT9
+  position:
+    x: 48.539555
+    y: -31.269507
+    z: -21.825906
+- id: 240
+  label: SC1
+  position:
+    x: -24.160445
+    y: -2.669507
+    z: 29.674094
+- id: 241
+  label: SC2
+  position:
+    x: -24.160445
+    y: -6.169507
+    z: 29.674094
+- id: 242
+  label: SC3
+  position:
+    x: -24.160445
+    y: -9.669507
+    z: 29.674094
+- id: 243
+  label: SC4
+  position:
+    x: -24.160445
+    y: -13.169507
+    z: 29.674094
+- id: 244
+  label: SC5
+  position:
+    x: -24.160445
+    y: -16.669507
+    z: 29.674094
+- id: 245
+  label: SC6
+  position:
+    x: -24.160445
+    y: -20.169507
+    z: 29.674094
+- id: 246
+  label: SC7
+  position:
+    x: -24.160445
+    y: -23.669507
+    z: 29.674094
+- id: 247
+  label: SC8
+  position:
+    x: -24.160445
+    y: -27.169507
+    z: 29.674094
+- id: 248
+  label: SC9
+  position:
+    x: -24.160445
+    y: -30.669507
+    z: 29.674094
+- id: 249
+  label: OF1
+  position:
+    x: 35.639555
+    y: -36.269507
+    z: -17.825906
+- id: 250
+  label: OF2
+  position:
+    x: 35.639555
+    y: -39.769507
+    z: -17.825906
+- id: 251
+  label: OF3
+  position:
+    x: 35.639555
+    y: -43.269507
+    z: -17.825906
+- id: 252
+  label: OF4
+  position:
+    x: 35.639555
+    y: -46.769507
+    z: -17.825906
+- id: 253
+  label: OF5
+  position:
+    x: 35.639555
+    y: -50.269507
+    z: -17.825906
+- id: 254
+  label: OF6
+  position:
+    x: 35.639555
+    y: -53.769507
+    z: -17.825906
+- id: 255
+  label: OF7
+  position:
+    x: 35.639555
+    y: -57.269507
+    z: -17.825906
+- id: 256
+  label: OF8
+  position:
+    x: 35.639555
+    y: -60.769507
+    z: -17.825906
+- id: 257
+  label: OF9
+  position:
+    x: 35.639555
+    y: -64.269507
+    z: -17.825906
+- id: 258
+  label: OC1
+  position:
+    x: 7.839555
+    y: -37.169507
+    z: -13.525906
+- id: 259
+  label: OC2
+  position:
+    x: 7.839555
+    y: -40.669507
+    z: -13.525906
+- id: 260
+  label: OC3
+  position:
+    x: 7.839555
+    y: -44.169507
+    z: -13.525906
+- id: 261
+  label: OC4
+  position:
+    x: 7.839555
+    y: -47.669507
+    z: -13.525906
+- id: 262
+  label: OC5
+  position:
+    x: 7.839555
+    y: -51.169507
+    z: -13.525906
+- id: 263
+  label: OC6
+  position:
+    x: 7.839555
+    y: -54.669507
+    z: -13.525906
+- id: 264
+  label: OC7
+  position:
+    x: 7.839555
+    y: -58.169507
+    z: -13.525906
+- id: 265
+  label: OC8
+  position:
+    x: 7.839555
+    y: -61.669507
+    z: -13.525906
+- id: 266
+  label: OC9
+  position:
+    x: 7.839555
+    y: -65.169507
+    z: -13.525906
+- id: 267
+  label: OP1
+  position:
+    x: -10.660445
+    y: -35.069507
+    z: -2.625906
+- id: 268
+  label: OP2
+  position:
+    x: -10.660445
+    y: -38.569507
+    z: -2.625906
+- id: 269
+  label: OP3
+  position:
+    x: -10.660445
+    y: -42.069507
+    z: -2.625906
+- id: 270
+  label: OP4
+  position:
+    x: -10.660445
+    y: -45.569507
+    z: -2.625906
+- id: 271
+  label: OP5
+  position:
+    x: -10.660445
+    y: -49.069507
+    z: -2.625906
+- id: 272
+  label: OP6
+  position:
+    x: -10.660445
+    y: -52.569507
+    z: -2.625906
+- id: 273
+  label: OP7
+  position:
+    x: -10.660445
+    y: -56.069507
+    z: -2.625906
+- id: 274
+  label: OP8
+  position:
+    x: -10.660445
+    y: -59.569507
+    z: -2.625906
+- id: 275
+  label: OP9
+  position:
+    x: -10.660445
+    y: -63.069507
+    z: -2.625906
+- id: 276
+  label: H1
+  position:
+    x: 0.539555
+    y: -20.269507
+    z: -20.325906
+- id: 277
+  label: H2
+  position:
+    x: 0.539555
+    y: -23.769507
+    z: -20.325906
+- id: 278
+  label: H3
+  position:
+    x: 0.539555
+    y: -27.269507
+    z: -20.325906
+- id: 279
+  label: H4
+  position:
+    x: 0.539555
+    y: -30.769507
+    z: -20.325906
+- id: 280
+  label: H5
+  position:
+    x: 0.539555
+    y: -34.269507
+    z: -20.325906
+- id: 281
+  label: H6
+  position:
+    x: 0.539555
+    y: -37.769507
+    z: -20.325906
+- id: 282
+  label: H7
+  position:
+    x: 0.539555
+    y: -41.269507
+    z: -20.325906
+- id: 283
+  label: H8
+  position:
+    x: 0.539555
+    y: -44.769507
+    z: -20.325906
+- id: 284
+  label: H9
+  position:
+    x: 0.539555
+    y: -48.269507
+    z: -20.325906
+- id: 285
+  label: T1
+  position:
+    x: 4.339555
+    y: -18.369507
+    z: -25.525906
+- id: 286
+  label: T2
+  position:
+    x: 4.339555
+    y: -21.869507
+    z: -25.525906
+- id: 287
+  label: T3
+  position:
+    x: 4.339555
+    y: -25.369507
+    z: -25.525906
+- id: 288
+  label: T4
+  position:
+    x: 4.339555
+    y: -28.869507
+    z: -25.525906
+- id: 289
+  label: T5
+  position:
+    x: 4.339555
+    y: -32.369507
+    z: -25.525906
+- id: 290
+  label: T6
+  position:
+    x: 4.339555
+    y: -35.869507
+    z: -25.525906
+- id: 291
+  label: T7
+  position:
+    x: 4.339555
+    y: -39.369507
+    z: -25.525906
+- id: 292
+  label: T8
+  position:
+    x: 4.339555
+    y: -42.869507
+    z: -25.525906
+- id: 293
+  label: T9
+  position:
+    x: 4.339555
+    y: -46.369507
+    z: -25.525906
+- id: 294
+  label: TP'1
+  position:
+    x: 32.039555
+    y: 28.130493
+    z: -52.725906
+- id: 295
+  label: TP'2
+  position:
+    x: 32.039555
+    y: 31.630493
+    z: -52.725906
+- id: 296
+  label: TP'3
+  position:
+    x: 32.039555
+    y: 35.130493
+    z: -52.725906
+- id: 297
+  label: TP'4
+  position:
+    x: 32.039555
+    y: 38.630493
+    z: -52.725906
+- id: 298
+  label: TP'5
+  position:
+    x: 32.039555
+    y: 42.130493
+    z: -52.725906
+- id: 299
+  label: TP'6
+  position:
+    x: 32.039555
+    y: 45.630493
+    z: -52.725906
+- id: 300
+  label: TP'7
+  position:
+    x: 32.039555
+    y: 49.130493
+    z: -52.725906
+- id: 301
+  label: TP'8
+  position:
+    x: 32.039555
+    y: 52.630493
+    z: -52.725906
+- id: 302
+  label: TP'9
+  position:
+    x: 32.039555
+    y: 56.130493
+    z: -52.725906
+- id: 303
+  label: TB'1
+  position:
+    x: 10.139555
+    y: 29.130493
+    z: -50.725906
+- id: 304
+  label: TB'2
+  position:
+    x: 10.139555
+    y: 32.630493
+    z: -50.725906
+- id: 305
+  label: TB'3
+  position:
+    x: 10.139555
+    y: 36.130493
+    z: -50.725906
+- id: 306
+  label: TB'4
+  position:
+    x: 10.139555
+    y: 39.630493
+    z: -50.725906
+- id: 307
+  label: TB'5
+  position:
+    x: 10.139555
+    y: 43.130493
+    z: -50.725906
+- id: 308
+  label: TB'6
+  position:
+    x: 10.139555
+    y: 46.630493
+    z: -50.725906
+- id: 309
+  label: TB'7
+  position:
+    x: 10.139555
+    y: 50.130493
+    z: -50.725906
+- id: 310
+  label: TB'8
+  position:
+    x: 10.139555
+    y: 53.630493
+    z: -50.725906
+- id: 311
+  label: TB'9
+  position:
+    x: 10.139555
+    y: 57.130493
+    z: -50.725906
+- id: 312
+  label: A'1
+  position:
+    x: 14.539555
+    y: 26.930493
+    z: -40.925906
+- id: 313
+  label: A'2
+  position:
+    x: 14.539555
+    y: 30.430493
+    z: -40.925906
+- id: 314
+  label: A'3
+  position:
+    x: 14.539555
+    y: 33.930493
+    z: -40.925906
+- id: 315
+  label: A'4
+  position:
+    x: 14.539555
+    y: 37.430493
+    z: -40.925906
+- id: 316
+  label: A'5
+  position:
+    x: 14.539555
+    y: 40.930493
+    z: -40.925906
+- id: 317
+  label: A'6
+  position:
+    x: 14.539555
+    y: 44.430493
+    z: -40.925906
+- id: 318
+  label: A'7
+  position:
+    x: 14.539555
+    y: 47.930493
+    z: -40.925906
+- id: 319
+  label: A'8
+  position:
+    x: 14.539555
+    y: 51.430493
+    z: -40.925906
+- id: 320
+  label: A'9
+  position:
+    x: 14.539555
+    y: 54.930493
+    z: -40.925906
+- id: 321
+  label: B'1
+  position:
+    x: 6.639555
+    y: 23.930493
+    z: -40.625906
+- id: 322
+  label: B'2
+  position:
+    x: 6.639555
+    y: 27.430493
+    z: -40.625906
+- id: 323
+  label: B'3
+  position:
+    x: 6.639555
+    y: 30.930493
+    z: -40.625906
+- id: 324
+  label: B'4
+  position:
+    x: 6.639555
+    y: 34.430493
+    z: -40.625906
+- id: 325
+  label: B'5
+  position:
+    x: 6.639555
+    y: 37.930493
+    z: -40.625906
+- id: 326
+  label: B'6
+  position:
+    x: 6.639555
+    y: 41.430493
+    z: -40.625906
+- id: 327
+  label: B'7
+  position:
+    x: 6.639555
+    y: 44.930493
+    z: -40.625906
+- id: 328
+  label: B'8
+  position:
+    x: 6.639555
+    y: 48.430493
+    z: -40.625906
+- id: 329
+  label: B'9
+  position:
+    x: 6.639555
+    y: 51.930493
+    z: -40.625906
+- id: 330
+  label: C'1
+  position:
+    x: -11.860445
+    y: 32.830493
+    z: -28.625906
+- id: 331
+  label: C'2
+  position:
+    x: -11.860445
+    y: 36.330493
+    z: -28.625906
+- id: 332
+  label: C'3
+  position:
+    x: -11.860445
+    y: 39.830493
+    z: -28.625906
+- id: 333
+  label: C'4
+  position:
+    x: -11.860445
+    y: 43.330493
+    z: -28.625906
+- id: 334
+  label: C'5
+  position:
+    x: -11.860445
+    y: 46.830493
+    z: -28.625906
+- id: 335
+  label: C'6
+  position:
+    x: -11.860445
+    y: 50.330493
+    z: -28.625906
+- id: 336
+  label: C'7
+  position:
+    x: -11.860445
+    y: 53.830493
+    z: -28.625906
+- id: 337
+  label: C'8
+  position:
+    x: -11.860445
+    y: 57.330493
+    z: -28.625906
+- id: 338
+  label: C'9
+  position:
+    x: -11.860445
+    y: 60.830493
+    z: -28.625906
+- id: 339
+  label: GPH'1
+  position:
+    x: -18.060445
+    y: 28.930493
+    z: -33.425906
+- id: 340
+  label: GPH'2
+  position:
+    x: -18.060445
+    y: 32.430493
+    z: -33.425906
+- id: 341
+  label: GPH'3
+  position:
+    x: -18.060445
+    y: 35.930493
+    z: -33.425906
+- id: 342
+  label: GPH'4
+  position:
+    x: -18.060445
+    y: 39.430493
+    z: -33.425906
+- id: 343
+  label: GPH'5
+  position:
+    x: -18.060445
+    y: 42.930493
+    z: -33.425906
+- id: 344
+  label: GPH'6
+  position:
+    x: -18.060445
+    y: 46.430493
+    z: -33.425906
+- id: 345
+  label: GPH'7
+  position:
+    x: -18.060445
+    y: 49.930493
+    z: -33.425906
+- id: 346
+  label: GPH'8
+  position:
+    x: -18.060445
+    y: 53.430493
+    z: -33.425906
+- id: 347
+  label: GPH'9
+  position:
+    x: -18.060445
+    y: 56.930493
+    z: -33.425906
+- id: 348
+  label: OT'1
+  position:
+    x: -44.060445
+    y: 29.830493
+    z: -31.125906
+- id: 349
+  label: OT'2
+  position:
+    x: -44.060445
+    y: 33.330493
+    z: -31.125906
+- id: 350
+  label: OT'3
+  position:
+    x: -44.060445
+    y: 36.830493
+    z: -31.125906
+- id: 351
+  label: OT'4
+  position:
+    x: -44.060445
+    y: 40.330493
+    z: -31.125906
+- id: 352
+  label: OT'5
+  position:
+    x: -44.060445
+    y: 43.830493
+    z: -31.125906
+- id: 353
+  label: OT'6
+  position:
+    x: -44.060445
+    y: 47.330493
+    z: -31.125906
+- id: 354
+  label: OT'7
+  position:
+    x: -44.060445
+    y: 50.830493
+    z: -31.125906
+- id: 355
+  label: OT'8
+  position:
+    x: -44.060445
+    y: 54.330493
+    z: -31.125906
+- id: 356
+  label: OT'9
+  position:
+    x: -44.060445
+    y: 57.830493
+    z: -31.125906
+- id: 357
+  label: FCA'1
+  position:
+    x: -38.860445
+    y: 12.530493
+    z: -7.625906
+- id: 358
+  label: FCA'2
+  position:
+    x: -38.860445
+    y: 16.030493
+    z: -7.625906
+- id: 359
+  label: FCA'3
+  position:
+    x: -38.860445
+    y: 19.530493
+    z: -7.625906
+- id: 360
+  label: FCA'4
+  position:
+    x: -38.860445
+    y: 23.030493
+    z: -7.625906
+- id: 361
+  label: FCA'5
+  position:
+    x: -38.860445
+    y: 26.530493
+    z: -7.625906
+- id: 362
+  label: FCA'6
+  position:
+    x: -38.860445
+    y: 30.030493
+    z: -7.625906
+- id: 363
+  label: FCA'7
+  position:
+    x: -38.860445
+    y: 33.530493
+    z: -7.625906
+- id: 364
+  label: FCA'8
+  position:
+    x: -38.860445
+    y: 37.030493
+    z: -7.625906
+- id: 365
+  label: FCA'9
+  position:
+    x: -38.860445
+    y: 40.530493
+    z: -7.625906
+- id: 366
+  label: GL'1
+  position:
+    x: -58.160445
+    y: 5.630493
+    z: -11.825906
+- id: 367
+  label: GL'2
+  position:
+    x: -58.160445
+    y: 9.130493
+    z: -11.825906
+- id: 368
+  label: GL'3
+  position:
+    x: -58.160445
+    y: 12.630493
+    z: -11.825906
+- id: 369
+  label: GL'4
+  position:
+    x: -58.160445
+    y: 16.130493
+    z: -11.825906
+- id: 370
+  label: GL'5
+  position:
+    x: -58.160445
+    y: 19.630493
+    z: -11.825906
+- id: 371
+  label: GL'6
+  position:
+    x: -58.160445
+    y: 23.130493
+    z: -11.825906
+- id: 372
+  label: GL'7
+  position:
+    x: -58.160445
+    y: 26.630493
+    z: -11.825906
+- id: 373
+  label: GL'8
+  position:
+    x: -58.160445
+    y: 30.130493
+    z: -11.825906
+- id: 374
+  label: GL'9
+  position:
+    x: -58.160445
+    y: 33.630493
+    z: -11.825906
+- id: 375
+  label: Cu'1
+  position:
+    x: -65.360445
+    y: 5.430493
+    z: 4.574094
+- id: 376
+  label: Cu'2
+  position:
+    x: -65.360445
+    y: 8.930493
+    z: 4.574094
+- id: 377
+  label: Cu'3
+  position:
+    x: -65.360445
+    y: 12.430493
+    z: 4.574094
+- id: 378
+  label: Cu'4
+  position:
+    x: -65.360445
+    y: 15.930493
+    z: 4.574094
+- id: 379
+  label: Cu'5
+  position:
+    x: -65.360445
+    y: 19.430493
+    z: 4.574094
+- id: 380
+  label: Cu'6
+  position:
+    x: -65.360445
+    y: 22.930493
+    z: 4.574094
+- id: 381
+  label: Cu'7
+  position:
+    x: -65.360445
+    y: 26.430493
+    z: 4.574094
+- id: 382
+  label: Cu'8
+  position:
+    x: -65.360445
+    y: 29.930493
+    z: 4.574094
+- id: 383
+  label: Cu'9
+  position:
+    x: -65.360445
+    y: 33.430493
+    z: 4.574094
+- id: 384
+  label: PFG'1
+  position:
+    x: -41.060445
+    y: 4.330493
+    z: 9.474094
+- id: 385
+  label: PFG'2
+  position:
+    x: -41.060445
+    y: 7.830493
+    z: 9.474094
+- id: 386
+  label: PFG'3
+  position:
+    x: -41.060445
+    y: 11.330493
+    z: 9.474094
+- id: 387
+  label: PFG'4
+  position:
+    x: -41.060445
+    y: 14.830493
+    z: 9.474094
+- id: 388
+  label: PFG'5
+  position:
+    x: -41.060445
+    y: 18.330493
+    z: 9.474094
+- id: 389
+  label: PFG'6
+  position:
+    x: -41.060445
+    y: 21.830493
+    z: 9.474094
+- id: 390
+  label: PFG'7
+  position:
+    x: -41.060445
+    y: 25.330493
+    z: 9.474094
+- id: 391
+  label: PFG'8
+  position:
+    x: -41.060445
+    y: 28.830493
+    z: 9.474094
+- id: 392
+  label: PFG'9
+  position:
+    x: -41.060445
+    y: 32.330493
+    z: 9.474094
+- id: 393
+  label: PP'1
+  position:
+    x: -46.960445
+    y: 3.130493
+    z: 34.674094
+- id: 394
+  label: PP'2
+  position:
+    x: -46.960445
+    y: 6.630493
+    z: 34.674094
+- id: 395
+  label: PP'3
+  position:
+    x: -46.960445
+    y: 10.130493
+    z: 34.674094
+- id: 396
+  label: PP'4
+  position:
+    x: -46.960445
+    y: 13.630493
+    z: 34.674094
+- id: 397
+  label: PP'5
+  position:
+    x: -46.960445
+    y: 17.130493
+    z: 34.674094
+- id: 398
+  label: PP'6
+  position:
+    x: -46.960445
+    y: 20.630493
+    z: 34.674094
+- id: 399
+  label: PP'7
+  position:
+    x: -46.960445
+    y: 24.130493
+    z: 34.674094
+- id: 400
+  label: PP'8
+  position:
+    x: -46.960445
+    y: 27.630493
+    z: 34.674094
+- id: 401
+  label: PP'9
+  position:
+    x: -46.960445
+    y: 31.130493
+    z: 34.674094
+- id: 402
+  label: PA'1
+  position:
+    x: -39.660445
+    y: 6.030493
+    z: 39.474094
+- id: 403
+  label: PA'2
+  position:
+    x: -39.660445
+    y: 9.530493
+    z: 39.474094
+- id: 404
+  label: PA'3
+  position:
+    x: -39.660445
+    y: 13.030493
+    z: 39.474094
+- id: 405
+  label: PA'4
+  position:
+    x: -39.660445
+    y: 16.530493
+    z: 39.474094
+- id: 406
+  label: PA'5
+  position:
+    x: -39.660445
+    y: 20.030493
+    z: 39.474094
+- id: 407
+  label: PA'6
+  position:
+    x: -39.660445
+    y: 23.530493
+    z: 39.474094
+- id: 408
+  label: PA'7
+  position:
+    x: -39.660445
+    y: 27.030493
+    z: 39.474094
+- id: 409
+  label: PA'8
+  position:
+    x: -39.660445
+    y: 30.530493
+    z: 39.474094
+- id: 410
+  label: PA'9
+  position:
+    x: -39.660445
+    y: 34.030493
+    z: 39.474094
+- id: 411
+  label: GC'1
+  position:
+    x: -34.260445
+    y: 3.430493
+    z: 6.074094
+- id: 412
+  label: GC'2
+  position:
+    x: -34.260445
+    y: 6.930493
+    z: 6.074094
+- id: 413
+  label: GC'3
+  position:
+    x: -34.260445
+    y: 10.430493
+    z: 6.074094
+- id: 414
+  label: GC'4
+  position:
+    x: -34.260445
+    y: 13.930493
+    z: 6.074094
+- id: 415
+  label: GC'5
+  position:
+    x: -34.260445
+    y: 17.430493
+    z: 6.074094
+- id: 416
+  label: GC'6
+  position:
+    x: -34.260445
+    y: 20.930493
+    z: 6.074094
+- id: 417
+  label: GC'7
+  position:
+    x: -34.260445
+    y: 24.430493
+    z: 6.074094
+- id: 418
+  label: GC'8
+  position:
+    x: -34.260445
+    y: 27.930493
+    z: 6.074094
+- id: 419
+  label: GC'9
+  position:
+    x: -34.260445
+    y: 31.430493
+    z: 6.074094
+- id: 420
+  label: PI'1
+  position:
+    x: -26.660445
+    y: 2.230493
+    z: 17.774094
+- id: 421
+  label: PI'2
+  position:
+    x: -26.660445
+    y: 5.730493
+    z: 17.774094
+- id: 422
+  label: PI'3
+  position:
+    x: -26.660445
+    y: 9.230493
+    z: 17.774094
+- id: 423
+  label: PI'4
+  position:
+    x: -26.660445
+    y: 12.730493
+    z: 17.774094
+- id: 424
+  label: PI'5
+  position:
+    x: -26.660445
+    y: 16.230493
+    z: 17.774094
+- id: 425
+  label: PI'6
+  position:
+    x: -26.660445
+    y: 19.730493
+    z: 17.774094
+- id: 426
+  label: PI'7
+  position:
+    x: -26.660445
+    y: 23.230493
+    z: 17.774094
+- id: 427
+  label: PI'8
+  position:
+    x: -26.660445
+    y: 26.730493
+    z: 17.774094
+- id: 428
+  label: PI'9
+  position:
+    x: -26.660445
+    y: 30.230493
+    z: 17.774094
+- id: 429
+  label: CP'1
+  position:
+    x: -3.760445
+    y: 5.330493
+    z: 16.674094
+- id: 430
+  label: CP'2
+  position:
+    x: -3.760445
+    y: 8.830493
+    z: 16.674094
+- id: 431
+  label: CP'3
+  position:
+    x: -3.760445
+    y: 12.330493
+    z: 16.674094
+- id: 432
+  label: CP'4
+  position:
+    x: -3.760445
+    y: 15.830493
+    z: 16.674094
+- id: 433
+  label: CP'5
+  position:
+    x: -3.760445
+    y: 19.330493
+    z: 16.674094
+- id: 434
+  label: CP'6
+  position:
+    x: -3.760445
+    y: 22.830493
+    z: 16.674094
+- id: 435
+  label: CP'7
+  position:
+    x: -3.760445
+    y: 26.330493
+    z: 16.674094
+- id: 436
+  label: CP'8
+  position:
+    x: -3.760445
+    y: 29.830493
+    z: 16.674094
+- id: 437
+  label: CP'9
+  position:
+    x: -3.760445
+    y: 33.330493
+    z: 16.674094
+- id: 438
+  label: CC'1
+  position:
+    x: 25.939555
+    y: 4.430493
+    z: 8.274094
+- id: 439
+  label: CC'2
+  position:
+    x: 25.939555
+    y: 7.930493
+    z: 8.274094
+- id: 440
+  label: CC'3
+  position:
+    x: 25.939555
+    y: 11.430493
+    z: 8.274094
+- id: 441
+  label: CC'4
+  position:
+    x: 25.939555
+    y: 14.930493
+    z: 8.274094
+- id: 442
+  label: CC'5
+  position:
+    x: 25.939555
+    y: 18.430493
+    z: 8.274094
+- id: 443
+  label: CC'6
+  position:
+    x: 25.939555
+    y: 21.930493
+    z: 8.274094
+- id: 444
+  label: CC'7
+  position:
+    x: 25.939555
+    y: 25.430493
+    z: 8.274094
+- id: 445
+  label: CC'8
+  position:
+    x: 25.939555
+    y: 28.930493
+    z: 8.274094
+- id: 446
+  label: CC'9
+  position:
+    x: 25.939555
+    y: 32.430493
+    z: 8.274094
+- id: 447
+  label: LP'1
+  position:
+    x: -12.460445
+    y: 2.930493
+    z: 44.074094
+- id: 448
+  label: LP'2
+  position:
+    x: -12.460445
+    y: 6.430493
+    z: 44.074094
+- id: 449
+  label: LP'3
+  position:
+    x: -12.460445
+    y: 9.930493
+    z: 44.074094
+- id: 450
+  label: LP'4
+  position:
+    x: -12.460445
+    y: 13.430493
+    z: 44.074094
+- id: 451
+  label: LP'5
+  position:
+    x: -12.460445
+    y: 16.930493
+    z: 44.074094
+- id: 452
+  label: LP'6
+  position:
+    x: -12.460445
+    y: 20.430493
+    z: 44.074094
+- id: 453
+  label: LP'7
+  position:
+    x: -12.460445
+    y: 23.930493
+    z: 44.074094
+- id: 454
+  label: LP'8
+  position:
+    x: -12.460445
+    y: 27.430493
+    z: 44.074094
+- id: 455
+  label: LP'9
+  position:
+    x: -12.460445
+    y: 30.930493
+    z: 44.074094
+- id: 456
+  label: SA'1
+  position:
+    x: -2.560445
+    y: 2.030493
+    z: 41.674094
+- id: 457
+  label: SA'2
+  position:
+    x: -2.560445
+    y: 5.530493
+    z: 41.674094
+- id: 458
+  label: SA'3
+  position:
+    x: -2.560445
+    y: 9.030493
+    z: 41.674094
+- id: 459
+  label: SA'4
+  position:
+    x: -2.560445
+    y: 12.530493
+    z: 41.674094
+- id: 460
+  label: SA'5
+  position:
+    x: -2.560445
+    y: 16.030493
+    z: 41.674094
+- id: 461
+  label: SA'6
+  position:
+    x: -2.560445
+    y: 19.530493
+    z: 41.674094
+- id: 462
+  label: SA'7
+  position:
+    x: -2.560445
+    y: 23.030493
+    z: 41.674094
+- id: 463
+  label: SA'8
+  position:
+    x: -2.560445
+    y: 26.530493
+    z: 41.674094
+- id: 464
+  label: SA'9
+  position:
+    x: -2.560445
+    y: 30.030493
+    z: 41.674094
+- id: 465
+  label: PM'1
+  position:
+    x: 16.339555
+    y: 2.030493
+    z: 39.774094
+- id: 466
+  label: PM'2
+  position:
+    x: 16.339555
+    y: 5.530493
+    z: 39.774094
+- id: 467
+  label: PM'3
+  position:
+    x: 16.339555
+    y: 9.030493
+    z: 39.774094
+- id: 468
+  label: PM'4
+  position:
+    x: 16.339555
+    y: 12.530493
+    z: 39.774094
+- id: 469
+  label: PM'5
+  position:
+    x: 16.339555
+    y: 16.030493
+    z: 39.774094
+- id: 470
+  label: PM'6
+  position:
+    x: 16.339555
+    y: 19.530493
+    z: 39.774094
+- id: 471
+  label: PM'7
+  position:
+    x: 16.339555
+    y: 23.030493
+    z: 39.774094
+- id: 472
+  label: PM'8
+  position:
+    x: 16.339555
+    y: 26.530493
+    z: 39.774094
+- id: 473
+  label: PM'9
+  position:
+    x: 16.339555
+    y: 30.030493
+    z: 39.774094
+- id: 474
+  label: FD'1
+  position:
+    x: 43.839555
+    y: 3.130493
+    z: 27.474094
+- id: 475
+  label: FD'2
+  position:
+    x: 43.839555
+    y: 6.630493
+    z: 27.474094
+- id: 476
+  label: FD'3
+  position:
+    x: 43.839555
+    y: 10.130493
+    z: 27.474094
+- id: 477
+  label: FD'4
+  position:
+    x: 43.839555
+    y: 13.630493
+    z: 27.474094
+- id: 478
+  label: FD'5
+  position:
+    x: 43.839555
+    y: 17.130493
+    z: 27.474094
+- id: 479
+  label: FD'6
+  position:
+    x: 43.839555
+    y: 20.630493
+    z: 27.474094
+- id: 480
+  label: FD'7
+  position:
+    x: 43.839555
+    y: 24.130493
+    z: 27.474094
+- id: 481
+  label: FD'8
+  position:
+    x: 43.839555
+    y: 27.630493
+    z: 27.474094
+- id: 482
+  label: FD'9
+  position:
+    x: 43.839555
+    y: 31.130493
+    z: 27.474094
+- id: 483
+  label: FP'1
+  position:
+    x: 77.039555
+    y: 5.630493
+    z: -11.125906
+- id: 484
+  label: FP'2
+  position:
+    x: 77.039555
+    y: 9.130493
+    z: -11.125906
+- id: 485
+  label: FP'3
+  position:
+    x: 77.039555
+    y: 12.630493
+    z: -11.125906
+- id: 486
+  label: FP'4
+  position:
+    x: 77.039555
+    y: 16.130493
+    z: -11.125906
+- id: 487
+  label: FP'5
+  position:
+    x: 77.039555
+    y: 19.630493
+    z: -11.125906
+- id: 488
+  label: FP'6
+  position:
+    x: 77.039555
+    y: 23.130493
+    z: -11.125906
+- id: 489
+  label: FP'7
+  position:
+    x: 77.039555
+    y: 26.630493
+    z: -11.125906
+- id: 490
+  label: FP'8
+  position:
+    x: 77.039555
+    y: 30.130493
+    z: -11.125906
+- id: 491
+  label: FP'9
+  position:
+    x: 77.039555
+    y: 33.630493
+    z: -11.125906
+- id: 492
+  label: CR'1
+  position:
+    x: 48.939555
+    y: 9.630493
+    z: -13.225906
+- id: 493
+  label: CR'2
+  position:
+    x: 48.939555
+    y: 13.130493
+    z: -13.225906
+- id: 494
+  label: CR'3
+  position:
+    x: 48.939555
+    y: 16.630493
+    z: -13.225906
+- id: 495
+  label: CR'4
+  position:
+    x: 48.939555
+    y: 20.130493
+    z: -13.225906
+- id: 496
+  label: CR'5
+  position:
+    x: 48.939555
+    y: 23.630493
+    z: -13.225906
+- id: 497
+  label: CR'6
+  position:
+    x: 48.939555
+    y: 27.130493
+    z: -13.225906
+- id: 498
+  label: CR'7
+  position:
+    x: 48.939555
+    y: 30.630493
+    z: -13.225906
+- id: 499
+  label: CR'8
+  position:
+    x: 48.939555
+    y: 34.130493
+    z: -13.225906
+- id: 500
+  label: CR'9
+  position:
+    x: 48.939555
+    y: 37.630493
+    z: -13.225906
+- id: 501
+  label: R'1
+  position:
+    x: 60.939555
+    y: 5.930493
+    z: -35.325906
+- id: 502
+  label: R'2
+  position:
+    x: 60.939555
+    y: 9.430493
+    z: -35.325906
+- id: 503
+  label: R'3
+  position:
+    x: 60.939555
+    y: 12.930493
+    z: -35.325906
+- id: 504
+  label: R'4
+  position:
+    x: 60.939555
+    y: 16.430493
+    z: -35.325906
+- id: 505
+  label: R'5
+  position:
+    x: 60.939555
+    y: 19.930493
+    z: -35.325906
+- id: 506
+  label: R'6
+  position:
+    x: 60.939555
+    y: 23.430493
+    z: -35.325906
+- id: 507
+  label: R'7
+  position:
+    x: 60.939555
+    y: 26.930493
+    z: -35.325906
+- id: 508
+  label: R'8
+  position:
+    x: 60.939555
+    y: 30.430493
+    z: -35.325906
+- id: 509
+  label: R'9
+  position:
+    x: 60.939555
+    y: 33.930493
+    z: -35.325906
+- id: 510
+  label: OR'1
+  position:
+    x: 33.939555
+    y: 4.830493
+    z: -33.125906
+- id: 511
+  label: OR'2
+  position:
+    x: 36.499555
+    y: 4.870493
+    z: -30.735906
+- id: 512
+  label: OR'3
+  position:
+    x: 39.059555
+    y: 4.900493
+    z: -28.355906
+- id: 513
+  label: OR'4
+  position:
+    x: 41.619555
+    y: 4.940493
+    z: -25.965906
+- id: 514
+  label: OR'5
+  position:
+    x: 44.179555
+    y: 4.970493
+    z: -23.575906
+- id: 515
+  label: OR'6
+  position:
+    x: 50.759555
+    y: 5.060493
+    z: -17.435906
+- id: 516
+  label: OR'7
+  position:
+    x: 53.319555
+    y: 5.100493
+    z: -15.055906
+- id: 517
+  label: OR'8
+  position:
+    x: 55.879555
+    y: 5.140493
+    z: -12.665906
+- id: 518
+  label: OR'9
+  position:
+    x: 58.439555
+    y: 5.170493
+    z: -10.275906
+- id: 519
+  label: OR'10
+  position:
+    x: 60.999555
+    y: 5.210493
+    z: -7.895906
+- id: 520
+  label: OR'11
+  position:
+    x: 67.579555
+    y: 5.300493
+    z: -1.755906
+- id: 521
+  label: OR'12
+  position:
+    x: 70.139555
+    y: 5.340493
+    z: 0.634094
+- id: 522
+  label: OR'13
+  position:
+    x: 72.699555
+    y: 5.370493
+    z: 3.014094
+- id: 523
+  label: OR'14
+  position:
+    x: 75.259555
+    y: 5.410493
+    z: 5.404094
+- id: 524
+  label: OR'15
+  position:
+    x: 77.819555
+    y: 5.440493
+    z: 7.794094
+- id: 525
+  label: FT'1
+  position:
+    x: 48.539555
+    y: 3.730493
+    z: -21.825906
+- id: 526
+  label: FT'2
+  position:
+    x: 48.539555
+    y: 7.230493
+    z: -21.825906
+- id: 527
+  label: FT'3
+  position:
+    x: 48.539555
+    y: 10.730493
+    z: -21.825906
+- id: 528
+  label: FT'4
+  position:
+    x: 48.539555
+    y: 14.230493
+    z: -21.825906
+- id: 529
+  label: FT'5
+  position:
+    x: 48.539555
+    y: 17.730493
+    z: -21.825906
+- id: 530
+  label: FT'6
+  position:
+    x: 48.539555
+    y: 21.230493
+    z: -21.825906
+- id: 531
+  label: FT'7
+  position:
+    x: 48.539555
+    y: 24.730493
+    z: -21.825906
+- id: 532
+  label: FT'8
+  position:
+    x: 48.539555
+    y: 28.230493
+    z: -21.825906
+- id: 533
+  label: FT'9
+  position:
+    x: 48.539555
+    y: 31.730493
+    z: -21.825906
+- id: 534
+  label: SC'1
+  position:
+    x: -24.160445
+    y: 3.130493
+    z: 29.674094
+- id: 535
+  label: SC'2
+  position:
+    x: -24.160445
+    y: 6.630493
+    z: 29.674094
+- id: 536
+  label: SC'3
+  position:
+    x: -24.160445
+    y: 10.130493
+    z: 29.674094
+- id: 537
+  label: SC'4
+  position:
+    x: -24.160445
+    y: 13.630493
+    z: 29.674094
+- id: 538
+  label: SC'5
+  position:
+    x: -24.160445
+    y: 17.130493
+    z: 29.674094
+- id: 539
+  label: SC'6
+  position:
+    x: -24.160445
+    y: 20.630493
+    z: 29.674094
+- id: 540
+  label: SC'7
+  position:
+    x: -24.160445
+    y: 24.130493
+    z: 29.674094
+- id: 541
+  label: SC'8
+  position:
+    x: -24.160445
+    y: 27.630493
+    z: 29.674094
+- id: 542
+  label: SC'9
+  position:
+    x: -24.160445
+    y: 31.130493
+    z: 29.674094
+- id: 543
+  label: OF'1
+  position:
+    x: 35.639555
+    y: 36.730493
+    z: -17.825906
+- id: 544
+  label: OF'2
+  position:
+    x: 35.639555
+    y: 40.230493
+    z: -17.825906
+- id: 545
+  label: OF'3
+  position:
+    x: 35.639555
+    y: 43.730493
+    z: -17.825906
+- id: 546
+  label: OF'4
+  position:
+    x: 35.639555
+    y: 47.230493
+    z: -17.825906
+- id: 547
+  label: OF'5
+  position:
+    x: 35.639555
+    y: 50.730493
+    z: -17.825906
+- id: 548
+  label: OF'6
+  position:
+    x: 35.639555
+    y: 54.230493
+    z: -17.825906
+- id: 549
+  label: OF'7
+  position:
+    x: 35.639555
+    y: 57.730493
+    z: -17.825906
+- id: 550
+  label: OF'8
+  position:
+    x: 35.639555
+    y: 61.230493
+    z: -17.825906
+- id: 551
+  label: OF'9
+  position:
+    x: 35.639555
+    y: 64.730493
+    z: -17.825906
+- id: 552
+  label: OC'1
+  position:
+    x: 7.839555
+    y: 37.630493
+    z: -13.525906
+- id: 553
+  label: OC'2
+  position:
+    x: 7.839555
+    y: 41.130493
+    z: -13.525906
+- id: 554
+  label: OC'3
+  position:
+    x: 7.839555
+    y: 44.630493
+    z: -13.525906
+- id: 555
+  label: OC'4
+  position:
+    x: 7.839555
+    y: 48.130493
+    z: -13.525906
+- id: 556
+  label: OC'5
+  position:
+    x: 7.839555
+    y: 51.630493
+    z: -13.525906
+- id: 557
+  label: OC'6
+  position:
+    x: 7.839555
+    y: 55.130493
+    z: -13.525906
+- id: 558
+  label: OC'7
+  position:
+    x: 7.839555
+    y: 58.630493
+    z: -13.525906
+- id: 559
+  label: OC'8
+  position:
+    x: 7.839555
+    y: 62.130493
+    z: -13.525906
+- id: 560
+  label: OC'9
+  position:
+    x: 7.839555
+    y: 65.630493
+    z: -13.525906
+- id: 561
+  label: OP'1
+  position:
+    x: -10.660445
+    y: 35.530493
+    z: -2.625906
+- id: 562
+  label: OP'2
+  position:
+    x: -10.660445
+    y: 39.030493
+    z: -2.625906
+- id: 563
+  label: OP'3
+  position:
+    x: -10.660445
+    y: 42.530493
+    z: -2.625906
+- id: 564
+  label: OP'4
+  position:
+    x: -10.660445
+    y: 46.030493
+    z: -2.625906
+- id: 565
+  label: OP'5
+  position:
+    x: -10.660445
+    y: 49.530493
+    z: -2.625906
+- id: 566
+  label: OP'6
+  position:
+    x: -10.660445
+    y: 53.030493
+    z: -2.625906
+- id: 567
+  label: OP'7
+  position:
+    x: -10.660445
+    y: 56.530493
+    z: -2.625906
+- id: 568
+  label: OP'8
+  position:
+    x: -10.660445
+    y: 60.030493
+    z: -2.625906
+- id: 569
+  label: OP'9
+  position:
+    x: -10.660445
+    y: 63.530493
+    z: -2.625906
+- id: 570
+  label: H'1
+  position:
+    x: 0.539555
+    y: 20.730493
+    z: -20.325906
+- id: 571
+  label: H'2
+  position:
+    x: 0.539555
+    y: 24.230493
+    z: -20.325906
+- id: 572
+  label: H'3
+  position:
+    x: 0.539555
+    y: 27.730493
+    z: -20.325906
+- id: 573
+  label: H'4
+  position:
+    x: 0.539555
+    y: 31.230493
+    z: -20.325906
+- id: 574
+  label: H'5
+  position:
+    x: 0.539555
+    y: 34.730493
+    z: -20.325906
+- id: 575
+  label: H'6
+  position:
+    x: 0.539555
+    y: 38.230493
+    z: -20.325906
+- id: 576
+  label: H'7
+  position:
+    x: 0.539555
+    y: 41.730493
+    z: -20.325906
+- id: 577
+  label: H'8
+  position:
+    x: 0.539555
+    y: 45.230493
+    z: -20.325906
+- id: 578
+  label: H'9
+  position:
+    x: 0.539555
+    y: 48.730493
+    z: -20.325906
+- id: 579
+  label: T'1
+  position:
+    x: 4.339555
+    y: 18.830493
+    z: -25.525906
+- id: 580
+  label: T'2
+  position:
+    x: 4.339555
+    y: 22.330493
+    z: -25.525906
+- id: 581
+  label: T'3
+  position:
+    x: 4.339555
+    y: 25.830493
+    z: -25.525906
+- id: 582
+  label: T'4
+  position:
+    x: 4.339555
+    y: 29.330493
+    z: -25.525906
+- id: 583
+  label: T'5
+  position:
+    x: 4.339555
+    y: 32.830493
+    z: -25.525906
+- id: 584
+  label: T'6
+  position:
+    x: 4.339555
+    y: 36.330493
+    z: -25.525906
+- id: 585
+  label: T'7
+  position:
+    x: 4.339555
+    y: 39.830493
+    z: -25.525906
+- id: 586
+  label: T'8
+  position:
+    x: 4.339555
+    y: 43.330493
+    z: -25.525906
+- id: 587
+  label: T'9
+  position:
+    x: 4.339555
+    y: 46.830493
+    z: -25.525906
