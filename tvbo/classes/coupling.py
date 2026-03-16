@@ -175,21 +175,17 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
 class Coupling(tvbo_datamodel.Coupling):
     """Runtime Coupling that is also a direct instance of tvbo_datamodel.Coupling.
 
-    - If a name matches an ontology/database Coupling and ``use_ontology=True``,
-      missing fields are populated from the knowledge base.
-    - Backward compatibility:  returns self so existing code keeps working.
-
-    Parameters
-    ----------
-    use_ontology : bool
-        If True, fill missing fields from ontology/database by name lookup.
-        Default False — only explicitly constructed or ``from_ontology()``
-        couplings get populated.
+    If ``iri`` is set (e.g. ``tvbo:SigmoidalJansenRit``), missing fields
+    are automatically populated from the ontology/database.
+    Use ``Coupling.from_ontology(name)`` for explicit ontology lookup.
     """
 
-    def __init__(self, use_ontology: bool = False, **kwargs):
+    def __init__(self, **kwargs):
+        # Legacy: accept and ignore use_ontology kwarg
+        kwargs.pop('use_ontology', None)
         super().__init__(**kwargs)
-        if use_ontology:
+        # Auto-populate from ontology if iri is set and expressions are missing
+        if getattr(self, 'iri', None) and not getattr(self, 'pre_expression', None):
             self._populate_from_ontology()
 
     def _populate_from_ontology(self, lookup_name=None):
@@ -206,7 +202,7 @@ class Coupling(tvbo_datamodel.Coupling):
             # Strip CURIE prefix if present
             lookup = lookup_name.split(':', 1)[-1] if ':' in lookup_name else lookup_name
         else:
-            lookup = None
+            lookup = getattr(self, 'name', None)
 
         # Try database YAML first (fast, no ontology deps needed)
         if lookup and _load_coupling_from_database(lookup, self):
@@ -268,11 +264,26 @@ class Coupling(tvbo_datamodel.Coupling):
 
     @classmethod
     def from_ontology(cls, ontoclass):
-        """Create a Coupling instance from an ontology Coupling class."""
+        """Create a Coupling instance from an ontology Coupling class or name.
+
+        Accepts an owlready2 class, a plain name (``"SigmoidalJansenRit"``),
+        or a CURIE (``"tvbo:SigmoidalJansenRit"``).
+        Tries the database YAML first, then falls back to ontology lookup.
+        """
         if isinstance(ontoclass, str):
-            ontoclass = query.label_search(
-                ontoclass, root_class="Coupling", exact_match=["label"]
-            )[0]
+            # Strip CURIE prefix if present
+            lookup = ontoclass.split(':', 1)[-1] if ':' in ontoclass else ontoclass
+            # Try database YAML first (fast, no ontology deps needed)
+            coup = cls(name=lookup)
+            if _load_coupling_from_database(lookup, coup):
+                return coup
+            # Fall back to ontology lookup
+            hits = query.label_search(
+                lookup, root_class="Coupling", exact_match=["label"]
+            )
+            if not hits:
+                raise ValueError(f"Coupling '{lookup}' not found in database or ontology.")
+            ontoclass = hits[0]
         if not isinstance(ontoclass, owlready2.entity.ThingClass):
             raise ValueError(
                 "ontoclass must be a string or an ontology Coupling class."

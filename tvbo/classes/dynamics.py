@@ -588,13 +588,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
 
-        # Explicit ontology class reference — only set by from_ontology(),
-        # use_ontology=True, or enrich_from_ontology().  The ``ontology``
-        # *property* still auto-discovers by name for read-only informational
-        # access, but backfill only happens when this attribute is set.
-        if not hasattr(self, '_ontology_class'):
-            self._ontology_class = None
-
         # Skip ontology lookup when model is fully specified (e.g., from PyRates import)
         if _skip_ontology:
             return
@@ -603,8 +596,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         if name != "Dynamics":
             # Opt-in: resolve ontology class by name and backfill missing fields
             if use_ontology:
-                self._resolve_and_store_ontology_class()
-            self._populate_from_ontology_if_available()
+                self._populate_from_ontology_by_name()
 
             # Finalize metadata/equations
             self.update_metadata()
@@ -619,10 +611,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
         ``inlined_as_dict`` fields)."""
         inst = cls.__new__(cls)
         inst.__dict__.update(model_meta.__dict__)
-        inst._ontology_class = None
         if use_ontology:
-            inst._resolve_and_store_ontology_class()
-            inst._populate_from_ontology_if_available()
+            inst._populate_from_ontology_by_name()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
@@ -635,8 +625,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 ontoclass, root_class="NeuralMassModel", exact_match=["label"]
             )[0]
         inst = cls(name=ontoclass.name, **kwargs)
-        # Explicitly store the ontology class for backfill
-        inst._ontology_class = ontoclass
         inst._populate_from_ontology(ontoclass, **kwargs)
         inst.update_metadata()
         inst.calculate_derived_parameters()
@@ -647,8 +635,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                   use_ontology: bool = False) -> "Dynamics":
         inst = yaml_loader.load(str(path), cls)
         if use_ontology:
-            inst._resolve_and_store_ontology_class()
-            inst._populate_from_ontology_if_available()
+            inst._populate_from_ontology_by_name()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
@@ -658,8 +645,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     use_ontology: bool = False) -> "Dynamics":
         inst = yaml_loader.loads(str, cls)
         if use_ontology:
-            inst._resolve_and_store_ontology_class()
-            inst._populate_from_ontology_if_available()
+            inst._populate_from_ontology_by_name()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
@@ -784,30 +770,15 @@ class Dynamics(tvbo_datamodel.Dynamics):
         >>> d = Dynamics.from_string(partial_spec)
         >>> d.enrich_from_ontology()  # fill in defaults from the knowledge base
         """
-        self._resolve_and_store_ontology_class()
-        self._populate_from_ontology_if_available()
+        self._populate_from_ontology_by_name()
         self.update_metadata()
         self.calculate_derived_parameters()
         return self
 
     # Internal helpers
-    def _resolve_and_store_ontology_class(self):
-        """Resolve the ontology class by model name and store it for backfill."""
-        if self._ontology_class is not None:
-            return  # already resolved
+    def _populate_from_ontology_by_name(self):
+        """Resolve the ontology class by name and populate fields from it."""
         oc = self.ontology  # auto-discover by name (read-only property)
-        if oc is not None:
-            self._ontology_class = oc
-
-    def _populate_from_ontology_if_available(self):
-        """Populate from ontology ONLY if an explicit ontology class was stored.
-
-        This does NOT auto-discover by name.  Only ``from_ontology()``,
-        ``use_ontology=True``, or ``enrich_from_ontology()`` triggers backfill,
-        preventing user-defined models from being contaminated by ontology data
-        just because they share a name with an ontology model.
-        """
-        oc = self._ontology_class
         if oc is not None:
             self._populate_from_ontology(oc)
 

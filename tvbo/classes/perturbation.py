@@ -97,7 +97,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
     def __init__(self, **kwargs):
         # if isinstance(instance, owl.ThingClass):
         #     self.ontology = instance
-        #     self.metadata = class2metadata(instance)
+        #     self = class2metadata(instance)
         # elif isinstance(instance, str) and (
         #     ontoclasses := query.label_search(
         #         instance,
@@ -107,15 +107,15 @@ class Stimulus(tvbo_datamodel.Stimulus):
         #     if len(ontoclasses) > 1:
         #         print(f"Multiple stimulus classes found: {ontoclasses}")
         #     self.ontology = ontoclasses[0]
-        #     self.metadata = class2metadata(self.ontology)
+        #     self = class2metadata(self.ontology)
         # elif isinstance(instance, tvbo_datamodel.Stimulus):
-        #     self.metadata = instance
+        #     self = instance
         # else:
         #     if "name" not in kwargs:
         #         kwargs["name"] = "Stimulus"
-        #     self.metadata = tvbo_datamodel.Stimulus(**kwargs)
+        #     self = tvbo_datamodel.Stimulus(**kwargs)
 
-        # if self.metadata.equation:
+        # if self.equation:
         #     eq, params = self.get_expression()
         if "label" not in kwargs:
             kwargs["label"] = kwargs.get("name", "Stimulus")

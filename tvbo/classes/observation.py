@@ -750,3 +750,77 @@ class ObservationModel:
             plt.title("Observation Model Graph Data")
             plt.close()
             return fig
+
+
+class Observation(tvbo_datamodel.Observation):
+    """Wrapper around the LinkML Observation datamodel with convenience
+    factory methods for loading from file, database, or TVB monitors."""
+
+    @classmethod
+    def from_file(cls, path: str) -> "Observation":
+        """Load an Observation from a YAML file."""
+        from linkml_runtime.loaders import yaml_loader
+        return yaml_loader.load(str(path), target_class=cls)
+
+    @classmethod
+    def from_db(cls, name: str) -> "Observation":
+        """Load an Observation by name from the tvbo database."""
+        from tvbo.data.registry import resolve
+        return cls.from_file(str(resolve("Observation", name)))
+
+    @classmethod
+    def list_db(cls) -> list[str]:
+        """List available observation models in the tvbo database."""
+        from tvbo.data.registry import list_entries
+        return list_entries("Observation")
+
+    def render_code(self, format="tvb"):
+        """Generate backend code that creates this monitor.
+
+        Parameters
+        ----------
+        format : str
+            Target backend. Currently ``"tvb"`` is supported.
+
+        Returns
+        -------
+        str
+            Executable Python code string.
+        """
+        if format != "tvb":
+            raise ValueError(f"Format {format!r} not supported for Observation. Use 'tvb'.")
+
+        from tvbo import templates
+        from tvbo.codegen.templater import format_code
+
+        # Wrap single observation as the template expects experiment.observations dict
+        class _Ctx:
+            observations = {str(self.name): self}
+
+        template = templates.lookup.get_template("tvbo-tvb-observation.py.mako")
+        rendered = template.render(experiment=_Ctx())
+        return format_code(rendered)
+
+    def execute(self, format="tvb"):
+        """Convert this observation to a backend monitor object.
+
+        Parameters
+        ----------
+        format : str
+            Target backend. Currently ``"tvb"`` is supported.
+
+        Returns
+        -------
+        tvb.simulator.monitors.Monitor
+            Configured TVB monitor instance.
+        """
+        if format != "tvb":
+            raise ValueError(f"Format {format!r} not supported for Observation. Use 'tvb'.")
+
+        code = self.render_code("tvb")
+        ns = {}
+        exec(code, ns)
+        monitors = ns.get("monitors", [])
+        if monitors:
+            return monitors[0]
+        raise RuntimeError("Template produced no monitors")
