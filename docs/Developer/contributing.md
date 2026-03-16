@@ -104,7 +104,7 @@ The core quality gate. Ensures code is correct before it reaches `main`.
 
 > **Runs on:** push to `main`, manual dispatch
 
-Publishes the Quarto documentation site to GitHub Pages.
+Publishes the [Quarto](https://quarto.org/) documentation site to GitHub Pages.
 
 | Step | Details |
 |------|---------|

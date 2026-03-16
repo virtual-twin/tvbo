@@ -66,7 +66,7 @@ The code generation pipeline:
 
 1. **YAML → Python objects**: `SimulationExperiment.from_file()` parses the YAML into `Dynamics`, `Coupling`, `Network`, and `Integrator` instances
 2. **SymPy equations**: `Dynamics.get_equations()` parses equation strings into SymPy, respecting `equation_order` for higher-order derivatives
-3. **Mako template**: The `mtk` format uses a single template `tvbo-mtk-experiment.jl.mako` that generates:
+3. **[Mako](https://www.makotemplates.org/) template**: The `mtk` format uses a single template `tvbo-mtk-experiment.jl.mako` that generates:
    - `@component` function with `@parameters`, `@variables`, and equations
    - Nested `Dt(Dt(x))` for higher-order ODEs
    - `mtkcompile` for structural simplification

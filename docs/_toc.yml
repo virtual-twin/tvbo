@@ -17,33 +17,41 @@ website:
                 href: index.qmd
               - text: "Installation"
                 href: installation.md
-              - text: "Quick Reference"
+              - section: "Quick Reference"
                 href: reference.qmd
+                contents:
+                  - text: "Examples"
+                    href: examples/index.qmd
 
               - section: "Usage"
                 href: Usage/index.qmd
                 contents:
-                  - section: "Examples"
-                    href: examples/index.qmd
+                  - section: "Fundamentals"
                     contents:
-                      - text: "Normative Networks"
-                        href: examples/network_from_db.qmd
-                  - text: "Defining Dynamical Systems"
-                    href: Usage/DefineDynamicalSystem.qmd
-                  - text: "Simulation Experiments"
-                    href: Usage/SimulationExperiments.qmd
-                  - text: "Code Generation"
-                    href: Usage/CodeGeneration.qmd
+                      - text: "Defining Dynamical Systems"
+                        href: Usage/DefineDynamicalSystem.qmd
+                      - text: "Defining Networks"
+                        href: Specification/Network.qmd
+                      - text: "Simulation Experiments"
+                        href: Usage/SimulationExperiments.qmd
+                      - text: "Code Generation"
+                        href: Usage/CodeGeneration.qmd
                   - section: "Observation & Analysis"
                     contents:
                       - text: "Observation Models"
                         href: Usage/ObservationModels.qmd
+                      - text: "Algorithms"
+                        href: Specification/Algorithms.qmd
+                      - text: "Loss Functions"
+                        href: Specification/LossFunction.qmd
                       - text: "Parameter Exploration"
                         href: Usage/ParameterExploration.qmd
                       - text: "Model Fitting"
                         href: Usage/ModelFitting.qmd
                       - text: "Bifurcation Analysis"
                         href: Usage/BifurcationAnalysis.qmd
+                      - text: "Output Specification"
+                        href: Specification/Output.qmd
                   - section: "Simulation Features"
                     contents:
                       - text: "Events & Stimulation"
@@ -60,22 +68,17 @@ website:
                         href: Usage/HeterogeneousEdges.qmd
                       - text: "Unit-Aware Computations"
                         href: Usage/UnitValidation.qmd
-                  - section: "Specification"
-                    contents:
-                      - text: "Overview"
-                        href: Specification/index.qmd
-                      - text: "Networks"
-                        href: Specification/Network.qmd
-                      - text: "Algorithms"
-                        href: Specification/Algorithms.qmd
-                      - text: "Loss Functions"
-                        href: Specification/LossFunction.qmd
-                      - text: "Output"
-                        href: Specification/Output.qmd
 
               - section: "Interoperability"
                 href: Interoperability/index.qmd
                 contents:
+                  - section: "The Virtual Brain (TVB)"
+                    href: Interoperability/TVB/index.qmd
+                    contents:
+                      - text: "Connectome"
+                        href: Interoperability/TVB/Connectome.qmd
+                      - text: "Monitors"
+                        href: Interoperability/TVB/Monitor.qmd
                   - section: "tvboptim Backend"
                     href: Interoperability/tvboptim/index.qmd
                     contents:
@@ -549,6 +552,8 @@ website:
                         href: datamodel/slots/digitalIdentifier.qmd
                       - text: "dimension"
                         href: datamodel/slots/dimension.qmd
+                      - text: "dimension_labels"
+                        href: datamodel/slots/dimension_labels.qmd
                       - text: "directed"
                         href: datamodel/slots/directed.qmd
                       - text: "discretization"
@@ -1065,6 +1070,8 @@ website:
                         href: datamodel/slots/target_component.qmd
                       - text: "target_data"
                         href: datamodel/slots/target_data.qmd
+                      - text: "target_network"
+                        href: datamodel/slots/target_network.qmd
                       - text: "target_parameter"
                         href: datamodel/slots/target_parameter.qmd
                       - text: "target_structure"
@@ -1245,6 +1252,8 @@ website:
                         href: api/adapters/pyrates.qmd
                       - text: "Pyrates Bifurcation"
                         href: api/adapters/pyrates_bifurcation.qmd
+                      - text: "Tvb"
+                        href: api/adapters/tvb.qmd
                   - section: "Analysis"
                     href: api/analysis/index.qmd
                     contents:
@@ -1366,8 +1375,6 @@ website:
                         href: api/parse/expression.qmd
                       - text: "Lems Loader"
                         href: api/parse/lems_loader.qmd
-                      - text: "Metadata"
-                        href: api/parse/metadata.qmd
                       - text: "Tvb Converter"
                         href: api/parse/tvb_converter.qmd
                   - section: "Plot"

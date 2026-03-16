@@ -8,6 +8,20 @@ if [ "$TVBO_SKIP_PRERENDER" = "1" ]; then
 fi
 
 set -e
+
+# Ensure we're in the docs/ directory (Quarto sets this automatically,
+# but manual invocation may not).
+cd "$(dirname "$0")/.."
+
+# ── Sync master bibliography from iCloud ──
+BIB_SRC="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Literature/TVBO.bib"
+if [[ -f "$BIB_SRC" ]]; then
+    rsync -avh "$BIB_SRC" references.bib
+    echo "[pre-render] bib-sync OK"
+else
+    echo "[pre-render][WARN] source bib not found: $BIB_SRC" >&2
+fi
+
 python scripts/tvbo_package_struct.py
 python -m quartodoc build --config api/_quartodoc_config.yml
 python scripts/update_toc_api.py
