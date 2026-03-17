@@ -22,6 +22,7 @@ _CATEGORIES = {
     "Network":               "networks",
     "SimulationExperiment":  "experiments",
     "SimulationStudy":       "studies",
+    "Observation":           "observation_models",
     "Function":              "observation_models",
     "BrainAtlas":            "atlases",
     "Continuation":          "continuations",

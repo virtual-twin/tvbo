@@ -38,6 +38,19 @@ RELMAT_PATTERNS = [
     "[_desc-{description}]_relmat{extension|.h5}",
 ]
 
+SENSOR_PATTERNS = [
+    # Template-level sensor network with atlas (forward-model projection)
+    "tpl-{template}_acq-{acquisition}"
+    "[_atlas-{atlas}][_desc-{description}]"
+    "_sensors{extension|.h5}",
+    # Template-level sensor network without atlas
+    "tpl-{template}_acq-{acquisition}"
+    "[_desc-{description}]_sensors{extension|.h5}",
+    # Sensor network without standard template
+    "acq-{acquisition}[_desc-{description}]"
+    "_sensors{extension|.h5}",
+]
+
 # ── Helpers ───────────────────────────────────────────────────────────
 
 
@@ -90,6 +103,43 @@ def _read_edges(store, meta: dict) -> tuple[dict, dict]:
     return arrays, params
 
 
+def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
+    """Attach HDF5 dimension scales to a matrix dataset.
+
+    dim-0 (rows) is labelled from the parent Network's node labels.
+    dim-1 (columns) is labelled from the edge's ``dimension_labels``.
+    Scale datasets are created inside the same group as *dataset*.
+    """
+    import h5py
+
+    if not isinstance(dataset.id.id, int):
+        return  # skip for zarr
+    grp = dataset.parent
+
+    # Row labels from network nodes
+    nodes = meta.get("nodes", [])
+    if nodes:
+        row_labels = [str(n.get("label", f"node_{n.get('id', i)}"))
+                      for i, n in enumerate(nodes)]
+        row_ds = grp.create_dataset(
+            "_dim_row_labels",
+            data=np.array(row_labels, dtype=h5py.string_dtype()),
+        )
+        row_ds.make_scale("row_labels")
+        dataset.dims[0].attach_scale(row_ds)
+        dataset.dims[0].label = "rows"
+
+    # Column labels from dimension_labels
+    if column_labels:
+        col_ds = grp.create_dataset(
+            "_dim_col_labels",
+            data=np.array(column_labels, dtype=h5py.string_dtype()),
+        )
+        col_ds.make_scale("column_labels")
+        dataset.dims[1].attach_scale(col_ds)
+        dataset.dims[1].label = "columns"
+
+
 def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
     """Write all template-edge matrices + edge parameters to a store."""
     edge_meta = {}
@@ -116,6 +166,11 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
                 else:
                     grp.attrs[attr] = str(val)
         write_matrix(grp, matrix, fmt=str(fmt))
+
+        # HDF5 dimension scales for labelled axes (§12.2)
+        dim_labels = m.get("dimension_labels")
+        if dim_labels and "data" in grp:
+            _write_dimension_labels(grp["data"], meta, dim_labels)
 
         for pname, pmatrix in edge_params.get(name, {}).items():
             pg = grp.require_group("edge_parameters").create_group(pname)
@@ -384,10 +439,47 @@ def load_network(yaml_path):
         data_path = yaml_path.parent / data_file
         net._store = LazyArrayStore(data_path, meta_dict)
         net.data_file = data_file
+
+        # Restore mesh data from companion if present
+        _load_mesh(net, data_path)
     else:
         net._store = None
 
     return net
+
+
+def _load_mesh(network, companion_path):
+    """Restore mesh arrays from the ``/mesh/`` group in a companion file."""
+    ext = Path(companion_path).suffix.lower()
+    if ext not in (".h5", ".hdf5"):
+        return
+    import h5py
+    with h5py.File(companion_path, "r") as f:
+        if "mesh" not in f:
+            return
+        mg = f["mesh"]
+        if "vertices" in mg:
+            object.__setattr__(network, "_mesh_vertices",
+                               np.asarray(mg["vertices"][:], dtype="float32"))
+        if "elements" in mg:
+            object.__setattr__(network, "_mesh_elements",
+                               np.asarray(mg["elements"][:], dtype="int32"))
+        if "normals" in mg:
+            object.__setattr__(network, "_mesh_normals",
+                               np.asarray(mg["normals"][:], dtype="float32"))
+        # Reconstruct Mesh metadata object
+        from tvbo.datamodel import schema as tvbo_datamodel
+        et = mg.attrs.get("element_type", None)
+        if isinstance(et, bytes):
+            et = et.decode("utf-8")
+        nv = mg.attrs.get("number_of_vertices", None)
+        ne = mg.attrs.get("number_of_elements", None)
+        mesh_obj = tvbo_datamodel.Mesh(
+            element_type=et,
+            number_of_vertices=int(nv) if nv is not None else None,
+            number_of_elements=int(ne) if ne is not None else None,
+        )
+        object.__setattr__(network, "_mesh", mesh_obj)
 
 
 # ── Save ──────────────────────────────────────────────────────────────

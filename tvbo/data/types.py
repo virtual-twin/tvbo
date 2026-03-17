@@ -61,6 +61,10 @@ class SimulationResult(Bunch):
         TimeSeries
             4D time series (Time, State Variable, Space, Mode)
         """
+        # Use cached TimeSeries if available (e.g. from ExperimentResult.from_tvb)
+        if hasattr(self, '_timeseries') and self._timeseries is not None:
+            return self._timeseries
+
         data = self.data
         if data is None:
             raise ValueError("No simulation data to convert")
@@ -91,27 +95,22 @@ class SimulationResult(Bunch):
             labels_dimensions=labels_dimensions,
         )
 
-    def get_state(self, sv_label):
-        """Get state variable(s) as a TimeSeries, supporting plotting.
-
-        Parameters
-        ----------
-        sv_label : str or list[str]
-            State variable name(s) to extract.
-
-        Returns
-        -------
-        TimeSeries
-            Subset time series for the requested state variables.
-        """
-        return self.to_timeseries().get_state(sv_label)
-
-    def plot(self, **kwargs):
-        """Plot the simulation result as a TimeSeries.
-
-        Supports all TimeSeries plot types (timeseries, statespace, etc.).
-        """
-        return self.to_timeseries().plot(**kwargs)
+    def __getattr__(self, name):
+        # Let Bunch handle its own dict-key lookups first
+        try:
+            return super().__getattr__(name)
+        except (AttributeError, KeyError):
+            pass
+        # Delegate remaining lookups to the underlying TimeSeries
+        if name.startswith('_'):
+            raise AttributeError(name)
+        try:
+            ts = self.to_timeseries()
+        except (ValueError, AttributeError, RecursionError):
+            raise AttributeError(name)
+        if hasattr(ts, name):
+            return getattr(ts, name)
+        raise AttributeError(name)
 
     def __repr__(self):
         n_obs = len(self.observations.keys()) if self.observations else 0
@@ -726,6 +725,68 @@ class ExperimentResult(Bunch):
         """Rich display for Jupyter notebooks."""
         return f"```\n{self.__repr__()}\n```"
 
+    @classmethod
+    def from_tvb(cls, simulator, result=None):
+        """Create an ExperimentResult from a TVB simulator and its run output.
+
+        Wraps TVB simulation output into the standard TVBO result structure:
+
+        - ``result.integration`` — primary monitor as SimulationResult
+        - ``result.integration.observations.<Name>`` — one TimeSeries per
+          additional monitor, keyed by the TVB monitor class name
+
+        Parameters
+        ----------
+        simulator : tvb.simulator.simulator.Simulator
+            A configured TVB simulator.
+        result : list of (time_array, data_array) tuples, optional
+            Output of ``simulator.run()``. If *None*, the simulator is
+            run using its ``simulation_length``.
+
+        Returns
+        -------
+        ExperimentResult
+        """
+        if result is None:
+            result = simulator.run()
+
+        voi = list(simulator.model.variables_of_interest)
+        region_labels = list(simulator.connectivity.region_labels)
+        base_labels = {"State Variable": voi, "Region": region_labels}
+
+        primary_ts = None
+        observations = Bunch()
+
+        for monitor, (tv, xv) in zip(simulator.monitors, result):
+            mon_labels = deepcopy(base_labels)
+            if hasattr(monitor, 'sensors') and monitor.sensors is not None:
+                mon_labels["Region"] = list(monitor.sensors.labels)
+
+            mon_name = type(monitor).__name__
+
+            ts = TimeSeries(
+                data=xv,
+                time=tv,
+                labels_dimensions=mon_labels,
+                title=mon_name,
+                sample_period=float(monitor.period),
+            )
+
+            if primary_ts is None:
+                primary_ts = ts
+            else:
+                observations[mon_name] = ts
+
+        sim_result = SimulationResult(
+            state_names=voi,
+            observations=observations,
+        )
+        sim_result.data = np.asarray(primary_ts.data)
+        sim_result.time = np.asarray(primary_ts.time)
+        sim_result._timeseries = primary_ts
+
+        return cls(results=Bunch(integration=sim_result))
+
 
 # =============================================================================
 # Time Series Classes
@@ -920,6 +981,12 @@ class BaseTimeSeries:
             space_index = np.where(self.space_labels == label)[0][0]
             list_of_indices_for_labels.append(space_index)
         return list_of_indices_for_labels
+
+    def _check_space_indices(self, list_of_index):
+        n_space = self.data.shape[2]
+        for idx in list_of_index:
+            if idx < 0 or idx >= n_space:
+                raise IndexError(f"Space index {idx} out of range [0, {n_space})")
 
     def get_subspace_by_index(self, list_of_index, **kwargs):
         self._check_space_indices(list_of_index)
