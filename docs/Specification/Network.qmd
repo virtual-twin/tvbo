@@ -867,7 +867,7 @@ from tvbo import Network, database_path
 
 sensor_net = Network.from_file(
     database_path / "networks"
-    / "sensors_eeg_standard1005_fsaverage_aparc_projection.yaml"
+    / "tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.yaml"
 )
 print(f"Sensors:    {sensor_net.number_of_nodes} EEG channels")
 print(f"Descriptor: {sensor_net.descriptor}")
@@ -986,7 +986,7 @@ tvbo_class: tvbo:Network
 label: EEG standard_1005 fsaverage projection
 descriptor: sensors
 distance_unit: mm
-data_file: sensors_eeg_standard1005_fsaverage_aparc_projection.h5
+data_file: tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.h5
 
 nodes:
   - id: 0

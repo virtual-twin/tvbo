@@ -1,0 +1,56 @@
+---
+title: "Working with Results"
+subtitle: "Accessing simulation output, time series, and derived observables"
+---
+
+::: {.callout-note}
+## Placeholder
+This page is under construction.
+:::
+
+## Overview
+
+After running a simulation experiment, the result object provides structured access
+to all output data — raw state variables, derived observations (BOLD, FC, PSD),
+algorithm history, and optimization traces.
+
+## Basic Usage
+
+```python
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_db("...")
+result = exp.run()
+
+# Access state variable time series
+result.data           # (time × nodes × state_vars) array
+result.time           # time vector
+```
+
+## Result Structure
+
+The result mirrors the YAML experiment specification:
+
+```python
+result.integration                     # Main simulation data
+result.integration.observations.bold   # BOLD signal (if defined)
+result.algorithms.fic                  # Algorithm results (if defined)
+```
+
+## Plotting
+
+```python
+result.plot()          # Default time series plot
+```
+
+## Exporting Results
+
+```python
+# TODO: export to BIDS, xarray, etc.
+```
+
+## See Also
+
+- [Output Specification](../Specification/Output.qmd) — declaring what to output
+- [Observation Models](ObservationModels.qmd) — derived observables (BOLD, FC, …)
+- [Visualization](Visualization.qmd) — detailed plotting guide

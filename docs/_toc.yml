@@ -28,12 +28,20 @@ website:
                 contents:
                   - section: "Fundamentals"
                     contents:
+                      - text: "Getting Started"
+                        href: Usage/GettingStarted.qmd
                       - text: "Defining Dynamical Systems"
                         href: Usage/DefineDynamicalSystem.qmd
                       - text: "Defining Networks"
                         href: Specification/Network.qmd
+                      - text: "Coupling Functions"
+                        href: Usage/CouplingFunctions.qmd
+                      - text: "Integrators"
+                        href: Usage/Integrators.qmd
                       - text: "Simulation Experiments"
                         href: Usage/SimulationExperiments.qmd
+                      - text: "Working with Results"
+                        href: Usage/Results.qmd
                       - text: "Code Generation"
                         href: Usage/CodeGeneration.qmd
                   - section: "Observation & Analysis"
@@ -50,6 +58,8 @@ website:
                         href: Usage/ModelFitting.qmd
                       - text: "Bifurcation Analysis"
                         href: Usage/BifurcationAnalysis.qmd
+                      - text: "Visualization"
+                        href: Usage/Visualization.qmd
                       - text: "Output Specification"
                         href: Specification/Output.qmd
                   - section: "Simulation Features"
