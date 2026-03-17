@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 <%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment).</%doc>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import get_attr, to_numeric
 
 model = experiment.dynamics
@@ -548,7 +548,7 @@ from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor
 from tvbo.data.types import ObservationResult
 
 % if network_obs_keys and bids_dir:
-from tvbo.data.tvbo_data.connectomes import Network as _TvboNetwork
+from tvbo.classes.network import Network as _TvboNetwork
 
 _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
 % endif

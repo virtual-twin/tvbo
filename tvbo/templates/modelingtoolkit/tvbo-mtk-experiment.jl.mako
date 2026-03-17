@@ -20,7 +20,7 @@ is_stochastic, dt, duration, solver_method, needs_stiff, \
 tstops, \
 **kwargs"/>
 <%!
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 from sympy.parsing.sympy_parser import parse_expr as _parse_expr
 %>
 <%

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from tvbo import Dynamics, database_path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = database_path / "models"
 
 

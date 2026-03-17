@@ -25,7 +25,7 @@ Design:
 - Parameters: event parameters become class DEFAULT_PARAMS
 </%doc>
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 
 # Extract stimulus events from experiment context
 assert 'experiment' in context.keys(), "experiment required for stimulus template"

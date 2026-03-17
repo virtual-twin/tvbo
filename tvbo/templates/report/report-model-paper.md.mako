@@ -1,6 +1,6 @@
 <%
 from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
-from tvbo.export import report
+from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
 
@@ -32,28 +32,28 @@ def format_aligned_equations(equations):
     joined = ' \\\\\n'.join(lines)
     return f"$$\n\\begin{{aligned}}\n{joined}\n\\end{{aligned}}\n$$"
 
-state_equations = [eq for k, eq in model.get_equations().items() if k in model.metadata.state_variables]
+state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
 
-derived_variables = [eq for k, eq in model.get_equations().items() if k in model.metadata.derived_variables]
+derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
 
-if isinstance(model.metadata.output, list):
-    output = [eq for k, eq in model.get_equations().items() if k in model.metadata.output]
+if isinstance(model.output, list):
+    output = [eq for k, eq in model.get_equations().items() if k in model.output]
 else:
     output = [
         Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-        for p in model.metadata.output.values()
+        for p in model.output.values()
     ]
 
 derived_parameters = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.metadata.derived_parameters.values()
+    for p in model.derived_parameters.values()
 ]
 
-functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.metadata.functions.values()]
+functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
 
 rows = "\n".join([
     f"${latex(Symbol(p.name))}$ & {p.value} & {p.unit if p.unit else '1'} & {p.definition or p.description} \\\\"
-    for p in model.metadata.parameters.values()
+    for p in model.parameters.values()
 ])
 
 
@@ -67,8 +67,8 @@ table_latex = (
     "\\end{center}\n"
 )
 
-%># ${model.metadata.name}
-${model.metadata.description if model.metadata.description else ""}
+%># ${model.name}
+${model.description if model.description else ""}
 
 ${"### Equations"}
 ${format_aligned_equations(state_equations)}

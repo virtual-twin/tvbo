@@ -16,8 +16,6 @@ try:
 except ImportError:
     parse_file = None  # pybtex is optional (docs extra)
 
-from tvbo import parse
-
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 bib_file = os.path.join(ROOT, "tvbo-literature-db.bib")
@@ -47,17 +45,20 @@ class SimulationStudies:
             self.files[key] = path
 
     def load_all(self):
+        from tvbo.classes.study import SimulationStudy
         for key, path in self.files.items():
-            self.__setattr__(key, parse.metadata.load_simulation_study(path))
+            self.__setattr__(key, SimulationStudy.from_file(path))
 
     def load(self, key):
-        study = parse.metadata.load_simulation_study(self.files[key])
+        from tvbo.classes.study import SimulationStudy
+        study = SimulationStudy.from_file(self.files[key])
         self.__setattr__(key, study)
         return study
 
 
 def load_study(citationkey: str):
-    return parse.metadata.load_simulation_study(
+    from tvbo.classes.study import SimulationStudy
+    return SimulationStudy.from_file(
         getattr(study_metadata_files, citationkey)
     )
 

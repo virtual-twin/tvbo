@@ -1,0 +1,44 @@
+---
+title: "Coupling Functions"
+subtitle: "Specifying how brain regions interact through network connections"
+---
+
+::: {.callout-note}
+## Placeholder
+This page is under construction.
+:::
+
+## Overview
+
+Coupling functions define how connected brain regions influence each other.
+They transform pre-synaptic activity and scale it by connection weights before
+it enters the local dynamics.
+
+## Built-in Coupling Functions
+
+```python
+# TODO: list available coupling functions from database
+```
+
+## YAML Specification
+
+```yaml
+# TODO: example coupling in YAML
+coupling:
+  name: Linear
+  parameters:
+    a:
+      value: 0.1
+```
+
+## Custom Coupling Functions
+
+```python
+# TODO: define a custom coupling function
+```
+
+## See Also
+
+- [Defining Networks](../Specification/Network.qmd) — network connectivity
+- [Defining Dynamical Systems](DefineDynamicalSystem.qmd) — local node dynamics
+- [`Coupling`](../datamodel/classes/Coupling.qmd) — data model reference

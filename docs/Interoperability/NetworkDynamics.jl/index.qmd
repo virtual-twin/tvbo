@@ -5,7 +5,7 @@ subtitle: "Julia code generation for network-based dynamical systems"
 
 ## Overview
 
-The **NetworkDynamics.jl** backend generates Julia code for simulating dynamical systems on networks using the [NetworkDynamics.jl](https://juliadynamics.github.io/NetworkDynamics.jl/stable/) package. From a single YAML experiment specification, `render_code("networkdynamics")` produces a self-contained Julia script that:
+The **NetworkDynamics.jl** backend generates Julia code for simulating dynamical systems on networks using the [NetworkDynamics.jl](https://juliadynamics.github.io/NetworkDynamics.jl/stable/) package [@Lindner2021]. From a single YAML experiment specification, `render_code("networkdynamics")` produces a self-contained Julia script that:
 
 - Defines a `VertexModel` from the local dynamics (node equations)
 - Defines an `EdgeModel` from the coupling function
@@ -46,7 +46,7 @@ print(julia_code)
 The code generation pipeline:
 
 1. **YAML → Python objects**: `SimulationExperiment.from_file()` parses the YAML into `Dynamics`, `Coupling`, `Network`, and `Integrator` instances
-2. **Mako templates**: The `networkdynamics` format uses three composable templates:
+2. **[Mako](https://www.makotemplates.org/) templates**: The `networkdynamics` format uses three composable templates:
    - `tvbo-nd-vertex.jl.mako` — generates the vertex function `f!` and `VertexModel`
    - `tvbo-nd-edge.jl.mako` — generates the edge function `g!` and `EdgeModel`
    - `tvbo-nd-experiment.jl.mako` — orchestrates the full script (imports, graph, solve, plot)

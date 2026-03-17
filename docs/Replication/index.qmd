@@ -1,0 +1,16 @@
+---
+title: "Replication Studies"
+listing:
+  id: replication-listing
+  contents: "*/Run_*.qmd"
+  type: grid
+  image-height: "200"
+  grid-columns: 3
+  sort: "title"
+  fields: [image, title, description]
+---
+
+Computational replications of published neuroscience studies using TVB-O.
+
+::: {#replication-listing}
+:::

@@ -8,11 +8,15 @@ project:
     - reference.qmd
     - platform.qmd
     - api/**/*.qmd
+    - datamodel/*.qmd
     - datamodel/**/*.qmd
     - Usage/*.qmd
     - examples/**/*.qmd
     - Specification/*.qmd
     - Interoperability/**/*.qmd
+    - Interoperability/*.qmd
+    - Replication/*.qmd
+    - Replication/**/*.qmd
     - Developer/*.md
     - "!_archive/*"
   output-dir: _site
@@ -82,6 +86,9 @@ format:
           body-width: 900px
           margin-width: 300px
         out-width: "100%"
+
+bibliography: references.bib
+csl: https://raw.githubusercontent.com/citation-style-language/styles/master/ieee.csl
 
 fig-align: center
 

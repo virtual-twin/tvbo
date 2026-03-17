@@ -6,7 +6,7 @@ subtitle: "Julia code generation for bifurcation analysis"
 ## Overview
 
 The **BifurcationKit.jl** backend generates Julia code for bifurcation analysis
-using [BifurcationKit.jl](https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/).
+using [BifurcationKit.jl](https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/) [@Veltz2020].
 From a YAML experiment specification, `render_code("bifurcation-julia")` produces
 a self-contained Julia script that:
 
@@ -34,7 +34,7 @@ using TVBO's declarative YAML format.
 
 ```python
 from tvbo import Dynamics
-from tvbo.knowledge.simulation.continuation import Continuation
+from tvbo.classes.continuation import Continuation
 
 # Load model + bifurcation spec from YAML
 model = Dynamics.from_db("TsodyksMarkram")

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 <%
-    from tvbo.export.code import render_expression
+    from tvbo.codegen import render_expression
     jaxcode = lambda expr: render_expression(expr, format='jax')
     # For rendering model objects (DerivedParameter, DerivedVariable, etc.)
     jaxcode_obj = lambda obj: experiment.dynamics.render_equation(obj, format='jax')

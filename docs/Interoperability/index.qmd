@@ -55,7 +55,7 @@ flowchart LR
 | Integration | Input | Direction | Description |
 |-------------|-------|-----------|-------------|
 | [tvboptim](tvboptim/index.qmd) | SimulationExperiment | Bidirectional | JAX-compiled simulation with autodiff optimization |
-| [NetworkDynamics.jl](NetworkDynamics.jl/index.qmd) | SimulationExperiment + Network | Export | Julia graph-based network simulation |
+| [NetworkDynamics.jl](NetworkDynamics.jl/index.qmd) | SimulationExperiment + Network | Export | Julia graph-based network simulation [@Lindner2021] |
 | [ModelingToolkit.jl](ModelingToolkit.jl/index.qmd) | SimulationExperiment or Dynamics | Export | Symbolic ODE system via Julia MTK |
 | DifferentialEquations.jl | SimulationExperiment | Export | Julia ODE/SDE solvers |
 
@@ -63,17 +63,17 @@ flowchart LR
 
 | Integration | Input | Direction | Description |
 |-------------|-------|-----------|-------------|
-| [PyRates](Pyrates/index.qmd) | SimulationExperiment or Dynamics | Bidirectional | Dynamical systems analysis and simulation |
-| [BifurcationKit.jl](BifurcationKit.jl/index.qmd) | Dynamics + Continuation | Export | Julia bifurcation analysis (equilibria, Hopf, periodic orbits) |
+| [PyRates](Pyrates/index.qmd) | SimulationExperiment or Dynamics | Bidirectional | Dynamical systems analysis and simulation [@Gast2023] |
+| [BifurcationKit.jl](BifurcationKit.jl/index.qmd) | Dynamics + Continuation | Export | Julia bifurcation analysis [@Veltz2020] |
 | PyCoBi / AUTO-07p | Dynamics + Continuation | Export | Fortran-based numerical continuation via PyRates |
 
 ### Standards & Schemas
 
 | Integration | Input | Direction | Description |
 |-------------|-------|-----------|-------------|
-| [BIDS](BIDS/index.qmd) | SimulationExperiment | Export | Brain Imaging Data Structure (BEP034) |
+| [BIDS](BIDS/index.qmd) | SimulationExperiment | Export | Brain Imaging Data Structure [@Poldrack2024; @Schirner2021] |
 | [OpenMINDS](OpenMINDS.qmd) | SimulationExperiment | Bidirectional | EBRAINS Knowledge Graph metadata (JSON-LD) |
-| NeuroML / LEMS | Dynamics | Export | LEMS ComponentType definitions |
+| NeuroML / LEMS | Dynamics | Export | LEMS ComponentType definitions [@Sinha2024] |
 
 ## Quick Start
 

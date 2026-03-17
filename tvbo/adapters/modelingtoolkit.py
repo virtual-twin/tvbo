@@ -60,8 +60,8 @@ class ModelingToolkitAdapter(BaseAdapter):
     """
 
     def __init__(self, source=None):
-        from tvbo.export.experiment import SimulationExperiment
-        from tvbo.knowledge.simulation.localdynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
+        from tvbo.classes.dynamics import Dynamics
 
         if source is None:
             self.experiment = None
@@ -199,8 +199,8 @@ class ModelingToolkitAdapter(BaseAdapter):
         -------
         dict | Dynamics | SimulationExperiment
         """
-        from tvbo.export.experiment import SimulationExperiment
-        from tvbo.knowledge.simulation.localdynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
+        from tvbo.classes.dynamics import Dynamics
 
         # Accept source at call time — set up adapter state
         if source is not None:
@@ -291,7 +291,7 @@ class ModelingToolkitAdapter(BaseAdapter):
 
     def _apply_lowered(self, lowered):
         """Apply lowered equations onto a deepcopy of the original Dynamics."""
-        from tvbo.datamodel.tvbo_datamodel import (
+        from tvbo.datamodel.schema import (
             Equation,
             StateVariable,
             StateVariableName,
@@ -396,7 +396,7 @@ def _infer_aux_initial_value(var_name, original):
     """Infer initial values for MTK-introduced auxiliary variables."""
     if "_t" in var_name:
         base = var_name.split("_t", 1)[0]
-        base_sv = original.state_variables.get(base)
+        base_sv = original.state_variables[base] if base in original.state_variables else None
         if base_sv is not None:
             deriv_init = getattr(base_sv, "derivative_initial_value", None)
             if var_name == f"{base}_t" and deriv_init is not None:

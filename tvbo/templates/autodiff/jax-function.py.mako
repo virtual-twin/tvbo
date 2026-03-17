@@ -12,7 +12,7 @@ For standalone mathematical functions, use base/function-def.mako directly.
 </%doc>
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%!
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 %>
 <%def name="generate_function(func, func_name)" filter="trim">
 <%

@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 <%page args="model"/>
 <%!
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 import re
 
 # Julia special functions that require `using SpecialFunctions`

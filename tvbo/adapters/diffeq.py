@@ -13,7 +13,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from tvbo.data.types import TimeSeries
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
 
 # Julia packages required by the base Julia templates

@@ -186,7 +186,7 @@ L = Sum(1 - corr(x[i], y[i]), (i, 0, N-1)) / N  # NOT a custom Mean() function
 ## Core Architecture
 
 - **Data Model:** `schema/tvbo_datamodel.yaml` is the LinkML schema source of truth. Use it for correct metadata handling.
-- **Generated Classes:** All major classes inherit from `tvbo/datamodel/tvbo_datamodel.py` (auto-generated from LinkML schema).
+- **Generated Classes:** All major classes inherit from `tvbo.datamodel.schema.py` (auto-generated from LinkML schema).
 - **Entry Point:** `tvbo/export/experiment.py` contains `SimulationExperiment`, the main class for running simulations.
 
 ## Repository Overview

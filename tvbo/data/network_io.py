@@ -38,6 +38,19 @@ RELMAT_PATTERNS = [
     "[_desc-{description}]_relmat{extension|.h5}",
 ]
 
+SENSOR_PATTERNS = [
+    # Template-level sensor network with atlas (forward-model projection)
+    "tpl-{template}_acq-{acquisition}"
+    "[_atlas-{atlas}][_desc-{description}]"
+    "_sensors{extension|.h5}",
+    # Template-level sensor network without atlas
+    "tpl-{template}_acq-{acquisition}"
+    "[_desc-{description}]_sensors{extension|.h5}",
+    # Sensor network without standard template
+    "acq-{acquisition}[_desc-{description}]"
+    "_sensors{extension|.h5}",
+]
+
 # ── Helpers ───────────────────────────────────────────────────────────
 
 
@@ -52,10 +65,10 @@ def _template_edges(edges) -> list:
     result = []
     for e in edges:
         if isinstance(e, dict):
-            if not e.get("source"):
+            if e.get("source") is None:
                 result.append(e)
         else:
-            if not getattr(e, "source", None):
+            if getattr(e, "source", None) is None:
                 result.append(e)
     return result
 
@@ -90,6 +103,43 @@ def _read_edges(store, meta: dict) -> tuple[dict, dict]:
     return arrays, params
 
 
+def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
+    """Attach HDF5 dimension scales to a matrix dataset.
+
+    dim-0 (rows) is labelled from the parent Network's node labels.
+    dim-1 (columns) is labelled from the edge's ``dimension_labels``.
+    Scale datasets are created inside the same group as *dataset*.
+    """
+    import h5py
+
+    if not isinstance(dataset.id.id, int):
+        return  # skip for zarr
+    grp = dataset.parent
+
+    # Row labels from network nodes
+    nodes = meta.get("nodes", [])
+    if nodes:
+        row_labels = [str(n.get("label", f"node_{n.get('id', i)}"))
+                      for i, n in enumerate(nodes)]
+        row_ds = grp.create_dataset(
+            "_dim_row_labels",
+            data=np.array(row_labels, dtype=h5py.string_dtype()),
+        )
+        row_ds.make_scale("row_labels")
+        dataset.dims[0].attach_scale(row_ds)
+        dataset.dims[0].label = "rows"
+
+    # Column labels from dimension_labels
+    if column_labels:
+        col_ds = grp.create_dataset(
+            "_dim_col_labels",
+            data=np.array(column_labels, dtype=h5py.string_dtype()),
+        )
+        col_ds.make_scale("column_labels")
+        dataset.dims[1].attach_scale(col_ds)
+        dataset.dims[1].label = "columns"
+
+
 def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
     """Write all template-edge matrices + edge parameters to a store."""
     edge_meta = {}
@@ -116,6 +166,11 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
                 else:
                     grp.attrs[attr] = str(val)
         write_matrix(grp, matrix, fmt=str(fmt))
+
+        # HDF5 dimension scales for labelled axes (§12.2)
+        dim_labels = m.get("dimension_labels")
+        if dim_labels and "data" in grp:
+            _write_dimension_labels(grp["data"], meta, dim_labels)
 
         for pname, pmatrix in edge_params.get(name, {}).items():
             pg = grp.require_group("edge_parameters").create_group(pname)
@@ -274,6 +329,65 @@ def _write_nodes(store, network):
         )
 
 
+def _write_mesh(store, network):
+    """Write mesh data (vertices, elements, normals) to ``/mesh/`` group.
+
+    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``,
+    ``_mesh_normals`` attributes on the network. These are set by
+    ``from_tvb_surface()`` or directly by user code.
+
+    Called after ``_write_nodes`` during ``save_network``.
+    """
+    import numpy as _np
+
+    try:
+        vertices = object.__getattribute__(network, "_mesh_vertices")
+    except AttributeError:
+        return  # No mesh data — nothing to write
+
+    mesh_grp = store.require_group("mesh")
+
+    # Mesh metadata
+    mesh_obj = getattr(network, "mesh", None)
+    if mesh_obj:
+        mesh_grp.attrs["tvbo_class"] = "tvbo:Mesh"
+        et = getattr(mesh_obj, "element_type", None)
+        if et:
+            mesh_grp.attrs["element_type"] = str(getattr(et, "text", et)).encode("utf-8")
+        nv = getattr(mesh_obj, "number_of_vertices", None)
+        if nv is not None:
+            mesh_grp.attrs["number_of_vertices"] = int(nv)
+        ne = getattr(mesh_obj, "number_of_elements", None)
+        if ne is not None:
+            mesh_grp.attrs["number_of_elements"] = int(ne)
+
+    # Vertices (V, 3)
+    v = _np.asarray(vertices, dtype="float32")
+    v_chunks = (min(v.shape[0], 4096), 3)
+    _create_ds(mesh_grp, "vertices", data=v,
+               chunks=v_chunks, compression="gzip")
+
+    # Elements (E, K)
+    try:
+        elements = object.__getattribute__(network, "_mesh_elements")
+        e = _np.asarray(elements, dtype="int32")
+        e_chunks = (min(e.shape[0], 4096), e.shape[1])
+        _create_ds(mesh_grp, "elements", data=e,
+                   chunks=e_chunks, compression="gzip")
+    except AttributeError:
+        pass
+
+    # Normals (V, 3) — optional
+    try:
+        normals = object.__getattribute__(network, "_mesh_normals")
+        n = _np.asarray(normals, dtype="float32")
+        n_chunks = (min(n.shape[0], 4096), 3)
+        _create_ds(mesh_grp, "normals", data=n,
+                   chunks=n_chunks, compression="gzip")
+    except AttributeError:
+        pass
+
+
 # ── Load ──────────────────────────────────────────────────────────────
 
 def load_network(yaml_path):
@@ -295,7 +409,7 @@ def load_network(yaml_path):
     Network
         Fully constructed tvbo.Network with lazy array references.
     """
-    from tvbo.data.tvbo_data.connectomes import Network
+    from tvbo.classes.network import Network
 
     yaml_path = Path(yaml_path)
     ext = yaml_path.suffix.lower()
@@ -325,10 +439,47 @@ def load_network(yaml_path):
         data_path = yaml_path.parent / data_file
         net._store = LazyArrayStore(data_path, meta_dict)
         net.data_file = data_file
+
+        # Restore mesh data from companion if present
+        _load_mesh(net, data_path)
     else:
         net._store = None
 
     return net
+
+
+def _load_mesh(network, companion_path):
+    """Restore mesh arrays from the ``/mesh/`` group in a companion file."""
+    ext = Path(companion_path).suffix.lower()
+    if ext not in (".h5", ".hdf5"):
+        return
+    import h5py
+    with h5py.File(companion_path, "r") as f:
+        if "mesh" not in f:
+            return
+        mg = f["mesh"]
+        if "vertices" in mg:
+            object.__setattr__(network, "_mesh_vertices",
+                               np.asarray(mg["vertices"][:], dtype="float32"))
+        if "elements" in mg:
+            object.__setattr__(network, "_mesh_elements",
+                               np.asarray(mg["elements"][:], dtype="int32"))
+        if "normals" in mg:
+            object.__setattr__(network, "_mesh_normals",
+                               np.asarray(mg["normals"][:], dtype="float32"))
+        # Reconstruct Mesh metadata object
+        from tvbo.datamodel import schema as tvbo_datamodel
+        et = mg.attrs.get("element_type", None)
+        if isinstance(et, bytes):
+            et = et.decode("utf-8")
+        nv = mg.attrs.get("number_of_vertices", None)
+        ne = mg.attrs.get("number_of_elements", None)
+        mesh_obj = tvbo_datamodel.Mesh(
+            element_type=et,
+            number_of_vertices=int(nv) if nv is not None else None,
+            number_of_elements=int(ne) if ne is not None else None,
+        )
+        object.__setattr__(network, "_mesh", mesh_obj)
 
 
 # ── Save ──────────────────────────────────────────────────────────────
@@ -390,10 +541,30 @@ def save_network(network, yaml_path, binary_format: str = "h5",
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
 
+    # Align array keys with template edge names from metadata
+    if arrays:
+        tedges = _template_edges(meta.get("edges", []))
+        if tedges and "weight" in arrays:
+            w_name = tedges[0].get("name") or tedges[0].get("label") or "weight"
+            if w_name != "weight":
+                arrays[w_name] = arrays.pop("weight")
+        if len(tedges) > 1 and "length" in arrays:
+            l_name = tedges[1].get("name") or tedges[1].get("label") or "length"
+            if l_name != "length":
+                arrays[l_name] = arrays.pop("length")
+
     if not arrays:
-        # Metadata-only sidecar (no companion file)
-        _write_v07_sidecar(network, sidecar_path, sidecar_format)
-        return
+        # Check if there's mesh data that needs a companion file
+        has_mesh = False
+        try:
+            object.__getattribute__(network, "_mesh_vertices")
+            has_mesh = True
+        except AttributeError:
+            pass
+        if not has_mesh:
+            # Metadata-only sidecar (no companion file)
+            _write_v07_sidecar(network, sidecar_path, sidecar_format)
+            return
 
     companion = sidecar_path.with_suffix(f".{binary_format}")
     meta["data_file"] = companion.name
@@ -404,12 +575,14 @@ def save_network(network, yaml_path, binary_format: str = "h5",
         with h5py.File(companion, "w") as f:
             _write_edges(f, meta, arrays, edge_params)
             _write_nodes(f, network)
+            _write_mesh(f, network)
 
     elif binary_format == "zarr":
         import zarr
         z = zarr.open(str(companion), mode="w")
         _write_edges(z, meta, arrays, edge_params)
         _write_nodes(z, network)
+        _write_mesh(z, network)
 
     elif binary_format == "csv":
         # CSV: one file = one matrix = first template edge only

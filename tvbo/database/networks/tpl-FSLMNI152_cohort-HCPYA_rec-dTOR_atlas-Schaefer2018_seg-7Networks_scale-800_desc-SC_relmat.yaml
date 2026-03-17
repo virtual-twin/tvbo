@@ -4837,3 +4837,4 @@ edges:
   valid_diagonal: false
   non_negative: true
   directed: false
+node_mapping: /nodes/parent_index

@@ -15,9 +15,10 @@ import owlready2 as owl
 from sympy import latex, symbols
 
 import tvbo.data.db as db
-from tvbo.export.experiment import SimulationExperiment
-from tvbo.knowledge import graph, ontology, query
-from tvbo.parse import metadata
+from tvbo.classes.experiment import SimulationExperiment
+from tvbo.ontology import graph
+from tvbo.ontology import owl as ontology
+from tvbo.ontology import query
 
 # exp = SimulationExperiment(
 #     id=1,
@@ -65,22 +66,22 @@ def ontoclass2dict(ontoclass):
     #     study = metadata.load_simulation_study(db_studies.files[ontoclass.name])
     #     exp = study.get_experiment(1)
 
-    #     if exp.metadata.model.name:
-    #         model = query.label_search(exp.metadata.model.name, root_class=onto.Model)[
+    #     if exp.model.name:
+    #         model = query.label_search(exp.model.name, root_class=onto.Model)[
     #             0
     #         ]
     #         if not model in ontoclass.requires:
     #             ontoclass.requires.append(model)
-    #     if exp.metadata.coupling.name:
+    #     if exp.coupling.name:
     #         coupling = query.label_search(
-    #             exp.metadata.coupling.name, root_class=onto.Coupling
+    #             exp.coupling.name, root_class=onto.Coupling
     #         )[0]
     #         if not coupling in ontoclass.requires:
     #             ontoclass.requires.append(coupling)
 
-    #     if exp.metadata.integration.method:
+    #     if exp.integration.method:
     #         integration = query.label_search(
-    #             exp.metadata.integration.method, root_class=onto.IntegrationMethod
+    #             exp.integration.method, root_class=onto.IntegrationMethod
     #         )[0]
     #         if not integration in ontoclass.requires:
     #             ontoclass.requires.append(integration)

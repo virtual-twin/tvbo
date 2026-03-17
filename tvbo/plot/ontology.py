@@ -38,9 +38,10 @@ from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch, Patch
 from sympy import latex, symbols
 
-from tvbo.knowledge import graph, ontology
-from tvbo.knowledge.simulation import equations
-from tvbo.utils import get_cmap, get_continuous_cmap, tvb_colors
+from tvbo.ontology import graph
+from tvbo.ontology import owl as ontology
+from tvbo.classes import equation as equations
+from tvbo.plot.utils import get_cmap, get_continuous_cmap, tvb_colors_simple as tvb_colors
 
 ######################
 # Default Parameters #

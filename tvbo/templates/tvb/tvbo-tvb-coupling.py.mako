@@ -1,16 +1,16 @@
 <%!
     import numpy as np
-    from tvbo.export.code import render_expression
-    from tvbo.knowledge.simulation.equations import _clash1
+    from tvbo.codegen import render_expression
+    from tvbo.classes.equation import _clash1
 
     # Generic pycode - pass parameters on each call
     pycode = lambda expr, parameters=None: render_expression(expr, format='python', parameters=parameters)
 %>
 <%
 if 'experiment' in context.keys():
-    coupling = context['experiment'].coupling.metadata
+    coupling = context['experiment'].coupling
 else:
-    coupling = context['coupling'].metadata
+    coupling = context['coupling']
 
 # Collect coupling parameter names for use in expressions
 coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []

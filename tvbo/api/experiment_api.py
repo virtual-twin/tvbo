@@ -20,7 +20,7 @@ EXPERIMENT_DIR = database_dir("SimulationExperiment")
 
 def _index_experiments() -> dict:
     """Build {id: (SimulationExperiment, yaml_path)} index."""
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
     experiments = {}
     if not EXPERIMENT_DIR.exists():

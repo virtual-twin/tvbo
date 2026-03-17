@@ -1,9 +1,9 @@
-"""Format converters: BEP017 export, TVB ZIP import.
+"""Format converters: BEP017 export.
 
 Uses relmat_entities() + build_path() from §6.5 for BIDS-compliant
 filenames — no manual filename construction.
 
-See §12.3 of the tvbo HDF5 format proposal v0.7.
+TVB converters have moved to :mod:`tvbo.adapters.tvb`.
 """
 import json
 import numpy as np
@@ -62,6 +62,32 @@ def relmat_entities(network) -> dict:
         "atlas": atlas or None,
         "segmentation": bids.get("segmentation"),
         "scale": bids.get("scale"),
+        "description": descriptor,
+    }
+
+
+def sensor_entities(network) -> dict:
+    """Extract pybids entities from a sensor Network (§6.5).
+
+    Returns entity dict suitable for ``build_path()`` with
+    ``SENSOR_PATTERNS``.
+    """
+    if isinstance(network, dict):
+        bids = network.get("bids", {})
+        descriptor = network.get("descriptor")
+    else:
+        bids = getattr(network, "bids", None) or {}
+        if not isinstance(bids, dict):
+            bids = {
+                k: getattr(bids, k, None)
+                for k in ("template", "acquisition", "atlas")
+            }
+        descriptor = getattr(network, "descriptor", None)
+
+    return {
+        "template": bids.get("template"),
+        "acquisition": bids.get("acquisition"),
+        "atlas": bids.get("atlas"),
         "description": descriptor,
     }
 
@@ -130,61 +156,6 @@ def to_bep017(network, output_dir):
         (out / f"atlas-{atlas}_nodeindices.tsv").write_text("\n".join(lines))
 
 
-def from_tvb_zip(zip_path):
-    """Import a TVB connectivity ZIP into a tvbo Network.
-
-    TVB ZIPs contain: ``weights.txt``, ``tract_lengths.txt``,
-    ``centres.txt``. Returns a Network with arrays loaded — call
-    ``net.save()`` to persist.
-
-    Parameters
-    ----------
-    zip_path : str or Path
-        Path to TVB connectivity ZIP file.
-
-    Returns
-    -------
-    Network
-        Network instance with loaded arrays ready for ``save()``.
-    """
-    import zipfile
-    import io
-    from tvbo.data.tvbo_data.connectomes import Network
-
-    zip_path = Path(zip_path)
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        weights = np.loadtxt(io.BytesIO(zf.read("weights.txt")))
-        lengths = np.loadtxt(io.BytesIO(zf.read("tract_lengths.txt")))
-        centres_raw = zf.read("centres.txt").decode()
-
-    labels, coords = [], []
-    for line in centres_raw.strip().split("\n"):
-        parts = line.split()
-        labels.append(parts[0])
-        coords.append([float(x) for x in parts[1:4]])
-
-    n = weights.shape[0]
-    from tvbo.datamodel import tvbo_datamodel
-    nodes = [
-        tvbo_datamodel.Node(
-            id=i, label=labels[i],
-            position=tvbo_datamodel.Coordinate(
-                x=float(coords[i][0]),
-                y=float(coords[i][1]),
-                z=float(coords[i][2]),
-            ),
-        )
-        for i in range(n)
-    ]
-    net = Network(
-        nodes=nodes,
-        edges=[],
-        number_of_nodes=n,
-    )
-    net.set_matrix("weight", weights)
-    net.set_matrix("length", lengths)
-    net.label = zip_path.stem
-    net.descriptor = "SC"  # TVB connectivity = structural
-    object.__setattr__(net, '_arrays', {"streamlineCount": weights})
-    object.__setattr__(net, '_edge_params', {"streamlineCount": {"tractLength": lengths}})
-    return net
+# TVB converters have been consolidated into tvbo.adapters.tvb
+# Backward-compatible re-exports:
+from tvbo.adapters.tvb import from_tvb_zip, from_tvb, from_tvb_surface  # noqa: F401, E402

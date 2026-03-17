@@ -3,31 +3,31 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.knowledge.simulation.equations import _clash1
+from tvbo.classes.equation import _clash1
 if 'experiment' in context.keys():
-    model = context['experiment'].dynamics.metadata
+    model = context['experiment'].dynamics
     standalone = False
 else:
-    model = context['model'].metadata
+    model = context['model']
     standalone = True
 render = lambda obj: model.render_equation(obj, format='numpy')
 
 # In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
-# Use the ontology to identify which coupling terms are global (part of coupling array)
+# Use the ontology to identify which coupling inputs are global (part of coupling array)
 # vs local (passed as separate dfun argument). This correctly handles models like SupHopf
 # that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
-from tvbo.knowledge import ontology as _onto
+from tvbo.ontology import owl as _onto
 try:
     _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
-    global_coupling_terms = {k: v for k, v in model.coupling_terms.items() if k in _global_names}
+    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k in _global_names}
 except Exception:
     # Model not in ontology — filter by naming convention:
     # 'local_coupling' and 'lc_*' prefixed terms are local coupling
     def _is_local(name):
         return name == 'local_coupling' or name.startswith('lc_')
-    global_coupling_terms = {k: v for k, v in model.coupling_terms.items() if not _is_local(k)}
-local_coupling_terms = {k: v for k, v in model.coupling_terms.items() if k not in global_coupling_terms}
-has_local_coupling = bool(local_coupling_terms)
+    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k)}
+local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
+has_local_coupling = bool(local_coupling_inputs)
 %>
 % if standalone:
 # Auto-generated standalone model file
@@ -119,14 +119,11 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
         },
     )
 
-    ## TODO: Was this hack necessary for anything?
-    ## % if any([sv.coupling_variable for sv in model.state_variables.values()]):
-    ## cvar = np.array(${[i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]*len(model.coupling_terms)}, dtype=np.int32)
-    cvar = np.array(${list(range(len(model.state_variables)))}, dtype=np.int32)
+    cvar = np.array(${[i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]}, dtype=np.int32)
 
     coupling_terms = Final(
         label="Coupling terms",
-        default=${[p.name for p in global_coupling_terms.values()]}
+        default=${[p.name for p in global_coupling_inputs.values()]}
     )
 
     _R = None
@@ -206,8 +203,8 @@ ${indented_fndef}
 
 ## Coupling Terms
         # Coupling Terms (from coupling array)
-% for cterm in global_coupling_terms:
-        ${cterm} = coupling[${list(global_coupling_terms).index(cterm)}, :]
+% for cterm in global_coupling_inputs:
+        ${cterm} = coupling[${list(global_coupling_inputs).index(cterm)}, :]
 % endfor
 
 ## Derived Variables

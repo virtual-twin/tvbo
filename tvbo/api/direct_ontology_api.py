@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import owlready2 as owl
 from sympy import latex, symbols
 
-from tvbo.knowledge import ontology, query
+from tvbo.ontology import owl as ontology, query
 
 onto = ontology.onto
 

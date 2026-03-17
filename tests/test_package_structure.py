@@ -59,32 +59,31 @@ class TestCurrentImportPaths:
 
     IMPORT_SPECS = [
         # (module_path, attribute_name)
-        ("tvbo.knowledge.simulation.localdynamics", "Dynamics"),
-        ("tvbo.knowledge.simulation.network", "Coupling"),
-        ("tvbo.knowledge.simulation.integration", "Noise"),
-        ("tvbo.knowledge.simulation.continuation", "Continuation"),
-        ("tvbo.knowledge.simulation.observation", "Function"),
-        ("tvbo.knowledge.simulation.observation", "ObservationModel"),
-        ("tvbo.knowledge.simulation.perturbation", "Stimulus"),
-        ("tvbo.knowledge.simulation.equations", None),  # module import
-        ("tvbo.knowledge.function", "Function"),
-        ("tvbo.knowledge.function", "LossFunction"),
-        ("tvbo.knowledge.study", "SimulationStudy"),
-        ("tvbo.knowledge.ontology", "onto"),
-        ("tvbo.knowledge", "ontology"),
-        ("tvbo.export.experiment", "SimulationExperiment"),
-        ("tvbo.export.code", "parse_eq"),
-        ("tvbo.export.templater", None),  # module import
-        ("tvbo.data.tvbo_data.connectomes", "Network"),
-        ("tvbo.data.tvbo_data.connectomes", "Connectome"),
-        ("tvbo.data.tvbo_data.atlases", "Atlas"),
+        ("tvbo.classes.dynamics", "Dynamics"),
+        ("tvbo.classes.coupling", "Coupling"),
+        ("tvbo.classes.noise", "Noise"),
+        ("tvbo.classes.continuation", "Continuation"),
+        ("tvbo.classes.observation", "Function"),
+        ("tvbo.classes.observation", "ObservationModel"),
+        ("tvbo.classes.perturbation", "Stimulus"),
+        ("tvbo.classes.equation", None),  # module import
+        ("tvbo.classes.function", "Function"),
+        ("tvbo.classes.function", "LossFunction"),
+        ("tvbo.classes.study", "SimulationStudy"),
+        ("tvbo.ontology.owl", "onto"),
+        ("tvbo.classes.experiment", "SimulationExperiment"),
+        ("tvbo.codegen.code", "parse_eq"),
+        ("tvbo.codegen.templater", None),  # module import
+        ("tvbo.classes.network", "Network"),
+        ("tvbo.classes.network", "Connectome"),
+        ("tvbo.classes.atlas", "Atlas"),
         ("tvbo.data.types", "TimeSeries"),
         ("tvbo.datamodel", "tvbo_datamodel"),
-        ("tvbo.datamodel.tvbo_datamodel", "Dynamics"),
-        ("tvbo.datamodel.tvbo_datamodel", "Parameter"),
-        ("tvbo.datamodel.tvbo_datamodel", "Network"),
-        ("tvbo.datamodel.tvbo_datamodel", "Equation"),
-        ("tvbo.datamodel.tvbopydantic", "Dynamics"),
+        ("tvbo.datamodel.schema", "Dynamics"),
+        ("tvbo.datamodel.schema", "Parameter"),
+        ("tvbo.datamodel.schema", "Network"),
+        ("tvbo.datamodel.schema", "Equation"),
+        ("tvbo.datamodel.pydantic", "Dynamics"),
     ]
 
     @pytest.mark.parametrize("module_path,attr", IMPORT_SPECS,
@@ -102,43 +101,43 @@ class TestClassIdentity:
 
     def test_connectome_is_subclass_of_network(self):
         """Connectome should be a deprecated alias/subclass of Network."""
-        from tvbo.data.tvbo_data.connectomes import Connectome, Network
+        from tvbo.classes.network import Connectome, Network
         assert issubclass(Connectome, Network)
 
     def test_top_level_dynamics_is_same_class(self):
         """tvbo.Dynamics is the same class as localdynamics.Dynamics."""
         import tvbo
-        from tvbo.knowledge.simulation.localdynamics import Dynamics
+        from tvbo.classes.dynamics import Dynamics
         assert tvbo.Dynamics is Dynamics
 
     def test_top_level_network_is_same_class(self):
-        """tvbo.Network is the same class as connectomes.Network."""
+        """tvbo.Network is the same class as classes.network.Network."""
         import tvbo
-        from tvbo.data.tvbo_data.connectomes import Network
+        from tvbo.classes.network import Network
         assert tvbo.Network is Network
 
     def test_top_level_coupling_is_same_class(self):
         """tvbo.Coupling is the same class from network.py."""
         import tvbo
-        from tvbo.knowledge.simulation.network import Coupling
+        from tvbo.classes.coupling import Coupling
         assert tvbo.Coupling is Coupling
 
     def test_top_level_experiment_is_same_class(self):
         """tvbo.SimulationExperiment is the same class from export."""
         import tvbo
-        from tvbo.export.experiment import SimulationExperiment
+        from tvbo.classes.experiment import SimulationExperiment
         assert tvbo.SimulationExperiment is SimulationExperiment
 
     def test_dynamics_inherits_from_datamodel(self):
         """Runtime Dynamics should subclass the datamodel Dynamics."""
-        from tvbo.knowledge.simulation.localdynamics import Dynamics
-        from tvbo.datamodel.tvbo_datamodel import Dynamics as DmDynamics
+        from tvbo.classes.dynamics import Dynamics
+        from tvbo.datamodel.schema import Dynamics as DmDynamics
         assert issubclass(Dynamics, DmDynamics)
 
     def test_network_inherits_from_datamodel(self):
         """Runtime Network should subclass the datamodel Network."""
-        from tvbo.data.tvbo_data.connectomes import Network
-        from tvbo.datamodel.tvbo_datamodel import Network as DmNetwork
+        from tvbo.classes.network import Network
+        from tvbo.datamodel.schema import Network as DmNetwork
         assert issubclass(Network, DmNetwork)
 
 
@@ -179,9 +178,9 @@ class TestSubpackages:
     """Verify key subpackages are importable."""
 
     SUBPACKAGES = [
-        "tvbo.knowledge",
-        "tvbo.knowledge.simulation",
-        "tvbo.export",
+        "tvbo.classes",
+        "tvbo.codegen",
+        "tvbo.ontology",
         "tvbo.data",
         "tvbo.data.tvbo_data",
         "tvbo.datamodel",
@@ -192,8 +191,6 @@ class TestSubpackages:
         "tvbo.analysis",
         "tvbo.run",
         "tvbo.api",
-        "tvbo.summary",           # will become tvbo.report in v1.0
-        "tvbo.benchmark",
     ]
 
     @pytest.mark.parametrize("pkg", SUBPACKAGES)
@@ -210,13 +207,13 @@ class TestSubpackages:
 #     NEW_IMPORT_SPECS = [
 #         ("tvbo.models", "Dynamics"),
 #         ("tvbo.models", "Coupling"),
-#         ("tvbo.models.dynamics", "Dynamics"),
-#         ("tvbo.models.coupling", "Coupling"),
-#         ("tvbo.models.noise", "Noise"),
-#         ("tvbo.models.continuation", "Continuation"),
-#         ("tvbo.models.observation", "Function"),
-#         ("tvbo.models.function", "Function"),
-#         ("tvbo.models.function", "LossFunction"),
+#         ("tvbo.classes.dynamics", "Dynamics"),
+#         ("tvbo.classes.coupling", "Coupling"),
+#         ("tvbo.classes.noise", "Noise"),
+#         ("tvbo.classes.continuation", "Continuation"),
+#         ("tvbo.classes.observation", "Function"),
+#         ("tvbo.classes.function", "Function"),
+#         ("tvbo.classes.function", "LossFunction"),
 #         ("tvbo.experiment", "SimulationExperiment"),
 #         ("tvbo.experiment", "SimulationStudy"),
 #         ("tvbo.ontology", None),

@@ -455,13 +455,8 @@ class TestFromTvbZipRoundTrip:
                 np.testing.assert_allclose(pos.y, coords[i, 1], atol=1e-5)
                 np.testing.assert_allclose(pos.z, coords[i, 2], atol=1e-5)
 
-            # Verify arrays
-            assert "streamlineCount" in net._arrays
-            np.testing.assert_allclose(net._arrays["streamlineCount"], weights, atol=1e-5)
-
-            # Verify edge parameters
-            assert "tractLength" in net._edge_params["streamlineCount"]
-            np.testing.assert_allclose(
-                net._edge_params["streamlineCount"]["tractLength"],
-                lengths, atol=1e-5,
-            )
+            # Verify arrays (canonical names: weight, length)
+            assert "weight" in net._arrays
+            np.testing.assert_allclose(net._arrays["weight"], weights, atol=1e-5)
+            assert "length" in net._arrays
+            np.testing.assert_allclose(net._arrays["length"], lengths, atol=1e-5)

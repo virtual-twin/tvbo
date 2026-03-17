@@ -15,7 +15,7 @@ is self-contained. The sim template uses <%include> to compose them.
 </%doc>
 <%!
 import numpy as np
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 
 # Solver method -> tvboptim class mapping
 SOLVER_MAP = {

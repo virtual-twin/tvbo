@@ -14,7 +14,7 @@ Context: model (Dynamics instance)
 </%doc>
 <%page args="model, all_couplings=None, outdim=None"/>
 <%!
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 %>
 <%
 sv_names = list(model.state_variables.keys())

@@ -119,3 +119,6 @@ tvbo/data/tvbo_data/_archive_connectome
 replication_studies
 
 _archive/database
+
+# Compiled Mako templates
+tvbo/templates/modules/*.py.mako.py

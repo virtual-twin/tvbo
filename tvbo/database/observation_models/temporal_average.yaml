@@ -1,0 +1,23 @@
+# Temporal Average - running temporal mean
+
+name: TemporalAverage
+label: Temporal Average
+description: >-
+    Running temporal mean over a sliding window of configurable length.
+    Returns one averaged sample per period.
+
+period: 0.9765625  # ms (~1024 Hz default)
+
+class_reference:
+    name: TemporalAverage
+    module: tvb.simulator.monitors
+
+pipeline:
+    - name: temporal_average
+      output: averaged
+      equation:
+          rhs: "mean(X.reshape(-1, window_size, *X.shape[1:]), axis=1)"
+      arguments:
+          - name: window_size
+            description: "Number of integration steps per averaging window = period / dt"
+      apply_on_dimension: time
