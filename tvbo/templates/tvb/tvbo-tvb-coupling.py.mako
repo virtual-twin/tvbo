@@ -8,9 +8,9 @@
 %>
 <%
 if 'experiment' in context.keys():
-    coupling = context['experiment'].coupling.metadata
+    coupling = context['experiment'].coupling
 else:
-    coupling = context['coupling'].metadata
+    coupling = context['coupling']
 
 # Collect coupling parameter names for use in expressions
 coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
