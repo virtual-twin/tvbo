@@ -4516,6 +4516,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#system-specification" id="toc-system-specification" class="nav-link" data-scroll-target="#system-specification">System Specification</a></li>
   <li><a href="#visualization" id="toc-visualization" class="nav-link" data-scroll-target="#visualization">Visualization</a></li>
+  <li><a href="#phase-portrait" id="toc-phase-portrait" class="nav-link" data-scroll-target="#phase-portrait">Phase Portrait</a></li>
   </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/DefineDynamicalSystem.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
@@ -4550,7 +4551,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="system-specification" class="level3">
 <h3 class="anchored" data-anchor-id="system-specification">System Specification</h3>
 <p>Define the pendulum <a href="../datamodel/classes/Dynamics.html">Dynamics</a> using YAML format with <a href="../datamodel/classes/Parameter.html">Parameter</a>s, <a href="../datamodel/classes/StateVariable.html">state variables</a>, and <a href="../datamodel/slots/output.html">output transforms</a>:</p>
-<div id="eebad9c8" class="cell" data-execution_count="3">
+<div id="2e1b18c4" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yaml</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -4595,7 +4596,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="st">        unit: m</span></span>
 <span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">        equation:</span></span>
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="st">            rhs: -L * cos(theta)</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="st">output: </span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="st">output:</span></span>
 <span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="st">    - x</span></span>
 <span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="st">    - y</span></span>
 <span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
@@ -4604,10 +4605,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span>Dynamics(<span class="op">**</span>yaml.load(dynamics_yaml, Loader<span class="op">=</span>yaml.FullLoader)),</span>
 <span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> pendulum.run(duration<span class="op">=</span><span class="dv">5_000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
-  warnings.warn(</code></pre>
-</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ============================================================
@@ -4622,11 +4619,169 @@ Experiment complete.
 ============================================================</code></pre>
 </div>
 </div>
-<p>The system consists of: - <strong>Parameters</strong>: Physical constants (damping, frequency, length) - <strong>State variables</strong>: Time-evolving quantities (angle θ, angular velocity ω) - <strong>Output transforms</strong>: Computed observables (Cartesian coordinates x, y)</p>
+<p>The system consists of:</p>
+<ul>
+<li><strong><a href="../datamodel/classes/Parameter.html">Parameters</a></strong>: Physical constants (damping, frequency, length)</li>
+<li><strong><a href="../datamodel/classes/StateVariable.html">State variables</a></strong>: Time-evolving quantities (angle θ, angular velocity ω)</li>
+<li><strong><a href="../datamodel/slots/output.html">Output transforms</a></strong>: Computed observables (Cartesian coordinates x, y)</li>
+</ul>
 </section>
 <section id="visualization" class="level3">
 <h3 class="anchored" data-anchor-id="visualization">Visualization</h3>
 <p>Real-time animation of the pendulum motion alongside the time series data:</p>
+</section>
+<section id="phase-portrait" class="level3">
+<h3 class="anchored" data-anchor-id="phase-portrait">Phase Portrait</h3>
+<p>State variables accept a <a href="../datamodel/classes/Distribution.html">Distribution</a> for initial conditions. The presence of a distribution declares that the variable should be sampled — no runtime flags needed. The resolution order is:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Configuration</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>initial_value: 1.0</code> (no distribution)</td>
+<td>Deterministic — always starts at 1.0</td>
+</tr>
+<tr class="even">
+<td><code>distribution:</code> present + <code>n_trials &gt; 1</code></td>
+<td>Each trial samples a new IC from the distribution</td>
+</tr>
+<tr class="odd">
+<td><code>distribution:</code> present, single run</td>
+<td>Uses <code>initial_value</code> as fallback</td>
+</tr>
+<tr class="even">
+<td><code>distribution.domain</code> not set</td>
+<td>Falls back to the state variable’s <code>domain</code></td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Case 1: Fixed IC (no distribution)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">theta</span><span class="kw">:</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.0</span><span class="co">        # → Always starts at 1.0</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Case 2: Sampled IC (distribution present)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">theta</span><span class="kw">:</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.0</span><span class="co">        # fallback if sampling disabled</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">distribution</span><span class="kw">:</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Uniform</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">domain</span><span class="kw">:</span><span class="at"> </span><span class="kw">{</span><span class="fu">lo</span><span class="kw">:</span><span class="at"> </span><span class="fl">-3.14</span><span class="kw">,</span><span class="at"> </span><span class="fu">hi</span><span class="kw">:</span><span class="at"> </span><span class="fl">3.14</span><span class="kw">}</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">    # → Sampled when n_trials &gt; 1, else uses 0.0</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Case 3: Distribution without explicit domain → inherits SV domain</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">theta</span><span class="kw">:</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">initial_value</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.0</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain</span><span class="kw">:</span><span class="at"> </span><span class="kw">{</span><span class="fu">lo</span><span class="kw">:</span><span class="at"> </span><span class="fl">-3.14</span><span class="kw">,</span><span class="at"> </span><span class="fu">hi</span><span class="kw">:</span><span class="at"> </span><span class="fl">3.14</span><span class="kw">}</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">distribution</span><span class="kw">:</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Uniform</span><span class="co">         # domain falls back to SV domain</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">    # → Uniform(-3.14, 3.14)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>An <a href="../datamodel/classes/Exploration.html">Exploration</a> with <code>n_trials</code> runs them in parallel — each trial samples a different starting point, revealing the full phase portrait without any Python loop:</p>
+<div id="29ea271c" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel.schema <span class="im">import</span> Distribution, Range, Exploration</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach sampling distributions to the state variables</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>pendulum.dynamics.state_variables[<span class="st">"theta"</span>].distribution <span class="op">=</span> Distribution(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">"Uniform"</span>, domain<span class="op">=</span>Range(lo<span class="op">=-</span>np.pi, hi<span class="op">=</span>np.pi)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>pendulum.dynamics.state_variables[<span class="st">"omega"</span>].distribution <span class="op">=</span> Distribution(</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">"Uniform"</span>, domain<span class="op">=</span>Range(lo<span class="op">=-</span><span class="fl">0.005</span>,hi<span class="op">=</span><span class="fl">0.005</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 20 parallel trials from different initial conditions</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>pendulum.explorations[<span class="st">"ICs"</span>] <span class="op">=</span> Exploration(name<span class="op">=</span><span class="st">"ICs"</span>, n_trials<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> pendulum.run(duration<span class="op">=</span><span class="dv">10_000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+============================================================
+STEP 1: Running simulation...
+============================================================
+  Simulation period: 10000.0 ms, dt: 0.01220703125 ms
+  Transient period: 0.0 ms
+  Simulation complete.
+
+============================================================
+STEP 2: Running explorations...
+============================================================
+  &gt; ICs
+  Explorations complete.
+
+============================================================
+Experiment complete.
+============================================================</code></pre>
+</div>
+</div>
+<div id="cace1046" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_phase_portrait(trials, color_trajectory_by<span class="op">=</span><span class="st">"theta"</span>, color_ic_by<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                        cmap<span class="op">=</span><span class="st">"coolwarm"</span>, ic_cmap<span class="op">=</span><span class="va">None</span>, ax<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Plot phase portrait with independent coloring for trajectories and ICs.</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">    color_trajectory_by: "theta" or "omega" — colors lines by that IC value</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">    color_ic_by: "theta" or "omega" — colors IC dots (None = black)</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    var_map <span class="op">=</span> {<span class="st">"theta"</span>: <span class="dv">0</span>, <span class="st">"omega"</span>: <span class="dv">1</span>}</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    label_map <span class="op">=</span> {<span class="st">"theta"</span>: <span class="vs">r"</span><span class="dv">$</span><span class="ch">\t</span><span class="vs">heta_0</span><span class="dv">$</span><span class="vs">"</span>, <span class="st">"omega"</span>: <span class="vs">r"</span><span class="dv">$</span><span class="er">\</span><span class="vs">omega_0</span><span class="dv">$</span><span class="vs">"</span>}</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ax <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">4</span>), layout<span class="op">=</span><span class="st">"compressed"</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        fig <span class="op">=</span> ax.figure</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    ax.set_box_aspect(<span class="dv">1</span>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    n_trials <span class="op">=</span> trials.shape[<span class="dv">1</span>]</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Trajectory colors</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    traj_idx <span class="op">=</span> var_map[color_trajectory_by]</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    traj_ics <span class="op">=</span> [<span class="bu">float</span>(trials[<span class="dv">0</span>, i, <span class="dv">0</span>, traj_idx, <span class="dv">0</span>]) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_trials)]</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    traj_norm <span class="op">=</span> plt.Normalize(<span class="bu">min</span>(traj_ics), <span class="bu">max</span>(traj_ics))</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    traj_cm <span class="op">=</span> plt.colormaps[cmap]</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># IC dot colors</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> color_ic_by <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        ic_idx <span class="op">=</span> var_map[color_ic_by]</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        ic_vals <span class="op">=</span> [<span class="bu">float</span>(trials[<span class="dv">0</span>, i, <span class="dv">0</span>, ic_idx, <span class="dv">0</span>]) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_trials)]</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        ic_norm <span class="op">=</span> plt.Normalize(<span class="bu">min</span>(ic_vals), <span class="bu">max</span>(ic_vals))</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        ic_cm <span class="op">=</span> plt.colormaps[ic_cmap <span class="kw">or</span> cmap]</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_trials):</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        theta <span class="op">=</span> trials[<span class="dv">0</span>, i, :, <span class="dv">0</span>, <span class="dv">0</span>]</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>        omega <span class="op">=</span> trials[<span class="dv">0</span>, i, :, <span class="dv">1</span>, <span class="dv">0</span>]</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        ax.plot(theta, omega, lw<span class="op">=</span><span class="fl">0.6</span>, alpha<span class="op">=</span><span class="fl">0.7</span>, color<span class="op">=</span>traj_cm(traj_norm(traj_ics[i])))</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>        dot_color <span class="op">=</span> ic_cm(ic_norm(ic_vals[i])) <span class="cf">if</span> color_ic_by <span class="cf">else</span> <span class="st">"black"</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>        ax.plot(theta[<span class="dv">0</span>], omega[<span class="dv">0</span>], <span class="st">"o"</span>, ms<span class="op">=</span><span class="dv">4</span>, color<span class="op">=</span>dot_color, zorder<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Colorbars</span></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    sm <span class="op">=</span> plt.cm.ScalarMappable(cmap<span class="op">=</span>traj_cm, norm<span class="op">=</span>traj_norm)</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>    fig.colorbar(sm, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="ss">f"traj: </span><span class="sc">{</span>label_map[color_trajectory_by]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> color_ic_by <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>        sm2 <span class="op">=</span> plt.cm.ScalarMappable(cmap<span class="op">=</span>ic_cm, norm<span class="op">=</span>ic_norm)</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>        fig.colorbar(sm2, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="ss">f"IC: </span><span class="sc">{</span>label_map[color_ic_by]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="vs">r"</span><span class="dv">$</span><span class="ch">\t</span><span class="vs">heta</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="er">\</span><span class="vs">omega</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>    plt.close()</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fig</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>trials <span class="op">=</span> result.exploration.ICs.results</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>plot_phase_portrait(trials, color_trajectory_by<span class="op">=</span><span class="st">"theta"</span>, color_ic_by<span class="op">=</span><span class="st">"omega"</span>,</span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>                    cmap<span class="op">=</span><span class="st">"coolwarm"</span>, ic_cmap<span class="op">=</span><span class="st">"plasma"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div>
+<figure class="figure">
+<p><img src="DefineDynamicalSystem_files/figure-html/cell-6-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
 
 
 </section>
