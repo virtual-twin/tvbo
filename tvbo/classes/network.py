@@ -2717,6 +2717,8 @@ class Network(tvbo_datamodel.Network):
         brain_kwargs: Optional[Dict[str, Any]] = None,
         cmap: str = "magma",
         edge_percentile: float = 0,
+        show_nodes: bool = True,
+        show_edges: bool = True,
     ) -> Figure:
         """Create comprehensive visualization with brain surface and matrices.
 
@@ -2754,6 +2756,10 @@ class Network(tvbo_datamodel.Network):
         edge_percentile : float, default=0
             Only show edges above this percentile of weights in the brain
             surface and graph panels.  ``0`` (default) plots all connections.
+        show_nodes : bool, default=True
+            Show node spheres on the brain surface panel.
+        show_edges : bool, default=True
+            Show edge tubes on the brain surface panel.
 
         Returns
         -------
@@ -2850,22 +2856,29 @@ class Network(tvbo_datamodel.Network):
                     "node_scale": {"strength": 2},
                     "edge_radius": 0.12,
                     "edge_color": "auto",
-                    "edge_data_key": prop,
+                    "edge_data_key": "weight",
                     "edge_cmap": cmap,
                     "node_cmap": cmap,
-                    "edge_scale": {prop: 6},
+                    "edge_scale": {"weight": 6},
                     "threshold_percentile": edge_percentile,
+                    "show_nodes": show_nodes,
+                    "show_edges": show_edges,
                 }
                 brain_defaults.update(brain_kwargs)
                 _, _, mappables = self.plot_brain_surface(
                     ax=axs[row, 0], weight_matrix=mat,
                     **brain_defaults,
                 )
-                g = mappables.get("edges") or mappables.get("nodes")
                 axs[row, 0].axis("off")
-                cb = fig.colorbar(g, ax=axs[row, 0], shrink=0.5,
-                                  label=label)
-                cb.outline.set_visible(False)
+
+                # Add colorbars for available mappables
+                edge_sm = mappables.get("edges")
+                if edge_sm is not None:
+                    cb = fig.colorbar(
+                        edge_sm, ax=axs[row, 0], shrink=0.4,
+                        label=label, location="right",
+                    )
+                    cb.outline.set_visible(False)
                 col = 1
             else:
                 # --- Graph panel (networkx) ---
