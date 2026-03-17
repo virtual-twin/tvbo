@@ -398,17 +398,18 @@ print(f"  → {type(mon_ac).__name__}")
 To verify that tvbo-generated TVB models are faithful to the original,
 we compare simulations run with the TVB-native `Generic2dOscillator`
 against the tvbo-generated equivalent. Both use identical connectivity,
-coupling, integrator, and initial conditions.
+coupling, integrator, and initial conditions. Results are wrapped
+using `ExperimentResult.from_tvb()` for consistent access.
 
 ```{python}
-from tvbo import Dynamics
+from tvbo import Dynamics, ExperimentResult
 from tvb.simulator.lab import simulator, models, coupling, integrators, monitors
 
 # Shared setup
 sim_length = 100.0  # ms
 seed = 42
 
-# --- TVB Direct ---
+# --- TVB Native ---
 m1 = models.Generic2dOscillator()
 m1.variables_of_interest = ('V', 'W')
 sim1 = simulator.Simulator(
@@ -417,10 +418,11 @@ sim1 = simulator.Simulator(
     integrator=integrators.HeunDeterministic(dt=0.1),
     connectivity=conn,
     monitors=[monitors.Raw()],
+    simulation_length=sim_length,
 )
 np.random.seed(seed)
 sim1.configure()
-y1 = np.concatenate([r[0][1] for r in sim1(simulation_length=sim_length) if r[0] is not None])
+result_native = ExperimentResult.from_tvb(sim1)
 
 # --- tvbo Generated ---
 m = Dynamics.from_db('Generic2dOscillator')
@@ -434,33 +436,37 @@ sim2 = simulator.Simulator(
     integrator=integrators.HeunDeterministic(dt=0.1),
     connectivity=conn,
     monitors=[monitors.Raw()],
+    simulation_length=sim_length,
 )
 np.random.seed(seed)
 sim2.configure()
-y2 = np.concatenate([r[0][1] for r in sim2(simulation_length=sim_length) if r[0] is not None])
+result_tvbo = ExperimentResult.from_tvb(sim2)
 
-print(f"TVB native cvar:    {sim1.model.cvar}")
+print(f"TVB native cvar:     {sim1.model.cvar}")
 print(f"tvbo-generated cvar: {sim2.model.cvar}")
-print(f"Output shape: {y1.shape}")
-print(f"Max absolute diff:  {np.abs(y1 - y2).max():.2e}")
-print(f"Numerically equal:  {np.allclose(y1, y2, atol=1e-10)}")
+print(f"Output shape: {result_native.integration.data.shape}")
+
+diff = np.abs(result_native.integration.data - result_tvbo.integration.data).max()
+print(f"Max absolute diff:   {diff:.2e}")
+print(f"Numerically equal:   {np.allclose(result_native.integration.data, result_tvbo.integration.data, atol=1e-10)}")
 ```
 
 ```{python}
-# | label: fig-tvb-roundtrip
-# | fig-cap: "Simulation roundtrip: TVB native vs tvbo-generated Generic2dOscillator. Top: raw V traces for one region. Bottom: absolute difference (machine-epsilon level)."
-node = 0
-t = np.arange(y1.shape[0]) * 0.1
+#| label: fig-tvb-roundtrip
+#| fig-cap: "Simulation roundtrip: TVB native vs tvbo-generated Generic2dOscillator. Top: raw V traces for one region. Bottom: absolute difference (machine-epsilon level)."
+ts_native = result_native.integration
+ts_tvbo = result_tvbo.integration
 
+node = 0
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 4), sharex=True, height_ratios=[3, 1])
 
-ax1.plot(t, y1[:, 0, node], label="TVB native", lw=1.2)
-ax1.plot(t, y2[:, 0, node], label="tvbo-generated", lw=1.2, ls="--")
-ax1.set_ylabel("V")
+ts_native.get_subspace_by_index([node]).plot(ax=ax1, label="TVB native", linewidth=1.5)
+ts_tvbo.get_subspace_by_index([node]).plot(ax=ax1, label="tvbo-generated", linestyle="--", linewidth=1.5)
 ax1.legend()
 ax1.set_title(f"Region {node}: {conn.region_labels[node]}")
 
-ax2.semilogy(t, np.abs(y1[:, 0, node] - y2[:, 0, node]) + 1e-20, color="k", lw=0.8)
+diff_trace = np.abs(ts_native.data[:, 0, node, 0] - ts_tvbo.data[:, 0, node, 0]) + 1e-20
+ax2.semilogy(ts_native.time, diff_trace, color="k", lw=0.8)
 ax2.set_ylabel("|diff|")
 ax2.set_xlabel("Time (ms)")
 
