@@ -73,7 +73,7 @@ def compare_timeseries(exp: SimulationExperiment, ts1: Any, ts2: Any, atol: floa
         ts2: Second time series.
         atol: Absolute tolerance for broader identity check.
     """
-    for sv in exp.model.state_variables.keys():
+    for sv in exp.dynamics.state_variables.keys():
         data1 = ts1.get_state_variable(sv).data.squeeze()
         data2 = ts2.get_state_variable(sv).data.squeeze()
 

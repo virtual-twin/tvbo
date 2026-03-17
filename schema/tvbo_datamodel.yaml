@@ -580,6 +580,9 @@ classes:
             atlas:
                 range: string
                 description: "BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)"
+            acquisition:
+                range: string
+                description: "BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)"
 
     Network:
         class_uri: tvbo:Network
@@ -846,6 +849,24 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            target_network:
+                range: string
+                required: false
+                description: >-
+                    Path or name of the Network whose nodes define the columns
+                    of a non-square (projection) matrix. For example, a gain
+                    matrix with shape (n_sensors, n_regions) references the
+                    brain parcellation network here.  Row labels come from
+                    the parent Network's own nodes.
+            dimension_labels:
+                multivalued: true
+                range: string
+                required: false
+                description: >-
+                    Ordered labels for the matrix columns (dim-1) when the
+                    matrix is non-square.  Row labels (dim-0) are the parent
+                    Network's node labels.  Stored as HDF5 dimension scales
+                    in the companion file.
             dynamics:
                 range: Dynamics
                 required: false
@@ -2215,6 +2236,7 @@ classes:
         slots:
             - name
             - label
+            - iri
             - parameters
             - description
         slot_usage:
