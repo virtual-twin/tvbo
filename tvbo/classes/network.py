@@ -2716,6 +2716,7 @@ class Network(tvbo_datamodel.Network):
         plot_brain: Optional[bool] = None,
         brain_kwargs: Optional[Dict[str, Any]] = None,
         cmap: str = "magma",
+        edge_percentile: float = 0,
     ) -> Figure:
         """Create comprehensive visualization with brain surface and matrices.
 
@@ -2750,6 +2751,9 @@ class Network(tvbo_datamodel.Network):
             the brain surface panel is used.
         cmap : str, default="magma"
             Default colormap for matrix heatmaps.
+        edge_percentile : float, default=0
+            Only show edges above this percentile of weights in the brain
+            surface and graph panels.  ``0`` (default) plots all connections.
 
         Returns
         -------
@@ -2849,7 +2853,8 @@ class Network(tvbo_datamodel.Network):
                     "edge_data_key": prop,
                     "edge_cmap": cmap,
                     "node_cmap": cmap,
-                    "edge_scale": {prop: 6, "mode": "log"},
+                    "edge_scale": {prop: 6},
+                    "threshold_percentile": edge_percentile,
                 }
                 brain_defaults.update(brain_kwargs)
                 _, _, mappables = self.plot_brain_surface(
@@ -2867,7 +2872,7 @@ class Network(tvbo_datamodel.Network):
                 graph_defaults = {
                     "node_labels": False,
                     "edge_labels": False,
-                    "threshold_percentile": 90,
+                    "threshold_percentile": edge_percentile,
                     "edge_color": prop,
                 }
                 graph_defaults.update(graph_kwargs)
