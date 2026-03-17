@@ -237,7 +237,7 @@ TVBO ships with normative connectomes from published tractography datasets.
 Load them by atlas name:
 
 ```{python}
-sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc = Network.from_db("DesikanKilliany")
 print(f"{sc.number_of_nodes} regions, atlas: {sc.atlas.name}")
 ```
 
@@ -449,7 +449,7 @@ The region-level SC is the **parent**.  The vertex-level LC is the
 
 ```{python}
 # --- Parent: region-level SC ---
-sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc = Network.from_db("DesikanKilliany")
 sc.save(tmpdir / "dk_sc.yaml")
 
 # --- Child: vertex-level local connectivity ---
@@ -698,7 +698,7 @@ Create the network from the YAML file and attach the matrix:
 ```{python}
 net = Network.from_string(ms_yaml)
 print(f"Nodes:          {len(net.nodes)}")
-print(f"Template edges: {sum(1 for e in net.edges if not getattr(e, 'source', None))}")
+print(f"Template edges: {sum(1 for e in net.edges if getattr(e, 'source', None) is None)}")
 print(f"Explicit edges: {sum(1 for e in net.edges if getattr(e, 'source', None) is not None)}")
 ```
 
@@ -707,7 +707,11 @@ writes the YAML sidecar and HDF5 companion automatically:
 
 ```{python}
 # Attach matrix (matches template edge label: weights)
-net._cached_weights = W_sub
+# Embed the 10×10 subnetwork into the full 12×12 node space
+# Nodes 0–1 are mean-field; nodes 2–11 are the spiking subnetwork
+W_full = np.zeros((12, 12))
+W_full[2:, 2:] = W_sub
+net._cached_weights = W_full
 
 # Save → creates .yaml sidecar + .h5 companion
 net.save(tmpdir / "multiscale_cortex.yaml")
@@ -727,7 +731,7 @@ print(f"Edges: {len(loaded.edges)}")
 print(f"Node mapping: {loaded.node_mapping}")
 
 # Matrix — lazy-loaded on first access
-np.testing.assert_allclose(loaded.weights_matrix, W_sub)
+np.testing.assert_allclose(loaded.weights_matrix, W_full)
 print(f"Matrix shape: {loaded.weights_matrix.shape}")
 print(f"Roundtrip OK ✓")
 ```
@@ -835,6 +839,185 @@ edges:
 Here the edge weight $w$ evolves according to its own ODE during
 simulation, implementing spike-timing-dependent plasticity.
 
+### 7.3 Forward Model (Sensor Projection)
+
+A **forward model** maps region-level brain activity to sensor-level
+recordings (EEG, MEG, iEEG). The projection is stored as a **gain
+matrix** $G \in \mathbb{R}^{N_\text{sensors} \times N_\text{regions}}$
+inside a sensor Network: each row is a sensor, each column a cortical
+region, and $G_{ij}$ quantifies how strongly region $j$ contributes to
+sensor $i$.
+
+TVBO ships with a pre-computed EEG forward model based on the MNE
+`standard_1005` montage projected onto the fsaverage cortex
+(Desikan–Killiany parcellation). The gain matrix, sensor coordinates,
+and metadata are all stored in a single YAML + HDF5 pair — no MNE
+processing required at load time.
+
+::: {.callout-tip}
+For details on how observation pipelines use the gain matrix during
+simulation, see [Observation Models](../Usage/ObservationModels.qmd)
+and [TVB Monitor Round-Trip](../Interoperability/TVB/Monitor.qmd).
+:::
+
+#### Loading the sensor network
+
+```{python}
+from tvbo import Network, database_path
+
+sensor_net = Network.from_file(
+    database_path / "networks"
+    / "tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.yaml"
+)
+print(f"Sensors:    {sensor_net.number_of_nodes} EEG channels")
+print(f"Descriptor: {sensor_net.descriptor}")
+print(f"Labels:     {sensor_net.node_labels[:5]} ...")
+```
+
+The HDF5 companion stores sensor coordinates and the gain matrix:
+
+```{python}
+gain = sensor_net.matrix("gain")
+plt.imshow(gain)
+```
+
+#### Building a projection graph
+
+`execute(format="networkx")` constructs a bipartite graph connecting
+sensors to brain regions via thresholded gain edges. The target brain
+network is resolved automatically from the edge's `target_network`
+reference — no extra argument needed:
+
+```{python}
+G = sensor_net.execute(format="networkx", threshold_percentile=85)
+n_s = sum(1 for _, d in G.nodes(data=True) if d["node_type"] == "sensor")
+n_r = sum(1 for _, d in G.nodes(data=True) if d["node_type"] == "region")
+print(f"Graph: {n_s} sensors + {n_r} regions = {G.number_of_nodes()} nodes")
+print(f"Edges: {G.number_of_edges()} (gain > 85th percentile)")
+```
+
+Every node has a `pos` attribute (MNI coordinates) and a `color`
+attribute (red for sensors, blue for regions), so the graph is
+ready for 3D rendering with bsplot:
+
+```{python}
+import matplotlib.pyplot as plt
+from bsplot.graph import plot_network_on_surface
+
+fig, axes = plt.subplots(1, 2, figsize=(6, 3), layout="compressed")
+for ax, view in zip(axes, ["front", "top"]):
+    plot_network_on_surface(
+        G,
+        ax=ax,
+        view=view,
+        node_radius=1.5,
+        node_color="auto",
+        edge_radius=0.004,
+        edge_color="auto",
+        edge_cmap="hot",
+        edge_data_key="gain",
+        edge_scale={"gain": 2, "mode": "log"},
+        surface_alpha=0.12,
+        nodes=list(G.nodes()),
+    )
+    ax.set_title(view)
+plt.show()
+```
+
+Optionally, overlay a translucent **head surface** from MNE's
+fsaverage BEM model using `extra_surfaces`:
+
+```{python}
+#| code-fold: true
+#| code-summary: "Load MNE fsaverage head surface and render with network"
+import mne
+import nibabel as nib
+from pathlib import Path
+
+fs_dir = Path(mne.datasets.fetch_fsaverage(verbose=False))
+head_surfs = mne.read_bem_surfaces(
+    str(fs_dir / "bem" / "fsaverage-head.fif"), verbose=False
+)
+head_verts = head_surfs[0]["rr"] * 1000   # m → mm
+head_tris = head_surfs[0]["tris"]
+
+head_gifti = nib.gifti.GiftiImage()
+head_gifti.add_gifti_data_array(
+    nib.gifti.GiftiDataArray(
+        head_verts.astype(np.float32), intent="NIFTI_INTENT_POINTSET"
+    )
+)
+head_gifti.add_gifti_data_array(
+    nib.gifti.GiftiDataArray(
+        head_tris.astype(np.int32), intent="NIFTI_INTENT_TRIANGLE"
+    )
+)
+
+fig, axes = plt.subplots(1, 2, figsize=(6, 3), layout="compressed")
+for ax, view in zip(axes, ["front", "top"]):
+    plot_network_on_surface(
+        G,
+        ax=ax,
+        view=view,
+        node_radius=1.5,
+        node_color="auto",
+        edge_radius=0.004,
+        edge_color="auto",
+        edge_cmap="hot",
+        edge_data_key="gain",
+        edge_scale={"gain": 12, "mode": "log"},
+        surface_alpha=0.12,
+        nodes=list(G.nodes()),
+        extra_surfaces=[head_gifti],
+        extra_colors=["wheat"],
+        extra_alphas=[0.06],
+    )
+    ax.set_title(view)
+plt.show()
+```
+
+#### YAML structure
+
+The sensor network YAML follows the standard Network schema with
+`descriptor: sensors` and a template edge for the gain matrix:
+
+```yaml
+tvbo_class: tvbo:Network
+label: EEG standard_1005 fsaverage projection
+descriptor: sensors
+distance_unit: mm
+data_file: tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.h5
+
+nodes:
+  - id: 0
+    label: Fp1
+    position: {x: -29.44, y: 83.92, z: -6.99}
+  - id: 1
+    label: Fp2
+    position: {x: 29.87, y: 84.90, z: -7.08}
+  # ... 61 EEG channels with MNI coordinates
+
+edges:
+  - label: gain           # matrix name in HDF5
+    format: dense
+    directed: false
+    target_network: ...DesikanKilliany_desc-SC_relmat.yaml
+    dimension_labels:     # ordered column labels (68 DK cortical regions)
+      - ctx-lh-bankssts
+      - ctx-lh-caudalanteriorcingulate
+      # ... 68 entries total
+```
+
+The HDF5 companion stores data and **dimension scales** (HDF5 §12.2)
+that label matrix rows and columns:
+
+| Dataset | Shape | Content |
+|---------|-------|---------|
+| `edges/gain/data` | $(61, 68)$ | Lead-field projection matrix |
+| `edges/gain/_dim_row_labels` | $(61,)$ | Sensor labels (dim-0 scale) |
+| `edges/gain/_dim_col_labels` | $(68,)$ | Region labels (dim-1 scale) |
+| `nodes/coordinates` | $(61, 3)$ | Sensor positions (MNI mm) |
+
 
 ## Reference
 
@@ -846,15 +1029,17 @@ simulation, implementing spike-timing-dependent plasticity.
 | `Network.from_matrix(W, L)` | Large connectomes from arrays |
 | `Network.from_file(path)` | Load saved network (lazy arrays) |
 | `Network.from_tvb_zip(path)` | Import TVB connectivity ZIP |
-| `Network(parcellation=...)` | Built-in normative connectome |
+| `Network.from_db(name)` | Built-in normative connectome |
 
-### I/O
+### I/O & Export
 
 | Method | Description |
 |--------|-------------|
 | `net.save(path)` | Save as YAML + HDF5 (or Zarr, CSV) |
 | `net.to_bep017(dir)` | Export to BIDS BEP017 format |
 | `net.bids_filename` | Generate BIDS-compliant filename |
+| `net.execute(format="tvb")` | Convert to TVB `Connectivity` |
+| `net.execute(format="networkx", target=...)` | Build NetworkX graph (auto-resolves target for projections) |
 
 ### Visualization
 
@@ -872,9 +1057,10 @@ simulation, implementing spike-timing-dependent plasticity.
 |----------|---------|
 | `net.weights_matrix` | Weight array (N × N) |
 | `net.lengths_matrix` | Tract length array (N × N) |
+| `net.matrix(name)` | Any named matrix (e.g. `"gain"`) |
 | `net.number_of_nodes` | Number of regions |
 | `net.node_labels` | List of region labels |
-| `net.graph` | NetworkX graph |
+| `net.graph` | NetworkX graph (nodes have `pos` attribute) |
 
 ### YAML Schema
 

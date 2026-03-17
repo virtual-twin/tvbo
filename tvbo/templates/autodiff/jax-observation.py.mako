@@ -1,5 +1,5 @@
 <%!
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 
 def get_callable_info(func):
     return func.callable.module, func.callable.name

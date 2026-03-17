@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 <%
 if 'experiment' in context.keys():
-    model = context['experiment'].model
+    model = context['experiment'].dynamics
     dt = context['experiment'].integration.step_size
     duration = context['experiment'].integration.duration
 else:

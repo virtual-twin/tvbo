@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 
 # Generic jaxcode - pass parameters on each call
 jaxcode = lambda expr, parameters=None: render_expression(expr, format='jax', parameters=parameters)

@@ -21,7 +21,7 @@ from typing import Optional, Dict, Any
 import sympy.printing.c as spc
 from sympy import Symbol, Function, Pow, Float
 from sympy.printing.pycode import PythonCodePrinter
-from tvbo.knowledge.simulation.equations import sympify as tvbo_sympify
+from tvbo.classes.equation import sympify as tvbo_sympify
 
 
 # =============================================================================

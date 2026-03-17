@@ -15,7 +15,7 @@ import pytest
 
 from tvbo import Dynamics, Network, Coupling
 from tvbo.datamodel import tvbo_datamodel
-from tvbo.export.pyrates import (
+from tvbo.codegen.pyrates import (
     to_pyrates_model_yaml,
     to_pyrates_network_yaml,
     to_pyrates_yaml_string,

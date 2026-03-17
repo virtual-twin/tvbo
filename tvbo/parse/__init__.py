@@ -9,7 +9,5 @@
 TVB-O Parse
 =====
 
-This module provides fuctions for parsing different types of data to extract model components and metadata.
+This module provides functions for parsing different types of data to extract model components and metadata.
 """
-
-from . import metadata

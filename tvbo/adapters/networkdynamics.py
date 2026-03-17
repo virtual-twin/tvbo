@@ -15,7 +15,7 @@ from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
     from tvbo.data.types import TimeSeries
-    from tvbo.export.experiment import SimulationExperiment
+    from tvbo.classes.experiment import SimulationExperiment
 
 
 # Julia packages required by NetworkDynamics.jl templates

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from sympy import parse_expr, pycode, symbols
 import pandas as pd
-from tvbo.knowledge.simulation import equations
+from tvbo.classes import equation as equations
 
 
 def compute_voi(df, VOI, prefix="", state_var_index=None):

@@ -58,7 +58,7 @@ model = Dynamics.from_string(co_model_yaml)
 ## Bifurcation Analysis
 
 ```{python}
-from tvbo.knowledge.simulation.continuation import Continuation
+from tvbo.classes.continuation import Continuation
 
 bifurcation_yaml = """
 name: co_eq_in_q2

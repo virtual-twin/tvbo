@@ -28,7 +28,7 @@ The most readable way to define an experiment is using **pure YAML** with `Simul
 #| label: setup
 #| code-fold: true
 import json
-from tvbo.export.experiment import SimulationExperiment
+from tvbo.classes.experiment import SimulationExperiment
 from IPython.display import Markdown
 ```
 

@@ -59,8 +59,8 @@ Let's create and run a simple experiment to demonstrate the output format.
 ```{python}
 #| label: setup
 #| code-fold: true
-from tvbo.knowledge.simulation.localdynamics import Dynamics
-from tvbo.export.experiment import SimulationExperiment
+from tvbo import Dynamics
+from tvbo.classes.experiment import SimulationExperiment
 import tempfile
 import os
 ```

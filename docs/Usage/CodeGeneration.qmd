@@ -80,7 +80,7 @@ Export as a [BEP034](https://bids.neuroimaging.io/) computational modeling deriv
 exp.to_bids("output/derivatives/tvbo")
 ```
 
-### OpenMINDS
+### [OpenMINDS](https://openminds.ebrains.eu/)
 
 ```python
 exp.to_openminds("output/experiment.jsonld")

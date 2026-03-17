@@ -22,7 +22,7 @@ Standalone usage (no model context):
     code = template.get_def("function_def").render(func=my_func, format='jax')
 </%doc>
 <%!
-from tvbo.export.code import render_expression, parse_eq
+from tvbo.codegen import render_expression, parse_eq
 
 # =============================================================================
 # Helper Functions (Python code block - available to all defs)
@@ -538,7 +538,7 @@ def ${func.name}(${signature}):
     - Mean((x[i] - mean(x))**2, (i, 0, n-1)) -> jnp.mean((x - jnp.mean(x))**2)
     - Sum((x[i] - mean(x)) * (y[i] - mean(y)), (i, 0, n-1)) / sqrt(...)
 
-    The printers in tvbo.export.code handle the translation.
+    The printers in tvbo.codegen.code handle the translation.
     """
     args = get_func_args(func)
     params = get_func_params_with_defaults(func)

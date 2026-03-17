@@ -15,7 +15,7 @@ Output:
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import textwrap
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import get_param_info
 
 # Get model from context
@@ -75,7 +75,7 @@ else:
     _stoch_dt = 0.001  # fallback for standalone dfun rendering
 _stoch_inv_dt = 1.0 / _stoch_dt
 for pname in param_names:
-    p_obj = model.parameters.get(pname) if model.parameters else None
+    p_obj = (model.parameters[pname] if pname in model.parameters else None) if model.parameters else None
     if p_obj and getattr(p_obj, 'distribution', None):
         dist = p_obj.distribution
         axis = str(getattr(dist, 'axis', 'space'))

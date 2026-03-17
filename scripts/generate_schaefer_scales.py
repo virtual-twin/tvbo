@@ -188,6 +188,34 @@ def run_tck2connectome(
     )
 
 
+def extract_functional_network(region_name: str) -> str:
+    """Extract hemisphere + functional network from a Schaefer region name.
+
+    E.g. ``"17Networks_LH_VisCent_1"`` → ``"LH_VisCent"``,
+         ``"7Networks_RH_Default_3"``  → ``"RH_Default"``.
+    """
+    parts = region_name.split("_")
+    # Format: {seg}_{hemi}_{network}_{index...}
+    return f"{parts[1]}_{parts[2]}"
+
+
+def build_node_mapping(entities: list[dict]) -> tuple[np.ndarray, list[str]]:
+    """Build a parcel → functional-network index mapping.
+
+    Returns
+    -------
+    mapping : ndarray of int32, shape (n_parcels,)
+        Index into the sorted list of unique functional networks.
+    network_labels : list of str
+        Sorted unique functional network names (e.g. ``["LH_Cont", …]``).
+    """
+    parcel_nets = [extract_functional_network(e["name"]) for e in entities]
+    network_labels = sorted(set(parcel_nets), key=parcel_nets.index)
+    net_to_idx = {name: idx for idx, name in enumerate(network_labels)}
+    mapping = np.array([net_to_idx[n] for n in parcel_nets], dtype=np.int32)
+    return mapping, network_labels
+
+
 def build_network(
     weights: np.ndarray,
     lengths: np.ndarray,
@@ -207,6 +235,12 @@ def build_network(
             c = entity.get("center", {})
             if c:
                 node.position = {"x": float(c["x"]), "y": float(c["y"]), "z": float(c["z"])}
+
+    # Build parcel → functional network mapping (multi-layer hierarchy)
+    if entities:
+        mapping, net_labels = build_node_mapping(entities)
+        network.set_node_mapping(mapping)
+
     network.descriptor = "SC"
     network.parcellation = {
         "atlas": {

@@ -54,7 +54,7 @@
     # Convert Piecewise((a, cond), (b, True)) -> (a+b)/2 + (a-b)/2 * sign(cond_expr)
     # Convert Abs(x) -> sign(x)*x
     import sympy
-    from tvbo.knowledge.simulation.equations import sympify as tvbo_sympify
+    from tvbo.classes.equation import sympify as tvbo_sympify
 
     def _pyrates_compat(eq_str):
         """Post-process a rendered equation string for PyRates compatibility."""

@@ -3,7 +3,7 @@
 %>
 <%
 if 'experiment' in context.keys():
-    integration = context['experiment'].metadata.integration
+    integration = context['experiment'].integration
     # consider state-wise noise as stochastic, too
     sw = getattr(context['experiment'], 'noise_sigma_array', None)
     try:
@@ -11,7 +11,7 @@ if 'experiment' in context.keys():
     except Exception:
         has_state_noise = bool(sw)
 else:
-    integration = context['integrator'].metadata
+    integration = context['integrator']
     has_state_noise = False
 # Select the base class for the integrator based on whether it is stochastic and/or uses SciPy ODE solvers.
 stochastic = (integration.noise is not None) or has_state_noise

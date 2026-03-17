@@ -165,7 +165,7 @@ class LazyArrayStore:
         """Template edges = entries without source/target (matrix measures)."""
         return [
             e for e in (self._meta.get("edges", []) or [])
-            if not e.get("source")
+            if e.get("source") is None
         ]
 
     @staticmethod

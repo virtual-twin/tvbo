@@ -7,14 +7,14 @@ try:
 except ImportError:
     tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
 
-from tvbo.knowledge.simulation.observation import expand_to_4d
+from tvbo.classes.observation import expand_to_4d
 from tvbo.data.types import TimeSeries
 
 
 def initialize_graph_states_with_history(G, delay_buffer=1000):
     """Initialize states, time-series, and history buffer for each node."""
     for node in G.nodes:
-        state_dim = len(G.nodes[node]["model"].metadata.state_variables)
+        state_dim = len(G.nodes[node]["model"].state_variables)
         G.nodes[node]["state"] = np.zeros(state_dim)
         G.nodes[node]["time-series"] = np.empty((0, state_dim))
         G.nodes[node]["history"] = np.zeros((delay_buffer, state_dim))
@@ -102,7 +102,7 @@ def collect_time_series(G, time_points):
         time_series_4d,
         labels_dimensions={
             "State Variable": list(
-                G.nodes[node]["model"].metadata.state_variables.keys()
+                G.nodes[node]["model"].state_variables.keys()
             )
         },
     )

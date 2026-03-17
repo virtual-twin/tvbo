@@ -105,7 +105,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
     logger = logging.getLogger(__name__)
 
     try:
-        from tvbo.export.experiment import SimulationExperiment
+        from tvbo.classes.experiment import SimulationExperiment
 
         exp_data = request.experiment
         duration = request.duration or 1000.0

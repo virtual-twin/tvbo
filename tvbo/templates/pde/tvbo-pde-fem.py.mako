@@ -21,10 +21,26 @@ from skfem.models.poisson import mass, laplace
 # Extract values directly from the experiment datamodel
 <%
 fd = experiment.field_dynamics
-primary = fd.field
-meshinfo = primary.mesh
+
+# Support both new (state_variables + fd.mesh) and old (fd.field) paths
+if fd.state_variables:
+    primary = fd.state_variables[0]
+    meshinfo = fd.mesh or getattr(primary, 'mesh', None)
+    primary_label = primary.label or primary.name
+    u0_val = float(primary.initial_value) if primary.initial_value is not None else 0.0
+    bcs = primary.boundary_conditions or fd.boundary_conditions or []
+else:
+    primary = fd.field
+    meshinfo = primary.mesh or fd.mesh
+    primary_label = primary.label
+    u0_val = float(primary.initial_value)
+    bcs = fd.boundary_conditions or []
+
+# Resolve mesh file: prefer mesh_file, fall back to dataLocation
+mesh_loc = getattr(meshinfo, 'mesh_file', None) or getattr(meshinfo, 'dataLocation', None) or ''
+mesh_fmt = getattr(meshinfo, 'mesh_format', None) or ''
+
 solver = fd.solver
-bcs = fd.boundary_conditions or []
 integ = experiment.integration
 
 # Dirichlet value (first matching BC), default 0.0
@@ -37,42 +53,83 @@ for bc in bcs:
             dir_val = 0.0
         break
 
-# Sum diffusion coefficients of all operators (kept simple)
+# Sum diffusion coefficients of all operators.
+# fd.parameters is a dict {name: Parameter}; op.coefficient may be a ParameterName ref.
+# Build name->value lookup from fd.parameters.values().
+param_values = {}
+for p in (fd.parameters or {}).values() if hasattr(fd.parameters, 'values') else (fd.parameters or []):
+    pname = getattr(p, 'name', None) or str(p)
+    pval = getattr(p, 'value', None)
+    if pval is not None:
+        param_values[pname] = float(pval)
+
 coeffs = []
 for op in (fd.operators or []):
-    try:
-        coeffs.append(float(op.coefficient.value))
-    except Exception:
-        coeffs.append(1.0)
+    c = op.coefficient
+    # Try direct .value first (full Parameter object)
+    val = getattr(c, 'value', None)
+    if val is not None:
+        coeffs.append(float(val))
+    else:
+        # Resolve by name from fd.parameters
+        cname = getattr(c, 'name', None) or str(c)
+        coeffs.append(param_values.get(cname, 1.0))
 diff_coeff = sum(coeffs) if coeffs else 1.0
 %>
 
-UNKNOWN: str = ${repr(primary.label)}
+UNKNOWN: str = ${repr(primary_label)}
 ELEMENT_TYPE: str = ${repr(str(meshinfo.element_type))}
-DATA_LOCATION: str = ${repr(str(meshinfo.dataLocation))}
+DATA_LOCATION: str = ${repr(mesh_loc)}
+MESH_FORMAT: str = ${repr(mesh_fmt)}
 DT: float = ${float(solver.dt)}
 STEPS: int = ${int(round(integ.duration / solver.dt))}
-U0: float = ${float(experiment.field_dynamics.field.initial_value)}
+U0: float = ${u0_val}
 DIRICHLET_VALUE: float = ${dir_val}
 DIFF_COEFF: float = ${diff_coeff}
 
 
-def _load_mesh(data_location: str, element_type: str):
-    """Load triangle/tetra mesh from a file path; if a prefix is present (e.g., 'gifti:path'), use the part after ':'.
+def _load_mesh(data_location: str, element_type: str, mesh_format: str = ""):
+    """Load triangle/tetra mesh from a file path.
 
-    Notes for GIFTI:
-      - Surface meshes are typically in files like *.surf.gii (contain coordinates + triangles).
-      - Files like *.shape.gii hold scalar data on a reference surface and do NOT contain a mesh.
+    Supports prefix syntax (e.g., 'gifti:path/to/file.gii').
+    Uses mesh_format for explicit format override; otherwise auto-detects from extension.
     """
-    path = data_location.split(":", 1)[-1]
+    # Strip format prefix if present (e.g., 'gifti:path')
+    if ":" in data_location and not os.path.isabs(data_location.split(":", 1)[-1]):
+        prefix, path = data_location.split(":", 1)
+        if not mesh_format:
+            mesh_format = prefix
+    else:
+        path = data_location.split(":", 1)[-1] if ":" in data_location else data_location
+
     if not os.path.exists(path):
         raise FileNotFoundError(f"Mesh file not found: {path}")
 
-    if path.lower().endswith(".gii"):
+    fmt = mesh_format.lower() if mesh_format else ""
+
+    # Use explicit format or auto-detect from extension
+    is_gifti = fmt in ("gifti", "gii") or path.lower().endswith(".gii")
+    is_freesurfer = fmt == "freesurfer" or any(
+        path.lower().endswith(s) for s in (".pial", ".white", ".inflated")
+    )
+
+    if is_gifti:
         gi = nib.load(path)
-        triangles, vertices = gi.darrays
-        faces = triangles.data
-        coords = vertices.data
+        # GIFTI standard: POINTSET (vertices) first, TRIANGLE second.
+        # Use intent codes for robustness.
+        coords, faces = None, None
+        for da in gi.darrays:
+            if da.intent == nib.nifti1.intent_codes['NIFTI_INTENT_POINTSET']:
+                coords = da.data
+            elif da.intent == nib.nifti1.intent_codes['NIFTI_INTENT_TRIANGLE']:
+                faces = da.data
+        if coords is None or faces is None:
+            # Fallback: assume [vertices, triangles] order
+            coords = gi.darrays[0].data
+            faces = gi.darrays[1].data
+        m = meshio.Mesh(points=coords, cells=[("triangle", faces)])
+    elif is_freesurfer:
+        coords, faces = nib.freesurfer.read_geometry(path)
         m = meshio.Mesh(points=coords, cells=[("triangle", faces)])
     else:
         m = meshio.read(path)
@@ -96,7 +153,7 @@ def _load_mesh(data_location: str, element_type: str):
 
 def build():
     """Build solver from baked experiment values. Returns (solve_pde, visualize, meta)."""
-    mesh, element = _load_mesh(DATA_LOCATION, ELEMENT_TYPE)
+    mesh, element = _load_mesh(DATA_LOCATION, ELEMENT_TYPE, MESH_FORMAT)
     basis = InteriorBasis(mesh, element)
 
     # Assemble once
@@ -140,25 +197,7 @@ def build():
                 f = source(n, (n + 1) * DT, u) if callable(source) else source
                 b_full = M @ u + DT * (M @ f)
 
-            _out = condense(A_full, b_full, D=bdofs, x=x0_template)
-            if isinstance(_out, tuple):
-                if len(_out) == 2:
-                    A, b = _out
-                    u = solve(A, b)
-                elif len(_out) == 3:
-                    A, b, xc = _out
-                    u = solve(A, b, xc)
-                else:
-                    A, b = _out[0], _out[1]
-                    if len(_out) >= 3:
-                        xc = _out[2]
-                        u = solve(A, b, xc)
-                    else:
-                        u = solve(A, b)
-            else:
-                # Fallback to using as A, with original right-hand side
-                A, b = _out, b_full
-                u = solve(A, b)
+            u = solve(*condense(A_full, b_full, D=bdofs, x=x0_template))
             if U is not None:
                 U[n + 1] = u
 

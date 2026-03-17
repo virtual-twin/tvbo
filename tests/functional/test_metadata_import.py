@@ -1,7 +1,6 @@
-"""Test importing a minimal Dynamics into the ontology via metadata.import_yaml_model."""
+"""Test importing a minimal Dynamics into the ontology via ontology.import_model."""
 from tvbo.datamodel import tvbo_datamodel as dm
-from tvbo.parse import metadata
-from tvbo.knowledge import ontology
+from tvbo.ontology import owl as ontology
 
 
 def test_import_minimal_dynamics_into_ontology():
@@ -19,7 +18,7 @@ def test_import_minimal_dynamics_into_ontology():
         parameters={"a": param_a},
     )
 
-    oc = metadata.import_yaml_model(dyn, model_name="ToyModel")
+    oc = ontology.import_model(dyn, model_name="ToyModel")
     assert oc is not None
 
     oc2 = ontology.onto.search_one(label="ToyModel")
