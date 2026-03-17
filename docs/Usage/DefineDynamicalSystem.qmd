@@ -69,7 +69,7 @@ derived_variables:
         unit: m
         equation:
             rhs: -L * cos(theta)
-output: 
+output:
     - x
     - y
 """
