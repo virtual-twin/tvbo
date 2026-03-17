@@ -81,9 +81,10 @@ results = pendulum.run(duration=5_000)
 ```
 
 The system consists of:
-- **Parameters**: Physical constants (damping, frequency, length)
-- **State variables**: Time-evolving quantities (angle θ, angular velocity ω)
-- **Output transforms**: Computed observables (Cartesian coordinates x, y)
+
+- **[Parameters](/datamodel/classes/Parameter.html)**: Physical constants (damping, frequency, length)
+- **[State variables](/datamodel/classes/StateVariable.html)**: Time-evolving quantities (angle θ, angular velocity ω)
+- **[Output transforms](/datamodel/slots/output.html)**: Computed observables (Cartesian coordinates x, y)
 
 ### Visualization
 
@@ -139,5 +140,44 @@ ani = animation.FuncAnimation(
 plt.close()
 ani.save("_output/anim1.gif", writer="pillow", fps=target_fps)
 ```
+
+### Phase Portrait
+
+State variables accept a [Distribution](/datamodel/classes/Distribution.html) for initial conditions, which can also be set via the Python API. Running 20 trials — each from a different randomly sampled starting point — reveals the full phase portrait:
+
+```{python}
+from tvbo.datamodel.schema import Distribution, Range
+
+# Attach sampling distributions to the state variables via the Python API
+pendulum.dynamics.state_variables['theta'].distribution = Distribution(
+    name='Uniform', domain=Range(lo=-3.14159, hi=3.14159)
+)
+pendulum.dynamics.state_variables['omega'].distribution = Distribution(
+    name='Uniform', domain=Range(lo=-0.15, hi=0.15)
+)
+```
+
+```{python}
+N_TRIALS = 20
+DURATION = 10_000  # ms — long enough to see convergence to attractor
+
+fig, ax = plt.subplots(figsize=(5, 4), layout="tight")
+
+for _ in range(N_TRIALS):
+    trial = pendulum.run(duration=DURATION, random_initial_conditions=True)
+    theta = trial.integration.data[:, 0, 0]  # (time,)
+    omega = trial.integration.data[:, 1, 0]
+    ax.plot(theta, omega, lw=0.6, alpha=0.7)
+    ax.plot(theta[0], omega[0], "o", ms=4, color="black", zorder=5)
+
+ax.set_xlabel(r"$\theta$ (rad)")
+ax.set_ylabel(r"$\dot{\theta}$ (rad/ms)")
+ax.set_title("Phase portrait — 20 trials")
+ax.axhline(0, color="gray", lw=0.5, ls="--")
+ax.axvline(0, color="gray", lw=0.5, ls="--")
+plt.close()
+fig
+```
+
 
 
