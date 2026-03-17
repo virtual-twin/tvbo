@@ -24,7 +24,7 @@ data_source:
     description: >-
         SEEG depth electrode network. Each node is an electrode contact
         with spatial coordinates inside the brain.
-    path: sensors_seeg_588.yaml
+    path: acq-SEEG588_sensors.yaml
 
 parameters:
     conductivity:
