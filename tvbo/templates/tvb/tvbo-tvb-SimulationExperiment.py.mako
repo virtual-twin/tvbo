@@ -6,9 +6,9 @@ import numpy as np
 <%include file="/tvbo-tvb-coupling.py.mako" />
 <%include file="/tvbo-tvb-integration.py.mako" />
 <%include file="/tvbo-tvb-noise.py.mako" />
-<%include file="/tvbo-tvb-monitor.py.mako" />
+<%include file="/tvbo-tvb-observation.py.mako" />
 <%
-experiment = context['experiment'].metadata
+experiment = context['experiment']
 
 initial_conditions = np.array([
     np.full(((getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),), v.initial_value)

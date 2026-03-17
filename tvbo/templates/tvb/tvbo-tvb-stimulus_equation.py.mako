@@ -1,8 +1,8 @@
 <%
 if 'experiment' in context.keys():
-    stimulus = context['experiment'].metadata.stimulation
+    stimulus = context['experiment'].stimulation
 else:
-    stimulus = context['stimulus'].metadata
+    stimulus = context['stimulus']
 
 from tvbo.classes.equation import (
     conditionals2piecewise,
