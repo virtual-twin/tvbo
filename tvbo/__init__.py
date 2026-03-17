@@ -153,8 +153,11 @@ _LAZY_IMPORTS = {
     "Continuation": ".classes.continuation",
     "Coupling": ".classes.coupling",
     "Noise": ".classes.noise",
+    "Observation": ".classes.observation",
     "Function": ".classes.function",
     "LossFunction": ".classes.function",
+    "ExperimentResult": ".data.types",
+    "TimeSeries": ".data.types",
 }
 
 # Special renames for backward compatibility
