@@ -199,6 +199,26 @@ for pname in list(dyn_param_names):
 # Remove stochastic params from dynamics params (trajectories injected after prepare)
 dyn_param_names = [p for p in dyn_param_names if p not in stochastic_param_names]
 
+# Detect state variables with distributions for IC-based trials
+# When n_trials > 1 and state variables have distributions, each trial
+# samples different initial conditions from those distributions.
+sv_distribution_info = {}
+for sv_name, sv in model.state_variables.items():
+    dist = getattr(sv, 'distribution', None)
+    if dist:
+        # Fallback chain: distribution.domain → sv.domain → default
+        domain = getattr(dist, 'domain', None)
+        if not domain:
+            domain = getattr(sv, 'domain', None)
+        lo = float(domain.lo) if domain and domain.lo is not None else -1.0
+        hi = float(domain.hi) if domain and domain.hi is not None else 1.0
+        sv_distribution_info[sv_name] = {
+            'dist': str(getattr(dist, 'name', 'Uniform')).lower(),
+            'lo': lo,
+            'hi': hi,
+            'idx': state_names.index(sv_name),
+        }
+
 # === Events metadata (stimuli and other time-dependent inputs) ===
 # Schema: experiment.events is multivalued dict of Event objects
 # Each stimulus-type event becomes an AbstractExternalInput, available as a variable in dfun
@@ -405,9 +425,8 @@ for expl in exploration_list:
         'average': str(expl.average) if expl.average else None,
         'axes': [],
     }
-    # Schema: parameters is multivalued dict
-    params = expl.parameters
-    assert params, f"exploration.parameters required in YAML for {expl.name}"
+    # Schema: parameters is multivalued dict (optional for trial-only explorations)
+    params = expl.parameters or {}
     def _resolve_n(domain):
         """Compute n from domain: prefer n, else compute from step, else default 50."""
         if domain.n:
@@ -1358,15 +1377,16 @@ def run_optimization(
     total_points = 1
     for ax in expl['axes']:
         total_points *= ax['n']
+    has_axes = len(expl['axes']) > 0
     obs_type = expl.get('observable_type', 'observation')
     obs_func = expl.get('observable_func', '')
     obs_args = expl.get('observable_args', [])
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
-    grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']])
+    grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
-    """${expl['label']} - Grid: ${grid_desc} = ${total_points} points."""
+    """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
     if _network is not None:
         _solver = get_solver()
@@ -1401,6 +1421,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     else:
         _expl_model_fn = model_fn
         _expl_state = state
+% if has_axes:
     grid_state = copy.deepcopy(_expl_state)
     % for ax in expl['axes']:
     % if ax.get('element_idx') is not None:
@@ -1426,6 +1447,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
+% endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
 % if obs_type == 'function_call':
@@ -1488,43 +1510,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-% if has_model_output:
-    # Model output: ${', '.join(model_output_vars)}
-    @jax.jit
-    def observable_fn(s):
-        result = _expl_model_fn(s)
-        ## Unpack parameters (may be needed by derived variable equations)
-        % for name in dyn_param_names:
-        ${name} = s.dynamics.${name}
-        % endfor
-        % for sp_name in stochastic_param_names:
-        ${sp_name} = ${dyn_param_defaults.get(sp_name, 0.0)}  # stochastic time-varying param (default for derived computation)
-        % endfor
-        % if derived_param_names:
-        % for dp in model.derived_parameters.values():
-        ${dp.name} = ${jaxcode_obj(dp)}
-        % endfor
-        % endif
-        ## Unpack state variables from simulation result
-        % for i, sv_name in enumerate(state_names):
-        ${sv_name} = result.data[:, ${i}]
-        % endfor
-        ## Compute derived output variables
-        % for dv_name in model_derived_outputs:
-        ${dv_name} = ${jaxcode_obj(model.derived_variables[dv_name])}
-        % endfor
-        % if len(model_output_vars) == 1:
-        return ${model_output_vars[0]}
-        % else:
-        return jnp.stack([${', '.join(model_output_vars)}], axis=-1)
-        % endif
-% else:
-    # No observable specified, no model output - return raw simulation data
+    # No observable specified — return full simulation data (states + auxiliaries)
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
         return result.data
-% endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
     @jax.jit
@@ -1628,8 +1618,53 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     % endif
 % endif
 
+% if expl.get('n_trials', 1) > 1 and sv_distribution_info:
+<%
+    _sv_names = list(sv_distribution_info.keys())
+    _n_sv = len(_sv_names)
+%>\
+    # === IC-based trial parallelization: ${expl['n_trials']} trials ===
+    # Each trial samples different initial conditions from state variable distributions.
+    _n_trials = ${expl['n_trials']}
+    _trial_key = jax.random.key(${random_seed})
+    _trial_keys = jax.random.split(_trial_key, _n_trials)
+
+    def _sample_ics(key):
+        keys = jax.random.split(key, ${_n_sv + 1})
+        ic = _expl_state.initial_state.dynamics  # (n_states, n_nodes)
+    % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
+    % if _sv_info['dist'] in ('gaussian', 'normal'):
+        ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(keys[${_si + 1}], ic[${_sv_info['idx']}].shape))
+    % else:
+        ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(keys[${_si + 1}], ic[${_sv_info['idx']}].shape, minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
+    % endif
+    % endfor
+        return ic
+
+    _trial_ics = jax.vmap(_sample_ics)(_trial_keys)  # (n_trials, n_states, n_nodes)
+
+    _base_ic_observable = observable_fn
+
+    @jax.jit
+    def observable_fn(s):
+        def _run_trial(ic):
+            s.initial_state.dynamics = ic
+            return _base_ic_observable(s)
+        trial_results = jax.vmap(_run_trial)(_trial_ics)
+    % if expl.get('average') == 'trials':
+        return jnp.mean(trial_results, axis=0)
+    % else:
+        return trial_results
+    % endif
+% endif
+
+% if has_axes:
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     results = exec_runner.run()
+% else:
+    # Trial-only exploration — no parameter grid
+    results = [observable_fn(_expl_state)]
+% endif
 
     # Build axes info for ExplorationResult
     _axes_info = [
@@ -1661,7 +1696,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     return ExplorationResult(
         name='${expl['name']}',
+% if has_axes:
         grid=grid,
+% endif
         results=jnp.stack(results),
         axes=_axes_info,
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\

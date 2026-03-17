@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-16T19:02:34
+# Generation date: 2026-03-17T18:17:47
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2322,10 +2322,10 @@ class Exploration(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Exploration
 
     name: Union[str, ExplorationName] = None
-    parameters: Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]] = empty_dict()
     label: Optional[str] = None
     description: Optional[str] = None
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
@@ -2338,10 +2338,6 @@ class Exploration(YAMLRoot):
         if not isinstance(self.name, ExplorationName):
             self.name = ExplorationName(self.name)
 
-        if self._is_empty(self.parameters):
-            self.MissingRequiredField("parameters")
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
-
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -2350,6 +2346,8 @@ class Exploration(YAMLRoot):
 
         if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
             self.execution = ExecutionConfig(**as_dict(self.execution))
+
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.mode is not None and not isinstance(self.mode, str):
             self.mode = str(self.mode)
@@ -5910,7 +5908,7 @@ slots.exploration__execution = Slot(uri=TVBO.execution, name="exploration__execu
                    model_uri=TVBO.exploration__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
 
 slots.exploration__parameters = Slot(uri=TVBO.parameters, name="exploration__parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.exploration__parameters, domain=None, range=Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]])
+                   model_uri=TVBO.exploration__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.exploration__mode = Slot(uri=TVBO.mode, name="exploration__mode", curie=TVBO.curie('mode'),
                    model_uri=TVBO.exploration__mode, domain=None, range=Optional[str])

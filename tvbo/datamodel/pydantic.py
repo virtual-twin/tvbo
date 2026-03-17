@@ -5691,7 +5691,7 @@ class Exploration(ConfiguredBaseModel):
                        'Algorithm',
                        'Continuation',
                        'SimulationExperiment']} })
-    parameters: dict[str, Parameter] = Field(default=..., description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'Event',
                        'TemporalApplicableEquation',
