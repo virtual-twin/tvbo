@@ -4,7 +4,7 @@ label: EEG standard_1005 fsaverage projection
 description: MNE standard_1005 EEG sensors (MNI, mm) with fsaverage aparc projection
   gain matrix (sensors x regions).
 number_of_nodes: 61
-descriptor: projection
+descriptor: sensors
 distance_unit: mm
 time_unit: ms
 data_file: tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.h5

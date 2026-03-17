@@ -22,7 +22,7 @@ data_source:
         MEG sensor array network. Each node is a SQUID sensor with spatial
         coordinates and orientation vector. The associated data file stores
         the precomputed lead field matrix (gain).
-    path: sensors_meg_brainstorm_276.yaml
+    path: acq-MEGBrainstorm276_sensors.yaml
 
 parameters:
     permeability:
