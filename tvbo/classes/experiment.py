@@ -1239,9 +1239,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         simulation_data = Bunch()
 
         if format.lower() == "tvb":
-            initial_conditions = self.collect_initial_conditions(
-                random=kwargs.pop("random_initial_conditions", False)
-            )
+            _random_ic = kwargs.pop("random_initial_conditions", False)
+            if _random_ic:
+                import warnings
+                warnings.warn(
+                    "random_initial_conditions=True is deprecated. "
+                    "Set distribution on state variables instead.",
+                    DeprecationWarning, stacklevel=2,
+                )
+            initial_conditions = self.collect_initial_conditions(random=_random_ic)
             simulator_ = self.execute()
             simulator_.initial_conditions = initial_conditions.data
             simulator_.configure()
@@ -1576,8 +1582,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         n_nodes = getattr(self.network, 'number_of_nodes', None) or 1
 
         if random:
+            import warnings
+            warnings.warn(
+                "random=True is deprecated. Set distribution on state variables instead.",
+                DeprecationWarning, stacklevel=2,
+            )
+
+        # Auto-detect distributions on state variables
+        has_distributions = any(
+            getattr(sv, 'distribution', None) for sv in self.dynamics.state_variables.values()
+        )
+
+        if random or has_distributions:
             history.append(
-                self.dynamics.get_initial_values(random=True, N=n_nodes)
+                self.dynamics.get_initial_values(N=n_nodes)
             )
         else:
             for sv in self.dynamics.state_variables.values():

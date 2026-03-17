@@ -2045,19 +2045,43 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     def get_initial_values(self, default=0.1, random=False, N=1, **kwargs):
         if random:
+            import warnings
+            warnings.warn(
+                "random=True is deprecated. Set distribution on state variables instead.",
+                DeprecationWarning, stacklevel=2,
+            )
+        # Auto-detect: if any SV has a distribution, sample from it
+        has_distributions = any(
+            getattr(sv, 'distribution', None) for sv in self.state_variables.values()
+        )
+        if random or has_distributions:
             init = []
             for k, sv in self.state_variables.items():
-                lo, hi = sv.domain.lo if sv.domain else -10, (
-                    sv.domain.hi if sv.domain else 10
-                )
-                if sv.boundaries:
-                    lo = max(lo, sv.boundaries.lo)
-                    hi = min(hi, sv.boundaries.hi)
-                if random:
+                dist = getattr(sv, 'distribution', None)
+                if dist:
+                    # Use distribution.domain, fall back to sv.domain
+                    domain = getattr(dist, 'domain', None) or getattr(sv, 'domain', None)
+                    lo = float(domain.lo) if domain and domain.lo is not None else -10.0
+                    hi = float(domain.hi) if domain and domain.hi is not None else 10.0
+                    dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+                    if dist_name in ('gaussian', 'normal'):
+                        sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
+                    else:
+                        sv_init = np.random.uniform(lo, hi, size=N)
+                elif random:
+                    # Legacy fallback: sample from domain/boundaries
+                    lo = sv.domain.lo if sv.domain else -10
+                    hi = sv.domain.hi if sv.domain else 10
+                    if sv.boundaries:
+                        lo = max(lo, sv.boundaries.lo)
+                        hi = min(hi, sv.boundaries.hi)
                     sv_init = np.random.uniform(lo, hi, size=N)
-                if random == "normal":
-                    sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6)
-                self.state_variables[k].initial_value = sv_init
+                else:
+                    # No distribution, no random flag → use initial_value
+                    sv_init = np.repeat(
+                        float(sv.initial_value) if sv.initial_value is not None else default,
+                        N,
+                    )
                 init.append(sv_init)
         else:
             init = [
