@@ -1114,7 +1114,7 @@ class Network(tvbo_datamodel.Network):
         """
         from bids.layout.writing import build_path
 
-        if getattr(self, "descriptor", None) == "sensors":
+        if getattr(self, "descriptor", None) in ("sensors", "projection"):
             from tvbo.data.converters import sensor_entities
             from tvbo.data.network_io import SENSOR_PATTERNS
             return build_path(sensor_entities(self), SENSOR_PATTERNS)

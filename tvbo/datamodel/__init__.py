@@ -20,5 +20,8 @@ Network.number_of_regions = property(
 from .schema import *  # noqa: E402, F401, F403
 
 # Backward-compat aliases for old module names
+import sys
 from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
 from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
+sys.modules['tvbo.datamodel.tvbo_datamodel'] = tvbo_datamodel
+sys.modules['tvbo.datamodel.tvbopydantic'] = tvbopydantic

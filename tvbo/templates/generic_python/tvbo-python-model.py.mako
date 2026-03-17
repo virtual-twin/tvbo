@@ -10,7 +10,7 @@ Uses base/dfun.mako with signature='scipy'.
 <%
 # Get model from context - handle both Dynamics and wrapped model objects
 if hasattr(model, 'metadata'):
-    _model = model.metadata
+    _model = model
 else:
     _model = model
 

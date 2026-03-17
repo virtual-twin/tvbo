@@ -66,22 +66,22 @@ def ontoclass2dict(ontoclass):
     #     study = metadata.load_simulation_study(db_studies.files[ontoclass.name])
     #     exp = study.get_experiment(1)
 
-    #     if exp.metadata.model.name:
-    #         model = query.label_search(exp.metadata.model.name, root_class=onto.Model)[
+    #     if exp.model.name:
+    #         model = query.label_search(exp.model.name, root_class=onto.Model)[
     #             0
     #         ]
     #         if not model in ontoclass.requires:
     #             ontoclass.requires.append(model)
-    #     if exp.metadata.coupling.name:
+    #     if exp.coupling.name:
     #         coupling = query.label_search(
-    #             exp.metadata.coupling.name, root_class=onto.Coupling
+    #             exp.coupling.name, root_class=onto.Coupling
     #         )[0]
     #         if not coupling in ontoclass.requires:
     #             ontoclass.requires.append(coupling)
 
-    #     if exp.metadata.integration.method:
+    #     if exp.integration.method:
     #         integration = query.label_search(
-    #             exp.metadata.integration.method, root_class=onto.IntegrationMethod
+    #             exp.integration.method, root_class=onto.IntegrationMethod
     #         )[0]
     #         if not integration in ontoclass.requires:
     #             ontoclass.requires.append(integration)

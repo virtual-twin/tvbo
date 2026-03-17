@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-12T19:20:51
+# Generation date: 2026-03-16T19:02:34
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -733,6 +733,7 @@ class BidsEntities(YAMLRoot):
     segmentation: Optional[str] = None
     scale: Optional[str] = None
     atlas: Optional[str] = None
+    acquisition: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.template is not None and not isinstance(self.template, str):
@@ -752,6 +753,9 @@ class BidsEntities(YAMLRoot):
 
         if self.atlas is not None and not isinstance(self.atlas, str):
             self.atlas = str(self.atlas)
+
+        if self.acquisition is not None and not isinstance(self.acquisition, str):
+            self.acquisition = str(self.acquisition)
 
         super().__post_init__(**kwargs)
 
@@ -1057,6 +1061,8 @@ class Edge(YAMLRoot):
     target_var: Optional[str] = None
     coupling: Optional[Union[str, CouplingName]] = None
     directed: Optional[Union[bool, Bool]] = False
+    target_network: Optional[str] = None
+    dimension_labels: Optional[Union[str, list[str]]] = empty_list()
     dynamics: Optional[Union[str, DynamicsName]] = None
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
@@ -1101,6 +1107,13 @@ class Edge(YAMLRoot):
 
         if self.directed is not None and not isinstance(self.directed, Bool):
             self.directed = Bool(self.directed)
+
+        if self.target_network is not None and not isinstance(self.target_network, str):
+            self.target_network = str(self.target_network)
+
+        if not isinstance(self.dimension_labels, list):
+            self.dimension_labels = [self.dimension_labels] if self.dimension_labels is not None else []
+        self.dimension_labels = [v if isinstance(v, str) else str(v) for v in self.dimension_labels]
 
         if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
             self.dynamics = DynamicsName(self.dynamics)
@@ -2988,6 +3001,7 @@ class Coupling(YAMLRoot):
 
     name: Union[str, CouplingName] = "Linear"
     label: Optional[str] = None
+    iri: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     description: Optional[str] = None
     coupling_function: Optional[Union[dict, Equation]] = None
@@ -3014,6 +3028,9 @@ class Coupling(YAMLRoot):
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
+
+        if self.iri is not None and not isinstance(self.iri, str):
+            self.iri = str(self.iri)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -5388,6 +5405,9 @@ slots.bidsEntities__scale = Slot(uri=TVBO.scale, name="bidsEntities__scale", cur
 slots.bidsEntities__atlas = Slot(uri=TVBO.atlas, name="bidsEntities__atlas", curie=TVBO.curie('atlas'),
                    model_uri=TVBO.bidsEntities__atlas, domain=None, range=Optional[str])
 
+slots.bidsEntities__acquisition = Slot(uri=TVBO.acquisition, name="bidsEntities__acquisition", curie=TVBO.curie('acquisition'),
+                   model_uri=TVBO.bidsEntities__acquisition, domain=None, range=Optional[str])
+
 slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.curie('nodes'),
                    model_uri=TVBO.network__nodes, domain=None, range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]])
 
@@ -5522,6 +5542,12 @@ slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO
 
 slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
                    model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__target_network = Slot(uri=TVBO.target_network, name="edge__target_network", curie=TVBO.curie('target_network'),
+                   model_uri=TVBO.edge__target_network, domain=None, range=Optional[str])
+
+slots.edge__dimension_labels = Slot(uri=TVBO.dimension_labels, name="edge__dimension_labels", curie=TVBO.curie('dimension_labels'),
+                   model_uri=TVBO.edge__dimension_labels, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.edge__dynamics = Slot(uri=TVBO.dynamics, name="edge__dynamics", curie=TVBO.curie('dynamics'),
                    model_uri=TVBO.edge__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])

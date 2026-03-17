@@ -1,10 +1,18 @@
 """Convert TVB simulator objects to tvbo datamodel instances."""
-from os.path import join
 from typing import Any, Union
 
-import pandas as pd
-
 from tvbo.datamodel import schema as tvbo_datamodel
+
+
+def _to_scalar(val):
+    """Extract a Python scalar from a numpy array or other array-like."""
+    if val is None:
+        return None
+    if hasattr(val, 'item'):
+        return val.item() if val.ndim == 0 else val.flat[0]
+    if hasattr(val, '__len__') and len(val) > 0:
+        return float(val[0])
+    return float(val)
 
 
 def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: Union[str, None] = None) -> Any:
@@ -53,6 +61,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
             }:
                 continue
             val = getattr(sim.model, k)
+            val = val[0] if hasattr(val, "__len__") and len(val) > 0 else val
             model_metadata.parameters[k] = tvbo_datamodel.Parameter(name=k, value=val)
 
     # State variables with domains/boundaries and optional initial conditions
@@ -64,10 +73,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
             blo, bhi = sbb[sv]
             boundaries = tvbo_datamodel.Range(lo=blo, hi=bhi)
 
-        init_vals = None
         ics = getattr(sim, "initial_conditions", None)
-        if ics is not None:
-            init_vals = list(float(ic) for ic in ics[0, i, :, 0])
 
         model_metadata.state_variables[sv] = tvbo_datamodel.StateVariable(
             name=sv,
@@ -82,7 +88,6 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
             ),
             boundaries=boundaries,
             initial_value=float(ics[0, i, :, 0].mean()) if ics is not None else None,
-            initial_conditions=init_vals,
         )
 
     # --- Coupling ---
@@ -90,7 +95,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     for k, v in dict(getattr(sim.coupling, "summary_info", lambda: {})()).items():
         if k in {"Type", "title", "gid"}:
             continue
-        coupling_metadata.parameters[k] = tvbo_datamodel.Parameter(name=k, value=v)
+        coupling_metadata.parameters[k] = tvbo_datamodel.Parameter(name=k, value=_to_scalar(v))
 
     # --- Integration ---
     integrator_info = dict(getattr(sim.integrator, "summary_info", lambda: {})())
@@ -188,13 +193,13 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     # --- Stimulus ---
     if getattr(sim, "stimulus", None):
         stimulus_metadata = tvbo_datamodel.Stimulus(
-            name="Stimulus",
+            label=type(sim.stimulus).__name__,
             weighting=list(getattr(sim.stimulus, "weight", []) or []),
             equation=tvbo_datamodel.Equation(
                 pycode=getattr(getattr(sim.stimulus, "temporal", None), "equation", "")
             ),
             parameters={
-                k: tvbo_datamodel.Parameter(name=k, value=v)
+                k: tvbo_datamodel.Parameter(name=k, value=_to_scalar(v))
                 for k, v in (
                     getattr(getattr(sim.stimulus, "temporal", None), "parameters", {})
                     or {}
@@ -205,58 +210,10 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
         stimulus_metadata = None
 
     # --- Network/Connectome ---
-    if odir:
-        pd.DataFrame(sim.connectivity.weights).to_csv(
-            join(odir, f"exp-{experiment_id}_desc-connectome_weights.csv")
-        )
-        pd.DataFrame(sim.connectivity.tract_lengths).to_csv(
-            join(odir, f"exp-{experiment_id}_desc-connectome_lengths.csv")
-        )
-
-    network_metadata = tvbo_datamodel.Network(
-        number_of_nodes=sim.connectivity.number_of_regions,
-        weights=(
-            tvbo_datamodel.Matrix(
-                dataLocation=f"exp-{experiment_id}_desc-connectome_weights.csv"
-            )
-            if odir
-            else tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=list(sim.connectivity.region_labels)
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=list(sim.connectivity.region_labels)
-                ),
-                values=[float(w) for w in sim.connectivity.weights.ravel()],
-            )
-        ),
-        lengths=(
-            tvbo_datamodel.Matrix(
-                dataLocation=f"exp-{experiment_id}_desc-connectome_lengths.csv"
-            )
-            if odir
-            else tvbo_datamodel.Matrix(
-                x=tvbo_datamodel.BrainRegionSeries(
-                    values=list(sim.connectivity.region_labels)
-                ),
-                y=tvbo_datamodel.BrainRegionSeries(
-                    values=list(sim.connectivity.region_labels)
-                ),
-                values=[float(l) for l in sim.connectivity.tract_lengths.ravel()],
-            )
-        ),
-        conduction_speed=tvbo_datamodel.Parameter(
-            name="conduction_speed",
-            label="v",
-            value=(
-                float(getattr(sim.connectivity, "speed", None))
-                if getattr(sim, "connectivity", None) is not None
-                and getattr(sim.connectivity, "speed", None) is not None
-                else getattr(sim, "conduction_speed", None)
-            ),
-            unit="mm/ms",
-        ),
-    )
+    # Delegate to the canonical from_tvb converter which uses the current
+    # Network schema (nodes + set_matrix, not the removed weights/lengths fields)
+    from tvbo.data.converters import from_tvb as _from_tvb_connectivity
+    network_metadata = _from_tvb_connectivity(sim.connectivity)
 
     # --- Assemble experiment ---
     exp = tvbo_datamodel.SimulationExperiment(
@@ -267,11 +224,9 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
         network=network_metadata,
         stimulation=stimulus_metadata,
     )
-    # Software environment and requirements (TVB version)
+    # Software environment
     try:
-        import sys as _sys
         import platform as _platform
-
         try:
             import tvb as _tvb
             tvb_version = getattr(_tvb, "__version__", None)
@@ -282,26 +237,16 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
             version=str(tvb_version) if tvb_version is not None else "unknown",
             platform=_platform.platform(),
         )
-        if hasattr(exp, "environment"):
-            exp.environment = env
-        if hasattr(exp, "requirements"):
-            req = tvbo_datamodel.SoftwareRequirement(
-                name="tvb",
-                version=str(tvb_version) if tvb_version is not None else "unknown",
-                environment=env,
-            )
-            try:
-                exp.requirements.append(req)
-            except Exception:
-                exp.requirements = [req]
+        exp.environment = env
     except Exception:
         pass
-    # Monitors
+
+    # Monitors → Observations (Monitor class no longer exists in schema)
     for mon in getattr(sim, "monitors", []) or []:
         info = dict(getattr(mon, "summary_info", lambda: {})())
         if not info:
             continue
         name = info.get("Type") or type(mon).__name__
-        period = info.get("period")
-        exp.monitors[name] = tvbo_datamodel.Monitor(name=name, period=period)
+        period = _to_scalar(info.get("period"))
+        exp.observations[name] = tvbo_datamodel.Observation(name=name, period=period)
     return exp
