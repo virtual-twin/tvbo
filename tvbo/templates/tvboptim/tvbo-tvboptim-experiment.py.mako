@@ -1510,11 +1510,30 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-    # No observable specified — return full simulation data (states + auxiliaries)
+<%
+    n_aux = len([v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()])
+    if not n_aux and model.derived_variables:
+        n_aux = len(model.derived_variables)
+%>
+% if has_model_output and n_aux == 1:
+    # Single model output — extract as (T, n_nodes) dropping the variable dimension
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        return result.data[:, ${len(state_names)}, ...]
+% elif has_model_output and n_aux > 1:
+    # Multiple model outputs — keep variable dimension (T, n_out, n_nodes)
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        return result.data[:, ${len(state_names)}:, ...]
+% else:
+    # No observable specified, no model output — return full simulation data
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
         return result.data
+% endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
     @jax.jit
