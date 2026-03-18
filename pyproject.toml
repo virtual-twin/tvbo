@@ -16,6 +16,7 @@ dependencies = [
     "scipy>=1.15.0",
     "numpy>=2.0.0",
     "pandas>=2.2.3",
+    "xarray>=2024.0",
 
     # Data models & schema
     "pydantic>=2.6.0",
@@ -29,6 +30,7 @@ dependencies = [
     # ML
     "jax >=0.4.28",
     "equinox >=0.11.12",
+    "xarray-jax>=0.1",
 
     # Symbolic
     "sympy>=1.13.0",
