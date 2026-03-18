@@ -386,7 +386,7 @@ derived_observations:
 # =============================================================================
 # OPTIMIZATION: Loss compares simulated_psd.psd to external target_data
 # =============================================================================
-optimization:
+optimizations:
     - name: spectral_gradient_fit
       label: "Spectral Gradient Fitting"
       description: >

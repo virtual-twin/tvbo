@@ -753,7 +753,7 @@ algorithms:
 # =============================================================================
 # OPTIMIZATION: Gradient-Based Alternative
 # =============================================================================
-optimization:
+optimizations:
     - name: gradient_eib
       label: "Gradient-Based EI Tuning"
       description: >

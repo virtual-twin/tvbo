@@ -624,7 +624,7 @@ class ExperimentResult(Bunch):
     """
 
     # Keys that represent actual outputs (not inputs/metadata)
-    _output_sections = {"integration", "algorithms", "optimization", "exploration"}
+    _output_sections = {"integration", "algorithms", "optimizations", "explorations"}
 
     def __init__(self, results=None, experiment_name=None, **kwargs):
         super().__init__(**kwargs)
