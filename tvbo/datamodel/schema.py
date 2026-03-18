@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-17T18:17:47
+# Generation date: 2026-03-18T14:35:15
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -3220,7 +3220,7 @@ class SimulationExperiment(YAMLRoot):
     stimulation: Optional[Union[dict, Stimulus]] = None
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
     field_dynamics: Optional[Union[dict, "PDE"]] = None
-    optimization: Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]] = empty_dict()
+    optimizations: Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]] = empty_dict()
     explorations: Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]] = empty_dict()
     algorithms: Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]] = empty_dict()
     continuations: Optional[Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]] = empty_dict()
@@ -3277,7 +3277,7 @@ class SimulationExperiment(YAMLRoot):
         if self.field_dynamics is not None and not isinstance(self.field_dynamics, PDE):
             self.field_dynamics = PDE(**as_dict(self.field_dynamics))
 
-        self._normalize_inlined_as_dict(slot_name="optimization", slot_type=Optimization, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="optimizations", slot_type=Optimization, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
 
@@ -6303,8 +6303,8 @@ slots.simulationExperiment__events = Slot(uri=TVBO.events, name="simulationExper
 slots.simulationExperiment__field_dynamics = Slot(uri=TVBO.field_dynamics, name="simulationExperiment__field_dynamics", curie=TVBO.curie('field_dynamics'),
                    model_uri=TVBO.simulationExperiment__field_dynamics, domain=None, range=Optional[Union[dict, PDE]])
 
-slots.simulationExperiment__optimization = Slot(uri=TVBO.optimization, name="simulationExperiment__optimization", curie=TVBO.curie('optimization'),
-                   model_uri=TVBO.simulationExperiment__optimization, domain=None, range=Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]])
+slots.simulationExperiment__optimizations = Slot(uri=TVBO.optimizations, name="simulationExperiment__optimizations", curie=TVBO.curie('optimizations'),
+                   model_uri=TVBO.simulationExperiment__optimizations, domain=None, range=Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]])
 
 slots.simulationExperiment__explorations = Slot(uri=TVBO.explorations, name="simulationExperiment__explorations", curie=TVBO.curie('explorations'),
                    model_uri=TVBO.simulationExperiment__explorations, domain=None, range=Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]])

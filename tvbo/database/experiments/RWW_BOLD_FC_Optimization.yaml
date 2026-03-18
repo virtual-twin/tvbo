@@ -302,7 +302,7 @@ derived_observations:
 # =============================================================================
 # OPTIMIZATION: Parameter fitting (keyed by name)
 # =============================================================================
-optimization:
+optimizations:
     fc_fitting:
         label: "FC Fitting"
         description: >

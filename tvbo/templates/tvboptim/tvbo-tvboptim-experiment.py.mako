@@ -227,8 +227,8 @@ stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'ev
 has_stimulus_events = len(stimulus_events) > 0
 
 # === Optimization metadata ===
-# Schema: experiment.optimization is multivalued dict, opt.stages is inlined_as_list
-optim_list = list(experiment.optimization.values()) if experiment.optimization else []
+# Schema: experiment.optimizations is multivalued dict, opt.stages is inlined_as_list
+optim_list = list(experiment.optimizations.values()) if experiment.optimizations else []
 has_optimization = len(optim_list) > 0
 
 # === Algorithm metadata (FIC, etc.) ===
@@ -2419,8 +2419,8 @@ stage_lr = stage['learning_rate']
         # Final results: last stage's fitted_params + per-stage access via dot notation
         results['fitted_params'] = current_state
         results['fitting_data'] = stage_results  # Bunch of all stage histories
-        # Store under results.optimization for consistent access
-        results['optimization'] = stage_results
+        # Store under results.optimizations for consistent access
+        results['optimizations'] = stage_results
         # Add each stage directly to results for easy access: results.global_optimization.fitted_params
         for _stage_name, _stage_result in stage_results.items():
             results[_stage_name] = _stage_result
@@ -2463,8 +2463,8 @@ stage_lr = stage['learning_rate']
                 hyperparameters=_opt_hyperparams,
             )
 
-            # Store under results.optimization.{name} for consistent structure
-            results['optimization'] = Bunch(**{_opt_name: _opt_result})
+            # Store under results.optimizations.{name} for consistent structure
+            results['optimizations'] = Bunch(**{_opt_name: _opt_result})
             results[_opt_name] = _opt_result  # Also at top level for convenience
             print("  Optimization complete.")
 % endif

@@ -55,7 +55,7 @@ def _to_dict(obj):
 observations = _to_dict(getattr(exp, 'observations', None))
 derived_observations = _to_dict(getattr(exp, 'derived_observations', None))
 functions = _to_dict(getattr(exp, 'functions', None))
-optimizations = _to_dict(getattr(exp, 'optimization', None))
+optimizations = _to_dict(getattr(exp, 'optimizations', None))
 explorations = _to_dict(getattr(exp, 'explorations', None))
 algorithms = _to_dict(getattr(exp, 'algorithms', None))
 execution = getattr(exp, 'execution', None)

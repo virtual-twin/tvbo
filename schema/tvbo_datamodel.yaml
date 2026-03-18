@@ -2446,7 +2446,7 @@ classes:
             field_dynamics:
                 range: PDE # Distributed, spatially resolved dynamics (PDE)
                 inlined: true
-            optimization:
+            optimizations:
                 multivalued: true
                 range: Optimization
                 inlined: true
