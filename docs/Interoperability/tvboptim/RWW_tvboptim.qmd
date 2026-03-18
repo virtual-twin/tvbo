@@ -110,7 +110,7 @@ for label, G, w, dy in [
     )
 
 # Trajectory
-route = results.optimization.global_optimization.state_trajectory
+route = results.optimizations.global_optimization.state_trajectory
 ax.scatter(
     [s.coupling.FastLinearCoupling.G.value for s in route],
     [s.dynamics.w.value for s in route],
@@ -125,8 +125,8 @@ ax.set(xlabel="G", ylabel="w", title="Exploration")
 
 # D-F: FC Matrices
 for key, fc, title in [
-    ("D", np.array(results.optimization.global_optimization.simulation.observations.fc), f"Global"),
-    ("E", np.array(results.optimization.regional_optimization.simulation.observations.fc), f"Regional"),
+    ("D", np.array(results.optimizations.global_optimization.simulation.observations.fc), f"Global"),
+    ("E", np.array(results.optimizations.regional_optimization.simulation.observations.fc), f"Regional"),
     ("F", fc_target, "Target FC"),
 ]:
     ax = axes[key]
@@ -138,8 +138,8 @@ for key, fc, title in [
 # G-H: Scatter Plots
 triu = np.triu_indices_from(fc_target, k=1)
 for key, fc, title in [
-    ("G", results.optimization.global_optimization.simulation.observations.fc, "Global Fit"),
-    ("H", results.optimization.regional_optimization.simulation.observations.fc, "Regional Fit"),
+    ("G", results.optimizations.global_optimization.simulation.observations.fc, "Global Fit"),
+    ("H", results.optimizations.regional_optimization.simulation.observations.fc, "Regional Fit"),
 ]:
     ax = axes[key]
     ax.scatter(fc_target[triu], np.array(fc)[triu], alpha=0.3, s=8, color="royalblue")
