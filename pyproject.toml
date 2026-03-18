@@ -30,7 +30,7 @@ dependencies = [
     # ML
     "jax >=0.4.28",
     "equinox >=0.11.12",
-    "xarray-jax>=0.1",
+    "xarray-jax>=0.0.4",
 
     # Symbolic
     "sympy>=1.13.0",

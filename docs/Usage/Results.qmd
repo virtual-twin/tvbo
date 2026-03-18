@@ -1,56 +1,272 @@
 ---
 title: "Working with Results"
-subtitle: "Accessing simulation output, time series, and derived observables"
+subtitle: "Accessing simulation output, observations, and exporting to BIDS"
+execute:
+  eval: false
 ---
-
-::: {.callout-note}
-## Placeholder
-This page is under construction.
-:::
 
 ## Overview
 
-After running a simulation experiment, the result object provides structured access
-to all output data — raw state variables, derived observations (BOLD, FC, PSD),
-algorithm history, and optimization traces.
+After running a simulation experiment, TVBO returns an `ExperimentResult` that
+provides structured access to all output data — raw state variables, derived
+observations (BOLD, FC, PSD), algorithm history, and optimization traces.
+
+The result object mirrors the YAML experiment specification: each section of the
+experiment (integration, algorithms, optimizations, explorations) maps to a
+corresponding field on the result.
+
+
+## Result Architecture
+
+```
+ExperimentResult
+├── name                    # Experiment label
+├── source                  # Back-reference to SimulationExperiment
+├── integration             # SimulationResult — main simulation
+│   ├── data                #   xr.DataArray (time × variable × node [× mode])
+│   ├── observations        #   dict of observation outputs (BOLD, FC, …)
+│   └── transient           #   SimulationResult — warm-up (if any)
+├── algorithms              # dict[str, AlgorithmResult]
+│   └── fic                 #   e.g. FIC tuning result
+│       ├── state           #     Final tuned state
+│       ├── history         #     Per-iteration tracking
+│       ├── pre_tuning      #     SimulationResult before algorithm
+│       └── post_tuning     #     SimulationResult after algorithm
+├── optimizations           # dict[str, OptimizationResult]
+│   └── loss_fc             #   e.g. FC-based optimization
+│       ├── state           #     Fitted parameters
+│       ├── history         #     Loss trajectory
+│       └── simulation      #     SimulationResult with fitted params
+├── explorations            # dict[str, ExplorationResult]
+│   └── grid                #   Parameter sweep results
+└── continuations           # dict — bifurcation analysis results
+```
+
 
 ## Basic Usage
 
-```python
+```{python}
 from tvbo import SimulationExperiment
 
-exp = SimulationExperiment.from_db("...")
+exp = SimulationExperiment.from_db("Deco2014_FIC_DMF")
 result = exp.run()
-
-# Access state variable time series
-result.data           # (time × nodes × state_vars) array
-result.time           # time vector
 ```
 
-## Result Structure
+The `ExperimentResult` displays a tree summary:
 
-The result mirrors the YAML experiment specification:
-
-```python
-result.integration                     # Main simulation data
-result.integration.observations.bold   # BOLD signal (if defined)
-result.algorithms.fic                  # Algorithm results (if defined)
+```{python}
+result
 ```
 
-## Plotting
-
-```python
-result.plot()          # Default time series plot
 ```
+Deco2014_FIC_DMF
+├── integration
+│       data: (60000, 4, 68)
+│       observations: ['bold']
+└── algorithms
+    └── fic
+            n_iterations: 100
+            history: ['J_i', 'delta']
+```
+
+
+## Accessing Data
+
+### Integration (Main Simulation)
+
+The primary simulation result is an `xr.DataArray` with named dimensions
+and coordinates:
+
+```{python}
+result.integration.data
+# <xarray.DataArray (time: 60000, variable: 4, node: 68)>
+# Coords:
+#   * time      (time) float64 0.0 0.1 0.2 ... 5999.8 5999.9
+#   * variable  (variable) <U4 'S_e' 'S_i' 'r_e' 'r_i'
+#   * node      (node) <U30 'ctx-lh-bankssts' ... 'ctx-rh-transversetemporal'
+```
+
+Use xarray's label-based selection:
+
+```{python}
+# Select a single state variable across all nodes
+result.integration.sel(variable='S_e')                 # → DataArray (time × node)
+
+# Select a single node
+result.integration.sel(node='ctx-lh-bankssts')         # → DataArray (time × variable)
+
+# Integer indexing
+result.integration.isel(time=slice(0, 1000))           # First 1000 time steps
+```
+
+Standard properties remain available:
+
+```{python}
+result.integration.time          # numpy array of time values
+result.integration.state_names   # ['S_e', 'S_i', 'r_e', 'r_i']
+result.integration.dims          # ('time', 'variable', 'node')
+```
+
+### Observations
+
+Observations (BOLD, functional connectivity, PSD, etc.) are attached to the
+simulation that produced them:
+
+```{python}
+result.integration.observations                # dict of observation outputs
+result.integration.observations['bold']        # BOLD TimeSeries
+result.integration.observations['bold'].data   # raw data array
+```
+
+### Algorithm Results
+
+Algorithm results (FIC, EIB, etc.) track the full iteration history:
+
+```{python}
+fic = result.algorithms['fic']
+fic.name                  # 'fic'
+fic.n_iterations          # 100
+fic.state                 # Final tuned state (Bunch with parameter arrays)
+fic.history               # Per-iteration tracking (Bunch of lists/arrays)
+fic.pre_tuning            # SimulationResult before tuning
+fic.post_tuning           # SimulationResult after tuning
+fic.convergence           # Computed convergence metrics
+```
+
+### Optimization Results
+
+Optimization results track loss trajectory and parameter evolution:
+
+```{python}
+opt = result.optimizations['loss_fc']
+opt.name                 # 'loss_fc'
+opt.n_steps              # Number of gradient steps
+opt.final_loss           # Final loss value
+opt.loss_trajectory      # Loss at each step (array)
+opt.state                # Fitted parameters
+opt.simulation           # Post-optimization SimulationResult
+```
+
+
+## Source Experiment Link
+
+`ExperimentResult` holds a back-reference to the `SimulationExperiment` that
+produced it:
+
+```{python}
+result.source                 # SimulationExperiment object
+result.source.dynamics.name   # 'ReducedWongWangExcInh'
+result.source.network.name    # 'Schaefer100'
+result.source.to_yaml()       # Full YAML specification string
+```
+
+This link enables `export()` to write both data and metadata in a single call.
+
 
 ## Exporting Results
 
-```python
-# TODO: export to BIDS, xarray, etc.
+### BIDS-Compatible Export
+
+`ExperimentResult.export()` writes simulation data and experiment metadata to a
+[BIDS](https://bids-specification.readthedocs.io/)-compatible directory following
+[BEP034](https://bids.neuroimaging.io/bep034) conventions:
+
+```{python}
+result.export("output/my_experiment")
 ```
+
+This produces:
+
+```
+output/my_experiment/
+├── dataset_description.json                              # BIDS required
+└── sub-01/
+    ├── sub-01_desc-tvbsim_experiment.yaml                # Full experiment spec
+    └── ts/
+        ├── sub-01_desc-tvbsim_ts-sim_State.nc            # Simulation data (netCDF)
+        ├── sub-01_desc-tvbsim_ts-sim_State.json          # Sidecar metadata
+        ├── sub-01_desc-tvbsim_ts-bold_State.nc           # BOLD observation
+        └── sub-01_desc-tvbsim_ts-fic_State.nc            # Post-algorithm simulation
+```
+
+#### Export Options
+
+```{python}
+result.export(
+    "output/",
+    subject="02",              # BIDS subject label (default: "01")
+    session="pre",             # Optional BIDS session
+    description="fic_tuned",   # desc- entity (default: "tvbsim")
+)
+```
+
+#### What Gets Written
+
+| Component | File | Format |
+|-----------|------|--------|
+| **Experiment specification** | `*_experiment.yaml` | YAML (LinkML) |
+| **Simulation data** | `*_ts-sim_State.nc` | netCDF (self-describing, HDF5-based) |
+| **Observations** | `*_ts-{name}.nc` | netCDF per observation |
+| **Algorithm post-tuning** | `*_ts-{algo}_State.nc` | netCDF |
+| **Optimization simulation** | `*_ts-{opt}_State.nc` | netCDF |
+| **Sidecar metadata** | `*_State.json` | JSON (shape, dims, sample period) |
+| **Dataset description** | `dataset_description.json` | JSON (BIDS required) |
+
+
+### Data Format: netCDF
+
+Simulation data is stored as **netCDF** — a self-describing scientific data format
+built on HDF5. Each file contains the full array with named dimensions and
+coordinates, readable by any netCDF/HDF5 tool:
+
+```{python}
+import xarray as xr
+
+# Read back exported data
+ds = xr.open_dataset("output/my_experiment/sub-01/ts/sub-01_desc-tvbsim_ts-sim_State.nc")
+ds['data']
+# <xarray.DataArray 'data' (time: 60000, variable: 4, node: 68)>
+# Coords:
+#   * time      (time) float64 ...
+#   * variable  (variable) object 'S_e' 'S_i' 'r_e' 'r_i'
+#   * node      (node) object 'ctx-lh-bankssts' ...
+
+# Also readable with h5py, MATLAB, R (ncdf4), Julia (NCDatasets), etc.
+```
+
+::: {.callout-tip}
+netCDF4 files **are** HDF5 files — any HDF5 reader (h5py, HDFView, MATLAB's
+`h5read`) can open them directly. The netCDF layer adds self-describing
+dimension names and coordinates.
+:::
+
+
+### Roundtrip: Export → Load → Analyze
+
+```{python}
+# Export
+result.export("output/study1")
+
+# Load in a new session without re-running the simulation
+import xarray as xr
+ds = xr.open_dataset("output/study1/sub-01/ts/sub-01_desc-tvbsim_ts-sim_State.nc")
+
+# Analyze
+bold_corr = ds['data'].sel(variable='S_e').values  # numpy array
+```
+
+
+## Plotting
+
+`SimulationResult` supports plotting via its legacy `TimeSeries` interface:
+
+```{python}
+result.integration.plot()          # Time series plot of all state variables
+```
+
 
 ## See Also
 
-- [Output Specification](../Specification/Output.qmd) — declaring what to output
+- [Simulation Experiments](SimulationExperiments.qmd) — defining and running experiments
 - [Observation Models](ObservationModels.qmd) — derived observables (BOLD, FC, …)
 - [Visualization](Visualization.qmd) — detailed plotting guide

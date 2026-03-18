@@ -881,6 +881,179 @@ class ExperimentResult:
         """Rich display for Jupyter notebooks."""
         return f"```\n{self.__repr__()}\n```"
 
+    # ── Export ─────────────────────────────────────
+
+    def export(self, output_dir, subject="01", session=None, description="tvbsim"):
+        """Export results and metadata to a BIDS-compatible directory.
+
+        Writes experiment specification as YAML and simulation data as
+        netCDF/HDF5, following BEP034 directory conventions::
+
+            output_dir/
+            ├── dataset_description.json
+            ├── sub-{subject}/
+            │   ├── sub-{subject}_desc-{desc}_experiment.yaml
+            │   └── ts/
+            │       ├── sub-{subject}_desc-{desc}_ts-sim_State.nc
+            │       ├── sub-{subject}_desc-{desc}_ts-sim_State.json
+            │       └── sub-{subject}_desc-{desc}_ts-{obs}_BOLD.nc  (per observation)
+
+        Parameters
+        ----------
+        output_dir : str or Path
+            Root output directory (created if it doesn't exist).
+        subject : str
+            BIDS subject label (default ``"01"``).
+        session : str or None
+            BIDS session label (optional).
+        description : str
+            BIDS ``desc-`` entity (default ``"tvbsim"``).
+
+        Returns
+        -------
+        pathlib.Path
+            Path to the output directory.
+        """
+        from pathlib import Path
+        import json
+
+        output_dir = Path(output_dir)
+        sub = f"sub-{subject}"
+        ses = f"ses-{session}" if session else None
+        desc = f"desc-{description}" if description else ""
+
+        sub_dir = output_dir / sub
+        if ses:
+            sub_dir = sub_dir / ses
+        sub_dir.mkdir(parents=True, exist_ok=True)
+
+        prefix = f"{sub}_{desc}" if desc else sub
+
+        # ── 1. Dataset description ────────────────────
+        dd_path = output_dir / "dataset_description.json"
+        if not dd_path.exists():
+            dd = {
+                "Name": self.name or "TVBO Simulation Experiment",
+                "BIDSVersion": "1.9.0",
+                "DatasetType": "derivative",
+                "GeneratedBy": [{"Name": "tvbo", "Description": "The Virtual Brain Ontology"}],
+            }
+            dd_path.write_text(json.dumps(dd, indent=2))
+
+        # ── 2. Experiment specification YAML ──────────
+        if self.source is not None:
+            yaml_path = sub_dir / f"{prefix}_experiment.yaml"
+            self.source.to_yaml(str(yaml_path))
+
+        # ── 3. Integration data ───────────────────────
+        if self.integration is not None and self.integration.data is not None:
+            ts_dir = sub_dir / "ts"
+            ts_dir.mkdir(exist_ok=True)
+            ts_prefix = f"{prefix}_ts-sim"
+
+            self._write_data(
+                self.integration.data,
+                ts_dir / f"{ts_prefix}_State",
+            )
+
+            # Sidecar
+            sidecar = self._build_sidecar(self.integration)
+            (ts_dir / f"{ts_prefix}_State.json").write_text(
+                json.dumps(sidecar, indent=2, default=str)
+            )
+
+            # Observations
+            for obs_name, obs in self.integration.observations.items():
+                obs_path = ts_dir / f"{prefix}_ts-{obs_name}"
+                if isinstance(obs, xr.DataArray):
+                    self._write_data(obs, obs_path)
+                elif hasattr(obs, 'data'):
+                    obs_da = _to_dataarray(
+                        np.asarray(obs.data),
+                        np.asarray(obs.time) if hasattr(obs, 'time') else None,
+                    )
+                    if obs_da is not None:
+                        self._write_data(obs_da, obs_path)
+
+            # Transient
+            if (self.integration.transient is not None
+                    and self.integration.transient.data is not None):
+                self._write_data(
+                    self.integration.transient.data,
+                    ts_dir / f"{prefix}_ts-transient_State",
+                )
+
+        # ── 4. Algorithm results ──────────────────────
+        for algo_name, algo in self.algorithms.items():
+            algo_dir = sub_dir / "ts"
+            algo_dir.mkdir(exist_ok=True)
+            if isinstance(algo, AlgorithmResult) and algo.post_tuning is not None:
+                if algo.post_tuning.data is not None:
+                    self._write_data(
+                        algo.post_tuning.data,
+                        algo_dir / f"{prefix}_ts-{algo_name}_State",
+                    )
+
+        # ── 5. Optimization results ───────────────────
+        for opt_name, opt in self.optimizations.items():
+            opt_dir = sub_dir / "ts"
+            opt_dir.mkdir(exist_ok=True)
+            if isinstance(opt, OptimizationResult) and opt.simulation is not None:
+                if opt.simulation.data is not None:
+                    self._write_data(
+                        opt.simulation.data,
+                        opt_dir / f"{prefix}_ts-{opt_name}_State",
+                    )
+
+        return output_dir
+
+    @staticmethod
+    def _write_data(da, path_stem):
+        """Write an xr.DataArray to netCDF (preferred) or HDF5.
+
+        Tries engines in order: h5netcdf → scipy (netCDF3).
+        The file extension is set automatically (.nc).
+        """
+        from pathlib import Path
+        path_stem = Path(path_stem)
+        ds = da.to_dataset(name="data")
+        nc_path = path_stem.with_suffix(".nc")
+        for engine in ("h5netcdf", "scipy"):
+            try:
+                ds.to_netcdf(nc_path, engine=engine)
+                return nc_path
+            except ImportError:
+                continue
+        raise ImportError(
+            "netCDF export requires scipy or h5netcdf. "
+            "Install with: pip install h5netcdf"
+        )
+
+    @staticmethod
+    def _build_sidecar(sim_result):
+        """Build a JSON sidecar dict for a SimulationResult."""
+        sidecar = {}
+        if sim_result.data is not None:
+            sidecar["Shape"] = list(sim_result.data.shape)
+            sidecar["Dimensions"] = list(sim_result.data.dims)
+            if 'variable' in sim_result.data.coords:
+                sidecar["StateVariables"] = list(
+                    sim_result.data.coords['variable'].values
+                )
+            if 'node' in sim_result.data.coords:
+                sidecar["Regions"] = list(
+                    sim_result.data.coords['node'].values
+                )
+            if sim_result.time is not None and len(sim_result.time) > 1:
+                dt = float(sim_result.time[1] - sim_result.time[0])
+                sidecar["SamplingPeriod"] = dt
+                sidecar["SamplingPeriodUnit"] = "ms"
+        if sim_result.observations:
+            sidecar["Observations"] = list(sim_result.observations.keys())
+        return sidecar
+
+    # ── Class methods ─────────────────────────────
+
     @classmethod
     def from_tvb(cls, simulator, result=None):
         """Create an ExperimentResult from a TVB simulator and its run output.
