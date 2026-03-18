@@ -1314,7 +1314,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
                 # Add timings to results and wrap in ExperimentResult
                 results.timings = timings
-                return ExperimentResult(results, experiment_name=self.label)
+                return ExperimentResult(results, experiment_name=self.label, source=self)
             else:
                 raw_results = ns.run_experiment(
                     weights=self.network.weights,
@@ -1322,7 +1322,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     mode=mode,
                     **kwargs,
                 )
-                return ExperimentResult(raw_results, experiment_name=self.label)
+                return ExperimentResult(raw_results, experiment_name=self.label, source=self)
 
         elif format.lower() in ["autodiff", "jax"]:
             state = self.collect_state(initial_conditions=initial_conditions)
