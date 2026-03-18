@@ -107,7 +107,7 @@ optimization:
 Track parameter evolution during optimization:
 
 ```python
-trajectory = results.optimization.global_optimization.state_trajectory
+trajectory = results.optimizations.global_optimization.state_trajectory
 for state in trajectory:
     print(f"G={state.dynamics.G}")
 ```

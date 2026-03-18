@@ -191,8 +191,8 @@ im = ax.imshow(
     aspect="auto",
 )
 plt.colorbar(im, ax=ax, label="Peak Frequency [Hz]", shrink=0.8)
-a_fit = results.optimization.spectral_gradient_fit.fitted_params.dynamics.a
-b_fit = results.optimization.spectral_gradient_fit.fitted_params.dynamics.b
+a_fit = results.optimizations.spectral_gradient_fit.fitted_params.dynamics.a
+b_fit = results.optimizations.spectral_gradient_fit.fitted_params.dynamics.b
 a_vals = a_fit.value if hasattr(a_fit, "value") else a_fit
 b_vals = b_fit.value if hasattr(b_fit, "value") else b_fit
 ax.scatter(
@@ -229,7 +229,7 @@ ax.set(
 ax = axes["E"]
 ax.scatter(
     target_peak_freqs,
-    results.optimization.spectral_gradient_fit.simulation.observations.peak_frequencies,
+    results.optimizations.spectral_gradient_fit.simulation.observations.peak_frequencies,
     alpha=0.6,
     s=25,
     color="royalblue",
@@ -257,7 +257,7 @@ for bax, freqs, title in zip(
     [
         results.integration.observations.peak_frequencies,
         target_peak_freqs,
-        results.optimization.spectral_gradient_fit.simulation.observations.peak_frequencies,
+        results.optimizations.spectral_gradient_fit.simulation.observations.peak_frequencies,
     ],
     ["Initial", "Target", "Fitted"],
 ):
@@ -376,7 +376,7 @@ fig, axes = plt.subplots(1, 2, layout="compressed")
 norm_surf = Normalize(vmin=6.5, vmax=11.5)
 
 fitted_freqs = (
-    results.optimization.spectral_gradient_fit.simulation.observations.peak_frequencies
+    results.optimizations.spectral_gradient_fit.simulation.observations.peak_frequencies
 )
 
 for ax, freqs, title in zip(
