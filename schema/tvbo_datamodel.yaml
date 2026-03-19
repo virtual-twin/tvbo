@@ -1075,6 +1075,15 @@ classes:
                     are post-hoc quantities recoverable from the solution.
                     Maps to obsf/obssym in ND.jl EdgeModel/VertexModel.
                     Example: absolute force magnitude computed from force components.
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: >-
+                    Discrete state transitions intrinsic to the dynamical system,
+                    such as threshold-triggered resets in spiking neuron models.
+                    Unlike experiment-level events (stimulation, perturbation),
+                    these define the model's own discontinuous behavior.
 
     StateVariable:
         class_uri: tvbo:StateVariable

@@ -1,0 +1,20 @@
+# TVBO → NeuroML: Wilson-Cowan
+# ==============================
+# Uses the TVBO database WilsonCowan model.
+# 2 state variables (E, I), 6 derived variables, coupling inputs.
+
+id: 907
+label: "TVBO WilsonCowan as LEMS"
+description: >
+  Export the Wilson-Cowan model from the TVBO database as LEMS XML.
+  Demonstrates derived variables and coupling inputs in LEMS.
+
+model: WilsonCowan
+
+network:
+  number_of_nodes: 1
+
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 100.0

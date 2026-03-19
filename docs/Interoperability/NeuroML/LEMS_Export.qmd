@@ -18,14 +18,14 @@ This tutorial walks through the complete LEMS export workflow for three represen
 
 FitzHugh-Nagumo is already in the TVBO database as a `Dynamics` that maps cleanly to a LEMS `ComponentType`:
 
-```python
+```{python}
 from tvbo import Dynamics
 from tvbo.adapters.neuroml import NeuroMLAdapter
 
-fhn = Dynamics.from_db("FitzHughNagumo")
+fhn = Dynamics.from_db("JansenRit")
 adapter = NeuroMLAdapter(fhn)
 xml = adapter.render_code()
-print(xml[:2000])
+print(xml)
 ```
 
 The rendered XML includes:
@@ -141,7 +141,7 @@ state variable equations.
 
 ## 5. Full Experiment Export
 
-```python
+```{python}
 from tvbo import SimulationExperiment
 from tvbo.adapters.neuroml import NeuroMLAdapter
 
@@ -171,7 +171,7 @@ By NeuroML convention, a fully portable model is distributed as three separate
 LEMS files that references each other via `<Include>`. The TVBO adapter generates
 all three with a single call:
 
-```python
+```{python}
 paths = adapter.export("./output", split=True, validate=False)
 print(paths)
 # {
@@ -191,7 +191,7 @@ The chain works as follows:
 
 You can render each piece independently:
 
-```python
+```{python}
 # Just the ComponentType definitions
 xml_dyn = adapter.render_dynamics()
 
@@ -209,7 +209,7 @@ xml_sim = adapter.render_simulation(network_file="my_network.xml")
 `SimulationExperiment.render()` is the unified entry point for all serialisation
 formats — both executable code and metadata.
 
-```python
+```{python}
 exp = SimulationExperiment.from_file("experiment.yaml")
 
 # Render as LEMS XML (same as NeuroMLAdapter(exp).render_code())
@@ -230,7 +230,7 @@ For split-file export or other adapter-specific options, use `NeuroMLAdapter` di
 
 Once a valid LEMS file is produced, simulate it with jNeuroML:
 
-```python
+```{python}
 # Via the adapter
 adapter.run()
 

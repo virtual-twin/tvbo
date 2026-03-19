@@ -1,0 +1,81 @@
+# NeuroML2 LEMS Example 8: Adaptive Exponential Integrate-and-Fire (AdEx)
+# ========================================================================
+# Reproduces LEMS_NML2_Ex8_AdEx.xml from the NeuroML2 canonical examples.
+# Uses adExIaFCell (Brette & Gerstner 2005):
+#   iMemb = -gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext
+#   dv/dt = iMemb / C
+#   dw/dt = (a*(v - EL) - w) / tauw
+#   OnCondition: v > thresh → v = reset, w = w + b
+#
+# Variant: bursting pattern (from adExBurst2)
+
+id: 905
+label: "NeuroML Ex8: AdEx (bursting)"
+description: >
+  Reproduces NeuroML2 LEMS canonical example 8, adExIaFCell.
+  Bursting variant simulated for 300ms at 0.025ms step.
+
+dynamics:
+  name: AdaptiveExponentialIF
+  description: >
+    Adaptive Exponential Integrate-and-Fire model from NeuroML2 adExIaFCell.
+    Brette R and Gerstner W (2005) J Neurophysiol 94:3637-3642.
+  parameters:
+    C:
+      value: 281.0
+      description: Membrane capacitance (pF)
+    gL:
+      value: 30.0
+      description: Leak conductance (nS)
+    EL:
+      value: -70.6
+      description: Leak reversal potential (mV)
+    VT:
+      value: -50.4
+      description: Spike threshold for exponential term (mV)
+    thresh:
+      value: -40.4
+      description: Detection threshold for spike event (mV)
+    reset:
+      value: -48.5
+      description: Reset potential after spike (mV)
+    delT:
+      value: 2.0
+      description: Slope factor (mV)
+    tauw:
+      value: 40.0
+      description: Adaptation time constant (ms)
+    a:
+      value: 4.0
+      description: Subthreshold adaptation conductance (nS)
+    b:
+      value: 0.08
+      description: Spike-triggered adaptation increase (nA)
+    I_ext:
+      value: 0.8
+      description: External input current (nA)
+  state_variables:
+    v:
+      equation:
+        rhs: "(-gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext) / C"
+      initial_value: -70.6
+      variable_of_interest: true
+    w:
+      equation:
+        rhs: "(a*(v - EL) - w) / tauw"
+      initial_value: 0.0
+  events:
+    spike:
+      condition:
+        rhs: "v >= thresh"
+      affect:
+        rhs: "v = reset; w = w + b"
+
+network:
+  number_of_nodes: 1
+
+integration:
+  method: euler
+  step_size: 0.025
+  duration: 300.0
+  time_scale: ms

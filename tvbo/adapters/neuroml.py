@@ -118,7 +118,7 @@ def sympy_to_lems(expr_str, parameters=None):
         SymPy Symbols before parsing, overriding any conflicting built-ins
         (e.g. ``I``, ``gamma``, ``lambda``).
     """
-    if not expr_str:
+    if expr_str is None or (isinstance(expr_str, str) and not expr_str):
         return ""
     from tvbo.codegen.code import render_expression
     return render_expression(expr_str, format="lems", parameters=parameters)
@@ -253,6 +253,7 @@ def build_lems_context(experiment):
     n_nodes = int(network.number_of_nodes) if network and hasattr(network, "number_of_nodes") else 1
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
+    time_scale = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
 
     # All symbol names — override SymPy built-ins (I, gamma, lambda, …)
     all_names = (
@@ -289,9 +290,13 @@ def build_lems_context(experiment):
         except Exception:
             return None
 
+    label = getattr(experiment, 'label', None)
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+
     return dict(
         dyn=dyn,
         dyn_id=dyn_id,
+        sim_id=sim_id,
         params=params,
         svs=svs,
         dvs=dvs,
@@ -310,6 +315,7 @@ def build_lems_context(experiment):
         _parse_piecewise=_parse_piecewise,
         lems_dim=unit_to_dimension,
         safe_id=safe_id,
+        time_scale=time_scale,
         max_output_nodes=100,
     )
 
@@ -480,6 +486,13 @@ class NeuroMLAdapter(BaseAdapter):
     def run(self, **kwargs) -> "ExperimentResult":
         """Run the LEMS simulation via pyNeuroML (jnml).
 
+        Uses a three-file split (dynamics / network / simulation) so that
+        ComponentType definitions live in a separate included file.  This
+        avoids the jNeuroML double-registration bug that occurs when
+        ComponentTypes are defined inline in the main simulation file
+        (jNeuroML reads the simulation file twice — once as LEMS, once as
+        NeuroML - causing "Duplicate name for ComponentType" errors).
+
         Returns
         -------
         ExperimentResult
@@ -494,14 +507,24 @@ class NeuroMLAdapter(BaseAdapter):
 
         from tvbo.data.types import ExperimentResult, SimulationResult
 
-        xml = self.render_code(**kwargs)
         ctx = build_lems_context(self.experiment)
         sv_names = list(ctx['svs'].keys())
-        n_nodes = ctx['n_nodes']
+        dyn_id = ctx['dyn_id']
+
+        dynamics_fname = f"{dyn_id}_dynamics.xml"
+        network_fname = f"{dyn_id}_network.xml"
+
+        dynamics_xml = self.render_dynamics(**kwargs)
+        network_xml = self.render_network(dynamics_file=dynamics_fname, **kwargs)
+        simulation_xml = self.render_simulation(network_file=network_fname, **kwargs)
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            (Path(tmpdir) / dynamics_fname).write_text(dynamics_xml)
+            (Path(tmpdir) / network_fname).write_text(network_xml)
             lems_file = Path(tmpdir) / "simulation.xml"
-            lems_file.write_text(xml)
+            lems_file.write_text(simulation_xml)
+            # jNeuroML writes output relative to exec_in_dir — pre-create the subdir
+            (Path(tmpdir) / "results").mkdir()
             result = pynml.run_lems_with_jneuroml(
                 str(lems_file), nogui=True, load_saved_data=True,
                 exec_in_dir=tmpdir,
@@ -510,18 +533,17 @@ class NeuroMLAdapter(BaseAdapter):
         if not isinstance(result, dict) or not result:
             raise RuntimeError("jNeuroML execution failed or produced no output")
 
-        # jnml returns {filename: 2D array} where col 0 = time
-        arrays = list(result.values())
-        raw = arrays[0]  # primary output file
+        # jnml returns {filename: 2D array} where col 0 = time, rest = SV columns
+        # Template generates one OutputFile with all SVs: results/{dyn_id}.dat
+        raw = next(iter(result.values()))
         time = raw[:, 0]
-        values = raw[:, 1:]  # (n_t, n_cols)
+        values = raw[:, 1:]  # (n_t, n_sv)
 
-        # Build labels: columns are sv0_node0, sv0_node1, ..., sv1_node0, ...
-        n_t = len(time)
-        n_out = min(n_nodes, ctx['max_output_nodes'])
         n_sv = len(sv_names)
+        n_out = min(ctx['n_nodes'], ctx['max_output_nodes'])
+        # Template outputs columns ordered: sv0_node0, sv0_node1, ..., sv1_node0, sv1_node1, ...
         if values.shape[1] == n_sv * n_out:
-            data = values.reshape(n_t, n_sv, n_out).transpose(0, 1, 2)
+            data = values.reshape(-1, n_sv, n_out)  # (n_t, n_sv, n_out)
             da = xr.DataArray(
                 data=data,
                 dims=['time', 'variable', 'node'],

@@ -10,23 +10,30 @@ All other template variables from tvbo.adapters.neuroml.build_lems_context().
 </%doc>
 <Lems>
 
+  <Include file="Simulation.xml"/>
+
 % if network_file:
   <Include file="${network_file}"/>
 % endif
 
+  <Target component="${sim_id}"/>
+
   <!-- ════════════════════════════════════════════════════════════════
        Simulation
-       length=${duration}ms   step=${dt}ms
+       length=${duration}${time_scale}   step=${dt}${time_scale}
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="sim1" length="${duration}ms" step="${dt}ms" target="net">
+  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net">
 
+    <OutputFile id="of1" fileName="results/${dyn_id}.dat">
+<%
+  n_out = min(n_nodes, max_output_nodes)
+%>\
 % for sv_name in svs:
-    <OutputFile id="of_${sv_name}" fileName="results/${dyn_id}_${sv_name}.dat">
-% for node_idx in range(min(n_nodes, max_output_nodes)):
+% for node_idx in range(n_out):
       <OutputColumn id="${sv_name}_${node_idx}" quantity="pop0[${node_idx}]/${sv_name}"/>
 % endfor
-    </OutputFile>
 % endfor
+    </OutputFile>
 
   </Simulation>
 
