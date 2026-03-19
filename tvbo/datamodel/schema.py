@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-18T14:35:15
+# Generation date: 2026-03-19T23:14:13
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1292,6 +1292,7 @@ class Dynamics(YAMLRoot):
     system_type: Optional[Union[str, "SystemType"]] = None
     autonomous: Optional[Union[bool, Bool]] = True
     observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1360,6 +1361,8 @@ class Dynamics(YAMLRoot):
             self.autonomous = Bool(self.autonomous)
 
         self._normalize_inlined_as_dict(slot_name="observed", slot_type=DerivedVariable, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
 
         if self.system_type is not None and not isinstance(self.system_type, str):
             self.system_type = str(self.system_type)
@@ -5642,6 +5645,9 @@ slots.dynamics__autonomous = Slot(uri=TVBO.autonomous, name="dynamics__autonomou
 
 slots.dynamics__observed = Slot(uri=TVBO.observed, name="dynamics__observed", curie=TVBO.curie('observed'),
                    model_uri=TVBO.dynamics__observed, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
+slots.dynamics__events = Slot(uri=TVBO.events, name="dynamics__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.dynamics__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
 slots.stateVariable__variable_of_interest = Slot(uri=TVBO.variable_of_interest, name="stateVariable__variable_of_interest", curie=TVBO.curie('variable_of_interest'),
                    model_uri=TVBO.stateVariable__variable_of_interest, domain=None, range=Optional[Union[bool, Bool]])

@@ -1749,11 +1749,55 @@ class Dynamics(tvbo_datamodel.Dynamics):
         elif format in ["pde-fem", "pde-python", "pde"]:
             # Generic Python FEM (scikit-fem) template
             template = templates.lookup.get_template("tvbo-pde-fem.py.mako")
+        elif format.lower() in ["neuroml", "nml", "lems"]:
+            from tvbo.adapters.neuroml import NeuroMLAdapter
+            adapter = NeuroMLAdapter(self)
+            return adapter.render_dynamics(**kwargs)
         else:
             raise ValueError(f"Format {format} not supported.")
 
         rendered_code = template.render(model=self, format=format, jax="jax" in format, **kwargs)
         return templater.format_code(rendered_code, format=format)
+
+    def render(self, format="yaml", **kwargs) -> str:
+        """Unified entry point for rendering the model in any output format.
+
+        Dispatches to the appropriate renderer based on *format*:
+
+        - ``'yaml'`` — TVBO YAML specification
+        - ``'pyrates-yaml'`` — PyRates YAML
+        - ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
+        - ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
+        - ``'neuroml'`` / ``'nml'`` / ``'lems'`` — LEMS XML via NeuroMLAdapter
+        - Any code format accepted by :meth:`render_code` (``'tvb'``,
+          ``'jax'``, ``'julia'``, ``'bifurcation-julia'``, …)
+
+        Parameters
+        ----------
+        format : str
+            Target output format.
+        **kwargs
+            Forwarded to the underlying renderer.
+
+        Returns
+        -------
+        str
+        """
+        fmt = format.lower()
+
+        # ── Serialisation ────────────────────────────────────────────────
+        if fmt == "yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"))
+        if fmt == "pyrates-yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"), format="pyrates")
+
+        # ── Report ───────────────────────────────────────────────────────
+        if fmt in ("report", "markdown", "md", "pdf"):
+            report_fmt = "pdf" if fmt == "pdf" else "markdown"
+            return self.generate_report(format=report_fmt, **kwargs)
+
+        # ── Code generation (all other formats) ──────────────────────────
+        return self.render_code(format=format, **kwargs)
 
     def display_markdown(self, format="tvb", **kwargs):
         from IPython.display import Markdown, display

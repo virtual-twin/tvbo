@@ -17,6 +17,12 @@ via tvbo.adapters.neuroml.build_lems_context().
 </%doc>
 <Lems>
 
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
 <%include file="_lems_dims_units.xml.mako"/>
 
 <%include file="_lems_componenttype.xml.mako"/>

@@ -18,29 +18,44 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 </%doc>
 <Lems>
 
+  <!-- Tell jLEMS/jNeuroML which component is the simulation entry point. -->
+  <Target component="${sim_id}"/>
+
+  <!-- Simulation.xml chain-includes NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml chain-includes Cells.xml which defines baseCell/baseStandalone,
+       enabling <population> and <network> for single- and multi-node networks.
+       Both files pull in NeuroMLCoreDimensions.xml; jLEMS deduplicates includes. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
 <%include file="_lems_dims_units.xml.mako"/>
 
 <%include file="_lems_componenttype.xml.mako"/>
 
   <!-- ════════════════════════════════════════════════════════════════
-       Network
+       Network — works for any n_nodes (single neuron or population).
+       Our ComponentType extends baseCell, so it is valid in a population.
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="net" type="network">
-    <Component id="pop0" type="population" component="${dyn_id}" size="${n_nodes}"/>
-  </Component>
+  <network id="net">
+    <population id="pop0" component="${dyn_id}_inst" size="${n_nodes}"/>
+  </network>
 
   <!-- ════════════════════════════════════════════════════════════════
-       Simulation
+       Simulation — target the network.
+       Output: one file with all (node, SV) combinations.
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="sim1" length="${duration}ms" step="${dt}ms" target="net">
+  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net">
 
+    <OutputFile id="of1" fileName="results/${dyn_id}.dat">
+<%
+  n_out = min(n_nodes, max_output_nodes)
+%>\
 % for sv_name in svs:
-    <OutputFile id="of_${sv_name}" fileName="results/${dyn_id}_${sv_name}.dat">
-% for node_idx in range(min(n_nodes, max_output_nodes)):
+% for node_idx in range(n_out):
       <OutputColumn id="${sv_name}_${node_idx}" quantity="pop0[${node_idx}]/${sv_name}"/>
 % endfor
-    </OutputFile>
 % endfor
+    </OutputFile>
 
   </Simulation>
 

@@ -181,7 +181,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if conts and isinstance(conts, dict):
             for key, val in conts.items():
                 if val is not None and not isinstance(val, Continuation):
-                    conts[key] = _coerce(Continuation, val)
+                    val.__class__ = Continuation
+                    conts[key] = val
 
         if not getattr(self, "network", None):
             self.network = Network()
@@ -1915,20 +1916,23 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return rendered_code
 
     def render(self, format="yaml", **kwargs) -> str:
-        """Unified entry point for rendering the experiment as code or metadata.
+        """Unified entry point for rendering the experiment in any output format.
 
-        Combines :meth:`render_code` (executable backends) and metadata
-        serialisation (``yaml``, ``lems``, ``neuroml``, …) behind a single
-        consistent interface.
+        Dispatches to the appropriate renderer based on *format*:
+
+        - ``'yaml'`` — TVBO YAML specification (default)
+        - ``'pyrates-yaml'`` — PyRates YAML
+        - ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
+        - ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
+        - ``'openminds'`` / ``'jsonld'`` — openMINDS JSON-LD (returns JSON string)
+        - ``'lems'`` / ``'neuroml'`` / ``'nml'`` — LEMS XML via NeuroMLAdapter
+        - Any code format accepted by :meth:`render_code` (``'tvb'``,
+          ``'jax'``, ``'tvboptim'``, ``'julia'``, ``'networkdynamics'``, …)
 
         Parameters
         ----------
         format : str
-            ``'yaml'``                   — YAML specification (default)
-            ``'lems'`` / ``'neuroml'`` / ``'nml'`` — LEMS XML via
-            :class:`~tvbo.adapters.neuroml.NeuroMLAdapter`
-            Any other format accepted by :meth:`render_code` (``tvb``,
-            ``jax``, ``tvboptim``, …).
+            Target output format.
         **kwargs
             Forwarded to the underlying renderer.
 
@@ -1936,8 +1940,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         -------
         str
         """
-        if format == "yaml":
-            return self.to_yaml(filepath=None)
+        fmt = format.lower()
+
+        # ── Serialisation ────────────────────────────────────────────────
+        if fmt == "yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"))
+        if fmt == "pyrates-yaml":
+            return self.to_yaml(
+                filepath=kwargs.get("filepath"), format="pyrates"
+            )
+
+        # ── Report ───────────────────────────────────────────────────────
+        if fmt in ("report", "markdown", "md", "pdf"):
+            report_fmt = "pdf" if fmt == "pdf" else "markdown"
+            return self.report(format=report_fmt, **kwargs)
+
+        # ── openMINDS JSON-LD ────────────────────────────────────────────
+        if fmt in ("openminds", "jsonld", "json-ld"):
+            import json
+            from tvbo.adapters.openminds import experiment_to_openminds
+
+            indent = kwargs.pop("indent", 2)
+            data = experiment_to_openminds(self, **kwargs)
+            return json.dumps(data, indent=indent, default=str)
+
+        # ── Code generation (all other formats) ──────────────────────────
         return self.render_code(format=format, **kwargs)
 
     def save_code(self, dir, file_name=None):

@@ -20,6 +20,85 @@ coupling:
 # Network (small test network)
 network:
   number_of_nodes: 4
+  dynamics:
+    BalloonWindkessel:
+      name: BalloonWindkessel
+      description: "Balloon-Windkessel hemodynamic model for BOLD fMRI"
+      system_type: continuous
+      parameters:
+        tau_s:
+          value: 0.65
+          description: "Signal decay time constant [s]"
+        tau_f:
+          value: 0.41
+          description: "Feedback time constant [s]"
+        tau_o:
+          value: 0.98
+          description: "Volume time constant [s]"
+        alpha:
+          value: 0.32
+          description: "Grubb exponent (stiffness)"
+        TE:
+          value: 0.04
+          description: "Echo time [s]"
+        V0:
+          value: 4.0
+          description: "Resting blood volume fraction"
+        E0:
+          value: 0.4
+          description: "Resting oxygen extraction fraction"
+        epsilon:
+          value: 0.5
+          description: "Ratio of intra- to extra-vascular signal"
+        nu_0:
+          value: 40.3
+          description: "Frequency offset [Hz]"
+        r_0:
+          value: 25.0
+          description: "Slope of intravascular relaxation rate [Hz]"
+      derived_parameters:
+        recip_tau_s:
+          equation: { rhs: "1.0 / tau_s" }
+        recip_tau_f:
+          equation: { rhs: "1.0 / tau_f" }
+        recip_tau_o:
+          equation: { rhs: "1.0 / tau_o" }
+        recip_alpha:
+          equation: { rhs: "1.0 / alpha" }
+        recip_E0:
+          equation: { rhs: "1.0 / E0" }
+        k1:
+          equation: { rhs: "4.3 * nu_0 * E0 * TE" }
+        k2:
+          equation: { rhs: "epsilon * r_0 * E0 * TE" }
+        k3:
+          equation: { rhs: "1.0 - epsilon" }
+      state_variables:
+        s:
+          initial_value: 0.0
+          equation:
+            rhs: "x - recip_tau_s * s - recip_tau_f * (f - 1.0)"
+          description: "Vasodilatory signal"
+        f:
+          initial_value: 1.0
+          equation:
+            rhs: "s"
+          description: "Blood inflow"
+        v:
+          initial_value: 1.0
+          equation:
+            rhs: "recip_tau_o * (f - pow(v, recip_alpha))"
+          description: "Blood volume"
+        q:
+          initial_value: 1.0
+          equation:
+            rhs: "recip_tau_o * (f * (1.0 - pow(1.0 - E0, 1.0 / f)) * recip_E0 - pow(v, recip_alpha) * (q / v))"
+          description: "Deoxyhemoglobin content"
+      derived_variables:
+        bold_signal:
+          equation:
+            rhs: "V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))"
+          description: "BOLD signal output"
 
 # Integration settings
 integration:
@@ -27,168 +106,89 @@ integration:
   step_size: 0.1
   duration: 1000.0
 
-# All dynamics models (keyed by name)
+# Primary dynamics model
 dynamics:
-  rwongwang:
-    system_type: continuous
-    parameters:
-      a_E:
-        value: 310.0
-        description: "[n/C]. Excitatory population input gain parameter"
-      b_E:
-        value: 125.0
-        description: "[Hz]. Excitatory population input shift parameter"
-      d_E:
-        value: 0.160
-        description: "[s]. Excitatory population input scaling parameter"
-      a_I:
-        value: 615.0
-        description: "[n/C]. Inhibitory population input gain parameter"
-      b_I:
-        value: 177.0
-        description: "[Hz]. Inhibitory population input shift parameter"
-      d_I:
-        value: 0.087
-        description: "[s]. Inhibitory population input scaling parameter"
-      gamma_E:
-        value: 0.000641
-        description: "Excitatory population kinetic parameter"
-      tau_E:
-        value: 100.0
-        description: "[ms]. Excitatory population NMDA decay time constant"
-      w_plus:
-        value: 1.4
-        description: "Excitatory population recurrence weight"
-      w_E:
-        value: 1.0
-        description: "Excitatory population external input scaling weight"
-      gamma_I:
-        value: 0.001
-        description: "Inhibitory population kinetic parameter"
-      tau_I:
-        value: 10.0
-        description: "[ms]. Inhibitory population NMDA decay time constant"
-      w_I:
-        value: 0.7
-        description: "Inhibitory population external input scaling weight"
-      I_0:
-        value: 0.382
-        description: "[nA]. Effective external input"
-      J_NMDA:
-        value: 0.15
-        description: "NMDA synaptic coupling"
-      JI:
-        value: 1.0
-        description: "Inhibitory synaptic coupling"
-    derived_variables:
-      tmp_I_E:
-        equation:
-          rhs: "a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_pop0 - JI*W) - b_E"
-      tmp_H_E:
-        equation:
-          rhs: "tmp_I_E / (1.0 - exp((-1.0 * d_E) * tmp_I_E))"
-      tmp_I_I:
-        equation:
-          rhs: "(a_I * (((w_I * I_0) + (J_NMDA * V)) - W)) - b_I"
-      tmp_H_I:
-        equation:
-          rhs: "tmp_I_I / (1.0 - exp((-1.0 * d_I) * tmp_I_I))"
-    state_variables:
-      V:
-        initial_value: 0.998307465821013
-        boundaries: { lo: 0.0, hi: 1.0 }
-        equation:
-          rhs: "((-1.0 / tau_E) * V) + (tmp_H_E * (1 - V) * gamma_E)"
-        variable_of_interest: true
-        coupling_variable: true
-      W:
-        initial_value: 0.12069886682928
-        boundaries: { lo: 0.0, hi: 1.0 }
-        equation:
-          rhs: "((-1.0 / tau_I) * W) + (tmp_H_I * gamma_I)"
-        variable_of_interest: true
-        coupling_variable: false
-    coupling_inputs:
-      c_pop0: {}
-
-  BalloonWindkessel:
-    name: BalloonWindkessel
-    description: "Balloon-Windkessel hemodynamic model for BOLD fMRI"
-    system_type: continuous
-    parameters:
-      tau_s:
-        value: 0.65
-        description: "Signal decay time constant [s]"
-      tau_f:
-        value: 0.41
-        description: "Feedback time constant [s]"
-      tau_o:
-        value: 0.98
-        description: "Volume time constant [s]"
-      alpha:
-        value: 0.32
-        description: "Grubb exponent (stiffness)"
-      TE:
-        value: 0.04
-        description: "Echo time [s]"
-      V0:
-        value: 4.0
-        description: "Resting blood volume fraction"
-      E0:
-        value: 0.4
-        description: "Resting oxygen extraction fraction"
-      epsilon:
-        value: 0.5
-        description: "Ratio of intra- to extra-vascular signal"
-      nu_0:
-        value: 40.3
-        description: "Frequency offset [Hz]"
-      r_0:
-        value: 25.0
-        description: "Slope of intravascular relaxation rate [Hz]"
-    derived_parameters:
-      recip_tau_s:
-        equation: { rhs: "1.0 / tau_s" }
-      recip_tau_f:
-        equation: { rhs: "1.0 / tau_f" }
-      recip_tau_o:
-        equation: { rhs: "1.0 / tau_o" }
-      recip_alpha:
-        equation: { rhs: "1.0 / alpha" }
-      recip_E0:
-        equation: { rhs: "1.0 / E0" }
-      k1:
-        equation: { rhs: "4.3 * nu_0 * E0 * TE" }
-      k2:
-        equation: { rhs: "epsilon * r_0 * E0 * TE" }
-      k3:
-        equation: { rhs: "1.0 - epsilon" }
-    state_variables:
-      s:
-        initial_value: 0.0
-        equation:
-          rhs: "x - recip_tau_s * s - recip_tau_f * (f - 1.0)"
-        description: "Vasodilatory signal"
-      f:
-        initial_value: 1.0
-        equation:
-          rhs: "s"
-        description: "Blood inflow"
-      v:
-        initial_value: 1.0
-        equation:
-          rhs: "recip_tau_o * (f - pow(v, recip_alpha))"
-        description: "Blood volume"
-      q:
-        initial_value: 1.0
-        equation:
-          rhs: "recip_tau_o * (f * (1.0 - pow(1.0 - E0, 1.0 / f)) * recip_E0 - pow(v, recip_alpha) * (q / v))"
-        description: "Deoxyhemoglobin content"
-    derived_variables:
-      bold_signal:
-        equation:
-          rhs: "V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))"
-        description: "BOLD signal output"
+  name: rwongwang
+  system_type: continuous
+  parameters:
+    a_E:
+      value: 310.0
+      description: "[n/C]. Excitatory population input gain parameter"
+    b_E:
+      value: 125.0
+      description: "[Hz]. Excitatory population input shift parameter"
+    d_E:
+      value: 0.160
+      description: "[s]. Excitatory population input scaling parameter"
+    a_I:
+      value: 615.0
+      description: "[n/C]. Inhibitory population input gain parameter"
+    b_I:
+      value: 177.0
+      description: "[Hz]. Inhibitory population input shift parameter"
+    d_I:
+      value: 0.087
+      description: "[s]. Inhibitory population input scaling parameter"
+    gamma_E:
+      value: 0.000641
+      description: "Excitatory population kinetic parameter"
+    tau_E:
+      value: 100.0
+      description: "[ms]. Excitatory population NMDA decay time constant"
+    w_plus:
+      value: 1.4
+      description: "Excitatory population recurrence weight"
+    w_E:
+      value: 1.0
+      description: "Excitatory population external input scaling weight"
+    gamma_I:
+      value: 0.001
+      description: "Inhibitory population kinetic parameter"
+    tau_I:
+      value: 10.0
+      description: "[ms]. Inhibitory population NMDA decay time constant"
+    w_I:
+      value: 0.7
+      description: "Inhibitory population external input scaling weight"
+    I_0:
+      value: 0.382
+      description: "[nA]. Effective external input"
+    J_NMDA:
+      value: 0.15
+      description: "NMDA synaptic coupling"
+    JI:
+      value: 1.0
+      description: "Inhibitory synaptic coupling"
+  derived_variables:
+    tmp_I_E:
+      equation:
+        rhs: "a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_pop0 - JI*W) - b_E"
+    tmp_H_E:
+      equation:
+        rhs: "tmp_I_E / (1.0 - exp((-1.0 * d_E) * tmp_I_E))"
+    tmp_I_I:
+      equation:
+        rhs: "(a_I * (((w_I * I_0) + (J_NMDA * V)) - W)) - b_I"
+    tmp_H_I:
+      equation:
+        rhs: "tmp_I_I / (1.0 - exp((-1.0 * d_I) * tmp_I_I))"
+  state_variables:
+    V:
+      initial_value: 0.998307465821013
+      boundaries: { lo: 0.0, hi: 1.0 }
+      equation:
+        rhs: "((-1.0 / tau_E) * V) + (tmp_H_E * (1 - V) * gamma_E)"
+      variable_of_interest: true
+      coupling_variable: true
+    W:
+      initial_value: 0.12069886682928
+      boundaries: { lo: 0.0, hi: 1.0 }
+      equation:
+        rhs: "((-1.0 / tau_I) * W) + (tmp_H_I * gamma_I)"
+      variable_of_interest: true
+      coupling_variable: false
+  coupling_inputs:
+    c_pop0: {}
 
 observations:
   bold:
