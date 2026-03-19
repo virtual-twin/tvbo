@@ -175,6 +175,11 @@ class SimulationResult:
             sample_period=dt,
             labels_dimensions=labels_dimensions,
         )
+        # Propagate extras that animate/plot helpers may need (e.g. graph from NetworkDynamics)
+        for key in ('graph', 'edge_data', 'vertex_data', 'node_positions'):
+            val = self._extras.get(key)
+            if val is not None:
+                setattr(self._timeseries, key, val)
         return self._timeseries
 
     def __getattr__(self, name):

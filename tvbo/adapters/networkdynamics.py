@@ -401,8 +401,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
         # 9. Restore original working directory
         os.chdir(original_cwd)
 
-        # 10. Build SimulationResult
-        sim = SimulationResult(data=da)
+        # 10. Build SimulationResult (store graph so TimeSeries.animate() can access it)
+        sim = SimulationResult(data=da, graph=graph_data)
 
         # Collect extra metadata
         extras = dict(sol=sol, graph=graph_data, edge_data=edge_data, vertex_data=vertex_data)
