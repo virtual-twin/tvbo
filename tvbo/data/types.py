@@ -595,7 +595,7 @@ class ExplorationResult(Bunch):
         if n == 1:
             axes = [axes]
 
-        ax_values = np.asarray(ax_info["values"]) if ax_info else None
+        ax_values = np.asarray(ax_info["explored_values"]) if ax_info else None
 
         for i, ax in enumerate(axes):
             data = np.asarray(self.results[i])  # (n_time, ...) or (n_time,)

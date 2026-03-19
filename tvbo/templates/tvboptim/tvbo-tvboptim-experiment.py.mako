@@ -1695,11 +1695,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
             name='${ax['name']}',
 % endif
 % if 'values' in ax:
-            values=jnp.array(${ax['values']}),
+            explored_values=jnp.array(${ax['values']}),
 % else:
             lo=${ax['lo']},
             hi=${ax['hi']},
-            values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
+            explored_values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
 % endif
             n=${ax['n']},
 % if ax.get('is_coupling'):
