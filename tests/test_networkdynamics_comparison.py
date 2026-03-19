@@ -537,9 +537,9 @@ class TestNumericalComparison:
         ts = exp.run(format="networkdynamics")
 
         # Check shape: should have 20 nodes, 1 state variable
-        assert ts.data.shape[2] == 20, f"Expected 20 nodes, got {ts.data.shape[2]}"
+        assert ts.data.sizes['node'] == 20, f"Expected 20 nodes, got {ts.data.sizes['node']}"
         # Check convergence: all nodes should converge to same value
-        final_states = ts.data[-1, 0, :, 0]
+        final_states = ts.data.isel(time=-1).sel(variable='v')
         assert np.std(final_states) < 0.1, \
             f"Diffusion should converge: std={np.std(final_states):.4f}"
 
@@ -551,9 +551,10 @@ class TestNumericalComparison:
         ts = exp.run(format="networkdynamics")
 
         # Check shape: 8 nodes, 1 state variable (theta)
-        assert ts.data.shape[2] == 8, f"Expected 8 nodes, got {ts.data.shape[2]}"
+        assert ts.data.sizes['node'] == 8, f"Expected 8 nodes, got {ts.data.sizes['node']}"
         # Phases should grow over time (oscillators)
-        assert ts.data[-1, 0, 0, 0] != ts.data[0, 0, 0, 0], \
+        node0_theta = ts.data.sel(variable='theta', node='0')
+        assert node0_theta.isel(time=-1).item() != node0_theta.isel(time=0).item(), \
             "Phase should change over time"
 
     def test_fhn_numerical(self, julia_runner):
@@ -564,11 +565,10 @@ class TestNumericalComparison:
         ts = exp.run(format="networkdynamics")
 
         # Check shape: 90 nodes, 2 state variables (u, v)
-        assert ts.data.shape[2] == 90, f"Expected 90 nodes, got {ts.data.shape[2]}"
-        assert ts.data.shape[1] == 2, f"Expected 2 state vars, got {ts.data.shape[1]}"
+        assert ts.data.sizes['node'] == 90, f"Expected 90 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes['variable'] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
         # u variables should be bounded (no numerical explosion)
-        # TVBO convention: (time, sv, nodes, 1) — sv=0 is 'u'
-        u_data = ts.data[:, 0, :, 0]
+        u_data = ts.data.sel(variable='u')
         assert np.all(np.abs(u_data) < 50), \
             f"u should be bounded: max={np.max(np.abs(u_data)):.1f}"
 
@@ -580,13 +580,13 @@ class TestNumericalComparison:
         ts = exp.run(format="networkdynamics")
 
         # Check shape: 10 nodes, 2 state variables (x, phi)
-        assert ts.data.shape[2] == 10, f"Expected 10 nodes, got {ts.data.shape[2]}"
-        assert ts.data.shape[1] == 2, f"Expected 2 state vars, got {ts.data.shape[1]}"
+        assert ts.data.sizes['node'] == 10, f"Expected 10 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes['variable'] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
         # Both x and phi should converge (diffusion)
-        for sv_idx in range(2):
-            final = ts.data[-1, sv_idx, :, 0]
+        for sv_name in ts.data.coords['variable'].values:
+            final = ts.data.isel(time=-1).sel(variable=sv_name)
             assert np.std(final) < 0.15, \
-                f"SV {sv_idx} should converge: std={np.std(final):.4f}"
+                f"SV {sv_name} should converge: std={np.std(final):.4f}"
 
     def test_heterogeneous_kuramoto_numerical(self, julia_runner):
         """Heterogeneous Kuramoto: correct shape with mixed vertex types."""
@@ -607,8 +607,8 @@ class TestNumericalComparison:
         ts = exp.run(format="networkdynamics")
 
         # 5 nodes, 2 state variables (delta, omega)
-        assert ts.data.shape[2] == 5, f"Expected 5 nodes, got {ts.data.shape[2]}"
-        assert ts.data.shape[1] == 2, f"Expected 2 state vars, got {ts.data.shape[1]}"
+        assert ts.data.sizes['node'] == 5, f"Expected 5 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes['variable'] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
         # States should be bounded (no numerical explosion from cascade)
         assert np.all(np.isfinite(ts.data)), "All states should be finite"
         assert np.max(np.abs(ts.data)) < 100, \
@@ -616,8 +616,8 @@ class TestNumericalComparison:
         # Numerical identity with reference
         tvbo_flat = np.zeros((len(ts.time), 10))
         for node in range(5):
-            tvbo_flat[:, node * 2] = ts.data[:, 0, node, 0]      # delta
-            tvbo_flat[:, node * 2 + 1] = ts.data[:, 1, node, 0]  # omega
+            tvbo_flat[:, node * 2] = ts.data.sel(variable='delta', node=str(node))
+            tvbo_flat[:, node * 2 + 1] = ts.data.sel(variable='omega', node=str(node))
         assert np.allclose(ts.time, ref["t"]), "Time vectors must match"
         assert np.allclose(tvbo_flat, ref["u"], atol=1e-8), \
             f"States must match reference: max diff={np.max(np.abs(tvbo_flat - ref['u'])):.2e}"
@@ -630,9 +630,9 @@ class TestNumericalComparison:
         ts = exp.run(format="networkdynamics")
 
         # Heterogeneous: 9 free nodes × 4 SVs = 36 total states
-        # Data shape is (n_t, 36, 1, 1) for heterogeneous models
-        assert ts.data.shape[1] == 36, \
-            f"Expected 36 total states (9×4), got {ts.data.shape[1]}"
+        # Data shape is (n_t, 36) for heterogeneous models
+        assert ts.data.sizes['variable'] == 36, \
+            f"Expected 36 total states (9×4), got {ts.data.sizes['variable']}"
         # All states should be finite (no structural collapse)
         assert np.all(np.isfinite(ts.data)), "All states should be finite"
 
