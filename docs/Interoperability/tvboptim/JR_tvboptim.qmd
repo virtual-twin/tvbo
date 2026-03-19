@@ -91,7 +91,7 @@ ax.axis("off")
 ax.set_title("A. Network Dynamics", fontsize=10)
 # Top inset: Transient
 ax_top = ax.inset_axes([0, 0.52, 1, 0.48])
-data = results.integration.transient.data[:t_max, 0, :]
+data = results.integration.transient.data[:t_max, 0, :].values
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax_top.plot(
@@ -114,7 +114,7 @@ ax_top.set(ylabel="y0 [a.u.]")
 ax_top.set_xticklabels([])
 # Bottom inset: Stabilized
 ax_bot = ax.inset_axes([0, 0, 1, 0.48])
-data = results.integration.data[:t_max, 0, :]
+data = results.integration.data[:t_max, 0, :].values
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax_bot.plot(

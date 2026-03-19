@@ -70,6 +70,8 @@ website:
                         href: Usage/Noise.qmd
                   - section: "Advanced"
                     contents:
+                      - text: "Creating Custom Networks"
+                        href: Usage/CreatingNetworks.qmd
                       - text: "PDE Simulation"
                         href: Usage/PDESimulation.qmd
                       - text: "Heterogeneous Node Dynamics"
