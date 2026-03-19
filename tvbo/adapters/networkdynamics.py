@@ -14,7 +14,7 @@ import numpy as np
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, TimeSeries
     from tvbo.classes.experiment import SimulationExperiment
 
 
