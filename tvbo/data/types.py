@@ -778,10 +778,14 @@ class ExperimentResult:
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError(name)
-        try:
+        # Check extras first
+        if name in self._extras:
             return self._extras[name]
-        except KeyError:
-            raise AttributeError(f"'ExperimentResult' has no attribute '{name}'")
+        # Delegate to integration for backward compat (result.data, result.time, etc.)
+        integration = self.__dict__.get('integration')
+        if integration is not None and hasattr(integration, name):
+            return getattr(integration, name)
+        raise AttributeError(f"'ExperimentResult' has no attribute '{name}'")
 
     def __repr__(self):
         label = self.name or "Experiment"
@@ -1053,6 +1057,72 @@ class ExperimentResult:
         return sidecar
 
     # ── Class methods ─────────────────────────────
+
+    @classmethod
+    def from_timeseries(cls, ts, source=None, name=None, **extras):
+        """Create an ExperimentResult from a TVBO TimeSeries.
+
+        Converts a raw TimeSeries (as returned by JAX, PyRates,
+        NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
+
+        Parameters
+        ----------
+        ts : TimeSeries
+            Simulation output with ``.data``, ``.time``, ``.labels_dimensions``.
+        source : SimulationExperiment, optional
+            Back-reference to the experiment that produced this result.
+        name : str, optional
+            Experiment label.
+        **extras
+            Additional attributes to store (e.g. ``sol``, ``graph``).
+
+        Returns
+        -------
+        ExperimentResult
+        """
+        data_np = np.asarray(ts.data)
+        # Squeeze singleton mode dim if present
+        if data_np.ndim == 4 and data_np.shape[3] == 1:
+            data_np = data_np[:, :, :, 0]
+
+        ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
+        state_names = ld.get("State Variable", [])
+        region_labels = ld.get("Region", [])
+
+        dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+        coords = {}
+        if ts.time is not None:
+            coords['time'] = np.asarray(ts.time)
+        if state_names:
+            coords['variable'] = list(state_names)
+        if region_labels and data_np.ndim >= 3:
+            coords['node'] = [str(r) for r in region_labels]
+
+        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+
+        # Collect observations from derivatives (TVB-style) or extras
+        observations = {}
+        if hasattr(ts, 'derivatives') and ts.derivatives:
+            for d_ts in ts.derivatives:
+                obs_name = getattr(d_ts, 'title', None) or f"obs_{len(observations)}"
+                observations[obs_name] = d_ts
+
+        sim_result = SimulationResult(data=da, observations=observations)
+        sim_result._timeseries = ts
+
+        # Continuations (bifurcation results) go in a separate section
+        continuations = {}
+        if hasattr(ts, 'sol') and extras.get('_is_bifurcation', False):
+            extras.pop('_is_bifurcation')
+            continuations['default'] = ts.sol
+
+        return cls(
+            integration=sim_result,
+            source=source,
+            name=name,
+            continuations=continuations or None,
+            **extras,
+        )
 
     @classmethod
     def from_tvb(cls, simulator, result=None):

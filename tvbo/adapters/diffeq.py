@@ -71,16 +71,17 @@ class DiffEqAdapter:
         )
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "TimeSeries":
+    def run(self, **kwargs) -> "ExperimentResult":
         """Run simulation using DifferentialEquations.jl.
 
         Returns
         -------
-        TimeSeries
-            Simulation results shaped ``(time, state_vars, 1, 1)``
-            for single-node simulations.
+        ExperimentResult
+            Simulation results with named dimensions and coordinates.
         """
-        from tvbo.data.types import TimeSeries
+        import xarray as xr
+
+        from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
@@ -110,17 +111,22 @@ class DiffEqAdapter:
         n_nodes = 1
         data = solution_to_array(t, u, n_sv, n_nodes)
 
-        dt = float(exp.integration.step_size)
-        ts = TimeSeries(
-            time=t,
-            data=data,
-            labels_dimensions={
-                "State Variable": sv_names,
-                "Region": [0],
-            },
-            sample_period=dt,
-        )
-        ts.source_experiment = exp
-        ts.sol = sol
+        # 6. Build xr.DataArray — squeeze singleton mode
+        data_np = np.asarray(data)
+        if data_np.ndim == 4 and data_np.shape[3] == 1:
+            data_np = data_np[:, :, :, 0]
 
-        return ts
+        da = xr.DataArray(
+            data=data_np,
+            dims=['time', 'variable', 'node'][:data_np.ndim],
+            coords={
+                'time': np.asarray(t),
+                'variable': sv_names,
+                'node': ['0'],
+            },
+        )
+        sim = SimulationResult(data=da)
+        return ExperimentResult(
+            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            sol=sol,
+        )

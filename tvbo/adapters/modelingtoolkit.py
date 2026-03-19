@@ -85,19 +85,20 @@ class ModelingToolkitAdapter(BaseAdapter):
         )
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "TimeSeries":
+    def run(self, **kwargs) -> "ExperimentResult":
         """Run simulation using pure ModelingToolkit.jl.
 
         Returns
         -------
-        TimeSeries
-            TVBO TimeSeries with simulation results.
+        ExperimentResult
+            Simulation results with named dimensions and coordinates.
         """
         import os
 
         import numpy as np
+        import xarray as xr
 
-        from tvbo.data.types import TimeSeries
+        from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
@@ -156,20 +157,25 @@ class ModelingToolkitAdapter(BaseAdapter):
         # 7. Restore working directory
         os.chdir(original_cwd)
 
-        dt = ctx['dt']
-        ts = TimeSeries(
-            time=t,
-            data=data,
-            labels_dimensions={
-                "State Variable": state_labels,
-                "Region": list(range(max(n_nodes, 1))),
-            },
-            sample_period=dt,
-        )
-        ts.source_experiment = exp
-        ts.sol = sol
+        # 8. Build xr.DataArray — squeeze singleton mode
+        data_np = np.asarray(data)
+        if data_np.ndim == 4 and data_np.shape[3] == 1:
+            data_np = data_np[:, :, :, 0]
 
-        return ts
+        dims = ['time', 'variable', 'node'][:data_np.ndim]
+        coords = {
+            'time': np.asarray(t),
+            'variable': state_labels,
+        }
+        if data_np.ndim >= 3:
+            coords['node'] = [str(i) for i in range(max(n_nodes, 1))]
+
+        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+        sim = SimulationResult(data=da)
+        return ExperimentResult(
+            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            sol=sol,
+        )
 
     # ── Symbolic round-trip ────────────────────────────────────────────
 
