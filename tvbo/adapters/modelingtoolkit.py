@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, TimeSeries
 
 # Julia packages required by the MTK backend
 MTK_PACKAGES = [
@@ -95,15 +95,12 @@ class ModelingToolkitAdapter(BaseAdapter):
         """
         import os
 
-        import numpy as np
-        import xarray as xr
-
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
             run_julia_code,
-            solution_to_array,
+            solution_to_dataarray,
         )
 
         exp = self.experiment
@@ -141,7 +138,6 @@ class ModelingToolkitAdapter(BaseAdapter):
         # auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
         if n_unknowns != n_sv * n_nodes:
-            data = u.T[:, :, np.newaxis, np.newaxis]
             try:
                 unknowns = run_julia_code("string.(unknowns(sys))")
                 state_labels = [
@@ -150,27 +146,14 @@ class ModelingToolkitAdapter(BaseAdapter):
                 ]
             except Exception:
                 state_labels = [f"x_{i}" for i in range(n_unknowns)]
+            # Flat unknowns — treat as n_unknowns variables, 1 node
+            da = solution_to_dataarray(t, u, state_labels, 1)
         else:
-            data = solution_to_array(t, u, n_sv, n_nodes)
-            state_labels = sv_names
+            da = solution_to_dataarray(t, u, sv_names, n_nodes)
 
         # 7. Restore working directory
         os.chdir(original_cwd)
 
-        # 8. Build xr.DataArray — squeeze singleton mode
-        data_np = np.asarray(data)
-        if data_np.ndim == 4 and data_np.shape[3] == 1:
-            data_np = data_np[:, :, :, 0]
-
-        dims = ['time', 'variable', 'node'][:data_np.ndim]
-        coords = {
-            'time': np.asarray(t),
-            'variable': state_labels,
-        }
-        if data_np.ndim >= 3:
-            coords['node'] = [str(i) for i in range(max(n_nodes, 1))]
-
-        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
         sim = SimulationResult(data=da)
         return ExperimentResult(
             integration=sim, source=exp, name=getattr(exp, 'label', None),

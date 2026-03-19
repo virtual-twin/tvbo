@@ -140,4 +140,5 @@ markers = [
     "backend_mtk: ModelingToolkit.jl backend tests",
     "docs: mark test as documentation test (tests that execute .qmd notebooks)",
     "julia: mark test as requiring a Julia runtime via juliacall",
+    "slow: long-running tests excluded by default (use --run-slow to include)",
 ]

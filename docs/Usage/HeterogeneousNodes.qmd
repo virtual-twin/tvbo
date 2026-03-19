@@ -164,7 +164,7 @@ ax = axes[0]
 driver_tvbo = res.get_region("Driver").get_state_variable("x")
 ax.plot(
     t_tvbo,
-    driver_tvbo.data[:, 0, 0, 0],
+    driver_tvbo.data.values.squeeze(),
 )
 ax.set_ylabel("Driver\n(Hopf)")
 
@@ -173,7 +173,7 @@ ax = axes[1]
 excitable_tvbo = res.get_region("Excitable").get_state_variable("v")
 ax.plot(
     t_tvbo,
-    excitable_tvbo.data[:, 0, 0, 0],
+    excitable_tvbo.data.values.squeeze(),
 )
 ax.set_ylabel("Excitable\n(FHN)")
 
@@ -182,7 +182,7 @@ ax = axes[2]
 relaxation_tvbo = res.get_region("Relaxation").get_state_variable("x")
 ax.plot(
     t_tvbo,
-    relaxation_tvbo.data[:, 0, 0, 0],
+    relaxation_tvbo.data.values.squeeze(),
     lw=1.5,
     alpha=0.7,
     label="TVBO TimeSeries",

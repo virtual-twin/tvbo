@@ -525,6 +525,121 @@ class FortranPrinter(spf.FCodePrinter):
         super().__init__(settings=settings)
 
 
+class LEMSPrinter(StrPrinter):
+    """Printer for LEMS (Low Entropy Model Specification) math expressions.
+
+    Key differences from plain StrPrinter:
+    - Powers use ``^`` instead of ``**``
+    - Natural log is ``ln`` (SymPy ``log`` is natural; LEMS ``log`` is base-10)
+    - ``abs`` instead of ``Abs``
+    - Relational operators use LEMS dot-notation: ``.gt.``, ``.geq.``, ``.lt.``,
+      ``.leq.``, ``.eq.``, ``.neq.``
+    - Boolean operators: ``.and.``, ``.or.``, ``.not.``
+    - ``Piecewise`` rendered via Heaviside trick (``H(cond)*val)``
+
+    Parameters
+    ----------
+    settings : dict, optional
+        Printer settings.  Recognised key:
+
+        ``parameters`` : list of str
+            Model symbol names.  When a SymPy ``Function`` whose name matches
+            a parameter is encountered, it is printed as implicit multiplication
+            (``gamma*x``) instead of a function call (``gamma(x)``).  This
+            defends against symbols that were parsed without proper
+            ``parameters=`` overrides.
+    """
+
+    # SymPy function name → LEMS function name
+    _lems_functions = {
+        "Abs": "abs",
+        "ceiling": "ceil",
+        "Heaviside": "H",
+    }
+
+    def __init__(self, settings=None):
+        settings = dict(settings or {})
+        params = settings.pop('parameters', [])
+        super().__init__(settings)
+        self._model_params = set(params)
+
+    def _print_Pow(self, expr):
+        from sympy.core.numbers import equal_valued
+        from sympy.printing.precedence import precedence
+
+        PREC = precedence(expr)
+        if equal_valued(expr.exp, 0.5):
+            return f"sqrt({self._print(expr.base)})"
+        if equal_valued(expr.exp, -0.5):
+            return f"1/sqrt({self._print(expr.base)})"
+        if equal_valued(expr.exp, -1):
+            return f"1/{self.parenthesize(expr.base, PREC)}"
+        return f"{self.parenthesize(expr.base, PREC)}^{self.parenthesize(expr.exp, PREC)}"
+
+    def _print_log(self, expr):
+        # SymPy log() is natural log; LEMS uses ln for natural log
+        if len(expr.args) == 1:
+            return f"ln({self._print(expr.args[0])})"
+        # log(x, base) — no direct LEMS equivalent; approximate via ln
+        return f"(ln({self._print(expr.args[0])}) / ln({self._print(expr.args[1])}))"
+
+    def _print_Function(self, expr):
+        name = expr.func.__name__
+        # Safety net: if a model parameter was mis-parsed as a function call
+        # (e.g. gamma(x) instead of gamma*x), treat as multiplication.
+        if self._model_params and name in self._model_params:
+            args = "*".join(self._print(a) for a in expr.args)
+            return f"{name}*{args}" if args else name
+        lems_name = self._lems_functions.get(name, name)
+        args = ", ".join(self._print(a) for a in expr.args)
+        return f"{lems_name}({args})"
+
+    # ── Relational operators ───────────────────────────────────────────
+
+    def _print_StrictGreaterThan(self, expr):
+        return f"{self._print(expr.lhs)} .gt. {self._print(expr.rhs)}"
+
+    def _print_GreaterThan(self, expr):
+        return f"{self._print(expr.lhs)} .geq. {self._print(expr.rhs)}"
+
+    def _print_StrictLessThan(self, expr):
+        return f"{self._print(expr.lhs)} .lt. {self._print(expr.rhs)}"
+
+    def _print_LessThan(self, expr):
+        return f"{self._print(expr.lhs)} .leq. {self._print(expr.rhs)}"
+
+    def _print_Equality(self, expr):
+        return f"{self._print(expr.lhs)} .eq. {self._print(expr.rhs)}"
+
+    def _print_Unequality(self, expr):
+        return f"{self._print(expr.lhs)} .neq. {self._print(expr.rhs)}"
+
+    # ── Boolean operators ──────────────────────────────────────────────
+
+    def _print_And(self, expr):
+        return " .and. ".join(self.parenthesize(a, 0) for a in expr.args)
+
+    def _print_Or(self, expr):
+        return " .or. ".join(self.parenthesize(a, 0) for a in expr.args)
+
+    def _print_Not(self, expr):
+        return f".not. {self.parenthesize(expr.args[0], 0)}"
+
+    # ── Piecewise → Heaviside product ─────────────────────────────────
+
+    def _print_Piecewise(self, expr):
+        # LEMS has no ternary; use H(cond)*val summation as fallback.
+        # True branch last (otherwise case).
+        from sympy import S as sympy_S
+        terms = []
+        for val, cond in expr.args:
+            if cond == sympy_S.true:
+                terms.append(self._print(val))
+            else:
+                terms.append(f"H({self._print(cond)}) * {self._print(val)}")
+        return " + ".join(terms)
+
+
 class PythonCodePrinter(_PythonCodePrinter):
     def __init__(self, settings=None):
         settings = settings or {}
@@ -559,7 +674,7 @@ class PythonCodePrinter(_PythonCodePrinter):
         return f"(1 if {arg} > 0 else (-1 if {arg} < 0 else 0))"
 
 
-def get_printer(format):
+def get_printer(format, parameters=None):
 
     if format == "numpy":
         return NumPyPrinter()
@@ -573,9 +688,9 @@ def get_printer(format):
         return FortranPrinter()
     elif format == "python":
         return PythonCodePrinter()
+    elif format == "lems":
+        return LEMSPrinter(settings={'parameters': parameters or []})
     elif format in ["sympy", "symbolic", "pyrates"]:
-        # Return StrPrinter for plain SymPy string output (exp, sin, etc. without prefix)
-        # This is suitable for PyRates which uses SymPy's parser internally
         return StrPrinter()
     else:
         raise ValueError(f"Unsupported format: {format}")
@@ -615,7 +730,7 @@ def render_expression(
         func_names = list(user_functions.keys()) if user_functions else None
         expression = parse_eq(expression, parameters=parameters, functions=func_names)
 
-    printer = get_printer(format)
+    printer = get_printer(format, parameters=parameters)
     # User functions extend built-in mappings (don't override if already mapped)
     if user_functions:
         for name, target in user_functions.items():
