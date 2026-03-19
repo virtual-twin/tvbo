@@ -181,6 +181,9 @@ class SimulationResult:
         # Check extras first
         if name in self._extras:
             return self._extras[name]
+        # Delegate to xarray DataArray (mean, sum, std, min, max, etc.)
+        if self.data is not None and hasattr(self.data, name):
+            return getattr(self.data, name)
         # Delegate to TimeSeries for plot/get_state etc.
         try:
             ts = self.to_timeseries()
@@ -548,9 +551,9 @@ class ExplorationResult(Bunch):
                 else getattr(ax, "name", None)
             )
             ax_values = (
-                ax.get("values", getattr(ax, "values", None))
+                ax.get("explored_values", getattr(ax, "explored_values", None))
                 if isinstance(ax, dict)
-                else getattr(ax, "values", None)
+                else getattr(ax, "explored_values", None)
             )
             if ax_name and ax_values is not None and i < len(self.optimal.index):
                 idx = self.optimal.index[i]
@@ -629,8 +632,8 @@ class ExplorationResult(Bunch):
         if len(self._grid_shape) == 1:
             ax_info = self.axes[0]
             values = (
-                np.asarray(ax_info["values"])
-                if "values" in ax_info
+                np.asarray(ax_info["explored_values"])
+                if "explored_values" in ax_info
                 else np.arange(self._grid_shape[0])
             )
             fig, ax = plt.subplots(figsize=figsize or (8, 4))
@@ -669,9 +672,9 @@ class ExplorationResult(Bunch):
                     else getattr(ax, "name", None)
                 )
                 ax_values = (
-                    ax.get("values", getattr(ax, "values", None))
+                    ax.get("explored_values", getattr(ax, "explored_values", None))
                     if isinstance(ax, dict)
-                    else getattr(ax, "values", None)
+                    else getattr(ax, "explored_values", None)
                 )
                 if ax_name == param_name and ax_values is not None:
                     # Find closest index
@@ -1219,9 +1222,10 @@ class ExperimentResult:
 
 
 @register_pytree_node_class
-class BaseTimeSeries:
+class TimeSeries:
     """
-    Base time-series dataType.
+    Time-series dataType with JAX pytree support, domain-specific analysis,
+    and visualization methods.
     """
 
     def tree_flatten(self):
@@ -1544,8 +1548,8 @@ class BaseTimeSeries:
         return new
 
 
-@register_pytree_node_class
-class TimeSeries(BaseTimeSeries):
+    # ── Domain-specific methods (analysis, visualization) ─────────────
+
     def get_state_variable(self, sv_label):
         if isinstance(sv_label, (list, tuple, np.ndarray)):
             return self.get_state(sv_label)
@@ -2867,17 +2871,6 @@ class TimeSeries(BaseTimeSeries):
 #         plt.close()
 #         return ani
 
-
-class LegacySimulationResult(Bunch):
-    """Legacy simulation result class. Use SimulationResult instead."""
-
-    def __init__(self):
-        self.monitors = []
-
-    def add_timeseries(self, monitor_name, timeseries):
-        setattr(self, monitor_name, timeseries)
-        self.monitors.append(monitor_name)
-        pass
 
 
 @register_pytree_node_class
