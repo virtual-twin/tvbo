@@ -97,7 +97,7 @@ jobs:
             - name: Install dev code + test deps
               run: pip install -e ".[all]" pytest-xdist
             - name: Run doc tests
-              run: pytest tests/test_docs.py -x -v --tb=long -m docs --override-ini="addopts="
+              run: pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow --override-ini="addopts="
 
     # ─── Release-ready check ───────────────────────────────────
     release-ready:

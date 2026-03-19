@@ -1409,7 +1409,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Support TimeSeries or ndarray as initial conditions
                 if isinstance(initial_conditions, TimeSeries):
                     arr = np.asarray(
-                        initial_conditions.data[-1, 0, :, 0], dtype=float
+                        initial_conditions.data.isel(time=-1, variable=0).values,
+                        dtype=float,
                     ).ravel()
                 else:
                     arr = np.asarray(initial_conditions, dtype=float).ravel()
@@ -1487,11 +1488,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ]:
             return self._run_julia(**kwargs)
 
+        elif format.lower() in ["neuroml", "nml", "lems"]:
+            from tvbo.adapters.neuroml import NeuroMLAdapter
+            return NeuroMLAdapter(self).run(**kwargs)
+
         else:
             raise ValueError(
                 f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
                 "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl, "
-                "pyrates-bifurcation, julia"
+                "pyrates-bifurcation, julia, neuroml, nml, lems"
             )
 
     def _run_pyrates(
@@ -1637,12 +1642,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return TimeSeries(t, history)
 
     def save_model_specification(self, dir):
-        file_prefix = self.get_experiment_file_prefix()
-        lems_path = join(dir, f"{file_prefix}_simulation.xml")
-        self.to_lems().export_to_file(lems_path)
-        if validate_lems is not None:
-            validate_lems(lems_path)
-        return lems_path
+        """Save the LEMS simulation file to *dir*.
+
+        .. deprecated::
+            Use ``NeuroMLAdapter(experiment).export(dir)`` from
+            ``tvbo.adapters.neuroml`` instead.
+        """
+        import warnings
+        warnings.warn(
+            "save_model_specification() is deprecated. "
+            "Use NeuroMLAdapter(experiment).export(dir) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from tvbo.adapters.neuroml import NeuroMLAdapter
+        paths = NeuroMLAdapter(self).export(dir, validate=False)
+        return paths["simulation"]
 
     def to_lems(
         self,
@@ -1650,6 +1665,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         out_path: str | None = None,
         out_file: str | None = None,
     ):
+        """Export this experiment as a LEMS Model object.
+
+        .. deprecated::
+            Use ``NeuroMLAdapter(experiment).render_code()`` from
+            ``tvbo.adapters.neuroml`` instead. This method returns a
+            ``lems.Model`` object; the adapter produces a validated XML string
+            that covers all LEMS constructs including ConditionalDerivedVariable
+            and Coupling.
+        """
+        import warnings
+        warnings.warn(
+            "SimulationExperiment.to_lems() is deprecated. "
+            "Use NeuroMLAdapter(experiment).render_code() from tvbo.adapters.neuroml instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         import lems.api as lems
         from lems.model.component import Text
         from lems.model.simulation import DataWriter, Run
@@ -1882,6 +1913,32 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
         return rendered_code
+
+    def render(self, format="yaml", **kwargs) -> str:
+        """Unified entry point for rendering the experiment as code or metadata.
+
+        Combines :meth:`render_code` (executable backends) and metadata
+        serialisation (``yaml``, ``lems``, ``neuroml``, …) behind a single
+        consistent interface.
+
+        Parameters
+        ----------
+        format : str
+            ``'yaml'``                   — YAML specification (default)
+            ``'lems'`` / ``'neuroml'`` / ``'nml'`` — LEMS XML via
+            :class:`~tvbo.adapters.neuroml.NeuroMLAdapter`
+            Any other format accepted by :meth:`render_code` (``tvb``,
+            ``jax``, ``tvboptim``, …).
+        **kwargs
+            Forwarded to the underlying renderer.
+
+        Returns
+        -------
+        str
+        """
+        if format == "yaml":
+            return self.to_yaml(filepath=None)
+        return self.render_code(format=format, **kwargs)
 
     def save_code(self, dir, file_name=None):
         if file_name is not None:

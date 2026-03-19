@@ -14,7 +14,7 @@ import numpy as np
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, TimeSeries
     from tvbo.classes.experiment import SimulationExperiment
 
 
@@ -316,7 +316,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
             ensure_packages,
             extract_ode_solution,
             run_julia_code,
-            solution_to_array,
+            solution_to_dataarray,
         )
 
         exp = self.experiment
@@ -352,9 +352,9 @@ class NetworkDynamicsAdapter(BaseAdapter):
         is_hetero = ctx.get('is_heterogeneous', False)
 
         if is_hetero:
-            n_t = len(t)
             n_total = u.shape[0]
-            data = u.T[:, :, np.newaxis, np.newaxis]   # (n_t, n_states, 1, 1)
+            # Hetero: all states flattened, treat as (time, variable) with 1 node
+            data = u.T  # (n_t, n_states)
 
             dynamics_dict = ctx['dynamics_dict']
             node_dynamics_map = ctx['node_dynamics_map']
@@ -369,8 +369,18 @@ class NetworkDynamicsAdapter(BaseAdapter):
                         state_labels.append(f"{sv_name}_{node.id}")
             if len(state_labels) != n_total:
                 state_labels = [f"x_{i}" for i in range(n_total)]
+
+            da = xr.DataArray(
+                data=data[:, :, np.newaxis],
+                dims=['time', 'variable', 'node'],
+                coords={
+                    'time': np.asarray(t),
+                    'variable': state_labels,
+                    'node': ['0'],
+                },
+            )
         else:
-            data = solution_to_array(t, u, n_sv, n_nodes)
+            da = solution_to_dataarray(t, u, sv_names, n_nodes)
             state_labels = sv_names
 
         # 7. Extract edge observables from outsym metadata
@@ -391,20 +401,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         # 9. Restore original working directory
         os.chdir(original_cwd)
 
-        # 10. Build xr.DataArray — squeeze singleton mode
-        data_np = np.asarray(data)
-        if data_np.ndim == 4 and data_np.shape[3] == 1:
-            data_np = data_np[:, :, :, 0]
-
-        dims = ['time', 'variable', 'node'][:data_np.ndim]
-        coords = {
-            'time': np.asarray(t),
-            'variable': state_labels,
-        }
-        if data_np.ndim >= 3:
-            coords['node'] = [str(i) for i in range(n_nodes)]
-
-        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+        # 10. Build SimulationResult
         sim = SimulationResult(data=da)
 
         # Collect extra metadata
@@ -413,7 +410,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
             # Need TimeSeries for spatial metadata helpers
             from tvbo.data.types import TimeSeries
             ts = TimeSeries(
-                time=t, data=data,
+                time=t, data=np.asarray(da.values),
                 labels_dimensions={"State Variable": state_labels, "Region": list(range(n_nodes))},
                 sample_period=ctx['dt'],
             )

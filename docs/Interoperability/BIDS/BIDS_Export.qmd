@@ -495,8 +495,8 @@ print(f"Model: {loaded_exp.dynamics.name}")
 ```{python}
 #| label: verify-isclose
 # Compare original and loaded data
-original_data = ts.data
-loaded_data = loaded_ts.data
+original_data = np.asarray(ts.data).squeeze()
+loaded_data = np.asarray(loaded_ts.data).squeeze()
 
 # Check if arrays are close (within numerical tolerance)
 all_close = np.allclose(original_data, loaded_data, rtol=1e-5, atol=1e-8)
@@ -527,7 +527,11 @@ print(f"Loaded TimeSeries shape: {loaded_ts2.shape}")
 print(f"State variables: {loaded_ts2.variables_labels}")
 
 # Verify CIFTI round-trip
-cifti_close = np.allclose(ts.data, loaded_ts2.data, rtol=1e-5, atol=1e-8)
+cifti_close = np.allclose(
+    np.asarray(ts.data).squeeze(),
+    np.asarray(loaded_ts2.data).squeeze(),
+    rtol=1e-5, atol=1e-8,
+)
 print(f"CIFTI round-trip match: {cifti_close}")
 ```
 

@@ -41,11 +41,11 @@ ts.plot()
 ```{python}
 #| echo: false
 import numpy as np
-u_data = ts.data[:, 0, :, 0]  # u variable for all nodes
+u_data = ts.data.sel(variable='u')
 print(f"Shape: {ts.data.shape}")
 print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
-print(f"u range: [{u_data.min():.3f}, {u_data.max():.3f}]")
-print(f"Final u std across nodes: {np.std(u_data[-1]):.4f}")
+print(f"u range: [{u_data.min().item():.3f}, {u_data.max().item():.3f}]")
+print(f"Final u std across nodes: {u_data.isel(time=-1).std().item():.4f}")
 print(f"(Lower std indicates synchronization)")
 ```
 

@@ -1862,6 +1862,12 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def to_lems(self, initial_conditions=1, component_id=None):
         """Build a LEMS model for this local neural mass model.
 
+        .. deprecated::
+            Use ``NeuroMLAdapter(model).render_code()`` from
+            ``tvbo.adapters.neuroml`` instead.  This method returns a
+            ``lems.Model`` object (PyLEMS API); the adapter produces a
+            validated XML string.
+
         Parameters:
         - initial_conditions: number or dict; if number, used for all SVs; if dict, keys are sv name or sv_name_0
         - component_id: optional id for the component; defaults to model label
@@ -1869,6 +1875,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
         Returns:
         - lems.Model instance containing a ComponentType and a Component for this model
         """
+        import warnings
+        warnings.warn(
+            "Dynamics.to_lems() is deprecated. "
+            "Use NeuroMLAdapter(model).render_code() from tvbo.adapters.neuroml instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         import lems.api as lems  # lazy import
 
         from tvbo.codegen.lems import setup_lems_model  # lazy to avoid cycles

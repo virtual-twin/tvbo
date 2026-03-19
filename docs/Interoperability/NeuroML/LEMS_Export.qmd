@@ -1,0 +1,373 @@
+---
+title: "LEMS Export"
+subtitle: "Step-by-step guide to exporting TVBO models as LEMS XML"
+bibliography: ../../references.bib
+---
+
+## Introduction
+
+This tutorial walks through the complete LEMS export workflow for three representative model types:
+
+1. A mean-field neural mass model (FitzHugh-Nagumo)
+2. A spiking integrate-and-fire model with spike/reset events
+3. A full simulation experiment with network, coupling, and output
+
+---
+
+## 1. FitzHugh-Nagumo — Basic Export
+
+FitzHugh-Nagumo is already in the TVBO database as a `Dynamics` that maps cleanly to a LEMS `ComponentType`:
+
+```python
+from tvbo import Dynamics
+from tvbo.adapters.neuroml import NeuroMLAdapter
+
+fhn = Dynamics.from_db("FitzHughNagumo")
+adapter = NeuroMLAdapter(fhn)
+xml = adapter.render_code()
+print(xml[:2000])
+```
+
+The rendered XML includes:
+
+- `<ComponentType name="FitzHughNagumo">` with all model parameters as `<Parameter>`
+- `<StateVariable name="V" ...>` and `<StateVariable name="W" ...>` with `<Exposure>`
+- `<TimeDerivative variable="V" value="(V - V^3/3 - W + I) / SEC"/>` — note the `/ SEC` to
+  account for the TVBO convention of millisecond-based integration with a `1s` constant
+- `<OnStart>` with `<StateAssignment>` from initial conditions
+- A `<Component id="FitzHughNagumo" ...>` instance with default parameter values
+- A `<Simulation>` block with output files per state variable
+
+---
+
+## 2. Integrate-and-Fire — Spike/Reset Events
+
+Define an IaF model in TVBO YAML:
+
+```yaml
+# database/dynamics/spiking/IaF.yaml
+name: IaF
+iri: "GO:0019228"  # neuronal action potential
+
+parameters:
+  tau_m:
+    value: 20.0
+    unit: ms
+  V_th:
+    value: -55.0
+    unit: mV
+  V_reset:
+    value: -70.0
+    unit: mV
+  I_ext:
+    value: 15.0
+
+state_variables:
+  V:
+    equation:
+      rhs: "(V_rest - V + I_ext) / tau_m"
+    unit: mV
+    initial_value: -70.0
+
+events:
+  spike:
+    condition:
+      rhs: "V >= V_th"
+    affect:
+      rhs: "V = V_reset"
+```
+
+The adapter maps `events.spike.condition.rhs = "V >= V_th"` to:
+
+```xml
+<OnCondition test="V .geq. V_th">
+  <StateAssignment variable="V" value="V_reset"/>
+  <EventOut port="spike"/>
+</OnCondition>
+```
+
+The relational operators (`>=` → `.geq.`) are handled by `LEMSPrinter` inside `sympy_to_lems()`.
+
+---
+
+## 3. Conditional Derived Variables
+
+Gate variables in Hodgkin-Huxley-style models use piecewise functions with a singularity
+at specific voltages. TVBO stores these as SymPy `Piecewise` expressions, which the template
+automatically maps to LEMS `<ConditionalDerivedVariable>`:
+
+```yaml
+derived_variables:
+  alpha_m:
+    equation:
+      rhs: "Piecewise((1.0, Eq(V, -40)), (0.1*(V+40)/(1-exp(-(V+40)/10)), True))"
+    unit: per_ms
+```
+
+Exported as:
+
+```xml
+<ConditionalDerivedVariable name="alpha_m" dimension="per_time">
+  <Case condition="V .eq. -40" value="1.0"/>
+  <Case value="0.1*(V + 40)/(1 - exp(-(V + 40)/10))"/>
+</ConditionalDerivedVariable>
+```
+
+The final `<Case>` with no `condition` is the default fallback — equivalent to `True` in SymPy.
+
+---
+
+## 4. Coupling
+
+For a whole-brain experiment, TVBO's `Coupling` metadata (pre-expression, post-expression,
+global coupling constant) is exported as a dedicated LEMS `ComponentType`:
+
+```xml
+<ComponentType name="Coupling">
+  <Parameter name="global_coupling" dimension="none"/>
+  <Dynamics>
+    <DerivedVariable name="pre"  dimension="none" value="V_j"/>
+    <DerivedVariable name="gx"   dimension="none" value="global_coupling * pre"/>
+    <DerivedVariable name="post" dimension="none" value="a * gx"/>
+    <DerivedParameter name="c_pop0" value="post"/>
+  </Dynamics>
+</ComponentType>
+```
+
+The `c_pop0` DerivedParameter is the coupling term that appears in the network node's
+state variable equations.
+
+---
+
+## 5. Full Experiment Export
+
+```python
+from tvbo import SimulationExperiment
+from tvbo.adapters.neuroml import NeuroMLAdapter
+
+exp = SimulationExperiment.from_file("experiment.yaml")
+adapter = NeuroMLAdapter(exp)
+
+# Render monolithic LEMS file
+xml = adapter.render_code()
+
+# Validate with PyLEMS
+try:
+    adapter.validate(xml)
+    print("Valid LEMS")
+except Exception as e:
+    print(f"Validation error: {e}")
+
+# Save to file
+with open("lems_sim.xml", "w") as f:
+    f.write(xml)
+```
+
+---
+
+## 6. Split-File Export
+
+By NeuroML convention, a fully portable model is distributed as three separate
+LEMS files that references each other via `<Include>`. The TVBO adapter generates
+all three with a single call:
+
+```python
+paths = adapter.export("./output", split=True, validate=False)
+print(paths)
+# {
+#   'dynamics':   './output/ses-..._dynamics.xml',
+#   'network':    './output/ses-..._network.xml',
+#   'simulation': './output/ses-..._simulation.xml',
+# }
+```
+
+The chain works as follows:
+
+| File | Contains | Includes |
+|------|----------|----------|
+| `*_dynamics.xml` | Dimensions, Units, `ComponentType`, Coupling CT, default instances | nothing |
+| `*_network.xml` | `<Component id="net" ...>` + population | `*_dynamics.xml` |
+| `*_simulation.xml` | `<Simulation>` + Output files | `*_network.xml` |
+
+You can render each piece independently:
+
+```python
+# Just the ComponentType definitions
+xml_dyn = adapter.render_dynamics()
+
+# Network file that references an external dynamics file
+xml_net = adapter.render_network(dynamics_file="my_dynamics.xml")
+
+# Simulation file that references an external network file
+xml_sim = adapter.render_simulation(network_file="my_network.xml")
+```
+
+---
+
+## 7. Unified `render()` API
+
+`SimulationExperiment.render()` is the unified entry point for all serialisation
+formats — both executable code and metadata.
+
+```python
+exp = SimulationExperiment.from_file("experiment.yaml")
+
+# Render as LEMS XML (same as NeuroMLAdapter(exp).render_code())
+xml = exp.render("lems")       # also accepts 'neuroml', 'nml'
+
+# Render as YAML specification
+yaml_str = exp.render("yaml")
+
+# Render as JAX code
+jax_code = exp.render("jax")
+```
+
+For split-file export or other adapter-specific options, use `NeuroMLAdapter` directly.
+
+---
+
+## 8. Running via jNeuroML
+
+Once a valid LEMS file is produced, simulate it with jNeuroML:
+
+```python
+# Via the adapter
+adapter.run()
+
+# Via SimulationExperiment.run()
+exp.run("neuroml")
+```
+
+Or from the command line:
+
+```bash
+jnml ses-..._simulation.xml
+```
+
+Results are written to `results/<model>_<sv>.dat` (one file per state variable per
+run), matching the `<OutputFile>` definitions in the `<Simulation>` block.
+
+---
+
+## 9. User-Defined Functions
+
+LEMS has no mechanism for user-defined functions. Models that define helper
+functions in YAML (e.g. a sigmoid `Sigm(x)`) have those calls automatically
+**inlined** by the adapter before rendering:
+
+```yaml
+# In TVBO YAML — user function
+functions:
+  Sigm:
+    arguments: [x]
+    equation:
+      rhs: "2*e0 / (1 + exp(r*(v0 - x)))"
+
+state_variables:
+  y0:
+    equation:
+      rhs: "A*a * Sigm(y1 - y2) - 2*a*y3 - a**2*y0"
+```
+
+The adapter substitutes `Sigm(y1 - y2)` with its body, producing valid LEMS:
+
+```xml
+<TimeDerivative variable="y0"
+  value="(A*a * (2*e0/(1 + exp(r*(v0 - (y1 - y2))))) - 2*a*y3 - a^2*y0) / SEC"/>
+```
+
+This inlining is done symbolically via SymPy's `replace()` + `xreplace()`, so
+nested or composed function calls work correctly.
+
+---
+
+## 10. Understanding the LEMS Structure
+
+A complete TVBO → LEMS export produces this XML skeleton:
+
+```xml
+<Lems>
+  <!-- Standard NeuroML dimensions (voltage, time, current, ...) -->
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  ...
+
+  <!-- Units (mV, ms, nA, ...) -->
+  <Unit name="milliVolt" symbol="mV" dimension="voltage" power="-3"/>
+  ...
+
+  <!-- The dynamics model as a ComponentType -->
+  <ComponentType name="MyModel">
+    <Parameter name="param1" dimension="none"/>
+    ...
+    <Constant name="SEC" dimension="time" value="1s"/>
+    <Exposure name="V" dimension="voltage"/>
+
+    <Dynamics>
+      <StateVariable name="V" dimension="voltage" exposure="V"/>
+
+      <!-- Simple derived variable -->
+      <DerivedVariable name="f_V" dimension="none" value="1/(1 + exp(-V))"/>
+
+      <!-- Piecewise derived variable -->
+      <ConditionalDerivedVariable name="alpha_n" dimension="per_time">
+        <Case condition="V .eq. -55" value="0.1"/>
+        <Case value="0.01*(V + 55)/(1 - exp(-(V+55)/10))"/>
+      </ConditionalDerivedVariable>
+
+      <!-- Time derivative (scaled to ms time base) -->
+      <TimeDerivative variable="V" value="(dV_rhs) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="V" value="V_0"/>
+      </OnStart>
+
+      <!-- Spike/reset events -->
+      <OnCondition test="V .geq. V_th">
+        <StateAssignment variable="V" value="V_reset"/>
+      </OnCondition>
+    </Dynamics>
+  </ComponentType>
+
+  <!-- Coupling function as a separate ComponentType -->
+  <ComponentType name="Coupling">
+    ...
+  </ComponentType>
+
+  <!-- Component instance with default parameter values -->
+  <Component id="MyModel" type="MyModel" param1="1.0" V_0="-65.0"/>
+
+  <!-- Network: population of N nodes -->
+  <Component id="net" type="network">
+    <Component id="pop0" type="population" component="MyModel" size="80"/>
+  </Component>
+
+  <!-- Simulation: length, step, output files -->
+  <Simulation id="sim1" length="1000ms" step="0.1ms" target="net">
+    <OutputFile id="of_V" fileName="results/MyModel_V.dat">
+      <OutputColumn id="V_0" quantity="pop0[0]/V"/>
+      ...
+    </OutputFile>
+  </Simulation>
+</Lems>
+```
+
+---
+
+## Troubleshooting
+
+**`DeprecationWarning: Dynamics.to_lems()`**
+: This method is deprecated. Use `NeuroMLAdapter(model).render_code()` instead.
+
+**`LEMSPrinter` output has `exp()` instead of `e^x`**
+: That's correct — LEMS uses the function name `exp(x)`, not `e^x`.
+
+**Validation fails with "Unknown element: network"**
+: The TVBO template generates self-contained LEMS, not standard NeuroML XML. It does not
+  use `<neuroml>` as the root element — `<Lems>` is the root. Use `jnml` directly, not
+  `pynml_run_neuroml2_lems`.
+
+**Missing units dimension**
+: If a parameter has `unit: "mA/cm2"` that isn't in the lookup table, the dimension
+  falls back to `"none"`. Extend `UNITS` in `tvbo/adapters/neuroml.py` or map it in
+  your YAML with a known unit string.
