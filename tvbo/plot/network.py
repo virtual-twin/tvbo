@@ -411,6 +411,7 @@ def plot_graph_brain(
     edge_cmap: Optional[str] = None,
     edge_data_key: str = "weight",
     edge_scale: Optional[dict] = None,
+    log_weights: bool = False,
     figsize: Tuple[float, float] = (6, 5),
     **kwargs,
 ) -> Tuple[Figure, Axes, dict]:
@@ -494,6 +495,9 @@ def plot_graph_brain(
     # Extract sub-matrix for valid nodes
     idx = np.array(valid_idx)
     W_sub = W[np.ix_(idx, idx)]
+
+    if log_weights:
+        W_sub = np.where(W_sub > 0, np.log1p(W_sub), 0.0)
 
     # Build sequential centers dict for create_network
     seq_centers = {j: np.array(centers[i]) for j, i in enumerate(idx)}

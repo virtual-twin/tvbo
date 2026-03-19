@@ -1228,6 +1228,63 @@ class Network(tvbo_datamodel.Network):
         return resp.json()
 
     @classmethod
+    def load(cls, source: Union[str, Path, None] = None,
+             **entities) -> Union["Network", list["Network"]]:
+        """Unified loader: file path, database name, or BIDS entities.
+
+        Accepts any of:
+
+        - **File path** (YAML, JSON, or HDF5): loads from disk.
+          For HDF5, automatically finds the companion YAML sidecar.
+        - **Short name**: resolves via the tvbo database
+          (e.g. ``"Lobar"``, ``"DesikanKilliany"``).
+        - **BIDS entities** as keyword arguments
+          (e.g. ``atlas="Schaefer2018", scale="100"``).
+
+        Parameters
+        ----------
+        source : str or Path, optional
+            A file path or database name.  When omitted, BIDS entity
+            kwargs are used to search the database.
+        **entities
+            BIDS key-value filters (``atlas``, ``rec``, ``scale``,
+            ``desc``, ``seg``, ``cohort``, …).
+
+        Returns
+        -------
+        Network or list[Network]
+            A single Network, or a list when multiple BIDS matches occur.
+
+        Examples
+        --------
+        >>> Network.load("Lobar")                               # database name
+        >>> Network.load("networks/my_network.yaml")            # YAML file
+        >>> Network.load("networks/my_network.h5")              # HDF5 companion
+        >>> Network.load(atlas="Schaefer2018", scale="100")     # BIDS entities
+        """
+        if source is not None:
+            p = Path(source)
+            ext = p.suffix.lower()
+            # HDF5 companion → resolve to YAML sidecar
+            if ext in (".h5", ".hdf5"):
+                sidecar = p.with_suffix(".yaml")
+                if not sidecar.exists():
+                    sidecar = p.with_suffix(".json")
+                if not sidecar.exists():
+                    raise FileNotFoundError(
+                        f"No YAML/JSON sidecar found for {p}")
+                return cls.from_file(str(sidecar))
+            # Explicit sidecar path
+            if ext in (".yaml", ".yml", ".json") or p.is_file():
+                return cls.from_file(str(p))
+            # No extension / not a file → treat as database name
+            return cls.from_db(str(source), **entities)
+        # No source → BIDS entity search
+        if entities:
+            return cls.from_db(**entities)
+        raise ValueError("Provide a file path, database name, or BIDS entities.")
+
+    @classmethod
     def from_db(cls, name: Optional[str] = None, **entities) -> Union["Network", list["Network"]]:
         """Load a Network from the tvbo database by name or BIDS entities.
 
@@ -2867,6 +2924,7 @@ class Network(tvbo_datamodel.Network):
                 brain_defaults.update(brain_kwargs)
                 _, _, mappables = self.plot_brain_surface(
                     ax=axs[row, 0], weight_matrix=mat,
+                    log_weights=use_log,
                     **brain_defaults,
                 )
                 axs[row, 0].axis("off")
