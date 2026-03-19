@@ -32,6 +32,7 @@ lookup = TemplateLookup(
         join(root, "tvboptim"),
         join(root, "networkdynamics"),
         join(root, "modelingtoolkit"),
+        join(root, "neuroml"),
     ],
     module_directory=join(root, "modules"),
 )

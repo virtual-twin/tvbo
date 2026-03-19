@@ -1868,12 +1868,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             adapter = PyRatesBifurcationAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
+        elif format.lower() in ["neuroml", "nml", "lems"]:
+            from tvbo.adapters.neuroml import NeuroMLAdapter
+            adapter = NeuroMLAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
         else:
             raise ValueError(
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
                 "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
                 "julia, networkdynamics, nd, mtk, modelingtoolkit, "
-                "bifurcationkit.jl, pyrates-bifurcation"
+                "bifurcationkit.jl, pyrates-bifurcation, neuroml, nml, lems"
             )
 
         return rendered_code
