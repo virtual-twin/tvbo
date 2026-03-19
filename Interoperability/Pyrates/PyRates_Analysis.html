@@ -293,7 +293,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -395,6 +395,12 @@ window.Quarto = {
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -2845,6 +2851,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4541,32 +4553,26 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#workflow" id="toc-workflow" class="nav-link active" data-scroll-target="#workflow">Workflow</a></li>
   <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
   <li><a href="#example-1-van-der-pol-parameter-sweep" id="toc-example-1-van-der-pol-parameter-sweep" class="nav-link" data-scroll-target="#example-1-van-der-pol-parameter-sweep">Example 1: Van der Pol Parameter Sweep</a>
   <ul class="collapse">
-  <li><a href="#define-model-in-tvbo" id="toc-define-model-in-tvbo" class="nav-link" data-scroll-target="#define-model-in-tvbo">Define Model in TVBO</a></li>
-  <li><a href="#export-to-pyrates" id="toc-export-to-pyrates" class="nav-link" data-scroll-target="#export-to-pyrates">Export to PyRates</a></li>
-  <li><a href="#run-parameter-sweep" id="toc-run-parameter-sweep" class="nav-link" data-scroll-target="#run-parameter-sweep">Run Parameter Sweep</a></li>
-  <li><a href="#visualize-results" id="toc-visualize-results" class="nav-link" data-scroll-target="#visualize-results">Visualize Results</a></li>
-  <li><a href="#phase-space-analysis" id="toc-phase-space-analysis" class="nav-link" data-scroll-target="#phase-space-analysis">Phase Space Analysis</a></li>
+  <li><a href="#define-model-and-exploration" id="toc-define-model-and-exploration" class="nav-link" data-scroll-target="#define-model-and-exploration">Define Model and Exploration</a></li>
+  <li><a href="#declare-exploration-and-run" id="toc-declare-exploration-and-run" class="nav-link" data-scroll-target="#declare-exploration-and-run">Declare Exploration and Run</a></li>
+  <li><a href="#visualize-time-series" id="toc-visualize-time-series" class="nav-link" data-scroll-target="#visualize-time-series">Visualize Time Series</a></li>
+  <li><a href="#phase-portraits" id="toc-phase-portraits" class="nav-link" data-scroll-target="#phase-portraits">Phase Portraits</a></li>
   </ul></li>
-  <li><a href="#example-2-2d-parameter-sweep" id="toc-example-2-2d-parameter-sweep" class="nav-link" data-scroll-target="#example-2-2d-parameter-sweep">Example 2: 2D Parameter Sweep</a>
+  <li><a href="#example-2-2d-parameter-grid-search" id="toc-example-2-2d-parameter-grid-search" class="nav-link" data-scroll-target="#example-2-2d-parameter-grid-search">Example 2: 2D Parameter Grid Search</a>
   <ul class="collapse">
-  <li><a href="#define-fitzhugh-nagumo-model" id="toc-define-fitzhugh-nagumo-model" class="nav-link" data-scroll-target="#define-fitzhugh-nagumo-model">Define FitzHugh-Nagumo Model</a></li>
-  <li><a href="#d-grid-search-via-sequential-sweeps" id="toc-d-grid-search-via-sequential-sweeps" class="nav-link" data-scroll-target="#d-grid-search-via-sequential-sweeps">2D Grid Search via Sequential Sweeps</a></li>
-  <li><a href="#amplitude-analysis" id="toc-amplitude-analysis" class="nav-link" data-scroll-target="#amplitude-analysis">Amplitude Analysis</a></li>
+  <li><a href="#define-model-and-2d-exploration" id="toc-define-model-and-2d-exploration" class="nav-link" data-scroll-target="#define-model-and-2d-exploration">Define Model and 2D Exploration</a></li>
+  <li><a href="#amplitude-heatmap" id="toc-amplitude-heatmap" class="nav-link" data-scroll-target="#amplitude-heatmap">Amplitude Heatmap</a></li>
   </ul></li>
-  <li><a href="#example-3-bifurcation-like-analysis" id="toc-example-3-bifurcation-like-analysis" class="nav-link" data-scroll-target="#example-3-bifurcation-like-analysis">Example 3: Bifurcation-like Analysis</a>
+  <li><a href="#example-3-bifurcation-like-sweep" id="toc-example-3-bifurcation-like-sweep" class="nav-link" data-scroll-target="#example-3-bifurcation-like-sweep">Example 3: Bifurcation-like Sweep</a>
   <ul class="collapse">
-  <li><a href="#qif-neural-mass-model" id="toc-qif-neural-mass-model" class="nav-link" data-scroll-target="#qif-neural-mass-model">QIF Neural Mass Model</a></li>
-  <li><a href="#sweep-over-η-background-drive" id="toc-sweep-over-η-background-drive" class="nav-link" data-scroll-target="#sweep-over-η-background-drive">Sweep Over η (Background Drive)</a></li>
-  <li><a href="#bifurcation-like-diagram" id="toc-bifurcation-like-diagram" class="nav-link" data-scroll-target="#bifurcation-like-diagram">Bifurcation-like Diagram</a></li>
+  <li><a href="#define-model-and-sweep" id="toc-define-model-and-sweep" class="nav-link" data-scroll-target="#define-model-and-sweep">Define Model and Sweep</a></li>
+  <li><a href="#bifurcation-diagram" id="toc-bifurcation-diagram" class="nav-link" data-scroll-target="#bifurcation-diagram">Bifurcation Diagram</a></li>
   </ul></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a>
-  <ul class="collapse">
-  <li><a href="#key-functions" id="toc-key-functions" class="nav-link" data-scroll-target="#key-functions">Key Functions</a></li>
-  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next Steps</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Interoperability/Pyrates/PyRates_Analysis.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
@@ -4593,56 +4599,42 @@ window.Quarto = {
 </header>
 
 
-<p>This guide demonstrates how to use TVBO models with PyRates for parameter sweeps and sensitivity analysis.</p>
-<section id="overview" class="level2">
-<h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>PyRates provides powerful tools for parameter analysis:</p>
-<ul>
-<li><strong>Grid Search</strong>: Simulate multiple parameter combinations in parallel</li>
-<li><strong>Parameter Sweeps</strong>: 1D/2D exploration of parameter space</li>
-<li><strong>Sensitivity Analysis</strong>: Identify critical parameters</li>
-</ul>
-<p>The workflow:</p>
+<p>This guide demonstrates parameter sweeps and grid searches using TVBO’s <code>SimulationExperiment.explorations</code> with PyRates as the backend. Grid searches are declared declaratively — no manual loops, no YAML export plumbing. TVBO translates each <code>Exploration</code> into a PyRates-native <code>grid_search()</code> call automatically.</p>
+<section id="workflow" class="level2">
+<h2 class="anchored" data-anchor-id="workflow">Workflow</h2>
 <ol type="1">
-<li>Define model in TVBO</li>
-<li>Export to PyRates format</li>
-<li>Run parameter sweeps using PyRates <code>grid_search()</code></li>
-<li>Analyze and visualize results</li>
+<li><strong>Define</strong> the model with <code>Dynamics</code></li>
+<li><strong>Declare</strong> the exploration with <code>SimulationExperiment.explorations</code></li>
+<li><strong>Run</strong> <code>exp.run('pyrates')</code> — TVBO invokes PyRates <code>grid_search()</code> natively</li>
+<li><strong>Access</strong> results via <code>result.explorations[name]</code> (<code>ExplorationResult</code>)</li>
 </ol>
 </section>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="7139650e" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> cm</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyrates <span class="im">import</span> grid_search, CircuitTemplate, clear</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="ec93dea5" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> cm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="example-1-van-der-pol-parameter-sweep" class="level2">
 <h2 class="anchored" data-anchor-id="example-1-van-der-pol-parameter-sweep">Example 1: Van der Pol Parameter Sweep</h2>
-<p>Explore how the damping parameter μ affects oscillation behavior.</p>
-<section id="define-model-in-tvbo" class="level3">
-<h3 class="anchored">Define Model in TVBO</h3>
-<div id="73172db0" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create Van der Pol oscillator</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>vdp <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>vdp.name <span class="op">=</span> <span class="st">"VdP"</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>vdp.add_parameter(<span class="st">"mu"</span>, value<span class="op">=</span><span class="fl">1.0</span>, description<span class="op">=</span><span class="st">"Damping parameter"</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>vdp.add_state_variable(<span class="st">"x"</span>, equation<span class="op">=</span><span class="st">"z"</span>, initial_value<span class="op">=</span><span class="fl">0.1</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>vdp.add_state_variable(<span class="st">"z"</span>, equation<span class="op">=</span><span class="st">"mu*(1 - x**2)*z - x"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Display model summary using generate_report</span></span>
+<p>Explore how the damping parameter μ affects oscillation behaviour.</p>
+<section id="define-model-and-exploration" class="level3">
+<h3 class="anchored">Define Model and Exploration</h3>
+<div id="4913ee5a" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel.schema <span class="im">import</span> Exploration, Parameter, Range</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Van der Pol oscillator</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>vdp <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>vdp.name <span class="op">=</span> <span class="st">"VdP"</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>vdp.add_parameter(<span class="st">"mu"</span>, value<span class="op">=</span><span class="fl">1.0</span>, description<span class="op">=</span><span class="st">"Damping parameter"</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>vdp.add_state_variable(<span class="st">"x"</span>, equation<span class="op">=</span><span class="st">"z"</span>, initial_value<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>vdp.add_state_variable(<span class="st">"z"</span>, equation<span class="op">=</span><span class="st">"mu*(1 - x**2)*z - x"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>display(Markdown(vdp.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
-  warnings.warn(</code></pre>
-</div>
 <section id="vdp" class="level2 cell-output cell-output-display cell-output-markdown">
 <h2 class="anchored" data-anchor-id="vdp">VdP</h2>
 <section id="state-equations" class="level3">
@@ -4677,59 +4669,36 @@ window.Quarto = {
 </section>
 </div>
 </section>
-<section id="export-to-pyrates" class="level3">
-<h3 class="anchored" data-anchor-id="export-to-pyrates">Export to PyRates</h3>
-<div id="8c2337ea" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create module directory</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_sweep_vdp'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_sweep_vdp/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    f.write(<span class="st">''</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Export</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>vdp.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>, filepath<span class="op">=</span><span class="st">'_sweep_vdp/model.yaml'</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Model exported to _sweep_vdp/model.yaml"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="declare-exploration-and-run" class="level3">
+<h3 class="anchored" data-anchor-id="declare-exploration-and-run">Declare Exploration and Run</h3>
+<div id="2e54c08e" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>vdp)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>exp.integration.duration <span class="op">=</span> <span class="fl">50.0</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp.integration.step_size <span class="op">=</span> <span class="fl">1e-2</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Declare 1-D sweep over mu — TVBO translates this to PyRates grid_search()</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>exp.explorations[<span class="st">'mu_sweep'</span>] <span class="op">=</span> Exploration(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'mu_sweep'</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'μ sweep'</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="st">'Effect of damping coefficient μ on VdP oscillations'</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>[Parameter(name<span class="op">=</span><span class="st">'mu'</span>, domain<span class="op">=</span>Range(lo<span class="op">=</span><span class="fl">0.1</span>, hi<span class="op">=</span><span class="fl">10.0</span>, n<span class="op">=</span><span class="dv">6</span>))],</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'product'</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Running μ sweep via PyRates grid_search …"</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">'pyrates'</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>sweep <span class="op">=</span> result.explorations[<span class="st">'mu_sweep'</span>]</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>mu_values <span class="op">=</span> sweep.axes[<span class="dv">0</span>].explored_values</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>n_time <span class="op">=</span> sweep.results.shape[<span class="dv">1</span>]</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>time <span class="op">=</span> np.arange(n_time) <span class="op">*</span> sweep.dt</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>x_idx <span class="op">=</span> sweep.output_names.index(<span class="st">'x'</span>)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>z_idx <span class="op">=</span> sweep.output_names.index(<span class="st">'z'</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Sweep complete — </span><span class="sc">{</span><span class="bu">len</span>(mu_values)<span class="sc">}</span><span class="ss"> conditions × </span><span class="sc">{</span>n_time<span class="sc">}</span><span class="ss"> time steps"</span>)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ExplorationResult: </span><span class="sc">{</span>sweep<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Model exported to _sweep_vdp/model.yaml</code></pre>
-</div>
-</div>
-</section>
-<section id="run-parameter-sweep" class="level3">
-<h3 class="anchored" data-anchor-id="run-parameter-sweep">Run Parameter Sweep</h3>
-<div id="0547a243" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameter grid</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>mu_values <span class="op">=</span> [<span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>, <span class="fl">5.0</span>, <span class="fl">10.0</span>]</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>param_grid <span class="op">=</span> {<span class="st">'mu'</span>: mu_values}</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Map parameters to model variables</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>param_map <span class="op">=</span> {</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'mu'</span>: {<span class="st">'vars'</span>: [<span class="st">'VdP_op/mu'</span>], <span class="st">'nodes'</span>: [<span class="st">'p'</span>]}</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulation settings</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> <span class="fl">100.0</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> <span class="fl">1e-3</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>dts <span class="op">=</span> <span class="fl">1e-2</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Run grid search</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Running parameter sweep..."</span>)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>results, results_map <span class="op">=</span> grid_search(</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    circuit_template<span class="op">=</span><span class="st">'_sweep_vdp.model.VdP_circuit'</span>,</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    param_grid<span class="op">=</span>param_grid,</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    param_map<span class="op">=</span>param_map,</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    simulation_time<span class="op">=</span>T,</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    step_size<span class="op">=</span>dt,</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    sampling_step_size<span class="op">=</span>dts,</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    outputs<span class="op">=</span>{<span class="st">'x'</span>: <span class="st">'p/VdP_op/x'</span>, <span class="st">'z'</span>: <span class="st">'p/VdP_op/z'</span>},</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'scipy'</span>,</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    vectorize<span class="op">=</span><span class="va">False</span>,  <span class="co"># Required for single-node circuits (PyRates bug)</span></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    clear<span class="op">=</span><span class="va">True</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Sweep complete! Results shape: </span><span class="sc">{</span>results<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Results map: </span><span class="sc">{</span>results_map<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Running parameter sweep...
+<pre><code>Running μ sweep via PyRates grid_search …
 Compilation Progress
 --------------------
     (1) Translating the circuit template into a networkx graph representation...
@@ -4745,49 +4714,77 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.07323199999518692s.
-Sweep complete! Results shape: (10000, 12)
-Results map:                  mu
-VdP_circuit_0   0.1
-VdP_circuit_1   0.5
-VdP_circuit_2   1.0
-VdP_circuit_3   2.0
-VdP_circuit_4   5.0
-VdP_circuit_5  10.0</code></pre>
+        ...finished after 0.022495917000924237s.
+Compilation Progress
+--------------------
+    (1) Translating the circuit template into a networkx graph representation...
+        ...finished.
+    (2) Preprocessing edge transmission operations...
+        ...finished.
+    (3) Parsing the model equations into a compute graph...
+        ...finished.
+    Model compilation was finished.
+Simulation Progress
+-------------------
+     (1) Generating the network run function...
+     (2) Processing output variables...
+        ...finished.
+     (3) Running the simulation...
+        ...finished after 0.09025104199827183s.
+Sweep complete — 6 conditions × 5000 time steps
+ExplorationResult: ExplorationResult(name='mu_sweep', grid=6, timeseries=(6, 5000, 2))</code></pre>
 </div>
 </div>
 </section>
-<section id="visualize-results" class="level3">
-<h3 class="anchored" data-anchor-id="visualize-results">Visualize Results</h3>
-<div id="d890bc02" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time series for different μ values</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>time <span class="op">=</span> results.index</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Get x and z columns - they are ordered by parameter index</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>x_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> results.columns <span class="cf">if</span> c[<span class="dv">0</span>] <span class="op">==</span> <span class="st">'x'</span>]</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>z_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> results.columns <span class="cf">if</span> c[<span class="dv">0</span>] <span class="op">==</span> <span class="st">'z'</span>]</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, mu <span class="kw">in</span> <span class="bu">enumerate</span>(mu_values):</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[i]</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Columns are indexed by circuit instance number</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    x_col <span class="op">=</span> x_cols[i]</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    z_col <span class="op">=</span> z_cols[i]</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    ax.plot(time, results[x_col], label<span class="op">=</span><span class="st">'x'</span>)</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    ax.plot(time, results[z_col], alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="st">'z'</span>)</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'μ = </span><span class="sc">{</span>mu<span class="sc">}</span><span class="ss">'</span>)</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'Time (ms)'</span>)</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'State'</span>)</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    ax.legend(loc<span class="op">=</span><span class="st">'upper right'</span>)</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    ax.set_xlim([<span class="dv">0</span>, T])</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Van der Pol Oscillator: Effect of Damping (μ)'</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="visualize-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="visualize-time-series">Visualize Time Series</h3>
+<div id="4ec753e7" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, mu <span class="kw">in</span> <span class="bu">enumerate</span>(mu_values):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[i]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    ax.plot(time, sweep.results[i, :, x_idx], label<span class="op">=</span><span class="st">'x'</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    ax.plot(time, sweep.results[i, :, z_idx], alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="st">'z'</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'μ = </span><span class="sc">{</span>mu<span class="sc">:.2g}</span><span class="ss">'</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'Time'</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'State'</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    ax.legend(loc<span class="op">=</span><span class="st">'upper right'</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Van der Pol: Effect of Damping (μ)'</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="PyRates_Analysis_files/figure-html/cell-5-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="phase-portraits" class="level3">
+<h3 class="anchored" data-anchor-id="phase-portraits">Phase Portraits</h3>
+<div id="05ef7345" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> cm.viridis(np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="bu">len</span>(mu_values)))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (mu, color) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(mu_values, colors)):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[i]</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> sweep.results[i, :, x_idx]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> sweep.results[i, :, z_idx]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    ax.plot(x, z, color<span class="op">=</span>color, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    ax.scatter(x[<span class="dv">0</span>], z[<span class="dv">0</span>], color<span class="op">=</span><span class="st">'green'</span>, s<span class="op">=</span><span class="dv">50</span>, zorder<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">'Start'</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    ax.scatter(x[<span class="op">-</span><span class="dv">1</span>], z[<span class="op">-</span><span class="dv">1</span>], color<span class="op">=</span><span class="st">'red'</span>, s<span class="op">=</span><span class="dv">50</span>, zorder<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">'End'</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'μ = </span><span class="sc">{</span>mu<span class="sc">:.2g}</span><span class="ss">'</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'x'</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'z'</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    ax.set_box_aspect(<span class="dv">1</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Van der Pol Phase Portraits'</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -4797,73 +4794,23 @@ VdP_circuit_5  10.0</code></pre>
 </div>
 </div>
 </section>
-<section id="phase-space-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="phase-space-analysis">Phase Space Analysis</h3>
-<div id="9a978b12" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Phase portraits for different μ values</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> cm.viridis(np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="bu">len</span>(mu_values)))</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, mu <span class="kw">in</span> <span class="bu">enumerate</span>(mu_values):</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[i]</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    x_col <span class="op">=</span> x_cols[i]</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    z_col <span class="op">=</span> z_cols[i]</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> results[x_col].values</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> results[z_col].values</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    ax.plot(x, z, color<span class="op">=</span>colors[i], linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    ax.scatter(x[<span class="dv">0</span>], z[<span class="dv">0</span>], color<span class="op">=</span><span class="st">'green'</span>, s<span class="op">=</span><span class="dv">50</span>, zorder<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">'Start'</span>)</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    ax.scatter(x[<span class="op">-</span><span class="dv">1</span>], z[<span class="op">-</span><span class="dv">1</span>], color<span class="op">=</span><span class="st">'red'</span>, s<span class="op">=</span><span class="dv">50</span>, zorder<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">'End'</span>)</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'μ = </span><span class="sc">{</span>mu<span class="sc">}</span><span class="ss">'</span>)</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'x'</span>)</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'z'</span>)</span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    ax.set_box_aspect(<span class="dv">1</span>)</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Van der Pol Phase Portraits'</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Cleanup</span></span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(<span class="st">'_sweep_vdp'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="PyRates_Analysis_files/figure-html/cell-7-output-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
 </section>
-</section>
-<section id="example-2-2d-parameter-sweep" class="level2">
-<h2 class="anchored" data-anchor-id="example-2-2d-parameter-sweep">Example 2: 2D Parameter Sweep</h2>
-<p>Explore two parameters simultaneously.</p>
-<section id="define-fitzhugh-nagumo-model" class="level3">
-<h3 class="anchored">Define FitzHugh-Nagumo Model</h3>
-<div id="8f9105e9" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># FitzHugh-Nagumo model</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>fhn <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>fhn.name <span class="op">=</span> <span class="st">"FHN"</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"a"</span>, value<span class="op">=</span><span class="fl">0.7</span>)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"b"</span>, value<span class="op">=</span><span class="fl">0.8</span>)</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"tau"</span>, value<span class="op">=</span><span class="fl">12.5</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"I_ext"</span>, value<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>fhn.add_state_variable(<span class="st">"v"</span>, equation<span class="op">=</span><span class="st">"v - v**3/3 - w + I_ext"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>fhn.add_state_variable(<span class="st">"w"</span>, equation<span class="op">=</span><span class="st">"(v + a - b*w)/tau"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Display model summary using generate_report</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>display(Markdown(fhn.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)))</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Also show the generated Python code</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Generated Python Code ==="</span>)</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(fhn.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">"python"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="example-2-2d-parameter-grid-search" class="level2">
+<h2 class="anchored" data-anchor-id="example-2-2d-parameter-grid-search">Example 2: 2D Parameter Grid Search</h2>
+<p>Explore two FitzHugh-Nagumo parameters simultaneously using a full Cartesian product.</p>
+<section id="define-model-and-2d-exploration" class="level3">
+<h3 class="anchored">Define Model and 2D Exploration</h3>
+<div id="3c54471e" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fhn <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fhn.name <span class="op">=</span> <span class="st">"FHN"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"a"</span>, value<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"b"</span>, value<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"tau"</span>, value<span class="op">=</span><span class="fl">12.5</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"I_ext"</span>, value<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>fhn.add_state_variable(<span class="st">"v"</span>, equation<span class="op">=</span><span class="st">"v - v**3/3 - w + I_ext"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>fhn.add_state_variable(<span class="st">"w"</span>, equation<span class="op">=</span><span class="st">"(v + a - b*w)/tau"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>display(Markdown(fhn.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="fhn" class="level2 cell-output cell-output-display cell-output-markdown">
 <h2 class="anchored" data-anchor-id="fhn">FHN</h2>
 <section id="state-equations-1" class="level3">
@@ -4914,245 +4861,123 @@ VdP_circuit_5  10.0</code></pre>
 </table>
 </section>
 </section>
+</div>
+<div id="03130c1d" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>fhn)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>exp2.integration.duration <span class="op">=</span> <span class="fl">100.0</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>exp2.integration.step_size <span class="op">=</span> <span class="fl">5e-3</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2-D product sweep: 3 × 3 = 9 conditions</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># axes[0] = 'a' varies fastest (innermost), axes[1] = 'I_ext' varies slowest</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>exp2.explorations[<span class="st">'amp_landscape'</span>] <span class="op">=</span> Exploration(</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'amp_landscape'</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'a × I_ext amplitude landscape'</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>[</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        Parameter(name<span class="op">=</span><span class="st">'a'</span>,     domain<span class="op">=</span>Range(lo<span class="op">=</span><span class="fl">0.5</span>, hi<span class="op">=</span><span class="fl">1.0</span>, n<span class="op">=</span><span class="dv">3</span>)),</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        Parameter(name<span class="op">=</span><span class="st">'I_ext'</span>, domain<span class="op">=</span>Range(lo<span class="op">=</span><span class="fl">0.0</span>, hi<span class="op">=</span><span class="fl">1.0</span>, n<span class="op">=</span><span class="dv">3</span>)),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'product'</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Running 2-D grid search …"</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>result2 <span class="op">=</span> exp2.run(<span class="st">'pyrates'</span>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>sweep2  <span class="op">=</span> result2.explorations[<span class="st">'amp_landscape'</span>]</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>a_vals   <span class="op">=</span> sweep2.axes[<span class="dv">0</span>].explored_values   <span class="co"># varies fastest</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>I_vals   <span class="op">=</span> sweep2.axes[<span class="dv">1</span>].explored_values   <span class="co"># varies slowest</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>n_a, n_I <span class="op">=</span> <span class="bu">len</span>(a_vals), <span class="bu">len</span>(I_vals)</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>n_time2  <span class="op">=</span> sweep2.results.shape[<span class="dv">1</span>]</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>v_idx    <span class="op">=</span> sweep2.output_names.index(<span class="st">'v'</span>)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Grid: </span><span class="sc">{</span>n_a<span class="sc">}</span><span class="ss">×</span><span class="sc">{</span>n_I<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>n_a<span class="op">*</span>n_I<span class="sc">}</span><span class="ss"> conditions, </span><span class="sc">{</span>n_time2<span class="sc">}</span><span class="ss"> time steps"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>=== Generated Python Code ===
-import numpy as np
-import scipy.special
-
-
-def FHN(
-    current_state,
-    t,
-    a=0.7,
-    b=0.8,
-    tau=12.5,
-    I_ext=0.5,
-    stimulus=False,
-):
-    stim_t = stimulus(t) if stimulus else 0.0
-
-    # State variables
-    v = current_state[0]
-    w = current_state[1]
-
-    # Derivatives
-    dv_dt = I_ext + v - w - 1 / 3 * v**3
-    dw_dt = (a + v - b * w) / tau
-
-    derivatives = np.array([dv_dt, dw_dt])
-
-    return derivatives
-</code></pre>
+<pre><code>Running 2-D grid search …
+Compilation Progress
+--------------------
+    (1) Translating the circuit template into a networkx graph representation...
+        ...finished.
+    (2) Preprocessing edge transmission operations...
+        ...finished.
+    (3) Parsing the model equations into a compute graph...
+        ...finished.
+    Model compilation was finished.
+Simulation Progress
+-------------------
+     (1) Generating the network run function...
+     (2) Processing output variables...
+        ...finished.
+     (3) Running the simulation...
+        ...finished after 0.14872750001086388s.
+Compilation Progress
+--------------------
+    (1) Translating the circuit template into a networkx graph representation...
+        ...finished.
+    (2) Preprocessing edge transmission operations...
+        ...finished.
+    (3) Parsing the model equations into a compute graph...
+        ...finished.
+    Model compilation was finished.
+Simulation Progress
+-------------------
+     (1) Generating the network run function...
+     (2) Processing output variables...
+        ...finished.
+     (3) Running the simulation...
+        ...finished after 0.8430946669977857s.
+Grid: 3×3 = 9 conditions, 20000 time steps</code></pre>
 </div>
 </div>
 </section>
-<section id="d-grid-search-via-sequential-sweeps" class="level3">
-<h3 class="anchored" data-anchor-id="d-grid-search-via-sequential-sweeps">2D Grid Search via Sequential Sweeps</h3>
-<p>PyRates <code>grid_search</code> performs 1D sweeps efficiently. For 2D parameter exploration, we run sequential sweeps, varying one parameter while fixing the other.</p>
-<div id="be52ffdd" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export model</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_sweep_fhn'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_sweep_fhn/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    f.write(<span class="st">''</span>)</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>fhn.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>, filepath<span class="op">=</span><span class="st">'_sweep_fhn/model.yaml'</span>)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter values</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>a_values <span class="op">=</span> np.linspace(<span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="dv">5</span>)</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>I_values <span class="op">=</span> np.linspace(<span class="fl">0.0</span>, <span class="fl">1.0</span>, <span class="dv">5</span>)</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulation settings</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> <span class="fl">200.0</span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> <span class="fl">1e-3</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>dts <span class="op">=</span> <span class="fl">1e-1</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Store amplitudes for 2D heatmap</span></span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>amplitudes <span class="op">=</span> np.zeros((<span class="bu">len</span>(a_values), <span class="bu">len</span>(I_values)))</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Running 2D parameter sweep via sequential 1D sweeps..."</span>)</span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="co"># For each value of 'a', sweep over I_ext</span></span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, a_val <span class="kw">in</span> <span class="bu">enumerate</span>(a_values):</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Update model with fixed 'a' value</span></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    fhn_temp <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    fhn_temp.name <span class="op">=</span> <span class="st">"FHN"</span></span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    fhn_temp.add_parameter(<span class="st">"a"</span>, value<span class="op">=</span>a_val)</span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    fhn_temp.add_parameter(<span class="st">"b"</span>, value<span class="op">=</span><span class="fl">0.8</span>)</span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    fhn_temp.add_parameter(<span class="st">"tau"</span>, value<span class="op">=</span><span class="fl">12.5</span>)</span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    fhn_temp.add_parameter(<span class="st">"I_ext"</span>, value<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>    fhn_temp.add_state_variable(<span class="st">"v"</span>, equation<span class="op">=</span><span class="st">"v - v**3/3 - w + I_ext"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    fhn_temp.add_state_variable(<span class="st">"w"</span>, equation<span class="op">=</span><span class="st">"(v + a - b*w)/tau"</span>, initial_value<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    fhn_temp.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>, filepath<span class="op">=</span><span class="st">'_sweep_fhn/model.yaml'</span>)</span>
-<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 1D sweep over I_ext</span></span>
-<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>    param_grid <span class="op">=</span> {<span class="st">'I'</span>: I_values.tolist()}</span>
-<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>    param_map <span class="op">=</span> {<span class="st">'I'</span>: {<span class="st">'vars'</span>: [<span class="st">'FHN_op/I_ext'</span>], <span class="st">'nodes'</span>: [<span class="st">'p'</span>]}}</span>
-<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>    results, _ <span class="op">=</span> grid_search(</span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>        circuit_template<span class="op">=</span><span class="st">'_sweep_fhn.model.FHN_circuit'</span>,</span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>        param_grid<span class="op">=</span>param_grid,</span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>        param_map<span class="op">=</span>param_map,</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>        simulation_time<span class="op">=</span>T,</span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>        step_size<span class="op">=</span>dt,</span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>        sampling_step_size<span class="op">=</span>dts,</span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>        outputs<span class="op">=</span>{<span class="st">'v'</span>: <span class="st">'p/FHN_op/v'</span>},</span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>        solver<span class="op">=</span><span class="st">'scipy'</span>,</span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>        vectorize<span class="op">=</span><span class="va">False</span>,  <span class="co"># Required for single-node circuits (PyRates bug)</span></span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>        clear<span class="op">=</span><span class="va">True</span></span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract amplitudes for each I value</span></span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>    v_cols <span class="op">=</span> <span class="bu">list</span>(results.columns)</span>
-<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(I_values)):</span>
-<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>        v <span class="op">=</span> results[v_cols[j]].values</span>
-<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>        v_steady <span class="op">=</span> v[<span class="bu">len</span>(v)<span class="op">//</span><span class="dv">2</span>:]  <span class="co"># Use second half</span></span>
-<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>        amplitudes[i, j] <span class="op">=</span> np.<span class="bu">max</span>(v_steady) <span class="op">-</span> np.<span class="bu">min</span>(v_steady)</span>
-<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  a = </span><span class="sc">{</span>a_val<span class="sc">:.2f}</span><span class="ss"> complete"</span>)</span>
-<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"2D sweep complete!"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Running 2D parameter sweep via sequential 1D sweeps...
-Compilation Progress
---------------------
-    (1) Translating the circuit template into a networkx graph representation...
-        ...finished.
-    (2) Preprocessing edge transmission operations...
-        ...finished.
-    (3) Parsing the model equations into a compute graph...
-        ...finished.
-    Model compilation was finished.
-Simulation Progress
--------------------
-     (1) Generating the network run function...
-     (2) Processing output variables...
-        ...finished.
-     (3) Running the simulation...
-        ...finished after 0.08863499999279156s.
-  a = 0.50 complete
-Compilation Progress
---------------------
-    (1) Translating the circuit template into a networkx graph representation...
-        ...finished.
-    (2) Preprocessing edge transmission operations...
-        ...finished.
-    (3) Parsing the model equations into a compute graph...
-        ...finished.
-    Model compilation was finished.
-Simulation Progress
--------------------
-     (1) Generating the network run function...
-     (2) Processing output variables...
-        ...finished.
-     (3) Running the simulation...
-        ...finished after 0.06503124997834675s.
-  a = 0.62 complete
-Compilation Progress
---------------------
-    (1) Translating the circuit template into a networkx graph representation...
-        ...finished.
-    (2) Preprocessing edge transmission operations...
-        ...finished.
-    (3) Parsing the model equations into a compute graph...
-        ...finished.
-    Model compilation was finished.
-Simulation Progress
--------------------
-     (1) Generating the network run function...
-     (2) Processing output variables...
-        ...finished.
-     (3) Running the simulation...
-        ...finished after 0.04547962499782443s.
-  a = 0.75 complete
-Compilation Progress
---------------------
-    (1) Translating the circuit template into a networkx graph representation...
-        ...finished.
-    (2) Preprocessing edge transmission operations...
-        ...finished.
-    (3) Parsing the model equations into a compute graph...
-        ...finished.
-    Model compilation was finished.
-Simulation Progress
--------------------
-     (1) Generating the network run function...
-     (2) Processing output variables...
-        ...finished.
-     (3) Running the simulation...
-        ...finished after 0.04719737501000054s.
-  a = 0.88 complete
-Compilation Progress
---------------------
-    (1) Translating the circuit template into a networkx graph representation...
-        ...finished.
-    (2) Preprocessing edge transmission operations...
-        ...finished.
-    (3) Parsing the model equations into a compute graph...
-        ...finished.
-    Model compilation was finished.
-Simulation Progress
--------------------
-     (1) Generating the network run function...
-     (2) Processing output variables...
-        ...finished.
-     (3) Running the simulation...
-        ...finished after 0.05053645800217055s.
-  a = 1.00 complete
-2D sweep complete!</code></pre>
-</div>
-</div>
-</section>
-<section id="amplitude-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="amplitude-analysis">Amplitude Analysis</h3>
-<div id="2114ad60" class="cell" data-execution_count="10">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot heatmap</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> ax.imshow(amplitudes, origin<span class="op">=</span><span class="st">'lower'</span>, aspect<span class="op">=</span><span class="st">'auto'</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>               extent<span class="op">=</span>[I_values[<span class="dv">0</span>], I_values[<span class="op">-</span><span class="dv">1</span>], a_values[<span class="dv">0</span>], a_values[<span class="op">-</span><span class="dv">1</span>]],</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>               cmap<span class="op">=</span><span class="st">'viridis'</span>)</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'External Current (I_ext)'</span>)</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Parameter a'</span>)</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'FitzHugh-Nagumo: Oscillation Amplitude'</span>)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">'Amplitude'</span>)</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Cleanup</span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(<span class="st">'_sweep_fhn'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="amplitude-heatmap" class="level3">
+<h3 class="anchored" data-anchor-id="amplitude-heatmap">Amplitude Heatmap</h3>
+<div id="74d393a2" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Steady-state amplitude for each condition</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>amps <span class="op">=</span> np.array([</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    np.ptp(sweep2.results[i, n_time2 <span class="op">//</span> <span class="dv">2</span>:, v_idx])</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_a <span class="op">*</span> n_I)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Reshape: conditions ordered (a varies fastest → rows=I, cols=a)</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>amps_grid <span class="op">=</span> amps.reshape(n_I, n_a)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="dv">5</span>))</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> ax.imshow(</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    amps_grid, origin<span class="op">=</span><span class="st">'lower'</span>, aspect<span class="op">=</span><span class="st">'auto'</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    extent<span class="op">=</span>[a_vals[<span class="dv">0</span>], a_vals[<span class="op">-</span><span class="dv">1</span>], I_vals[<span class="dv">0</span>], I_vals[<span class="op">-</span><span class="dv">1</span>]],</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Parameter a'</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'External current I_ext'</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'FitzHugh-Nagumo: Oscillation Amplitude'</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">'Amplitude (max − min)'</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="PyRates_Analysis_files/figure-html/cell-10-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="PyRates_Analysis_files/figure-html/cell-9-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
 </section>
 </section>
-<section id="example-3-bifurcation-like-analysis" class="level2">
-<h2 class="anchored" data-anchor-id="example-3-bifurcation-like-analysis">Example 3: Bifurcation-like Analysis</h2>
-<p>Detect qualitative changes in dynamics across parameter range.</p>
-<section id="qif-neural-mass-model" class="level3">
-<h3 class="anchored">QIF Neural Mass Model</h3>
-<div id="0a0f3e79" class="cell" data-execution_count="11">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Quadratic Integrate-and-Fire mean-field model</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>qif <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>qif.name <span class="op">=</span> <span class="st">"QIF"</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"tau"</span>, value<span class="op">=</span><span class="fl">1.0</span>)</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"eta"</span>, value<span class="op">=-</span><span class="fl">5.0</span>)  <span class="co"># Background drive</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"J"</span>, value<span class="op">=</span><span class="fl">15.0</span>)    <span class="co"># Coupling strength</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"Delta"</span>, value<span class="op">=</span><span class="fl">1.0</span>)  <span class="co"># Heterogeneity</span></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co"># State variables</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>qif.add_state_variable(<span class="st">"r"</span>, equation<span class="op">=</span><span class="st">"Delta/(tau*pi) + 2*r*v"</span>, initial_value<span class="op">=</span><span class="fl">0.1</span>)</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>qif.add_state_variable(<span class="st">"v"</span>, equation<span class="op">=</span><span class="st">"v**2 + eta + J*r*tau - (pi*r*tau)**2"</span>, initial_value<span class="op">=-</span><span class="fl">2.0</span>)</span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Display model summary using generate_report</span></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>display(Markdown(qif.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="example-3-bifurcation-like-sweep" class="level2">
+<h2 class="anchored" data-anchor-id="example-3-bifurcation-like-sweep">Example 3: Bifurcation-like Sweep</h2>
+<p>Scan the background drive η of a QIF mean-field model to find the transition from silence to oscillation.</p>
+<section id="define-model-and-sweep" class="level3">
+<h3 class="anchored">Define Model and Sweep</h3>
+<div id="04a436d7" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>qif <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>qif.name <span class="op">=</span> <span class="st">"QIF"</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"tau"</span>,   value<span class="op">=</span><span class="fl">1.0</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"eta"</span>,   value<span class="op">=-</span><span class="fl">5.0</span>,  description<span class="op">=</span><span class="st">"Background drive"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"J"</span>,     value<span class="op">=</span><span class="fl">15.0</span>,  description<span class="op">=</span><span class="st">"Coupling strength"</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"Delta"</span>, value<span class="op">=</span><span class="fl">1.0</span>,   description<span class="op">=</span><span class="st">"Heterogeneity"</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>qif.add_state_variable(<span class="st">"r"</span>, equation<span class="op">=</span><span class="st">"Delta/(tau*pi) + 2*r*v"</span>,         initial_value<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>qif.add_state_variable(<span class="st">"v"</span>, equation<span class="op">=</span><span class="st">"v**2 + eta + J*r*tau - (pi*r*tau)**2"</span>, initial_value<span class="op">=-</span><span class="fl">2.0</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>display(Markdown(qif.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="qif" class="level2 cell-output cell-output-display cell-output-markdown">
 <h2 class="anchored" data-anchor-id="qif">QIF</h2>
 <section id="state-equations-2" class="level3">
@@ -5185,63 +5010,48 @@ Simulation Progress
 <td><span class="math inline">\(\eta\)</span></td>
 <td>-5.0</td>
 <td>N/A</td>
-<td>None</td>
+<td>Background drive</td>
 </tr>
 <tr class="odd">
 <td><span class="math inline">\(J\)</span></td>
 <td>15.0</td>
 <td>N/A</td>
-<td>None</td>
+<td>Coupling strength</td>
 </tr>
 <tr class="even">
 <td><span class="math inline">\(\Delta\)</span></td>
 <td>1.0</td>
 <td>N/A</td>
-<td>None</td>
+<td>Heterogeneity</td>
 </tr>
 </tbody>
 </table>
 </section>
 </section>
 </div>
-</section>
-<section id="sweep-over-η-background-drive" class="level3">
-<h3 class="anchored" data-anchor-id="sweep-over-η-background-drive">Sweep Over η (Background Drive)</h3>
-<div id="b0c67ef5" class="cell" data-execution_count="12">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_sweep_qif'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_sweep_qif/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    f.write(<span class="st">''</span>)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>qif.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>, filepath<span class="op">=</span><span class="st">'_sweep_qif/model.yaml'</span>)</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter grid</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>eta_values <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">10</span>, <span class="dv">5</span>, <span class="dv">30</span>)</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>param_grid <span class="op">=</span> {<span class="st">'eta'</span>: eta_values.tolist()}</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>param_map <span class="op">=</span> {<span class="st">'eta'</span>: {<span class="st">'vars'</span>: [<span class="st">'QIF_op/eta'</span>], <span class="st">'nodes'</span>: [<span class="st">'p'</span>]}}</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Long simulation to find steady states</span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> <span class="fl">500.0</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> <span class="fl">1e-3</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>dts <span class="op">=</span> <span class="fl">1e-1</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Running bifurcation-like sweep..."</span>)</span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>results_qif, results_map_qif <span class="op">=</span> grid_search(</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    circuit_template<span class="op">=</span><span class="st">'_sweep_qif.model.QIF_circuit'</span>,</span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    param_grid<span class="op">=</span>param_grid,</span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    param_map<span class="op">=</span>param_map,</span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    simulation_time<span class="op">=</span>T,</span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    step_size<span class="op">=</span>dt,</span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    sampling_step_size<span class="op">=</span>dts,</span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    outputs<span class="op">=</span>{<span class="st">'r'</span>: <span class="st">'p/QIF_op/r'</span>},</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'scipy'</span>,</span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    vectorize<span class="op">=</span><span class="va">False</span>,  <span class="co"># Required for single-node circuits (PyRates bug)</span></span>
-<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    clear<span class="op">=</span><span class="va">True</span></span>
-<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Sweep complete! Results shape: </span><span class="sc">{</span>results_qif<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="f8d63642" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>exp3 <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>qif)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>exp3.integration.duration <span class="op">=</span> <span class="fl">200.0</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>exp3.integration.step_size <span class="op">=</span> <span class="fl">5e-3</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>exp3.explorations[<span class="st">'eta_sweep'</span>] <span class="op">=</span> Exploration(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'eta_sweep'</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'η bifurcation sweep'</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>[Parameter(name<span class="op">=</span><span class="st">'eta'</span>, domain<span class="op">=</span>Range(lo<span class="op">=-</span><span class="fl">10.0</span>, hi<span class="op">=</span><span class="fl">5.0</span>, n<span class="op">=</span><span class="dv">15</span>))],</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'product'</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Running η bifurcation sweep …"</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>result3  <span class="op">=</span> exp3.run(<span class="st">'pyrates'</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>sweep3   <span class="op">=</span> result3.explorations[<span class="st">'eta_sweep'</span>]</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>eta_values <span class="op">=</span> sweep3.axes[<span class="dv">0</span>].explored_values</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>n_time3    <span class="op">=</span> sweep3.results.shape[<span class="dv">1</span>]</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>r_idx      <span class="op">=</span> sweep3.output_names.index(<span class="st">'r'</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Sweep complete — </span><span class="sc">{</span><span class="bu">len</span>(eta_values)<span class="sc">}</span><span class="ss"> conditions × </span><span class="sc">{</span>n_time3<span class="sc">}</span><span class="ss"> time steps"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Running bifurcation-like sweep...
+<pre><code>Running η bifurcation sweep …
 Compilation Progress
 --------------------
     (1) Translating the circuit template into a networkx graph representation...
@@ -5257,71 +5067,65 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 2.399549958005082s.
-Sweep complete! Results shape: (5000, 30)</code></pre>
+        ...finished after 0.39545925000857096s.
+Compilation Progress
+--------------------
+    (1) Translating the circuit template into a networkx graph representation...
+        ...finished.
+    (2) Preprocessing edge transmission operations...
+        ...finished.
+    (3) Parsing the model equations into a compute graph...
+        ...finished.
+    Model compilation was finished.
+Simulation Progress
+-------------------
+     (1) Generating the network run function...
+     (2) Processing output variables...
+        ...finished.
+     (3) Running the simulation...
+        ...finished after 4.21698770900548s.
+Sweep complete — 15 conditions × 40000 time steps</code></pre>
 </div>
 </div>
 </section>
-<section id="bifurcation-like-diagram" class="level3">
-<h3 class="anchored" data-anchor-id="bifurcation-like-diagram">Bifurcation-like Diagram</h3>
-<div id="57553688" class="cell" data-execution_count="13">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Get all r columns</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>r_cols <span class="op">=</span> <span class="bu">list</span>(results_qif.columns)</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract steady-state firing rates</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>r_min <span class="op">=</span> []</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>r_max <span class="op">=</span> []</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>r_mean <span class="op">=</span> []</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, eta <span class="kw">in</span> <span class="bu">enumerate</span>(eta_values):</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> results_qif[r_cols[i]].values</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use last 20% for steady state</span></span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    r_steady <span class="op">=</span> r[<span class="bu">int</span>(<span class="fl">0.8</span><span class="op">*</span><span class="bu">len</span>(r)):]</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    r_min.append(np.<span class="bu">min</span>(r_steady))</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    r_max.append(np.<span class="bu">max</span>(r_steady))</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    r_mean.append(np.mean(r_steady))</span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Bifurcation-like diagram</span></span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>ax.fill_between(eta_values, r_min, r_max, alpha<span class="op">=</span><span class="fl">0.3</span>, label<span class="op">=</span><span class="st">'Oscillation range'</span>)</span>
-<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>ax.plot(eta_values, r_mean, <span class="st">'k-'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">'Mean firing rate'</span>)</span>
-<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'η (Background drive)'</span>)</span>
-<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Firing rate r'</span>)</span>
-<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'QIF Model: Bifurcation-like Diagram'</span>)</span>
-<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
-<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Select sample traces</span></span>
-<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
-<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>sample_indices <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">25</span>]  <span class="co"># Indices into eta_values</span></span>
-<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> plt.cm.viridis(np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="bu">len</span>(sample_indices)))</span>
-<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, color <span class="kw">in</span> <span class="bu">zip</span>(sample_indices, colors):</span>
-<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>    eta <span class="op">=</span> eta_values[idx]</span>
-<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> results_qif[r_cols[idx]].values</span>
-<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> results_qif.index.values</span>
-<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    start_idx <span class="op">=</span> <span class="bu">int</span>(<span class="fl">0.6</span> <span class="op">*</span> <span class="bu">len</span>(r))</span>
-<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>    ax.plot(t[start_idx:] <span class="op">-</span> t[start_idx], r[start_idx:],</span>
-<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>            color<span class="op">=</span>color, label<span class="op">=</span><span class="ss">f'η = </span><span class="sc">{</span>eta<span class="sc">:.1f}</span><span class="ss">'</span>)</span>
-<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Time (ms)'</span>)</span>
-<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Firing rate r'</span>)</span>
-<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'Sample Time Series'</span>)</span>
-<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
-<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a><span class="co"># Cleanup</span></span>
-<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(<span class="st">'_sweep_qif'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="bifurcation-diagram" class="level3">
+<h3 class="anchored" data-anchor-id="bifurcation-diagram">Bifurcation Diagram</h3>
+<div id="66fb18ef" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>steady_start <span class="op">=</span> <span class="bu">int</span>(<span class="fl">0.8</span> <span class="op">*</span> n_time3)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>r_min  <span class="op">=</span> [<span class="bu">float</span>(np.<span class="bu">min</span>( sweep3.results[i, steady_start:, r_idx])) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(eta_values))]</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>r_max  <span class="op">=</span> [<span class="bu">float</span>(np.<span class="bu">max</span>( sweep3.results[i, steady_start:, r_idx])) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(eta_values))]</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>r_mean <span class="op">=</span> [<span class="bu">float</span>(np.mean(sweep3.results[i, steady_start:, r_idx])) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(eta_values))]</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">0</span>]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>ax.fill_between(eta_values, r_min, r_max, alpha<span class="op">=</span><span class="fl">0.3</span>, label<span class="op">=</span><span class="st">'Oscillation range'</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>ax.plot(eta_values, r_mean, <span class="st">'k-'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">'Mean firing rate'</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'η (background drive)'</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Firing rate r'</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'QIF: Bifurcation-like Diagram'</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>time3 <span class="op">=</span> np.arange(n_time3) <span class="op">*</span> sweep3.dt</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="dv">1</span>]</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>sample_indices <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">9</span>, <span class="dv">14</span>]</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>colors_ <span class="op">=</span> plt.cm.viridis(np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="bu">len</span>(sample_indices)))</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, color <span class="kw">in</span> <span class="bu">zip</span>(sample_indices, colors_):</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    start <span class="op">=</span> <span class="bu">int</span>(<span class="fl">0.6</span> <span class="op">*</span> n_time3)</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>    ax.plot(time3[start:] <span class="op">-</span> time3[start], sweep3.results[idx, start:, r_idx],</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>            color<span class="op">=</span>color, label<span class="op">=</span><span class="ss">f'η = </span><span class="sc">{</span>eta_values[idx]<span class="sc">:.1f}</span><span class="ss">'</span>)</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Time'</span>)</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Firing rate r'</span>)</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'Sample Time Series'</span>)</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="PyRates_Analysis_files/figure-html/cell-13-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="PyRates_Analysis_files/figure-html/cell-12-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -5330,34 +5134,59 @@ Sweep complete! Results shape: (5000, 30)</code></pre>
 </section>
 <section id="summary" class="level2">
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>TVBO enables seamless integration with PyRates parameter analysis:</p>
-<ol type="1">
-<li><strong>Define</strong> models in TVBO’s structured format</li>
-<li><strong>Export</strong> to PyRates with <code>model.to_yaml(format="pyrates")</code></li>
-<li><strong>Analyze</strong> using PyRates <code>grid_search()</code> for parallel parameter sweeps</li>
-<li><strong>Visualize</strong> results to understand parameter effects</li>
-</ol>
-<section id="key-functions" class="level3">
-<h3 class="anchored" data-anchor-id="key-functions">Key Functions</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyrates <span class="im">import</span> grid_search</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>results, results_map <span class="op">=</span> grid_search(</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    circuit_template<span class="op">=</span><span class="st">'module.file.circuit_name'</span>,</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    param_grid<span class="op">=</span>{<span class="st">'param'</span>: [values]},          <span class="co"># Parameter combinations</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    param_map<span class="op">=</span>{<span class="st">'param'</span>: {<span class="st">'vars'</span>: [<span class="st">'op/var'</span>], <span class="st">'nodes'</span>: [<span class="st">'node'</span>]}},</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    simulation_time<span class="op">=</span>T,</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    step_size<span class="op">=</span>dt,</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    sampling_step_size<span class="op">=</span>dts,</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    outputs<span class="op">=</span>{<span class="st">'name'</span>: <span class="st">'node/op/var'</span>},</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'scipy'</span>,</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    vectorize<span class="op">=</span><span class="va">False</span>,  <span class="co"># Required for single-node circuits</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
+<p>TVBO’s <code>explorations</code> declaration maps directly to PyRates <code>grid_search()</code>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>TVBO concept</th>
+<th>PyRates concept</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Exploration.parameters</code> + <code>Range(lo, hi, n)</code></td>
+<td><code>param_grid = {name: linspace(lo, hi, n)}</code></td>
+</tr>
+<tr class="even">
+<td><code>Exploration.mode = 'product'</code></td>
+<td><code>permute_grid=True</code> (Cartesian product)</td>
+</tr>
+<tr class="odd">
+<td><code>Exploration.mode = 'zip'</code></td>
+<td><code>permute_grid=False</code> (pairwise)</td>
+</tr>
+<tr class="even">
+<td><code>result.explorations[name]</code></td>
+<td>returned <code>(results_df, results_map)</code> DataFrames</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel.schema <span class="im">import</span> Exploration, Parameter, Range</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>model)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>exp.integration.duration <span class="op">=</span> T</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>exp.integration.step_size <span class="op">=</span> dt</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>exp.explorations[<span class="st">'my_sweep'</span>] <span class="op">=</span> Exploration(</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'my_sweep'</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>[Parameter(name<span class="op">=</span><span class="st">'mu'</span>, domain<span class="op">=</span>Range(lo<span class="op">=</span><span class="fl">0.1</span>, hi<span class="op">=</span><span class="fl">10.0</span>, n<span class="op">=</span><span class="dv">6</span>))],</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'product'</span>,  <span class="co"># or 'zip'</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">'pyrates'</span>)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>sweep  <span class="op">=</span> result.explorations[<span class="st">'my_sweep'</span>]</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Access:  sweep.axes[i].explored_values, sweep.results[cond, time, var], sweep.output_names</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="next-steps" class="level2">
 <h2 class="anchored" data-anchor-id="next-steps">Next Steps</h2>
 <ul>
-<li><a href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">PyRates Bifurcation</a>: Numerical continuation and bifurcation detection</li>
+<li><a href="../../Interoperability/Pyrates/PyRates_Bifurcation.html">PyRates Bifurcation</a>: Numerical continuation with AUTO-07p</li>
 <li><a href="../../Interoperability/Pyrates/PyRates.html">PyRates Interoperability</a>: Basic round-trip examples</li>
 </ul>
 

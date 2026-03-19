@@ -267,7 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -369,6 +369,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -2819,6 +2825,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4771,13 +4783,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     
 
         
-      SimulationExperiment : optimization
+      SimulationExperiment : optimizations
         
           
     
         
         
-        SimulationExperiment --&gt; "*" Optimization : optimization
+        SimulationExperiment --&gt; "*" Optimization : optimizations
         click Optimization href "./Optimization.html"
     
 
@@ -4953,7 +4965,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>direct</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/slots/optimization.html">optimization</a></td>
+<td><a href="../../datamodel/slots/optimizations.html">optimizations</a></td>
 <td>* <br> <a href="../../datamodel/classes/Optimization.html">Optimization</a></td>
 <td>Parameter optimization configurations</td>
 <td>direct</td>
@@ -5297,8 +5309,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>
 <span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> PDE</span></span>
 <span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">optimization</span><span class="kw">:</span></span>
-<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> optimization</span></span>
+<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">optimizations</span><span class="kw">:</span></span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> optimizations</span></span>
 <span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Parameter optimization configurations</span></span>
 <span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
 <span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
@@ -5647,12 +5659,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-257"><a href="#cb2-257" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>
 <span id="cb2-258"><a href="#cb2-258" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> PDE</span></span>
 <span id="cb2-259"><a href="#cb2-259" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-260"><a href="#cb2-260" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">optimization</span><span class="kw">:</span></span>
-<span id="cb2-261"><a href="#cb2-261" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> optimization</span></span>
+<span id="cb2-260"><a href="#cb2-260" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">optimizations</span><span class="kw">:</span></span>
+<span id="cb2-261"><a href="#cb2-261" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> optimizations</span></span>
 <span id="cb2-262"><a href="#cb2-262" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Parameter optimization configurations</span></span>
 <span id="cb2-263"><a href="#cb2-263" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
 <span id="cb2-264"><a href="#cb2-264" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-265"><a href="#cb2-265" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">alias</span><span class="kw">:</span><span class="at"> optimization</span></span>
+<span id="cb2-265"><a href="#cb2-265" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">alias</span><span class="kw">:</span><span class="at"> optimizations</span></span>
 <span id="cb2-266"><a href="#cb2-266" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> SimulationExperiment</span></span>
 <span id="cb2-267"><a href="#cb2-267" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
 <span id="cb2-268"><a href="#cb2-268" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>

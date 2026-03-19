@@ -264,7 +264,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -366,6 +366,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -2816,6 +2822,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4623,10 +4635,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.run">run</h5>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>adapters.networkdynamics.NetworkDynamicsAdapter.run(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Run simulation using NetworkDynamics.jl.</p>
-<p>Returns the full Julia <code>sol</code> object attached to the TimeSeries as <code>ts.sol</code> so users can inspect it interactively, just like the bifurcation workflow.</p>
 <section id="returns" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
-<p>TimeSeries Simulation results shaped <code>(time, state_vars, nodes, 1)</code>. The raw Julia solution is available as <code>ts.sol</code>.</p>
+<p>ExperimentResult Simulation results with named dimensions and coordinates. Extra attributes: <code>sol</code>, <code>graph</code>, <code>edge_data</code>, <code>vertex_data</code>.</p>
 
 
 </section>

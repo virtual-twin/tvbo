@@ -264,7 +264,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -366,6 +366,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -2816,6 +2822,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4552,58 +4564,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/PDE.html">PDE</a></td>
-<td>Partial differential equation problem definition</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Noise.html">Noise</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/BranchSwitch.html">BranchSwitch</a></td>
-<td>Specification for switching from a detected bifurcation point to a new branch…</td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/Network.html">Network</a></td>
 <td>Network specification with nodes, edges, and reusable coupling configurations</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Event.html">Event</a></td>
-<td>A discrete or continuous event that modifies the system during simulation</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Dynamics.html">Dynamics</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Coupling.html">Coupling</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
-<td>Observation derived from one or more other observations</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a></td>
-<td>Backend-agnostic graph generator specification</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -4617,17 +4579,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Exploration.html">Exploration</a></td>
-<td>Parameter space exploration (grid search, sweep)</td>
+<td><a href="../../datamodel/classes/Noise.html">Noise</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Node.html">Node</a></td>
-<td>A node in a network with its own dynamics and properties</td>
+<td><a href="../../datamodel/classes/GraphGenerator.html">GraphGenerator</a></td>
+<td>Backend-agnostic graph generator specification</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/TemporalApplicableEquation.html">TemporalApplicableEquation</a></td>
+<td><a href="../../datamodel/classes/Distribution.html">Distribution</a></td>
+<td>A probability distribution for sampling parameters or initial conditions</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/PDE.html">PDE</a></td>
+<td>Partial differential equation problem definition</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Dynamics.html">Dynamics</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -4637,13 +4619,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
+<td><a href="../../datamodel/classes/BranchSwitch.html">BranchSwitch</a></td>
+<td>Specification for switching from a detected bifurcation point to a new branch…</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/TemporalApplicableEquation.html">TemporalApplicableEquation</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Coupling.html">Coupling</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Node.html">Node</a></td>
+<td>A node in a network with its own dynamics and properties</td>
+<td>no</td>
+</tr>
+<tr class="even">
 <td><a href="../../datamodel/classes/Discretization.html">Discretization</a></td>
 <td>Discretization method for boundary value problems in continuation (periodic o…</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Distribution.html">Distribution</a></td>
-<td>A probability distribution for sampling parameters or initial conditions</td>
+<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Exploration.html">Exploration</a></td>
+<td>Parameter space exploration (grid search, sweep)</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
+<td></td>
 <td>no</td>
 </tr>
 </tbody>

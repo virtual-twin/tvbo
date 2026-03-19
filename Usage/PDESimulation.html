@@ -66,7 +66,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../Usage/HeterogeneousNodes.html" rel="next">
-<link href="../Usage/Noise.html" rel="prev">
+<link href="../Usage/CreatingNetworks.html" rel="prev">
 <link href="../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -190,7 +190,7 @@ window.Quarto = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/index.html">Usage</a></li><li class="breadcrumb-item"><a href="../Usage/PDESimulation.html">Advanced</a></li><li class="breadcrumb-item"><a href="../Usage/PDESimulation.html">PDE Simulation</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/index.html">Usage</a></li><li class="breadcrumb-item"><a href="../Usage/CreatingNetworks.html">Advanced</a></li><li class="breadcrumb-item"><a href="../Usage/PDESimulation.html">PDE Simulation</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -293,7 +293,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -395,6 +395,12 @@ window.Quarto = {
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link active">
@@ -2845,6 +2851,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4563,7 +4575,7 @@ window.Quarto = {
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/index.html">Usage</a></li><li class="breadcrumb-item"><a href="../Usage/PDESimulation.html">Advanced</a></li><li class="breadcrumb-item"><a href="../Usage/PDESimulation.html">PDE Simulation</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../Usage/index.html">Usage</a></li><li class="breadcrumb-item"><a href="../Usage/CreatingNetworks.html">Advanced</a></li><li class="breadcrumb-item"><a href="../Usage/PDESimulation.html">PDE Simulation</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">PDE Simulation</h1>
 </div>
@@ -4591,7 +4603,7 @@ window.Quarto = {
 <p>A minimal diffusion example on a unit square, using scikit-fem’s built-in mesh generators.</p>
 <section id="step-1-create-a-triangle-mesh-and-experiment-yaml" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-create-a-triangle-mesh-and-experiment-yaml">Step 1 — Create a triangle mesh and experiment YAML</h3>
-<div id="e733b919" class="cell" data-execution_count="1">
+<div id="e733b919" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile, os, yaml</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> meshio</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -4654,7 +4666,7 @@ window.Quarto = {
 </section>
 <section id="step-2-run-the-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-run-the-simulation">Step 2 — Run the simulation</h3>
-<div id="44b7c557" class="cell" data-execution_count="2">
+<div id="44b7c557" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(yaml_path)</span>
@@ -4676,7 +4688,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="step-3-animate-the-diffusion" class="level3">
 <h3 class="anchored" data-anchor-id="step-3-animate-the-diffusion">Step 3 — Animate the diffusion</h3>
-<div id="075cc286" class="cell" data-execution_count="3">
+<div id="075cc286" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.tri <span class="im">as</span> mtri</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> PowerNorm</span>
@@ -4727,7 +4739,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 <p>Diffusion on a cortical surface mesh (fsLR 32k), using the <code>mesh_file</code> attribute to reference an external GIFTI file directly. The cortical midthickness surface is a closed manifold (no boundary), so the Dirichlet BC has no effect and total mass is conserved — the field spreads but doesn’t decay.</p>
 <section id="setup-and-run" class="level3">
 <h3 class="anchored" data-anchor-id="setup-and-run">Setup and run</h3>
-<div id="7774ed5e" class="cell" data-execution_count="4">
+<div id="7774ed5e" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> templateflow.api <span class="im">as</span> tfa</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nibabel <span class="im">as</span> nib</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -4784,7 +4796,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="animate-with-bsplot" class="level3">
 <h3 class="anchored" data-anchor-id="animate-with-bsplot">Animate with bsplot</h3>
-<div id="c0077060" class="cell" data-execution_count="5">
+<div id="c0077060" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> PowerNorm</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.surface <span class="im">import</span> plot_surf</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.animate <span class="im">import</span> animate_axes</span>
@@ -5419,8 +5431,8 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../Usage/Noise.html" class="pagination-link" aria-label="Noise &amp; Stochastic Integration">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Noise &amp; Stochastic Integration</span>
+      <a href="../Usage/CreatingNetworks.html" class="pagination-link" aria-label="Creating Custom Networks">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Creating Custom Networks</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

@@ -264,7 +264,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -366,6 +366,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -2816,6 +2822,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4539,7 +4551,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Complete BOLD functional connectivity simulation &amp; optimization: simulation, exploration, global and regional parameter fitting.</p>
-<div id="3882ead8" class="cell" data-execution_count="2">
+<div id="e552fd52" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"XLA_FLAGS"</span>] <span class="op">=</span> <span class="st">"--xla_force_host_platform_device_count=8"</span></span>
@@ -4570,60 +4582,60 @@ STEP 4: Running optimization...
 
 &gt;&gt;&gt; Stage 1/2: global_optimization
     Free parameters: w, G
-Step 0: 0.291980
-Step 10: 0.284520
-Step 20: 0.253220
-Step 30: 0.255369
-Step 40: 0.258688
-Step 50: 0.245600
-Step 60: 0.245192
-Step 70: 0.244507
-Step 80: 0.244431
-Step 90: 0.244266
-Step 100: 0.244095
-Step 110: 0.243937
-Step 120: 0.243775
-Step 130: 0.243606
-Step 140: 0.243430
-Step 150: 0.243248
-Step 160: 0.243060
-Step 170: 0.242867
-Step 180: 0.242669
-Step 190: 0.242468
-Step 200: 0.242264
-Step 210: 0.242058
-Step 220: 0.241850
-Step 230: 0.241640
-Step 240: 0.241430
-Step 250: 0.241219
-Step 260: 0.241009
-Step 270: 0.240799
-Step 280: 0.240589
-Step 290: 0.240381
+Step 0: 0.294715
+Step 10: 0.287573
+Step 20: 0.254444
+Step 30: 0.248133
+Step 40: 0.284865
+Step 50: 0.290303
+Step 60: 0.291113
+Step 70: 0.290875
+Step 80: 0.290149
+Step 90: 0.288995
+Step 100: 0.287202
+Step 110: 0.283975
+Step 120: 0.274039
+Step 130: 0.255346
+Step 140: 0.243899
+Step 150: 0.279207
+Step 160: 0.283097
+Step 170: 0.277154
+Step 180: 0.251136
+Step 190: 0.243328
+Step 200: 0.239384
+Step 210: 0.238809
+Step 220: 0.239096
+Step 230: 0.238629
+Step 240: 0.238569
+Step 250: 0.238553
+Step 260: 0.238515
+Step 270: 0.238502
+Step 280: 0.238483
+Step 290: 0.238467
 
 &gt;&gt;&gt; Stage 2/2: regional_optimization
     Free parameters: w, I_o
     Warmup from: global_optimization
-Step 0: 0.240174
-Step 10: 0.218983
-Step 20: 0.193763
-Step 30: 0.184035
-Step 40: 0.178383
-Step 50: 0.169580
-Step 60: 0.167361
-Step 70: 0.162838
-Step 80: 0.159880
-Step 90: 0.159405
-Step 100: 0.159411
-Step 110: 0.158312
-Step 120: 0.159464
-Step 130: 0.158393
-Step 140: 0.156673
-Step 150: 0.165773
-Step 160: 0.165883
-Step 170: 0.184896
-Step 180: 0.286296
-Step 190: 0.289588
+Step 0: 0.238450
+Step 10: 0.203557
+Step 20: 0.188123
+Step 30: 0.179457
+Step 40: 0.173846
+Step 50: 0.182177
+Step 60: 0.173627
+Step 70: 0.172276
+Step 80: 0.168835
+Step 90: 0.167816
+Step 100: 0.166375
+Step 110: 0.168021
+Step 120: 0.186270
+Step 130: 0.175343
+Step 140: 0.161616
+Step 150: 0.186598
+Step 160: 0.168459
+Step 170: 0.164402
+Step 180: 0.161483
+Step 190: 0.161250
 
 ============================================================
   Multi-stage optimization complete
@@ -4636,7 +4648,7 @@ Experiment complete.
 </div>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="cell-fig-rww-results" class="cell" data-execution_count="3">
+<div id="cell-fig-rww-results" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># | fig-cap: "**RWW BOLD FC Optimization.** (A) Neural activity. (B) BOLD signal. (C) Parameter landscape with trajectory. (D-F) FC matrices: target, global, regional. (G-H) FC scatter plots. (I-J) Fitted regional parameters."</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
@@ -4660,11 +4672,11 @@ Experiment complete.
 <span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co"># A: Neural Activity</span></span>
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"A"</span>]</span>
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>t_max <span class="op">=</span> <span class="bu">int</span>(<span class="dv">1000</span> <span class="op">/</span> exp.integration.step_size)</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> results.integration.data[:t_max, <span class="dv">0</span>, :]</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> np.asarray(results.integration.data[:t_max, <span class="dv">0</span>, :])</span>
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>norm <span class="op">=</span> Normalize(vmin<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">min</span>(), vmax<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">max</span>())</span>
 <span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(data.shape[<span class="dv">1</span>]):</span>
 <span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    ax.plot(</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        results.integration.time[:t_max],</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        np.asarray(results.integration.time[:t_max]),</span>
 <span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        data[:, i],</span>
 <span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])),</span>
 <span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">0.5</span>,</span>
@@ -4674,10 +4686,10 @@ Experiment complete.
 <span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="co"># B: BOLD Signal</span></span>
 <span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> axes[<span class="st">"B"</span>]</span>
 <span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>bold <span class="op">=</span> results.integration.observations.bold</span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> bold.data[:<span class="dv">60</span>, <span class="dv">0</span>, :]</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> np.asarray(bold.data[:<span class="dv">60</span>, <span class="dv">0</span>, :])</span>
 <span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>norm <span class="op">=</span> Normalize(vmin<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">min</span>(), vmax<span class="op">=</span>data.mean(<span class="dv">0</span>).<span class="bu">max</span>())</span>
 <span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(data.shape[<span class="dv">1</span>]):</span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    ax.plot(bold.time[:<span class="dv">60</span>], data[:, i], color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])), lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    ax.plot(np.asarray(bold.time[:<span class="dv">60</span>]), data[:, i], color<span class="op">=</span>cmap(norm(data.mean(<span class="dv">0</span>)[i])), lw<span class="op">=</span><span class="fl">0.8</span>)</span>
 <span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"Time [s]"</span>, ylabel<span class="op">=</span><span class="st">"BOLD [a.u.]"</span>, title<span class="op">=</span><span class="st">"BOLD Signal"</span>)</span>
 <span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># C: Parameter Landscape with Trajectory</span></span>
@@ -4723,7 +4735,7 @@ Experiment complete.
 <span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a><span class="co"># Trajectory</span></span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>route <span class="op">=</span> results.optimization.global_optimization.state_trajectory</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>route <span class="op">=</span> results.optimizations.global_optimization.state_trajectory</span>
 <span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>ax.scatter(</span>
 <span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>    [s.coupling.FastLinearCoupling.G.value <span class="cf">for</span> s <span class="kw">in</span> route],</span>
 <span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>    [s.dynamics.w.value <span class="cf">for</span> s <span class="kw">in</span> route],</span>
@@ -4738,8 +4750,8 @@ Experiment complete.
 <span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="co"># D-F: FC Matrices</span></span>
 <span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, fc, title <span class="kw">in</span> [</span>
-<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"D"</span>, np.array(results.optimization.global_optimization.simulation.observations.fc), <span class="ss">f"Global"</span>),</span>
-<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"E"</span>, np.array(results.optimization.regional_optimization.simulation.observations.fc), <span class="ss">f"Regional"</span>),</span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"D"</span>, np.array(results.optimizations.global_optimization.simulation.observations.fc), <span class="ss">f"Global"</span>),</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"E"</span>, np.array(results.optimizations.regional_optimization.simulation.observations.fc), <span class="ss">f"Regional"</span>),</span>
 <span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"F"</span>, fc_target, <span class="st">"Target FC"</span>),</span>
 <span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>]:</span>
 <span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[key]</span>
@@ -4751,8 +4763,8 @@ Experiment complete.
 <span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a><span class="co"># G-H: Scatter Plots</span></span>
 <span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>triu <span class="op">=</span> np.triu_indices_from(fc_target, k<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> key, fc, title <span class="kw">in</span> [</span>
-<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"G"</span>, results.optimization.global_optimization.simulation.observations.fc, <span class="st">"Global Fit"</span>),</span>
-<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"H"</span>, results.optimization.regional_optimization.simulation.observations.fc, <span class="st">"Regional Fit"</span>),</span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"G"</span>, results.optimizations.global_optimization.simulation.observations.fc, <span class="st">"Global Fit"</span>),</span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"H"</span>, results.optimizations.regional_optimization.simulation.observations.fc, <span class="st">"Regional Fit"</span>),</span>
 <span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>]:</span>
 <span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[key]</span>
 <span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>    ax.scatter(fc_target[triu], np.array(fc)[triu], alpha<span class="op">=</span><span class="fl">0.3</span>, s<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">"royalblue"</span>)</span>

@@ -264,7 +264,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Working with Results</span></a>
+ <span class="menu-text">The Experiment Result</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -366,6 +366,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           </a> 
       </div>
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Creating Custom Networks</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Usage/PDESimulation.html" class="sidebar-item-text sidebar-link">
@@ -2816,6 +2822,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">optimizations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optional.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optional</span></a>
   </div>
@@ -4565,7 +4577,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.adapters.pyrates.PyRatesAdapter.run">run</a></td>
-<td>Run simulation using PyRates backend.</td>
+<td>Run simulation and explorations using PyRates backend.</td>
 </tr>
 </tbody>
 </table>
@@ -4578,14 +4590,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    matrix_edge_threshold<span class="op">=</span><span class="dv">100</span>,</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Run simulation using PyRates backend.</p>
+<p>Run simulation and explorations using PyRates backend.</p>
+<p>Handles both integration and grid-search explorations in a single call, sharing YAML export / circuit load across both.</p>
 <section id="parameters" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
-<p>solver : str, optional ODE solver: “euler”, “heun”, “scipy”. Defaults to mapped integration.method. inputs : dict, optional External inputs as {node/op/var: array} or will be auto-generated. outputs : list[str], optional Variables to monitor. If None, monitors all state variables. matrix_edge_threshold : int, optional For networks with N &gt; threshold nodes, use add_edges_from_matrix instead of YAML edges for efficiency. Default is 100. **kwargs Additional kwargs passed to circuit.run().</p>
+<p>solver : str, optional ODE solver: “euler”, “heun”, “scipy”. Defaults to mapped integration.method. inputs : dict, optional External inputs as {node/op/var: array} or will be auto-generated. outputs : list[str], optional Variables to monitor. If None, monitors all state variables. matrix_edge_threshold : int, optional For networks with N &gt; threshold nodes, use add_edges_from_matrix instead of YAML edges for efficiency. Default is 100. **kwargs Additional kwargs passed to circuit.run() / grid_search().</p>
 </section>
 <section id="returns" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
-<p>TimeSeries TVBO TimeSeries with simulation results.</p>
+<p>ExperimentResult</p>
 
 
 </section>
