@@ -278,7 +278,7 @@ class PyRatesAdapter(BaseAdapter):
         # Compute algebraic output variables post-hoc
         result = self._compute_outputs(result)
 
-        return self._result_to_timeseries(result)
+        return self._result_to_experiment_result(result)
 
     def _resolve_solver(self, solver: str | None, integration) -> str:
         """Resolve solver from input or integration method."""
@@ -724,9 +724,11 @@ class PyRatesAdapter(BaseAdapter):
 
         return inputs
 
-    def _result_to_timeseries(self, result: "pd.DataFrame") -> "TimeSeries":
-        """Convert PyRates pandas DataFrame result to TVBO TimeSeries."""
-        from tvbo.data.types import TimeSeries
+    def _result_to_experiment_result(self, result: "pd.DataFrame") -> "ExperimentResult":
+        """Convert PyRates pandas DataFrame result to ExperimentResult."""
+        import xarray as xr
+
+        from tvbo.data.types import ExperimentResult, SimulationResult
 
         exp = self.experiment
         time = np.array(result.index)
@@ -774,21 +776,20 @@ class PyRatesAdapter(BaseAdapter):
         n_nodes = len(node_names)
         n_svs = len(sv_names)
 
-        data = np.zeros((n_time, n_svs, n_nodes, 1), dtype=np.float32)
+        data = np.zeros((n_time, n_svs, n_nodes), dtype=np.float32)
 
         for col_idx, (node_name, sv_name) in enumerate(node_sv_pairs):
             node_idx = node_names.index(node_name)
             sv_idx = sv_names.index(sv_name)
-            data[:, sv_idx, node_idx, 0] = result.iloc[:, col_idx].values
+            data[:, sv_idx, node_idx] = result.iloc[:, col_idx].values
 
-        labels_dimensions = {
-            "State Variable": sv_names,
-            "Region": node_names,
-        }
-
-        return TimeSeries(
-            time=time,
+        da = xr.DataArray(
             data=data,
-            labels_dimensions=labels_dimensions,
-            sample_period=float(time[1] - time[0]) if len(time) > 1 else 1.0,
+            dims=['time', 'variable', 'node'],
+            coords={'time': time, 'variable': sv_names, 'node': node_names},
+        )
+        sim = SimulationResult(data=da)
+
+        return ExperimentResult(
+            integration=sim, source=exp, name=getattr(exp, 'label', None),
         )

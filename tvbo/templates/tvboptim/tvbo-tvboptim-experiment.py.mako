@@ -2500,6 +2500,7 @@ observational_measures = list(network.observational_measures) if network.observa
 if __name__ == "__main__":
     import pickle
     from pathlib import Path
+    from tvbo.data.types import ExperimentResult
 
     print("=" * 60)
     print("${dynamics_class} Experiment - Standalone Execution")
@@ -2539,12 +2540,15 @@ if __name__ == "__main__":
 
     # Run the experiment
     # Order: 1) Simulation → 2) Explorations → 3) Algorithms → 4) Optimization
-    results = run_experiment(
+    raw_results = run_experiment(
         weights,
         distances=distances,
         region_labels=region_labels,
         mode="all",
     )
+
+    # Wrap in ExperimentResult for consistent access and export
+    results = ExperimentResult(raw_results, experiment_name="${safe_name(experiment.label or 'experiment')}")
 
     # Save results
     output_path = Path(__file__).parent / "${safe_name(experiment.label or 'experiment')}_results.pkl"
@@ -2552,15 +2556,14 @@ if __name__ == "__main__":
         pickle.dump(results, f)
     print(f"\nResults saved to: {output_path}")
 
+    # Export BIDS-compatible output
+    bids_output = Path(__file__).parent / "derivatives"
+    results.export(bids_output, description="${safe_name(experiment.label or 'tvbsim')}")
+    print(f"BIDS output: {bids_output}")
+
     # Summary
     print("\n" + "=" * 60)
     print("Results Summary")
     print("=" * 60)
-    print(f"  Keys: {list(results.keys())}")
-    if hasattr(results, 'observations'):
-        print(f"  Observations: {list(results.observations.keys())}")
-    if hasattr(results, 'algorithms'):
-        print(f"  Algorithms: {list(results.algorithms.keys())}")
-    if hasattr(results, 'fitted_params'):
-        print(f"  Optimization: Complete")
+    print(results)
 

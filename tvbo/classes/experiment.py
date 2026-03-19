@@ -10,6 +10,7 @@ from os.path import join
 import jax
 import jax.numpy as jnp
 import numpy as np
+import xarray as xr
 
 try:
     from lems.base.util import validate_lems
@@ -18,7 +19,7 @@ except ImportError:
 
 from tvbo import templates
 from tvbo.classes.network import Network
-from tvbo.data.types import SimulationState, TimeSeries, ExperimentResult
+from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen import templater
 from tvbo.codegen.templater import format_code
@@ -1252,35 +1253,54 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             simulator_.initial_conditions = initial_conditions.data
             simulator_.configure()
             simres = simulator_.run(**kwargs)
-            derivatives = []
-            labels_dim = {
-                "State Variable": simulator_.model.variables_of_interest,
-                "Region": list(simulator_.connectivity.region_labels),
-            }
+
+            sv_names = list(simulator_.model.variables_of_interest)
+            region_labels = [str(r) for r in simulator_.connectivity.region_labels]
+
+            observations = {}
+            sim_result = None
             for m, (tv, xv) in zip(simulator_.monitors, simres):
                 m_name = m.title.split(" ")[0]
+                # Squeeze singleton mode dimension if present
+                data_np = np.asarray(xv)
+                if data_np.ndim == 4 and data_np.shape[3] == 1:
+                    data_np = data_np[:, :, :, 0]
+
+                da = xr.DataArray(
+                    data=data_np,
+                    dims=['time', 'variable', 'node'],
+                    coords={
+                        'time': np.asarray(tv),
+                        'variable': sv_names,
+                        'node': region_labels,
+                    },
+                )
                 if m_name == "Raw":
-                    ts = TimeSeries(
-                        data=xv,
-                        time=tv,
-                        labels_dimensions=labels_dim,
-                        title=m_name,
-                        sample_period=m.period,
-                    )
+                    sim_result = SimulationResult(data=da)
                 else:
-                    derivatives.append(
-                        TimeSeries(
-                            data=xv,
-                            time=tv,
-                            labels_dimensions=labels_dim,
-                            title=m_name,
-                            sample_period=m.period,
-                        )
-                    )
-            ts.derivatives = derivatives
-            # Link TimeSeries to source experiment for provenance tracking
-            ts.source_experiment = self
-            return ts
+                    observations[m_name.lower()] = SimulationResult(data=da)
+
+            if sim_result is None:
+                # Fallback if no Raw monitor — use first
+                first_m, (tv, xv) = list(zip(simulator_.monitors, simres))[0]
+                data_np = np.asarray(xv)
+                if data_np.ndim == 4 and data_np.shape[3] == 1:
+                    data_np = data_np[:, :, :, 0]
+                da = xr.DataArray(
+                    data=data_np,
+                    dims=['time', 'variable', 'node'],
+                    coords={
+                        'time': np.asarray(tv),
+                        'variable': sv_names,
+                        'node': region_labels,
+                    },
+                )
+                sim_result = SimulationResult(data=da)
+
+            sim_result.observations = observations
+            return ExperimentResult(
+                integration=sim_result, source=self, name=self.label,
+            )
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
             import time
@@ -1335,22 +1355,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             jax_model = self.execute(format="jax", **kwargs)
             ts = jax_model(state)
-            # simulation_data = Bunch()
-            # ts.labels_dimensions = {
-            #     "State Variable": list(self.dynamics.state_variables.keys()),
-            #     "Region": self.network.labels,
-            # }
-            # ts.sample_period = self.integration.step_size
-            # ts.dt = self.integration.step_size
 
-            # Link TimeSeries to source experiment for provenance tracking
-            ts.source_experiment = self
-
-            return ts
+            # Wrap in ExperimentResult for consistent return type
+            return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() == "cuda":
             from tvbo.codegen.cuda import run_cuda
-            return run_cuda(self, **kwargs)
+            cuda_result = run_cuda(self, **kwargs)
+            if isinstance(cuda_result, TimeSeries):
+                return ExperimentResult.from_timeseries(cuda_result, source=self, name=self.label)
+            return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
             bnm = _Network(Network(self.network))
@@ -1361,7 +1375,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 duration=kwargs.get("duration", self.integration.duration),
                 dt=self.integration.step_size,
             )
-            simulation_data["Raw"] = ts
+            return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
             ns = self.execute(format="pde")
@@ -1426,18 +1440,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             T = U.shape[0] if U is not None else 1
             t = np.arange(T) * float(meta.get("dt", 1.0))
-            data = U if U is not None else u[np.newaxis, :]
-            data = data.reshape(T, 1, -1, 1)  # (time, state, region, mode)
-            labels_dimensions = {
-                "State Variable": [str(meta.get("unknown", "u"))],
-                "Region": [i for i in range(data.shape[2])],
-            }
-            ts = TimeSeries(
-                time=t, data=data, network=None, labels_dimensions=labels_dimensions
+            data_raw = U if U is not None else u[np.newaxis, :]
+            # Reshape: (time, 1_sv, region) — no singleton mode dim
+            n_region = data_raw.shape[-1] if data_raw.ndim >= 2 else data_raw.size
+            data_np = data_raw.reshape(T, 1, n_region)
+
+            sv_name = str(meta.get("unknown", "u"))
+            da = xr.DataArray(
+                data=data_np,
+                dims=['time', 'variable', 'node'],
+                coords={
+                    'time': t,
+                    'variable': [sv_name],
+                    'node': [str(i) for i in range(n_region)],
+                },
             )
-            # Link TimeSeries to source experiment for provenance tracking
-            ts.source_experiment = self
-            return ts
+            sim = SimulationResult(data=da)
+            return ExperimentResult(
+                integration=sim, source=self, name=self.label,
+            )
 
         elif format.lower() == "pyrates":
             return self._run_pyrates(**kwargs)
@@ -1473,8 +1494,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "pyrates-bifurcation, julia"
             )
 
-        return simulation_data
-
     def _run_pyrates(
         self,
         solver: str | None = None,
@@ -1482,7 +1501,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         outputs: list[str] | None = None,
         matrix_edge_threshold: int = 100,
         **kwargs,
-    ) -> TimeSeries:
+    ) -> ExperimentResult:
         """Run simulation using PyRates backend.
 
         Parameters
@@ -1501,8 +1520,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Returns
         -------
-        TimeSeries
-            TVBO TimeSeries with simulation results.
+        ExperimentResult
         """
         from tvbo.adapters.pyrates import PyRatesAdapter
 
@@ -1515,35 +1533,43 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             **kwargs,
         )
 
-    def _run_networkdynamics(self, **kwargs) -> TimeSeries:
+    def _run_networkdynamics(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl via pyjulia."""
         from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
 
         adapter = NetworkDynamicsAdapter(self)
         return adapter.run(**kwargs)
 
-    def _run_modelingtoolkit(self, **kwargs) -> TimeSeries:
+    def _run_modelingtoolkit(self, **kwargs) -> ExperimentResult:
         """Run simulation using pure ModelingToolkit.jl via pyjulia."""
         from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
         adapter = ModelingToolkitAdapter(self)
         return adapter.run(**kwargs)
 
-    def _run_bifurcation(self, **kwargs):
+    def _run_bifurcation(self, **kwargs) -> ExperimentResult:
         """Run bifurcation analysis via BifurcationKit.jl."""
         from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
         adapter = BifurcationKitAdapter(self)
-        return adapter.run(**kwargs)
+        bif_result = adapter.run(**kwargs)
+        return ExperimentResult(
+            continuations={'default': bif_result},
+            source=self, name=self.label,
+        )
 
-    def _run_pyrates_bifurcation(self, **kwargs):
+    def _run_pyrates_bifurcation(self, **kwargs) -> ExperimentResult:
         """Run bifurcation analysis via PyRates/PyCoBi (AUTO-07p)."""
         from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
 
         adapter = PyRatesBifurcationAdapter(self)
-        return adapter.run(**kwargs)
+        bif_result = adapter.run(**kwargs)
+        return ExperimentResult(
+            continuations={'default': bif_result},
+            source=self, name=self.label,
+        )
 
-    def _run_julia(self, **kwargs) -> TimeSeries:
+    def _run_julia(self, **kwargs) -> ExperimentResult:
         """Run simulation using DifferentialEquations.jl via juliacall."""
         from tvbo.adapters.diffeq import DiffEqAdapter
 

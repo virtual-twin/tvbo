@@ -300,20 +300,18 @@ class NetworkDynamicsAdapter(BaseAdapter):
         )
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "TimeSeries":
+    def run(self, **kwargs) -> "ExperimentResult":
         """Run simulation using NetworkDynamics.jl.
-
-        Returns the full Julia ``sol`` object attached to the TimeSeries as
-        ``ts.sol`` so users can inspect it interactively, just like the
-        bifurcation workflow.
 
         Returns
         -------
-        TimeSeries
-            Simulation results shaped ``(time, state_vars, nodes, 1)``.
-            The raw Julia solution is available as ``ts.sol``.
+        ExperimentResult
+            Simulation results with named dimensions and coordinates.
+            Extra attributes: ``sol``, ``graph``, ``edge_data``, ``vertex_data``.
         """
-        from tvbo.data.types import TimeSeries
+        import xarray as xr
+
+        from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
@@ -354,14 +352,10 @@ class NetworkDynamicsAdapter(BaseAdapter):
         is_hetero = ctx.get('is_heterogeneous', False)
 
         if is_hetero:
-            # Heterogeneous models: nodes have different numbers of SVs,
-            # so the total state dimension != n_nodes * n_sv.
-            # Return raw (n_t, n_total_states, 1, 1) — no node/SV split.
             n_t = len(t)
             n_total = u.shape[0]
             data = u.T[:, :, np.newaxis, np.newaxis]   # (n_t, n_states, 1, 1)
 
-            # Build per-state labels from node-dynamics map
             dynamics_dict = ctx['dynamics_dict']
             node_dynamics_map = ctx['node_dynamics_map']
             nodes = ctx['nodes']
@@ -372,10 +366,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 dyn = dynamics_dict.get(dyn_name)
                 if dyn and dyn.state_variables:
                     for sv_name in dyn.state_variables:
-                        state_labels.append(
-                            f"{sv_name}_{node.id}"
-                        )
-            # Fallback if label count doesn't match
+                        state_labels.append(f"{sv_name}_{node.id}")
             if len(state_labels) != n_total:
                 state_labels = [f"x_{i}" for i in range(n_total)]
         else:
@@ -400,27 +391,38 @@ class NetworkDynamicsAdapter(BaseAdapter):
         # 9. Restore original working directory
         os.chdir(original_cwd)
 
-        dt = ctx['dt']
-        ts = TimeSeries(
-            time=t,
-            data=data,
-            labels_dimensions={
-                "State Variable": state_labels,
-                "Region": list(range(n_nodes)),
-            },
-            sample_period=dt,
-        )
-        ts.source_experiment = exp
-        ts.sol = sol  # keep full Julia object for interactive use
-        ts.graph = graph_data  # adjacency, positions, weights
-        ts.edge_data = edge_data  # edge observables from outsym/obssym
-        ts.vertex_data = vertex_data  # vertex derived-variable observables
+        # 10. Build xr.DataArray — squeeze singleton mode
+        data_np = np.asarray(data)
+        if data_np.ndim == 4 and data_np.shape[3] == 1:
+            data_np = data_np[:, :, :, 0]
 
-        # Spatial metadata (for heterogeneous spatial models)
+        dims = ['time', 'variable', 'node'][:data_np.ndim]
+        coords = {
+            'time': np.asarray(t),
+            'variable': state_labels,
+        }
+        if data_np.ndim >= 3:
+            coords['node'] = [str(i) for i in range(n_nodes)]
+
+        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+        sim = SimulationResult(data=da)
+
+        # Collect extra metadata
+        extras = dict(sol=sol, graph=graph_data, edge_data=edge_data, vertex_data=vertex_data)
         if is_hetero and self.get_coupling_vars(ctx['model']):
-            ts.node_positions = self.build_node_positions(ts, ctx)
-            ts.initial_positions = self.get_initial_positions()
-            ts.fixed_nodes = self.get_fixed_nodes()
-            ts.node_metadata = self.get_node_metadata()
+            # Need TimeSeries for spatial metadata helpers
+            from tvbo.data.types import TimeSeries
+            ts = TimeSeries(
+                time=t, data=data,
+                labels_dimensions={"State Variable": state_labels, "Region": list(range(n_nodes))},
+                sample_period=ctx['dt'],
+            )
+            extras['node_positions'] = self.build_node_positions(ts, ctx)
+            extras['initial_positions'] = self.get_initial_positions()
+            extras['fixed_nodes'] = self.get_fixed_nodes()
+            extras['node_metadata'] = self.get_node_metadata()
 
-        return ts
+        return ExperimentResult(
+            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            **extras,
+        )
