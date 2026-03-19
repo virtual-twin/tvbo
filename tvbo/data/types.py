@@ -47,7 +47,10 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None):
     if raw_time is not None:
         coords['time'] = np.asarray(raw_time)
     if state_names:
-        coords['variable'] = list(state_names)
+        # Only assign variable coord if length matches the data dimension
+        var_axis = dims.index('variable') if 'variable' in dims else None
+        if var_axis is not None and len(state_names) == raw_data.shape[var_axis]:
+            coords['variable'] = list(state_names)
     return xr.DataArray(data=np.asarray(raw_data), dims=dims, coords=coords)
 
 
@@ -282,6 +285,13 @@ class AlgorithmResult:
             return self._extras[name]
         except KeyError:
             raise AttributeError(f"AlgorithmResult has no attribute '{name}'")
+
+    def get(self, key, default=None):
+        """Dict-like get for backward compat with Bunch-based code."""
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            return default
 
     def __repr__(self):
         n_iter = self.n_iterations or (

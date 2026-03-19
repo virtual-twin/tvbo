@@ -40,7 +40,7 @@ website:
                         href: Usage/Integrators.qmd
                       - text: "Simulation Experiments"
                         href: Usage/SimulationExperiments.qmd
-                      - text: "Working with Results"
+                      - text: "The Experiment Result"
                         href: Usage/Results.qmd
                       - text: "Code Generation"
                         href: Usage/CodeGeneration.qmd
@@ -882,6 +882,8 @@ website:
                         href: datamodel/slots/operators.qmd
                       - text: "optimization"
                         href: datamodel/slots/optimization.qmd
+                      - text: "optimizations"
+                        href: datamodel/slots/optimizations.qmd
                       - text: "optional"
                         href: datamodel/slots/optional.qmd
                       - text: "options"
