@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, TimeSeries
 
 # Julia packages required by the MTK backend
 MTK_PACKAGES = [
