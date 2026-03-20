@@ -1,0 +1,245 @@
+"""
+Unit and Dimension Utilities
+============================
+
+Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), LEMS dimensions,
+SymPy units, and legacy free-text unit strings found in older model YAMLs.
+
+The ``UnitEnum`` values use conventional abbreviations (ms, mV, nA, etc.)
+as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
+
+* ``unit_to_lems_dimension(unit)`` — map a UnitEnum value to a LEMS dimension name
+* ``unit_to_lems_symbol(unit)`` — map a UnitEnum value to the LEMS unit symbol
+* ``unit_has_time_dimension(unit)`` — whether the unit carries a time component
+* ``normalize_unit(raw)`` — convert legacy free-text strings to UnitEnum values
+"""
+
+# ── UnitEnum → LEMS dimension ────────────────────────────────────────
+
+_UNIT_TO_LEMS_DIM = {
+    # Time
+    "s": "time", "ms": "time", "us": "time",
+    # Rates / inverse time
+    "per_s": "per_time", "per_ms": "per_time",
+    "Hz": "per_time", "kHz": "per_time",
+    # Voltage
+    "V": "voltage", "mV": "voltage",
+    # Inverse voltage
+    "per_mV": "none",
+    # Voltage rates
+    "mV_per_ms": "none", "mV_per_s": "none",
+    # Current
+    "A": "current", "nA": "current", "pA": "current",
+    # Capacitance
+    "pF": "capacitance", "nF": "capacitance",
+    # Conductance
+    "nS": "conductance", "uS": "conductance",
+    # Charge (inverse)
+    "per_nC": "none", "per_pC": "none",
+    # Concentration
+    "mol_per_m3": "concentration", "mmol_per_m3": "concentration",
+    # Volume
+    "um3": "none",
+    # Length
+    "m": "none", "mm": "none", "cm": "none",
+    # Velocity
+    "m_per_s": "none", "mm_per_ms": "none",
+    # Gain / compound
+    "Hz_per_nA": "none",
+    # Conductivity / permeability
+    "S_per_m": "none", "H_per_m": "none",
+    # Angular rate
+    "rad_per_ms": "per_time",
+    # Dimensionless
+    "dimensionless": "none", "percent": "none", "arbitrary_unit": "none",
+}
+
+
+def unit_to_lems_dimension(unit):
+    """Return the LEMS dimension name for a UnitEnum value (or string).
+
+    Returns ``"none"`` for unknown or missing units.
+    """
+    if unit is None:
+        return "none"
+    key = unit.value if hasattr(unit, "value") else str(unit)
+    return _UNIT_TO_LEMS_DIM.get(key, "none")
+
+
+# ── UnitEnum → LEMS symbol (for Component values) ───────────────────
+
+_UNIT_TO_LEMS_SYMBOL = {
+    "s": "s", "ms": "ms", "us": "us",
+    "per_s": "per_s", "per_ms": "per_ms",
+    "Hz": "per_s", "kHz": "per_ms",
+    "V": "V", "mV": "mV",
+    "A": "A", "nA": "nA", "pA": "pA",
+    "pF": "", "nF": "",
+    "nS": "nS", "uS": "",
+    "dimensionless": "",
+}
+
+
+def unit_to_lems_symbol(unit):
+    """Return the LEMS unit symbol string for appending to numeric values.
+
+    Returns ``""`` for dimensionless or unmapped units.
+    """
+    if unit is None:
+        return ""
+    key = unit.value if hasattr(unit, "value") else str(unit)
+    return _UNIT_TO_LEMS_SYMBOL.get(key, "")
+
+
+# ── Time-dimension detection (for SEC inference) ─────────────────────
+
+_TIME_UNITS = {
+    "s", "ms", "us",
+    "per_s", "per_ms",
+    "Hz", "kHz",
+    "mV_per_ms", "mV_per_s",
+    "rad_per_ms",
+    "m_per_s", "mm_per_ms",
+    "Hz_per_nA",
+}
+
+
+def unit_has_time_dimension(unit):
+    """Return True if the unit carries a time component (T or T⁻¹).
+
+    This is the key signal for NeuroML LEMS export: if any parameter
+    in the RHS equation has a time dimension, the equation already
+    carries time normalisation and ``/ SEC`` is not needed.
+    """
+    if unit is None:
+        return False
+    key = unit.value if hasattr(unit, "value") else str(unit)
+    return key in _TIME_UNITS
+
+
+# ── Legacy string → UnitEnum normalisation ───────────────────────────
+
+_LEGACY_TO_ENUM = {
+    # Time
+    "s": "s", "sec": "s", "second": "s",
+    "ms": "ms", "millisecond": "ms",
+    "us": "us", "microsecond": "us",
+    # Rates
+    "s^-1": "per_s", "s**-1": "per_s", "per_s": "per_s", "per_second": "per_s",
+    "ms^-1": "per_ms", "ms**-1": "per_ms", "per_ms": "per_ms", "per_millisecond": "per_ms",
+    "Hz": "Hz", "hz": "Hz", "hertz": "Hz",
+    "kHz": "kHz", "khz": "kHz", "kilohertz": "kHz",
+    # Voltage
+    "V": "V", "volt": "V",
+    "mV": "mV", "mv": "mV", "millivolt": "mV",
+    "mV^-1": "per_mV", "mV**-1": "per_mV", "per_mV": "per_mV", "per_millivolt": "per_mV",
+    "mV*ms^-1": "mV_per_ms", "mV/ms": "mV_per_ms", "mV_per_ms": "mV_per_ms",
+    "millivolt_per_millisecond": "mV_per_ms",
+    "mV/s": "mV_per_s", "mV*s^-1": "mV_per_s", "mV_per_s": "mV_per_s",
+    "millivolt_per_second": "mV_per_s",
+    # Current
+    "A": "A", "ampere": "A",
+    "nA": "nA", "nanoampere": "nA",
+    "pA": "pA", "picoampere": "pA",
+    # Capacitance
+    "pF": "pF", "picofarad": "pF",
+    "nF": "nF", "nanofarad": "nF",
+    # Conductance
+    "nS": "nS", "nanosiemens": "nS",
+    "uS": "uS", "microsiemens": "uS",
+    # Charge (inverse)
+    "nC^-1": "per_nC", "(nC)^-1": "per_nC", "per_nC": "per_nC", "per_nanocoulomb": "per_nC",
+    "(pC)^-1": "per_pC", "pC^-1": "per_pC", "per_pC": "per_pC", "per_picocoulomb": "per_pC",
+    # Concentration
+    "mol.m**-3": "mol_per_m3", "mol/m**3": "mol_per_m3",
+    "mol/m^3": "mol_per_m3", "mol/m3": "mol_per_m3",
+    "mol_per_m3": "mol_per_m3", "mole_per_cubic_metre": "mol_per_m3",
+    "mMol/m**3": "mmol_per_m3", "mMol/m^3": "mmol_per_m3",
+    "mmol/m**3": "mmol_per_m3", "mmol/m3": "mmol_per_m3",
+    "mM": "mmol_per_m3", "mmol_per_m3": "mmol_per_m3",
+    "millimole_per_cubic_metre": "mmol_per_m3",
+    # Volume
+    "umeter**3": "um3", "um^3": "um3", "um**3": "um3", "um3": "um3",
+    "cubic_micrometre": "um3",
+    # Length
+    "m": "m", "metre": "m",
+    "mm": "mm", "millimetre": "mm",
+    "cm": "cm", "centimetre": "cm",
+    # Velocity
+    "m/s": "m_per_s", "m_per_s": "m_per_s",
+    "mm/ms": "mm_per_ms", "mm_per_ms": "mm_per_ms",
+    # Gain / compound
+    "Hz/nA": "Hz_per_nA", "Hz_per_nA": "Hz_per_nA",
+    "n/C": "per_nC",
+    # Conductivity / permeability
+    "S/m": "S_per_m", "S_per_m": "S_per_m",
+    "H/m": "H_per_m", "H_per_m": "H_per_m",
+    # Angular
+    "rad/ms": "rad_per_ms", "rad_per_ms": "rad_per_ms",
+    "radian_per_millisecond": "rad_per_ms",
+    # Dimensionless
+    "dimensionless": "dimensionless", "1": "dimensionless", "": "dimensionless",
+    "%": "percent", "percent": "percent",
+    "a.u.": "arbitrary_unit", "arbitrary_unit": "arbitrary_unit",
+    "r_pearson": "dimensionless",
+}
+
+
+def normalize_unit(raw):
+    """Convert a legacy free-text unit string to a UnitEnum value name.
+
+    Accepts both abbreviations and full names.
+    Returns ``None`` if the string cannot be mapped.
+
+    >>> normalize_unit("mV")
+    'mV'
+    >>> normalize_unit("millivolt")
+    'mV'
+    >>> normalize_unit("ms^-1")
+    'per_ms'
+    >>> normalize_unit(None)
+    """
+    if raw is None:
+        return None
+    raw = str(raw).strip()
+    if not raw:
+        return None
+    return _LEGACY_TO_ENUM.get(raw)
+
+
+# ── UnitEnum → display symbol ────────────────────────────────────────
+
+# For compound underscore forms, map to the conventional notation
+# Uses SymPy-parseable symbols (no unicode) so equations render in any context
+_DISPLAY_SYMBOLS = {
+    "per_s": "1/s", "per_ms": "1/ms",
+    "per_mV": "1/mV",
+    "mV_per_ms": "mV/ms", "mV_per_s": "mV/s",
+    "per_nC": "1/nC", "per_pC": "1/pC",
+    "mol_per_m3": "mol/m^3", "mmol_per_m3": "mmol/m^3",
+    "um3": "um^3",
+    "m_per_s": "m/s", "mm_per_ms": "mm/ms",
+    "Hz_per_nA": "Hz/nA",
+    "S_per_m": "S/m", "H_per_m": "H/m",
+    "rad_per_ms": "rad/ms",
+    "dimensionless": "", "percent": "%", "arbitrary_unit": "a.u.",
+}
+
+
+def unit_to_symbol(unit):
+    """Return the conventional display symbol for a UnitEnum value.
+
+    For simple abbreviations (ms, mV, nA), the enum value IS the symbol.
+    For compound forms (per_ms, mV_per_ms), returns conventional notation.
+
+    >>> unit_to_symbol("ms")
+    'ms'
+    >>> unit_to_symbol("per_ms")
+    '1/ms'
+    >>> unit_to_symbol(None)
+    ''
+    """
+    if unit is None:
+        return ""
+    key = unit.value if hasattr(unit, "value") else str(unit)
+    return _DISPLAY_SYMBOLS.get(key, key)

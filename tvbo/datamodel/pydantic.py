@@ -125,10 +125,14 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
      'id': 'https://w3id.org/tvbo',
      'imports': ['linkml:types', 'SANDS', 'tvb_dbs'],
      'name': 'tvb-datamodel',
-     'prefixes': {'linkml': {'prefix_prefix': 'linkml',
+     'prefixes': {'UO': {'prefix_prefix': 'UO',
+                         'prefix_reference': 'http://purl.obolibrary.org/obo/UO_'},
+                  'linkml': {'prefix_prefix': 'linkml',
                              'prefix_reference': 'https://w3id.org/linkml/'},
                   'prov': {'prefix_prefix': 'prov',
                            'prefix_reference': 'http://www.w3.org/ns/prov#'},
+                  'qudt': {'prefix_prefix': 'qudt',
+                           'prefix_reference': 'http://qudt.org/vocab/unit/'},
                   'rdfs': {'prefix_prefix': 'rdfs',
                            'prefix_reference': 'http://www.w3.org/2000/01/rdf-schema#'},
                   'tvbo': {'prefix_prefix': 'tvbo',
@@ -150,6 +154,218 @@ class Hemisphere(str, Enum):
     left = "left"
     right = "right"
     both = "both"
+
+
+class UnitEnum(str, Enum):
+    """
+    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.
+    """
+    s = "s"
+    """
+    Second
+    """
+    ms = "ms"
+    """
+    Millisecond
+    """
+    us = "us"
+    """
+    Microsecond
+    """
+    per_s = "per_s"
+    """
+    Per second (s⁻¹)
+    """
+    per_ms = "per_ms"
+    """
+    Per millisecond (ms⁻¹)
+    """
+    Hz = "Hz"
+    """
+    Hertz (s⁻¹)
+    """
+    kHz = "kHz"
+    """
+    Kilohertz
+    """
+    V = "V"
+    """
+    Volt
+    """
+    mV = "mV"
+    """
+    Millivolt
+    """
+    per_mV = "per_mV"
+    """
+    Reciprocal millivolt (mV⁻¹)
+    """
+    mV_per_ms = "mV_per_ms"
+    """
+    Millivolt per millisecond
+    """
+    mV_per_s = "mV_per_s"
+    """
+    Millivolt per second
+    """
+    A = "A"
+    """
+    Ampere
+    """
+    nA = "nA"
+    """
+    Nanoampere
+    """
+    pA = "pA"
+    """
+    Picoampere
+    """
+    pF = "pF"
+    """
+    Picofarad
+    """
+    nF = "nF"
+    """
+    Nanofarad
+    """
+    nS = "nS"
+    """
+    Nanosiemens
+    """
+    uS = "uS"
+    """
+    Microsiemens
+    """
+    per_nC = "per_nC"
+    """
+    Reciprocal nanocoulomb (nC⁻¹)
+    """
+    per_pC = "per_pC"
+    """
+    Reciprocal picocoulomb (pC⁻¹)
+    """
+    mol_per_m3 = "mol_per_m3"
+    """
+    Mole per cubic metre (mol/m³)
+    """
+    mmol_per_m3 = "mmol_per_m3"
+    """
+    Millimole per cubic metre (mmol/m³ ≈ mM)
+    """
+    um3 = "um3"
+    """
+    Cubic micrometre (µm³)
+    """
+    m = "m"
+    """
+    Metre
+    """
+    mm = "mm"
+    """
+    Millimetre
+    """
+    cm = "cm"
+    """
+    Centimetre
+    """
+    m_per_s = "m_per_s"
+    """
+    Metre per second
+    """
+    mm_per_ms = "mm_per_ms"
+    """
+    Millimetre per millisecond (= m/s)
+    """
+    Hz_per_nA = "Hz_per_nA"
+    """
+    Hertz per nanoampere (neural gain)
+    """
+    S_per_m = "S_per_m"
+    """
+    Siemens per metre (conductivity)
+    """
+    H_per_m = "H_per_m"
+    """
+    Henry per metre (permeability)
+    """
+    rad_per_ms = "rad_per_ms"
+    """
+    Radian per millisecond
+    """
+    dimensionless = "dimensionless"
+    """
+    Dimensionless (unitless)
+    """
+    percent = "percent"
+    """
+    Percent (%)
+    """
+    arbitrary_unit = "arbitrary_unit"
+    """
+    Arbitrary units (a.u.)
+    """
+
+
+class PhysicalDimension(str, Enum):
+    """
+    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
+    """
+    none = "none"
+    """
+    Dimensionless
+    """
+    time = "time"
+    """
+    Time [T]
+    """
+    per_time = "per_time"
+    """
+    Inverse time [T⁻¹]
+    """
+    voltage = "voltage"
+    """
+    Voltage [M L² T⁻³ I⁻¹]
+    """
+    current = "current"
+    """
+    Electric current [I]
+    """
+    capacitance = "capacitance"
+    """
+    Capacitance [M⁻¹ L⁻² T⁴ I²]
+    """
+    conductance = "conductance"
+    """
+    Conductance [M⁻¹ L⁻² T³ I²]
+    """
+    resistance = "resistance"
+    """
+    Resistance [M L² T⁻³ I⁻²]
+    """
+    charge = "charge"
+    """
+    Electric charge [T I]
+    """
+    concentration = "concentration"
+    """
+    Concentration [L⁻³ N]
+    """
+    substance = "substance"
+    """
+    Amount of substance [N]
+    """
+    length = "length"
+    """
+    Length [L]
+    """
+    volume = "volume"
+    """
+    Volume [L³]
+    """
+    temperature = "temperature"
+    """
+    Temperature [K]
+    """
 
 
 class ImagingModality(str, Enum):
@@ -609,7 +825,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwarePackage']} })
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity']} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',
@@ -2217,8 +2433,8 @@ class Network(ConfiguredBaseModel):
     provenance: Optional[Provenance] = Field(default=None, description="""W3C PROV-O aligned provenance""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     parent_network: Optional[str] = Field(default=None, description="""Path/URI to parent (coarser) Network. When set, this network is a refinement where each node maps to exactly one parent node via node_mapping.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     node_mapping: Optional[str] = Field(default=None, description="""HDF5 dataset path for node-to-parent mapping. Int32 array of shape (N,) where entry i is the parent node ID. Required when parent_network is set.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    distance_unit: Optional[str] = Field(default="mm", description="""Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(mm)'} })
-    time_unit: Optional[str] = Field(default="ms", description="""Default time unit for the network (e.g., 'ms', 's')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(ms)'} })
+    distance_unit: Optional[UnitEnum] = Field(default=UnitEnum.mm, description="""Unit for distances/lengths in the network""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(mm)'} })
+    time_unit: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Default time unit for the network""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network'], 'ifabsent': 'string(ms)'} })
     edge_matrix_files: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     graph_generator: Optional[GraphGenerator] = Field(default=None, description="""Graph generator specification.  When set, overrides explicit edges/nodes for graph construction.  The type field is a free string; StandardGraphType lists well-known types that get automatic code generation across backends.
 """, json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
@@ -2920,7 +3136,7 @@ class Observation(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
+    time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
     period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     downsample_period: Optional[float] = Field(default=None, description="""Intermediate downsampling period (ms). For BOLD: typically matches dt.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -3104,7 +3320,7 @@ class DerivedObservation(Observation):
                        'Coupling',
                        'PDE']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
+    time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics']} })
     period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     downsample_period: Optional[float] = Field(default=None, description="""Intermediate downsampling period (ms). For BOLD: typically matches dt.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -3449,7 +3665,7 @@ class StateVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',
@@ -3708,7 +3924,7 @@ class Parameter(ConfiguredBaseModel):
                        'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',
@@ -4746,7 +4962,7 @@ class DerivedParameter(Parameter):
                        'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',
@@ -4969,7 +5185,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',
@@ -6448,8 +6664,8 @@ class Integrator(Solver):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    time_scale: Optional[str] = Field(default="ms", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',
@@ -8185,7 +8401,7 @@ class FieldStateVariable(StateVariable):
                        'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
-    unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
                        'Parameter',

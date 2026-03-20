@@ -143,7 +143,7 @@ parameters:
       hi: 5.5
       step: 0.0
     description: ''
-    unit: mol.m**-3
+    unit: mol_per_m3
   Cl_i0:
     name: Cl_i0
     definition: initial concentration of intracellular Cl
@@ -153,7 +153,7 @@ parameters:
       hi: 4.8
       step: 0.0
     description: initial concentration of intracellular Cl
-    unit: mMol/m**3
+    unit: mmol_per_m3
   Cl_o0:
     name: Cl_o0
     definition: initial concentration of extracellular Cl
@@ -163,7 +163,7 @@ parameters:
       hi: 112.0
       step: 0.0
     description: initial concentration of extracellular Cl
-    unit: mMol/m**3
+    unit: mmol_per_m3
   Cmna:
     name: Cmna
     value: -24.0
@@ -181,7 +181,7 @@ parameters:
       hi: 21.0
       step: 0.0
     description: ''
-    unit: mol.m**-3
+    unit: mol_per_m3
   Cnk:
     name: Cnk
     value: -19.0
@@ -207,7 +207,7 @@ parameters:
       hi: 1.0
       step: 0.0
     description: ''
-    unit: mol.m**-3
+    unit: mol_per_m3
   DCmna:
     name: DCmna
     value: 12.0
@@ -225,7 +225,7 @@ parameters:
       hi: 21.0
       step: 0.0
     description: ''
-    unit: mol.m**-3
+    unit: mol_per_m3
   DCnk:
     name: DCnk
     value: 18.0
@@ -244,7 +244,7 @@ parameters:
       hi: 130.0
       step: 0.0
     description: initial concentration of intracellular K
-    unit: mMol/m**3
+    unit: mmol_per_m3
   K_o0:
     name: K_o0
     definition: initial concentration of extracellular K
@@ -254,7 +254,7 @@ parameters:
       hi: 4.8
       step: 0.0
     description: initial concentration of extracellular K
-    unit: mMol/m**3
+    unit: mmol_per_m3
   Na_i0:
     name: Na_i0
     definition: initial concentration of intracellular Na
@@ -264,7 +264,7 @@ parameters:
       hi: 16.0
       step: 0.0
     description: initial concentration of intracellular Na
-    unit: mMol/m**3
+    unit: mmol_per_m3
   Na_o0:
     name: Na_o0
     definition: initial concentration of extracellular Na
@@ -274,7 +274,7 @@ parameters:
       hi: 138.0
       step: 0.0
     description: initial concentration of extracellular Na
-    unit: mMol/m**3
+    unit: mmol_per_m3
   g_Cl:
     name: g_Cl
     definition: chloride conductance
@@ -344,7 +344,7 @@ parameters:
       hi: 2160.0
       step: 0.0
     description: intracellular volume
-    unit: umeter**3
+    unit: um3
   w_o:
     name: w_o
     definition: extracellular volume
@@ -354,7 +354,7 @@ parameters:
       hi: 720.0
       step: 0.0
     description: extracellular volume
-    unit: umeter**3
+    unit: um3
 description: "It describes the mean-field activity of a population of Hodgkin-Huxley-type\
   \ neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and\
   \ extra-cellular potassium ion concentrations to the mean membrane potential, and\

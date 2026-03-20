@@ -82,7 +82,7 @@ parameters:
       step: 1.0
     description: Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco
       et al
-    unit: nC^-1
+    unit: per_nC
   a_i:
     name: a_i
     definition: Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the
@@ -94,7 +94,7 @@ parameters:
       step: 1.0
     description: Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the
       inhibitory population (Deco et al
-    unit: nC^-1
+    unit: per_nC
   b_e:
     name: b_e
     definition: Shift parameter of the sigmoid function HE_RWW_EI of the excitatory

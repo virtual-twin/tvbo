@@ -1,0 +1,90 @@
+---
+title: "NML2: Instance-Based Network"
+description: "Network with explicit instance placement and coordinates"
+---
+
+## NML2_InstanceBasedNetwork.nml
+
+Demonstrates `<instance>` elements within a population, giving each cell
+explicit 3D coordinates for spatial positioning:
+
+```xml
+<population id="pop0" component="iaf0" size="3" type="populationList">
+  <instance id="0"> <location x="0" y="0" z="0"/> </instance>
+  <instance id="1"> <location x="100" y="0" z="0"/> </instance>
+  <instance id="2"> <location x="0" y="100" z="0"/> </instance>
+</population>
+```
+
+```{python}
+from pathlib import Path
+
+nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_InstanceBasedNetwork.nml"
+text = nml_file.read_text()
+
+# Show network structure
+in_network = False
+for line in text.split('\n'):
+    if '<network' in line:
+        in_network = True
+    if in_network:
+        print(line.rstrip()[:100])
+    if '</network' in line:
+        break
+```
+
+## TVBO Representation: IaF Cell
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NML2 InstanceBasedNetwork: IaF Cell"
+dynamics:
+  name: IntegrateAndFire
+  parameters:
+    leakReversal: { value: -50.0 }
+    tau:          { value: 30.0 }
+    thresh:       { value: -55.0 }
+    reset:        { value: -70.0 }
+  state_variables:
+    v:
+      equation: { rhs: "(leakReversal - v) / tau" }
+      initial_value: -50.0
+      variable_of_interest: true
+  events:
+    spike:
+      condition: { rhs: "v > thresh" }
+      affect:    { rhs: "v = reset" }
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 300.0
+  time_scale: ms
+""")
+xml = exp.render("lems")
+print(xml[:800])
+```
+
+## Run TVBO
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+result = exp.run("neuroml")
+da = result.integration.data
+t = da.coords['time'].values
+v = da.sel(node='0').values[:, 0]
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(t, v)
+ax.set_xlabel("Time (ms)")
+ax.set_ylabel("Voltage (mV)")
+ax.set_title("NML2 InstanceBasedNetwork: IaF Cell via TVBO")
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```

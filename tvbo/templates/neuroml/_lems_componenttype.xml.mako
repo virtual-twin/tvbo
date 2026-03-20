@@ -14,9 +14,7 @@ All template variables are injected by the calling template's render context
        ComponentType: ${dyn_id}
        Generated from TVBO Dynamics: ${dyn.name or '(unnamed)'}
        ════════════════════════════════════════════════════════════════ -->
-  <!-- Extending baseCell (from Cells.xml via Networks.xml) makes this type
-       valid as a population component. baseCell requires no extra slots. -->
-  <ComponentType name="${dyn_id}" extends="baseCell">
+  <ComponentType name="${dyn_id}">
 
     <!-- Parameters -->
 % for pname, p in params.items():
@@ -34,9 +32,16 @@ All template variables are injected by the calling template's render context
     <Parameter name="${sv_name}_0" dimension="${lems_dim(getattr(svs[sv_name], 'unit', None))}"/>
 % endfor
 
-    <!-- Time constant for derivatives: normalises 1/${time_scale} → dimensionless rate.
-         Value matches integration.time_scale so equations stay numerically correct. -->
+    <!-- Time constant for derivatives.
+         When the model is fully dimensionless (no time-bearing parameter units),
+         dividing by SEC converts the expression from 'none' to 'per_time' as
+         LEMS requires.  When parameters already carry physical time dimensions
+         (e.g., tau_e in ms, or rate constant a in ms⁻¹), the equation naturally
+         has the correct dimension and / SEC is omitted.
+         needs_sec=${needs_sec}  time_scale=${time_scale} -->
+% if needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
+% endif
 
     <!-- Exposures (one per state variable) -->
 % for sv_name, sv in svs.items():
@@ -82,7 +87,11 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs:
+% if needs_sec:
       <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
+% else:
+      <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
+% endif
 % endif
 % endfor
 

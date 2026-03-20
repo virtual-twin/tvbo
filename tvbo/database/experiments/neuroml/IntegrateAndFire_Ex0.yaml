@@ -1,17 +1,21 @@
 # NeuroML2 LEMS Example 0: Integrate-and-Fire (IaF) Cell
 # =======================================================
 # Reproduces LEMS_NML2_Ex0_IaF.xml from the NeuroML2 canonical examples.
-# The NeuroML built-in `iafTauCell` uses:
+# Matches the iafTauCell ComponentType from Cells.xml:
 #   dv/dt = (leakReversal - v) / tau
-#   OnCondition: v > thresh → v = reset, spike
+#   OnStart: v = leakReversal
+#   OnCondition: v .gt. thresh → v = reset, spike
 #
-# This file defines the simplest (tau-based) variant.
+# Note: iafTauCell has NO external input. The cell fires because
+# leakReversal (-50mV) > thresh (-55mV), so it spikes immediately
+# on the first timestep, resets to -70mV, then integrates back up.
 
 id: 903
 label: "NeuroML Ex0: Integrate-and-Fire (tau variant)"
 description: >
   Reproduces NeuroML2 LEMS canonical example 0, iafTauCell variant.
   Single leaky integrate-and-fire cell with spike/reset event.
+  No external input — fires rhythmically because leakReversal > thresh.
   Simulated for 300ms at 0.005ms step.
 
 dynamics:
@@ -21,34 +25,26 @@ dynamics:
   parameters:
     leakReversal:
       value: -50.0
-      unit: mV
       description: Leak reversal potential
     tau:
       value: 30.0
-      unit: ms
       description: Membrane time constant
     thresh:
       value: -55.0
-      unit: mV
       description: Spike threshold
     reset:
       value: -70.0
-      unit: mV
       description: Reset potential after spike
-    I_ext:
-      value: 30.0
-      description: External input current (dimensionless)
   state_variables:
     v:
       equation:
-        rhs: "(leakReversal - v + I_ext) / tau"
-      unit: mV
-      initial_value: -70.0
+        rhs: "(leakReversal - v) / tau"
+      initial_value: -50.0
       variable_of_interest: true
   events:
     spike:
       condition:
-        rhs: "v >= thresh"
+        rhs: "v > thresh"
       affect:
         rhs: "v = reset"
 

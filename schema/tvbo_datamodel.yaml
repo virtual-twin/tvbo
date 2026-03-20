@@ -8,6 +8,8 @@ prefixes:
     linkml: https://w3id.org/linkml/
     rdfs: http://www.w3.org/2000/01/rdf-schema#
     prov: http://www.w3.org/ns/prov#
+    qudt: http://qudt.org/vocab/unit/
+    UO: http://purl.obolibrary.org/obo/UO_
 imports:
     - linkml:types
     - SANDS
@@ -21,8 +23,11 @@ slots:
         range: string
         key: true
     time_scale:
-        range: string
+        range: UnitEnum
         ifabsent: "ms"
+        description: >-
+            Time unit for the integration / simulation. Determines the
+            physical time meaning of one model time-step.
     environment:
         range: SoftwareEnvironment
     requirements:
@@ -69,7 +74,11 @@ slots:
         range: Equation
         inlined: true
     unit:
-        range: string
+        range: UnitEnum
+        description: >-
+            Physical unit of measurement. Values are drawn from the QUDT
+            ontology (http://qudt.org/vocab/unit/) with UO cross-references
+            where available.
     derived_from:
     source:
         range: string
@@ -81,6 +90,192 @@ slots:
             (HDF5 or Zarr) at this path. The value slot is omitted.
 
 enums:
+    UnitEnum:
+        description: >-
+            Physical units of measurement for model parameters, state variables,
+            and integration settings. Uses conventional abbreviations as values,
+            mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO
+            cross-references where available.
+        permissible_values:
+            # ── Time ──
+            s:
+                meaning: qudt:SEC
+                exact_mappings:
+                    - UO:0000010
+                description: "Second"
+            ms:
+                meaning: qudt:MilliSEC
+                exact_mappings:
+                    - UO:0000028
+                description: "Millisecond"
+            us:
+                meaning: qudt:MicroSEC
+                exact_mappings:
+                    - UO:0000029
+                description: "Microsecond"
+            # ── Rates / inverse time ──
+            per_s:
+                meaning: qudt:PER-SEC
+                description: "Per second (s⁻¹)"
+            per_ms:
+                meaning: qudt:PER-MilliSEC
+                description: "Per millisecond (ms⁻¹)"
+            Hz:
+                meaning: qudt:HZ
+                exact_mappings:
+                    - UO:0000106
+                description: "Hertz (s⁻¹)"
+            kHz:
+                meaning: qudt:KiloHZ
+                description: "Kilohertz"
+            # ── Voltage ──
+            V:
+                meaning: qudt:V
+                exact_mappings:
+                    - UO:0000218
+                description: "Volt"
+            mV:
+                meaning: qudt:MilliV
+                exact_mappings:
+                    - UO:0000247
+                description: "Millivolt"
+            per_mV:
+                meaning: qudt:PER-MilliV
+                description: "Reciprocal millivolt (mV⁻¹)"
+            mV_per_ms:
+                meaning: qudt:MilliV-PER-MilliSEC
+                description: "Millivolt per millisecond"
+            mV_per_s:
+                meaning: qudt:MilliV-PER-SEC
+                description: "Millivolt per second"
+            # ── Current ──
+            A:
+                meaning: qudt:A
+                exact_mappings:
+                    - UO:0000011
+                description: "Ampere"
+            nA:
+                meaning: qudt:NanoA
+                description: "Nanoampere"
+            pA:
+                meaning: qudt:PicoA
+                exact_mappings:
+                    - UO:0010054
+                description: "Picoampere"
+            # ── Capacitance ──
+            pF:
+                meaning: qudt:PicoFARAD
+                description: "Picofarad"
+            nF:
+                meaning: qudt:NanoFARAD
+                description: "Nanofarad"
+            # ── Conductance ──
+            nS:
+                meaning: qudt:NanoS
+                description: "Nanosiemens"
+            uS:
+                meaning: qudt:MicroS
+                description: "Microsiemens"
+            # ── Charge (inverse) ──
+            per_nC:
+                meaning: qudt:PER-NanoC
+                description: "Reciprocal nanocoulomb (nC⁻¹)"
+            per_pC:
+                meaning: qudt:PER-PicoC
+                description: "Reciprocal picocoulomb (pC⁻¹)"
+            # ── Concentration ──
+            mol_per_m3:
+                meaning: qudt:MOL-PER-M3
+                description: "Mole per cubic metre (mol/m³)"
+            mmol_per_m3:
+                meaning: qudt:MilliMOL-PER-M3
+                description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
+            # ── Volume ──
+            um3:
+                meaning: qudt:MicroM3
+                description: "Cubic micrometre (µm³)"
+            # ── Length / distance ──
+            m:
+                meaning: qudt:M
+                exact_mappings:
+                    - UO:0000008
+                description: "Metre"
+            mm:
+                meaning: qudt:MilliM
+                exact_mappings:
+                    - UO:0000016
+                description: "Millimetre"
+            cm:
+                meaning: qudt:CentiM
+                exact_mappings:
+                    - UO:0000015
+                description: "Centimetre"
+            # ── Velocity ──
+            m_per_s:
+                meaning: qudt:M-PER-SEC
+                description: "Metre per second"
+            mm_per_ms:
+                meaning: qudt:MilliM-PER-MilliSEC
+                description: "Millimetre per millisecond (= m/s)"
+            # ── Gain / compound ──
+            Hz_per_nA:
+                description: "Hertz per nanoampere (neural gain)"
+            # ── Conductivity / permeability ──
+            S_per_m:
+                meaning: qudt:S-PER-M
+                description: "Siemens per metre (conductivity)"
+            H_per_m:
+                meaning: qudt:H-PER-M
+                description: "Henry per metre (permeability)"
+            # ── Angular rate ──
+            rad_per_ms:
+                description: "Radian per millisecond"
+            # ── Dimensionless ──
+            dimensionless:
+                meaning: qudt:UNITLESS
+                exact_mappings:
+                    - UO:0000186
+                description: "Dimensionless (unitless)"
+            percent:
+                meaning: qudt:PERCENT
+                description: "Percent (%)"
+            arbitrary_unit:
+                description: "Arbitrary units (a.u.)"
+
+    PhysicalDimension:
+        description: >-
+            Physical dimension categories for LEMS and dimensional analysis.
+            Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
+        permissible_values:
+            none:
+                description: "Dimensionless"
+            time:
+                description: "Time [T]"
+            per_time:
+                description: "Inverse time [T⁻¹]"
+            voltage:
+                description: "Voltage [M L² T⁻³ I⁻¹]"
+            current:
+                description: "Electric current [I]"
+            capacitance:
+                description: "Capacitance [M⁻¹ L⁻² T⁴ I²]"
+            conductance:
+                description: "Conductance [M⁻¹ L⁻² T³ I²]"
+            resistance:
+                description: "Resistance [M L² T⁻³ I⁻²]"
+            charge:
+                description: "Electric charge [T I]"
+            concentration:
+                description: "Concentration [L⁻³ N]"
+            substance:
+                description: "Amount of substance [N]"
+            length:
+                description: "Length [L]"
+            volume:
+                description: "Volume [L³]"
+            temperature:
+                description: "Temperature [K]"
+
     ImagingModality:
         permissible_values:
             BOLD:
@@ -693,12 +888,12 @@ classes:
                     parent node ID. Required when parent_network is set.
 
             distance_unit:
-                range: string
-                description: "Unit for distances/lengths in the network (e.g., 'mm', 'm', 'cm')"
+                range: UnitEnum
+                description: "Unit for distances/lengths in the network"
                 ifabsent: string(mm)
             time_unit:
-                range: string
-                description: "Default time unit for the network (e.g., 'ms', 's')"
+                range: UnitEnum
+                description: "Default time unit for the network"
                 ifabsent: string(ms)
 
             edge_matrix_files:
