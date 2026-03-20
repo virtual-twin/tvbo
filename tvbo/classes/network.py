@@ -335,7 +335,7 @@ class Network(tvbo_datamodel.Network):
                 # Ensure conduction_speed for early return path
                 if "conduction_speed" not in (self.parameters or {}):
                     self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                        name="conduction_speed", label="v", value=3.0, unit="mm/ms"
+                        name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
                     )
                 return  # Skip rest of __init__ — already called super()
 
@@ -375,7 +375,7 @@ class Network(tvbo_datamodel.Network):
         # Ensure conduction_speed exists in parameters
         if "conduction_speed" not in (self.parameters or {}):
             self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                name="conduction_speed", label="v", value=3.0, unit="mm/ms"
+                name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
             )
 
     # -- Backward-compat properties: conduction_speed, global_coupling_strength --
@@ -2055,10 +2055,11 @@ class Network(tvbo_datamodel.Network):
         # Use sympy's full unit namespace - no hardcoded mapping needed
         unit_ns = dict(vars(u))
 
-        # Get units from network attributes (with defaults)
-        distance_unit_str = getattr(self, "distance_unit", None) or "mm"
-        time_unit_str = output_unit or getattr(self, "time_unit", None) or "ms"
-        speed_unit_str = cs.unit or f"{distance_unit_str}/{time_unit_str}"
+        # Get units as SymPy-parseable symbols (e.g. "mm/ms" not "mm_per_ms")
+        from tvbo.utils.units import unit_to_symbol
+        distance_unit_str = unit_to_symbol(getattr(self, "distance_unit", None) or "mm")
+        time_unit_str = unit_to_symbol(output_unit or getattr(self, "time_unit", None) or "ms")
+        speed_unit_str = unit_to_symbol(cs.unit) if cs.unit else f"{distance_unit_str}/{time_unit_str}"
 
         length_unit = parse_expr(distance_unit_str, local_dict=unit_ns)
         speed_unit = parse_expr(speed_unit_str, local_dict=unit_ns)

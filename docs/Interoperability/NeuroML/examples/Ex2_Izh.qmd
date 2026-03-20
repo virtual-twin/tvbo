@@ -1,0 +1,184 @@
+---
+title: "Ex2: Izhikevich"
+description: "Izhikevich 2003 spiking neuron — tonic, bursting, mixed, and class-1 modes"
+---
+
+## Model: Izhikevich 2003
+
+The Izhikevich (2003) model is a computationally efficient spiking neuron:
+
+$$\frac{dv}{dt} = 0.04\,v^2 + 5\,v + 140 - U + I_{\text{ext}}$$
+$$\frac{dU}{dt} = a\,(b\,v - U)$$
+
+Spike event: if $v > \text{thresh}$, then $v \leftarrow c$, $U \leftarrow U + d$.
+
+Different parameter sets produce **tonic** (a=0.02, b=0.2, c=-65, d=6),
+**bursting** (c=-50, d=2), **mixed** (c=-55, d=4), and **class-1** (b=-0.1, c=-55, d=6) modes.
+
+---
+
+## 1. Tonic Spiking
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp_tonic = SimulationExperiment.from_string("""
+label: "NeuroML Ex2: Izhikevich (tonic)"
+dynamics:
+  name: IzhikevichCell
+  parameters:
+    a:      { value: 0.02 }
+    b:      { value: 0.2 }
+    c:      { value: -65.0 }
+    d:      { value: 6.0 }
+    thresh: { value: 30.0 }
+    I_ext:  { value: 14.0 }
+  state_variables:
+    v:
+      equation: { rhs: "0.04*v**2 + 5*v + 140 - U + I_ext" }
+      initial_value: -70.0
+      variable_of_interest: true
+    U:
+      equation: { rhs: "a*(b*v - U)" }
+      initial_value: -14.0
+  events:
+    spike:
+      condition: { rhs: "v > thresh" }
+      affect:    { rhs: "v = c; U = U + d" }
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 200.0
+  time_scale: ms
+""")
+print(f"Model: {exp_tonic.dynamics.name}")
+print(f"Events: {list(exp_tonic.dynamics.events.keys())}")
+```
+
+## 2. Bursting
+
+```{python}
+exp_burst = SimulationExperiment.from_string("""
+label: "NeuroML Ex2: Izhikevich (bursting)"
+dynamics:
+  name: IzhikevichBurst
+  parameters:
+    a:      { value: 0.02 }
+    b:      { value: 0.2 }
+    c:      { value: -50.0 }
+    d:      { value: 2.0 }
+    thresh: { value: 30.0 }
+    I_ext:  { value: 15.0 }
+  state_variables:
+    v:
+      equation: { rhs: "0.04*v**2 + 5*v + 140 - U + I_ext" }
+      initial_value: -70.0
+      variable_of_interest: true
+    U:
+      equation: { rhs: "a*(b*v - U)" }
+      initial_value: -14.0
+  events:
+    spike:
+      condition: { rhs: "v > thresh" }
+      affect:    { rhs: "v = c; U = U + d" }
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 200.0
+  time_scale: ms
+""")
+```
+
+## 3. Render LEMS XML (tonic variant)
+
+```{python}
+xml = exp_tonic.render("lems")
+print(xml[:1500])
+```
+
+## 4. Run Reference (NeuroML2)
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex2_Izh.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 5. Run TVBO Versions
+
+```{python}
+import numpy as np
+
+def extract_array(exp):
+    da = exp.run("neuroml").integration.data
+    return np.column_stack([da.coords['time'].values, da.sel(node='0').values])
+
+tvbo_tonic = extract_array(exp_tonic)
+tvbo_burst = extract_array(exp_burst)
+print(f"Tonic: shape={tvbo_tonic.shape}")
+print(f"Burst: shape={tvbo_burst.shape}")
+```
+
+## 6. Numerical Comparison
+
+The NeuroML example outputs multiple cells (izBurst, izTonic, izMixed, izClass1).
+We compare the tonic variant:
+
+```{python}
+from _nml_helpers import compare_traces
+import numpy as np
+
+ref_arr = list(ref_outputs.values())[0]
+# NeuroML output: time, izBurst/v, izTonic/v, izMixed/v, izClass1/v + U columns
+# We need to identify which columns are which from the file structure
+print(f"Reference columns: {ref_arr.shape[1]}")
+
+# The tonic cell is typically column 2 (izTonic/v)
+# Compare tonic v
+ref_tonic = ref_arr[:, [0, 2]]  # time + izTonic/v
+compare_traces(
+    ref_tonic, tvbo_tonic,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+)
+```
+
+## 7. Plot
+
+```{python}
+from _nml_helpers import plot_comparison
+
+plot_comparison(
+    ref_tonic, tvbo_tonic,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+    title="Ex2: Izhikevich (tonic spiking) — NeuroML vs TVBO",
+    time_scale=1.0, time_unit="s",
+)
+```
+
+### All Four Variants from NeuroML
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
+labels = ['Burst', 'Tonic', 'Mixed', 'Class 1']
+t_ref = ref_arr[:, 0]
+for i in range(4):
+    axes[i].plot(t_ref, ref_arr[:, i+1], label=f'NeuroML {labels[i]}')
+    axes[i].set_ylabel('v')
+    axes[i].set_title(labels[i])
+    axes[i].legend(loc='upper right', fontsize=8)
+    axes[i].grid(True, alpha=0.3)
+axes[-1].set_xlabel("Time (s)")
+fig.suptitle("Ex2: All Izhikevich Variants (NeuroML reference)", fontsize=13)
+fig.tight_layout()
+plt.show()
+```

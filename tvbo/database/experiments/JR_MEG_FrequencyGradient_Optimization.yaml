@@ -32,12 +32,12 @@ dynamics:
             value: 0.065
             description: "Reciprocal of membrane time constant (excitatory)"
             domain: { lo: 0.001, hi: 0.2 }
-            unit: ms^-1
+            unit: per_ms
         b:
             value: 0.065
             description: "Reciprocal of membrane time constant (inhibitory)"
             domain: { lo: 0.001, hi: 0.2 }
-            unit: ms^-1
+            unit: per_ms
         v0:
             value: 5.52
             description: "Firing threshold [mV]"
@@ -45,11 +45,11 @@ dynamics:
         nu_max:
             value: 0.0025
             description: "Maximum firing rate"
-            unit: ms^-1
+            unit: per_ms
         r:
             value: 0.56
             description: "Steepness of sigmoid"
-            unit: mV^-1
+            unit: per_mV
         J:
             value: 135.0
             description: "Average number of synapses"
@@ -130,7 +130,7 @@ network:
         conduction_speed:
             name: conduction_speed
             value: 3.0
-            unit: mm/ms
+            unit: mm_per_ms
     transforms:
         - name: weight
           equation:

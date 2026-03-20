@@ -1,0 +1,192 @@
+---
+title: "Ex1: Hodgkin-Huxley"
+description: "Classic Hodgkin-Huxley conductance-based cell with Na, K, and leak channels"
+---
+
+## Model: Hodgkin-Huxley Point Cell
+
+The classic 4-variable conductance-based model:
+
+$$C\frac{dv}{dt} = -g_{Na}\,m^3\,h\,(v - E_{Na}) - g_K\,n^4\,(v - E_K) - g_L\,(v - E_L) + I_{\text{ext}}$$
+
+With gating variable kinetics:
+$$\frac{dx}{dt} = \alpha_x(v)(1-x) - \beta_x(v)\,x \quad \text{for } x \in \{m, h, n\}$$
+
+The NeuroML2 example uses a `pointCellCondBased` with separate ion channel
+populations.  We flatten this into a single TVBO `Dynamics` with derived
+variables for the rate functions.
+
+---
+
+## 1. Define in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+# HH parameters matching NeuroML2 Ex1 (hhpointcell)
+# g_Na = 120000 * 10pS = 1200 nS, E_Na = 50 mV
+# g_K  = 36000 * 10pS  = 360 nS,  E_K  = -77 mV
+# g_L  = 300 * 10pS    = 3 nS,    E_L  = -54.3 mV
+# C    = 10 pF
+# All expressed in nS, mV, pF, ms
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex1: Hodgkin-Huxley"
+dynamics:
+  name: HodgkinHuxley
+  description: >
+    Hodgkin-Huxley model matching NeuroML2 Ex1.
+    Units: v in mV, gating variables dimensionless, time in ms.
+    Conductances in nS, capacitance in pF, currents in pA.
+  parameters:
+    C:     { value: 10.0,    description: "Membrane capacitance (pF)" }
+    g_Na:  { value: 1200.0,  description: "Max Na conductance (nS)" }
+    g_K:   { value: 360.0,   description: "Max K conductance (nS)" }
+    g_L:   { value: 3.0,     description: "Leak conductance (nS)" }
+    E_Na:  { value: 50.0,    description: "Na reversal potential (mV)" }
+    E_K:   { value: -77.0,   description: "K reversal potential (mV)" }
+    E_L:   { value: -54.3,   description: "Leak reversal potential (mV)" }
+    I_ext: { value: 0.08,    description: "External current (nA = 80 pA)" }
+  derived_variables:
+    alpha_m:
+      equation:
+        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
+    beta_m:
+      equation:
+        rhs: "4.0*exp(-(v + 65.0)/18.0)"
+    alpha_h:
+      equation:
+        rhs: "0.07*exp(-(v + 65.0)/20.0)"
+    beta_h:
+      equation:
+        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
+    alpha_n:
+      equation:
+        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
+    beta_n:
+      equation:
+        rhs: "0.125*exp(-(v + 65.0)/80.0)"
+  state_variables:
+    v:
+      equation:
+        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
+      initial_value: -65.0
+      variable_of_interest: true
+    m:
+      equation:
+        rhs: "alpha_m*(1 - m) - beta_m*m"
+      initial_value: 0.05
+    h:
+      equation:
+        rhs: "alpha_h*(1 - h) - beta_h*h"
+      initial_value: 0.6
+    n:
+      equation:
+        rhs: "alpha_n*(1 - n) - beta_n*n"
+      initial_value: 0.32
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 150.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+print(f"SVs: {list(exp.dynamics.state_variables.keys())}")
+print(f"DVs: {list(exp.dynamics.derived_variables.keys())}")
+```
+
+::: {.callout-note}
+## Unit Conversion
+- In NeuroML the input is 0.08 nA = 80 pA, and we use `I_ext*1000` to convert nA→pA
+  since conductances are in nS and voltage in mV: $I [\text{pA}] = g [\text{nS}] \cdot V [\text{mV}]$.
+- The initial conditions for gating variables are approximate steady-state values at -65 mV.
+:::
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+# Show just the ComponentType dynamics section
+lines = xml.split('\n')
+for i, line in enumerate(lines):
+    if 'TimeDerivative' in line or 'ConditionalDerived' in line:
+        print(line.strip())
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex1_HH.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}, t=[{arr[0,0]:.4f}, {arr[-1,0]:.4f}]")
+```
+
+## 4. Run TVBO Version
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+time = da.coords['time'].values
+sv_data = da.sel(node='0').values
+tvbo_arr = np.column_stack([time, sv_data])
+print(f"TVBO: shape={tvbo_arr.shape}, t=[{tvbo_arr[0,0]:.4f}, {tvbo_arr[-1,0]:.4f}]")
+```
+
+## 5. Numerical Comparison
+
+```{python}
+from _nml_helpers import compare_traces
+import numpy as np
+
+ref_arr = list(ref_outputs.values())[0]
+# NeuroML output columns: time, v, spiking  (spiking is a flag, ignore it)
+ref_cols = ['time', 'v']
+tvbo_cols = ['time', 'v', 'm', 'h', 'n']
+
+# Compare voltage traces
+ref_v = ref_arr[:, [0, 1]]
+tvbo_v = tvbo_arr[:, [0, 1]]
+compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
+```
+
+## 6. Plot
+
+```{python}
+from _nml_helpers import plot_comparison
+
+ref_v = ref_arr[:, [0, 1]]
+tvbo_v = tvbo_arr[:, [0, 1]]
+
+plot_comparison(
+    ref_v, tvbo_v,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+    title="Ex1: Hodgkin-Huxley — NeuroML vs TVBO",
+    time_scale=1.0, time_unit="s",
+)
+```
+
+### Gating Variables
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 7), sharex=True)
+time = tvbo_arr[:, 0]
+for i, (name, idx) in enumerate([('m', 2), ('h', 3), ('n', 4)]):
+    axes[i].plot(time, tvbo_arr[:, idx], label=f'TVBO {name}')
+    axes[i].set_ylabel(name)
+    axes[i].legend(loc='upper right')
+    axes[i].grid(True, alpha=0.3)
+axes[-1].set_xlabel("Time (s)")
+fig.suptitle("HH Gating Variables (TVBO)")
+fig.tight_layout()
+plt.show()
+```

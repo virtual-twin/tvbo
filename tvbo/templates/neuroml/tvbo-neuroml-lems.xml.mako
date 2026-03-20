@@ -3,57 +3,80 @@
 TVBO → LEMS XML Template  (monolithic)
 =======================================
 Generates a complete, self-contained LEMS simulation file.
+All dimensions, units, and LEMS infrastructure types (Simulation,
+OutputFile, OutputColumn) are defined inline — NO external
+<Include> files are used.  This avoids the jNeuroML double-read bug
+where included NeuroML type files cause "Duplicate name for
+ComponentType" or "no such dimension" errors.
+
 All template variables are pre-computed by NeuroMLAdapter._ctx()
 via tvbo.adapters.neuroml.build_lems_context() and injected directly
-into the Mako namespace — no Python setup needed here.
-
-The ComponentType + Coupling definitions are shared with the split-file
-dynamics template via <%include> fragments to avoid duplication.
+into the Mako namespace.
 
 Variables available: dyn, dyn_id, params, svs, dvs, events,
   coupling_inputs, coupling_params, coupling_pre_rhs, coupling_post_rhs,
   coupling_global, sv_names_set, n_nodes, dt, duration,
   lems_expr (callable), _parse_piecewise (callable), lems_dim (callable),
-  max_output_nodes (int)
+  max_output_nodes (int), sim_id, time_scale, safe_id
 </%doc>
 <Lems>
 
   <!-- Tell jLEMS/jNeuroML which component is the simulation entry point. -->
   <Target component="${sim_id}"/>
 
-  <!-- Simulation.xml chain-includes NeuroMLCoreDimensions.xml (all standard dims/units).
-       Networks.xml chain-includes Cells.xml which defines baseCell/baseStandalone,
-       enabling <population> and <network> for single- and multi-node networks.
-       Both files pull in NeuroMLCoreDimensions.xml; jLEMS deduplicates includes. -->
-  <Include file="Simulation.xml"/>
-  <Include file="Networks.xml"/>
-
+  <!-- ════════════════════════════════════════════════════════════════
+       Dimensions & Units (inline — no external includes needed)
+       ════════════════════════════════════════════════════════════════ -->
 <%include file="_lems_dims_units.xml.mako"/>
 
+  <!-- ════════════════════════════════════════════════════════════════
+       LEMS Simulation infrastructure types
+       (normally provided by Simulation.xml — defined inline to avoid
+       the jNeuroML double-read bug)
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="Simulation">
+    <Parameter name="length" dimension="time"/>
+    <Parameter name="step" dimension="time"/>
+    <Children name="outputs" type="OutputFile"/>
+    <ComponentReference name="target" type="Component"/>
+    <Dynamics>
+      <StateVariable name="t" dimension="time"/>
+    </Dynamics>
+    <Simulation>
+      <Run component="target" variable="t" increment="step" total="length"/>
+    </Simulation>
+  </ComponentType>
+
+  <ComponentType name="OutputFile">
+    <Children name="outputColumn" type="OutputColumn"/>
+    <Text name="fileName"/>
+    <Text name="path"/>
+    <Simulation>
+      <DataWriter path="path" fileName="fileName"/>
+    </Simulation>
+  </ComponentType>
+
+  <ComponentType name="OutputColumn">
+    <Path name="quantity"/>
+    <Simulation>
+      <Record quantity="quantity"/>
+    </Simulation>
+  </ComponentType>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Dynamics ComponentType & Component instances
+       ════════════════════════════════════════════════════════════════ -->
 <%include file="_lems_componenttype.xml.mako"/>
 
   <!-- ════════════════════════════════════════════════════════════════
-       Network — works for any n_nodes (single neuron or population).
-       Our ComponentType extends baseCell, so it is valid in a population.
+       Simulation — target the component instance directly.
+       Output: one file with all state variables.
        ════════════════════════════════════════════════════════════════ -->
-  <network id="net">
-    <population id="pop0" component="${dyn_id}_inst" size="${n_nodes}"/>
-  </network>
-
-  <!-- ════════════════════════════════════════════════════════════════
-       Simulation — target the network.
-       Output: one file with all (node, SV) combinations.
-       ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net">
+  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="${dyn_id}_inst">
 
     <OutputFile id="of1" fileName="results/${dyn_id}.dat">
-<%
-  n_out = min(n_nodes, max_output_nodes)
-%>\
 % for sv_name in svs:
-% for node_idx in range(n_out):
-      <OutputColumn id="${sv_name}_${node_idx}" quantity="pop0[${node_idx}]/${sv_name}"/>
-% endfor
+      <OutputColumn id="${sv_name}" quantity="${sv_name}"/>
 % endfor
     </OutputFile>
 

@@ -145,7 +145,11 @@ state variable equations.
 from tvbo import SimulationExperiment
 from tvbo.adapters.neuroml import NeuroMLAdapter
 
-exp = SimulationExperiment.from_file("experiment.yaml")
+exp = SimulationExperiment.from_string("""
+label: JansenRit LEMS Export
+dynamics:
+  name: JansenRit
+""")
 adapter = NeuroMLAdapter(exp)
 
 # Render monolithic LEMS file
@@ -210,7 +214,7 @@ xml_sim = adapter.render_simulation(network_file="my_network.xml")
 formats — both executable code and metadata.
 
 ```{python}
-exp = SimulationExperiment.from_file("experiment.yaml")
+# exp and adapter are already defined in section 5 above
 
 # Render as LEMS XML (same as NeuroMLAdapter(exp).render_code())
 xml = exp.render("lems")       # also accepts 'neuroml', 'nml'

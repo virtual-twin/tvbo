@@ -83,8 +83,6 @@ def _load_coupling_from_database(name, coupling):
             **(pe if isinstance(pe, dict) else {'rhs': pe})
         )
     if 'parameters' in data:
-        if not getattr(coupling, 'parameters', None):
-            coupling.parameters = {}
         for pname, pval in data['parameters'].items():
             if pname not in coupling.parameters:
                 if isinstance(pval, dict):
@@ -157,8 +155,6 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
     # Parameters
     for key, param in get_parameters(ontoclass).items():
         label = param["label"]
-        if getattr(metadata, "parameters", None) is None:
-            metadata.parameters = {}
         if label not in metadata.parameters:
             metadata.parameters[label] = tvbo_datamodel.Parameter(
                 name=param["label"],

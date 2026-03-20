@@ -21,6 +21,8 @@ from tvbo import templates
 from tvbo.classes.network import Network
 from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult
 from tvbo.datamodel import schema as tvbo_datamodel
+from linkml_runtime.utils.yamlutils import YAMLRoot
+from linkml_runtime.utils.enumerations import EnumDefinitionImpl
 from tvbo.codegen import templater
 from tvbo.codegen.templater import format_code
 from tvbo.classes.coupling import Coupling
@@ -147,8 +149,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         def _coerce(cls, obj, **extra):
             if isinstance(obj, cls):
                 return obj
-            if hasattr(obj, "_as_dict"):
-                return cls(**obj._as_dict, **extra)
+            if isinstance(obj, YAMLRoot):
+                # Copy dataclass fields directly — _as_dict over-serializes
+                # enums and nested objects causing lossy round-trips.
+                from dataclasses import fields as dc_fields
+                d = {}
+                for f in dc_fields(obj):
+                    if f.name.startswith(("_", "class_")):
+                        continue
+                    val = getattr(obj, f.name, f.default)
+                    # Convert enums/PermissibleValues to plain text so
+                    # constructors can re-parse them via __post_init__.
+                    from linkml_runtime.linkml_model.meta import PermissibleValue
+                    if isinstance(val, PermissibleValue):
+                        val = val.text
+                    elif isinstance(val, EnumDefinitionImpl):
+                        val = str(val)
+                    if val is not None:
+                        d[f.name] = val
+                return cls(**d, **extra)
             if isinstance(obj, dict):
                 return cls(**obj, **extra)
             return obj
@@ -324,7 +343,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if not getattr(net, "conduction_speed", None):
                 net.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
                     name="conduction_speed", label="v",
-                    value=3.0, unit="mm/ms",
+                    value=3.0, unit="mm_per_ms",
                 )
         if not getattr(obj, "network", None):
             obj.__dict__["network"] = Network()
@@ -1900,7 +1919,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             adapter = PyRatesBifurcationAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
-        elif format.lower() in ["neuroml", "nml", "lems"]:
+        elif format.lower() in ["lems", "neuroml", "nml"]:
             from tvbo.adapters.neuroml import NeuroMLAdapter
             adapter = NeuroMLAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
@@ -1910,7 +1929,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
                 "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
                 "julia, networkdynamics, nd, mtk, modelingtoolkit, "
-                "bifurcationkit.jl, pyrates-bifurcation, neuroml, nml, lems"
+                "bifurcationkit.jl, pyrates-bifurcation, lems, neuroml, nml"
             )
 
         return rendered_code
@@ -1925,7 +1944,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
         - ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
         - ``'openminds'`` / ``'jsonld'`` — openMINDS JSON-LD (returns JSON string)
-        - ``'lems'`` / ``'neuroml'`` / ``'nml'`` — LEMS XML via NeuroMLAdapter
+        - ``'lems'`` / ``'neuroml'`` / ``'nml'`` — self-contained LEMS XML (``<Lems>`` root)
         - Any code format accepted by :meth:`render_code` (``'tvb'``,
           ``'jax'``, ``'tvboptim'``, ``'julia'``, ``'networkdynamics'``, …)
 

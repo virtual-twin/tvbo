@@ -14,6 +14,7 @@ description: >
   Reproduces NeuroML2 LEMS canonical example 9 (LEMS_NML2_Ex9_FN.xml).
   Single FitzHugh-Nagumo cell with external input I=0.8,
   simulated for 200s at 0.01s step size.
+  Initial conditions V=0, W=0 match the NeuroML2 default (no OnStart block).
 
 dynamics:
   name: FitzHughNagumo
@@ -28,12 +29,12 @@ dynamics:
     V:
       equation:
         rhs: "V - V**3/3 - W + I"
-      initial_value: -1.0
+      initial_value: 0.0
       variable_of_interest: true
     W:
       equation:
         rhs: "0.08*(V + 0.7 - 0.8*W)"
-      initial_value: -0.5
+      initial_value: 0.0
 
 network:
   number_of_nodes: 1

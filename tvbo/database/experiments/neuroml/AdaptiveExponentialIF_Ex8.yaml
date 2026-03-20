@@ -1,19 +1,22 @@
 # NeuroML2 LEMS Example 8: Adaptive Exponential Integrate-and-Fire (AdEx)
 # ========================================================================
 # Reproduces LEMS_NML2_Ex8_AdEx.xml from the NeuroML2 canonical examples.
-# Uses adExIaFCell (Brette & Gerstner 2005):
-#   iMemb = -gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext
+# Matches the adExIaFCell ComponentType from Cells.xml:
+#   iMemb = -gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + iSyn
 #   dv/dt = iMemb / C
 #   dw/dt = (a*(v - EL) - w) / tauw
-#   OnCondition: v > thresh → v = reset, w = w + b
+#   OnCondition: v .gt. thresh → (regime transition) v = reset, w = w + b
 #
-# Variant: bursting pattern (from adExBurst2)
+# Variant: 2-spike bursting (adExBurst2), refract=0ms (no refractory period).
+# Note: Original Ex8 uses pulseGenerator with delay=0ms, amplitude=0.8nA.
+# We use constant I_ext=0.8 which is equivalent (delay=0, duration > sim length).
 
 id: 905
 label: "NeuroML Ex8: AdEx (bursting)"
 description: >
   Reproduces NeuroML2 LEMS canonical example 8, adExIaFCell.
-  Bursting variant simulated for 300ms at 0.025ms step.
+  Bursting variant (adExBurst2) simulated for 300ms at 0.025ms step.
+  Uses constant I_ext=0.8 matching the pulse generator amplitude.
 
 dynamics:
   name: AdaptiveExponentialIF
@@ -67,7 +70,7 @@ dynamics:
   events:
     spike:
       condition:
-        rhs: "v >= thresh"
+        rhs: "v > thresh"
       affect:
         rhs: "v = reset; w = w + b"
 
@@ -78,4 +81,5 @@ integration:
   method: euler
   step_size: 0.025
   duration: 300.0
+  time_scale: ms
   time_scale: ms

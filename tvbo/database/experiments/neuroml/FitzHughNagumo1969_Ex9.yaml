@@ -1,20 +1,25 @@
-# NeuroML2 LEMS Example 9: FitzHugh-Nagumo 1969 Cell
-# =====================================================
-# Reproduces the fitzHughNagumo1969Cell from NeuroML2 Cells.xml.
-# The 1969 parameterisation (Scholarpedia variant) adds explicit
-# parameters a, b, phi, V0, W0:
+# NeuroML2 LEMS: FitzHugh-Nagumo 1969 Cell
+# ==========================================
+# Matches the fitzHughNagumo1969Cell ComponentType from NeuroML2 Cells.xml.
+# Uses parameterised form with explicit a, b, phi, V0, W0.
+# Reference: FitzHugh R.[1969], Chapter 1 in Biological Engineering.
 #
-#   dV/dt = (V - V^3/3 - W + I) / SEC
-#   dW/dt = phi*(V + a - b*W) / SEC
+# Equations (using TS = 1ms as in the original ComponentType):
+#   F  = V - V^3/3                       (DerivedVariable in NML2)
+#   dV/dt = (F - W + I) / TS
+#   dW/dt = phi*(V + a - b*W) / TS
 #
-# Note: FitzHughNagumoCell (non-1969) hard-codes the FHN constants.
-# This TVBO version uses the parameterised form.
+# Parameter values from the canonical NeuroML2 example instance:
+#   NML2_AbstractCells.nml:
+#   <fitzHughNagumo1969Cell id="fn1969" a="0.7" b="0.08" I="1.0"
+#                           phi="0.08" V0="0.0" W0="0.0"/>
 
 id: 902
-label: "NeuroML Ex9 variant: FitzHugh-Nagumo 1969"
+label: "NeuroML: FitzHugh-Nagumo 1969"
 description: >
-  Parameterised FitzHugh-Nagumo 1969 model matching NeuroML2
-  fitzHughNagumo1969Cell ComponentType.
+  FitzHugh-Nagumo 1969 model matching NeuroML2 fitzHughNagumo1969Cell.
+  Parameters from canonical NML2_AbstractCells.nml example.
+  Uses TS=1ms (time_scale: ms) as defined in the ComponentType.
 
 dynamics:
   name: FitzHughNagumo1969
@@ -26,10 +31,10 @@ dynamics:
       value: 0.7
       description: a parameter
     b:
-      value: 0.8
+      value: 0.08
       description: b parameter
     I:
-      value: 0.8
+      value: 1.0
       description: External stimulus current
     phi:
       value: 0.08
@@ -38,12 +43,12 @@ dynamics:
     V:
       equation:
         rhs: "V - V**3/3 - W + I"
-      initial_value: -1.0
+      initial_value: 0.0
       variable_of_interest: true
     W:
       equation:
         rhs: "phi*(V + a - b*W)"
-      initial_value: -0.5
+      initial_value: 0.0
 
 network:
   number_of_nodes: 1
@@ -52,4 +57,4 @@ integration:
   method: euler
   step_size: 0.01
   duration: 200.0
-  time_scale: s
+  time_scale: ms
