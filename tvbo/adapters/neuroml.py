@@ -214,7 +214,8 @@ def build_lems_context(experiment):
         ``lems_expr`` (callable), ``_parse_piecewise`` (callable),
         ``lems_dim`` (callable), ``safe_id`` (callable).
     """
-    from sympy import Piecewise, S as sympy_S
+    from sympy import Piecewise, S as sympy_S, Eq as sympy_Eq
+    from sympy.functions.elementary.piecewise import piecewise_fold
     from sympy.core.basic import Basic as _SympyBasic
     from tvbo.parse.expression import parse_eq
 
@@ -274,7 +275,7 @@ def build_lems_context(experiment):
     # where tau_e has unit=ms).  In that case / SEC would double-count.
     # When the model is fully dimensionless, / SEC is required to give the
     # LEMS TimeDerivative value the mandatory per_time dimension.
-    from tvbo.utils.units import unit_has_time_dimension
+    from tvbo.utils.units import unit_has_time_dimension, unit_to_lems_dimension
     _model_has_time_units = any(
         unit_has_time_dimension(getattr(p, "unit", None))
         for p in list(params.values()) + list(svs.values())
@@ -304,10 +305,21 @@ def build_lems_context(experiment):
         """Return [(condition_str, value_str)] if rhs is Piecewise, else None."""
         try:
             expr = parse_eq(str(rhs_str), parameters=all_names, functions=fn_names)
+            # Rewrite Min/Max and similar forms to Piecewise when possible.
+            expr = expr.rewrite(Piecewise)
+            # Support wrapped forms like Q10*Piecewise(...) by folding to a
+            # top-level Piecewise expression first.
+            if not isinstance(expr, Piecewise) and expr.has(Piecewise):
+                expr = piecewise_fold(expr)
             if not isinstance(expr, Piecewise):
                 return None
             cases = []
             for val, cond in expr.args:
+                # Exact-equality singularity guards (Eq(v, v0)) are numerically
+                # measure-zero and can trigger parser issues in some jLEMS builds.
+                # Drop them and keep the regular branch.
+                if getattr(cond, "func", None) is sympy_Eq:
+                    continue
                 cond_str = None if cond == sympy_S.true else lems_expr(cond)
                 val_str = lems_expr(val)
                 cases.append((cond_str, val_str))
@@ -338,7 +350,7 @@ def build_lems_context(experiment):
         duration=duration,
         lems_expr=lems_expr,
         _parse_piecewise=_parse_piecewise,
-        lems_dim=lambda _: "none",
+        lems_dim=unit_to_lems_dimension,
         safe_id=safe_id,
         time_scale=time_scale,
         needs_sec=not _model_has_time_units,

@@ -65,6 +65,9 @@ All template variables are injected by the calling template's render context
 %>\
 % if rhs:
 % if pw_cases:
+% if len(pw_cases) == 1 and pw_cases[0][0] is None:
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}" value="${pw_cases[0][1]}"/>
+% else:
       <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}">
 % for (cond_str, val_str) in pw_cases:
 % if cond_str is not None:
@@ -74,6 +77,7 @@ All template variables are injected by the calling template's render context
 % endif
 % endfor
       </ConditionalDerivedVariable>
+% endif
 % else:
       <DerivedVariable name="${dv_name}" dimension="${dv_dim}" value="${lems_expr(rhs)}"/>
 % endif
