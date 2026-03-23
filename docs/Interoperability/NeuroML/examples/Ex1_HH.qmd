@@ -47,13 +47,13 @@ dynamics:
     E_K:   { value: -77.0,   description: "K reversal potential (mV)" }
     E_L:   { value: -54.3,   description: "Leak reversal potential (mV)" }
     gate_rate_scale: { value: 0.988, description: "Global HH gate kinetics scale (matches canonical jLEMS trajectory)" }
-    I_amp:             { value: 0.08, description: "Pulse amplitude (nA)" }
-    pulse_delay_ms:    { value: 50.0, description: "Pulse onset time (ms)" }
-    pulse_duration_ms: { value: 50.0, description: "Pulse duration (ms)" }
+    I_amp:          { value: 0.08, description: "Pulse amplitude (nA)" }
+    pulse_delay:    { value: 50.0, unit: ms, description: "Pulse onset time" }
+    pulse_duration: { value: 50.0, unit: ms, description: "Pulse duration" }
   derived_variables:
     I_ext:
       equation:
-        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
+        rhs: "Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))"
     alpha_m:
       equation:
         rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"

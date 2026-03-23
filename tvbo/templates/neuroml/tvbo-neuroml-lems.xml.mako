@@ -210,7 +210,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
   <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
 % for pname, p in ct_params.items():
- ${pname}="${getattr(p, 'value', 0)}"\
+<% p_unit = getattr(p, 'unit', '') or '' %>\
+ ${pname}="${getattr(p, 'value', 0)}${p_unit}"\
 % endfor
 % for sv_name, sv in ct_svs.items():
 <% iv = getattr(sv, 'initial_value', None) %>\

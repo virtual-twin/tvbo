@@ -33,12 +33,12 @@ dynamics:
     d:      { value: 6.0 }
     thresh: { value: 30.0 }
     I_amp:  { value: 14.0 }
-    pulse_delay_ms:    { value: 20.0 }
-    pulse_duration_ms: { value: 2000.0 }
+    pulse_delay:    { value: 20.0, unit: ms }
+    pulse_duration: { value: 2000.0, unit: ms }
   derived_variables:
     I_ext:
       equation:
-        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
+        rhs: "Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))"
   state_variables:
     v:
       equation: { rhs: "0.04*v**2 + 5*v + 140 - U + I_ext" }
@@ -77,12 +77,12 @@ dynamics:
     d:      { value: 2.0 }
     thresh: { value: 30.0 }
     I_amp:  { value: 15.0 }
-    pulse_delay_ms:    { value: 22.0 }
-    pulse_duration_ms: { value: 2000.0 }
+    pulse_delay:    { value: 22.0, unit: ms }
+    pulse_duration: { value: 2000.0, unit: ms }
   derived_variables:
     I_ext:
       equation:
-        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
+        rhs: "Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))"
   state_variables:
     v:
       equation: { rhs: "0.04*v**2 + 5*v + 140 - U + I_ext" }

@@ -1,33 +1,41 @@
 ---
 title: "Ex13: Population Instances"
-description: "Instance-based population with explicit cell placement"
+description: "Instance-based population with explicit cell placement — iafCell with pulse input"
 ---
 
 ## Model: Instance-Based Population
 
-Explicit instance placement in NeuroML2 — each cell has specific 3D coordinates.
-The cell dynamics are the same IaF model as Ex0/Ex12.
+Explicit instance placement in NeuroML2.
+We model cell 0 (iafCells/0) which receives pulseGen1 (delay=100ms, duration=100ms, amplitude=0.3nA).
+
+The iafCell equation: $C\frac{dv}{dt} = g_L(E_L - v) + I_{\text{ext}}$
 
 ---
 
-## 1. Define IaF Cell in TVBO
+## 1. Define iafCell in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex13: IaF Cell (Instances)"
+label: "NeuroML Ex13: iafCell (Instances)"
 dynamics:
-  name: IntegrateAndFire
+  name: IaFCell
   parameters:
-    leakReversal: { value: -50.0 }
-    tau:          { value: 30.0 }
-    thresh:       { value: -55.0 }
-    reset:        { value: -70.0 }
+    tau:          { value: 20.0,  description: "C/gL = 1nF/50nS = 0.02s = 20ms" }
+    leakReversal: { value: -60.0, description: "mV" }
+    thresh:       { value: -55.0, description: "mV" }
+    reset:        { value: -62.0, description: "mV" }
+  derived_variables:
+    I_ext:
+      equation:
+        rhs: "Piecewise((0.3, (t >= 0.1) & (t < 0.2)), (0.0, True))"
+      description: "pulseGen1: 0.3nA / (1.0nF) = 0.3 mV/ms (times in SI seconds)"
   state_variables:
     v:
-      equation: { rhs: "(leakReversal - v) / tau" }
-      initial_value: -50.0
+      equation:
+        rhs: "(leakReversal - v) / tau + I_ext"
+      initial_value: -60.0
       variable_of_interest: true
   events:
     spike:
@@ -37,8 +45,8 @@ network:
   number_of_nodes: 1
 integration:
   method: euler
-  step_size: 0.005
-  duration: 200.0
+  step_size: 0.05
+  duration: 300.0
   time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name}")

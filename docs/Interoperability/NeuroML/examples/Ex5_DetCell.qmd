@@ -42,12 +42,12 @@ dynamics:
     E_L:   { value: -54.3 }
     gate_rate_scale: { value: 0.988 }
     I_amp: { value: 0.08 }
-    pulse_delay_ms:    { value: 100.0 }
-    pulse_duration_ms: { value: 100.0 }
+    pulse_delay:    { value: 100.0, unit: ms }
+    pulse_duration: { value: 100.0, unit: ms }
   derived_variables:
     I_ext:
       equation:
-        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
+        rhs: "Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))"
     alpha_m:
       equation:
         rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"

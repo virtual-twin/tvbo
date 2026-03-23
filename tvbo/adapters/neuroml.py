@@ -171,6 +171,59 @@ def safe_id(s):
     return ("_" + s) if s[0].isdigit() else s
 
 
+def _dynamics_has_time_units(params, svs, dvs):
+    """Check if dynamics equations (TimeDerivatives) use time-dimensioned params.
+
+    Only parameters directly referenced in TD equations — or in non-Piecewise
+    DerivedVariables that feed into TDs — count.  Parameters that appear *only*
+    in Piecewise conditions (e.g. ``pulse_delay``, ``switch_time``) are timing /
+    stimulus parameters and do NOT indicate that the model equations carry
+    physical time normalisation.
+    """
+    from tvbo.utils.units import unit_has_time_dimension
+
+    # Collect TD equation RHS strings
+    td_rhs_parts = []
+    for sv in svs.values():
+        eq = getattr(sv, 'equation', None)
+        rhs = getattr(eq, 'rhs', None) if eq else None
+        if rhs:
+            td_rhs_parts.append(str(rhs))
+    td_text = ' '.join(td_rhs_parts)
+
+    def _name_in(name, text):
+        return bool(re.search(r'\b' + re.escape(name) + r'\b', text))
+
+    # Parameters directly in TD equations
+    td_params = set()
+    for pname in params:
+        if _name_in(str(pname), td_text):
+            td_params.add(str(pname))
+
+    # Expand through non-Piecewise DVs that are used in TD equations:
+    # if a DV feeds into a TD and is NOT Piecewise, its referenced params
+    # effectively contribute to the TD value dimension.
+    for dv_name, dv in (dvs or {}).items():
+        if not _name_in(str(dv_name), td_text):
+            continue
+        eq = getattr(dv, 'equation', None)
+        rhs = getattr(eq, 'rhs', None) if eq else None
+        if not rhs or 'Piecewise' in str(rhs):
+            continue
+        rhs_str = str(rhs)
+        for pname in params:
+            if _name_in(str(pname), rhs_str):
+                td_params.add(str(pname))
+
+    return any(
+        unit_has_time_dimension(getattr(params[k], "unit", None))
+        for k in td_params if k in params
+    ) or any(
+        unit_has_time_dimension(getattr(sv, "unit", None))
+        for sv in svs.values()
+    )
+
+
 def _normalize_edge_params(params):
     """Normalize edge parameters to a flat ``{name: param_obj}`` dict.
 
@@ -487,16 +540,13 @@ def build_lems_context(experiment):
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
 
     # ── Determine whether equations need / SEC ──
-    # If ANY parameter in the model carries a time-bearing unit, the
-    # equations already contain physical time normalisation (e.g., /tau_e
-    # where tau_e has unit=ms).  In that case / SEC would double-count.
-    # When the model is fully dimensionless, / SEC is required to give the
-    # LEMS TimeDerivative value the mandatory per_time dimension.
+    # If parameters used in TimeDerivative equations carry time-bearing
+    # units, the equations already contain physical time normalisation
+    # (e.g., /tau_e where tau_e has unit=ms).  In that case / SEC would
+    # double-count.  Parameters that appear *only* in Piecewise conditions
+    # (pulse timing, switch times) are excluded from this check.
     from tvbo.utils.units import unit_has_time_dimension, unit_to_lems_dimension
-    _model_has_time_units = any(
-        unit_has_time_dimension(getattr(p, "unit", None))
-        for p in list(params.values()) + list(svs.values())
-    )
+    _model_has_time_units = _dynamics_has_time_units(params, svs, dvs)
 
     # All symbol names — override SymPy built-ins (I, gamma, lambda, …)
     all_names = (
@@ -599,10 +649,8 @@ def build_lems_context(experiment):
             )
             ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
 
-            ct_has_time_units = any(
-                unit_has_time_dimension(getattr(p, "unit", None))
-                for p in list(ct_params.values()) + list(ct_svs.values())
-            )
+            ct_has_time_units = _dynamics_has_time_units(
+                ct_params, ct_svs, ct_dvs)
 
             _LEMS_CMP_RE = re.compile(r'\.(gt|lt|geq|leq|eq|neq)\.', re.IGNORECASE)
 
@@ -681,10 +729,8 @@ def build_lems_context(experiment):
                 ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
                 ct_sv_names_set = set(str(k) for k in ct_svs.keys())
                 ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
-                ct_has_time_units = any(
-                    unit_has_time_dimension(getattr(p, "unit", None))
-                    for p in list(ct_params.values()) + list(ct_svs.values())
-                )
+                ct_has_time_units = _dynamics_has_time_units(
+                    ct_params, ct_svs, ct_dvs)
                 ct_all_names = (
                     [str(k) for k in ct_params.keys()]
                     + [str(k) for k in ct_svs.keys()]
