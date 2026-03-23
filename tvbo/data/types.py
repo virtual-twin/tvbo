@@ -42,16 +42,18 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None):
         return None
     if isinstance(raw_data, xr.DataArray):
         return raw_data
-    dims = ['time', 'variable', 'node', 'mode'][:raw_data.ndim]
+    data_np = np.asarray(raw_data)
+    dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
     coords = {}
     if raw_time is not None:
         coords['time'] = np.asarray(raw_time)
     if state_names:
-        # Only assign variable coord if length matches the data dimension
         var_axis = dims.index('variable') if 'variable' in dims else None
-        if var_axis is not None and len(state_names) == raw_data.shape[var_axis]:
+        if var_axis is not None and len(state_names) == data_np.shape[var_axis]:
             coords['variable'] = list(state_names)
-    return xr.DataArray(data=np.asarray(raw_data), dims=dims, coords=coords)
+    if 'mode' in dims:
+        coords['mode'] = list(range(data_np.shape[dims.index('mode')]))
+    return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
 # =============================================================================
@@ -1127,9 +1129,6 @@ class ExperimentResult:
         ExperimentResult
         """
         data_np = np.asarray(ts.data)
-        # Squeeze singleton mode dim if present
-        if data_np.ndim == 4 and data_np.shape[3] == 1:
-            data_np = data_np[:, :, :, 0]
 
         ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
         state_names = ld.get("State Variable", [])
@@ -1143,6 +1142,8 @@ class ExperimentResult:
             coords['variable'] = list(state_names)
         if region_labels and data_np.ndim >= 3:
             coords['node'] = [str(r) for r in region_labels]
+        if 'mode' in dims:
+            coords['mode'] = list(range(data_np.shape[3]))
 
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 
@@ -1227,17 +1228,16 @@ class ExperimentResult:
                 observations[mon_name] = ts
 
         # Build xr.DataArray from primary monitor
-        # TVB shape: (time, state_variables, nodes, modes) — squeeze mode if 1
+        # TVB shape: (time, state_variables, nodes, modes) — keep mode dim
         data_np = np.asarray(primary_xv)
-        if data_np.ndim == 4 and data_np.shape[3] == 1:
-            data_np = data_np[:, :, :, 0]  # squeeze singleton mode
-
         dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
         coords = {
             'time': np.asarray(primary_tv),
             'variable': voi,
             'node': region_labels,
         }
+        if 'mode' in dims:
+            coords['mode'] = list(range(data_np.shape[3]))
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 
         sim_result = SimulationResult(

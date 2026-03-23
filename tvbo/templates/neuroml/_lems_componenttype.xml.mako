@@ -159,7 +159,8 @@ All template variables are injected by the calling template's render context
        ════════════════════════════════════════════════════════════════ -->
   <Component id="${dyn_id}_inst" type="${dyn_id}"\
 % for pname, p in params.items():
- ${pname}="${getattr(p, 'value', 0)}"\
+<% p_unit = getattr(p, 'unit', '') or '' %>\
+ ${pname}="${getattr(p, 'value', 0)}${p_unit}"\
 % endfor
 % for ci in coupling_inputs:
 <% ci_name = str(ci) %>\

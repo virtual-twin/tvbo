@@ -45,11 +45,11 @@ dynamics:
     I_amp: { value: 0.08 }
     Q10_early: { value: 0.333333, description: "Q10 at 22C: 3^(-1)" }
     Q10_late:  { value: 0.172414, description: "Q10 at 16C: 3^(-1.6)" }
-    switch_time_ms: { value: 500.0, description: "Temperature switch at 500ms" }
+    switch_time: { value: 500.0, unit: ms, description: "Temperature switch at 500ms" }
   derived_variables:
     Q10:
       equation:
-        rhs: "Piecewise((Q10_early, t < switch_time_ms/1000), (Q10_late, True))"
+        rhs: "Piecewise((Q10_early, t < switch_time), (Q10_late, True))"
       description: "Q10 factor: switches from 22C to 16C at 500ms"
     I_ext:
       equation:

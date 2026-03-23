@@ -1281,20 +1281,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             sim_result = None
             for m, (tv, xv) in zip(simulator_.monitors, simres):
                 m_name = m.title.split(" ")[0]
-                # Squeeze singleton mode dimension if present
                 data_np = np.asarray(xv)
-                if data_np.ndim == 4 and data_np.shape[3] == 1:
-                    data_np = data_np[:, :, :, 0]
-
-                da = xr.DataArray(
-                    data=data_np,
-                    dims=['time', 'variable', 'node'],
-                    coords={
-                        'time': np.asarray(tv),
-                        'variable': sv_names,
-                        'node': region_labels,
-                    },
-                )
+                dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+                coords = {
+                    'time': np.asarray(tv),
+                    'variable': sv_names,
+                    'node': region_labels,
+                }
+                if 'mode' in dims:
+                    coords['mode'] = list(range(data_np.shape[3]))
+                da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 if m_name == "Raw":
                     sim_result = SimulationResult(data=da)
                 else:
@@ -1304,17 +1300,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Fallback if no Raw monitor — use first
                 first_m, (tv, xv) = list(zip(simulator_.monitors, simres))[0]
                 data_np = np.asarray(xv)
-                if data_np.ndim == 4 and data_np.shape[3] == 1:
-                    data_np = data_np[:, :, :, 0]
-                da = xr.DataArray(
-                    data=data_np,
-                    dims=['time', 'variable', 'node'],
-                    coords={
-                        'time': np.asarray(tv),
-                        'variable': sv_names,
-                        'node': region_labels,
-                    },
-                )
+                dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+                coords = {
+                    'time': np.asarray(tv),
+                    'variable': sv_names,
+                    'node': region_labels,
+                }
+                if 'mode' in dims:
+                    coords['mode'] = list(range(data_np.shape[3]))
+                da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 sim_result = SimulationResult(data=da)
 
             sim_result.observations = observations

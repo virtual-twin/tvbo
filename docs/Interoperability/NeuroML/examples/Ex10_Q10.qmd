@@ -39,13 +39,13 @@ dynamics:
     E_K:   { value: -77.0 }
     E_L:   { value: -54.3 }
     I_amp: { value: 0.08 }
-    pulse_delay_ms:    { value: 100.0 }
-    pulse_duration_ms: { value: 100.0 }
+    pulse_delay:    { value: 100.0, unit: ms }
+    pulse_duration: { value: 100.0, unit: ms }
     Q10:   { value: 0.333333, description: "Q10 factor = 3^((22-32)/10)" }
   derived_variables:
     I_ext:
       equation:
-        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
+        rhs: "Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))"
     alpha_m:
       equation:
         rhs: "Q10 * Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
