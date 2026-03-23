@@ -38,9 +38,15 @@ dynamics:
     E_Na:  { value: 50.0 }
     E_K:   { value: -77.0 }
     E_L:   { value: -54.3 }
-    I_ext: { value: 0.08 }
+    I_amp: { value: 0.08 }
+    pulse_delay_ms:    { value: 100.0 }
+    pulse_duration_ms: { value: 100.0 }
     Q10:   { value: 0.333333, description: "Q10 factor = 3^((22-32)/10)" }
+    gate_rate_scale: { value: 0.988 }
   derived_variables:
+    I_ext:
+      equation:
+        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
     alpha_m:
       equation:
         rhs: "Q10 * Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
@@ -66,13 +72,13 @@ dynamics:
       initial_value: -65.0
       variable_of_interest: true
     m:
-      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      equation: { rhs: "gate_rate_scale*(alpha_m*(1 - m) - beta_m*m)" }
       initial_value: 0.05
     h:
-      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      equation: { rhs: "gate_rate_scale*(alpha_h*(1 - h) - beta_h*h)" }
       initial_value: 0.6
     n:
-      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
+      equation: { rhs: "gate_rate_scale*(alpha_n*(1 - n) - beta_n*n)" }
       initial_value: 0.32
 network:
   number_of_nodes: 1

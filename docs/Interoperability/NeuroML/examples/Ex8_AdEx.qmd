@@ -26,17 +26,21 @@ label: "NeuroML Ex8: AdEx (bursting)"
 dynamics:
   name: AdaptiveExponentialIF
   parameters:
-    C:      { value: 281.0 }
-    gL:     { value: 30.0 }
-    EL:     { value: -70.6 }
+    C:      { value: 281.0,  description: "Capacitance (pF)" }
+    gL:     { value: 30.0,   description: "Leak conductance (nS)" }
+    EL:     { value: -70.6,  description: "Leak reversal (mV)" }
     VT:     { value: -50.4 }
     thresh: { value: -40.4 }
     reset:  { value: -48.5 }
     delT:   { value: 2.0 }
     tauw:   { value: 40.0 }
-    a:      { value: 4.0 }
-    b:      { value: 0.08 }
-    I_ext:  { value: 0.8 }
+    a:      { value: 4.0,    description: "Subthreshold adaptation (nS)" }
+    b:      { value: 80.0,   description: "Spike-triggered adaptation (pA, = 0.08 nA)" }
+  derived_variables:
+    I_ext:
+      equation:
+        rhs: "Piecewise((300.0, (t >= 0.15) & (t < 0.2)), (800.0, True))"
+      description: "Combined pulses in pA: +0.8nA constant, -0.5nA during 150-200ms"
   state_variables:
     v:
       equation:
