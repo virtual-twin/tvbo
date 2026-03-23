@@ -47,8 +47,13 @@ dynamics:
     g_K:   { value: 14.4,   description: "Total K conductance (nS)" }
     E_Na:  { value: 50.0 }
     E_K:   { value: -77.0 }
-    I_ext: { value: 0.005,  description: "External current (nA)" }
+    I_amp: { value: 0.005,  description: "Pulse amplitude (nA)" }
+    pulse_delay_ms:    { value: 100.0 }
+    pulse_duration_ms: { value: 100.0 }
   derived_variables:
+    I_ext:
+      equation:
+        rhs: "Piecewise((I_amp, (t >= pulse_delay_ms/1000) & (t < (pulse_delay_ms + pulse_duration_ms)/1000)), (0.0, True))"
     alpha_m:
       equation:
         rhs: "Piecewise((1.0, Eq(v, -40.0)), (1.0*(v + 40.0)/(10.0*(1.0 - exp(-(v + 40.0)/10.0))), True))"
@@ -77,13 +82,13 @@ dynamics:
       variable_of_interest: true
     m:
       equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
-      initial_value: 0.05
+      initial_value: 0.052932
     h:
       equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
-      initial_value: 0.6
+      initial_value: 0.596121
     n:
       equation: { rhs: "rf_n*(1 - n) - rr_n*n" }
-      initial_value: 0.32
+      initial_value: 0.0
       description: "KS K+ channel open-state occupancy"
 network:
   number_of_nodes: 1
