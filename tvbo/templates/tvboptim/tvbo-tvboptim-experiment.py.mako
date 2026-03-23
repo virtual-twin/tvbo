@@ -2207,14 +2207,13 @@ def run_experiment(
                 results[_alg_name] = _alg_result
             # Use last algorithm's result as the "main" result
             last_algo_name = algorithms_to_run[-1]
-            if last_algo_name in algorithms_results:
-                results.update(algorithms_results[last_algo_name])
             print("\n" + "=" * 60)
             print(f"  Algorithms complete. Results: {list(algorithms_results.keys())}")
             print("=" * 60)
         else:
             # Running single: expose result at top level
-            results.update(algo_result)
+            results['algorithms'] = {algorithm_name: algo_result}
+            results[algorithm_name] = algo_result
             results['algorithm'] = Bunch(name=algorithm_name)
     % endif
 

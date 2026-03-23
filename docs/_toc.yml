@@ -140,6 +140,11 @@ website:
                     contents:
                       - text: "Higher-Order ODE Lowering"
                         href: Interoperability/ModelingToolkit.jl/higher_order.qmd
+                  - section: "NeuroML / LEMS"
+                    href: Interoperability/NeuroML/index.qmd
+                    contents:
+                      - text: "LEMS Export"
+                        href: Interoperability/NeuroML/LEMS_Export.qmd
                   - section: "BIDS"
                     href: Interoperability/BIDS/index.qmd
                     contents:

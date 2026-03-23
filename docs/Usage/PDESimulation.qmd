@@ -91,7 +91,7 @@ x, y = nodes[0], nodes[1]
 u0 = np.exp(-((x - 0.5)**2 + (y - 0.5)**2) / 0.02)
 
 ts = exp.run("pde", u0=u0)
-print(f"TimeSeries: {ts.data.shape}  (time, state_var, nodes, mode)")
+print(f"TimeSeries: {ts.data.shape}  (time, state_var, nodes)")
 print(f"Time: {ts.time[0]:.2f} to {ts.time[-1]:.2f}, dt={ts.time[1] - ts.time[0]:.3f}")
 ```
 
@@ -118,12 +118,12 @@ fig.colorbar(sm, ax=ax_mesh, label="u", shrink=0.8)
 
 def update_2d(frame):
     ax_mesh.clear()
-    ax_mesh.tripcolor(triang, ts.data[frame, 0, :, 0], norm=norm, cmap="viridis")
+    ax_mesh.tripcolor(triang, np.asarray(ts.data[frame, 0, :]), norm=norm, cmap="viridis")
     ax_mesh.set_title(f"t = {ts.time[frame]:.2f}")
     ax_mesh.set_aspect("equal")
 
     ax_ts.clear()
-    ax_ts.plot(ts.time, ts.data[:, 0, :, 0].mean(axis=1), color="black")
+    ax_ts.plot(ts.time, np.asarray(ts.data[:, 0, :]).mean(axis=1), color="black")
     ax_ts.axvline(ts.time[frame], color="red", lw=1)
     ax_ts.set_xlabel("Time")
     ax_ts.set_ylabel("Mean u")
@@ -227,14 +227,14 @@ vertex_areas = np.zeros(len(vertices))
 for k in range(3):
     np.add.at(vertex_areas, faces[:, k], tri_areas / 3)
 global_mean = np.array([
-    (vertex_areas * ts2.data[t, 0, :, 0]).sum() / vertex_areas.sum()
+    (vertex_areas * np.asarray(ts2.data[t, 0, :])).sum() / vertex_areas.sum()
     for t in range(n_frames)
 ])
 
 def cortex_update(frame, ax, axis_idx, context):
     ax.clear()
     if axis_idx == 0:
-        overlay = context["ts"].data[frame, 0, :, 0]
+        overlay = np.asarray(context["ts"].data[frame, 0, :])
         plot_surf(
             context["gii"], overlay=overlay,
             hemi="rh", view="lateral", ax=ax,

@@ -41,7 +41,15 @@ def get_doc_name(path: str) -> str:
 
 # Discover all testable qmd files
 qmd_files = [f for f in get_all_qmd_files() if has_python_cells(f)]
-test_params = [(path, get_doc_name(path)) for path in qmd_files]
+
+# Directories whose doc tests are slow and excluded by default (use --run-slow)
+SLOW_DIRS = {"Interoperability/tvboptim"}
+
+test_params = []
+for path in qmd_files:
+    doc_name = get_doc_name(path)
+    marks = [pytest.mark.slow] if any(d in doc_name for d in SLOW_DIRS) else []
+    test_params.append(pytest.param(path, doc_name, marks=marks))
 
 
 @pytest.mark.docs
@@ -94,8 +102,3 @@ def test_doc_executes(qmd_path, doc_name):
         # Clean up generated notebook
         if ipynb_path.exists():
             ipynb_path.unlink()
-
-
-# Allow running docs tests separately
-def pytest_configure(config):
-    config.addinivalue_line("markers", "docs: mark test as documentation test")

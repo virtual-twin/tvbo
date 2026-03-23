@@ -1,0 +1,184 @@
+---
+title: "NeuroML / LEMS Integration"
+subtitle: "Export TVBO models to LEMS XML for simulation with jNeuroML, NEURON, Brian2, and NEST"
+bibliography: ../../references.bib
+---
+
+## Overview
+
+[NeuroML](https://neuroml.org/) [@Sinha2024] is an XML-based declarative language for describing neuronal biophysics — ion channels, spiking cells, synapses, and networks. Its simulation layer, **LEMS** (Low Entropy Model Specification), is a general-purpose ODE/event language that can represent *any* dynamical system, making it a natural export target for TVBO.
+
+| Direction | API | Supported |
+|-----------|-----|-----------|
+| **TVBO → LEMS XML** | `NeuroMLAdapter` / `exp.render("lems")` | ✅ Full |
+| **LEMS → TVBO YAML** | `lems_loader.py` | 🟡 Partial (TVB-style models) |
+
+### Why NeuroML?
+
+- Run the same TVBO model in **NEURON, Brian2, or NEST** via [pyNeuroML](https://pyneuroml.readthedocs.io/) without writing simulator-specific code
+- **Validate** model equations against a formal type system with physical dimensions
+- **Share** models through the [NeuroML Database](https://neuroml-db.org/) in a standard format
+- Enable **multi-scale co-simulation**: embed biophysically detailed neuron models inside mean-field brain regions
+
+---
+
+## TVBO → LEMS Mapping
+
+Every TVBO `Dynamics` becomes a self-contained LEMS `ComponentType`. The full mapping is:
+
+| TVBO Concept | LEMS Element | Notes |
+|---|---|---|
+| `Dynamics` | `<ComponentType>` | Custom cell type, no NeuroML built-in wrapping |
+| `Parameter` | `<Parameter dimension="..."/>` | Dimension derived from `unit` attribute |
+| `StateVariable` | `<StateVariable>` + `<Exposure>` + `<TimeDerivative>` | Scaled by `SEC` (1s) for ms time base |
+| `DerivedVariable` | `<DerivedVariable value="..."/>` | Equation printed via `LEMSPrinter` |
+| `DerivedVariable` (Piecewise) | `<ConditionalDerivedVariable>` + `<Case>` | Automatic detection |
+| `Event.condition` | `<OnCondition test="...">` | Relational ops → `.gt.`, `.leq.`, etc. |
+| `Event.affect` | `<StateAssignment variable="..." value="..."/>` | Support `var1=expr1; var2=expr2` |
+| `Coupling` | LEMS `<ComponentType name="Coupling">` | Pre/post expressions as `<DerivedVariable>` |
+| `Network` | `<Component type="network">` + `<population>` | Size from `number_of_nodes` |
+| `Integrator` | `<Simulation length="..." step="...">` | Duration + step in ms |
+| Observations | `<OutputFile>` + `<OutputColumn>` | One file per state variable |
+
+### Expression Syntax
+
+TVBO uses SymPy internally; the `LEMSPrinter` translates to LEMS-compliant math:
+
+| Python/SymPy | LEMS |
+|---|---|
+| `x**2` | `x^2` |
+| `log(x)` | `ln(x)` |
+| `sqrt(x)` | `sqrt(x)` |
+| `x > 0` | `x .gt. 0` |
+| `x >= threshold` | `x .geq. threshold` |
+| `a and b` | `a .and. b` |
+
+---
+
+## Quick Start
+
+### Export a Single Dynamics Model
+
+```python
+from tvbo import Dynamics
+from tvbo.adapters.neuroml import NeuroMLAdapter
+
+# Load any TVBO model
+model = Dynamics.from_db("FitzHughNagumo")
+
+# Render as LEMS XML string
+adapter = NeuroMLAdapter(model)
+xml = adapter.render_code()
+print(xml)
+```
+
+### Export a Full Simulation Experiment
+
+```python
+from tvbo import SimulationExperiment
+from tvbo.adapters.neuroml import NeuroMLAdapter
+
+exp = SimulationExperiment.from_db("Schirner2023_MultiscaleBNM_DM")
+
+# Unified render() entry point (same as render_code("lems"))
+xml = exp.render("lems")
+
+# Or access the adapter directly for more control
+adapter = NeuroMLAdapter(exp)
+adapter.validate(xml)
+```
+
+### Split-File Export (NeuroML convention)
+
+NeuroML projects typically split the simulation into three canonical files:
+
+```python
+adapter = NeuroMLAdapter(exp)
+paths = adapter.export("./output", split=True, validate=False)
+# paths == {
+#   'dynamics':   './output/ses-..._dynamics.xml',   # ComponentType defs
+#   'network':    './output/ses-..._network.xml',    # Network (includes dynamics)
+#   'simulation': './output/ses-..._simulation.xml', # Simulation (includes network)
+# }
+```
+
+Each file uses `<Include file="..."/>` to chain the others, so you can run the
+simulation file with `jnml ses-..._simulation.xml` and it pulls in the rest automatically.
+
+For a single self-contained file (default):
+
+```python
+paths = adapter.export("./output")   # split=False
+# paths == {'simulation': './output/ses-..._simulation.xml'}
+```
+
+### Run via jNeuroML
+
+```python
+# Via adapter directly
+adapter.run()
+
+# Via SimulationExperiment.run()
+exp.run("neuroml")
+```
+
+---
+
+## Architecture
+
+The export pipeline is:
+
+```
+SimulationExperiment (TVBO YAML)
+      │
+      ├── exp.render("lems")             ← unified entry point
+      │        │
+      ▼        ▼
+NeuroMLAdapter
+      │
+      ├── render_code()        → monolithic self-contained LEMS file
+      ├── render_dynamics()    → ComponentType definitions only
+      ├── render_network()     → Network (optionally includes dynamics file)
+      ├── render_simulation()  → Simulation block (optionally includes network file)
+      └── export(dir, split=) → write 1 or 3 files to disk, return path dict
+             │
+             ├── Mako templates: tvbo-neuroml-lems.xml.mako  (monolithic)
+             │                   tvbo-neuroml-dynamics.xml.mako
+             │                   tvbo-neuroml-network.xml.mako
+             │                   tvbo-neuroml-simulation.xml.mako
+             │         │
+             │         ├── build_lems_context()  → all template vars computed in Python
+             │         ├── sympy_to_lems()       → LEMSPrinter (SymPy → LEMS math)
+             │         ├── inline_model_functions()  → user-defined fn inlining
+             │         ├── unit_to_dimension()   → unit → LEMS dimension
+             │         └── safe_id()             → XML-safe identifiers
+             │
+             ├── validate()  → PyLEMS validation
+             └── run()       → pyNeuroML jnml execution
+```
+
+### Template Context
+
+All templates share a pre-computed context dictionary returned by
+`build_lems_context(experiment)`.  Templates contain no Python setup logic — all
+variables arrive ready-to-use via `template.render(**ctx)`.  This means the same
+model object is computed once and shared across all templates during a `split=True`
+export.
+
+---
+
+## Tutorials
+
+| Tutorial | Description |
+|----------|-------------|
+| [LEMS Export](LEMS_Export.qmd) | Step-by-step export of FitzHugh-Nagumo, Izhikevich, HH-style models |
+
+---
+
+## Roadmap
+
+The current adapter covers **Goal 2** from the [full interoperability plan](../../../dev/Interoperability/Small-Scale-Simulators/NeuroML-Interoperability-Plan.md): whole-brain network models exported as LEMS.
+
+**Goal 1** (reproduce all 27 NeuroML canonical examples in TVBO YAML) is being tracked in `database/dynamics/spiking/`, `database/dynamics/ion_channels/`, and `database/edges/synapses/`.
+
+**Goal 3** (multi-scale co-simulation) requires the compartmental Network → NeuroML morphology adapter, planned for Phase 3.

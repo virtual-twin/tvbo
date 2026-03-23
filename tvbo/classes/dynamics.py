@@ -87,8 +87,6 @@ def _migrate_coupling_terms(model):
 
     # Forward: coupling_terms → coupling_inputs
     if ct:
-        if model.coupling_inputs is None:
-            model.coupling_inputs = {}
         for name, param in ct.items():
             if name not in model.coupling_inputs:
                 model.coupling_inputs[name] = tvbo_datamodel.CouplingInput(
@@ -97,9 +95,7 @@ def _migrate_coupling_terms(model):
                 )
 
     # Backward: coupling_inputs → coupling_terms (for template compat)
-    if model.coupling_inputs:
-        if model.coupling_terms is None:
-            model.coupling_terms = {}
+    if model.coupling_inputs and model.coupling_terms is not None:
         for name, ci_obj in model.coupling_inputs.items():
             if name not in model.coupling_terms:
                 model.coupling_terms[name] = tvbo_datamodel.Parameter(
@@ -281,12 +277,10 @@ def class2metadata(ontoclass, metadata):
     # (onto_coupling_terms was fetched earlier for building local_dict)
     # Store them in coupling_inputs (canonical) with fallback to coupling_terms
     # for backward compat until coupling_terms is fully removed from schema.
-    ci_dict = metadata.coupling_inputs if metadata.coupling_inputs is not None else {}
-    ct_dict = metadata.coupling_terms if metadata.coupling_terms is not None else {}
+    ci_dict = metadata.coupling_inputs
+    ct_dict = metadata.coupling_terms
     for k, v in onto_coupling_terms.items():
         if k in required_symbols and k not in ci_dict and k not in ct_dict:
-            if metadata.coupling_inputs is None:
-                metadata.coupling_inputs = {}
             metadata.coupling_inputs[k] = tvbo_datamodel.CouplingInput(name=k)
 
     for r in ontoclass.has_reference:
@@ -1307,8 +1301,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
         dimension: int = 1, keys: list[str] | None = None,
     ):
         key = str(name)
-        if self.coupling_inputs is None:
-            self.coupling_inputs = {}
         self.coupling_inputs[key] = tvbo_datamodel.CouplingInput(
             name=key, description=description, dimension=dimension,
             keys=keys or [],
@@ -1749,11 +1741,55 @@ class Dynamics(tvbo_datamodel.Dynamics):
         elif format in ["pde-fem", "pde-python", "pde"]:
             # Generic Python FEM (scikit-fem) template
             template = templates.lookup.get_template("tvbo-pde-fem.py.mako")
+        elif format.lower() in ["neuroml", "nml", "lems"]:
+            from tvbo.adapters.neuroml import NeuroMLAdapter
+            adapter = NeuroMLAdapter(self)
+            return adapter.render_dynamics(**kwargs)
         else:
             raise ValueError(f"Format {format} not supported.")
 
         rendered_code = template.render(model=self, format=format, jax="jax" in format, **kwargs)
         return templater.format_code(rendered_code, format=format)
+
+    def render(self, format="yaml", **kwargs) -> str:
+        """Unified entry point for rendering the model in any output format.
+
+        Dispatches to the appropriate renderer based on *format*:
+
+        - ``'yaml'`` — TVBO YAML specification
+        - ``'pyrates-yaml'`` — PyRates YAML
+        - ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
+        - ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
+        - ``'neuroml'`` / ``'nml'`` / ``'lems'`` — LEMS XML via NeuroMLAdapter
+        - Any code format accepted by :meth:`render_code` (``'tvb'``,
+          ``'jax'``, ``'julia'``, ``'bifurcation-julia'``, …)
+
+        Parameters
+        ----------
+        format : str
+            Target output format.
+        **kwargs
+            Forwarded to the underlying renderer.
+
+        Returns
+        -------
+        str
+        """
+        fmt = format.lower()
+
+        # ── Serialisation ────────────────────────────────────────────────
+        if fmt == "yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"))
+        if fmt == "pyrates-yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"), format="pyrates")
+
+        # ── Report ───────────────────────────────────────────────────────
+        if fmt in ("report", "markdown", "md", "pdf"):
+            report_fmt = "pdf" if fmt == "pdf" else "markdown"
+            return self.generate_report(format=report_fmt, **kwargs)
+
+        # ── Code generation (all other formats) ──────────────────────────
+        return self.render_code(format=format, **kwargs)
 
     def display_markdown(self, format="tvb", **kwargs):
         from IPython.display import Markdown, display
@@ -1862,6 +1898,12 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def to_lems(self, initial_conditions=1, component_id=None):
         """Build a LEMS model for this local neural mass model.
 
+        .. deprecated::
+            Use ``NeuroMLAdapter(model).render_code()`` from
+            ``tvbo.adapters.neuroml`` instead.  This method returns a
+            ``lems.Model`` object (PyLEMS API); the adapter produces a
+            validated XML string.
+
         Parameters:
         - initial_conditions: number or dict; if number, used for all SVs; if dict, keys are sv name or sv_name_0
         - component_id: optional id for the component; defaults to model label
@@ -1869,6 +1911,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
         Returns:
         - lems.Model instance containing a ComponentType and a Component for this model
         """
+        import warnings
+        warnings.warn(
+            "Dynamics.to_lems() is deprecated. "
+            "Use NeuroMLAdapter(model).render_code() from tvbo.adapters.neuroml instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         import lems.api as lems  # lazy import
 
         from tvbo.codegen.lems import setup_lems_model  # lazy to avoid cycles
@@ -1876,28 +1925,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         model = setup_lems_model()
 
-        def _unit_to_dimension(u: str):
-            if not u:
-                return "none"
-            u = str(u).lower()
-            if u in {
-                "s",
-                "sec",
-                "second",
-                "seconds",
-                "ms",
-                "millisecond",
-                "millisecond(s)",
-                "millisecond",
-                "millisecond(s)",
-            }:
-                return "time"
-            if u in {"v", "mv", "volt", "millivolt", "millivolts", "millivolt(s)"}:
-                return "voltage"
-            if u in {"a", "ma", "ampere", "amp", "milliampere", "milliamp"}:
-                return "current"
-            # Fallback
-            return "none"
+        from tvbo.utils.units import unit_to_lems_dimension
 
         local_ct = lems.ComponentType(
             name=self.name,
@@ -1914,7 +1942,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
             local_ct.add(
                 lems.Parameter(
                     name=k,
-                    dimension=_unit_to_dimension(getattr(p, "unit", None)),
+                    dimension=unit_to_lems_dimension(getattr(p, "unit", None)),
                 )
             )
 
@@ -1936,7 +1964,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 if getattr(dp, "conditional", False):
                     cv = lems.ConditionalDerivedVariable(
                         name=dp.name,
-                        dimension=_unit_to_dimension(getattr(dp, "unit", None)),
+                        dimension=unit_to_lems_dimension(getattr(dp, "unit", None)),
                         exposure=dp.name,
                     )
                     for case in dp.cases:
@@ -1954,7 +1982,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
                     local_ct.dynamics.add(
                         lems.DerivedVariable(
                             name=dp.name,
-                            dimension=_unit_to_dimension(getattr(dp, "unit", None)),
+                            dimension=unit_to_lems_dimension(getattr(dp, "unit", None)),
                             value=str(dp.equation.rhs).replace("**", "^"),
                         )
                     )
@@ -1972,7 +2000,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         for sv in _ontology.get_model_statevariables(self.ontology).values():
             sv_name = _ontology.replace_suffix(sv)
-            dimension = _unit_to_dimension(
+            dimension = unit_to_lems_dimension(
                 sv.has_unit.first().label.first() if sv.has_unit.first() else None
             )
             sv_start = sv_name + "_0"

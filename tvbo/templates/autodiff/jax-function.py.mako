@@ -96,15 +96,15 @@ def ${func_name}(${func_signature}):
     expected_time_unit = None
     if func.equation and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for param_name, param in func.equation.parameters.items():
-            if hasattr(param, 'unit') and param.unit in ['s', 'ms', 'us', 'ns']:
-                expected_time_unit = param.unit
+            if hasattr(param, 'unit') and str(param.unit) in ['s', 'ms', 'us']:
+                expected_time_unit = str(param.unit)
                 break
     # Also check arguments
     if not expected_time_unit and func.arguments:
         args = func.arguments.values() if hasattr(func.arguments, 'values') else func.arguments
         for arg in args:
-            if hasattr(arg, 'unit') and arg.unit in ['s', 'ms', 'us', 'ns']:
-                expected_time_unit = arg.unit
+            if hasattr(arg, 'unit') and str(arg.unit) in ['s', 'ms', 'us']:
+                expected_time_unit = str(arg.unit)
                 break
 %>
 def ${func_name}(ts, ${param_args}):

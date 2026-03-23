@@ -44,7 +44,8 @@ ts.plot()
 import numpy as np
 print(f"Shape: {ts.data.shape}")
 print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
-print(f"Final theta range: [{ts.data[-1, 0, :, 0].min():.3f}, {ts.data[-1, 0, :, 0].max():.3f}]")
+final_theta = ts.data.sel(variable='theta').isel(time=-1)
+print(f"Final theta range: [{final_theta.min().item():.3f}, {final_theta.max().item():.3f}]")
 ```
 
 ## Animate

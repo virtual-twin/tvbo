@@ -1,0 +1,140 @@
+---
+title: "Ex6: NMDA Synapse"
+description: "Voltage-dependent NMDA synapse with Mg²⁺ block"
+---
+
+## Model: NMDA Synapse
+
+NMDA receptor-mediated synapse with voltage-dependent Mg²⁺ block.  The block
+factor is:
+
+$$B(v) = \frac{1}{1 + [\text{Mg}^{2+}]/3.57 \cdot \exp(-0.062 \cdot v)}$$
+
+The synapse conductance follows $dg/dt = -g/\tau_{\text{decay}}$ with the
+post-synaptic current $I_{\text{syn}} = g \cdot B(v) \cdot (v - E_{\text{rev}})$.
+
+TVBO models the HH pre-cell dynamics (same as Ex1/Ex3).
+
+---
+
+## 1. Define Pre-Cell in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+# Same HH pre-cell as Ex3, I_ext = 0.065 nA
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex6: HH Pre-Cell (NMDA Network)"
+dynamics:
+  name: HodgkinHuxley
+  parameters:
+    C:     { value: 10.0 }
+    g_Na:  { value: 1200.0 }
+    g_K:   { value: 360.0 }
+    g_L:   { value: 3.0 }
+    E_Na:  { value: 50.0 }
+    E_K:   { value: -77.0 }
+    E_L:   { value: -54.3 }
+    I_ext: { value: 0.065 }
+  derived_variables:
+    alpha_m:
+      equation:
+        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
+    beta_m:
+      equation:
+        rhs: "4.0*exp(-(v + 65.0)/18.0)"
+    alpha_h:
+      equation:
+        rhs: "0.07*exp(-(v + 65.0)/20.0)"
+    beta_h:
+      equation:
+        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
+    alpha_n:
+      equation:
+        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
+    beta_n:
+      equation:
+        rhs: "0.125*exp(-(v + 65.0)/80.0)"
+  state_variables:
+    v:
+      equation:
+        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
+      initial_value: -65.0
+      variable_of_interest: true
+    m:
+      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      initial_value: 0.05
+    h:
+      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      initial_value: 0.6
+    n:
+      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
+      initial_value: 0.32
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 150.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+```
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+print(xml[:1500])
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex6_NMDA.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO (Pre-Cell)
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+tvbo_arr = np.column_stack([da.coords['time'].values, da.sel(node='0').values])
+print(f"TVBO: shape={tvbo_arr.shape}")
+```
+
+## 5. Plot Reference
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+ref_arr = list(ref_outputs.values())[0]
+t = ref_arr[:, 0] * 1000
+
+fig, ax = plt.subplots(figsize=(10, 4))
+for i in range(1, min(ref_arr.shape[1], 5)):
+    ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Cell {i}')
+ax.set_xlabel("Time (ms)")
+ax.set_ylabel("Voltage (mV)")
+ax.set_title("Ex6: NMDA Synapse Network — Voltage Traces (NeuroML reference)")
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## NMDA Dynamics
+The NMDA synapse ODE $dg/dt = -g/\tau_d$ with Mg²⁺ block $B(v)$ is expressible
+as a TVBO derived variable + state variable.  The network topology (pre→post
+projections) is NeuroML-native.
+:::

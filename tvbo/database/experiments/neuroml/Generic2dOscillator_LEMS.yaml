@@ -1,0 +1,23 @@
+# TVBO → NeuroML: Generic 2D Oscillator (FitzHugh-Nagumo-like)
+# ==============================================================
+# Uses the TVBO database Generic2dOscillator model with FHN-like parameters.
+# Demonstrates that existing TVBO database models can be rendered as LEMS
+# without any modifications.
+
+id: 906
+label: "TVBO Generic2dOscillator as LEMS"
+description: >
+  Export the full Generic2dOscillator model from the TVBO database as LEMS XML.
+  This model generalises FitzHugh-Nagumo. All 13 parameters, coupling inputs,
+  and 2 state variables (V, W) are exported.
+
+model: Generic2dOscillator
+
+network:
+  number_of_nodes: 1
+
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 100.0
+  time_scale: ms

@@ -19,7 +19,7 @@ dynamics:
         a:
             label: "Input gain parameter"
             value: 0.270
-            unit: n/C
+            unit: per_nC
         b:
             label: Input shift parameter
             unit: kHz

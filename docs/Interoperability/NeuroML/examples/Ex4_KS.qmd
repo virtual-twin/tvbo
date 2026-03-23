@@ -1,0 +1,167 @@
+---
+title: "Ex4: Kinetic Scheme Channels"
+description: "Ion channels defined via kinetic scheme (Markov) state transitions"
+---
+
+## Model: Kinetic Scheme Ion Channels
+
+This example demonstrates `ionChannelKS` — ion channels defined by Markov state
+transitions between open/closed states.  The `k_vh` channel uses a
+`vHalfTransition` with rates:
+
+$$r_{f0} = \frac{\exp(z\gamma(v - v_{Half})/k_{te})}{\tau}, \quad
+r_{r0} = \frac{\exp(-z(1-\gamma)(v - v_{Half})/k_{te})}{\tau}$$
+
+$$r_f = \frac{1}{1/r_{f0} + \tau_{Min}}, \quad
+r_r = \frac{1}{1/r_{r0} + \tau_{Min}}$$
+
+where $k_{te} = 25.3\,\text{mV}$.  This reduces to the standard ODE
+$\frac{dn}{dt} = r_f(1-n) - r_r \cdot n$, which TVBO represents as derived
+variables.
+
+The cell has a standard HH Na channel ($m^3 h$) and the KS K channel ($n$,
+instances=1):
+
+$$C\frac{dv}{dt} = -g_{Na}m^3 h(v - E_{Na}) - g_K n(v - E_K) + I_{\text{ext}}$$
+
+---
+
+## 1. Define in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+# Ex4 parameters: pointCellCondBased, C=1pF
+# Na: 6000 channels × 20pS = 120 nS, erev=50mV (standard HH rates)
+# K (k_vh): 1800 channels × 8pS = 14.4 nS, erev=-77mV (KS vHalfTransition)
+# vHalf=0mV, z=1.5, gamma=0.75, tau=3.2ms, tauMin=0.3ms, kte=25.3mV
+# z*gamma/kte = 1.125/25.3 ≈ 0.04447, z*(1-gamma)/kte = 0.375/25.3 ≈ 0.01482
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex4: KS Channels"
+dynamics:
+  name: HH_KineticScheme
+  parameters:
+    C:     { value: 1.0,    description: "Membrane capacitance (pF)" }
+    g_Na:  { value: 120.0,  description: "Total Na conductance (nS)" }
+    g_K:   { value: 14.4,   description: "Total K conductance (nS)" }
+    E_Na:  { value: 50.0 }
+    E_K:   { value: -77.0 }
+    I_ext: { value: 0.005,  description: "External current (nA)" }
+  derived_variables:
+    alpha_m:
+      equation:
+        rhs: "Piecewise((1.0, Eq(v, -40.0)), (1.0*(v + 40.0)/(10.0*(1.0 - exp(-(v + 40.0)/10.0))), True))"
+    beta_m:
+      equation:
+        rhs: "4.0*exp(-(v + 65.0)/18.0)"
+    alpha_h:
+      equation:
+        rhs: "0.07*exp(-(v + 65.0)/20.0)"
+    beta_h:
+      equation:
+        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
+    rf_n:
+      equation:
+        rhs: "1.0/(3.2*exp(-0.04447*v) + 0.3)"
+      description: "KS forward rate for n gate (vHalfTransition)"
+    rr_n:
+      equation:
+        rhs: "1.0/(3.2*exp(0.01482*v) + 0.3)"
+      description: "KS reverse rate for n gate"
+  state_variables:
+    v:
+      equation:
+        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n*(v - E_K) + I_ext*1000) / C"
+      initial_value: -65.0
+      variable_of_interest: true
+    m:
+      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      initial_value: 0.05
+    h:
+      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      initial_value: 0.6
+    n:
+      equation: { rhs: "rf_n*(1 - n) - rr_n*n" }
+      initial_value: 0.32
+      description: "KS K+ channel open-state occupancy"
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 300.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+print(f"SVs: {list(exp.dynamics.state_variables.keys())}")
+print(f"DVs: {list(exp.dynamics.derived_variables.keys())}")
+```
+
+::: {.callout-note}
+## Kinetic Scheme → ODE
+The `vHalfTransition` between closed and open states is mathematically equivalent
+to an ODE $dn/dt = r_f(1-n) - r_r n$.  The KS open-state occupancy is the
+gating variable $n$.  No information is lost in the TVBO representation.
+:::
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+# Show TimeDerivative lines
+for line in xml.split('\n'):
+    if 'TimeDerivative' in line or 'DerivedVariable' in line:
+        print(line.strip())
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex4_KS.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO Version
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+tvbo_arr = np.column_stack([da.coords['time'].values, da.sel(node='0').values])
+print(f"TVBO: shape={tvbo_arr.shape}")
+```
+
+## 5. Numerical Comparison
+
+```{python}
+from _nml_helpers import compare_traces
+import numpy as np
+
+ref_arr = list(ref_outputs.values())[0]
+# Reference output: time, v, na/m, na/h, k_vh/n, c1/occupancy, o1/occupancy
+# Compare voltage (column 1)
+ref_v = ref_arr[:, [0, 1]]
+tvbo_v = tvbo_arr[:, [0, 1]]
+
+compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
+```
+
+## 6. Plot
+
+```{python}
+from _nml_helpers import plot_comparison
+
+plot_comparison(
+    ref_v, tvbo_v,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+    title="Ex4: KS Channels — NeuroML vs TVBO",
+    time_scale=1.0, time_unit="s",
+)
+```
