@@ -39,8 +39,8 @@ dynamics:
   derived_variables:
     I_ext:
       equation:
-        rhs: "Piecewise((300.0, (t >= 0.15) & (t < 0.2)), (800.0, True))"
-      description: "Combined pulses in pA: +0.8nA constant, -0.5nA during 150-200ms"
+        rhs: "800.0"
+      description: "Constant current 0.8 nA = 800 pA (pulseGen1: delay=0, duration=2000ms)"
   state_variables:
     v:
       equation:

@@ -1,49 +1,103 @@
 ---
 title: "Ex17: Tissue Simulation"
-description: "Tissue-level simulation with continuous field/population models"
+description: "HH cell with Q10 temperature scaling in a tissue that changes temperature"
 ---
 
-## Model: Tissue Simulation
+## Model: Tissue with Varying Temperature
 
-Demonstrates `<continuousProjection>` and `<continuousConnection>` — the NeuroML
-mechanism for representing continuous (non-spiking) signal transmission between
-populations, suitable for graded synapses and mean-field models.
+Demonstrates `tissueWithVaryingTemperature` — an HH cell with Q10-scaled gating
+rates inside a tissue that changes temperature from 22°C to 16°C at $t=500\,\text{ms}$.
 
-The cells are FitzHugh-Nagumo oscillators:
+$$C\frac{dv}{dt} = -g_{Na}m^3h(v - E_{Na}) - g_K n^4(v - E_K) - g_L(v - E_L) + I_{\text{ext}}$$
 
-$$\frac{dV}{dt} = V - \frac{V^3}{3} - W + I$$
-$$\frac{dW}{dt} = 0.08(V + 0.7 - 0.8W)$$
+Gate rates are scaled by $Q_{10}(T)$:
+$$Q_{10}(T) = 3^{(T - 32)/10}$$
+
+- $T = 22°C$ for $t < 500\,\text{ms}$: $Q_{10} = 3^{-1} = 1/3$
+- $T = 16°C$ for $t \ge 500\,\text{ms}$: $Q_{10} = 3^{-1.6} \approx 0.1724$
 
 ---
 
-## 1. Define FHN Cell in TVBO
+## 1. Define in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
+# Q10 temperature scaling: 3^((T-32)/10)
+# T=22°C: Q10 = 3^(-1) = 0.333333
+# T=16°C: Q10 = 3^(-1.6) = 0.172414
+# Temperature changes at t=500ms (= 0.5s)
+# Same HH conductances as Ex1/Ex5/Ex10: g_Na=1200nS, g_K=360nS, g_L=3nS, C=10pF
+# Constant input: 0.08nA = 80pA for entire simulation
+
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex17: FHN Tissue"
+label: "NeuroML Ex17: HH Tissue with Q10"
 dynamics:
-  name: FitzHughNagumo
+  name: HH_Tissue_Q10
   parameters:
-    I: { value: 0.8 }
+    C:     { value: 10.0 }
+    g_Na:  { value: 1200.0 }
+    g_K:   { value: 360.0 }
+    g_L:   { value: 3.0 }
+    E_Na:  { value: 50.0 }
+    E_K:   { value: -77.0 }
+    E_L:   { value: -54.3 }
+    I_amp: { value: 0.08 }
+    Q10_early: { value: 0.333333, description: "Q10 at 22C: 3^(-1)" }
+    Q10_late:  { value: 0.172414, description: "Q10 at 16C: 3^(-1.6)" }
+    switch_time_ms: { value: 500.0, description: "Temperature switch at 500ms" }
+  derived_variables:
+    Q10:
+      equation:
+        rhs: "Piecewise((Q10_early, t < switch_time_ms/1000), (Q10_late, True))"
+      description: "Q10 factor: switches from 22C to 16C at 500ms"
+    I_ext:
+      equation:
+        rhs: "I_amp"
+      description: "Constant current 0.08 nA"
+    alpha_m:
+      equation:
+        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
+    beta_m:
+      equation:
+        rhs: "4.0*exp(-(v + 65.0)/18.0)"
+    alpha_h:
+      equation:
+        rhs: "0.07*exp(-(v + 65.0)/20.0)"
+    beta_h:
+      equation:
+        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
+    alpha_n:
+      equation:
+        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
+    beta_n:
+      equation:
+        rhs: "0.125*exp(-(v + 65.0)/80.0)"
   state_variables:
-    V:
-      equation: { rhs: "V - V**3/3 - W + I" }
-      initial_value: 0.0
+    v:
+      equation:
+        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
+      initial_value: -65.0
       variable_of_interest: true
-    W:
-      equation: { rhs: "0.08*(V + 0.7 - 0.8*W)" }
-      initial_value: 0.0
+    m:
+      equation: { rhs: "Q10*(alpha_m*(1 - m) - beta_m*m)" }
+      initial_value: 0.052932
+    h:
+      equation: { rhs: "Q10*(alpha_h*(1 - h) - beta_h*h)" }
+      initial_value: 0.596121
+    n:
+      equation: { rhs: "Q10*(alpha_n*(1 - n) - beta_n*n)" }
+      initial_value: 0.317677
 network:
   number_of_nodes: 1
 integration:
   method: euler
   step_size: 0.01
-  duration: 200.0
-  time_scale: s
+  duration: 1000.0
+  time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name}")
+print(f"SVs: {list(exp.dynamics.state_variables.keys())}")
 ```
 
 ## 2. Render LEMS XML

@@ -171,6 +171,28 @@ def safe_id(s):
     return ("_" + s) if s[0].isdigit() else s
 
 
+def _normalize_edge_params(params):
+    """Normalize edge parameters to a flat ``{name: param_obj}`` dict.
+
+    Handles both the dict form ``{weight: {value: 1.0}}`` and the list form
+    ``[{weight: {value: 1.0}}, ...]`` that YAML may produce.
+    """
+    if not params:
+        return {}
+    if isinstance(params, list):
+        result = {}
+        for item in params:
+            if isinstance(item, dict):
+                for k, v in item.items():
+                    result[str(k)] = v
+        return result
+    # dict or dict-like (LinkML JsonObj)
+    try:
+        return {str(k): v for k, v in params.items()}
+    except AttributeError:
+        return {}
+
+
 def validate_lems_xml(xml_string):
     """Validate a LEMS XML string using PyLEMS.
 
@@ -188,6 +210,201 @@ def validate_lems_xml(xml_string):
         Model().import_from_file(fname)
     finally:
         os.unlink(fname)
+
+
+# ── Network context builder ──────────────────────────────────────────
+
+def _build_network_context(experiment):
+    """Extract multi-population network structure for LEMS rendering.
+
+    Inspects the experiment's network for explicit nodes, edges, and
+    coupling definitions.  When present, builds the population, synapse,
+    connection, and input metadata needed by the LEMS templates.
+
+    Returns None if the network is a simple single-population case
+    (no explicit nodes/edges), otherwise returns a dict with keys:
+    ``populations``, ``synapses``, ``connections``, ``inputs``,
+    ``cell_types``.
+    """
+    from tvbo.classes.dynamics import Dynamics
+
+    network = getattr(experiment, "network", None)
+    if network is None:
+        return None
+
+    nodes = getattr(network, "nodes", None) or []
+    edges = getattr(network, "edges", None) or []
+
+    if not nodes or not edges:
+        return None
+
+    # ── Resolve dynamics for each node ──
+    # Build a dict of unique dynamics models and group nodes into populations
+    default_dyn = experiment.dynamics
+    dynamics_lib = getattr(network, "dynamics", None) or {}
+
+    cell_types = {}   # dyn_name -> Dynamics object
+    populations = []  # list of {id, component, size, node_ids}
+    node_pop_map = {} # node_id -> (pop_id, index_within_pop)
+
+    # Group nodes by their dynamics name
+    from collections import OrderedDict
+    groups = OrderedDict()  # dyn_name -> [node_obj, ...]
+    for node in nodes:
+        node_dyn = getattr(node, "dynamics", None)
+        if node_dyn:
+            dyn_name = getattr(node_dyn, "name", None) or str(node_dyn)
+        else:
+            dyn_name = getattr(default_dyn, "name", None) or "dynamics"
+        groups.setdefault(dyn_name, []).append(node)
+
+    for dyn_name, group_nodes in groups.items():
+        # Resolve the Dynamics object
+        if dyn_name in dynamics_lib:
+            dyn_obj = dynamics_lib[dyn_name]
+        elif dyn_name == getattr(default_dyn, "name", None):
+            dyn_obj = default_dyn
+        else:
+            dyn_obj = Dynamics.from_db(dyn_name)
+        cell_types[dyn_name] = dyn_obj
+
+        pop_id = safe_id(dyn_name) + "_pop"
+        node_ids = []
+        for idx, node in enumerate(group_nodes):
+            nid = getattr(node, "id", idx)
+            node_pop_map[nid] = (pop_id, idx)
+            node_ids.append(nid)
+
+        populations.append({
+            "id": pop_id,
+            "component": safe_id(dyn_name) + "_inst",
+            "size": len(group_nodes),
+            "node_ids": node_ids,
+            "dyn_name": dyn_name,
+        })
+
+    # ── Extract synapse definitions from edges ──
+    synapses = []     # list of {id, type, params}
+    connections = []  # list of {from_pop, from_idx, to_pop, to_idx, synapse, weight, delay}
+    synapse_set = {}  # dedup key -> synapse_id
+
+    for edge_idx, edge in enumerate(edges):
+        src = getattr(edge, "source", None)
+        tgt = getattr(edge, "target", None)
+        if src is None or tgt is None:
+            continue
+
+        src = int(src)
+        tgt = int(tgt)
+        if src not in node_pop_map or tgt not in node_pop_map:
+            continue
+
+        src_pop, src_idx = node_pop_map[src]
+        tgt_pop, tgt_idx = node_pop_map[tgt]
+
+        # Get edge coupling/synapse info
+        edge_coupling = getattr(edge, "coupling", None)
+        edge_dynamics = getattr(edge, "dynamics", None)
+
+        # ── Extract ALL edge parameters ────────────────────────────────
+        # Supports both dict {weight: {value:1.0}} and list [{weight: ...}]
+        # formats.  Separates connection-level params (weight, delay) from
+        # synapse definition params (everything else, kept with their units).
+        edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
+        weight = None
+        delay = None
+        delay_unit = None
+        syn_params = {}  # {name: {'value': v, 'unit': u}}
+        for pname, pval in edge_params.items():
+            pname = str(pname)
+            val = getattr(pval, 'value', pval)
+            unit = getattr(pval, 'unit', None)
+            if pname == 'weight':
+                weight = float(val) if val is not None else None
+            elif pname == 'delay':
+                delay = float(val) if val is not None else None
+                delay_unit = unit
+            else:
+                syn_params[pname] = {'value': val, 'unit': unit}
+
+        # Merge coupling-definition params into syn_params (edge params take precedence)
+        syn_type = None
+        if edge_coupling:
+            coup_name = getattr(edge_coupling, "name", None) or str(edge_coupling)
+            syn_type = coup_name
+            coup_params = _normalize_edge_params(getattr(edge_coupling, "parameters", None))
+            for k, v in coup_params.items():
+                k = str(k)
+                if k not in ('weight', 'delay') and k not in syn_params:
+                    val = getattr(v, 'value', v)
+                    unit = getattr(v, 'unit', None)
+                    syn_params[k] = {'value': val, 'unit': unit}
+
+        # Resolve edge dynamics to a Dynamics object
+        resolved_edge_dyn = None
+        if edge_dynamics:
+            dyn_name = getattr(edge_dynamics, 'name', None) or str(edge_dynamics)
+            if dyn_name in dynamics_lib:
+                resolved_edge_dyn = dynamics_lib[dyn_name]
+            elif dyn_name:
+                try:
+                    resolved_edge_dyn = Dynamics.from_db(dyn_name)
+                except Exception:
+                    pass
+
+        if syn_type is None and edge_dynamics:
+            syn_type = getattr(edge_dynamics, 'name', None) or f"syn_edge{edge_idx}"
+        if syn_type is None:
+            syn_type = f"syn{edge_idx}"
+
+        # Build synapse dedup key — include param values (not units) for dedup
+        syn_key = (
+            syn_type,
+            tuple(sorted(
+                (k, pinfo['value'] if isinstance(pinfo, dict) else pinfo)
+                for k, pinfo in syn_params.items()
+            )),
+        )
+        if syn_key not in synapse_set:
+            syn_id = safe_id(syn_type)
+            synapse_set[syn_key] = syn_id
+            synapses.append({
+                "id": syn_id,
+                "type": syn_type,
+                "params": syn_params,       # {name: {'value': v, 'unit': u}}
+                "edge_dynamics": edge_dynamics,
+                "edge_coupling": edge_coupling,
+                "resolved_dyn": resolved_edge_dyn,
+            })
+        syn_id = synapse_set[syn_key]
+
+        connections.append({
+            "from_pop": src_pop,
+            "from_idx": src_idx,
+            "to_pop": tgt_pop,
+            "to_idx": tgt_idx,
+            "synapse": syn_id,
+            "weight": float(weight) if weight is not None else None,
+            "delay": float(delay) if delay is not None else None,
+            "delay_unit": delay_unit,
+        })
+
+    # ── Extract input specifications ──
+    inputs = []
+    # Inputs come from node-level parameters or experiment-level stimulus.
+    # For now, check if any node dynamics has a Piecewise I_ext that encodes
+    # a pulse generator — this is the pattern used in QMD examples.
+    # More sophisticated input handling (explicit stimulus objects) can be
+    # added later.
+
+    return {
+        "populations": populations,
+        "synapses": synapses,
+        "connections": connections,
+        "inputs": inputs,
+        "cell_types": cell_types,
+        "node_pop_map": node_pop_map,
+    }
 
 
 # ── Shared template context ───────────────────────────────────────────
@@ -330,7 +547,10 @@ def build_lems_context(experiment):
     label = getattr(experiment, 'label', None)
     sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
 
-    return dict(
+    # ── Multi-population network context ──
+    net_ctx = _build_network_context(experiment)
+
+    ctx = dict(
         dyn=dyn,
         dyn_id=dyn_id,
         sim_id=sim_id,
@@ -355,7 +575,158 @@ def build_lems_context(experiment):
         time_scale=time_scale,
         needs_sec=not _model_has_time_units,
         max_output_nodes=100,
+        # Network context (None for single-population)
+        net_ctx=net_ctx,
+        has_network=net_ctx is not None,
     )
+
+    # When multi-population network exists, build per-cell-type contexts
+    if net_ctx:
+        cell_contexts = {}
+        for ct_name, ct_dyn in net_ctx["cell_types"].items():
+            ct_params = ct_dyn.parameters or {}
+            ct_svs = ct_dyn.state_variables or {}
+            ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
+            ct_events = getattr(ct_dyn, "events", None) or {}
+            ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
+            ct_sv_names_set = set(str(k) for k in ct_svs.keys())
+
+            ct_all_names = (
+                [str(k) for k in ct_params.keys()]
+                + [str(k) for k in ct_svs.keys()]
+                + [str(k) for k in ct_dvs.keys()]
+                + [str(ci) for ci in ct_coupling_inputs]
+            )
+            ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
+
+            ct_has_time_units = any(
+                unit_has_time_dimension(getattr(p, "unit", None))
+                for p in list(ct_params.values()) + list(ct_svs.values())
+            )
+
+            _LEMS_CMP_RE = re.compile(r'\.(gt|lt|geq|leq|eq|neq)\.', re.IGNORECASE)
+
+            def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
+                def ct_lems_expr(e):
+                    e_str = str(e)
+                    # LEMS comparison operators (.gt., .lt., etc.) are not SymPy parseable;
+                    # return them as-is.
+                    if _LEMS_CMP_RE.search(e_str):
+                        return e_str
+                    if not isinstance(e, _SympyBasic):
+                        e = parse_eq(e_str, parameters=ct_all_names, functions=ct_fn_names)
+                    e = inline_model_functions(e, ct_dyn, ct_all_names)
+                    return sympy_to_lems(e, parameters=ct_all_names)
+                return ct_lems_expr
+
+            def _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr_fn):
+                def ct_parse_pw(rhs_str):
+                    try:
+                        expr = parse_eq(str(rhs_str), parameters=ct_all_names, functions=ct_fn_names)
+                        expr = expr.rewrite(Piecewise)
+                        if not isinstance(expr, Piecewise) and expr.has(Piecewise):
+                            expr = piecewise_fold(expr)
+                        if not isinstance(expr, Piecewise):
+                            return None
+                        cases = []
+                        for val, cond in expr.args:
+                            if getattr(cond, "func", None) is sympy_Eq:
+                                continue
+                            cond_str = None if cond == sympy_S.true else ct_lems_expr_fn(cond)
+                            val_str = ct_lems_expr_fn(val)
+                            cases.append((cond_str, val_str))
+                        return cases
+                    except Exception:
+                        return None
+                return ct_parse_pw
+
+            ct_lems_expr = _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names)
+            ct_parse_pw = _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr)
+
+            # Detect threshold (spike-emitting) events for this node type
+            threshold_event_names = [
+                k for k, v in ct_events.items()
+                if getattr(getattr(v, 'condition', None), 'rhs', None) is not None
+            ]
+
+            cell_contexts[ct_name] = {
+                "dyn": ct_dyn,
+                "dyn_id": safe_id(ct_name),
+                "params": ct_params,
+                "svs": ct_svs,
+                "dvs": ct_dvs,
+                "events": ct_events,
+                "coupling_inputs": ct_coupling_inputs,
+                "sv_names_set": ct_sv_names_set,
+                "needs_sec": not ct_has_time_units,
+                "lems_expr": ct_lems_expr,
+                "_parse_piecewise": ct_parse_pw,
+                # Node-level flags for LEMS network rendering
+                "is_synapse": False,
+                "has_threshold_events": bool(threshold_event_names),
+                "threshold_event_names": threshold_event_names,
+            }
+        ctx["cell_contexts"] = cell_contexts
+
+        # ── Also build cell_contexts for edge dynamics (synapse ComponentTypes) ──
+        for syn in net_ctx.get("synapses", []):
+            rdyn = syn.get("resolved_dyn")
+            if rdyn and syn["id"] not in cell_contexts:
+                ct_dyn = rdyn
+                ct_name = syn["id"]
+                ct_params = ct_dyn.parameters or {}
+                ct_svs = ct_dyn.state_variables or {}
+                ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
+                ct_events = getattr(ct_dyn, "events", None) or {}
+                ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
+                ct_sv_names_set = set(str(k) for k in ct_svs.keys())
+                ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
+                ct_has_time_units = any(
+                    unit_has_time_dimension(getattr(p, "unit", None))
+                    for p in list(ct_params.values()) + list(ct_svs.values())
+                )
+                ct_all_names = (
+                    [str(k) for k in ct_params.keys()]
+                    + [str(k) for k in ct_svs.keys()]
+                    + [str(k) for k in ct_dvs.keys()]
+                    + [str(ci) for ci in ct_coupling_inputs]
+                )
+                ct_lems_expr = _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names)
+                ct_parse_pw = _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr)
+
+                # Synapse-specific: events without a condition are external spike triggers
+                external_event_names = [
+                    k for k, ev in ct_events.items()
+                    if not getattr(getattr(ev, 'condition', None), 'rhs', None)
+                ]
+                # Exposure / InstanceRequirement detection
+                has_i_exposure = 'i' in ct_dvs or any(str(k) == 'i' for k in ct_svs)
+                has_v_req = any(str(ci) == 'v' for ci in ct_coupling_inputs)
+
+                cell_contexts[ct_name] = {
+                    "dyn": ct_dyn,
+                    "dyn_id": ct_name,
+                    "params": ct_params,
+                    "svs": ct_svs,
+                    "dvs": ct_dvs,
+                    "events": ct_events,
+                    "coupling_inputs": ct_coupling_inputs,
+                    "sv_names_set": ct_sv_names_set,
+                    "needs_sec": not ct_has_time_units,
+                    "lems_expr": ct_lems_expr,
+                    "_parse_piecewise": ct_parse_pw,
+                    # Synapse-specific extras
+                    "is_synapse": True,
+                    "has_i_exposure": has_i_exposure,
+                    "has_v_req": has_v_req,
+                    "external_event_names": external_event_names,
+                    "has_threshold_events": False,
+                    "threshold_event_names": [],
+                }
+        # Re-store with synapse contexts included
+        ctx["cell_contexts"] = cell_contexts
+
+    return ctx
 
 
 # ── Adapter ──────────────────────────────────────────────────────────
@@ -606,6 +977,8 @@ class NeuroMLAdapter(BaseAdapter):
         ctx = build_lems_context(self.experiment)
         sv_names = list(ctx['svs'].keys())
         dyn_id = ctx['dyn_id']
+        net_ctx = ctx.get('net_ctx')
+        cell_contexts = ctx.get('cell_contexts', {})
 
         xml = self.render_code(**kwargs)
 
@@ -640,18 +1013,37 @@ class NeuroMLAdapter(BaseAdapter):
 
             raw = np.loadtxt(str(dat_files[0]))
 
-        time = raw[:, 0]
-        values = raw[:, 1:]  # (n_t, n_sv)
+        time_data = raw[:, 0]
+        values_data = raw[:, 1:]
 
-        da = xr.DataArray(
-            data=values.reshape(-1, len(sv_names), 1),
-            dims=['time', 'variable', 'node'],
-            coords={
-                'time': time,
-                'variable': sv_names,
-                'node': ['0'],
-            },
-        )
+        if net_ctx and cell_contexts:
+            # Multi-population: rebuild column labels from the ordered out_cols
+            # produced by the template (same order as the OutputFile columns).
+            col_names = []
+            for pop in net_ctx['populations']:
+                ct = cell_contexts.get(pop['dyn_name'], {})
+                if ct.get('is_synapse'):
+                    continue  # synapse populations don't have output columns
+                for sv_name in ct.get('svs', {}):
+                    for idx in range(pop['size']):
+                        col_names.append(f"{pop['id']}[{idx}]/{sv_name}")
+
+            da = xr.DataArray(
+                data=values_data,
+                dims=['time', 'quantity'],
+                coords={'time': time_data, 'quantity': col_names},
+            )
+        else:
+            # Single population: existing flat layout
+            da = xr.DataArray(
+                data=values_data.reshape(-1, len(sv_names), 1),
+                dims=['time', 'variable', 'node'],
+                coords={
+                    'time': time_data,
+                    'variable': sv_names,
+                    'node': ['0'],
+                },
+            )
 
         sim = SimulationResult(data=da)
         return ExperimentResult(

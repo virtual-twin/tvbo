@@ -42,7 +42,6 @@ dynamics:
     pulse_delay_ms:    { value: 100.0 }
     pulse_duration_ms: { value: 100.0 }
     Q10:   { value: 0.333333, description: "Q10 factor = 3^((22-32)/10)" }
-    gate_rate_scale: { value: 0.988 }
   derived_variables:
     I_ext:
       equation:
@@ -72,14 +71,14 @@ dynamics:
       initial_value: -65.0
       variable_of_interest: true
     m:
-      equation: { rhs: "gate_rate_scale*(alpha_m*(1 - m) - beta_m*m)" }
-      initial_value: 0.05
+      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      initial_value: 0.052932
     h:
-      equation: { rhs: "gate_rate_scale*(alpha_h*(1 - h) - beta_h*h)" }
-      initial_value: 0.6
+      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      initial_value: 0.596121
     n:
-      equation: { rhs: "gate_rate_scale*(alpha_n*(1 - n) - beta_n*n)" }
-      initial_value: 0.32
+      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
+      initial_value: 0.317677
 network:
   number_of_nodes: 1
 integration:

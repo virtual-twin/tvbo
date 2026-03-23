@@ -68,11 +68,11 @@ dynamics:
         rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
     rf_n:
       equation:
-        rhs: "1.0/(3.2*exp(-0.04447*v) + 0.3)"
+        rhs: "1.0/(3.2*exp(-1.125*v/25.3) + 0.3)"
       description: "KS forward rate for n gate (vHalfTransition)"
     rr_n:
       equation:
-        rhs: "1.0/(3.2*exp(0.01482*v) + 0.3)"
+        rhs: "1.0/(3.2*exp(0.375*v/25.3) + 0.3)"
       description: "KS reverse rate for n gate"
   state_variables:
     v:

@@ -57,7 +57,7 @@ state_variables:
       rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability (facilitation variable)"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -85,7 +85,7 @@ state_variables:
       rhs: "(1 - x)/tau_x - k*x*r_in"
     initial_value: 1.0
     description: "Available synaptic resources"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -116,7 +116,7 @@ state_variables:
       rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -141,7 +141,7 @@ state_variables:
     equation:
       rhs: "(-r + I_ext + r_in)/tau"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   r_in: {}
 """)
 
@@ -200,47 +200,46 @@ edges:
   - source: 0
     target: 1
     parameters:
-      - weight:
-          value: 1.0
+      weight:
+        value: 1.0
     source_var: r_out
     target_var: r_in
   - source: 0
     target: 2
     parameters:
-      - weight:
-          value: 1.0
+      weight:
+        value: 1.0
     source_var: r_out
     target_var: r_in
   - source: 0
     target: 3
     parameters:
-      - weight:
-          value: 1.0
+      weight:
+        value: 1.0
     source_var: r_out
     target_var: r_in
   # All synapses converge onto the post-synaptic neuron
   - source: 1
     target: 4
     parameters:
-      - weight:
-          value: 0.33
+      weight:
+        value: 0.33
     source_var: r_eff
     target_var: r_in
   - source: 2
     target: 4
     parameters:
-      - weight:
-          value: 0.33
+      weight:
+        value: 0.33
     source_var: r_eff
     target_var: r_in
   - source: 3
     target: 4
     parameters:
-      - weight:
-          value: 0.33
+      weight:
+        value: 0.33
     source_var: r_eff
     target_var: r_in
-
 """
 
 # Parse network and create experiment with all components
