@@ -21,7 +21,7 @@ state_variables:
     equation:
       rhs: "omega*x + a*z - z*(x**2 + z**2)"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   c_in: {}
 """)
 
@@ -47,7 +47,7 @@ state_variables:
     equation:
       rhs: "(v + a - b*w)/tau"
     initial_value: -0.5
-coupling_terms:
+coupling_inputs:
   c_in: {}
 """)
 
@@ -67,7 +67,7 @@ state_variables:
     equation:
       rhs: "x/mu"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   c_in: {}
 """)
 ```
