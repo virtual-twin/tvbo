@@ -62,7 +62,7 @@ network:
                 a_E:
                     label: "Excitatory gain"
                     value: 310.0
-                    unit: n/C
+                    unit: per_nC
                 b_E:
                     label: "Excitatory threshold"
                     value: 125.0
@@ -84,7 +84,7 @@ network:
                 a_I:
                     label: "Inhibitory gain"
                     value: 615.0
-                    unit: n/C
+                    unit: per_nC
                 b_I:
                     label: "Inhibitory threshold"
                     value: 177.0
@@ -250,7 +250,7 @@ network:
                 a:
                     label: "Input-output gain"
                     value: 270.0
-                    unit: Hz/nA
+                    unit: Hz_per_nA
                 b:
                     label: "Input-output threshold"
                     value: 108.0
@@ -333,7 +333,7 @@ network:
                 contrast:
                     label: "Stimulus contrast"
                     value: 6.4
-                    unit: "%"
+                    unit: percent
                     description: "Evidence strength: (A - B) / (A + B) * 100"
 
             # --- DERIVED VARIABLES ---
@@ -455,7 +455,7 @@ network:
             name: conduction_speed
             label: global_trans_v
             value: 1.0
-            unit: m/s
+            unit: m_per_s
             description: "Global transmission velocity for computing delays"
         G:
             name: G
@@ -557,7 +557,7 @@ functions:
             parameters:
                 a_E:
                     value: 310.0
-                    unit: n/C
+                    unit: per_nC
                 b_E:
                     value: 125.0
                     unit: Hz
@@ -578,7 +578,7 @@ functions:
             parameters:
                 a_I:
                     value: 615.0
-                    unit: n/C
+                    unit: per_nC
                 b_I:
                     value: 177.0
                     unit: Hz
@@ -598,7 +598,7 @@ functions:
             parameters:
                 a:
                     value: 270.0
-                    unit: Hz/nA
+                    unit: Hz_per_nA
                 b:
                     value: 108.0
                     unit: Hz

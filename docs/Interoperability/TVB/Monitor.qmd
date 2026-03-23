@@ -465,7 +465,7 @@ ts_tvbo.get_subspace_by_index([node]).plot(ax=ax1, label="tvbo-generated", lines
 ax1.legend()
 ax1.set_title(f"Region {node}: {conn.region_labels[node]}")
 
-diff_trace = np.abs(ts_native.data[:, 0, node, 0] - ts_tvbo.data[:, 0, node, 0]) + 1e-20
+diff_trace = np.abs(ts_native.data.isel(variable=0, node=node, mode=0) - ts_tvbo.data.isel(variable=0, node=node, mode=0)) + 1e-20
 ax2.semilogy(ts_native.time, diff_trace, color="k", lw=0.8)
 ax2.set_ylabel("|diff|")
 ax2.set_xlabel("Time (ms)")

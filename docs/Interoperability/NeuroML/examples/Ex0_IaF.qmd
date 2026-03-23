@@ -1,0 +1,127 @@
+---
+title: "Ex0: Integrate-and-Fire"
+description: "Leaky integrate-and-fire cells — iafTauCell with spike/reset events"
+---
+
+## Model: `iafTauCell`
+
+The simplest NeuroML2 example: a leaky integrate-and-fire neuron with a single
+state variable $v$, governed by:
+
+$$\frac{dv}{dt} = \frac{E_L - v}{\tau}$$
+
+With spike event: if $v > \text{thresh}$, then $v \leftarrow \text{reset}$.
+
+Parameters: `leakReversal=-50 mV`, `thresh=-55 mV`, `reset=-70 mV`, `tau=30 ms`.
+
+Note: since `leakReversal > thresh`, this cell will never fire.  The NeuroML
+example also includes `iafTauRefCell`, `iafCell`, and `iafRefCell` variants.
+The TVBO version matches the `iafTauCell` (tau-based, no refractory period).
+
+---
+
+## 1. Define in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex0: Integrate-and-Fire (iafTau)"
+dynamics:
+  name: IntegrateAndFire
+  parameters:
+    leakReversal: { value: -50.0 }
+    tau:          { value: 30.0 }
+    thresh:       { value: -55.0 }
+    reset:        { value: -70.0 }
+  state_variables:
+    v:
+      equation: { rhs: "(leakReversal - v) / tau" }
+      initial_value: -50.0
+      variable_of_interest: true
+  events:
+    spike:
+      condition: { rhs: "v > thresh" }
+      affect:    { rhs: "v = reset" }
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 300.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+print(f"State variables: {list(exp.dynamics.state_variables.keys())}")
+print(f"Events: {list(exp.dynamics.events.keys())}")
+```
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+print(xml[:2000])
+```
+
+## 3. Run Reference (NeuroML2 via jNeuroML)
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example, LEMS_EXAMPLES
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex0_IaF.xml")
+print(f"Reference output files: {list(ref_outputs.keys())}")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO Version
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+time = da.coords['time'].values
+sv_data = da.sel(node='0').values
+tvbo_arr = np.column_stack([time, sv_data])
+print(f"TVBO output shape: {tvbo_arr.shape}")
+print(f"Time range: [{tvbo_arr[0,0]:.3f}, {tvbo_arr[-1,0]:.3f}] s")
+```
+
+## 5. Numerical Comparison
+
+The NeuroML `iafTauCell` with `leakReversal=-50` and `thresh=-55` never spikes —
+the membrane just decays toward the leak reversal.  We compare the `v` traces:
+
+```{python}
+from _nml_helpers import compare_traces
+import numpy as np
+
+# Reference: Ex0 has multiple cell types in one file; pick the iafTau columns
+# The output has columns: time, iafTau/v, iafTauRef/v, iaf/v, iafRef/v
+ref_arr = list(ref_outputs.values())[0]
+ref_cols = ['time', 'iafTau_v', 'iafTauRef_v', 'iaf_v', 'iafRef_v']
+tvbo_cols = ['time', 'v']
+
+# Compare just the iafTau column (col 1)
+ref_sub = ref_arr[:, [0, 1]]
+compare_traces(
+    ref_sub, tvbo_arr,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+)
+```
+
+## 6. Plot
+
+```{python}
+from _nml_helpers import plot_comparison
+
+plot_comparison(
+    ref_sub, tvbo_arr,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+    title="Ex0: Integrate-and-Fire (iafTauCell) — NeuroML vs TVBO",
+    time_scale=1.0, time_unit="s",
+)
+```

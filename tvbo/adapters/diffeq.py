@@ -79,14 +79,12 @@ class DiffEqAdapter:
         ExperimentResult
             Simulation results with named dimensions and coordinates.
         """
-        import xarray as xr
-
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
             run_julia_code,
-            solution_to_array,
+            solution_to_dataarray,
         )
 
         exp = self.experiment
@@ -105,26 +103,10 @@ class DiffEqAdapter:
         # 4. Extract solution
         t, u, sol = extract_ode_solution()
 
-        # 5. Reshape to TVBO convention (single node)
+        # 5. Build xr.DataArray directly — dims (time, variable, node)
         sv_names = list(model.state_variables.keys())
-        n_sv = len(sv_names)
-        n_nodes = 1
-        data = solution_to_array(t, u, n_sv, n_nodes)
+        da = solution_to_dataarray(t, u, sv_names, 1)
 
-        # 6. Build xr.DataArray — squeeze singleton mode
-        data_np = np.asarray(data)
-        if data_np.ndim == 4 and data_np.shape[3] == 1:
-            data_np = data_np[:, :, :, 0]
-
-        da = xr.DataArray(
-            data=data_np,
-            dims=['time', 'variable', 'node'][:data_np.ndim],
-            coords={
-                'time': np.asarray(t),
-                'variable': sv_names,
-                'node': ['0'],
-            },
-        )
         sim = SimulationResult(data=da)
         return ExperimentResult(
             integration=sim, source=exp, name=getattr(exp, 'label', None),

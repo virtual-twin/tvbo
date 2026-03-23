@@ -1,0 +1,22 @@
+# TVBO → NeuroML: Jansen-Rit
+# =============================
+# Uses the TVBO database JansenRit model.
+# 6 state variables, 3 derived variables, demonstrates the most common
+# neural mass model architecture in the TVBO database.
+
+id: 908
+label: "TVBO JansenRit as LEMS"
+description: >
+  Export the Jansen-Rit model from the TVBO database as LEMS XML.
+  6 state variables with derived variables.
+
+model: JansenRit
+
+network:
+  number_of_nodes: 1
+
+integration:
+  method: euler
+  step_size: 0.1
+  duration: 2000.0
+  time_scale: ms

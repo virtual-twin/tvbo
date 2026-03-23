@@ -163,6 +163,8 @@ class SimulationResult:
         names = self.state_names
         if names:
             labels_dimensions["State Variable"] = names
+        if self.data is not None and 'node' in self.data.coords:
+            labels_dimensions["Region"] = list(self.data.coords['node'].values)
 
         time = np.asarray(self.time) if self.time is not None else np.arange(raw.shape[0])
         dt = float(time[1] - time[0]) if len(time) > 1 else 1.0
@@ -173,6 +175,11 @@ class SimulationResult:
             sample_period=dt,
             labels_dimensions=labels_dimensions,
         )
+        # Propagate extras that animate/plot helpers may need (e.g. graph from NetworkDynamics)
+        for key in ('graph', 'edge_data', 'vertex_data', 'node_positions'):
+            val = self._extras.get(key)
+            if val is not None:
+                setattr(self._timeseries, key, val)
         return self._timeseries
 
     def __getattr__(self, name):
@@ -798,7 +805,33 @@ class ExperimentResult:
         integration = self.__dict__.get('integration')
         if integration is not None and hasattr(integration, name):
             return getattr(integration, name)
+        # Delegate to single continuation (bifurcation results)
+        continuations = self.__dict__.get('continuations', {})
+        if continuations and len(continuations) == 1:
+            cont = next(iter(continuations.values()))
+            if hasattr(cont, name):
+                return getattr(cont, name)
         raise AttributeError(f"'ExperimentResult' has no attribute '{name}'")
+
+    def __contains__(self, key):
+        if key in self._output_sections:
+            val = getattr(self, key, None)
+            return val is not None and val != {}
+        return key in self._extras
+
+    def plot(self, **kwargs):
+        """Dispatch plot to the most relevant sub-result."""
+        if self.integration is not None:
+            return self.integration.plot(**kwargs)
+        if self.continuations:
+            cont = next(iter(self.continuations.values()))
+            if hasattr(cont, 'plot'):
+                return cont.plot(**kwargs)
+        if self.explorations:
+            expl = next(iter(self.explorations.values()))
+            if hasattr(expl, 'plot'):
+                return expl.plot(**kwargs)
+        raise AttributeError("No plottable sub-result found")
 
     def __repr__(self):
         label = self.name or "Experiment"

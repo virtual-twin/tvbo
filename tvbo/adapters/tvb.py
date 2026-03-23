@@ -767,7 +767,7 @@ def from_tvb(connectivity):
     speed = np.asarray(conn.speed).ravel()
     cs_val = float(speed[0]) if len(speed) > 0 else 3.0
     net.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-        name="conduction_speed", label="v", value=cs_val, unit="mm/ms",
+        name="conduction_speed", label="v", value=cs_val, unit="mm_per_ms",
     )
 
     return net

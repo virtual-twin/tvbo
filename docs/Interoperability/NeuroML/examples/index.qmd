@@ -1,0 +1,65 @@
+---
+title: "NeuroML/LEMS Examples"
+subtitle: "Replicating all canonical NeuroML2 examples in TVBO with numerical validation"
+bibliography: ../../../references.bib
+listing:
+  - id: lems-examples
+    contents: "Ex*.qmd"
+    sort: "title asc"
+    type: table
+    fields: [title, description]
+    field-display-names:
+      title: "Example"
+      description: "Description"
+  - id: nml2-examples
+    contents: "NML2_*.qmd"
+    sort: "title asc"
+    type: table
+    fields: [title, description]
+    field-display-names:
+      title: "NML2 File"
+      description: "Description"
+---
+
+## Overview
+
+This section reproduces **every canonical NeuroML2 LEMS example** using TVBO.
+Each QMD notebook:
+
+1. **Defines the model** in TVBO (as a `SimulationExperiment` YAML spec)
+2. **Renders** to LEMS XML via `exp.render("lems")`
+3. **Runs the original** NeuroML2 example via jNeuroML
+4. **Runs the TVBO version** via `NeuroMLAdapter.run()`
+5. **Compares** time-series numerically (RMSE, correlation, max error)
+6. **Plots** overlaid reference vs TVBO traces
+
+### Example Categories
+
+| Category | Examples | Description |
+|---|---|---|
+| **Single-cell ODE** | Ex0 (IaF), Ex2 (Izh), Ex8 (AdEx), Ex9 (FN) | Simple 1–2 variable models with event-driven spikes |
+| **Conductance-based** | Ex1 (HH), Ex5 (DetCell) | Hodgkin-Huxley-style cells with gating variables |
+| **Channels & Kinetics** | Ex4 (KS), Ex10 (Q10), Ex15 (Ca), Ex18 (GHK), Ex24 (Frac) | Ion channel biophysics |
+| **Synapses** | Ex3 (Net), Ex6 (NMDA), Ex7 (STP), Ex11 (STDP), Ex20/21 (Analog/Current), Ex27 (Multi) | Synaptic dynamics and plasticity |
+| **Networks** | Ex12 (Net2), Ex13 (Instances), Ex19 (GapJ), Ex25 (MultiComp), Ex26 (Weights) | Multi-cell networks and connectivity |
+| **Other** | Ex14 (PyNN), Ex16 (Inputs), Ex17 (Tissue), Ex22 (PinskyRinzel), Ex23 (Spiketimes) | Specialized examples |
+
+### Prerequisites
+
+```bash
+pip install pyneuroml matplotlib scipy
+```
+
+jNeuroML (Java-based) is required for running the reference examples.
+It is bundled with pyNeuroML.
+
+::: {#lems-examples}
+:::
+
+## NML2 File Documentation
+
+These pages document the structure of canonical NML2 example files, with
+TVBO representations showing the equivalent dynamics.
+
+::: {#nml2-examples}
+:::

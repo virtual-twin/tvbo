@@ -49,7 +49,7 @@ parameters:
       step: 0.01
     description: Slope (or gain) parameter of the sigmoid input-output function H_RWW
       (Deco et al
-    unit: (pC)^-1
+    unit: per_pC
   b:
     name: b
     definition: "Shift parameter of the sigmoid input-output function H_RWW (Deco\

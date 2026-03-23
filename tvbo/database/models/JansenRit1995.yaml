@@ -46,13 +46,13 @@ parameters:
   a:
     name: a
     value: 100
-    unit: s^-1
+    unit: per_s
     description: "Reciprocal of EPSP time constant"
     # md:L183 — "a = 100 s⁻¹"
   b:
     name: b
     value: 50
-    unit: s^-1
+    unit: per_s
     description: "Reciprocal of IPSP time constant"
     # md:L183 — "b = 50 s⁻¹"
   v0:
@@ -64,19 +64,19 @@ parameters:
   e0:
     name: e0
     value: 2.5
-    unit: s^-1
+    unit: per_s
     description: "Half of maximum firing rate (2*e0 = max rate)"
     # md:L186 — "e0 = 2.5 s⁻¹"
   r:
     name: r
     value: 0.56
-    unit: mV^-1
+    unit: per_mV
     description: "Steepness of sigmoid transformation"
     # md:L186 — "r = 0.56 mV⁻¹"
   p:
     name: p
     value: 220
-    unit: s^-1
+    unit: per_s
     description: "Mean external input (afferent pulse density)"
     # md:L187 — "p(t) between 120 and 320 pulses per second"
     # Mean = (120 + 320) / 2 = 220
@@ -157,7 +157,7 @@ state_variables:
     label: "Pyramidal EPSP drive (velocity)"
     equation:
       rhs: A*a*Sigm(y1 - y2) - 2*a*y3 - a**2*y0
-    unit: mV/s
+    unit: mV_per_s
     # md:L97 — ẏ₃ = Aa·Sigm[y₁-y₂] - 2a·y₃ - a²·y₀
   y1:
     name: y1
@@ -171,7 +171,7 @@ state_variables:
     label: "Excitatory EPSP drive (velocity) with coupling input"
     equation:
       rhs: A*a*(p + C2*Sigm(C1*y0) + c_intercolumn) - 2*a*y4 - a**2*y1
-    unit: mV/s
+    unit: mV_per_s
     coupling_variable: true
     # md:L99-100 — ẏ₄ = Aa{p(t) + C₂·Sigm[C₁·y₀(t)] + coupling} - 2a·y₄ - a²·y₁
   y2:
@@ -186,7 +186,7 @@ state_variables:
     label: "Inhibitory IPSP drive (velocity)"
     equation:
       rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
-    unit: mV/s
+    unit: mV_per_s
     # md:L102 — ẏ₅ = Bb{C₄·Sigm[C₃·y₀(t)]} - 2b·y₅ - b²·y₂
 
 # ---------------------------------------------------------------------------

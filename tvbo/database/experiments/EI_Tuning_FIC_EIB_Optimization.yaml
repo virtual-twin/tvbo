@@ -38,7 +38,7 @@ dynamics:
         a_e:
             label: "Excitatory input gain"
             value: 310.0
-            unit: n/C
+            unit: per_nC
         b_e:
             label: "Excitatory input shift"
             value: 125.0
@@ -66,7 +66,7 @@ dynamics:
         a_i:
             label: "Inhibitory input gain"
             value: 615.0
-            unit: n/C
+            unit: per_nC
         b_i:
             label: "Inhibitory input shift"
             value: 177.0
@@ -196,7 +196,7 @@ network:
         conduction_speed:
             name: conduction_speed
             value: 3.0
-            unit: mm/ms
+            unit: mm_per_ms
     transforms:
         - name: weight
           equation:

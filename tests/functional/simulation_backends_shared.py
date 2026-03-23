@@ -13,6 +13,8 @@ _HAVE_TVB = _has("tvb.simulator")
 _HAVE_PYRATES = _has("pyrates")
 _HAVE_TVBOPTIM = _has("tvboptim")
 _HAVE_JULIACALL = _has("juliacall")
+_HAVE_LEMS = _has("lems")
+_HAVE_NEUROML = _has("pyneuroml")
 
 
 from tvbo import database_path
