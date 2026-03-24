@@ -41,18 +41,7 @@
       "/Interoperability/NeuroML/examples/Ex6_NMDA.html",
       "/Interoperability/NeuroML/examples/Ex7_STP.html",
       "/Interoperability/NeuroML/examples/Ex8_AdEx.html",
-      "/Interoperability/NeuroML/examples/Ex9_FN.html",
-      "/Interoperability/NeuroML/examples/NML2_AbstractCells.html",
-      "/Interoperability/NeuroML/examples/NML2_AnalogSynapses.html",
-      "/Interoperability/NeuroML/examples/NML2_FullCell.html",
-      "/Interoperability/NeuroML/examples/NML2_FullNeuroML.html",
-      "/Interoperability/NeuroML/examples/NML2_GapJunctions.html",
-      "/Interoperability/NeuroML/examples/NML2_Inputs.html",
-      "/Interoperability/NeuroML/examples/NML2_InstanceBasedNetwork.html",
-      "/Interoperability/NeuroML/examples/NML2_SimpleIonChannel.html",
-      "/Interoperability/NeuroML/examples/NML2_SimpleMorphology.html",
-      "/Interoperability/NeuroML/examples/NML2_SingleCompHHCell.html",
-      "/Interoperability/NeuroML/examples/NML2_SynapseTypes.html"
+      "/Interoperability/NeuroML/examples/Ex9_FN.html"
     ]
   }
 ]
