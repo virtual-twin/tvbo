@@ -1,6 +1,6 @@
 ---
 title: "NeuroML/LEMS Examples"
-subtitle: "Replicating all canonical NeuroML2 examples in TVBO with numerical validation"
+subtitle: "All 28 canonical NeuroML2 examples — represented, rendered, and validated in TVBO"
 bibliography: ../../../references.bib
 listing:
   - id: lems-examples
@@ -11,29 +11,105 @@ listing:
     field-display-names:
       title: "Example"
       description: "Description"
-  - id: nml2-examples
-    contents: "NML2_*.qmd"
-    sort: "title asc"
-    type: table
-    fields: [title, description]
-    field-display-names:
-      title: "NML2 File"
-      description: "Description"
 ---
 
-## Overview
+## Origin
 
-This section reproduces **every canonical NeuroML2 LEMS example** using TVBO.
-Each QMD notebook:
+The examples on this page are retrieved from the **official [NeuroML2 repository](https://github.com/NeuroML/NeuroML2)** (`LEMSexamples/` and `examples/` directories). They constitute the canonical test suite that the NeuroML community uses to validate simulator implementations. Each example here has a 1-to-1 correspondence with an original `LEMS_NML2_Ex*.xml` file and its associated `.nml` component files.
 
-1. **Defines the model** in TVBO (as a `SimulationExperiment` YAML spec)
+TVBO can represent **every one of these experiments** in a single, unified YAML specification — no XML, no file scattering, no separate simulation harness.
+
+---
+
+## What are `.nml` and LEMS `.xml` files?
+
+NeuroML splits model descriptions across two complementary XML formats:
+
+### `.nml` files — Model Components
+
+**NeuroML files** (`.nml`) define reusable biological components: ion channels, cells, synapses, morphologies, and networks. They use a domain-specific XML schema with elements like `<ionChannelHH>`, `<cell>`, `<expOneSynapse>`, and `<network>`. Each `.nml` file is a self-contained building block — for example, `NML2_SingleCompHHCell.nml` defines a Hodgkin-Huxley cell with Na, K, and leak channels, its morphology, and biophysical properties.
+
+```xml
+<!-- NML2_SingleCompHHCell.nml (excerpt) -->
+<ionChannelHH id="naChan" conductance="10pS" species="na">
+  <gateHHrates id="m" instances="3">
+    <forwardRate type="HHExpLinearRate" rate="1per_ms" midpoint="-40mV" scale="10mV"/>
+    <reverseRate type="HHExpRate" rate="4per_ms" midpoint="-65mV" scale="-18mV"/>
+  </gateHHrates>
+  ...
+</ionChannelHH>
+```
+
+### LEMS `.xml` files — Simulation Experiments
+
+**LEMS files** (Low Entropy Model Specification) are the simulation harness. They `<Include>` the `.nml` component files, wire them into a network, define simulation parameters (duration, time step), and specify what to record. A single LEMS file stitches together all the pieces needed to run an experiment:
+
+```xml
+<!-- LEMS_NML2_Ex5_DetCell.xml (excerpt) -->
+<Include file="Cells.xml"/>           <!-- core type definitions -->
+<Include file="Networks.xml"/>        <!-- core type definitions -->
+<Include file="Simulation.xml"/>      <!-- core type definitions -->
+<Include file="../examples/NML2_SingleCompHHCell.nml"/>  <!-- the actual model -->
+
+<network id="net1">
+  <population id="hhpop" component="hhcell" size="1"/>
+</network>
+
+<Simulation id="sim1" length="300ms" step="0.01ms" target="net1">
+  <OutputFile id="of0" fileName="results/ex5.dat">
+    <OutputColumn id="v" quantity="hhpop[0]/v"/>
+  </OutputFile>
+</Simulation>
+```
+
+### The fragmentation problem
+
+A typical NeuroML experiment requires **4+ XML files**: 3 core LEMS includes (`Cells.xml`, `Networks.xml`, `Simulation.xml` — which themselves include dozens more), the LEMS simulation file, and one or more `.nml` model files. More complex examples reference additional channel, synapse, or morphology files. The actual model equations are implicit — encoded in `type` attributes that reference component types buried deep in the LEMS type hierarchy.
+
+---
+
+## One TVBO YAML instead
+
+TVBO collapses this entire multi-file XML structure into a **single YAML document** that is simultaneously:
+
+- **Human-readable** — equations, parameters, units, network, integrator, and outputs are all visible in one place
+- **Machine-actionable** — the same YAML can render to LEMS XML, JAX, NumPy, Julia, or any supported backend
+- **Self-contained** — no external includes, no implicit type hierarchies, no file path dependencies
+- **Schema-validated** — every field is checked against the LinkML data model; typos and missing fields are caught before simulation
+
+For example, the FitzHugh-Nagumo oscillator (Ex9) requires a LEMS XML file that references `Cells.xml`, `Networks.xml`, and `Simulation.xml` — themselves importing hundreds of component type definitions. In TVBO, the same experiment is:
+
+```yaml
+name: FitzHughNagumo
+state_variables:
+  V: { equation: { rhs: "V - V**3/3 - W + I" } }
+  W: { equation: { rhs: "0.08 * (V + 0.7 - 0.8 * W)" } }
+parameters:
+  I: { value: 0.8 }
+integrator: { scheme: euler, dt: 0.01, duration: 200 }
+```
+
+From this single spec, TVBO can:
+
+1. **`exp.render("lems")`** → produce the exact LEMS XML that jNeuroML runs
+2. **`exp.run()`** → simulate directly via JAX/NumPy
+3. **`exp.render("julia")`** → generate Julia code for NetworkDynamics.jl
+4. **`exp.render("pyrates")`** → export to PyRates
+
+---
+
+## Validation approach
+
+Each example notebook below:
+
+1. **Defines** the model as a TVBO `SimulationExperiment`
 2. **Renders** to LEMS XML via `exp.render("lems")`
-3. **Runs the original** NeuroML2 example via jNeuroML
+3. **Runs the original** NeuroML2 LEMS file via jNeuroML as reference
 4. **Runs the TVBO version** via `NeuroMLAdapter.run()`
 5. **Compares** time-series numerically (RMSE, correlation, max error)
-6. **Plots** overlaid reference vs TVBO traces
+6. **Plots** overlaid reference vs. TVBO traces
 
-### Example Categories
+### Example categories
 
 | Category | Examples | Description |
 |---|---|---|
@@ -50,16 +126,9 @@ Each QMD notebook:
 pip install pyneuroml matplotlib scipy
 ```
 
-jNeuroML (Java-based) is required for running the reference examples.
-It is bundled with pyNeuroML.
+jNeuroML (Java-based) is required for running the reference examples. It is bundled with pyNeuroML.
+
+---
 
 ::: {#lems-examples}
-:::
-
-## NML2 File Documentation
-
-These pages document the structure of canonical NML2 example files, with
-TVBO representations showing the equivalent dynamics.
-
-::: {#nml2-examples}
 :::

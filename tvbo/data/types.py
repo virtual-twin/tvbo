@@ -83,9 +83,10 @@ class SimulationResult:
     """
 
     def __init__(self, data=None, observations=None, transient=None, *,
-                 result=None, state_names=None, **kwargs):
+                 result=None, state_names=None, units=None, **kwargs):
         self._extras = {}
         self._timeseries = None
+        self._units = units or {}  # {variable_name: unit_string}
 
         # ── Backward compat: accept old-style result= arg ──
         if result is not None and data is None:
@@ -95,6 +96,13 @@ class SimulationResult:
         elif data is not None and not isinstance(data, xr.DataArray):
             data = _to_dataarray(data, None, state_names)
 
+        # Drop singleton node/mode dims — they add no information and
+        # force downstream users to .squeeze().  These dimensions only
+        # matter when there are truly multiple nodes or modes.
+        if isinstance(data, xr.DataArray):
+            for dim in ('node', 'mode'):
+                if dim in data.dims and data.sizes[dim] == 1:
+                    data = data.squeeze(dim)
         self.data = data
         self.observations = observations if observations is not None else {}
         self.transient = transient
@@ -103,15 +111,20 @@ class SimulationResult:
         if state_names and not (data is not None and 'variable' in getattr(data, 'coords', {})):
             self._extras['state_names'] = state_names
 
+    @property
+    def units(self):
+        """Unit mapping {variable_name: unit_string} for state/derived variables."""
+        return self._units
+
     # ── xarray delegation ─────────────────────────
 
     def sel(self, **kw):
-        """Label-based selection, delegated to self.data."""
-        return self.data.sel(**kw)
+        """Label-based selection returning a new SimulationResult."""
+        return SimulationResult(data=self.data.sel(**kw), units=self._units)
 
     def isel(self, **kw):
-        """Integer-based selection, delegated to self.data."""
-        return self.data.isel(**kw)
+        """Integer-based selection returning a new SimulationResult."""
+        return SimulationResult(data=self.data.isel(**kw), units=self._units)
 
     @property
     def time(self):
@@ -158,8 +171,8 @@ class SimulationResult:
             raise ValueError("No simulation data to convert")
 
         raw = np.asarray(self.data.values)
-        if raw.ndim == 3:
-            raw = np.expand_dims(raw, -1)  # add Mode dimension
+        while raw.ndim < 4:
+            raw = np.expand_dims(raw, -1)  # pad to 4D (Time, Variable, Space, Mode)
 
         labels_dimensions = {}
         names = self.state_names
@@ -184,6 +197,59 @@ class SimulationResult:
                 setattr(self._timeseries, key, val)
         return self._timeseries
 
+    def plot(self, ax=None, type="timeseries", **kwargs):
+        """Plot simulation results.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Axes to plot on (single-panel plots only).
+        type : str
+            Plot type: 'timeseries' (default), 'phase'/'state-space',
+            'vector_field', 'eeg', 'power_spectrum', 'raster'.
+        **kwargs
+            Forwarded to the underlying plot function in ``tvbo.plot``.
+        """
+        if type == "raster":
+            return self.data.plot(**kwargs)
+        if type in {"phase", "state-space", "trajectory"}:
+            from tvbo.plot.phase import plot_phase
+            return plot_phase(self, ax=ax, **kwargs)
+        if type == "vector_field":
+            from tvbo.plot.phase import plot_vector_field
+            return plot_vector_field(self, ax=ax, **kwargs)
+        if type == "eeg":
+            from tvbo.plot.timeseries import plot_eeg
+            return plot_eeg(self, ax=ax, **kwargs)
+        if type == "power_spectrum":
+            from tvbo.plot.timeseries import plot_power_spectrum
+            return plot_power_spectrum(self, ax=ax, **kwargs)
+
+        # Default: timeseries
+        from tvbo.plot.timeseries import plot_timeseries
+        return plot_timeseries(self, ax=ax, **kwargs)
+
+    def animate(self, type="network", **kwargs):
+        """Animate simulation results.
+
+        Parameters
+        ----------
+        type : str
+            'network' (default) — nodes colored by state on graph layout.
+            'phase' — trailing trajectory in phase space.
+        **kwargs
+            Forwarded to the animation function.
+
+        Returns
+        -------
+        matplotlib.animation.FuncAnimation
+        """
+        if type == "phase":
+            from tvbo.plot.animate import animate_phase
+            return animate_phase(self, **kwargs)
+        from tvbo.plot.animate import animate_network
+        return animate_network(self, **kwargs)
+
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError(name)
@@ -193,7 +259,7 @@ class SimulationResult:
         # Delegate to xarray DataArray (mean, sum, std, min, max, etc.)
         if self.data is not None and hasattr(self.data, name):
             return getattr(self.data, name)
-        # Delegate to TimeSeries for plot/get_state etc.
+        # Delegate to TimeSeries for plot_eeg, plot_power_spectrum, etc.
         try:
             ts = self.to_timeseries()
         except (ValueError, AttributeError, RecursionError):
@@ -796,6 +862,21 @@ class ExperimentResult:
         self.name = name or experiment_name
         self.source = source
         self._extras.update(kwargs)
+
+        # Inject variable units from source dynamics into integration result
+        if source is not None and integration is not None and not integration._units:
+            dynamics = getattr(source, 'dynamics', None)
+            if dynamics is not None:
+                units = {}
+                for n, sv in getattr(dynamics, 'state_variables', {}).items():
+                    u = getattr(sv, 'unit', None)
+                    if u is not None:
+                        units[str(n)] = str(u)
+                for n, dv in getattr(dynamics, 'derived_variables', {}).items():
+                    u = getattr(dv, 'unit', None)
+                    if u is not None:
+                        units[str(n)] = str(u)
+                integration._units = units
 
     def __getattr__(self, name):
         if name.startswith('_'):
