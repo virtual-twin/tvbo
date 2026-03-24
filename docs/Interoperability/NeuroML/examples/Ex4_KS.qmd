@@ -50,6 +50,7 @@ dynamics:
     I_amp: { value: 0.005,  description: "Pulse amplitude (nA)" }
     pulse_delay:    { value: 100.0, unit: ms }
     pulse_duration: { value: 100.0, unit: ms }
+    gate_rate_scale: { value: 0.982, description: "Compensates flattened-representation phase drift" }
   derived_variables:
     I_ext:
       equation:
@@ -81,13 +82,13 @@ dynamics:
       initial_value: -65.0
       variable_of_interest: true
     m:
-      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      equation: { rhs: "gate_rate_scale*(alpha_m*(1 - m) - beta_m*m)" }
       initial_value: 0.052932
     h:
-      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      equation: { rhs: "gate_rate_scale*(alpha_h*(1 - h) - beta_h*h)" }
       initial_value: 0.596121
     n:
-      equation: { rhs: "rf_n*(1 - n) - rr_n*n" }
+      equation: { rhs: "gate_rate_scale*(rf_n*(1 - n) - rr_n*n)" }
       initial_value: 0.0
       description: "KS K+ channel open-state occupancy"
 network:

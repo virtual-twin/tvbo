@@ -36,6 +36,7 @@ dynamics:
     tauw:   { value: 40.0 }
     a:      { value: 4.0,    description: "Subthreshold adaptation (nS)" }
     b:      { value: 80.0,   description: "Spike-triggered adaptation (pA, = 0.08 nA)" }
+    refract: { value: 0.0, unit: ms, description: "Refractory period" }
   derived_variables:
     I_ext:
       equation:

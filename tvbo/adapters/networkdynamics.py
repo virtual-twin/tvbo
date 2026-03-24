@@ -246,12 +246,12 @@ class NetworkDynamicsAdapter(BaseAdapter):
         return meta
 
     def build_node_positions(
-        self, ts: "TimeSeries", ctx: dict,
+        self, ts: "SimulationResult", ctx: dict,
     ) -> np.ndarray:
         """Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
 
         For free nodes: positions come from the coupling-variable columns
-        of the flat heterogeneous state vector.
+        of the properly shaped ``(time, variable, node)`` DataArray.
         For fixed nodes: positions are constant (from YAML parameters).
         """
         dynamics_dict = ctx['dynamics_dict']
@@ -345,33 +345,57 @@ class NetworkDynamicsAdapter(BaseAdapter):
         is_hetero = ctx.get('is_heterogeneous', False)
 
         if is_hetero:
-            n_total = u.shape[0]
-            # Hetero: all states flattened, treat as (time, variable) with 1 node
-            data = u.T  # (n_t, n_states)
+            from tvbo.run.julia import run_julia_code
 
             dynamics_dict = ctx['dynamics_dict']
             node_dynamics_map = ctx['node_dynamics_map']
             nodes = ctx['nodes']
             default_name = ctx['model'].name if ctx['model'] else None
-            state_labels = []
+
+            # Collect all unique state variable names (preserving order)
+            all_sv_names = []
+            seen_sv = set()
             for node in nodes:
                 dyn_name = node_dynamics_map.get(node.id, default_name)
                 dyn = dynamics_dict.get(dyn_name)
                 if dyn and dyn.state_variables:
                     for sv_name in dyn.state_variables:
-                        state_labels.append(f"{sv_name}_{node.id}")
-            if len(state_labels) != n_total:
-                state_labels = [f"x_{i}" for i in range(n_total)]
+                        if sv_name not in seen_sv:
+                            all_sv_names.append(sv_name)
+                            seen_sv.add(sv_name)
+
+            n_t = len(t)
+            n_unique_sv = len(all_sv_names)
+            data = np.full((n_t, n_unique_sv, n_nodes), np.nan)
+
+            # Extract per-variable time series via ND.jl vidxs (one Julia
+            # call per unique SV — batches all nodes that share that variable)
+            for sv_idx, sv_name in enumerate(all_sv_names):
+                node_ids = [n.id for n in nodes
+                            if (d := dynamics_dict.get(
+                                node_dynamics_map.get(n.id, default_name)))
+                            and d.state_variables and sv_name in d.state_variables]
+                if not node_ids:
+                    continue
+                jl_ids = ', '.join(str(nid + 1) for nid in node_ids)
+                raw = run_julia_code(
+                    f"hcat([getindex.(sol(sol.t; idxs=vidxs(sol, i, :{sv_name})).u, 1)"
+                    f" for i in [{jl_ids}]]...)"
+                )
+                vals = np.array(raw, dtype=float)  # (n_t, len(node_ids))
+                for k, nid in enumerate(node_ids):
+                    data[:, sv_idx, nid] = vals[:, k]
 
             da = xr.DataArray(
-                data=data[:, :, np.newaxis],
+                data=data,
                 dims=['time', 'variable', 'node'],
                 coords={
                     'time': np.asarray(t),
-                    'variable': state_labels,
-                    'node': ['0'],
+                    'variable': all_sv_names,
+                    'node': [node.id for node in nodes],
                 },
             )
+            state_labels = all_sv_names
         else:
             da = solution_to_dataarray(t, u, sv_names, n_nodes)
             state_labels = sv_names

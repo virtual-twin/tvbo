@@ -90,7 +90,12 @@ from linkml_runtime.linkml_model.meta import PermissibleValue as _PermissibleVal
 
 
 def _unit_meta_getattribute(cls, item):
-    result = _meta_orig_getattribute(cls, item)
+    try:
+        result = _meta_orig_getattribute(cls, item)
+    except AttributeError:
+        # Dotted names like "a.u." can't be Python attributes; construct instead
+        canonical = _normalize_unit(item) or item
+        return cls(canonical)
     # Wrap bare PermissibleValue in a proper UnitEnum instance
     if isinstance(result, _PermissibleValue) and not isinstance(result, _UnitEnum):
         canonical = _normalize_unit(item) or item

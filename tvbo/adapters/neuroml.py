@@ -171,15 +171,21 @@ def safe_id(s):
     return ("_" + s) if s[0].isdigit() else s
 
 
-def _dynamics_has_physical_units(params, svs):
-    """Return True if any parameter or state variable has a non-dimensionless
-    LEMS dimension (voltage, conductance, capacitance, current, etc.).
+def _dynamics_has_physical_units(params, svs, td_param_names=None):
+    """Return True if any dynamics-relevant parameter or state variable has a
+    non-dimensionless LEMS dimension (voltage, conductance, capacitance, etc.).
 
     When physical units are present, the equations are fully dimensioned in LEMS
     and do NOT need ``/ SEC`` time scaling.
+
+    Parameters that only appear in Piecewise conditions (e.g. ``pulse_delay``,
+    ``pulse_duration``) are NOT dynamics-relevant and should be excluded via
+    *td_param_names*.
     """
     from tvbo.utils.units import unit_to_lems_dimension
-    for p in params.values():
+    for pname, p in params.items():
+        if td_param_names is not None and str(pname) not in td_param_names:
+            continue
         dim = unit_to_lems_dimension(getattr(p, 'unit', None))
         if dim != 'none':
             return True
@@ -240,7 +246,7 @@ def _dynamics_has_time_units(params, svs, dvs):
     ) or any(
         unit_has_time_dimension(getattr(sv, "unit", None))
         for sv in svs.values()
-    ) or _dynamics_has_physical_units(params, svs)
+    ) or _dynamics_has_physical_units(params, svs, td_params)
 
 
 def _build_regime_data(events):
@@ -717,13 +723,28 @@ def build_lems_context(experiment):
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
 
     # ── Determine whether equations need / SEC ──
-    # If parameters used in TimeDerivative equations carry time-bearing
-    # units, the equations already contain physical time normalisation
-    # (e.g., /tau_e where tau_e has unit=ms).  In that case / SEC would
-    # double-count.  Parameters that appear *only* in Piecewise conditions
-    # (pulse timing, switch times) are excluded from this check.
-    from tvbo.utils.units import unit_has_time_dimension, unit_to_lems_dimension
-    _model_has_time_units = _dynamics_has_time_units(params, svs, dvs)
+    # SEC scaling is needed when state variables are dimensionless.  In that
+    # case the TimeDerivative RHS is treated as pure numerics and must be
+    # divided by SEC (a time constant) so that d(x)/dt has dimension per_time.
+    #
+    # SEC scaling is NOT needed when all state variables with TDs carry
+    # physical units (e.g. mV, nA).  In that regime the equations are
+    # assumed to be fully dimensioned and / SEC would double-count.
+    #
+    # NOTE:  Parameter units alone are NOT sufficient to declare the model
+    # physically dimensioned — parameters may carry units as physical
+    # annotations (e.g. A=3.25 mV, a=0.1 per_ms in JansenRit) without
+    # the equations being dimensionally consistent.
+    from tvbo.utils.units import unit_has_time_dimension, unit_to_lems_dimension, unit_to_lems_symbol
+
+    def _svs_have_physical_units(svs):
+        """True if at least one state variable has a non-dimensionless unit."""
+        return any(
+            unit_to_lems_dimension(getattr(sv, "unit", None)) != "none"
+            for sv in svs.values()
+        )
+
+    _model_has_time_units = _svs_have_physical_units(svs)
 
     # All symbol names — override SymPy built-ins (I, gamma, lambda, …)
     all_names = (
@@ -783,6 +804,40 @@ def build_lems_context(experiment):
     # ── Multi-population network context ──
     net_ctx = _build_network_context(experiment)
 
+    # For single-cell models (no network), use flat OnCondition UNLESS the
+    # model explicitly defines a ``refract`` parameter — mirroring the
+    # NeuroML convention where izhikevichCell uses flat OnCondition while
+    # adExIaFCell/iafRefCell use Regime with an explicit refractory period.
+    # Regime adds a one-timestep delay that drifts phase for flat-reference
+    # models.  Network mode always uses Regime for correct EventOut.
+    has_refract_param = 'refract' in params
+    if regime_data and net_ctx is None and not has_refract_param:
+        regime_data = None
+
+    # ── Dimension/symbol helpers: conditional on whether model is dimensioned ──
+    _needs_sec = not _model_has_time_units
+    if _needs_sec:
+        # Dimensionless model: suppress dimensions EXCEPT for pure time params.
+        # Parameters with unit="ms"/"s" (LEMS dimension "time") must keep
+        # dimension="time" so LEMS converts their values to SI seconds,
+        # allowing correct comparison with the built-in time variable ``t``
+        # (e.g. pulse_delay, pulse_duration).
+        #
+        # Rate constants (per_ms → "per_time") and all other non-time
+        # dimensions are suppressed to "none" — they are numerical
+        # coefficients in the dimensionless equation.
+        def _lems_dim(unit):
+            if unit_to_lems_dimension(unit) == "time":
+                return "time"
+            return "none"
+        def _lems_sym(unit):
+            if unit_to_lems_dimension(unit) == "time":
+                return unit_to_lems_symbol(unit)
+            return ""
+    else:
+        _lems_dim = unit_to_lems_dimension
+        _lems_sym = unit_to_lems_symbol
+
     ctx = dict(
         dyn=dyn,
         dyn_id=dyn_id,
@@ -803,10 +858,13 @@ def build_lems_context(experiment):
         duration=duration,
         lems_expr=lems_expr,
         _parse_piecewise=_parse_piecewise,
-        lems_dim=unit_to_lems_dimension,
+        lems_dim=_lems_dim,
+        lems_sym=_lems_sym,
+        lems_dim_real=unit_to_lems_dimension,
+        lems_sym_real=unit_to_lems_symbol,
         safe_id=safe_id,
         time_scale=time_scale,
-        needs_sec=not _model_has_time_units,
+        needs_sec=_needs_sec,
         max_output_nodes=100,
         # Regime rendering for spike events
         regime_data=regime_data,
@@ -834,8 +892,7 @@ def build_lems_context(experiment):
             )
             ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
 
-            ct_has_time_units = _dynamics_has_time_units(
-                ct_params, ct_svs, ct_dvs)
+            ct_has_time_units = _svs_have_physical_units(ct_svs)
 
             _LEMS_CMP_RE = re.compile(r'\.(gt|lt|geq|leq|eq|neq)\.', re.IGNORECASE)
 
@@ -882,6 +939,14 @@ def build_lems_context(experiment):
                 if getattr(getattr(v, 'condition', None), 'rhs', None) is not None
             ]
 
+            ct_needs_sec = not ct_has_time_units
+            if ct_needs_sec:
+                ct_lems_dim = lambda u: "time" if unit_has_time_dimension(u) else "none"
+                ct_lems_sym_fn = lambda u: unit_to_lems_symbol(u) if unit_has_time_dimension(u) else ""
+            else:
+                ct_lems_dim = unit_to_lems_dimension
+                ct_lems_sym_fn = unit_to_lems_symbol
+
             cell_contexts[ct_name] = {
                 "dyn": ct_dyn,
                 "dyn_id": safe_id(ct_name),
@@ -891,9 +956,11 @@ def build_lems_context(experiment):
                 "events": ct_events,
                 "coupling_inputs": ct_coupling_inputs,
                 "sv_names_set": ct_sv_names_set,
-                "needs_sec": not ct_has_time_units,
+                "needs_sec": ct_needs_sec,
                 "lems_expr": ct_lems_expr,
                 "_parse_piecewise": ct_parse_pw,
+                "lems_dim": ct_lems_dim,
+                "lems_sym": ct_lems_sym_fn,
                 "regime_data": _build_regime_data(ct_events),
                 # Node-level flags for LEMS network rendering
                 "is_synapse": False,
@@ -915,8 +982,7 @@ def build_lems_context(experiment):
                 ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
                 ct_sv_names_set = set(str(k) for k in ct_svs.keys())
                 ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
-                ct_has_time_units = _dynamics_has_time_units(
-                    ct_params, ct_svs, ct_dvs)
+                ct_has_time_units = _svs_have_physical_units(ct_svs)
                 ct_all_names = (
                     [str(k) for k in ct_params.keys()]
                     + [str(k) for k in ct_svs.keys()]
@@ -935,6 +1001,14 @@ def build_lems_context(experiment):
                 has_i_exposure = 'i' in ct_dvs or any(str(k) == 'i' for k in ct_svs)
                 has_v_req = any(str(ci) == 'v' for ci in ct_coupling_inputs)
 
+                syn_needs_sec = not ct_has_time_units
+                if syn_needs_sec:
+                    syn_lems_dim = lambda u: "none"
+                    syn_lems_sym_fn = lambda u: ""
+                else:
+                    syn_lems_dim = unit_to_lems_dimension
+                    syn_lems_sym_fn = unit_to_lems_symbol
+
                 cell_contexts[ct_name] = {
                     "dyn": ct_dyn,
                     "dyn_id": ct_name,
@@ -944,9 +1018,11 @@ def build_lems_context(experiment):
                     "events": ct_events,
                     "coupling_inputs": ct_coupling_inputs,
                     "sv_names_set": ct_sv_names_set,
-                    "needs_sec": not ct_has_time_units,
+                    "needs_sec": syn_needs_sec,
                     "lems_expr": ct_lems_expr,
                     "_parse_piecewise": ct_parse_pw,
+                    "lems_dim": syn_lems_dim,
+                    "lems_sym": syn_lems_sym_fn,
                     # Synapse-specific extras
                     "is_synapse": True,
                     "has_i_exposure": has_i_exposure,

@@ -91,19 +91,19 @@
   <ComponentType name="JansenRit">
 
     <!-- Parameters -->
-    <Parameter name="A" dimension="voltage"/>
-    <Parameter name="B" dimension="voltage"/>
+    <Parameter name="A" dimension="none"/>
+    <Parameter name="B" dimension="none"/>
     <Parameter name="J" dimension="none"/>
     <Parameter name="a_1" dimension="none"/>
     <Parameter name="a_2" dimension="none"/>
     <Parameter name="a_3" dimension="none"/>
     <Parameter name="a_4" dimension="none"/>
-    <Parameter name="a" dimension="per_time"/>
-    <Parameter name="b" dimension="per_time"/>
-    <Parameter name="mu" dimension="per_time"/>
-    <Parameter name="nu_max" dimension="per_time"/>
+    <Parameter name="a" dimension="none"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="mu" dimension="none"/>
+    <Parameter name="nu_max" dimension="none"/>
     <Parameter name="r" dimension="none"/>
-    <Parameter name="v0" dimension="voltage"/>
+    <Parameter name="v0" dimension="none"/>
     <!-- Coupling inputs -->
     <Parameter name="c_pop0" dimension="none"/>
     <Parameter name="local_coupling" dimension="none"/>
@@ -116,12 +116,14 @@
     <Parameter name="y5_0" dimension="none"/>
 
     <!-- Time constant for derivatives.
-         When the model is fully dimensionless (no time-bearing parameter units),
-         dividing by SEC converts the expression from 'none' to 'per_time' as
-         LEMS requires.  When parameters already carry physical time dimensions
-         (e.g., tau_e in ms, or rate constant a in ms⁻¹), the equation naturally
-         has the correct dimension and / SEC is omitted.
-         needs_sec=False  time_scale=ms -->
+         All parameters use dimension="none" to avoid jLEMS dimensional
+         analysis failures (neural-mass models mix units freely).
+         / SEC is always applied so the TimeDerivative has per_time
+         dimension.  When the model already has time units in parameters,
+         SEC = 1s (numerically 1.0 — identity); otherwise SEC = 1<time_scale>
+         provides the actual numeric conversion.
+         needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
 
     <!-- Exposures (one per state variable) -->
     <Exposure name="y0" dimension="none"/>
@@ -149,12 +151,12 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="y0" value="y3"/>
-      <TimeDerivative variable="y1" value="y4"/>
-      <TimeDerivative variable="y2" value="y5"/>
-      <TimeDerivative variable="y3" value="-y0*a^2 - 2.0*a*y3 + A*a*sigma_y1_y2"/>
-      <TimeDerivative variable="y4" value="-y1*a^2 - 2.0*a*y4 + A*a*(c_pop0 + mu + local_coupling*(y1 - y2) + J*a_2*sigma_y0_1)"/>
-      <TimeDerivative variable="y5" value="-y2*b^2 - 2.0*b*y5 + B*J*a_4*b*sigma_y0_3"/>
+      <TimeDerivative variable="y0" value="(y3) / SEC"/>
+      <TimeDerivative variable="y1" value="(y4) / SEC"/>
+      <TimeDerivative variable="y2" value="(y5) / SEC"/>
+      <TimeDerivative variable="y3" value="(-y0*a^2 - 2.0*a*y3 + A*a*sigma_y1_y2) / SEC"/>
+      <TimeDerivative variable="y4" value="(-y1*a^2 - 2.0*a*y4 + A*a*(c_pop0 + mu + local_coupling*(y1 - y2) + J*a_2*sigma_y0_1)) / SEC"/>
+      <TimeDerivative variable="y5" value="(-y2*b^2 - 2.0*b*y5 + B*J*a_4*b*sigma_y0_3) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>
@@ -176,7 +178,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="JansenRit_inst" type="JansenRit" A="3.25mV" B="22.0mV" J="135.0" a_1="1.0" a_2="0.8" a_3="0.25" a_4="0.25" a="0.1per_ms" b="0.05per_ms" mu="0.22per_ms" nu_max="0.0025per_ms" r="0.56per_mV" v0="5.52mV" c_pop0="0" local_coupling="0" y0_0="0.1" y1_0="0.1" y2_0="0.1" y3_0="0.1" y4_0="0.1" y5_0="0.1"/>
+  <Component id="JansenRit_inst" type="JansenRit" A="3.25" B="22.0" J="135.0" a_1="1.0" a_2="0.8" a_3="0.25" a_4="0.25" a="0.1" b="0.05" mu="0.22" nu_max="0.0025" r="0.56" v0="5.52" c_pop0="0" local_coupling="0" y0_0="0.1" y1_0="0.1" y2_0="0.1" y3_0="0.1" y4_0="0.1" y5_0="0.1"/>
 
 
 

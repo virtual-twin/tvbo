@@ -100,6 +100,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_needs_sec = ct['needs_sec']
   ct_lems_expr = ct['lems_expr']
   ct_parse_piecewise = ct['_parse_piecewise']
+  ct_lems_dim = ct.get('lems_dim', lems_dim)
+  ct_lems_sym = ct.get('lems_sym', lems_sym)
   ct_has_threshold = ct.get('has_threshold_events', False)
   ct_threshold_ev = set(ct.get('threshold_event_names', []))
   ct_regime_data = ct.get('regime_data')
@@ -123,13 +125,13 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <ComponentType name="${ct_dyn_id}">
 % endif
 % for pname, p in ct_params.items():
-    <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
+    <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
 % if ct_regime_data:
     <Parameter name="refract" dimension="time"/>
 % endif
 % for sv_name in ct_svs:
-    <Parameter name="${sv_name}_0" dimension="${lems_dim(getattr(ct_svs[sv_name], 'unit', None))}"/>
+    <Parameter name="${sv_name}_0" dimension="${ct_lems_dim(getattr(ct_svs[sv_name], 'unit', None))}" />
 % endfor
 % if ct_needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
@@ -138,7 +140,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % if ct_v_from_base and sv_name == 'v':
 ## v Exposure is inherited from baseCellMembPot — do not redeclare
 % else:
-    <Exposure name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}"/>
+    <Exposure name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}" />
 % endif
 % endfor
 % if ct_has_threshold and not ct_extends_cell:
@@ -151,7 +153,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
     <Dynamics>
 % for sv_name, sv in ct_svs.items():
-      <StateVariable name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}" exposure="${sv_name}"/>
+      <StateVariable name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}" exposure="${sv_name}"/>
 % endfor
 % if ct_regime_data:
       <StateVariable name="lastSpikeTime" dimension="time"/>
@@ -168,7 +170,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 <%
   eq = getattr(dv, 'equation', None)
   rhs = getattr(eq, 'rhs', None) if eq else None
-  dv_dim = lems_dim(getattr(dv, 'unit', None))
+  dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
 %>\
 % if rhs:
@@ -243,6 +245,85 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
           <Transition regime="integrating"/>
         </OnCondition>
       </Regime>
+% elif ct_has_threshold and ct_extends_cell:
+<%
+  ## ── Edge-triggered spike detection via Regime pattern ──
+  ## jLEMS fires plain OnCondition at EVERY timestep where the condition
+  ## is true (level-triggered) for custom ComponentTypes. Standard types
+  ## like pointCellCondBased are edge-triggered. Using Regime transitions
+  ## ensures the spike fires only once per upward threshold crossing.
+  ##
+  ## Negate comparison operators for the exit condition:
+  _NEGATE_CMP = {'.gt.': '.leq.', '.lt.': '.geq.',
+                 '.geq.': '.lt.', '.leq.': '.gt.',
+                 '.GT.': '.LEQ.', '.LT.': '.GEQ.',
+                 '.GEQ.': '.LT.', '.LEQ.': '.GT.'}
+  import re as _re
+  _CMP_PAT = _re.compile(r'\.(?:gt|lt|geq|leq)\.', _re.IGNORECASE)
+  def _negate_cond(cond_str):
+      return _CMP_PAT.sub(lambda m: _NEGATE_CMP[m.group(0)], cond_str)
+%>\
+      <!-- ── Edge-triggered spike dynamics (Regime pattern for network cells) ── -->
+      <OnStart>
+% for sv_name, sv in ct_svs.items():
+        <StateAssignment variable="${sv_name}" value="${sv_name}_0"/>
+% endfor
+      </OnStart>
+
+      <Regime name="integrating" initial="true">
+% for sv_name, sv in ct_svs.items():
+<%
+  eq = getattr(sv, 'equation', None)
+  rhs = getattr(eq, 'rhs', None) if eq else None
+%>\
+% if rhs:
+% if ct_needs_sec:
+        <TimeDerivative variable="${sv_name}" value="(${ct_lems_expr(rhs)}) / SEC"/>
+% else:
+        <TimeDerivative variable="${sv_name}" value="${ct_lems_expr(rhs)}"/>
+% endif
+% endif
+% endfor
+% for ev_name, ev in ct_events.items():
+<%
+  cond = getattr(ev, 'condition', None)
+  cond_rhs = getattr(cond, 'rhs', None) if cond else None
+%>\
+% if cond_rhs and ev_name in ct_threshold_ev:
+        <OnCondition test="${ct_lems_expr(cond_rhs)}">
+          <EventOut port="spike"/>
+          <Transition regime="refractory"/>
+        </OnCondition>
+% endif
+% endfor
+      </Regime>
+
+      <Regime name="refractory">
+% for sv_name, sv in ct_svs.items():
+<%
+  eq = getattr(sv, 'equation', None)
+  rhs = getattr(eq, 'rhs', None) if eq else None
+%>\
+% if rhs:
+% if ct_needs_sec:
+        <TimeDerivative variable="${sv_name}" value="(${ct_lems_expr(rhs)}) / SEC"/>
+% else:
+        <TimeDerivative variable="${sv_name}" value="${ct_lems_expr(rhs)}"/>
+% endif
+% endif
+% endfor
+% for ev_name, ev in ct_events.items():
+<%
+  cond = getattr(ev, 'condition', None)
+  cond_rhs = getattr(cond, 'rhs', None) if cond else None
+%>\
+% if cond_rhs and ev_name in ct_threshold_ev:
+        <OnCondition test="${_negate_cond(ct_lems_expr(cond_rhs))}">
+          <Transition regime="integrating"/>
+        </OnCondition>
+% endif
+% endfor
+      </Regime>
 % else:
       <!-- ── Flat dynamics ── -->
 % for sv_name, sv in ct_svs.items():
@@ -292,16 +373,16 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
   <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
 % for pname, p in ct_params.items():
-<% p_unit = getattr(p, 'unit', '') or '' %>\
- ${pname}="${getattr(p, 'value', 0)}${p_unit}"\
+<% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
+ ${pname}="${getattr(p, 'value', 0)}${(' ' + p_unit) if p_unit else ''}"\
 % endfor
 % if ct_regime_data:
- refract="0${time_scale}"\
+ refract="0 ${time_scale}"\
 % endif
 % for sv_name, sv in ct_svs.items():
 <% iv = getattr(sv, 'initial_value', None) %>\
-<% sv_unit = getattr(sv, 'unit', '') or '' %>\
- ${sv_name}_0="${iv if iv is not None else 0.0}${sv_unit}"\
+<% sv_unit = ct_lems_sym(getattr(sv, 'unit', None)) %>\
+ ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor
 />
 % endif
@@ -322,6 +403,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_needs_sec = ct['needs_sec']
   ct_lems_expr = ct['lems_expr']
   ct_parse_piecewise = ct['_parse_piecewise']
+  ct_lems_dim = ct.get('lems_dim', lems_dim)
+  ct_lems_sym = ct.get('lems_sym', lems_sym)
   ct_has_i = ct.get('has_i_exposure', False)
   ct_has_v = ct.get('has_v_req', False)
   ct_ext_evs = set(ct.get('external_event_names', []))
@@ -330,10 +413,10 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends baseSynapse) ── -->
   <ComponentType name="${ct_dyn_id}" extends="baseSynapse">
 % for pname, p in ct_params.items():
-    <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
+    <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
 % for sv_name in ct_svs:
-    <Parameter name="${sv_name}_0" dimension="${lems_dim(getattr(ct_svs[sv_name], 'unit', None))}"/>
+    <Parameter name="${sv_name}_0" dimension="${ct_lems_dim(getattr(ct_svs[sv_name], 'unit', None))}"/>
 % endfor
 % if ct_needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
@@ -344,13 +427,13 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
     <Dynamics>
 % for sv_name, sv in ct_svs.items():
-      <StateVariable name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}"/>
+      <StateVariable name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}"/>
 % endfor
 % for dv_name, dv in ct_dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
   rhs = getattr(eq, 'rhs', None) if eq else None
-  dv_dim = lems_dim(getattr(dv, 'unit', None))
+  dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
   is_i = (dv_name == 'i')
 %>\
@@ -443,8 +526,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <!-- Synapse: ${syn_id} (${syn_type}) -->
   <${syn_type} id="${syn_id}"\
 % for pk, pinfo in syn_params.items():
-<% pv = pinfo['value'] if isinstance(pinfo, dict) else pinfo; pu = (pinfo.get('unit') if isinstance(pinfo, dict) else None) or '' %>\
- ${pk}="${pv}${pu}"\
+<% pv = pinfo['value'] if isinstance(pinfo, dict) else pinfo; pu = lems_sym_real((pinfo.get('unit') if isinstance(pinfo, dict) else None)) %>\
+ ${pk}="${pv}${(' ' + pu) if pu else ''}"\
 % endfor
 />
 % endif
