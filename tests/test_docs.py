@@ -82,8 +82,9 @@ def test_doc_executes(qmd_path, doc_name):
         # so relative paths (yaml/, _output/, ../../../database/) resolve correctly
         env = os.environ.copy()
         env["MPLBACKEND"] = "Agg"  # Non-interactive matplotlib backend
-        # Ensure repo root is on PYTHONPATH for imports
-        env["PYTHONPATH"] = str(REPO_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
+        # Ensure repo root and doc directory are on PYTHONPATH
+        # (doc_dir needed for local module imports like Jansen1995_plot)
+        env["PYTHONPATH"] = str(doc_dir) + os.pathsep + str(REPO_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
 
         result = subprocess.run(
             ["jupyter", "execute", str(ipynb_path)],
