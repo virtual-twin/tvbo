@@ -1,4 +1,7 @@
 name: hcpmmp1
+coordinateSpace:
+  name: MNI152NLin2009b
+  abbreviation: MNI152NLin2009b
 terminology:
   label: Glasser2016-MRTrix
   entities:

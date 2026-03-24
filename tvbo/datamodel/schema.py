@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-24T14:46:49
+# Generation date: 2026-03-24T17:50:37
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -783,6 +783,7 @@ class Network(YAMLRoot):
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
     dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     number_of_nodes: Optional[int] = 1
+    coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[Union[dict, Tractogram]] = None
     transforms: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
@@ -821,6 +822,9 @@ class Network(YAMLRoot):
 
         if self.number_of_nodes is not None and not isinstance(self.number_of_nodes, int):
             self.number_of_nodes = int(self.number_of_nodes)
+
+        if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpace):
+            self.coordinate_space = CommonCoordinateSpace(**as_dict(self.coordinate_space))
 
         if self.parcellation is not None and not isinstance(self.parcellation, Parcellation):
             self.parcellation = Parcellation(**as_dict(self.parcellation))
@@ -5661,6 +5665,9 @@ slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curi
 
 slots.network__number_of_nodes = Slot(uri=TVBO.number_of_nodes, name="network__number_of_nodes", curie=TVBO.curie('number_of_nodes'),
                    model_uri=TVBO.network__number_of_nodes, domain=None, range=Optional[int])
+
+slots.network__coordinate_space = Slot(uri=TVBO.coordinate_space, name="network__coordinate_space", curie=TVBO.curie('coordinate_space'),
+                   model_uri=TVBO.network__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
 
 slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcellation", curie=TVBO.curie('parcellation'),
                    model_uri=TVBO.network__parcellation, domain=None, range=Optional[Union[dict, Parcellation]])

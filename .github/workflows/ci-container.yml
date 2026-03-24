@@ -1,12 +1,13 @@
 # Container-based CI that runs tests inside the TVBO Docker image.
 #
+# Pipeline: Docker (build+push) → CI Container (tests)
+#
 # Trigger matrix:
 #   push to main/dev  → Docker workflow builds image → workflow_run fires here
-#   PR to main        → uses existing :dev image (already built from latest dev push)
 #   manual            → uses :dev image
 #
-# PRs to dev do NOT trigger container tests — the :dev image doesn't
-# contain the feature branch code yet (only native tests via ci.yml).
+# PRs do NOT trigger container tests — they are covered by native CI (ci.yml).
+# Container tests always depend on a freshly built Docker image.
 name: CI (Container)
 
 on:
@@ -14,8 +15,6 @@ on:
         workflows: ["Docker"]
         types: [completed]
         branches: [main, dev]
-    pull_request:
-        branches: [main]
     workflow_dispatch:
 
 concurrency:
@@ -33,12 +32,11 @@ env:
 
 jobs:
     # ─── Container tests ──────────────────────────────────────
-    # Image tag: :latest for workflow_run from main, :dev for everything else
-    # (PRs, workflow_run from dev, manual dispatch)
+    # Image tag: :latest for main, :dev for dev/manual dispatch
     test-container:
         name: Container tests
         # Skip if Docker workflow failed (workflow_run fires for any conclusion);
-        # pull_request and workflow_dispatch always run.
+        # workflow_dispatch always runs.
         if: >-
             github.event_name != 'workflow_run'
             || github.event.workflow_run.conclusion == 'success'

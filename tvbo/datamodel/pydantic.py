@@ -1051,6 +1051,7 @@ class Dataset(ConfiguredBaseModel):
                        'Subject',
                        'Electrode',
                        'EField',
+                       'Network',
                        'SpatialDomain',
                        'Mesh']} })
 
@@ -1073,6 +1074,7 @@ class Subject(ConfiguredBaseModel):
                        'Subject',
                        'Electrode',
                        'EField',
+                       'Network',
                        'SpatialDomain',
                        'Mesh']} })
 
@@ -1096,6 +1098,7 @@ class Electrode(ConfiguredBaseModel):
                        'Subject',
                        'Electrode',
                        'EField',
+                       'Network',
                        'SpatialDomain',
                        'Mesh']} })
     recon_path: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode']} })
@@ -1401,6 +1404,7 @@ class EField(ConfiguredBaseModel):
                        'Subject',
                        'Electrode',
                        'EField',
+                       'Network',
                        'SpatialDomain',
                        'Mesh']} })
     threshold_applied: Optional[float] = Field(default=None, description="""Threshold value applied to the E-field simulation""", json_schema_extra = { "linkml_meta": {'domain_of': ['EField']} })
@@ -2453,6 +2457,13 @@ class Network(ConfiguredBaseModel):
     number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'aliases': ['number_of_nodes', 'number_of_regions'],
          'domain_of': ['Network'],
          'ifabsent': 'integer(1)'} })
+    coordinate_space: Optional[CommonCoordinateSpace] = Field(default=None, description="""Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'Subject',
+                       'Electrode',
+                       'EField',
+                       'Network',
+                       'SpatialDomain',
+                       'Mesh']} })
     parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     tractogram: Optional[Tractogram] = Field(default=None, description="""Reference to tractography data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     transforms: Optional[list[Function]] = Field(default=None, description="""Ordered list of transforms applied to edge property matrices. Each Function's name identifies the target edge property (e.g. 'weight', 'length'). Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
@@ -8041,6 +8052,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Subject',
                        'Electrode',
                        'EField',
+                       'Network',
                        'SpatialDomain',
                        'Mesh']} })
     region: Optional[str] = Field(default=None, description="""Optional named region/ROI in the atlas/parcellation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
@@ -8155,6 +8167,7 @@ class Mesh(ConfiguredBaseModel):
                        'Subject',
                        'Electrode',
                        'EField',
+                       'Network',
                        'SpatialDomain',
                        'Mesh']} })
     mesh_file: Optional[str] = Field(default=None, description="""Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
