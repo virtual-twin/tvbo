@@ -20,7 +20,7 @@ All template variables are injected by the calling template's render context
 % for pname, p in params.items():
     <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
-% if regime_data:
+% if regime_data and 'refract' not in params:
     <Parameter name="refract" dimension="time"/>
 % endif
     <!-- Coupling inputs -->
@@ -36,14 +36,17 @@ All template variables are injected by the calling template's render context
 % endfor
 
     <!-- Time constant for derivatives.
-         When the model is fully dimensionless (no time-bearing parameter units),
-         dividing by SEC converts the expression from 'none' to 'per_time' as
-         LEMS requires.  When parameters already carry physical time dimensions
-         (e.g., tau_e in ms, or rate constant a in ms⁻¹), the equation naturally
-         has the correct dimension and / SEC is omitted.
+         All parameters use dimension="none" to avoid jLEMS dimensional
+         analysis failures (neural-mass models mix units freely).
+         / SEC is always applied so the TimeDerivative has per_time
+         dimension.  When the model already has time units in parameters,
+         SEC = 1s (numerically 1.0 — identity); otherwise SEC = 1<time_scale>
+         provides the actual numeric conversion.
          needs_sec=${needs_sec}  time_scale=${time_scale} -->
 % if needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
+% else:
+    <Constant name="SEC" dimension="time" value="1s"/>
 % endif
 
     <!-- Exposures (one per state variable) -->
@@ -111,11 +114,7 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs:
-% if needs_sec:
         <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
-% else:
-        <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
-% endif
 % endif
 % endfor
         <OnCondition test="${lems_expr(regime_data['condition'])}">
@@ -132,11 +131,7 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs and sv_name not in regime_data['reset_vars']:
-% if needs_sec:
         <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
-% else:
-        <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
-% endif
 % endif
 % endfor
         <OnEntry>
@@ -160,11 +155,7 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs:
-% if needs_sec:
       <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
-% else:
-      <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
-% endif
 % endif
 % endfor
 
@@ -231,11 +222,11 @@ All template variables are injected by the calling template's render context
        ════════════════════════════════════════════════════════════════ -->
   <Component id="${dyn_id}_inst" type="${dyn_id}"\
 % for pname, p in params.items():
-<% p_unit = getattr(p, 'unit', '') or '' %>\
- ${pname}="${getattr(p, 'value', 0)}${p_unit}"\
+<% p_unit = lems_sym(getattr(p, 'unit', None)) %>\
+ ${pname}="${getattr(p, 'value', 0)}${(' ' + p_unit) if p_unit else ''}"\
 % endfor
-% if regime_data:
- refract="0${time_scale}"\
+% if regime_data and 'refract' not in params:
+ refract="0 ${time_scale}"\
 % endif
 % for ci in coupling_inputs:
 <% ci_name = str(ci) %>\

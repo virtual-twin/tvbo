@@ -70,11 +70,13 @@ _UNIT_TO_LEMS_DIM = {
 def unit_to_lems_dimension(unit):
     """Return the LEMS dimension name for a UnitEnum value (or string).
 
-    Returns ``"none"`` for unknown or missing units.
+    Returns the proper LEMS dimension (e.g. ``"voltage"``, ``"capacitance"``)
+    when the unit has a known mapping, or ``"none"`` for dimensionless /
+    unknown units.
     """
     if unit is None:
         return "none"
-    key = unit.value if hasattr(unit, "value") else str(unit)
+    key = str(unit).strip()
     return _UNIT_TO_LEMS_DIM.get(key, "none")
 
 
@@ -86,8 +88,12 @@ _UNIT_TO_LEMS_SYMBOL = {
     "Hz": "per_s", "kHz": "per_ms",
     "V": "V", "mV": "mV",
     "A": "A", "nA": "nA", "pA": "pA",
-    "pF": "", "nF": "",
-    "nS": "nS", "uS": "",
+    "pF": "pF", "nF": "nF", "uF": "uF",
+    "nS": "nS", "uS": "uS", "mS": "mS", "pS": "pS",
+    "kohm": "kohm", "Mohm": "Mohm",
+    "uA": "uA",
+    "mM": "mM", "M": "M",
+    "degC": "degC", "K": "K",
     "dimensionless": "",
 }
 
@@ -95,11 +101,13 @@ _UNIT_TO_LEMS_SYMBOL = {
 def unit_to_lems_symbol(unit):
     """Return the LEMS unit symbol string for appending to numeric values.
 
-    Returns ``""`` for dimensionless or unmapped units.
+    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the
+    matching LEMS unit symbol.  For dimensionless or unknown units, returns
+    ``""``.
     """
     if unit is None:
         return ""
-    key = unit.value if hasattr(unit, "value") else str(unit)
+    key = str(unit).strip()
     return _UNIT_TO_LEMS_SYMBOL.get(key, "")
 
 

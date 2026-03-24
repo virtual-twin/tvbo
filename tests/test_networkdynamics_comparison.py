@@ -595,8 +595,14 @@ class TestNumericalComparison:
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
-        # All states should be finite (no numerical explosion)
-        assert np.all(np.isfinite(ts.data)), "All states should be finite"
+        # Proper (time, variable, node) shape with named coordinates
+        assert 'variable' in ts.data.dims
+        assert 'node' in ts.data.dims
+        # Non-NaN states should be finite (NaN expected for static nodes
+        # and variables not present on all node types)
+        vals = ts.data.values
+        assert np.all(np.isfinite(vals[~np.isnan(vals)])), \
+            "Non-NaN states should be finite"
 
     def test_cascading_failure_numerical(self, julia_runner):
         """Cascading failure: identical to reference Julia implementation."""
@@ -629,12 +635,15 @@ class TestNumericalComparison:
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
-        # Heterogeneous: 9 free nodes × 4 SVs = 36 total states
-        # Data shape is (n_t, 36) for heterogeneous models
-        assert ts.data.sizes['variable'] == 36, \
-            f"Expected 36 total states (9×4), got {ts.data.sizes['variable']}"
-        # All states should be finite (no structural collapse)
-        assert np.all(np.isfinite(ts.data)), "All states should be finite"
+        # Heterogeneous: 11 nodes (9 free + 2 static), 4 unique SVs
+        assert ts.data.sizes['variable'] == 4, \
+            f"Expected 4 unique state variables, got {ts.data.sizes['variable']}"
+        assert ts.data.sizes['node'] == 11, \
+            f"Expected 11 nodes, got {ts.data.sizes['node']}"
+        # Non-NaN states should be finite (no structural collapse)
+        vals = ts.data.values
+        assert np.all(np.isfinite(vals[~np.isnan(vals)])), \
+            "Non-NaN states should be finite"
 
 
 # ===========================================================================
