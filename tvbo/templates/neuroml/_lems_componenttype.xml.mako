@@ -20,6 +20,9 @@ All template variables are injected by the calling template's render context
 % for pname, p in params.items():
     <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
+% if regime_data:
+    <Parameter name="refract" dimension="time"/>
+% endif
     <!-- Coupling inputs -->
 % for ci in coupling_inputs:
 <%  ci_name = str(ci) %>\
@@ -47,6 +50,9 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
     <Exposure name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}"/>
 % endfor
+% if regime_data:
+    <EventPort name="spike" direction="out"/>
+% endif
 
     <Dynamics>
 
@@ -54,6 +60,9 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
       <StateVariable name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}" exposure="${sv_name}"/>
 % endfor
+% if regime_data:
+      <StateVariable name="lastSpikeTime" dimension="time"/>
+% endif
 
       <!-- Derived variables (simple and conditional/piecewise) -->
 % for dv_name, dv in dvs.items():
@@ -84,6 +93,66 @@ All template variables are injected by the calling template's render context
 % endif
 % endfor
 
+% if regime_data:
+      <!-- ── Regime-based dynamics (spike model) ── -->
+
+      <!-- Initial conditions -->
+      <OnStart>
+% for sv_name, sv in svs.items():
+        <StateAssignment variable="${sv_name}" value="${sv_name}_0"/>
+% endfor
+      </OnStart>
+
+      <Regime name="integrating" initial="true">
+        <!-- All time derivatives active -->
+% for sv_name, sv in svs.items():
+<%
+  eq = getattr(sv, 'equation', None)
+  rhs = getattr(eq, 'rhs', None) if eq else None
+%>\
+% if rhs:
+% if needs_sec:
+        <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
+% else:
+        <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
+% endif
+% endif
+% endfor
+        <OnCondition test="${lems_expr(regime_data['condition'])}">
+          <EventOut port="spike"/>
+          <Transition regime="refractory"/>
+        </OnCondition>
+      </Regime>
+
+      <Regime name="refractory">
+        <!-- Only non-reset SVs evolve during refractory -->
+% for sv_name, sv in svs.items():
+<%
+  eq = getattr(sv, 'equation', None)
+  rhs = getattr(eq, 'rhs', None) if eq else None
+%>\
+% if rhs and sv_name not in regime_data['reset_vars']:
+% if needs_sec:
+        <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
+% else:
+        <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
+% endif
+% endif
+% endfor
+        <OnEntry>
+          <StateAssignment variable="lastSpikeTime" value="t"/>
+% for lhs, rhs_val in regime_data['assignments']:
+          <StateAssignment variable="${lhs}" value="${lems_expr(rhs_val)}"/>
+% endfor
+        </OnEntry>
+        <OnCondition test="t .gt. lastSpikeTime + refract">
+          <Transition regime="integrating"/>
+        </OnCondition>
+      </Regime>
+
+% else:
+      <!-- ── Flat dynamics (no spike events) ── -->
+
       <!-- Time derivatives -->
 % for sv_name, sv in svs.items():
 <%
@@ -106,7 +175,7 @@ All template variables are injected by the calling template's render context
 % endfor
       </OnStart>
 
-      <!-- Events (spike / reset) -->
+      <!-- Events (non-spike) -->
 % for ev_name, ev in events.items():
 <%
   cond = getattr(ev, 'condition', None)
@@ -127,6 +196,7 @@ All template variables are injected by the calling template's render context
       </OnCondition>
 % endif
 % endfor
+% endif
 
     </Dynamics>
 
@@ -162,6 +232,9 @@ All template variables are injected by the calling template's render context
 <% p_unit = getattr(p, 'unit', '') or '' %>\
  ${pname}="${getattr(p, 'value', 0)}${p_unit}"\
 % endfor
+% if regime_data:
+ refract="0${time_scale}"\
+% endif
 % for ci in coupling_inputs:
 <% ci_name = str(ci) %>\
 % if ci_name not in sv_names_set and ci_name not in [str(k) for k in params.keys()]:

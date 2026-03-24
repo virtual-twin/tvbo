@@ -224,6 +224,56 @@ def _dynamics_has_time_units(params, svs, dvs):
     )
 
 
+def _build_regime_data(events):
+    """Detect spike events and build Regime rendering data.
+
+    When an event has both a ``condition`` (threshold test) and an ``affect``
+    (state reset assignments), we render it as a pair of LEMS Regimes
+    (integrating / refractory) instead of a flat ``<OnCondition>``.
+
+    Returns ``None`` when no Regime rendering is needed, otherwise a dict::
+
+        {
+            'condition':  str,          # e.g. "v > thresh"
+            'assignments': [(lhs, rhs), ...],  # parsed affect assignments
+            'reset_vars': set,          # SVs clamped in refractory (no TD)
+        }
+
+    A variable is "clamped" (excluded from refractory TimeDerivatives) when
+    the assignment is a pure reset (``v = reset``, LHS absent from RHS).
+    A variable that receives a bump (``w = w + b``, LHS appears in RHS)
+    still evolves via its TimeDerivative in the refractory regime.
+    """
+    for _ev_name, ev in (events or {}).items():
+        cond = getattr(ev, 'condition', None)
+        affect = getattr(ev, 'affect', None)
+        cond_rhs = getattr(cond, 'rhs', None) if cond else None
+        affect_rhs = getattr(affect, 'rhs', None) if affect else None
+
+        if not (cond_rhs and affect_rhs):
+            continue
+
+        assignments = []
+        reset_vars = set()
+        for piece in str(affect_rhs).split(";"):
+            piece = piece.strip()
+            if "=" not in piece:
+                continue
+            lhs, rhs_val = piece.split("=", 1)
+            lhs, rhs_val = lhs.strip(), rhs_val.strip()
+            assignments.append((lhs, rhs_val))
+            # If LHS doesn't appear in RHS → it's a reset / clamp
+            if not re.search(r'\b' + re.escape(lhs) + r'\b', rhs_val):
+                reset_vars.add(lhs)
+
+        return {
+            'condition': str(cond_rhs),
+            'assignments': assignments,
+            'reset_vars': reset_vars,
+        }
+    return None
+
+
 def _normalize_edge_params(params):
     """Normalize edge parameters to a flat ``{name: param_obj}`` dict.
 
@@ -265,6 +315,27 @@ def validate_lems_xml(xml_string):
         os.unlink(fname)
 
 
+# ── Standard NeuroML input type detection ────────────────────────────
+
+# Current injection sources: standalone <Component>, injected via <explicitInput>
+CURRENT_INPUT_TYPES = frozenset({
+    'pulseGenerator', 'pulseGeneratorDL',
+    'compoundPulseGenerator', 'rampGenerator', 'rampGeneratorDL',
+    'voltageClamp', 'voltageClampTriple',
+})
+
+# Event (spike) sources: become <population> with synapticConnection
+EVENT_SOURCE_TYPES = frozenset({
+    'spikeGenerator', 'spikeGeneratorRandom', 'spikeGeneratorRefPoisson',
+    'spikeGeneratorPoisson', 'spikeArray',
+    'poissonFiringSynapse', 'transientPoissonFiringSynapse',
+    'timedSynapticInput',
+    'SpikeSourcePoisson',
+})
+
+ALL_INPUT_TYPES = CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES
+
+
 # ── Network context builder ──────────────────────────────────────────
 
 def _build_network_context(experiment):
@@ -299,6 +370,7 @@ def _build_network_context(experiment):
     cell_types = {}   # dyn_name -> Dynamics object
     populations = []  # list of {id, component, size, node_ids}
     node_pop_map = {} # node_id -> (pop_id, index_within_pop)
+    input_nodes = {}  # node_id -> {type, params, id}  (for current sources)
 
     # Group nodes by their dynamics name
     from collections import OrderedDict
@@ -312,7 +384,72 @@ def _build_network_context(experiment):
         groups.setdefault(dyn_name, []).append(node)
 
     for dyn_name, group_nodes in groups.items():
-        # Resolve the Dynamics object
+        is_current_input = dyn_name in CURRENT_INPUT_TYPES
+        is_event_source = dyn_name in EVENT_SOURCE_TYPES
+
+        if is_current_input:
+            # Current injection sources are NOT populations.
+            # Each becomes a standalone component + explicitInput.
+            for node in group_nodes:
+                nid = getattr(node, "id", 0)
+                node_params = _normalize_edge_params(
+                    getattr(node, "parameters", None))
+                # Build param string dict: "delay" -> "25ms"
+                param_strs = {}
+                for pn, pv in node_params.items():
+                    val = getattr(pv, 'value', pv)
+                    unit = getattr(pv, 'unit', None) or ''
+                    param_strs[str(pn)] = f"{val}{unit}"
+                input_id = f"{safe_id(dyn_name)}_{nid}"
+                input_nodes[nid] = {
+                    'type': dyn_name,
+                    'id': input_id,
+                    'params': param_strs,
+                }
+            continue
+
+        if is_event_source:
+            # Event sources (spikeGenerator, spikeArray) ARE populations.
+            # Use the standard type as component directly (not a custom CT).
+            for sub_idx, node in enumerate(group_nodes):
+                nid = getattr(node, "id", sub_idx)
+                node_params = _normalize_edge_params(
+                    getattr(node, "parameters", None))
+                param_strs = {}
+                spike_times = []
+                for pn, pv in node_params.items():
+                    pn_str = str(pn)
+                    val = getattr(pv, 'value', pv)
+                    unit = getattr(pv, 'unit', None) or ''
+                    if pn_str == 'spike_times':
+                        # spikeArray: list of spike times
+                        if isinstance(val, (list, tuple)):
+                            spike_times = [(f"{t}{unit}") for t in val]
+                        elif isinstance(val, str):
+                            spike_times = [
+                                (s.strip() if unit in s.strip() else f"{s.strip()}{unit}")
+                                for s in val.split(',')
+                            ]
+                    else:
+                        param_strs[pn_str] = f"{val}{unit}"
+                comp_id = f"{safe_id(dyn_name)}_{nid}"
+                pop_id = f"{safe_id(dyn_name)}_{nid}_pop"
+                node_pop_map[nid] = (pop_id, 0)
+                populations.append({
+                    "id": pop_id,
+                    "component": comp_id,
+                    "size": 1,
+                    "node_ids": [nid],
+                    "dyn_name": dyn_name,
+                    "is_input": True,
+                    "input_type": dyn_name,
+                    "input_id": comp_id,
+                    "input_params": param_strs,
+                    "spike_times": spike_times,
+                })
+            continue
+
+        # Normal cell type — resolve Dynamics object
         if dyn_name in dynamics_lib:
             dyn_obj = dynamics_lib[dyn_name]
         elif dyn_name == getattr(default_dyn, "name", None):
@@ -340,6 +477,7 @@ def _build_network_context(experiment):
     synapses = []     # list of {id, type, params}
     connections = []  # list of {from_pop, from_idx, to_pop, to_idx, synapse, weight, delay}
     synapse_set = {}  # dedup key -> synapse_id
+    inputs = []       # list of {id, type, params, target_pop, target_idx}
 
     for edge_idx, edge in enumerate(edges):
         src = getattr(edge, "source", None)
@@ -349,6 +487,30 @@ def _build_network_context(experiment):
 
         src = int(src)
         tgt = int(tgt)
+
+        # ── Handle edges FROM current-input nodes → explicitInput ──
+        if src in input_nodes:
+            if tgt not in node_pop_map:
+                continue
+            inp_info = input_nodes[src]
+            tgt_pop, tgt_idx = node_pop_map[tgt]
+            # Edge params may override input weight
+            edge_params = _normalize_edge_params(
+                getattr(edge, "parameters", None))
+            inp_weight = None
+            for pn, pv in edge_params.items():
+                if str(pn) == 'weight':
+                    inp_weight = float(getattr(pv, 'value', pv))
+            inputs.append({
+                'id': inp_info['id'],
+                'type': inp_info['type'],
+                'params': inp_info['params'],
+                'target_pop': tgt_pop,
+                'target_idx': tgt_idx,
+                'weight': inp_weight,
+            })
+            continue
+
         if src not in node_pop_map or tgt not in node_pop_map:
             continue
 
@@ -443,12 +605,8 @@ def _build_network_context(experiment):
         })
 
     # ── Extract input specifications ──
-    inputs = []
-    # Inputs come from node-level parameters or experiment-level stimulus.
-    # For now, check if any node dynamics has a Piecewise I_ext that encodes
-    # a pulse generator — this is the pattern used in QMD examples.
-    # More sophisticated input handling (explicit stimulus objects) can be
-    # added later.
+    # Current-source inputs have already been populated from edges above.
+    # Additional inputs from experiment.stimulation could be added here.
 
     return {
         "populations": populations,
@@ -597,6 +755,12 @@ def build_lems_context(experiment):
     label = getattr(experiment, 'label', None)
     sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
 
+    # ── Regime detection for spike events ──
+    # When an event has both condition and affect (e.g. spike + reset),
+    # render as LEMS Regimes (integrating/refractory) instead of flat
+    # OnCondition.  This matches the reference NeuroML execution model.
+    regime_data = _build_regime_data(events)
+
     # ── Multi-population network context ──
     net_ctx = _build_network_context(experiment)
 
@@ -625,6 +789,8 @@ def build_lems_context(experiment):
         time_scale=time_scale,
         needs_sec=not _model_has_time_units,
         max_output_nodes=100,
+        # Regime rendering for spike events
+        regime_data=regime_data,
         # Network context (None for single-population)
         net_ctx=net_ctx,
         has_network=net_ctx is not None,
@@ -709,6 +875,7 @@ def build_lems_context(experiment):
                 "needs_sec": not ct_has_time_units,
                 "lems_expr": ct_lems_expr,
                 "_parse_piecewise": ct_parse_pw,
+                "regime_data": _build_regime_data(ct_events),
                 # Node-level flags for LEMS network rendering
                 "is_synapse": False,
                 "has_threshold_events": bool(threshold_event_names),
@@ -1067,6 +1234,8 @@ class NeuroMLAdapter(BaseAdapter):
             # produced by the template (same order as the OutputFile columns).
             col_names = []
             for pop in net_ctx['populations']:
+                if pop.get('is_input'):
+                    continue  # input source populations don't have output columns
                 ct = cell_contexts.get(pop['dyn_name'], {})
                 if ct.get('is_synapse'):
                     continue  # synapse populations don't have output columns
