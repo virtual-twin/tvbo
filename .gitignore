@@ -5,6 +5,7 @@
 # Folders
 dev
 **/_dev
+**/_dev
 
 # Wildcard Folders
 **/Autofiles/BifurcationData
@@ -18,6 +19,7 @@ tests/tvb_validation
 # Documentation
 docs/_build/
 docs/_site/
+docs/_site/
 docs/api/
 docs/auto_examples/
 docs/**/*.ipynb
@@ -25,6 +27,8 @@ docs/**/*.py
 docs/gen_modules/
 docs/_api/
 docs/apidocs/
+docs/**/.gen_stamp
+docs/**/.struct_stamp
 docs/**/.gen_stamp
 docs/**/.struct_stamp
 build
@@ -82,6 +86,7 @@ docs/datamodel
 docs/_site_libs
 .quarto
 docs/_freeze
+tvbo/database/_extra
 tvbo/database/_extra
 manuscript/_notes
 
