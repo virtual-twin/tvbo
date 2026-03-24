@@ -340,6 +340,263 @@ def validate_lems_xml(xml_string):
         os.unlink(fname)
 
 
+# ── Standard NeuroML type rendering ──────────────────────────────────
+
+def _uses_neuroml_types(dynamics):
+    """Return True if the dynamics uses standard NeuroML types (iri: neuroml:*)."""
+    iri = getattr(dynamics, 'iri', None) or ''
+    return iri.startswith('neuroml:')
+
+
+def _nml_attr(param, default=''):
+    """Extract a NeuroML XML attribute value from a TVBO Parameter.
+
+    If the parameter description starts with 'nml:' (e.g. "nml:10pS"), that
+    literal value is used as the XML attribute.  Otherwise, just the numeric
+    value is returned (integers displayed without '.0').
+    """
+    if param is None:
+        return str(default)
+    desc = str(getattr(param, 'description', '') or '')
+    if desc.startswith('nml:'):
+        return desc[4:]
+    val = getattr(param, 'value', default)
+    # Display integers without '.0'
+    if isinstance(val, float) and val == int(val):
+        return str(int(val))
+    return str(val)
+
+
+def _render_standard_neuroml_lems(experiment):
+    """Generate LEMS XML using standard NeuroML2 types for dynamics with neuroml: IRIs.
+
+    This produces XML that includes Cells.xml/Channels.xml/etc. and instantiates
+    standard NeuroML components (ionChannelHH, gateHHrates, pointCellCondBased, etc.)
+    rather than custom ComponentTypes. This preserves the jLEMS child-before-parent
+    RK4 evaluation order, giving numerical identity with reference simulations.
+
+    Returns the complete LEMS XML string, or None if the dynamics can't be
+    represented using standard types (caller should fall back to flat rendering).
+    """
+    dyn = experiment.dynamics
+    if not dyn:
+        return None
+
+    iri = getattr(dyn, 'iri', None) or ''
+    if not iri.startswith('neuroml:'):
+        return None
+
+    cell_type = iri.split(':', 1)[1]
+    if cell_type != 'pointCellCondBased':
+        return None  # Only pointCellCondBased supported for now
+
+    params = dyn.parameters or {}
+    components = dyn.modes or {}
+
+    # Cell-level parameters (use nml: prefix in description for NeuroML units)
+    C_attr = _nml_attr(params.get('C'), '10pF')
+    v0_attr = _nml_attr(params.get('v0'), '-65mV')
+    thresh_attr = _nml_attr(params.get('thresh'), '20mV')
+
+    # ── Build ion channel XML from components ──
+    channel_xmls = []
+    channel_pops = []
+
+    for comp_name, comp in components.items():
+        comp_iri = getattr(comp, 'iri', None) or ''
+        comp_type = comp_iri.split(':', 1)[1] if ':' in comp_iri else ''
+        comp_params = comp.parameters or {}
+
+        if comp_type in ('ionChannelHH', 'ionChannelKS', 'ionChannelPassive'):
+            cond_attr = _nml_attr(comp_params.get('conductance'), '10pS')
+            number_attr = _nml_attr(comp_params.get('number'), '1')
+            erev_attr = _nml_attr(comp_params.get('erev'), '0mV')
+
+            if comp_type == 'ionChannelPassive':
+                channel_xmls.append(
+                    f'    <ionChannelPassive id="{safe_id(comp_name)}" '
+                    f'conductance="{cond_attr}"/>'
+                )
+            elif comp_type == 'ionChannelKS':
+                sub_components = comp.modes or {}
+                gate_lines = _render_gates(sub_components, 'KS')
+                tag = 'ionChannelKS'
+                if gate_lines:
+                    channel_xmls.append(
+                        f'    <{tag} id="{safe_id(comp_name)}" conductance="{cond_attr}">\n'
+                        + '\n'.join(gate_lines) + '\n'
+                        f'    </{tag}>'
+                    )
+                else:
+                    channel_xmls.append(
+                        f'    <{tag} id="{safe_id(comp_name)}" conductance="{cond_attr}"/>'
+                    )
+            else:
+                # ionChannelHH
+                sub_components = comp.modes or {}
+                gate_lines = _render_gates(sub_components, 'HH')
+                if gate_lines:
+                    channel_xmls.append(
+                        f'    <ionChannelHH id="{safe_id(comp_name)}" conductance="{cond_attr}">\n'
+                        + '\n'.join(gate_lines) + '\n'
+                        f'    </ionChannelHH>'
+                    )
+                else:
+                    channel_xmls.append(
+                        f'    <ionChannelHH id="{safe_id(comp_name)}" conductance="{cond_attr}"/>'
+                    )
+
+            channel_pops.append(
+                f'        <channelPopulation id="{safe_id(comp_name)}_pop" '
+                f'ionChannel="{safe_id(comp_name)}" '
+                f'number="{number_attr}" erev="{erev_attr}"/>'
+            )
+
+    # ── Build stimulus from parameters ──
+    pulse_xml = ''
+    input_xml = ''
+    if params.get('pulse_delay') and params.get('pulse_duration') and params.get('I_amp'):
+        delay_attr = _nml_attr(params['pulse_delay'], '50ms')
+        dur_attr = _nml_attr(params['pulse_duration'], '50ms')
+        amp_attr = _nml_attr(params['I_amp'], '0.08nA')
+        pulse_xml = (
+            f'    <pulseGenerator id="pulseGen1" '
+            f'delay="{delay_attr}" duration="{dur_attr}" amplitude="{amp_attr}"/>'
+        )
+        input_xml = '        <explicitInput target="pop[0]" input="pulseGen1" destination="synapses"/>'
+
+    # ── Integration parameters ──
+    integration = getattr(experiment, 'integration', None)
+    dt = integration.step_size if integration else 0.01
+    duration = integration.duration if integration else 1000.0
+    raw_ts = (getattr(integration, 'time_scale', None) or 'ms') if integration else 'ms'
+    time_scale = str(raw_ts) if str(raw_ts) in ('s', 'ms', 'us') else 'ms'
+
+    label = getattr(experiment, 'label', None)
+    dyn_id = safe_id(dyn.name or 'dynamics')
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+
+    # ── Assemble XML ──
+    lines = [
+        '<Lems>',
+        f'  <Target component="{sim_id}"/>',
+        '',
+        '  <Include file="Cells.xml"/>',
+        '  <Include file="Networks.xml"/>',
+        '  <Include file="Simulation.xml"/>',
+        '',
+    ]
+
+    for ch in channel_xmls:
+        lines.append(ch)
+        lines.append('')
+
+    lines.append(
+        f'    <pointCellCondBased id="{dyn_id}" C="{C_attr}" '
+        f'v0="{v0_attr}" thresh="{thresh_attr}">'
+    )
+    for pop in channel_pops:
+        lines.append(pop)
+    lines.append('    </pointCellCondBased>')
+    lines.append('')
+
+    if pulse_xml:
+        lines.append(pulse_xml)
+        lines.append('')
+
+    lines.append('    <network id="net1">')
+    lines.append(f'        <population id="pop" component="{dyn_id}" size="1"/>')
+    if input_xml:
+        lines.append(input_xml)
+    lines.append('    </network>')
+    lines.append('')
+
+    lines.append(f'    <Simulation id="{sim_id}" length="{duration}{time_scale}" step="{dt}{time_scale}" target="net1">')
+    lines.append(f'        <OutputFile id="of0" fileName="results/{dyn_id}.dat">')
+    lines.append(f'            <OutputColumn id="v" quantity="pop[0]/v"/>')
+    lines.append(f'        </OutputFile>')
+    lines.append(f'    </Simulation>')
+    lines.append('')
+    lines.append('</Lems>')
+
+    return '\n'.join(lines)
+
+
+def _render_gates(sub_components, channel_kind):
+    """Render gate XML lines for ionChannelHH or ionChannelKS.
+
+    Parameters
+    ----------
+    sub_components : dict
+        Gate sub-dynamics (modes of the ion channel).
+    channel_kind : str
+        'HH' or 'KS' — determines which gate types to look for.
+
+    Returns
+    -------
+    list[str]
+        XML lines for gates.
+    """
+    gate_lines = []
+    for gate_name, gate in sub_components.items():
+        gate_iri = getattr(gate, 'iri', None) or ''
+        gate_type = gate_iri.split(':', 1)[1] if ':' in gate_iri else ''
+        gate_params = gate.parameters or {}
+        instances_attr = _nml_attr(gate_params.get('instances'), '1')
+
+        if gate_type == 'gateHHrates':
+            gate_sub = gate.modes or {}
+            fwd_comp = gate_sub.get('forwardRate')
+            rev_comp = gate_sub.get('reverseRate')
+            if fwd_comp and rev_comp:
+                fwd_iri = getattr(fwd_comp, 'iri', None) or ''
+                rev_iri = getattr(rev_comp, 'iri', None) or ''
+                fwd_type = fwd_iri.split(':', 1)[1] if ':' in fwd_iri else ''
+                rev_type = rev_iri.split(':', 1)[1] if ':' in rev_iri else ''
+
+                def _rate_attrs(comp):
+                    p = comp.parameters or {}
+                    attrs = []
+                    for k in ('rate', 'midpoint', 'scale'):
+                        if p.get(k):
+                            attrs.append(f'{k}="{_nml_attr(p[k])}"')
+                    return ' '.join(attrs)
+
+                gate_lines.append(
+                    f'        <gateHHrates id="{safe_id(gate_name)}" instances="{instances_attr}">\n'
+                    f'            <forwardRate type="{fwd_type}" {_rate_attrs(fwd_comp)}/>\n'
+                    f'            <reverseRate type="{rev_type}" {_rate_attrs(rev_comp)}/>\n'
+                    f'        </gateHHrates>'
+                )
+
+        elif gate_type == 'gateKS':
+            gate_sub = gate.modes or {}
+            ks_lines = []
+            for sub_name, sub in gate_sub.items():
+                sub_iri = getattr(sub, 'iri', None) or ''
+                sub_type = sub_iri.split(':', 1)[1] if ':' in sub_iri else ''
+                if sub_type == 'closedState':
+                    ks_lines.append(f'            <closedState id="{sub_name}"/>')
+                elif sub_type == 'openState':
+                    ks_lines.append(f'            <openState id="{sub_name}"/>')
+                elif sub_type == 'vHalfTransition':
+                    sub_p = sub.parameters or {}
+                    attrs = []
+                    for k in ('from', 'to', 'vHalf', 'z', 'gamma', 'tau', 'tauMin'):
+                        if sub_p.get(k):
+                            attrs.append(f'{k}="{_nml_attr(sub_p[k])}"')
+                    ks_lines.append(f'            <vHalfTransition {" ".join(attrs)}/>')
+
+            gate_lines.append(
+                f'        <gateKS id="{safe_id(gate_name)}" instances="{instances_attr}">\n'
+                + '\n'.join(ks_lines) + '\n'
+                f'        </gateKS>'
+            )
+
+    return gate_lines
+
+
+
 # ── Standard NeuroML input type detection ────────────────────────────
 
 # Current injection sources: standalone <Component>, injected via <explicitInput>
@@ -1085,7 +1342,17 @@ class NeuroMLAdapter(BaseAdapter):
         return ctx
 
     def render_code(self, **kwargs) -> str:
-        """Render a complete, self-contained LEMS simulation file (``<Lems>`` root)."""
+        """Render a complete, self-contained LEMS simulation file (``<Lems>`` root).
+
+        If the experiment dynamics uses standard NeuroML types (``iri: neuroml:*``),
+        emits standard NeuroML components (ionChannelHH, pointCellCondBased, etc.)
+        with ``<Include file="Cells.xml"/>`` etc.  Otherwise falls through to the
+        flat custom-ComponentType template.
+        """
+        if self.experiment and self.experiment.dynamics and _uses_neuroml_types(self.experiment.dynamics):
+            xml = _render_standard_neuroml_lems(self.experiment)
+            if xml is not None:
+                return xml
         from tvbo import templates
         template = templates.lookup.get_template(self.TEMPLATE)
         return template.render(experiment=self.experiment, **self._ctx(**kwargs))
@@ -1282,11 +1549,22 @@ class NeuroMLAdapter(BaseAdapter):
 
         from tvbo.data.types import ExperimentResult, SimulationResult
 
-        ctx = build_lems_context(self.experiment)
-        sv_names = list(ctx['svs'].keys())
-        dyn_id = ctx['dyn_id']
-        net_ctx = ctx.get('net_ctx')
-        cell_contexts = ctx.get('cell_contexts', {})
+        uses_std = (
+            self.experiment and self.experiment.dynamics
+            and _uses_neuroml_types(self.experiment.dynamics)
+        )
+
+        if uses_std:
+            sv_names = ['v']
+            dyn_id = safe_id(self.experiment.dynamics.name)
+            net_ctx = None
+            cell_contexts = {}
+        else:
+            ctx = build_lems_context(self.experiment)
+            sv_names = list(ctx['svs'].keys())
+            dyn_id = ctx['dyn_id']
+            net_ctx = ctx.get('net_ctx')
+            cell_contexts = ctx.get('cell_contexts', {})
 
         xml = self.render_code(**kwargs)
 

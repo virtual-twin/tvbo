@@ -145,6 +145,13 @@ website:
                     contents:
                       - text: "LEMS Export"
                         href: Interoperability/NeuroML/LEMS_Export.qmd
+                      - section: "LEMS Examples"
+                        href: Interoperability/NeuroML/examples/index.qmd
+                        contents:
+                          - auto: Interoperability/NeuroML/examples/Ex*.qmd
+                      - section: "NML2 File Documentation"
+                        contents:
+                          - auto: Interoperability/NeuroML/examples/NML2_*.qmd
                   - section: "BIDS"
                     href: Interoperability/BIDS/index.qmd
                     contents:

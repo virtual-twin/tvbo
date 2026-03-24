@@ -142,6 +142,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _cname = kwargs["coupling"]
             kwargs["coupling"] = {"name": _cname, "iri": f"tvbo:{_cname}"}
 
+        # Resolve Dynamics slot aliases (e.g. components → modes) before
+        # the parent __post_init__ constructs the base-class Dynamics.
+        dyn_kw = kwargs.get("dynamics")
+        if isinstance(dyn_kw, dict):
+            from tvbo.classes.dynamics import _resolve_dynamics_aliases
+            _resolve_dynamics_aliases(dyn_kw)
+
         # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
 
