@@ -854,6 +854,10 @@ classes:
                 aliases:
                     - number_of_nodes
                     - number_of_regions
+            coordinate_space:
+                range: CommonCoordinateSpace
+                inlined: true
+                description: "Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous."
             parcellation:
                 range: Parcellation
                 description: "Brain parcellation/atlas reference"
