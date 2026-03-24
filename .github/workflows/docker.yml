@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: docker-${{ github.sha }}
+  group: docker-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
