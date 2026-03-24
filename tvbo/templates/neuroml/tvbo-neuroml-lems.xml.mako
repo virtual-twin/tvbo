@@ -1,13 +1,19 @@
 ## -*- coding: utf-8 -*-
 <%doc>
-TVBO → LEMS XML Template  (monolithic)
-=======================================
-Generates a complete, self-contained LEMS simulation file.
-All dimensions, units, and LEMS infrastructure types (Simulation,
-OutputFile, OutputColumn) are defined inline — NO external
-<Include> files are used.  This avoids the jNeuroML double-read bug
-where included NeuroML type files cause "Duplicate name for
-ComponentType" or "no such dimension" errors.
+TVBO → LEMS XML Template  (monolithic / include-based)
+==========================================================
+Generates a complete LEMS simulation file.
+
+Single-population mode (no network):
+  All dimensions, units, and LEMS infrastructure types (Simulation,
+  OutputFile, OutputColumn) are defined inline.
+
+Multi-population network mode:
+  Includes standard NeuroML2 type files (Cells.xml, Networks.xml,
+  Simulation.xml) which provide all standard types (synapse types,
+  input types, network infrastructure, simulation types, dimensions
+  and units).  Custom cell/synapse dynamics are rendered as additional
+  custom ComponentTypes alongside the standard types.
 
 All template variables are pre-computed by NeuroMLAdapter._ctx()
 via tvbo.adapters.neuroml.build_lems_context() and injected directly
@@ -24,6 +30,16 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <!-- Tell jLEMS/jNeuroML which component is the simulation entry point. -->
   <Target component="${sim_id}"/>
 
+% if has_network and cell_contexts:
+  <!-- ════════════════════════════════════════════════════════════════
+       Standard NeuroML2 type includes for network mode.
+       Provides all standard dimensions, units, synapse types, input
+       types, network infrastructure, and simulation types.
+       ════════════════════════════════════════════════════════════════ -->
+  <Include file="Cells.xml"/>
+  <Include file="Networks.xml"/>
+  <Include file="Simulation.xml"/>
+% else:
   <!-- ════════════════════════════════════════════════════════════════
        Dimensions & Units (inline — no external includes needed)
        ════════════════════════════════════════════════════════════════ -->
@@ -62,21 +78,12 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       <Record quantity="quantity"/>
     </Simulation>
   </ComponentType>
+% endif
 
   <!-- ════════════════════════════════════════════════════════════════
        Dynamics ComponentType & Component instances
        ════════════════════════════════════════════════════════════════ -->
 % if has_network and cell_contexts:
-## ── Multi-population: render ComponentTypes for each cell & synapse type ──
-
-  <!-- baseSynapse: minimal base type for spike-triggered synapses.
-       All custom synapse ComponentTypes reference EventPort "in" and
-       expose "i" (synaptic current).  Post-cells collect synaptic current
-       via <Children> + DerivedVariable select/reduce. -->
-  <ComponentType name="baseSynapse">
-    <EventPort name="in" direction="in"/>
-    <Exposure name="i" dimension="current"/>
-  </ComponentType>
 
 ## ── Cell-type ComponentTypes (non-synapse) ──
 % for ct_name, ct in cell_contexts.items():
@@ -95,6 +102,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_parse_piecewise = ct['_parse_piecewise']
   ct_has_threshold = ct.get('has_threshold_events', False)
   ct_threshold_ev = set(ct.get('threshold_event_names', []))
+  ct_regime_data = ct.get('regime_data')
   # coupling_inputs that are NOT parameters or state variables receive synaptic current
   ct_syn_inputs = [
       str(ci) for ci in ct_coupling_inputs
@@ -108,6 +116,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for pname, p in ct_params.items():
     <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
+% if ct_regime_data:
+    <Parameter name="refract" dimension="time"/>
+% endif
 % for sv_name in ct_svs:
     <Parameter name="${sv_name}_0" dimension="${lems_dim(getattr(ct_svs[sv_name], 'unit', None))}"/>
 % endfor
@@ -129,6 +140,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
       <StateVariable name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}" exposure="${sv_name}"/>
 % endfor
+% if ct_regime_data:
+      <StateVariable name="lastSpikeTime" dimension="time"/>
+% endif
 % if ct_syn_inputs:
 <%  ## Emit one DerivedVariable per coupling-input that sums synaptic currents.
     ## All conductance-based synapses expose dimension="current" via "i".
@@ -164,6 +178,60 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endif
 % endif
 % endfor
+% if ct_regime_data:
+      <!-- ── Regime-based dynamics (spike model) ── -->
+      <OnStart>
+% for sv_name, sv in ct_svs.items():
+        <StateAssignment variable="${sv_name}" value="${sv_name}_0"/>
+% endfor
+      </OnStart>
+
+      <Regime name="integrating" initial="true">
+% for sv_name, sv in ct_svs.items():
+<%
+  eq = getattr(sv, 'equation', None)
+  rhs = getattr(eq, 'rhs', None) if eq else None
+%>\
+% if rhs:
+% if ct_needs_sec:
+        <TimeDerivative variable="${sv_name}" value="(${ct_lems_expr(rhs)}) / SEC"/>
+% else:
+        <TimeDerivative variable="${sv_name}" value="${ct_lems_expr(rhs)}"/>
+% endif
+% endif
+% endfor
+        <OnCondition test="${ct_lems_expr(ct_regime_data['condition'])}">
+          <EventOut port="spike"/>
+          <Transition regime="refractory"/>
+        </OnCondition>
+      </Regime>
+
+      <Regime name="refractory">
+% for sv_name, sv in ct_svs.items():
+<%
+  eq = getattr(sv, 'equation', None)
+  rhs = getattr(eq, 'rhs', None) if eq else None
+%>\
+% if rhs and sv_name not in ct_regime_data['reset_vars']:
+% if ct_needs_sec:
+        <TimeDerivative variable="${sv_name}" value="(${ct_lems_expr(rhs)}) / SEC"/>
+% else:
+        <TimeDerivative variable="${sv_name}" value="${ct_lems_expr(rhs)}"/>
+% endif
+% endif
+% endfor
+        <OnEntry>
+          <StateAssignment variable="lastSpikeTime" value="t"/>
+% for lhs, rhs_val in ct_regime_data['assignments']:
+          <StateAssignment variable="${lhs}" value="${ct_lems_expr(rhs_val)}"/>
+% endfor
+        </OnEntry>
+        <OnCondition test="t .gt. lastSpikeTime + refract">
+          <Transition regime="integrating"/>
+        </OnCondition>
+      </Regime>
+% else:
+      <!-- ── Flat dynamics ── -->
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
@@ -205,6 +273,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       </OnCondition>
 % endif
 % endfor
+% endif
     </Dynamics>
   </ComponentType>
 
@@ -213,6 +282,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 <% p_unit = getattr(p, 'unit', '') or '' %>\
  ${pname}="${getattr(p, 'value', 0)}${p_unit}"\
 % endfor
+% if ct_regime_data:
+ refract="0${time_scale}"\
+% endif
 % for sv_name, sv in ct_svs.items():
 <% iv = getattr(sv, 'initial_value', None) %>\
  ${sv_name}_0="${iv if iv is not None else 0.0}"\
@@ -365,14 +437,39 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endfor
 
   <!-- ════════════════════════════════════════════════════════════════
-       Pulse Generators / Input Sources
+       Input Sources (pulseGenerator, spikeGenerator, spikeArray, etc.)
        ════════════════════════════════════════════════════════════════ -->
+## ── Current-injection sources (standalone components) ──
 % for inp in net_ctx.get('inputs', []):
   <${inp['type']} id="${inp['id']}"\
 % for pk, pv in inp.get('params', {}).items():
  ${pk}="${pv}"\
 % endfor
 />
+% endfor
+## ── Event sources (spikeGenerator, spikeArray — these are populations) ──
+% for pop in net_ctx['populations']:
+% if pop.get('is_input'):
+<%
+  inp_type = pop['input_type']
+  inp_id = pop['input_id']
+  inp_params = pop.get('input_params', {})
+  spike_times = pop.get('spike_times', [])
+%>\
+% if inp_type == 'spikeArray':
+  <spikeArray id="${inp_id}">
+% for st_idx, st_time in enumerate(spike_times):
+    <spike id="${st_idx}" time="${st_time}"/>
+% endfor
+  </spikeArray>
+% else:
+  <${inp_type} id="${inp_id}"\
+% for pk, pv in inp_params.items():
+ ${pk}="${pv}"\
+% endfor
+/>
+% endif
+% endif
 % endfor
 
   <!-- ════════════════════════════════════════════════════════════════
@@ -412,9 +509,11 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
        ════════════════════════════════════════════════════════════════ -->
   <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net1">
 <%
-  ## Collect output columns: all state variables from non-synapse populations.
+  ## Collect output columns: all state variables from non-synapse, non-input populations.
   out_cols = []
   for pop in net_ctx['populations']:
+    if pop.get('is_input'):
+        continue  # input source populations don't have output columns
     ct = cell_contexts.get(pop['dyn_name'], {})
     if ct.get('is_synapse'):
         continue  # synapses are not directly recorded
