@@ -2811,7 +2811,8 @@ class Network(tvbo_datamodel.Network):
                 edge_kwargs=edge_kwargs,
                 node_kwargs=node_kwargs,
             )
-            ax.axis("off")
+            if ax is not None:
+                ax.axis("off")
             return fig
 
     def plot_brain_surface(self, ax=None, weight_matrix=None, **kwargs):
