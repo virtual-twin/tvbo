@@ -58,8 +58,10 @@ def animate_network(result, state=0, interval=50, cmap='viridis',
         vals = arr[:, state, :, 0]
     elif arr.ndim == 3:
         vals = arr[:, state, :]
+    elif arr.ndim == 2:
+        vals = arr[:, state, np.newaxis]  # single node
     else:
-        raise ValueError("Need at least (time, variable, node) dimensions for animation")
+        raise ValueError("Need at least (time, variable) dimensions for animation")
 
     pos = graph['positions']
     adj = graph['adjacency']

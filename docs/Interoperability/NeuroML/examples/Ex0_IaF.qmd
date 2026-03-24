@@ -84,7 +84,7 @@ import numpy as np
 result = exp.run("neuroml")
 da = result.integration.data
 time = da.coords['time'].values
-sv_data = da.sel(node='0').values
+sv_data = da.values
 tvbo_arr = np.column_stack([time, sv_data])
 print(f"TVBO output shape: {tvbo_arr.shape}")
 print(f"Time range: [{tvbo_arr[0,0]:.3f}, {tvbo_arr[-1,0]:.3f}] s")

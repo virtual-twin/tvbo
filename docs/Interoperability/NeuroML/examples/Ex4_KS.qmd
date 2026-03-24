@@ -181,7 +181,7 @@ import numpy as np
 result = exp.run("neuroml")
 da = result.integration.data
 time = da.coords['time'].values
-v_data = da.sel(variable='v', node='0').values if 'variable' in da.dims else da.values[:, 0]
+v_data = da.sel(variable='v').values
 tvbo_arr = np.column_stack([time, v_data])
 print(f"TVBO: shape={tvbo_arr.shape}, t=[{tvbo_arr[0,0]:.4f}, {tvbo_arr[-1,0]:.4f}]")
 ```

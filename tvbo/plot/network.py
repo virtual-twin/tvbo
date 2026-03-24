@@ -32,6 +32,7 @@ from matplotlib.figure import Figure
 # Shared helpers
 # ---------------------------------------------------------------------------
 
+
 def _safe_norm(arr) -> np.ndarray:
     """Normalise array to [0, 1], handling empty / constant data."""
     arr = np.asarray(arr, dtype=float)
@@ -47,7 +48,9 @@ def _node_in_strengths(G, log: bool = True) -> np.ndarray:
     """Return per-node incoming strength vector (ordered by ``G.nodes()``)."""
     s = np.zeros(G.number_of_nodes())
     for i, node_id in enumerate(G.nodes()):
-        s[i] = sum(abs(d.get("weight", 1.0)) for _, _, d in G.in_edges(node_id, data=True))
+        s[i] = sum(
+            abs(d.get("weight", 1.0)) for _, _, d in G.in_edges(node_id, data=True)
+        )
     if log:
         s = np.log1p(s)
     return s
@@ -115,9 +118,11 @@ def _resolve_positions(G, pos, network=None, plot_brain=None):
 def _edge_data(G, attr: str = "weight"):
     """Return ``(edges_list, attr_vals)`` aligned arrays."""
     edges_list = list(G.edges(keys=True, data=True))
-    vals = np.array(
-        [d.get(attr, 0.0) for _, _, _, d in edges_list], dtype=float
-    ) if edges_list else np.array([])
+    vals = (
+        np.array([d.get(attr, 0.0) for _, _, _, d in edges_list], dtype=float)
+        if edges_list
+        else np.array([])
+    )
     return edges_list, vals
 
 
@@ -134,6 +139,7 @@ def _make_mappable(vals, cmap):
 # ---------------------------------------------------------------------------
 # 1.  NetworkX native
 # ---------------------------------------------------------------------------
+
 
 def plot_graph_networkx(
     G: nx.MultiDiGraph,
@@ -187,8 +193,12 @@ def plot_graph_networkx(
     -------
     Figure  (when *ax* is None) **or**  ScalarMappable  (when *ax* given).
     """
-    edge_kwargs = edge_kwargs or {}
-    node_kwargs = node_kwargs or {}
+    edge_kwargs = {
+        "min_source_margin": 15,
+        "min_target_margin": 15,
+        **(edge_kwargs or {}),
+    }
+    node_kwargs = {**(node_kwargs or {})}
 
     if isinstance(node_cmap, str):
         node_cmap = plt.get_cmap(node_cmap)
@@ -230,13 +240,25 @@ def plot_graph_networkx(
 
     # Draw
     edgelist_draw = [(u, v, k) for u, v, k, _ in edges_list]
+    print(edge_kwargs)
     nx.draw_networkx_edges(
-        G, pos, edgelist=edgelist_draw if edges_list else None,
-        edge_color=edge_colors, edge_cmap=edge_cmap, ax=ax, **edge_kwargs,
+        G,
+        pos,
+        edgelist=edgelist_draw if edges_list else None,
+        edge_color=edge_colors,
+        edge_cmap=edge_cmap,
+        ax=ax,
+        **edge_kwargs,
     )
     nx.draw_networkx_nodes(
-        G, pos, node_size=node_sizes, node_color="white",
-        edgecolors=node_coloring, linewidths=1, ax=ax, **node_kwargs,
+        G,
+        pos,
+        node_size=node_sizes,
+        node_color="white",
+        edgecolors=node_coloring,
+        linewidths=1,
+        ax=ax,
+        **node_kwargs,
     )
     if node_labels:
         lbl = {n: G.nodes[n].get("label", str(n)) for n in G.nodes()}
@@ -250,7 +272,9 @@ def plot_graph_networkx(
                     elbl[(u, v, k)] = f"{float(val):.2f}"
                 except (TypeError, ValueError):
                     elbl[(u, v, k)] = str(val)
-            nx.draw_networkx_edge_labels(G, pos, edge_labels=elbl, ax=ax, font_size=fontsize)
+            nx.draw_networkx_edge_labels(
+                G, pos, edge_labels=elbl, ax=ax, font_size=fontsize
+            )
 
     if fig is not None:
         ax.axis("off")
@@ -263,6 +287,7 @@ def plot_graph_networkx(
 # ---------------------------------------------------------------------------
 # 2.  bsplot  (text-box nodes + curved edges)
 # ---------------------------------------------------------------------------
+
 
 def plot_graph_bsplot(
     G: nx.MultiDiGraph,
@@ -361,7 +386,9 @@ def plot_graph_bsplot(
             d["type"] = d.get("label", f"w={d.get('weight', 1.0):.2f}")
 
     draw_custom_edges(
-        G_str, pos_str, ax=ax,
+        G_str,
+        pos_str,
+        ax=ax,
         edge_labels=edge_labels,
         edge_colors=edge_cmap.name if hasattr(edge_cmap, "name") else "viridis",
         color_by=edge_color_by,
@@ -370,8 +397,11 @@ def plot_graph_bsplot(
         font_size=fontsize,
     )
     draw_custom_nodes(
-        G_str, pos_str, labels=label_dict_str,
-        font_size=fontsize, ax=ax,
+        G_str,
+        pos_str,
+        labels=label_dict_str,
+        font_size=fontsize,
+        ax=ax,
         node_colors=node_colors_dict_str,
         alpha=alpha,
     )
@@ -389,6 +419,7 @@ def plot_graph_bsplot(
 # ---------------------------------------------------------------------------
 # 3.  Brain surface  (3-D spheres + tubes on cortex)
 # ---------------------------------------------------------------------------
+
 
 def plot_graph_brain(
     network,
@@ -482,7 +513,8 @@ def plot_graph_brain(
 
     # Filter out nodes with no valid coordinates (0,0,0)
     valid_idx = [
-        i for i, coord in centers.items()
+        i
+        for i, coord in centers.items()
         if not (coord[0] == 0 and coord[1] == 0 and coord[2] == 0)
     ]
 
@@ -504,7 +536,8 @@ def plot_graph_brain(
     seq_labels = list(range(len(idx)))
 
     G = create_network(
-        seq_centers, W_sub,
+        seq_centers,
+        W_sub,
         labels=seq_labels,
         threshold_percentile=threshold_percentile,
     )
@@ -522,9 +555,12 @@ def plot_graph_brain(
         fig = ax.figure
 
     _, ax, mappables = plot_network_on_surface(
-        G, ax=ax,
-        template=template, density=density,
-        hemi=hemi, view=view,
+        G,
+        ax=ax,
+        template=template,
+        density=density,
+        hemi=hemi,
+        view=view,
         surface_alpha=surface_alpha,
         node_radius=node_radius,
         node_color=node_color,

@@ -25,6 +25,7 @@ NETWORK_DIR = database_dir("Network")
 
 try:
     from bids.layout import BIDSLayout
+
     connectome_data = None
     available_connectomes = []
 except ImportError:
@@ -66,6 +67,7 @@ def _parse_bids_entities(stem: str) -> Dict[str, str]:
     → ``{"tpl": "MNI", "atlas": "DK", "rec": "dTOR", "scale": "100", "desc": "SC"}``
     """
     import re
+
     return dict(re.findall(r"(?:^|_)([a-zA-Z]+)-([^_]+)", stem))
 
 
@@ -81,8 +83,14 @@ def _filter_networks_by_entities(entities: Dict[str, str]) -> list:
 
 # Known BEP017 weight-like and length-like measure names for auto-classification
 _WEIGHT_MEASURES = {"streamlinecount", "streamlinedensity", "weight", "weights"}
-_LENGTH_MEASURES = {"tractlength", "tractlengths", "length", "lengths",
-                    "tract_length", "tract_lengths"}
+_LENGTH_MEASURES = {
+    "tractlength",
+    "tractlengths",
+    "length",
+    "lengths",
+    "tract_length",
+    "tract_lengths",
+}
 
 
 def _discover_bids_measures(bids_dir) -> list[str]:
@@ -93,10 +101,10 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     naming conventions.  Falls back to file order if names are unknown.
     """
     import re
+
     bids_dir = Path(bids_dir)
-    relmat_files = (
-        list(bids_dir.glob("*_relmat.dense.tsv"))
-        + list(bids_dir.glob("*_relmat.tsv"))
+    relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(
+        bids_dir.glob("*_relmat.tsv")
     )
     # Extract unique measure names
     measures = []
@@ -113,9 +121,11 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     # Classify: put weight-like first, length-like second
     weight_names = [m for m in measures if m.lower() in _WEIGHT_MEASURES]
     length_names = [m for m in measures if m.lower() in _LENGTH_MEASURES]
-    other = [m for m in measures
-             if m.lower() not in _WEIGHT_MEASURES
-             and m.lower() not in _LENGTH_MEASURES]
+    other = [
+        m
+        for m in measures
+        if m.lower() not in _WEIGHT_MEASURES and m.lower() not in _LENGTH_MEASURES
+    ]
 
     result = []
     if weight_names:
@@ -1116,6 +1126,7 @@ class Network(tvbo_datamodel.Network):
         if getattr(self, "descriptor", None) in ("sensors", "projection"):
             from tvbo.data.converters import sensor_entities
             from tvbo.data.network_io import SENSOR_PATTERNS
+
             return build_path(sensor_entities(self), SENSOR_PATTERNS)
 
         from tvbo.data.converters import relmat_entities
@@ -1227,8 +1238,9 @@ class Network(tvbo_datamodel.Network):
         return resp.json()
 
     @classmethod
-    def load(cls, source: Union[str, Path, None] = None,
-             **entities) -> Union["Network", list["Network"]]:
+    def load(
+        cls, source: Union[str, Path, None] = None, **entities
+    ) -> Union["Network", list["Network"]]:
         """Unified loader: file path, database name, or BIDS entities.
 
         Accepts any of:
@@ -1270,8 +1282,7 @@ class Network(tvbo_datamodel.Network):
                 if not sidecar.exists():
                     sidecar = p.with_suffix(".json")
                 if not sidecar.exists():
-                    raise FileNotFoundError(
-                        f"No YAML/JSON sidecar found for {p}")
+                    raise FileNotFoundError(f"No YAML/JSON sidecar found for {p}")
                 return cls.from_file(str(sidecar))
             # Explicit sidecar path
             if ext in (".yaml", ".yml", ".json") or p.is_file():
@@ -1284,7 +1295,9 @@ class Network(tvbo_datamodel.Network):
         raise ValueError("Provide a file path, database name, or BIDS entities.")
 
     @classmethod
-    def from_db(cls, name: Optional[str] = None, **entities) -> Union["Network", list["Network"]]:
+    def from_db(
+        cls, name: Optional[str] = None, **entities
+    ) -> Union["Network", list["Network"]]:
         """Load a Network from the tvbo database by name or BIDS entities.
 
         Supports two modes:
@@ -1318,14 +1331,14 @@ class Network(tvbo_datamodel.Network):
         """
         if not entities:
             from tvbo.data.registry import resolve
+
             return cls.from_file(str(resolve("Network", name)))
 
         matches = _filter_networks_by_entities(entities)
         if len(matches) == 0:
             available = [f.stem for f in NETWORK_DIR.glob("*.yaml")]
             raise FileNotFoundError(
-                f"No network matching {entities}. "
-                f"Available: {sorted(available)}"
+                f"No network matching {entities}. " f"Available: {sorted(available)}"
             )
         if len(matches) == 1:
             return cls.from_file(str(matches[0]))
@@ -1353,6 +1366,7 @@ class Network(tvbo_datamodel.Network):
         """
         if not entities:
             from tvbo.data.registry import list_entries
+
             return list_entries("Network")
         return sorted(m.stem for m in _filter_networks_by_entities(entities))
 
@@ -1439,6 +1453,7 @@ class Network(tvbo_datamodel.Network):
             # a {'_code': {...}} dict that becomes an unparseable JsonObj
             # on round-trip through json.loads → cls(**meta_dict))
             from linkml_runtime.utils.enumerations import EnumDefinitionImpl
+
             if isinstance(o, EnumDefinitionImpl):
                 return str(o)
             # LinkML dataclasses -> dict via as_dict
@@ -1502,12 +1517,17 @@ class Network(tvbo_datamodel.Network):
                 "_bids_observations",
             )
         }
+
         def _strip_none(obj):
             if isinstance(obj, dict):
                 # as_dict() serializes LinkML enums as {'_code': {'text': 'mm', ...}}
                 # Flatten back to the plain text key for clean round-trips
-                if '_code' in obj and isinstance(obj['_code'], dict) and 'text' in obj['_code']:
-                    return obj['_code']['text']
+                if (
+                    "_code" in obj
+                    and isinstance(obj["_code"], dict)
+                    and "text" in obj["_code"]
+                ):
+                    return obj["_code"]["text"]
                 return {k: _strip_none(v) for k, v in obj.items() if v is not None}
             if isinstance(obj, list):
                 return [_strip_none(x) for x in obj]
@@ -1724,11 +1744,13 @@ class Network(tvbo_datamodel.Network):
         _arrs = self._get_arrays()
         if "weight" in _arrs:
             from scipy import sparse as _sp
+
             W = _arrs["weight"]
             if _sp.issparse(W):
                 W = W.toarray()
         elif "weights" in _arrs:
             from scipy import sparse as _sp
+
             W = _arrs["weights"]
             if _sp.issparse(W):
                 W = W.toarray()
@@ -1736,6 +1758,7 @@ class Network(tvbo_datamodel.Network):
         elif hasattr(self, "_cached_weights") and self._cached_weights is not None:
             W = self._cached_weights
             from scipy import sparse as _sp
+
             if _sp.issparse(W):
                 W = W.toarray()
         elif hasattr(self, "_store") and self._store is not None:
@@ -1803,10 +1826,12 @@ class Network(tvbo_datamodel.Network):
         _arrs = self._get_arrays()
         if "length" in _arrs:
             from scipy import sparse as _sp
+
             L = _arrs["length"]
             return L.toarray() if _sp.issparse(L) else L
         elif "lengths" in _arrs:
             from scipy import sparse as _sp
+
             L = _arrs["lengths"]
             return L.toarray() if _sp.issparse(L) else L
 
@@ -1864,8 +1889,7 @@ class Network(tvbo_datamodel.Network):
         atlas = self.get_atlas()
         if atlas.terminology:
             return {
-                e.name: e.lookupLabel
-                for k, e in atlas.terminology.entities.items()
+                e.name: e.lookupLabel for k, e in atlas.terminology.entities.items()
             }
         return {}
 
@@ -1922,8 +1946,7 @@ class Network(tvbo_datamodel.Network):
         # Filter out template edges (no source/target) — those represent
         # matrix measures stored in the HDF5 companion, not graph edges.
         explicit_edges = [
-            e for e in (self.edges or [])
-            if getattr(e, "source", None) is not None
+            e for e in (self.edges or []) if getattr(e, "source", None) is not None
         ]
         if explicit_edges:
             # Use explicit edges
@@ -2048,7 +2071,11 @@ class Network(tvbo_datamodel.Network):
                 if hasattr(edge, "source") and hasattr(edge, "target"):
                     delay_val = 0.0
                     if hasattr(edge, "parameters") and edge.parameters:
-                        delay_param = edge.parameters["delay"] if "delay" in edge.parameters else None
+                        delay_param = (
+                            edge.parameters["delay"]
+                            if "delay" in edge.parameters
+                            else None
+                        )
                         if delay_param and hasattr(delay_param, "value"):
                             delay_val = float(delay_param.value)
                     delays[edge.source, edge.target] = delay_val
@@ -2066,9 +2093,16 @@ class Network(tvbo_datamodel.Network):
 
         # Get units as SymPy-parseable symbols (e.g. "mm/ms" not "mm_per_ms")
         from tvbo.utils.units import unit_to_symbol
+
         distance_unit_str = unit_to_symbol(getattr(self, "distance_unit", None) or "mm")
-        time_unit_str = unit_to_symbol(output_unit or getattr(self, "time_unit", None) or "ms")
-        speed_unit_str = unit_to_symbol(cs.unit) if cs.unit else f"{distance_unit_str}/{time_unit_str}"
+        time_unit_str = unit_to_symbol(
+            output_unit or getattr(self, "time_unit", None) or "ms"
+        )
+        speed_unit_str = (
+            unit_to_symbol(cs.unit)
+            if cs.unit
+            else f"{distance_unit_str}/{time_unit_str}"
+        )
 
         length_unit = parse_expr(distance_unit_str, local_dict=unit_ns)
         speed_unit = parse_expr(speed_unit_str, local_dict=unit_ns)
@@ -2146,8 +2180,7 @@ class Network(tvbo_datamodel.Network):
         # Auto-resolve target from edge metadata when not provided
         if target is None:
             gain_edge = next(
-                (e for e in (self.edges or [])
-                 if getattr(e, "label", None) == "gain"),
+                (e for e in (self.edges or []) if getattr(e, "label", None) == "gain"),
                 None,
             )
             if gain_edge is not None:
@@ -2157,7 +2190,9 @@ class Network(tvbo_datamodel.Network):
 
         if target is not None:
             return self._build_projection_graph(
-                target, gain, threshold_percentile,
+                target,
+                gain,
+                threshold_percentile,
             )
 
         return self.graph
@@ -2177,23 +2212,34 @@ class Network(tvbo_datamodel.Network):
             lbl = f"S:{node.label}"
             sensor_labels.append(lbl)
             if node.position:
-                pos = np.array([
-                    node.position.x, node.position.y,
-                    getattr(node.position, "z", 0) or 0,
-                ])
+                pos = np.array(
+                    [
+                        node.position.x,
+                        node.position.y,
+                        getattr(node.position, "z", 0) or 0,
+                    ]
+                )
             else:
                 pos = np.zeros(3)
-            G.add_node(lbl, pos=pos, x=pos[0], y=pos[1], z=pos[2],
-                       color="red", node_type="sensor",
-                       label=str(node.label))
+            G.add_node(
+                lbl,
+                pos=pos,
+                x=pos[0],
+                y=pos[1],
+                z=pos[2],
+                color="red",
+                node_type="sensor",
+                label=str(node.label),
+            )
 
         # --- region nodes (from target, cortical subset) ---
         n_sensors, n_cols = gain.shape
         target_nodes = list(target.nodes)
         # If gain columns < total target nodes, select cortical subset
         if len(target_nodes) > n_cols:
-            cortical = [n for n in target_nodes
-                        if n.label and str(n.label).startswith("ctx-")]
+            cortical = [
+                n for n in target_nodes if n.label and str(n.label).startswith("ctx-")
+            ]
             if len(cortical) == n_cols:
                 target_nodes = cortical
             else:
@@ -2204,15 +2250,25 @@ class Network(tvbo_datamodel.Network):
             lbl = f"R:{node.label}"
             region_labels.append(lbl)
             if node.position:
-                pos = np.array([
-                    node.position.x, node.position.y,
-                    getattr(node.position, "z", 0) or 0,
-                ])
+                pos = np.array(
+                    [
+                        node.position.x,
+                        node.position.y,
+                        getattr(node.position, "z", 0) or 0,
+                    ]
+                )
             else:
                 pos = np.zeros(3)
-            G.add_node(lbl, pos=pos, x=pos[0], y=pos[1], z=pos[2],
-                       color="blue", node_type="region",
-                       label=str(node.label))
+            G.add_node(
+                lbl,
+                pos=pos,
+                x=pos[0],
+                y=pos[1],
+                z=pos[2],
+                color="blue",
+                node_type="region",
+                label=str(node.label),
+            )
 
         # --- gain edges (thresholded) ---
         vals = np.abs(gain)
@@ -2227,8 +2283,10 @@ class Network(tvbo_datamodel.Network):
                 v = float(vals[i, j])
                 if v > threshold:
                     G.add_edge(
-                        region_labels[j], sensor_labels[i],
-                        gain=v, weight=v,
+                        region_labels[j],
+                        sensor_labels[i],
+                        gain=v,
+                        weight=v,
                     )
 
         return G
@@ -2613,7 +2671,7 @@ class Network(tvbo_datamodel.Network):
         node_cmap: Union[str, Any] = "viridis",
         edge_cmap: Union[str, Any] = "viridis",
         node_colors: str = "in-strength",
-        node_size: Union[str, float] = "in-strength",
+        node_size: Union[str, float] = 8,
         threshold_percentile: float = 0,
         pos_scaling: float = 1,
         node_labels: bool = True,
@@ -2715,31 +2773,46 @@ class Network(tvbo_datamodel.Network):
 
         # Resolve node positions
         resolved_pos = _resolve_positions(
-            G, pos, network=self, plot_brain=plot_brain,
+            G,
+            pos,
+            network=self,
+            plot_brain=plot_brain,
         )
 
         if format == "bsplot":
             return plot_graph_bsplot(
-                G, ax=ax,
-                node_cmap=node_cmap, edge_cmap=edge_cmap,
-                node_color_by=node_colors, log_in_strength=log_in_strength,
+                G,
+                ax=ax,
+                node_cmap=node_cmap,
+                edge_cmap=edge_cmap,
+                node_color_by=node_colors,
+                log_in_strength=log_in_strength,
                 pos=resolved_pos,
-                node_labels=node_labels, edge_labels=edge_labels,
+                node_labels=node_labels,
+                edge_labels=edge_labels,
                 fontsize=fontsize,
             )
 
-        return plot_graph_networkx(
-            G, ax=ax,
-            node_cmap=node_cmap, edge_cmap=edge_cmap,
-            node_color_by=node_colors, node_size_by=node_size,
-            node_size_scaling=node_size_scaling,
-            log_in_strength=log_in_strength,
-            edge_color_by=edge_color,
-            pos=resolved_pos,
-            node_labels=node_labels, edge_labels=edge_labels,
-            fontsize=fontsize,
-            edge_kwargs=edge_kwargs, node_kwargs=node_kwargs,
-        )
+        else:
+            fig = plot_graph_networkx(
+                G,
+                ax=ax,
+                node_cmap=node_cmap,
+                edge_cmap=edge_cmap,
+                node_color_by=node_colors,
+                node_size_by=node_size,
+                node_size_scaling=node_size_scaling,
+                log_in_strength=log_in_strength,
+                edge_color_by=edge_color,
+                pos=resolved_pos,
+                node_labels=node_labels,
+                edge_labels=edge_labels,
+                fontsize=fontsize,
+                edge_kwargs=edge_kwargs,
+                node_kwargs=node_kwargs,
+            )
+            ax.axis("off")
+            return fig
 
     def plot_brain_surface(self, ax=None, weight_matrix=None, **kwargs):
         """Render the network on the cortical brain surface.
@@ -2770,8 +2843,7 @@ class Network(tvbo_datamodel.Network):
         """
         from tvbo.plot.network import plot_graph_brain
 
-        return plot_graph_brain(self, ax=ax, weight_matrix=weight_matrix,
-                                **kwargs)
+        return plot_graph_brain(self, ax=ax, weight_matrix=weight_matrix, **kwargs)
 
     def _matrix_from_explicit_edges(self, param_name: str) -> Optional[np.ndarray]:
         """Build a dense N×N matrix from explicit (source/target) edge parameters.
@@ -2779,8 +2851,10 @@ class Network(tvbo_datamodel.Network):
         Returns None if no explicit edges carry the requested parameter.
         """
         explicit = [
-            e for e in (self.edges or [])
-            if getattr(e, "source", None) is not None and getattr(e, "target", None) is not None
+            e
+            for e in (self.edges or [])
+            if getattr(e, "source", None) is not None
+            and getattr(e, "target", None) is not None
         ]
         if not explicit:
             return None
@@ -2881,7 +2955,7 @@ class Network(tvbo_datamodel.Network):
         # Auto-discover all edge properties when not specified
         if edge_properties is None:
             seen = dict()  # preserve insertion order, deduplicate
-            for e in (self.edges or []):
+            for e in self.edges or []:
                 # Template edges: keyed by label/name
                 lbl = getattr(e, "label", None) or getattr(e, "name", None)
                 if lbl:
@@ -2889,7 +2963,7 @@ class Network(tvbo_datamodel.Network):
                 # Explicit edges (source/target): collect parameter names
                 params = getattr(e, "parameters", None)
                 if params and getattr(e, "source", None) is not None:
-                    for pname in (params.keys() if hasattr(params, "keys") else []):
+                    for pname in params.keys() if hasattr(params, "keys") else []:
                         seen[pname] = True
             # Also include stored matrices
             for pname in self._get_arrays().keys():
@@ -2900,6 +2974,7 @@ class Network(tvbo_datamodel.Network):
         if plot_brain is None:
             try:
                 import bsplot  # noqa: F401
+
                 centers = self.get_centers()
                 has_coords = any(
                     not (c[0] == 0 and c[1] == 0 and c[2] == 0)
@@ -2912,7 +2987,9 @@ class Network(tvbo_datamodel.Network):
         n_props = len(edge_properties)
         n_cols = 2
         fig, axs = plt.subplots(
-            nrows=n_props, ncols=n_cols, layout="tight",
+            nrows=n_props,
+            ncols=n_cols,
+            layout="tight",
             figsize=(5 * n_cols, 5 * n_props),
             squeeze=False,
         )
@@ -2924,7 +3001,7 @@ class Network(tvbo_datamodel.Network):
 
         # Build edge label → metadata lookup from template edges
         edge_meta = {}
-        for e in (self.edges or []):
+        for e in self.edges or []:
             lbl = getattr(e, "label", None) or getattr(e, "name", None)
             if lbl:
                 edge_meta[lbl] = e
@@ -2936,7 +3013,7 @@ class Network(tvbo_datamodel.Network):
             if mat is None:
                 mat = np.zeros((1, 1))
 
-            use_log = (prop == "weight" and log_weights)
+            use_log = prop == "weight" and log_weights
             norm = None
             if use_log:
                 nonzero = mat[mat > 0]
@@ -2975,7 +3052,8 @@ class Network(tvbo_datamodel.Network):
                 }
                 brain_defaults.update(brain_kwargs)
                 _, _, mappables = self.plot_brain_surface(
-                    ax=axs[row, 0], weight_matrix=mat,
+                    ax=axs[row, 0],
+                    weight_matrix=mat,
                     log_weights=use_log,
                     **brain_defaults,
                 )
@@ -2985,16 +3063,19 @@ class Network(tvbo_datamodel.Network):
                 edge_sm = mappables.get("edges")
                 if edge_sm is not None:
                     cb = fig.colorbar(
-                        edge_sm, ax=axs[row, 0], shrink=0.4,
-                        label=label, location="right",
+                        edge_sm,
+                        ax=axs[row, 0],
+                        shrink=0.4,
+                        label=label,
+                        location="right",
                     )
                     cb.outline.set_visible(False)
                 col = 1
             else:
                 # --- Graph panel (networkx) ---
                 graph_defaults = {
-                    "node_labels": False,
-                    "edge_labels": False,
+                    "node_labels": True,
+                    "edge_labels": True,
                     "threshold_percentile": edge_percentile,
                     "edge_color": prop,
                 }
@@ -3005,8 +3086,7 @@ class Network(tvbo_datamodel.Network):
 
             # --- Matrix panel ---
             ax_mat = axs[row, col]
-            im = ax_mat.imshow(mat, cmap=cmap, interpolation="none",
-                               norm=norm)
+            im = ax_mat.imshow(mat, cmap=cmap, interpolation="none", norm=norm)
             ax_mat.set_title(prop)
             ax_mat.set_box_aspect(1)
             cb = fig.colorbar(im, ax=ax_mat, shrink=0.5, label=label)
@@ -3018,10 +3098,8 @@ class Network(tvbo_datamodel.Network):
             for lbl in ax.get_xticklabels() + ax.get_yticklabels():
                 lbl.set_fontsize(lbl.get_fontsize() * fontsize_scaler)
             ax.title.set_fontsize(ax.title.get_fontsize() * fontsize_scaler)
-            ax.xaxis.label.set_fontsize(
-                ax.xaxis.label.get_fontsize() * fontsize_scaler)
-            ax.yaxis.label.set_fontsize(
-                ax.yaxis.label.get_fontsize() * fontsize_scaler)
+            ax.xaxis.label.set_fontsize(ax.xaxis.label.get_fontsize() * fontsize_scaler)
+            ax.yaxis.label.set_fontsize(ax.yaxis.label.get_fontsize() * fontsize_scaler)
 
         plt.close()
         return fig
@@ -3210,12 +3288,22 @@ class Network(tvbo_datamodel.Network):
         if name in arrays:
             mat = arrays[name]
         # 2. Lazy store (from file)
-        elif hasattr(self, "_store") and self._store is not None and name in self._store:
+        elif (
+            hasattr(self, "_store") and self._store is not None and name in self._store
+        ):
             mat = self._store[name]
         # 3. Legacy caches
-        elif name in ("weight", "weights") and hasattr(self, "_cached_weights") and self._cached_weights is not None:
+        elif (
+            name in ("weight", "weights")
+            and hasattr(self, "_cached_weights")
+            and self._cached_weights is not None
+        ):
             mat = self._cached_weights
-        elif name in ("length", "lengths") and hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
+        elif (
+            name in ("length", "lengths")
+            and hasattr(self, "_cached_lengths")
+            and self._cached_lengths is not None
+        ):
             mat = self._cached_lengths
 
         if mat is None:
@@ -3269,11 +3357,14 @@ class Network(tvbo_datamodel.Network):
         >>> net.add_edge(0, 1, weight=0.5, length=30.0)
         """
         # Map common singular → plural names to match template edge conventions
-        _NORMALIZE = {"weights": "weight", "lengths": "length",
-                      "delays": "delay", "distance": "length",
-                      "distances": "length"}
-        mapped = {_NORMALIZE.get(k, k): np.array([v])
-                  for k, v in params.items()}
+        _NORMALIZE = {
+            "weights": "weight",
+            "lengths": "length",
+            "delays": "delay",
+            "distance": "length",
+            "distances": "length",
+        }
+        mapped = {_NORMALIZE.get(k, k): np.array([v]) for k, v in params.items()}
         self.add_edges(
             np.array([source]),
             np.array([target]),
@@ -3336,9 +3427,7 @@ class Network(tvbo_datamodel.Network):
             existing = arrays.get(name)
 
             if existing is None:
-                mat = coo_matrix(
-                    (new_data, (new_rows, new_cols)), shape=(n, n)
-                )
+                mat = coo_matrix((new_data, (new_rows, new_cols)), shape=(n, n))
             else:
                 # Convert existing to COO for fast append
                 if not sparse.issparse(existing):
@@ -3348,9 +3437,7 @@ class Network(tvbo_datamodel.Network):
                 rows = np.concatenate([existing.row, new_rows])
                 cols = np.concatenate([existing.col, new_cols])
                 data = np.concatenate([existing.data, new_data])
-                mat = coo_matrix(
-                    (data, (rows, cols)), shape=existing.shape
-                )
+                mat = coo_matrix((data, (rows, cols)), shape=existing.shape)
 
             arrays[name] = mat
 
@@ -3377,15 +3464,16 @@ class Network(tvbo_datamodel.Network):
         transforms via the Function class.
         """
         # Callable-based transform
-        c = getattr(func, 'callable', None)
+        c = getattr(func, "callable", None)
         if c is not None:
             import importlib
+
             mod = importlib.import_module(c.module)
             fn = getattr(mod, c.name)
             return fn(M)
 
         # Equation-based transform
-        eq = getattr(func, 'equation', None)
+        eq = getattr(func, "equation", None)
         if eq is None:
             return M
         from tvbo.codegen.code import parse_eq, render_expression
@@ -3400,10 +3488,15 @@ class Network(tvbo_datamodel.Network):
             if subs_map:
                 exp = exp.subs(subs_map)
         env = {
-            "M": M, "W": M,
-            "M_min": jnp.nanmin(M), "W_min": jnp.nanmin(M),
-            "M_max": jnp.nanmax(M), "W_max": jnp.nanmax(M),
-            "jnp": jnp, "np": jnp, "jsp": jsp,
+            "M": M,
+            "W": M,
+            "M_min": jnp.nanmin(M),
+            "W_min": jnp.nanmin(M),
+            "M_max": jnp.nanmax(M),
+            "W_max": jnp.nanmax(M),
+            "jnp": jnp,
+            "np": jnp,
+            "jsp": jsp,
         }
         code_str = render_expression(exp, format="jax")
         if isinstance(code_str, str):
@@ -3462,9 +3555,11 @@ class Network(tvbo_datamodel.Network):
                 if mat is not None:
                     if sparse.issparse(mat):
                         from tvbo.data.matrix_io import auto_format
+
                         e.format = auto_format(mat)
                     elif isinstance(mat, np.ndarray):
                         from tvbo.data.matrix_io import auto_format
+
                         e.format = auto_format(mat)
                 return
 
@@ -3472,6 +3567,7 @@ class Network(tvbo_datamodel.Network):
         fmt = "dense"
         if mat is not None:
             from tvbo.data.matrix_io import auto_format
+
             fmt = auto_format(mat)
 
         edge = tvbo_datamodel.Edge(label=name, format=fmt, weighted=True)

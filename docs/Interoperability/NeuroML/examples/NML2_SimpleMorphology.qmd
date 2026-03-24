@@ -99,7 +99,7 @@ import matplotlib.pyplot as plt
 result = exp.run("neuroml")
 da = result.integration.data
 t = da.coords['time'].values
-v = da.sel(node='0').values[:, 0]
+v = da.values[:, 0]
 
 fig, ax = plt.subplots(figsize=(10, 4))
 ax.plot(t, v)

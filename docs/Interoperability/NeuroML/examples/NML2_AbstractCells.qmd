@@ -142,7 +142,7 @@ fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
 # FHN1969
 t = da_fn.coords['time'].values
-vals = da_fn.sel(node='0').values
+vals = da_fn.values
 axes[0].plot(t, vals[:, 0], label='V')
 axes[0].plot(t, vals[:, 1], label='W', alpha=0.7)
 axes[0].set_xlabel("Time (ms)")
@@ -152,7 +152,7 @@ axes[0].grid(True, alpha=0.3)
 
 # Iz2007
 t = da_iz.coords['time'].values
-vals = da_iz.sel(node='0').values
+vals = da_iz.values
 axes[1].plot(t, vals[:, 0], label='v')
 axes[1].plot(t, vals[:, 1], label='u', alpha=0.7)
 axes[1].set_xlabel("Time (ms)")
