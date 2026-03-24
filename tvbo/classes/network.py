@@ -1075,12 +1075,19 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
+        >>> net.save("output/")                                     # dir → BIDS filename
         >>> net.save("output/dk87.yaml")                           # YAML + HDF5
         >>> net.save("output/dk87.yaml", sidecar_format="json")     # JSON + HDF5
         >>> net.save("output/dk87.yaml", binary_format="zarr")      # YAML + Zarr
         >>> net.save("output/dk87.yaml", binary_format="csv")       # YAML + CSV
         """
         from tvbo.data.network_io import save_network
+
+        path = Path(path)
+        if path.is_dir() or str(path).endswith("/"):
+            sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
+            bids_stem = Path(self.bids_filename).with_suffix("").with_suffix("")
+            path = path / bids_stem.with_suffix(sidecar_ext)
 
         save_network(self, path, binary_format, sidecar_format)
         # Remember save path so it can be used as a reference string
