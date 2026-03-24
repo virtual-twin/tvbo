@@ -542,6 +542,36 @@ def sort_equations(model, variable_type):
     model[variable_type].update(sorted_variables_metadata)
 
 
+# Slot aliases: YAML keys that map to canonical slot names.
+# Keeps YAML files readable (e.g. ``components:`` instead of ``modes:``) while
+# the datamodel uses a single canonical attribute.
+_DYNAMICS_SLOT_ALIASES = {
+    "components": "modes",
+}
+
+
+def _resolve_dynamics_aliases(d: dict) -> dict:
+    """Recursively resolve slot aliases in a Dynamics dict tree.
+
+    Walks nested dicts that represent sub-Dynamics (modes/components) and
+    replaces alias keys with their canonical names at every level.
+    """
+    for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
+        if alias in d:
+            if canonical in d:
+                raise ValueError(
+                    f"Cannot specify both '{alias}' and '{canonical}' — "
+                    f"'{alias}' is an alias for '{canonical}'.")
+            d[canonical] = d.pop(alias)
+    # Recurse into sub-dynamics (modes values may themselves use aliases)
+    modes = d.get("modes")
+    if isinstance(modes, dict):
+        for v in modes.values():
+            if isinstance(v, dict):
+                _resolve_dynamics_aliases(v)
+    return d
+
+
 def _validate_dynamics_kwargs(kwargs: dict) -> None:
     """Validate Dynamics kwargs and provide helpful error messages for schema mistakes.
 
@@ -549,6 +579,9 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
     - Using 'output' as a dict of derived variables (should be 'derived_variables')
     - Using raw dicts instead of LinkML loader (should use Dynamics.from_string())
     """
+    # Resolve slot aliases recursively (e.g. components → modes)
+    _resolve_dynamics_aliases(kwargs)
+
     # Check if 'output' is misused as derived variables
     output = kwargs.get("output")
     if output is not None and isinstance(output, dict):
@@ -596,6 +629,15 @@ class Dynamics(tvbo_datamodel.Dynamics):
             self.update_metadata()
             self.calculate_derived_parameters()
 
+    @property
+    def components(self):
+        """Alias for ``modes`` — sub-dynamics contained in this model."""
+        return self.modes
+
+    @components.setter
+    def components(self, value):
+        self.modes = value
+
     # Factory constructors
     @classmethod
     def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics,
@@ -627,7 +669,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
     @classmethod
     def from_file(cls, path: str | os.PathLike,
                   use_ontology: bool = False) -> "Dynamics":
-        inst = yaml_loader.load(str(path), cls)
+        data = yaml_loader.load_as_dict(str(path))
+        _resolve_dynamics_aliases(data)
+        inst = cls(**data)
         if use_ontology:
             inst._populate_from_ontology_by_name()
         inst.update_metadata()
@@ -637,7 +681,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
     @classmethod
     def from_string(cls, str: str,
                     use_ontology: bool = False) -> "Dynamics":
-        inst = yaml_loader.loads(str, cls)
+        import yaml
+        data = yaml.safe_load(str)
+        _resolve_dynamics_aliases(data)
+        inst = cls(**data)
         if use_ontology:
             inst._populate_from_ontology_by_name()
         inst.update_metadata()
