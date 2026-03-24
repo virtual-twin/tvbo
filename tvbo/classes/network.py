@@ -1436,6 +1436,12 @@ class Network(tvbo_datamodel.Network):
             # tuples -> lists for JSON
             if isinstance(o, tuple):
                 return list(o)
+            # LinkML enums -> plain text string (NOT as_dict which creates
+            # a {'_code': {...}} dict that becomes an unparseable JsonObj
+            # on round-trip through json.loads → cls(**meta_dict))
+            from linkml_runtime.utils.enumerations import EnumDefinitionImpl
+            if isinstance(o, EnumDefinitionImpl):
+                return str(o)
             # LinkML dataclasses -> dict via as_dict
             if isinstance(o, YAMLRoot):
                 return as_dict(o)
@@ -1499,6 +1505,10 @@ class Network(tvbo_datamodel.Network):
         }
         def _strip_none(obj):
             if isinstance(obj, dict):
+                # as_dict() serializes LinkML enums as {'_code': {'text': 'mm', ...}}
+                # Flatten back to the plain text key for clean round-trips
+                if '_code' in obj and isinstance(obj['_code'], dict) and 'text' in obj['_code']:
+                    return obj['_code']['text']
                 return {k: _strip_none(v) for k, v in obj.items() if v is not None}
             if isinstance(obj, list):
                 return [_strip_none(x) for x in obj]

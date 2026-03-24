@@ -304,6 +304,38 @@ class UnitEnum(str, Enum):
     """
     Arbitrary units (a.u.)
     """
+    kg = "kg"
+    """
+    Kilogram
+    """
+    kg_per_s = "kg_per_s"
+    """
+    Kilogram per second
+    """
+    m_per_s2 = "m_per_s2"
+    """
+    Metre per second squared (acceleration)
+    """
+    N_per_m = "N_per_m"
+    """
+    Newton per metre (spring constant)
+    """
+    rad = "rad"
+    """
+    Radian
+    """
+    rad_per_s = "rad_per_s"
+    """
+    Radian per second (angular velocity)
+    """
+    s2 = "s2"
+    """
+    Second squared (inertia constant)
+    """
+    per_unit = "per_unit"
+    """
+    Per-unit (dimensionless power-systems convention)
+    """
 
 
 class PhysicalDimension(str, Enum):

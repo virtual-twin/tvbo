@@ -171,6 +171,25 @@ def safe_id(s):
     return ("_" + s) if s[0].isdigit() else s
 
 
+def _dynamics_has_physical_units(params, svs):
+    """Return True if any parameter or state variable has a non-dimensionless
+    LEMS dimension (voltage, conductance, capacitance, current, etc.).
+
+    When physical units are present, the equations are fully dimensioned in LEMS
+    and do NOT need ``/ SEC`` time scaling.
+    """
+    from tvbo.utils.units import unit_to_lems_dimension
+    for p in params.values():
+        dim = unit_to_lems_dimension(getattr(p, 'unit', None))
+        if dim != 'none':
+            return True
+    for sv in svs.values():
+        dim = unit_to_lems_dimension(getattr(sv, 'unit', None))
+        if dim != 'none':
+            return True
+    return False
+
+
 def _dynamics_has_time_units(params, svs, dvs):
     """Check if dynamics equations (TimeDerivatives) use time-dimensioned params.
 
@@ -221,7 +240,7 @@ def _dynamics_has_time_units(params, svs, dvs):
     ) or any(
         unit_has_time_dimension(getattr(sv, "unit", None))
         for sv in svs.values()
-    )
+    ) or _dynamics_has_physical_units(params, svs)
 
 
 def _build_regime_data(events):
@@ -1197,7 +1216,7 @@ class NeuroMLAdapter(BaseAdapter):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
-            lems_file = tmpdir / "simulation.xml"
+            lems_file = tmpdir / "tvbo_lems_sim.xml"
             lems_file.write_text(xml)
             (tmpdir / "results").mkdir()
 
@@ -1207,7 +1226,7 @@ class NeuroMLAdapter(BaseAdapter):
             jar_dir = Path(pyneuroml.__file__).parent / "lib"
             jar = jar_dir / f"jNeuroML-{JNEUROML_VERSION}-jar-with-dependencies.jar"
             result = subprocess.run(
-                ["java", "-jar", str(jar), "simulation.xml", "-nogui"],
+                ["java", "-jar", str(jar), "tvbo_lems_sim.xml", "-nogui"],
                 capture_output=True, text=True, cwd=str(tmpdir), timeout=600,
             )
             if result.returncode != 0:

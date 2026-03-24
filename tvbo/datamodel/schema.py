@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-20T10:31:25
+# Generation date: 2026-03-24T08:21:52
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -73,36 +73,6 @@ SCHEMA = CurieNamespace('schema', 'http://schema.org/')
 TVBO = CurieNamespace('tvbo', 'http://www.thevirtualbrain.org/tvb-o/')
 TVBO_DBS = CurieNamespace('tvbo_dbs', 'http://www.thevirtualbrain.org/tvb-o/dbs/')
 DEFAULT_ = TVBO
-
-
-def _enum_text(val):
-    """Extract the text key from a serialized UnitEnum / PermissibleValue.
-
-    Handles: plain str, JsonObj(text=...), JsonObj(_code=JsonObj(text=...)),
-    dict with 'text', dict with '_code'.'text', and empty/None values.
-    Returns the text string, or None if the value is empty/unresolvable.
-    """
-    if val is None:
-        return None
-    if isinstance(val, str):
-        return val
-    # PermissibleValue serialisation: {text: ..., meaning: ...}
-    t = getattr(val, 'text', None)
-    if t:
-        return str(t)
-    # UnitEnum serialisation: {_code: {text: ..., ...}}
-    code = getattr(val, '_code', None)
-    if code:
-        t = getattr(code, 'text', None)
-        if t:
-            return str(t)
-    # dict-based variants
-    if isinstance(val, dict):
-        if 'text' in val:
-            return str(val['text'])
-        if '_code' in val and isinstance(val['_code'], dict) and 'text' in val['_code']:
-            return str(val['_code']['text'])
-    return None
 
 
 # Types
@@ -890,10 +860,10 @@ class Network(YAMLRoot):
             self.node_mapping = str(self.node_mapping)
 
         if self.distance_unit is not None and not isinstance(self.distance_unit, UnitEnum):
-            self.distance_unit = _enum_text(self.distance_unit) and UnitEnum(_enum_text(self.distance_unit))
+            self.distance_unit = getattr(UnitEnum, self.distance_unit)
 
         if self.time_unit is not None and not isinstance(self.time_unit, UnitEnum):
-            self.time_unit = _enum_text(self.time_unit) and UnitEnum(_enum_text(self.time_unit))
+            self.time_unit = getattr(UnitEnum, self.time_unit)
 
         if not isinstance(self.edge_matrix_files, list):
             self.edge_matrix_files = [self.edge_matrix_files] if self.edge_matrix_files is not None else []
@@ -1214,7 +1184,7 @@ class Observation(YAMLRoot):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
 
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
-            self.time_scale = _enum_text(self.time_scale) and UnitEnum(_enum_text(self.time_scale))
+            self.time_scale = getattr(UnitEnum, self.time_scale)
 
         if self.source is not None and not isinstance(self.source, StateVariableName):
             self.source = StateVariableName(self.source)
@@ -1456,7 +1426,7 @@ class StateVariable(YAMLRoot):
             self.equation = Equation(**as_dict(self.equation))
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
-            self.unit = _enum_text(self.unit) and UnitEnum(_enum_text(self.unit))
+            self.unit = UnitEnum(self.unit)
 
         if self.variable_of_interest is not None and not isinstance(self.variable_of_interest, Bool):
             self.variable_of_interest = Bool(self.variable_of_interest)
@@ -1605,7 +1575,7 @@ class Parameter(YAMLRoot):
             self.equation = Equation(**as_dict(self.equation))
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
-            self.unit = _enum_text(self.unit) and UnitEnum(_enum_text(self.unit))
+            self.unit = UnitEnum(self.unit)
 
         if self.dataset_path is not None and not isinstance(self.dataset_path, str):
             self.dataset_path = str(self.dataset_path)
@@ -2048,7 +2018,7 @@ class DerivedParameter(Parameter):
             self.equation = Equation(**as_dict(self.equation))
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
-            self.unit = _enum_text(self.unit) and UnitEnum(_enum_text(self.unit))
+            self.unit = UnitEnum(self.unit)
 
         super().__post_init__(**kwargs)
 
@@ -2090,7 +2060,7 @@ class DerivedVariable(YAMLRoot):
             self.equation = Equation(**as_dict(self.equation))
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
-            self.unit = _enum_text(self.unit) and UnitEnum(_enum_text(self.unit))
+            self.unit = UnitEnum(self.unit)
 
         if self.conditional is not None and not isinstance(self.conditional, Bool):
             self.conditional = Bool(self.conditional)
@@ -2974,10 +2944,10 @@ class Integrator(Solver):
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
-            self.time_scale = _enum_text(self.time_scale) and UnitEnum(_enum_text(self.time_scale))
+            self.time_scale = getattr(UnitEnum, self.time_scale)
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
-            self.unit = _enum_text(self.unit) and UnitEnum(_enum_text(self.unit))
+            self.unit = UnitEnum(self.unit)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -4204,7 +4174,7 @@ class CommonCoordinateSpace(YAMLRoot):
             self.abbreviation = str(self.abbreviation)
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
-            self.unit = _enum_text(self.unit) and UnitEnum(_enum_text(self.unit))
+            self.unit = UnitEnum(self.unit)
 
         if self.license is not None and not isinstance(self.license, str):
             self.license = str(self.license)
@@ -4911,6 +4881,36 @@ class UnitEnum(EnumDefinitionImpl):
     arbitrary_unit = PermissibleValue(
         text="arbitrary_unit",
         description="Arbitrary units (a.u.)")
+    kg = PermissibleValue(
+        text="kg",
+        description="Kilogram",
+        meaning=QUDT["KiloGM"])
+    kg_per_s = PermissibleValue(
+        text="kg_per_s",
+        description="Kilogram per second")
+    m_per_s2 = PermissibleValue(
+        text="m_per_s2",
+        description="Metre per second squared (acceleration)",
+        meaning=QUDT["M-PER-SEC2"])
+    N_per_m = PermissibleValue(
+        text="N_per_m",
+        description="Newton per metre (spring constant)",
+        meaning=QUDT["N-PER-M"])
+    rad = PermissibleValue(
+        text="rad",
+        description="Radian",
+        meaning=QUDT["RAD"])
+    rad_per_s = PermissibleValue(
+        text="rad_per_s",
+        description="Radian per second (angular velocity)",
+        meaning=QUDT["RAD-PER-SEC"])
+    s2 = PermissibleValue(
+        text="s2",
+        description="Second squared (inertia constant)",
+        meaning=QUDT["SEC2"])
+    per_unit = PermissibleValue(
+        text="per_unit",
+        description="Per-unit (dimensionless power-systems convention)")
 
     _defn = EnumDefinition(
         name="UnitEnum",

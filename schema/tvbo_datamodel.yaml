@@ -241,6 +241,38 @@ enums:
                 description: "Percent (%)"
             arbitrary_unit:
                 description: "Arbitrary units (a.u.)"
+            # ── Mass ──
+            kg:
+                meaning: qudt:KiloGM
+                exact_mappings:
+                    - UO:0000009
+                description: "Kilogram"
+            kg_per_s:
+                description: "Kilogram per second"
+            # ── Acceleration ──
+            m_per_s2:
+                meaning: qudt:M-PER-SEC2
+                description: "Metre per second squared (acceleration)"
+            # ── Force / stiffness ──
+            N_per_m:
+                meaning: qudt:N-PER-M
+                description: "Newton per metre (spring constant)"
+            # ── Angle ──
+            rad:
+                meaning: qudt:RAD
+                exact_mappings:
+                    - UO:0000123
+                description: "Radian"
+            rad_per_s:
+                meaning: qudt:RAD-PER-SEC
+                description: "Radian per second (angular velocity)"
+            # ── Time squared ──
+            s2:
+                meaning: qudt:SEC2
+                description: "Second squared (inertia constant)"
+            # ── Per-unit (power systems) ──
+            per_unit:
+                description: "Per-unit (dimensionless power-systems convention)"
 
     PhysicalDimension:
         description: >-

@@ -202,6 +202,7 @@ All template variables are injected by the calling template's render context
 
   </ComponentType>
 
+% if n_nodes > 1:
   <!-- ════════════════════════════════════════════════════════════════
        Coupling ComponentType
        Provides pre/post expressions + global coupling parameter.
@@ -223,6 +224,7 @@ All template variables are injected by the calling template's render context
       <DerivedVariable name="c_pop0" dimension="none" value="post"/>
     </Dynamics>
   </ComponentType>
+% endif
 
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
@@ -247,6 +249,7 @@ All template variables are injected by the calling template's render context
 % endfor
 />
 
+% if n_nodes > 1:
   <Component id="coupling" type="Coupling" global_coupling="${coupling_global}"\
 % for pname, p in coupling_params.items():
 <% pname_str = str(pname) %>\
@@ -255,3 +258,4 @@ All template variables are injected by the calling template's render context
 % endif
 % endfor
 />
+% endif
