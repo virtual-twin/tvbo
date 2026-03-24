@@ -1,4 +1,6 @@
-# Build and push TVBO container to Docker Hub and GHCR
+# Build and push TVBO container, then run tests inside the fresh image.
+#
+# Pipeline: build → test-container + test-docs (parallel) → release-ready (main only)
 name: Docker
 
 on:
@@ -7,12 +9,23 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+concurrency:
+  group: docker-${{ github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  JAX_PLATFORMS: cpu
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_WARN_SCRIPT_LOCATION: "1"
+
 jobs:
+  # ─── Build & push Docker image ──────────────────────────────
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v6
@@ -55,3 +68,109 @@ jobs:
           provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ─── Container tests (after build) ──────────────────────────
+  test-container:
+    name: Container tests
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure git for private repos
+        run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Install dev code + test deps
+        run: pip install -e ".[all]" pytest-xdist
+      - name: Generate reference data
+        run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
+      - name: Run tests (no doc tests)
+        run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
+
+  # ─── Doc tests (after build) ─────────────────────────────────
+  test-docs:
+    name: Doc tests
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Ensure Quarto is available
+        run: |
+          if ! command -v quarto &>/dev/null; then
+            apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo
+            QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP '"tag_name": "v\K[^"]+')
+            ARCH=$(dpkg --print-architecture)
+            wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb"
+            dpkg -i quarto.deb && rm quarto.deb
+          fi
+          quarto --version
+      - name: Ensure system libs
+        run: |
+          if ! ldconfig -p | grep -q libcairo.so.2; then
+            apt-get update && apt-get install -y --no-install-recommends libcairo2-dev
+          fi
+      - name: Configure git for private repos
+        run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Install dev code + test deps
+        run: pip install -e ".[all]" pytest-xdist
+      - name: Run doc tests
+        run: pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow --override-ini="addopts="
+
+  # ─── Release-ready check (main only) ────────────────────────
+  release-ready:
+    name: Release-ready check
+    needs: [test-container, test-docs]
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Configure git for private repos
+        run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install build tools
+        run: pip install build twine check-wheel-contents
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Verify package metadata (twine --strict)
+        run: python -m twine check --strict dist/*
+
+      - name: Verify wheel contents
+        run: check-wheel-contents dist/*.whl
+
+      - name: Verify version consistency
+        run: |
+          PKG_VERSION=$(python -c "import tvbo; print(tvbo.__version__)")
+          WHL_NAME=$(ls dist/*.whl | head -1)
+          echo "Package version: $PKG_VERSION"
+          echo "Wheel: $WHL_NAME"
+          if ! echo "$WHL_NAME" | grep -q "$PKG_VERSION"; then
+            echo "::error::Version mismatch between tvbo/__init__.py ($PKG_VERSION) and wheel ($WHL_NAME)"
+            exit 1
+          fi
+          echo "Version $PKG_VERSION is consistent."
+
+      - name: Verify package installs cleanly from wheel
+        run: |
+          pip install dist/*.whl
+          python -c "from tvbo import Dynamics, SimulationExperiment; print('Import OK')"
+
+      - name: Upload release-ready artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: tvbo-dist
+          path: dist/*
+          retention-days: 30

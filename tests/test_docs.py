@@ -9,6 +9,7 @@ Run with: pytest tests/test_docs.py -v
 Run single doc: pytest tests/test_docs.py -k "Network" -v
 """
 
+import json
 import os
 import re
 import glob
@@ -78,13 +79,28 @@ def test_doc_executes(qmd_path, doc_name):
         # Ensure _output directory exists (some docs write files there)
         (doc_dir / "_output").mkdir(exist_ok=True)
 
-        # Execute the notebook with cwd = doc's directory
-        # so relative paths (yaml/, _output/, ../../../database/) resolve correctly
+        # Inject a setup cell so the kernel can find local modules (e.g. Jansen1995_plot)
+        # PYTHONPATH isn't reliably inherited by Jupyter kernels.
+        with open(ipynb_path, "r", encoding="utf-8") as f:
+            nb = json.load(f)
+        setup_cell = {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {"tags": ["setup"]},
+            "outputs": [],
+            "source": [
+                "import sys, os\n",
+                f"sys.path.insert(0, {str(doc_dir)!r})\n",
+                f"os.chdir({str(doc_dir)!r})\n",
+            ],
+        }
+        nb["cells"].insert(0, setup_cell)
+        with open(ipynb_path, "w", encoding="utf-8") as f:
+            json.dump(nb, f)
+
+        # Execute the notebook
         env = os.environ.copy()
         env["MPLBACKEND"] = "Agg"  # Non-interactive matplotlib backend
-        # Ensure repo root and doc directory are on PYTHONPATH
-        # (doc_dir needed for local module imports like Jansen1995_plot)
-        env["PYTHONPATH"] = str(doc_dir) + os.pathsep + str(REPO_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
 
         result = subprocess.run(
             ["jupyter", "execute", str(ipynb_path)],

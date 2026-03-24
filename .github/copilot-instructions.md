@@ -303,19 +303,14 @@ tvbo/
 2. **Compat** — Python 3.11/3.12/3.13 with `pip install -e .` + core tests
 3. **Native tests** — `pip install -e ".[all]"` + full pytest (no doc tests, no container)
 
-### `docker.yml` - Container Build (pushes to main/dev, tags)
-Builds multi-arch Docker image → GHCR + DockerHub.
+### `docker.yml` - Docker Build + Container CI (pushes to main/dev, tags)
 
-### `ci-container.yml` - Container CI (waits for Docker build)
+Pipeline: **build** → **test-container** + **test-docs** (parallel) → **release-ready** (main only)
 
-**On push to main/dev:** triggers via `workflow_run` after `docker.yml` completes, ensuring
-container tests always use the freshly built image (`:latest` for main, `:dev` for dev).
-
-**On PRs to main/dev:** triggers directly via `pull_request` (uses existing `dev` image).
-
-1. **Container tests** — full pytest in Docker (`ghcr.io/virtual-twin/tvbo:latest`)
-2. **Doc tests** — Quarto + `pytest tests/test_docs.py -m docs` in container
-3. **Release-ready** — builds sdist + wheel, verifies metadata, uploads artifacts
+1. **Build** — Multi-arch Docker image → GHCR + DockerHub
+2. **Container tests** — full pytest in the fresh Docker image (no doc tests)
+3. **Doc tests** — Quarto + `pytest tests/test_docs.py -m docs` in the fresh Docker image
+4. **Release-ready** (main only) — builds sdist + wheel, verifies metadata, uploads artifacts
 
 ### `publish-pypi.yml` - PyPI Release (on GitHub release)
 1. Tests on Python 3.12, 3.13

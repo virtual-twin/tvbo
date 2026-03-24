@@ -2774,6 +2774,34 @@ class Network(tvbo_datamodel.Network):
         return plot_graph_brain(self, ax=ax, weight_matrix=weight_matrix,
                                 **kwargs)
 
+    def _matrix_from_explicit_edges(self, param_name: str) -> Optional[np.ndarray]:
+        """Build a dense N×N matrix from explicit (source/target) edge parameters.
+
+        Returns None if no explicit edges carry the requested parameter.
+        """
+        explicit = [
+            e for e in (self.edges or [])
+            if getattr(e, "source", None) is not None and getattr(e, "target", None) is not None
+        ]
+        if not explicit:
+            return None
+        n = self.number_of_nodes or 0
+        if n == 0:
+            return None
+        mat = np.zeros((n, n))
+        found_any = False
+        for e in explicit:
+            params = getattr(e, "parameters", None) or {}
+            p = params.get(param_name) if hasattr(params, "get") else None
+            if p is None:
+                continue
+            val = getattr(p, "value", None)
+            if val is None:
+                continue
+            mat[int(e.source), int(e.target)] = float(val)
+            found_any = True
+        return mat if found_any else None
+
     def plot_overview(
         self,
         edge_properties: Optional[List[str]] = None,
@@ -2851,11 +2879,21 @@ class Network(tvbo_datamodel.Network):
 
         # Auto-discover all edge properties when not specified
         if edge_properties is None:
-            edge_properties = [
-                getattr(e, "label", None) or getattr(e, "name", None)
-                for e in (self.edges or [])
-            ]
-            edge_properties = [p for p in edge_properties if p]
+            seen = dict()  # preserve insertion order, deduplicate
+            for e in (self.edges or []):
+                # Template edges: keyed by label/name
+                lbl = getattr(e, "label", None) or getattr(e, "name", None)
+                if lbl:
+                    seen[lbl] = True
+                # Explicit edges (source/target): collect parameter names
+                params = getattr(e, "parameters", None)
+                if params and getattr(e, "source", None) is not None:
+                    for pname in (params.keys() if hasattr(params, "keys") else []):
+                        seen[pname] = True
+            # Also include stored matrices
+            for pname in self._get_arrays().keys():
+                seen[pname] = True
+            edge_properties = list(seen.keys())
 
         # Auto-detect brain surface capability
         if plot_brain is None:
@@ -2892,6 +2930,8 @@ class Network(tvbo_datamodel.Network):
 
         for row, prop in enumerate(edge_properties):
             mat = self.matrix(prop)
+            if mat is None:
+                mat = self._matrix_from_explicit_edges(prop)
             if mat is None:
                 mat = np.zeros((1, 1))
 
