@@ -4635,7 +4635,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.build_node_positions">build_node_positions</h5>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.networkdynamics.NetworkDynamicsAdapter.build_node_positions(ts, ctx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Build <code>(n_t, n_nodes, n_cv)</code> position array from simulation data.</p>
-<p>For free nodes: positions come from the coupling-variable columns of the flat heterogeneous state vector. For fixed nodes: positions are constant (from YAML parameters).</p>
+<p>For free nodes: positions come from the coupling-variable columns of the properly shaped <code>(time, variable, node)</code> DataArray. For fixed nodes: positions are constant (from YAML parameters).</p>
 </section>
 <section id="tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_fixed_nodes" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_fixed_nodes">get_fixed_nodes</h5>
