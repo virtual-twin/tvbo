@@ -1285,6 +1285,8 @@ classes:
                 multivalued: true
                 range: Dynamics
                 inlined: true
+                aliases:
+                    - components
             system_type:
                 range: SystemType
             autonomous:

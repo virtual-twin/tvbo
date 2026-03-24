@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Create a lobar structural connectivity network from the dTOR tractogram.
+"""Create a lobar structural+functional connectivity network from the dTOR tractogram.
 
 This script creates a small brain-lobe–level network by:
 1. Building a lobar atlas NIfTI from the DesikanKilliany (DKT31) segmentation
    in MNI152NLin2009cAsym space (from TemplateFlow)
 2. Running MRtrix ``tck2connectome`` to compute streamline counts (weights)
    and mean tract lengths between lobes
-3. Writing a tvbo-compliant HDF5+YAML network into ``tvbo/database/networks/``
+3. Averaging the DesikanKilliany (avgMatrix) FC across regions per lobe
+4. Writing a tvbo-compliant HDF5+YAML network into ``tvbo/database/networks/``
 
 The resulting network has anatomical brain lobes as nodes:
 
@@ -156,6 +157,121 @@ LOBE_ORDER = [
     "RH_Cerebellum",
     "BrainStem",
 ]
+
+
+# Lobar8: 8 lobes per hemisphere (no BrainStem)
+# Only includes regions with both SC and FC data.
+LOBE_ORDER_8 = [l for l in LOBE_ORDER if l != "BrainStem"]
+
+
+# ── DK abbreviation → lobe mapping for FC aggregation ────────────────
+
+# Maps DK 84-node abbreviations (e.g. "BSTS", "CMFG") to lobe names.
+# Used to aggregate the DK FC matrix into the 17-node lobar FC.
+DK_ABBREV_TO_LOBE = {
+    # Cortical — uses same grouping as DK_REGION_TO_LOBE above
+    # Frontal
+    "CMFG": "Frontal", "LOFG": "Frontal", "MOFG": "Frontal",
+    "PaCG": "Frontal", "POP": "Frontal", "POR": "Frontal",
+    "PTR": "Frontal", "PrCG": "Frontal", "RMFG": "Frontal",
+    "SFG": "Frontal", "FP": "Frontal",
+    # Parietal
+    "IPG": "Parietal", "PoCG": "Parietal", "PCU": "Parietal",
+    "SPG": "Parietal", "SMG": "Parietal",
+    # Temporal
+    "BSTS": "Temporal", "EC": "Temporal", "FG": "Temporal",
+    "ITG": "Temporal", "MTG": "Temporal", "PHIG": "Temporal",
+    "STG": "Temporal", "TTG": "Temporal", "TP": "Temporal",
+    # Occipital
+    "CU": "Occipital", "LOG": "Occipital", "LG": "Occipital",
+    "PCAL": "Occipital",
+    # Cingulate
+    "CACG": "Cingulate", "ICG": "Cingulate", "PCG": "Cingulate",
+    "RACG": "Cingulate",
+    # Insular
+    "IN": "Insular",
+    # Subcortical
+    "TH": "Subcortical", "CA": "Subcortical", "PU": "Subcortical",
+    "PA": "Subcortical", "HI": "Subcortical", "AM": "Subcortical",
+    "AC": "Subcortical",
+    # Cerebellum
+    "CER": "Cerebellum",
+}
+
+
+def compute_lobar_fc(dk_network_dir: Path) -> np.ndarray:
+    """Compute lobar FC by averaging the DK 84-node FC matrix.
+
+    Loads the DesikanKilliany (avgMatrix) FC and averages correlations
+    across all region pairs belonging to each lobe pair, producing a
+    17×17 mean FC matrix.
+
+    Parameters
+    ----------
+    dk_network_dir : Path
+        Directory containing the DK network HDF5 and YAML files.
+
+    Returns
+    -------
+    lobar_fc : ndarray (17, 17)
+        Mean functional connectivity between lobes.
+    """
+    import h5py
+
+    dk_yaml = dk_network_dir / (
+        "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany"
+        "_desc-SCFC_relmat.yaml"
+    )
+    dk_h5 = dk_yaml.with_suffix(".h5")
+
+    # Load DK labels
+    with open(dk_yaml) as f:
+        dk_data = yaml.safe_load(f)
+    dk_labels = [n["label"] for n in dk_data["nodes"]]
+
+    # Load FC matrix
+    with h5py.File(dk_h5, "r") as f:
+        fc_84 = np.array(f["edges/fc/data"])
+
+    n_dk = len(dk_labels)
+    n_lobes = len(LOBE_ORDER)
+
+    # Map each DK region → lobe index
+    dk_to_lobe = np.full(n_dk, -1, dtype=np.int32)
+    for i, label in enumerate(dk_labels):
+        hemi_prefix, abbrev = label.split(".", 1)
+        hemi = "LH" if hemi_prefix == "L" else "RH"
+        lobe = DK_ABBREV_TO_LOBE.get(abbrev)
+        if lobe is None:
+            continue
+        lobe_label = f"{hemi}_{lobe}"
+        if lobe_label in LOBE_ORDER:
+            dk_to_lobe[i] = LOBE_ORDER.index(lobe_label)
+
+    # Aggregate: mean FC per lobe pair
+    lobar_fc = np.zeros((n_lobes, n_lobes), dtype=np.float64)
+    counts = np.zeros((n_lobes, n_lobes), dtype=np.int32)
+
+    for i in range(n_dk):
+        li = dk_to_lobe[i]
+        if li < 0:
+            continue
+        for j in range(n_dk):
+            lj = dk_to_lobe[j]
+            if lj < 0:
+                continue
+            lobar_fc[li, lj] += fc_84[i, j]
+            counts[li, lj] += 1
+
+    mask = counts > 0
+    lobar_fc[mask] /= counts[mask]
+
+    n_mapped = np.count_nonzero(dk_to_lobe >= 0)
+    print(f"[fc  ] Aggregated DK FC ({n_dk} regions, {n_mapped} mapped) "
+          f"→ {n_lobes}×{n_lobes} lobar FC")
+    print(f"[fc  ] Lobar FC range: [{lobar_fc.min():.4f}, {lobar_fc.max():.4f}]")
+
+    return lobar_fc.astype(np.float32)
 
 
 # ── Build lobar atlas NIfTI ─────────────────────────────────────────
@@ -320,6 +436,7 @@ def build_network(
     weights: np.ndarray,
     lengths: np.ndarray,
     centroids: dict[str, tuple[float, float, float]],
+    fc: np.ndarray | None = None,
 ) -> "Network":
     """Build a tvbo Network from lobar connectivity matrices.
 
@@ -329,6 +446,8 @@ def build_network(
         Connectivity matrices with N = len(LOBE_ORDER).
     centroids : dict
         Lobe label → (x, y, z) MNI centroid.
+    fc : ndarray (N, N), optional
+        Functional connectivity matrix (mean Pearson correlation).
     """
     from tvbo.classes.network import Network
 
@@ -344,9 +463,13 @@ def build_network(
         if c:
             node.position = {"x": float(round(c[0], 4)), "y": float(round(c[1], 4)), "z": float(round(c[2], 4))}
 
+    # Add FC if provided
+    if fc is not None:
+        network.set_matrix("fc", fc)
+
     # Metadata
     network.label = "Lobar (dTOR)"
-    network.descriptor = "SC"
+    network.descriptor = "SCFC" if fc is not None else "SC"
     network.distance_unit = "mm"
     network.time_unit = "ms"
     network.number_of_nodes = len(LOBE_ORDER)
@@ -383,6 +506,88 @@ def build_network(
     network.set_node_mapping(np.array(mapping, dtype=np.int32))
 
     return network
+
+
+def build_lobar8_network(
+    parent_network: "Network",
+    fc: np.ndarray,
+) -> "Network":
+    """Build a 16-node (8 per hemisphere) SC+FC network by dropping BrainStem.
+
+    Subsets the 17-node lobar SC network to only regions with both SC and FC.
+    BrainStem is excluded because the DK atlas has no brainstem parcellation,
+    so FC cannot be computed for it.
+
+    Parameters
+    ----------
+    parent_network : Network
+        The 17-node lobar SC network.
+    fc : ndarray (17, 17)
+        Full lobar FC matrix (BrainStem row/col will be dropped).
+    """
+    from tvbo.classes.network import Network
+
+    n_full = len(LOBE_ORDER)
+    bs_idx = LOBE_ORDER.index("BrainStem")
+    keep = [i for i in range(n_full) if i != bs_idx]
+
+    # Subset matrices
+    W = parent_network.matrix("weight")[np.ix_(keep, keep)]
+    L = parent_network.matrix("length")[np.ix_(keep, keep)]
+
+    net8 = Network.from_matrix(
+        weights=W,
+        lengths=L,
+        labels=LOBE_ORDER_8,
+    )
+
+    # FC (subset from 17×17 to 16×16)
+    net8.set_matrix("fc", fc[np.ix_(keep, keep)])
+
+    # Copy node positions from parent
+    for node in net8.nodes:
+        parent_node = next(
+            (n for n in parent_network.nodes if n.label == node.label), None
+        )
+        if parent_node and parent_node.position:
+            pos = parent_node.position
+            node.position = {"x": pos.x, "y": pos.y, "z": pos.z}
+
+    # Metadata
+    net8.label = "Lobar8 (dTOR)"
+    net8.descriptor = "SCFC"
+    net8.distance_unit = "mm"
+    net8.time_unit = "ms"
+    net8.number_of_nodes = len(LOBE_ORDER_8)
+
+    net8.parcellation = {
+        "atlas": {
+            "name": "Lobar8",
+            "coordinateSpace": "MNI152NLin2009cAsym",
+        }
+    }
+    net8.tractogram = {"name": "dTOR"}
+    net8.bids = {
+        "template": "MNI152NLin2009cAsym",
+        "cohort": "HCPYA",
+        "reconstruction": "dTOR",
+        "atlas": "Lobar8",
+    }
+
+    # Subgroup mapping (same as parent, minus BrainStem)
+    group_names = []
+    mapping = []
+    for label in LOBE_ORDER_8:
+        if "_" in label and label.startswith(("LH_", "RH_")):
+            group = label.split("_", 1)[1]
+        else:
+            group = label
+        if group not in group_names:
+            group_names.append(group)
+        mapping.append(group_names.index(group))
+    net8.set_node_mapping(np.array(mapping, dtype=np.int32))
+
+    return net8
 
 
 # ── Build surface network ─────────────────────────────────────────
@@ -723,7 +928,19 @@ def main() -> None:
         print(f"[data] lengths: shape={lengths.shape}, "
               f"mean={lengths[lengths > 0].mean():.1f} mm")
 
-        # Step 3: Build tvbo Network
+        # Step 2b: Compute lobar FC from DK avgMatrix
+        dk_network_dir = args.output_dir
+        dk_h5 = dk_network_dir / (
+            "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany"
+            "_desc-SCFC_relmat.h5"
+        )
+        lobar_fc = None
+        if dk_h5.exists():
+            lobar_fc = compute_lobar_fc(dk_network_dir)
+        else:
+            print(f"[warn] DK FC not found at {dk_h5}, skipping FC")
+
+        # Step 3: Build tvbo Network (SC only for 17-node Lobar)
         network = build_network(weights, lengths, centroids)
 
         # Step 4: Save SC network
@@ -745,7 +962,9 @@ def main() -> None:
             _precomputed=(vertices, triangles, hemi_index, region_mapping),
         )
 
-        surf_name = network.bids_filename.replace("_desc-SC_", "_desc-surf_")
+        surf_name = network.bids_filename.replace(
+            f"_desc-{network.descriptor}_", "_desc-surf_"
+        )
         surf_sidecar = (args.output_dir / surf_name).with_suffix(".yaml")
 
         if surf_sidecar.exists() and not args.overwrite:
@@ -754,6 +973,19 @@ def main() -> None:
             surface_net.save(surf_sidecar)
             print(f"[ok  ] {surf_sidecar.name}")
             print(f"[ok  ] {surf_sidecar.with_suffix('.h5').name}")
+
+        # Step 6: Build Lobar8 (16-node SC+FC, no BrainStem)
+        if lobar_fc is not None:
+            net8 = build_lobar8_network(network, lobar_fc)
+            net8_name = net8.bids_filename
+            net8_sidecar = (args.output_dir / net8_name).with_suffix(".yaml")
+
+            if net8_sidecar.exists() and not args.overwrite:
+                print(f"[skip] {net8_sidecar.name} already exists (use --overwrite)")
+            else:
+                net8.save(net8_sidecar)
+                print(f"[ok  ] {net8_sidecar.name}")
+                print(f"[ok  ] {net8_sidecar.with_suffix('.h5').name}")
 
     print(f"[done] {n_lobes}-node lobar network from dTOR tractogram")
 
