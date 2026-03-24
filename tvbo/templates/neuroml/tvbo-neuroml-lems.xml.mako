@@ -109,10 +109,19 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       if str(ci) not in ct_sv_names_set
       and str(ci) not in [str(k) for k in ct_params.keys()]
   ]
+  # In network mode, cells with synaptic inputs extend baseCellMembPot
+  # (provides Exposure v dimension=voltage, EventPort spike via baseCell).
+  ct_extends_cell = bool(ct_syn_inputs)
+  # v Exposure and spike EventPort come from the base type when extending
+  ct_v_from_base = ct_extends_cell and 'v' in ct_sv_names_set
 %>\
 
   <!-- ── ComponentType: ${ct_dyn_id} ── -->
+% if ct_extends_cell:
+  <ComponentType name="${ct_dyn_id}" extends="baseCellMembPot">
+% else:
   <ComponentType name="${ct_dyn_id}">
+% endif
 % for pname, p in ct_params.items():
     <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
@@ -126,14 +135,18 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
 % endif
 % for sv_name, sv in ct_svs.items():
+% if ct_v_from_base and sv_name == 'v':
+## v Exposure is inherited from baseCellMembPot — do not redeclare
+% else:
     <Exposure name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}"/>
+% endif
 % endfor
-% if ct_has_threshold:
+% if ct_has_threshold and not ct_extends_cell:
     <EventPort name="spike" direction="out"/>
 % endif
 % if ct_syn_inputs:
-    <!-- Collects all attached spike-triggered synapses; their currents are summed -->
-    <Children name="synapses" type="baseSynapse"/>
+    <!-- Dynamically attached synapses/inputs from network connections -->
+    <Attachments name="synapses" type="basePointCurrent"/>
 % endif
 
     <Dynamics>
@@ -287,7 +300,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endif
 % for sv_name, sv in ct_svs.items():
 <% iv = getattr(sv, 'initial_value', None) %>\
- ${sv_name}_0="${iv if iv is not None else 0.0}"\
+<% sv_unit = getattr(sv, 'unit', '') or '' %>\
+ ${sv_name}_0="${iv if iv is not None else 0.0}${sv_unit}"\
 % endfor
 />
 % endif

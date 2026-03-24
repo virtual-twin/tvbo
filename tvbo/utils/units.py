@@ -49,7 +49,19 @@ _UNIT_TO_LEMS_DIM = {
     # Conductivity / permeability
     "S_per_m": "none", "H_per_m": "none",
     # Angular rate
-    "rad_per_ms": "per_time",
+    "rad_per_ms": "per_time", "rad_per_s": "per_time",
+    # Angle
+    "rad": "none",
+    # Mass
+    "kg": "none", "kg_per_s": "none",
+    # Acceleration
+    "m_per_s2": "none",
+    # Force / stiffness
+    "N_per_m": "none",
+    # Time squared
+    "s2": "none",
+    # Per-unit (power systems)
+    "per_unit": "none",
     # Dimensionless
     "dimensionless": "none", "percent": "none", "arbitrary_unit": "none",
 }
@@ -98,9 +110,10 @@ _TIME_UNITS = {
     "per_s", "per_ms",
     "Hz", "kHz",
     "mV_per_ms", "mV_per_s",
-    "rad_per_ms",
+    "rad_per_ms", "rad_per_s",
     "m_per_s", "mm_per_ms",
     "Hz_per_nA",
+    "kg_per_s", "m_per_s2", "s2",
 }
 
 
@@ -126,7 +139,9 @@ _LEGACY_TO_ENUM = {
     "us": "us", "microsecond": "us",
     # Rates
     "s^-1": "per_s", "s**-1": "per_s", "per_s": "per_s", "per_second": "per_s",
+    "1/s": "per_s",
     "ms^-1": "per_ms", "ms**-1": "per_ms", "per_ms": "per_ms", "per_millisecond": "per_ms",
+    "1/ms": "per_ms",
     "Hz": "Hz", "hz": "Hz", "hertz": "Hz",
     "kHz": "kHz", "khz": "kHz", "kilohertz": "kHz",
     # Voltage
@@ -175,10 +190,24 @@ _LEGACY_TO_ENUM = {
     "S/m": "S_per_m", "S_per_m": "S_per_m",
     "H/m": "H_per_m", "H_per_m": "H_per_m",
     # Angular
+    "rad": "rad", "radian": "rad",
+    "rad/s": "rad_per_s", "rad_per_s": "rad_per_s", "radian_per_second": "rad_per_s",
     "rad/ms": "rad_per_ms", "rad_per_ms": "rad_per_ms",
     "radian_per_millisecond": "rad_per_ms",
+    # Mass
+    "kg": "kg", "kilogram": "kg",
+    "kg/s": "kg_per_s", "kg_per_s": "kg_per_s",
+    # Acceleration
+    "m/s²": "m_per_s2", "m/s^2": "m_per_s2", "m/s**2": "m_per_s2", "m_per_s2": "m_per_s2",
+    # Force / stiffness
+    "N/m": "N_per_m", "N_per_m": "N_per_m",
+    # Time squared
+    "s²": "s2", "s^2": "s2", "s**2": "s2", "s2": "s2",
+    # Per-unit (power systems)
+    "p.u.": "per_unit", "per_unit": "per_unit", "pu": "per_unit",
     # Dimensionless
     "dimensionless": "dimensionless", "1": "dimensionless", "": "dimensionless",
+    "unitless": "dimensionless",
     "%": "percent", "percent": "percent",
     "a.u.": "arbitrary_unit", "arbitrary_unit": "arbitrary_unit",
     "r_pearson": "dimensionless",
@@ -221,7 +250,10 @@ _DISPLAY_SYMBOLS = {
     "m_per_s": "m/s", "mm_per_ms": "mm/ms",
     "Hz_per_nA": "Hz/nA",
     "S_per_m": "S/m", "H_per_m": "H/m",
-    "rad_per_ms": "rad/ms",
+    "rad_per_ms": "rad/ms", "rad_per_s": "rad/s",
+    "kg_per_s": "kg/s",
+    "m_per_s2": "m/s²", "N_per_m": "N/m", "s2": "s²",
+    "per_unit": "p.u.",
     "dimensionless": "", "percent": "%", "arbitrary_unit": "a.u.",
 }
 
@@ -241,5 +273,9 @@ def unit_to_symbol(unit):
     """
     if unit is None:
         return ""
-    key = unit.value if hasattr(unit, "value") else str(unit)
+    # PermissibleValue (from getattr(UnitEnum, name)) has .text
+    if hasattr(unit, "text"):
+        key = unit.text
+    else:
+        key = str(unit)
     return _DISPLAY_SYMBOLS.get(key, key)

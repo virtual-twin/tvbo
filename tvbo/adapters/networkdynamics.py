@@ -269,22 +269,15 @@ class NetworkDynamicsAdapter(BaseAdapter):
         init_pos = self.get_initial_positions()
 
         # Walk through state vector to find coupling-var columns per node
-        state_offset = 0
         for node in nodes:
             dyn_name = node_dynamics_map[node.id]
             dyn = dynamics_dict[dyn_name]
             if self.is_static(dyn):
-                # Constant position for all timesteps
                 positions[:, node.id, :] = init_pos[node.id]
             else:
-                # Find which state indices correspond to coupling vars
-                sv_names = list(dyn.state_variables.keys())
                 for j, cv_name in enumerate(coupling_vars):
-                    if cv_name in sv_names:
-                        sv_idx = sv_names.index(cv_name)
-                        col = state_offset + sv_idx
-                        positions[:, node.id, j] = ts.data[:, col, 0, 0]
-                state_offset += len(sv_names)
+                    if cv_name in dyn.state_variables:
+                        positions[:, node.id, j] = ts.sel(variable=cv_name, node=node.id).values
         return positions
 
     # ── Code generation ──────────────────────────────────────────────────
@@ -407,14 +400,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         # Collect extra metadata
         extras = dict(sol=sol, graph=graph_data, edge_data=edge_data, vertex_data=vertex_data)
         if is_hetero and self.get_coupling_vars(ctx['model']):
-            # Need TimeSeries for spatial metadata helpers
-            from tvbo.data.types import TimeSeries
-            ts = TimeSeries(
-                time=t, data=np.asarray(da.values),
-                labels_dimensions={"State Variable": state_labels, "Region": list(range(n_nodes))},
-                sample_period=ctx['dt'],
-            )
-            extras['node_positions'] = self.build_node_positions(ts, ctx)
+            extras['node_positions'] = self.build_node_positions(sim, ctx)
             extras['initial_positions'] = self.get_initial_positions()
             extras['fixed_nodes'] = self.get_fixed_nodes()
             extras['node_metadata'] = self.get_node_metadata()
