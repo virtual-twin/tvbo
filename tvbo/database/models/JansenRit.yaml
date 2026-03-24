@@ -10,7 +10,7 @@ parameters:
       hi: 9.75
       step: 0.05
     description: Maximum amplitude of EPSP [mV]
-    unit: Millivolt
+    unit: mV
   B:
     name: B
     definition: Maximum amplitude of IPSP [mV]. Also called average synaptic gain.
@@ -20,7 +20,7 @@ parameters:
       hi: 110.0
       step: 0.2
     description: Maximum amplitude of IPSP [mV]
-    unit: Millivolt
+    unit: mV
   J:
     name: J
     definition: Average number of synapses between three neuronal populations of the
@@ -96,7 +96,7 @@ parameters:
     description: Reciprocal of the time constant of passive membrane and all other
       spatially distributed delays in the dendritic network. Also called average synaptic
       time constant.
-    unit: ms^-1
+    unit: per_ms
   b:
     name: b
     definition: Rate constant of the inhibitory post-synaptic potential (IPSP). It
@@ -110,7 +110,7 @@ parameters:
       hi: 0.075
       step: 0.005
     description: Rate constant of the inhibitory post-synaptic potential (IPSP)
-    unit: ms^-1
+    unit: per_ms
   mu:
     name: mu
     definition: Mean excitatory external input to the derivative of the state-variable
@@ -126,7 +126,7 @@ parameters:
       y4_JR (PCs) represented by a pulse density, that consists of activity originating
       from adjacent and more distant cortical columns, as well as from subcortical
       structures (e
-    unit: ms^-1
+    unit: per_ms
   nu_max:
     name: nu_max
     definition: Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum
@@ -138,7 +138,7 @@ parameters:
       step: 1.0e-05
     description: Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum
       firing rate of the neural populations
-    unit: ms^-1
+    unit: per_ms
   r:
     name: r
     definition: Steepness (or gain) parameter of the sigmoid function Sigm_JR.
@@ -148,7 +148,7 @@ parameters:
       hi: 0.84
       step: 0.01
     description: Steepness (or gain) parameter of the sigmoid function Sigm_JR
-    unit: mV^-1
+    unit: per_mV
   v0:
     name: v0
     definition: 'Average firing threshold (PSP) for which half of the firing rate

@@ -83,13 +83,16 @@ def extract_bifurcation_result():
     return eval_with_auto_install("bifurcation_result")
 
 
-def solution_to_array(
+def solution_to_dataarray(
     t: np.ndarray,
     u: np.ndarray,
-    n_sv: int,
+    sv_names: list[str],
     n_nodes: int,
-) -> np.ndarray:
-    """Reshape a flat DiffEq solution into TVBO 4-D convention.
+):
+    """Build an ``xr.DataArray`` from a flat Julia ODE solution.
+
+    Reshapes ``u`` from flat ``(n_states, n_t)`` into dims
+    ``(time, variable, node)`` with named coordinates.
 
     Parameters
     ----------
@@ -97,19 +100,26 @@ def solution_to_array(
         Time array, shape ``(n_t,)``.
     u : np.ndarray
         Raw solution, shape ``(n_nodes * n_sv, n_t)``.
-    n_sv : int
-        Number of state variables per node.
+    sv_names : list[str]
+        State variable names (length determines n_sv).
     n_nodes : int
         Number of nodes.
 
     Returns
     -------
-    np.ndarray
-        Shape ``(n_t, n_sv, n_nodes, 1)``.
+    xr.DataArray
+        Dims ``(time, variable, node)`` with coords.
     """
-    n_t = len(t)
-    data = u.T                                   # (time, n_nodes*n_sv)
-    data = data.reshape(n_t, n_nodes, n_sv)      # (time, nodes, sv)
-    data = data.transpose(0, 2, 1)               # (time, sv, nodes)
-    data = data[:, :, :, np.newaxis]              # (time, sv, nodes, 1)
-    return data
+    import xarray as xr
+
+    n_sv = len(sv_names)
+    data = u.T.reshape(len(t), n_nodes, n_sv).transpose(0, 2, 1)
+    return xr.DataArray(
+        data=data,
+        dims=['time', 'variable', 'node'],
+        coords={
+            'time': np.asarray(t),
+            'variable': list(sv_names),
+            'node': [str(i) for i in range(n_nodes)],
+        },
+    )

@@ -335,7 +335,7 @@ class Network(tvbo_datamodel.Network):
                 # Ensure conduction_speed for early return path
                 if "conduction_speed" not in (self.parameters or {}):
                     self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                        name="conduction_speed", label="v", value=3.0, unit="mm/ms"
+                        name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
                     )
                 return  # Skip rest of __init__ — already called super()
 
@@ -375,7 +375,7 @@ class Network(tvbo_datamodel.Network):
         # Ensure conduction_speed exists in parameters
         if "conduction_speed" not in (self.parameters or {}):
             self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                name="conduction_speed", label="v", value=3.0, unit="mm/ms"
+                name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
             )
 
     # -- Backward-compat properties: conduction_speed, global_coupling_strength --
@@ -1228,6 +1228,63 @@ class Network(tvbo_datamodel.Network):
         return resp.json()
 
     @classmethod
+    def load(cls, source: Union[str, Path, None] = None,
+             **entities) -> Union["Network", list["Network"]]:
+        """Unified loader: file path, database name, or BIDS entities.
+
+        Accepts any of:
+
+        - **File path** (YAML, JSON, or HDF5): loads from disk.
+          For HDF5, automatically finds the companion YAML sidecar.
+        - **Short name**: resolves via the tvbo database
+          (e.g. ``"Lobar"``, ``"DesikanKilliany"``).
+        - **BIDS entities** as keyword arguments
+          (e.g. ``atlas="Schaefer2018", scale="100"``).
+
+        Parameters
+        ----------
+        source : str or Path, optional
+            A file path or database name.  When omitted, BIDS entity
+            kwargs are used to search the database.
+        **entities
+            BIDS key-value filters (``atlas``, ``rec``, ``scale``,
+            ``desc``, ``seg``, ``cohort``, …).
+
+        Returns
+        -------
+        Network or list[Network]
+            A single Network, or a list when multiple BIDS matches occur.
+
+        Examples
+        --------
+        >>> Network.load("Lobar")                               # database name
+        >>> Network.load("networks/my_network.yaml")            # YAML file
+        >>> Network.load("networks/my_network.h5")              # HDF5 companion
+        >>> Network.load(atlas="Schaefer2018", scale="100")     # BIDS entities
+        """
+        if source is not None:
+            p = Path(source)
+            ext = p.suffix.lower()
+            # HDF5 companion → resolve to YAML sidecar
+            if ext in (".h5", ".hdf5"):
+                sidecar = p.with_suffix(".yaml")
+                if not sidecar.exists():
+                    sidecar = p.with_suffix(".json")
+                if not sidecar.exists():
+                    raise FileNotFoundError(
+                        f"No YAML/JSON sidecar found for {p}")
+                return cls.from_file(str(sidecar))
+            # Explicit sidecar path
+            if ext in (".yaml", ".yml", ".json") or p.is_file():
+                return cls.from_file(str(p))
+            # No extension / not a file → treat as database name
+            return cls.from_db(str(source), **entities)
+        # No source → BIDS entity search
+        if entities:
+            return cls.from_db(**entities)
+        raise ValueError("Provide a file path, database name, or BIDS entities.")
+
+    @classmethod
     def from_db(cls, name: Optional[str] = None, **entities) -> Union["Network", list["Network"]]:
         """Load a Network from the tvbo database by name or BIDS entities.
 
@@ -1379,6 +1436,12 @@ class Network(tvbo_datamodel.Network):
             # tuples -> lists for JSON
             if isinstance(o, tuple):
                 return list(o)
+            # LinkML enums -> plain text string (NOT as_dict which creates
+            # a {'_code': {...}} dict that becomes an unparseable JsonObj
+            # on round-trip through json.loads → cls(**meta_dict))
+            from linkml_runtime.utils.enumerations import EnumDefinitionImpl
+            if isinstance(o, EnumDefinitionImpl):
+                return str(o)
             # LinkML dataclasses -> dict via as_dict
             if isinstance(o, YAMLRoot):
                 return as_dict(o)
@@ -1442,6 +1505,10 @@ class Network(tvbo_datamodel.Network):
         }
         def _strip_none(obj):
             if isinstance(obj, dict):
+                # as_dict() serializes LinkML enums as {'_code': {'text': 'mm', ...}}
+                # Flatten back to the plain text key for clean round-trips
+                if '_code' in obj and isinstance(obj['_code'], dict) and 'text' in obj['_code']:
+                    return obj['_code']['text']
                 return {k: _strip_none(v) for k, v in obj.items() if v is not None}
             if isinstance(obj, list):
                 return [_strip_none(x) for x in obj]
@@ -1998,10 +2065,11 @@ class Network(tvbo_datamodel.Network):
         # Use sympy's full unit namespace - no hardcoded mapping needed
         unit_ns = dict(vars(u))
 
-        # Get units from network attributes (with defaults)
-        distance_unit_str = getattr(self, "distance_unit", None) or "mm"
-        time_unit_str = output_unit or getattr(self, "time_unit", None) or "ms"
-        speed_unit_str = cs.unit or f"{distance_unit_str}/{time_unit_str}"
+        # Get units as SymPy-parseable symbols (e.g. "mm/ms" not "mm_per_ms")
+        from tvbo.utils.units import unit_to_symbol
+        distance_unit_str = unit_to_symbol(getattr(self, "distance_unit", None) or "mm")
+        time_unit_str = unit_to_symbol(output_unit or getattr(self, "time_unit", None) or "ms")
+        speed_unit_str = unit_to_symbol(cs.unit) if cs.unit else f"{distance_unit_str}/{time_unit_str}"
 
         length_unit = parse_expr(distance_unit_str, local_dict=unit_ns)
         speed_unit = parse_expr(speed_unit_str, local_dict=unit_ns)
@@ -2867,6 +2935,7 @@ class Network(tvbo_datamodel.Network):
                 brain_defaults.update(brain_kwargs)
                 _, _, mappables = self.plot_brain_surface(
                     ax=axs[row, 0], weight_matrix=mat,
+                    log_weights=use_log,
                     **brain_defaults,
                 )
                 axs[row, 0].axis("off")

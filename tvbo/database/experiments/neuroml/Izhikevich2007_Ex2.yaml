@@ -1,0 +1,72 @@
+# NeuroML2 LEMS Example 2: Izhikevich Cell (2003)
+# =================================================
+# Reproduces LEMS_NML2_Ex2_Izh.xml from the NeuroML2 canonical examples.
+# Uses the 2003 izhikevichCell formulation (NOT izhikevich2007Cell):
+#   dv/dt = (0.04*v^2 + 5*v + 140 - U + I_ext) / MSEC
+#   dU/dt = a*(b*v - U) / MSEC
+#   OnCondition: v .gt. thresh → v = c, U = U + d
+#   OnStart: v = v0, U = v0*b
+#
+# Variant: tonic spiking (izTonic from the NeuroML example)
+# Note: Original Ex2 uses pulseGeneratorDL with delay=20ms, amplitude=14.
+# We use constant I_ext=14 (ignoring the 20ms delay).
+
+id: 904
+label: "NeuroML Ex2: Izhikevich (tonic spiking)"
+description: >
+  Reproduces NeuroML2 LEMS canonical example 2, izhikevichCell (2003).
+  Tonic spiking variant simulated for 200ms at 0.005ms step.
+  Uses constant I_ext=14 (original has pulseGeneratorDL with 20ms delay).
+
+dynamics:
+  name: IzhikevichCell
+  description: >
+    Izhikevich 2003 model matching NeuroML2 izhikevichCell ComponentType.
+    See http://www.izhikevich.org/publications/spikes.htm
+  parameters:
+    v0:
+      value: -70.0
+      description: Initial membrane potential (mV)
+    thresh:
+      value: 30.0
+      description: Spike threshold (mV)
+    a:
+      value: 0.02
+      description: Time scale of recovery variable U
+    b:
+      value: 0.2
+      description: Sensitivity of U to subthreshold fluctuations of v
+    c:
+      value: -65.0
+      description: After-spike reset value of v
+    d:
+      value: 6.0
+      description: After-spike increase to U
+    I_ext:
+      value: 14.0
+      description: External input current (dimensionless, from pulseGeneratorDL)
+  state_variables:
+    v:
+      equation:
+        rhs: "0.04*v**2 + 5*v + 140 - U + I_ext"
+      initial_value: -70.0
+      variable_of_interest: true
+    U:
+      equation:
+        rhs: "a*(b*v - U)"
+      initial_value: -14.0
+  events:
+    spike:
+      condition:
+        rhs: "v > thresh"
+      affect:
+        rhs: "v = c; U = U + d"
+
+network:
+  number_of_nodes: 1
+
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 200.0
+  time_scale: ms

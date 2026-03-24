@@ -21,7 +21,7 @@ from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
     import pandas as pd
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, SimulationResult
     from tvbo.classes.experiment import SimulationExperiment
 
 
@@ -181,8 +181,11 @@ class PyRatesAdapter(BaseAdapter):
         outputs: list[str] | None = None,
         matrix_edge_threshold: int = 100,
         **kwargs,
-    ) -> "TimeSeries":
-        """Run simulation using PyRates backend.
+    ) -> "ExperimentResult":
+        """Run simulation and explorations using PyRates backend.
+
+        Handles both integration and grid-search explorations in a single
+        call, sharing YAML export / circuit load across both.
 
         Parameters
         ----------
@@ -196,15 +199,15 @@ class PyRatesAdapter(BaseAdapter):
             For networks with N > threshold nodes, use add_edges_from_matrix instead
             of YAML edges for efficiency. Default is 100.
         **kwargs
-            Additional kwargs passed to circuit.run().
+            Additional kwargs passed to circuit.run() / grid_search().
 
         Returns
         -------
-        TimeSeries
-            TVBO TimeSeries with simulation results.
+        ExperimentResult
         """
         from pyrates import clear
-        from pyrates.frontend import CircuitTemplate
+
+        from tvbo.data.types import ExperimentResult
 
         # Fix networkx 3.4+ backend dispatch conflict
         _patch_pyrates_networkx_backend()
@@ -228,7 +231,7 @@ class PyRatesAdapter(BaseAdapter):
             network, "weights_matrix"
         )
 
-        # Build circuit from YAML
+        # ── Shared setup: single YAML export + circuit load ──────────
         circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(
             include_edges=not use_matrix_edges
         )
@@ -244,41 +247,248 @@ class PyRatesAdapter(BaseAdapter):
             if inputs is None:
                 inputs = self._build_inputs()
 
-            # PyRates vectorize=True (default) breaks for single-node circuits
-            # and heterogeneous multi-node circuits (different operators have
-            # incompatible parameter shapes). Only safe for homogeneous N>1.
+            # PyRates vectorize=True breaks for single-node and heterogeneous
             if "vectorize" not in kwargs:
-                is_heterogeneous = self._is_heterogeneous()
-                if n_nodes <= 1 or is_heterogeneous:
+                if n_nodes <= 1 or self._is_heterogeneous():
                     kwargs["vectorize"] = False
 
-            # Use a declarative file_name so parallel runs don't collide
-            # and stale pyrates_run.py files are avoided.
-            if "file_name" not in kwargs:
-                run_id = uuid.uuid4().hex[:8]
-                kwargs["file_name"] = f"pyrates_run_{pkg_name}_{run_id}"
+            run_id = uuid.uuid4().hex[:8]
 
-            # Run simulation
-            result = circuit.run(
-                step_size=exp.integration.step_size,
-                simulation_time=exp.integration.duration,
-                inputs=inputs,
-                outputs=outputs,
-                solver=solver,
-                **kwargs,
-            )
-            clear(circuit)
+            # ── Integration ──────────────────────────────────────────
+            sim_result = None
+            if integration:
+                int_kwargs = dict(kwargs)
+                int_kwargs.setdefault(
+                    "file_name", f"pyrates_run_{pkg_name}_{run_id}"
+                )
 
-        except Exception:
-            clear(circuit)
-            raise
+                result_df = circuit.run(
+                    step_size=integration.step_size,
+                    simulation_time=integration.duration,
+                    inputs=inputs,
+                    outputs=outputs,
+                    solver=solver,
+                    **int_kwargs,
+                )
+
+                result_df = self._compute_outputs(result_df)
+                sim_result = self._df_to_simulation_result(result_df)
+
+            # ── Explorations ─────────────────────────────────────────
+            explorations = getattr(exp, "explorations", None) or {}
+            expl_results = {}
+            if explorations:
+                expl_results = self._run_explorations(
+                    circuit, outputs, solver, pkg_name, **kwargs
+                )
+
         finally:
+            try:
+                clear(circuit)
+            except Exception:
+                pass
             self._cleanup(tmpdir, pkg_name)
 
-        # Compute algebraic output variables post-hoc
-        result = self._compute_outputs(result)
+        return ExperimentResult(
+            integration=sim_result,
+            explorations=expl_results or None,
+            source=exp,
+            name=getattr(exp, "label", None),
+        )
 
-        return self._result_to_timeseries(result)
+    def _run_explorations(
+        self,
+        circuit,
+        outputs: dict,
+        solver: str,
+        pkg_name: str,
+        **kwargs,
+    ) -> dict:
+        """Run all explorations using PyRates native ``grid_search``.
+
+        Called internally by ``run()`` with an already-loaded circuit,
+        avoiding duplicate YAML export / circuit load.
+
+        Parameters
+        ----------
+        circuit : CircuitTemplate
+            Pre-loaded circuit (shared with integration run).
+        outputs : dict
+            Output variables dict (shared with integration).
+        solver : str
+            Resolved ODE solver name.
+        pkg_name : str
+            Package name for unique file naming.
+        **kwargs
+            Additional keyword arguments forwarded to ``grid_search``.
+
+        Returns
+        -------
+        dict
+            ``{exploration_name: ExplorationResult}``
+        """
+        from pyrates.utility import grid_search
+
+        exp = self.experiment
+        explorations = getattr(exp, "explorations", None) or {}
+        integration = getattr(exp, "integration", None)
+
+        results = {}
+        for expl_name, expl in explorations.items():
+            param_grid, param_map, axes = self._build_param_grid_and_axes(expl)
+            if not param_grid:
+                continue
+
+            # 'product' → permute_grid=True (Cartesian), 'zip' → pairwise
+            permute = getattr(expl, "mode", "product") != "zip"
+
+            gs_kwargs = dict(kwargs)
+            gs_kwargs.setdefault(
+                "file_name",
+                f"pyrates_gs_{pkg_name}_{expl_name}_{uuid.uuid4().hex[:8]}",
+            )
+
+            results_df, results_map = grid_search(
+                circuit_template=circuit,
+                param_grid=param_grid,
+                param_map=param_map,
+                step_size=integration.step_size,
+                simulation_time=integration.duration,
+                outputs=outputs,
+                permute_grid=permute,
+                solver=solver,
+                **gs_kwargs,
+            )
+
+            results[expl_name] = self._df_to_exploration_result(
+                results_df, results_map, axes, expl, expl_name
+            )
+
+        return results
+
+    def _build_param_grid_and_axes(self, expl) -> tuple:
+        """Translate a TVBO ``Exploration`` into PyRates ``param_grid``, ``param_map``, and axes.
+
+        Uses ``_pyrates_node_map()`` to resolve operator/node naming, so the
+        generated paths match the YAML template exactly.
+
+        Returns
+        -------
+        tuple
+            ``(param_grid, param_map, axes)``
+        """
+        from tvbo.utils import Bunch
+
+        dynamics_dict = self.build_dynamics_dict()
+        nmap = self._pyrates_node_map()
+
+        param_grid: dict = {}
+        param_map: dict = {}
+        axes: list = []
+
+        for param in expl.parameters.values():
+            name = param.name
+            domain = getattr(param, "domain", None)
+
+            # Get sweep values
+            explored = getattr(param, "explored_values", None)
+            if explored:
+                values = np.array([float(v) for v in explored])
+            elif domain:
+                lo, hi, n = float(domain.lo), float(domain.hi), int(domain.n)
+                values = (
+                    np.logspace(np.log10(lo), np.log10(hi), n)
+                    if getattr(domain, "log_scale", False)
+                    else np.linspace(lo, hi, n)
+                )
+            else:
+                continue
+
+            param_grid[name] = list(values)
+
+            ax = Bunch(name=name, n=len(values), explored_values=values)
+            axes.append(ax)
+
+            # Resolve PyRates variable path via shared node map
+            py_name = PYRATES_REPL.get(name, name)
+            for dyn_name, dyn in dynamics_dict.items():
+                if name in (dyn.parameters or {}):
+                    info = nmap[dyn_name]
+                    param_map[name] = {
+                        "vars": [f"{info['op']}/{py_name}"],
+                        "nodes": info["nodes"],
+                    }
+                    break
+            else:
+                # Fallback: first dynamics
+                info = next(iter(nmap.values()))
+                param_map[name] = {
+                    "vars": [f"{info['op']}/{py_name}"],
+                    "nodes": info["nodes"],
+                }
+
+        return param_grid, param_map, axes
+
+    def _df_to_exploration_result(
+        self,
+        results_df: "pd.DataFrame",
+        results_map: "pd.DataFrame",
+        axes: list,
+        expl,
+        expl_name: str,
+    ):
+        """Build ``ExplorationResult`` from PyRates ``grid_search`` output DataFrames.
+
+        PyRates returns:
+        * ``results_df``: MultiIndex columns ``(output_var, condition_name)``,
+          rows = time points.
+        * ``results_map``: rows indexed by condition_name, columns = param names.
+
+        The resulting ``ExplorationResult`` stores a ``(n_conditions, n_time, n_vars)``
+        time-series array together with axes metadata.
+        """
+        import pandas as pd
+
+        from tvbo.data.types import ExplorationResult
+
+        exp = self.experiment
+        dt = getattr(exp.integration, "step_size", None) if exp.integration else None
+
+        cols = results_df.columns
+        if isinstance(cols, pd.MultiIndex):
+            output_vars = list(cols.get_level_values(0).unique())
+        else:
+            output_vars = ["output"]
+
+        n_conditions = len(results_map)
+        n_time = len(results_df)
+        n_vars = len(output_vars)
+
+        results_arr = np.zeros((n_conditions, n_time, n_vars), dtype=np.float64)
+
+        for c_idx, cond_name in enumerate(results_map.index):
+            if isinstance(cols, pd.MultiIndex):
+                for v_idx, var_name in enumerate(output_vars):
+                    col_data = results_df[var_name][cond_name]
+                    if hasattr(col_data, "values"):
+                        col_data = col_data.values
+                    results_arr[c_idx, :, v_idx] = np.asarray(col_data).squeeze()
+            else:
+                results_arr[c_idx, :, 0] = results_df[cond_name].values.squeeze()
+
+        observable = None
+        obs = getattr(expl, "observable", None)
+        if obs is not None:
+            observable = getattr(obs, "function", None)
+
+        return ExplorationResult(
+            name=expl_name,
+            axes=axes,
+            results=results_arr,
+            observable=observable,
+            dt=dt,
+            output_names=output_vars,
+        )
 
     def _resolve_solver(self, solver: str | None, integration) -> str:
         """Resolve solver from input or integration method."""
@@ -317,6 +527,61 @@ class PyRatesAdapter(BaseAdapter):
         """
         dynamics_dict = self.build_dynamics_dict()
         return len(dynamics_dict) > 1
+
+    def _pyrates_node_map(self) -> dict:
+        """Map each dynamics model to its PyRates operator name and node labels.
+
+        Mirrors the naming conventions of the PyRates YAML template exactly,
+        so output paths and param_map entries resolve correctly.
+
+        Returns
+        -------
+        dict
+            ``{dyn_name: {'op': str, 'nodes': list[str]}}``
+        """
+        dynamics_dict = self.build_dynamics_dict()
+        exp = self.experiment
+        network = getattr(exp, "network", None)
+
+        nmap: dict[str, dict] = {}
+
+        if network and hasattr(network, "nodes") and network.nodes:
+            # Schema-based Network: each node declares its dynamics
+            default_dyn = next(iter(dynamics_dict), None)
+            for node in network.nodes:
+                label = str(
+                    getattr(node, "label", None) or f"node_{node.id}"
+                ).replace(" ", "_").replace("-", "_")
+                dyn_name = (
+                    node.dynamics
+                    if isinstance(node.dynamics, str)
+                    else getattr(node.dynamics, "name", None)
+                ) or default_dyn
+                if dyn_name:
+                    nmap.setdefault(dyn_name, {"op": f"{dyn_name}_op", "nodes": []})
+                    nmap[dyn_name]["nodes"].append(label)
+        elif network is not None:
+            # Base Network/Connectome: all nodes share the default dynamics
+            n_nodes = getattr(network, "number_of_nodes", 0)
+            weights = getattr(network, "weights_matrix", None)
+            if weights is not None:
+                n_nodes = weights.shape[0]
+            if hasattr(network, "node_labels") and network.node_labels:
+                labels = [str(l).replace(" ", "_").replace("-", "_")
+                          for l in network.node_labels]
+            elif hasattr(network, "region_labels") and network.region_labels:
+                labels = [str(l).replace(" ", "_").replace("-", "_")
+                          for l in network.region_labels]
+            else:
+                labels = [f"node_{i}" for i in range(n_nodes)]
+            dyn_name = next(iter(dynamics_dict))
+            nmap[dyn_name] = {"op": f"{dyn_name}_op", "nodes": labels}
+        else:
+            # Single dynamics → node 'p' (matches YAML template)
+            for dyn_name in dynamics_dict:
+                nmap[dyn_name] = {"op": f"{dyn_name}_op", "nodes": ["p"]}
+
+        return nmap
 
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
@@ -458,44 +723,23 @@ class PyRatesAdapter(BaseAdapter):
         Note: PyRates only tracks state variables (DEs) in its state vector.
         Algebraic outputs are computed post-hoc in _compute_outputs.
         """
-        exp = self.experiment
+        dynamics_dict = self.build_dynamics_dict()
+        nmap = self._pyrates_node_map()
+
+        # Single-node circuits use clean variable names (no node prefix)
+        single_node = (len(nmap) == 1
+                       and len(next(iter(nmap.values()))["nodes"]) == 1)
+
         outputs = {}
-
-        dynamics = self.build_dynamics_dict()
-
-        default_dyn = next(iter(dynamics.values())) if dynamics else None
-
-        def add_outputs_for_dynamics(dyn, op_name: str, prefix: str = ""):
+        for dyn_name, info in nmap.items():
+            dyn = dynamics_dict.get(dyn_name)
             if not dyn:
-                return
-            node_id = prefix.rstrip("_") or "node_0"
-            for sv_name in (dyn.state_variables or {}).keys():
-                # Apply same renaming as the PyRates YAML template
-                pyrates_sv_name = PYRATES_REPL.get(sv_name, sv_name)
-                key = f"{prefix}{sv_name}" if prefix else sv_name
-                outputs[key] = f"{node_id}/{op_name}/{pyrates_sv_name}"
-
-        network = getattr(exp, "network", None)
-        if network is not None and hasattr(network, "nodes") and network.nodes:
-            for node in network.nodes:
-                node_label = getattr(node, "label", None) or f"node_{node.id}"
-                safe_label = str(node_label).replace(" ", "_").replace("-", "_")
-
-                dyn_name = (
-                    node.dynamics
-                    if isinstance(node.dynamics, str)
-                    else getattr(node.dynamics, "name", None)
-                )
-                dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
-
-                if dyn:
-                    op_name = f"{dyn.name}_op"
-                    add_outputs_for_dynamics(dyn, op_name, prefix=f"{safe_label}_")
-        else:
-            if dynamics:
-                dyn = next(iter(dynamics.values()))
-                op_name = f"{dyn.name}_op"
-                add_outputs_for_dynamics(dyn, op_name)
+                continue
+            for node_label in info["nodes"]:
+                for sv_name in (dyn.state_variables or {}):
+                    py_name = PYRATES_REPL.get(sv_name, sv_name)
+                    key = sv_name if single_node else f"{node_label}_{sv_name}"
+                    outputs[key] = f"{node_label}/{info['op']}/{py_name}"
 
         return outputs
 
@@ -724,9 +968,11 @@ class PyRatesAdapter(BaseAdapter):
 
         return inputs
 
-    def _result_to_timeseries(self, result: "pd.DataFrame") -> "TimeSeries":
-        """Convert PyRates pandas DataFrame result to TVBO TimeSeries."""
-        from tvbo.data.types import TimeSeries
+    def _df_to_simulation_result(self, result: "pd.DataFrame") -> "SimulationResult":
+        """Convert PyRates pandas DataFrame result to SimulationResult."""
+        import xarray as xr
+
+        from tvbo.data.types import SimulationResult
 
         exp = self.experiment
         time = np.array(result.index)
@@ -774,21 +1020,16 @@ class PyRatesAdapter(BaseAdapter):
         n_nodes = len(node_names)
         n_svs = len(sv_names)
 
-        data = np.zeros((n_time, n_svs, n_nodes, 1), dtype=np.float32)
+        data = np.zeros((n_time, n_svs, n_nodes), dtype=np.float32)
 
         for col_idx, (node_name, sv_name) in enumerate(node_sv_pairs):
             node_idx = node_names.index(node_name)
             sv_idx = sv_names.index(sv_name)
-            data[:, sv_idx, node_idx, 0] = result.iloc[:, col_idx].values
+            data[:, sv_idx, node_idx] = result.iloc[:, col_idx].values
 
-        labels_dimensions = {
-            "State Variable": sv_names,
-            "Region": node_names,
-        }
-
-        return TimeSeries(
-            time=time,
+        da = xr.DataArray(
             data=data,
-            labels_dimensions=labels_dimensions,
-            sample_period=float(time[1] - time[0]) if len(time) > 1 else 1.0,
+            dims=['time', 'variable', 'node'],
+            coords={'time': time, 'variable': sv_names, 'node': node_names},
         )
+        return SimulationResult(data=da)

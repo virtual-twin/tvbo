@@ -47,11 +47,11 @@ fc_target = results.integration.observations.empirical_fc
 # A: Neural Activity
 ax = axes["A"]
 t_max = int(1000 / exp.integration.step_size)
-data = results.integration.data[:t_max, 0, :]
+data = np.asarray(results.integration.data[:t_max, 0, :])
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
     ax.plot(
-        results.integration.time[:t_max],
+        np.asarray(results.integration.time[:t_max]),
         data[:, i],
         color=cmap(norm(data.mean(0)[i])),
         lw=0.5,
@@ -61,10 +61,10 @@ ax.set(xlabel="Time [ms]", ylabel="S [a.u.]", title="Neural Activity")
 # B: BOLD Signal
 ax = axes["B"]
 bold = results.integration.observations.bold
-data = bold.data[:60, 0, :]
+data = np.asarray(bold.data[:60, 0, :])
 norm = Normalize(vmin=data.mean(0).min(), vmax=data.mean(0).max())
 for i in range(data.shape[1]):
-    ax.plot(bold.time[:60], data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.8)
+    ax.plot(np.asarray(bold.time[:60]), data[:, i], color=cmap(norm(data.mean(0)[i])), lw=0.8)
 ax.set(xlabel="Time [s]", ylabel="BOLD [a.u.]", title="BOLD Signal")
 
 # C: Parameter Landscape with Trajectory

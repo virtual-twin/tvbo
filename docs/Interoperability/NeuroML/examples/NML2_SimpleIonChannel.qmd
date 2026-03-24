@@ -1,0 +1,107 @@
+---
+title: "NML2: Simple Ion Channel"
+description: "Minimal HH-style ion channel definitions"
+---
+
+## NML2_SimpleIonChannel.nml
+
+Minimal examples of `<ionChannelHH>` with `<gateHHrates>`:
+
+- Forward rate: `HHExpLinearRate`, `HHExpRate`, `HHSigmoidRate`
+- Reverse rate: same types with different parameters
+
+```{python}
+from pathlib import Path
+
+nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_SimpleIonChannel.nml"
+text = nml_file.read_text()
+
+# Show channel definitions
+for line in text.split('\n'):
+    stripped = line.strip()
+    if '<ionChannel' in stripped or '<gate' in stripped or \
+       '<forwardRate' in stripped or '<reverseRate' in stripped or \
+       '</ionChannel' in stripped:
+        print(stripped[:120])
+```
+
+## TVBO Representation: HH Cell (Using These Channels)
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NML2 SimpleIonChannel: HH"
+dynamics:
+  name: HodgkinHuxley
+  parameters:
+    C:     { value: 10.0 }
+    g_Na:  { value: 1200.0 }
+    g_K:   { value: 360.0 }
+    g_L:   { value: 3.0 }
+    E_Na:  { value: 50.0 }
+    E_K:   { value: -77.0 }
+    E_L:   { value: -54.3 }
+    I_ext: { value: 0.08 }
+  derived_variables:
+    alpha_m:
+      equation:
+        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
+    beta_m:
+      equation: { rhs: "4.0*exp(-(v + 65.0)/18.0)" }
+    alpha_h:
+      equation: { rhs: "0.07*exp(-(v + 65.0)/20.0)" }
+    beta_h:
+      equation: { rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))" }
+    alpha_n:
+      equation:
+        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
+    beta_n:
+      equation: { rhs: "0.125*exp(-(v + 65.0)/80.0)" }
+  state_variables:
+    v:
+      equation:
+        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
+      initial_value: -65.0
+      variable_of_interest: true
+    m:
+      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      initial_value: 0.05
+    h:
+      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      initial_value: 0.6
+    n:
+      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
+      initial_value: 0.32
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 150.0
+  time_scale: ms
+""")
+xml = exp.render("lems")
+print(xml[:800])
+```
+
+## Run TVBO
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+result = exp.run("neuroml")
+da = result.integration.data
+t = da.coords['time'].values
+v = da.sel(node='0').values[:, 0]
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(t, v)
+ax.set_xlabel("Time (ms)")
+ax.set_ylabel("Voltage (mV)")
+ax.set_title("NML2 SimpleIonChannel: HH Cell via TVBO")
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```

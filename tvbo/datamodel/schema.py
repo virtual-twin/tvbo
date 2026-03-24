@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-18T14:35:15
+# Generation date: 2026-03-24T14:46:49
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -63,9 +63,11 @@ metamodel_version = "1.7.0"
 version = None
 
 # Namespaces
+UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
 ATOM = CurieNamespace('atom', 'http://uri.interlex.org/tgbugs/uris/readable/')
 LINKML = CurieNamespace('linkml', 'https://w3id.org/linkml/')
 PROV = CurieNamespace('prov', 'http://www.w3.org/ns/prov#')
+QUDT = CurieNamespace('qudt', 'http://qudt.org/vocab/unit/')
 RDFS = CurieNamespace('rdfs', 'http://www.w3.org/2000/01/rdf-schema#')
 SCHEMA = CurieNamespace('schema', 'http://schema.org/')
 TVBO = CurieNamespace('tvbo', 'http://www.thevirtualbrain.org/tvb-o/')
@@ -793,8 +795,8 @@ class Network(YAMLRoot):
     provenance: Optional[Union[dict, Provenance]] = None
     parent_network: Optional[str] = None
     node_mapping: Optional[str] = None
-    distance_unit: Optional[str] = "mm"
-    time_unit: Optional[str] = "ms"
+    distance_unit: Optional[Union[str, "UnitEnum"]] = 'mm'
+    time_unit: Optional[Union[str, "UnitEnum"]] = 'ms'
     edge_matrix_files: Optional[Union[Union[str, FileName], list[Union[str, FileName]]]] = empty_list()
     graph_generator: Optional[Union[dict, "GraphGenerator"]] = None
 
@@ -857,11 +859,11 @@ class Network(YAMLRoot):
         if self.node_mapping is not None and not isinstance(self.node_mapping, str):
             self.node_mapping = str(self.node_mapping)
 
-        if self.distance_unit is not None and not isinstance(self.distance_unit, str):
-            self.distance_unit = str(self.distance_unit)
+        if self.distance_unit is not None and not isinstance(self.distance_unit, UnitEnum):
+            self.distance_unit = getattr(UnitEnum, self.distance_unit)
 
-        if self.time_unit is not None and not isinstance(self.time_unit, str):
-            self.time_unit = str(self.time_unit)
+        if self.time_unit is not None and not isinstance(self.time_unit, UnitEnum):
+            self.time_unit = getattr(UnitEnum, self.time_unit)
 
         if not isinstance(self.edge_matrix_files, list):
             self.edge_matrix_files = [self.edge_matrix_files] if self.edge_matrix_files is not None else []
@@ -1143,7 +1145,7 @@ class Observation(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
-    time_scale: Optional[str] = "ms"
+    time_scale: Optional[Union[str, "UnitEnum"]] = 'ms'
     source: Optional[Union[str, StateVariableName]] = None
     period: Optional[float] = None
     downsample_period: Optional[float] = None
@@ -1181,8 +1183,8 @@ class Observation(YAMLRoot):
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
 
-        if self.time_scale is not None and not isinstance(self.time_scale, str):
-            self.time_scale = str(self.time_scale)
+        if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
+            self.time_scale = getattr(UnitEnum, self.time_scale)
 
         if self.source is not None and not isinstance(self.source, StateVariableName):
             self.source = StateVariableName(self.source)
@@ -1292,6 +1294,7 @@ class Dynamics(YAMLRoot):
     system_type: Optional[Union[str, "SystemType"]] = None
     autonomous: Optional[Union[bool, Bool]] = True
     observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1361,6 +1364,8 @@ class Dynamics(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="observed", slot_type=DerivedVariable, key_name="name", keyed=True)
 
+        self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
+
         if self.system_type is not None and not isinstance(self.system_type, str):
             self.system_type = str(self.system_type)
 
@@ -1383,7 +1388,7 @@ class StateVariable(YAMLRoot):
     domain: Optional[Union[dict, Range]] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    unit: Optional[str] = None
+    unit: Optional[Union[str, "UnitEnum"]] = None
     variable_of_interest: Optional[Union[bool, Bool]] = True
     coupling_variable: Optional[Union[bool, Bool]] = False
     equation_type: Optional[str] = "differential"
@@ -1420,8 +1425,8 @@ class StateVariable(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        if self.unit is not None and not isinstance(self.unit, str):
-            self.unit = str(self.unit)
+        if self.unit is not None and not isinstance(self.unit, UnitEnum):
+            self.unit = UnitEnum(self.unit)
 
         if self.variable_of_interest is not None and not isinstance(self.variable_of_interest, Bool):
             self.variable_of_interest = Bool(self.variable_of_interest)
@@ -1526,7 +1531,7 @@ class Parameter(YAMLRoot):
     reported_optimum: Optional[float] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    unit: Optional[str] = None
+    unit: Optional[Union[str, "UnitEnum"]] = None
     dataset_path: Optional[str] = None
     comment: Optional[str] = None
     heterogeneous: Optional[Union[bool, Bool]] = None
@@ -1569,8 +1574,8 @@ class Parameter(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        if self.unit is not None and not isinstance(self.unit, str):
-            self.unit = str(self.unit)
+        if self.unit is not None and not isinstance(self.unit, UnitEnum):
+            self.unit = UnitEnum(self.unit)
 
         if self.dataset_path is not None and not isinstance(self.dataset_path, str):
             self.dataset_path = str(self.dataset_path)
@@ -1995,7 +2000,7 @@ class DerivedParameter(Parameter):
     symbol: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    unit: Optional[str] = None
+    unit: Optional[Union[str, "UnitEnum"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2012,8 +2017,8 @@ class DerivedParameter(Parameter):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        if self.unit is not None and not isinstance(self.unit, str):
-            self.unit = str(self.unit)
+        if self.unit is not None and not isinstance(self.unit, UnitEnum):
+            self.unit = UnitEnum(self.unit)
 
         super().__post_init__(**kwargs)
 
@@ -2032,7 +2037,7 @@ class DerivedVariable(YAMLRoot):
     symbol: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    unit: Optional[str] = None
+    unit: Optional[Union[str, "UnitEnum"]] = None
     conditional: Optional[Union[bool, Bool]] = False
     cases: Optional[Union[Union[dict, Case], list[Union[dict, Case]]]] = empty_list()
 
@@ -2054,8 +2059,8 @@ class DerivedVariable(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        if self.unit is not None and not isinstance(self.unit, str):
-            self.unit = str(self.unit)
+        if self.unit is not None and not isinstance(self.unit, UnitEnum):
+            self.unit = UnitEnum(self.unit)
 
         if self.conditional is not None and not isinstance(self.conditional, Bool):
             self.conditional = Bool(self.conditional)
@@ -2920,8 +2925,8 @@ class Integrator(Solver):
     class_name: ClassVar[str] = "Integrator"
     class_model_uri: ClassVar[URIRef] = TVBO.Integrator
 
-    time_scale: Optional[str] = "ms"
-    unit: Optional[str] = None
+    time_scale: Optional[Union[str, "UnitEnum"]] = 'ms'
+    unit: Optional[Union[str, "UnitEnum"]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     duration: Optional[float] = 1000
     description: Optional[str] = None
@@ -2938,11 +2943,11 @@ class Integrator(Solver):
     delayed: Optional[Union[bool, Bool]] = True
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self.time_scale is not None and not isinstance(self.time_scale, str):
-            self.time_scale = str(self.time_scale)
+        if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
+            self.time_scale = getattr(UnitEnum, self.time_scale)
 
-        if self.unit is not None and not isinstance(self.unit, str):
-            self.unit = str(self.unit)
+        if self.unit is not None and not isinstance(self.unit, UnitEnum):
+            self.unit = UnitEnum(self.unit)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -4152,7 +4157,7 @@ class CommonCoordinateSpace(YAMLRoot):
 
     name: Union[str, CommonCoordinateSpaceName] = None
     abbreviation: Optional[str] = None
-    unit: Optional[str] = None
+    unit: Optional[Union[str, "UnitEnum"]] = None
     license: Optional[str] = None
     anatomicalAxesOrientation: Optional[str] = None
     axesOrigin: Optional[str] = None
@@ -4168,8 +4173,8 @@ class CommonCoordinateSpace(YAMLRoot):
         if self.abbreviation is not None and not isinstance(self.abbreviation, str):
             self.abbreviation = str(self.abbreviation)
 
-        if self.unit is not None and not isinstance(self.unit, str):
-            self.unit = str(self.unit)
+        if self.unit is not None and not isinstance(self.unit, UnitEnum):
+            self.unit = UnitEnum(self.unit)
 
         if self.license is not None and not isinstance(self.license, str):
             self.license = str(self.license)
@@ -4729,6 +4734,242 @@ class EField(YAMLRoot):
 
 
 # Enumerations
+class UnitEnum(EnumDefinitionImpl):
+    """
+    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional
+    abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
+    available.
+    """
+    s = PermissibleValue(
+        text="s",
+        description="Second",
+        meaning=QUDT["SEC"])
+    ms = PermissibleValue(
+        text="ms",
+        description="Millisecond",
+        meaning=QUDT["MilliSEC"])
+    us = PermissibleValue(
+        text="us",
+        description="Microsecond",
+        meaning=QUDT["MicroSEC"])
+    per_s = PermissibleValue(
+        text="per_s",
+        description="Per second (s⁻¹)",
+        meaning=QUDT["PER-SEC"])
+    per_ms = PermissibleValue(
+        text="per_ms",
+        description="Per millisecond (ms⁻¹)",
+        meaning=QUDT["PER-MilliSEC"])
+    Hz = PermissibleValue(
+        text="Hz",
+        description="Hertz (s⁻¹)",
+        meaning=QUDT["HZ"])
+    kHz = PermissibleValue(
+        text="kHz",
+        description="Kilohertz",
+        meaning=QUDT["KiloHZ"])
+    V = PermissibleValue(
+        text="V",
+        description="Volt",
+        meaning=QUDT["V"])
+    mV = PermissibleValue(
+        text="mV",
+        description="Millivolt",
+        meaning=QUDT["MilliV"])
+    per_mV = PermissibleValue(
+        text="per_mV",
+        description="Reciprocal millivolt (mV⁻¹)",
+        meaning=QUDT["PER-MilliV"])
+    mV_per_ms = PermissibleValue(
+        text="mV_per_ms",
+        description="Millivolt per millisecond",
+        meaning=QUDT["MilliV-PER-MilliSEC"])
+    mV_per_s = PermissibleValue(
+        text="mV_per_s",
+        description="Millivolt per second",
+        meaning=QUDT["MilliV-PER-SEC"])
+    A = PermissibleValue(
+        text="A",
+        description="Ampere",
+        meaning=QUDT["A"])
+    nA = PermissibleValue(
+        text="nA",
+        description="Nanoampere",
+        meaning=QUDT["NanoA"])
+    pA = PermissibleValue(
+        text="pA",
+        description="Picoampere",
+        meaning=QUDT["PicoA"])
+    pF = PermissibleValue(
+        text="pF",
+        description="Picofarad",
+        meaning=QUDT["PicoFARAD"])
+    nF = PermissibleValue(
+        text="nF",
+        description="Nanofarad",
+        meaning=QUDT["NanoFARAD"])
+    nS = PermissibleValue(
+        text="nS",
+        description="Nanosiemens",
+        meaning=QUDT["NanoS"])
+    uS = PermissibleValue(
+        text="uS",
+        description="Microsiemens",
+        meaning=QUDT["MicroS"])
+    per_nC = PermissibleValue(
+        text="per_nC",
+        description="Reciprocal nanocoulomb (nC⁻¹)",
+        meaning=QUDT["PER-NanoC"])
+    per_pC = PermissibleValue(
+        text="per_pC",
+        description="Reciprocal picocoulomb (pC⁻¹)",
+        meaning=QUDT["PER-PicoC"])
+    mol_per_m3 = PermissibleValue(
+        text="mol_per_m3",
+        description="Mole per cubic metre (mol/m³)",
+        meaning=QUDT["MOL-PER-M3"])
+    mmol_per_m3 = PermissibleValue(
+        text="mmol_per_m3",
+        description="Millimole per cubic metre (mmol/m³ ≈ mM)",
+        meaning=QUDT["MilliMOL-PER-M3"])
+    um3 = PermissibleValue(
+        text="um3",
+        description="Cubic micrometre (µm³)",
+        meaning=QUDT["MicroM3"])
+    m = PermissibleValue(
+        text="m",
+        description="Metre",
+        meaning=QUDT["M"])
+    mm = PermissibleValue(
+        text="mm",
+        description="Millimetre",
+        meaning=QUDT["MilliM"])
+    cm = PermissibleValue(
+        text="cm",
+        description="Centimetre",
+        meaning=QUDT["CentiM"])
+    m_per_s = PermissibleValue(
+        text="m_per_s",
+        description="Metre per second",
+        meaning=QUDT["M-PER-SEC"])
+    mm_per_ms = PermissibleValue(
+        text="mm_per_ms",
+        description="Millimetre per millisecond (= m/s)",
+        meaning=QUDT["MilliM-PER-MilliSEC"])
+    Hz_per_nA = PermissibleValue(
+        text="Hz_per_nA",
+        description="Hertz per nanoampere (neural gain)")
+    S_per_m = PermissibleValue(
+        text="S_per_m",
+        description="Siemens per metre (conductivity)",
+        meaning=QUDT["S-PER-M"])
+    H_per_m = PermissibleValue(
+        text="H_per_m",
+        description="Henry per metre (permeability)",
+        meaning=QUDT["H-PER-M"])
+    rad_per_ms = PermissibleValue(
+        text="rad_per_ms",
+        description="Radian per millisecond")
+    dimensionless = PermissibleValue(
+        text="dimensionless",
+        description="Dimensionless (unitless)",
+        meaning=QUDT["UNITLESS"])
+    percent = PermissibleValue(
+        text="percent",
+        description="Percent (%)",
+        meaning=QUDT["PERCENT"])
+    arbitrary_unit = PermissibleValue(
+        text="arbitrary_unit",
+        description="Arbitrary units (a.u.)")
+    kg = PermissibleValue(
+        text="kg",
+        description="Kilogram",
+        meaning=QUDT["KiloGM"])
+    kg_per_s = PermissibleValue(
+        text="kg_per_s",
+        description="Kilogram per second")
+    m_per_s2 = PermissibleValue(
+        text="m_per_s2",
+        description="Metre per second squared (acceleration)",
+        meaning=QUDT["M-PER-SEC2"])
+    N_per_m = PermissibleValue(
+        text="N_per_m",
+        description="Newton per metre (spring constant)",
+        meaning=QUDT["N-PER-M"])
+    rad = PermissibleValue(
+        text="rad",
+        description="Radian",
+        meaning=QUDT["RAD"])
+    rad_per_s = PermissibleValue(
+        text="rad_per_s",
+        description="Radian per second (angular velocity)",
+        meaning=QUDT["RAD-PER-SEC"])
+    s2 = PermissibleValue(
+        text="s2",
+        description="Second squared (inertia constant)",
+        meaning=QUDT["SEC2"])
+    per_unit = PermissibleValue(
+        text="per_unit",
+        description="Per-unit (dimensionless power-systems convention)")
+
+    _defn = EnumDefinition(
+        name="UnitEnum",
+        description="""Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""",
+    )
+
+class PhysicalDimension(EnumDefinitionImpl):
+    """
+    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions
+    (M, L, T, I, K, N).
+    """
+    none = PermissibleValue(
+        text="none",
+        description="Dimensionless")
+    time = PermissibleValue(
+        text="time",
+        description="Time [T]")
+    per_time = PermissibleValue(
+        text="per_time",
+        description="Inverse time [T⁻¹]")
+    voltage = PermissibleValue(
+        text="voltage",
+        description="Voltage [M L² T⁻³ I⁻¹]")
+    current = PermissibleValue(
+        text="current",
+        description="Electric current [I]")
+    capacitance = PermissibleValue(
+        text="capacitance",
+        description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
+    conductance = PermissibleValue(
+        text="conductance",
+        description="Conductance [M⁻¹ L⁻² T³ I²]")
+    resistance = PermissibleValue(
+        text="resistance",
+        description="Resistance [M L² T⁻³ I⁻²]")
+    charge = PermissibleValue(
+        text="charge",
+        description="Electric charge [T I]")
+    concentration = PermissibleValue(
+        text="concentration",
+        description="Concentration [L⁻³ N]")
+    substance = PermissibleValue(
+        text="substance",
+        description="Amount of substance [N]")
+    length = PermissibleValue(
+        text="length",
+        description="Length [L]")
+    volume = PermissibleValue(
+        text="volume",
+        description="Volume [L³]")
+    temperature = PermissibleValue(
+        text="temperature",
+        description="Temperature [K]")
+
+    _defn = EnumDefinition(
+        name="PhysicalDimension",
+        description="""Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).""",
+    )
+
 class ImagingModality(EnumDefinitionImpl):
 
     BOLD = PermissibleValue(
@@ -5125,7 +5366,7 @@ slots.name = Slot(uri=TVBO.name, name="name", curie=TVBO.curie('name'),
                    model_uri=TVBO.name, domain=None, range=URIRef)
 
 slots.time_scale = Slot(uri=TVBO.time_scale, name="time_scale", curie=TVBO.curie('time_scale'),
-                   model_uri=TVBO.time_scale, domain=None, range=Optional[str])
+                   model_uri=TVBO.time_scale, domain=None, range=Optional[Union[str, "UnitEnum"]])
 
 slots.environment = Slot(uri=TVBO.environment, name="environment", curie=TVBO.curie('environment'),
                    model_uri=TVBO.environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
@@ -5185,7 +5426,7 @@ slots.equation = Slot(uri=TVBO.Equation, name="equation", curie=TVBO.curie('Equa
                    model_uri=TVBO.equation, domain=None, range=Optional[Union[dict, Equation]])
 
 slots.unit = Slot(uri=TVBO.unit, name="unit", curie=TVBO.curie('unit'),
-                   model_uri=TVBO.unit, domain=None, range=Optional[str])
+                   model_uri=TVBO.unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
 
 slots.derived_from = Slot(uri=TVBO.derived_from, name="derived_from", curie=TVBO.curie('derived_from'),
                    model_uri=TVBO.derived_from, domain=None, range=Optional[str])
@@ -5458,10 +5699,10 @@ slots.network__node_mapping = Slot(uri=TVBO.node_mapping, name="network__node_ma
                    model_uri=TVBO.network__node_mapping, domain=None, range=Optional[str])
 
 slots.network__distance_unit = Slot(uri=TVBO.distance_unit, name="network__distance_unit", curie=TVBO.curie('distance_unit'),
-                   model_uri=TVBO.network__distance_unit, domain=None, range=Optional[str])
+                   model_uri=TVBO.network__distance_unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
 
 slots.network__time_unit = Slot(uri=TVBO.time_unit, name="network__time_unit", curie=TVBO.curie('time_unit'),
-                   model_uri=TVBO.network__time_unit, domain=None, range=Optional[str])
+                   model_uri=TVBO.network__time_unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
 
 slots.network__edge_matrix_files = Slot(uri=TVBO.edge_matrix_files, name="network__edge_matrix_files", curie=TVBO.curie('edge_matrix_files'),
                    model_uri=TVBO.network__edge_matrix_files, domain=None, range=Optional[Union[Union[str, FileName], list[Union[str, FileName]]]])
@@ -5642,6 +5883,9 @@ slots.dynamics__autonomous = Slot(uri=TVBO.autonomous, name="dynamics__autonomou
 
 slots.dynamics__observed = Slot(uri=TVBO.observed, name="dynamics__observed", curie=TVBO.curie('observed'),
                    model_uri=TVBO.dynamics__observed, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
+slots.dynamics__events = Slot(uri=TVBO.events, name="dynamics__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.dynamics__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
 slots.stateVariable__variable_of_interest = Slot(uri=TVBO.variable_of_interest, name="stateVariable__variable_of_interest", curie=TVBO.curie('variable_of_interest'),
                    model_uri=TVBO.stateVariable__variable_of_interest, domain=None, range=Optional[Union[bool, Bool]])

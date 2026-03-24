@@ -1,0 +1,85 @@
+---
+title: "NML2: Synapse Types"
+description: "All synapse types — expOne, expTwo, alpha, blocking, NMDA"
+---
+
+## NML2_SynapseTypes.nml
+
+Catalog of all NeuroML2 built-in synapse types:
+
+| Synapse | Kinetics | Key Parameters |
+|---------|----------|---------------|
+| `expOneSynapse` | Single-exponential decay | gbase, erev, tauDecay |
+| `expTwoSynapse` | Rise + decay | gbase, erev, tauRise, tauDecay |
+| `expThreeSynapse` | Rise + two decay phases | gbase, erev, tauRise, tauDecay1, tauDecay2 |
+| `alphaSynapse` | Alpha function | gbase, erev, tau |
+| `blockingPlasticSynapse` | With voltage block + plasticity | + blockConcentration, blockMechanism |
+| `doubleSynapse` | Two conductance components | gbase1, gbase2, ... |
+
+```{python}
+from pathlib import Path
+
+nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_SynapseTypes.nml"
+text = nml_file.read_text()
+
+for line in text.split('\n'):
+    stripped = line.strip()
+    if 'Synapse' in stripped and stripped.startswith('<') and 'id=' in stripped:
+        print(stripped[:120])
+```
+
+## TVBO Representation: IaF Cell (Synapse Target)
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NML2 SynapseTypes: IaF Cell"
+dynamics:
+  name: IntegrateAndFire
+  parameters:
+    leakReversal: { value: -50.0 }
+    tau:          { value: 30.0 }
+    thresh:       { value: -55.0 }
+    reset:        { value: -70.0 }
+  state_variables:
+    v:
+      equation: { rhs: "(leakReversal - v) / tau" }
+      initial_value: -50.0
+      variable_of_interest: true
+  events:
+    spike:
+      condition: { rhs: "v > thresh" }
+      affect:    { rhs: "v = reset" }
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 300.0
+  time_scale: ms
+""")
+xml = exp.render("lems")
+print(xml[:800])
+```
+
+## Run TVBO
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+result = exp.run("neuroml")
+da = result.integration.data
+t = da.coords['time'].values
+v = da.sel(node='0').values[:, 0]
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(t, v)
+ax.set_xlabel("Time (ms)")
+ax.set_ylabel("Voltage (mV)")
+ax.set_title("NML2 SynapseTypes: IaF Cell via TVBO")
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```

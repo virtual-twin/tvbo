@@ -28,7 +28,7 @@ parameters:
     value: 1.0
   conduction_speed:
     value: 3.0
-    unit: mm/ms
+    unit: mm_per_ms
 nodes:
 - id: 0
   label: Node_A

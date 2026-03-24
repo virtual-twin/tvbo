@@ -1,0 +1,294 @@
+---
+title: "Ex3: HH Network with Synapses"
+description: "Network of HH cells connected by expOneSynapse, expTwoSynapse, and alphaSynapse"
+---
+
+## Model: HH Network
+
+This example connects a pre-synaptic HH cell to three post-synaptic passive
+cells via different synapse types (expOneSynapse, expTwoSynapse, alphaSynapse).
+
+The cell dynamics use proper LEMS dimensions (voltage, conductance, capacitance)
+to interface correctly with standard NeuroML synapse types. HH rate equations
+are parameterized with (rate, midpoint, scale) triples matching the standard
+HHExpLinearRate / HHExpRate / HHSigmoidRate patterns.
+
+---
+
+## 1. Define Network in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex3: HH Network"
+dynamics:
+  name: hhcell_1
+  parameters:
+    C:     { value: 10.0, unit: pF }
+    g_Na:  { value: 1200.0, unit: nS }
+    g_K:   { value: 360.0, unit: nS }
+    g_L:   { value: 3.0, unit: nS }
+    E_Na:  { value: 50.0, unit: mV }
+    E_K:   { value: -77.0, unit: mV }
+    E_L:   { value: -54.3, unit: mV }
+    thresh: { value: 20.0, unit: mV }
+    rate_am:     { value: 1.0, unit: per_ms }
+    midpoint_am: { value: -40.0, unit: mV }
+    scale_am:    { value: 10.0, unit: mV }
+    rate_bm:     { value: 4.0, unit: per_ms }
+    midpoint_bm: { value: -65.0, unit: mV }
+    scale_bm:    { value: -18.0, unit: mV }
+    rate_ah:     { value: 0.07, unit: per_ms }
+    midpoint_ah: { value: -65.0, unit: mV }
+    scale_ah:    { value: -20.0, unit: mV }
+    rate_bh:     { value: 1.0, unit: per_ms }
+    midpoint_bh: { value: -35.0, unit: mV }
+    scale_bh:    { value: 10.0, unit: mV }
+    rate_an:     { value: 0.1, unit: per_ms }
+    midpoint_an: { value: -55.0, unit: mV }
+    scale_an:    { value: 10.0, unit: mV }
+    rate_bn:     { value: 0.125, unit: per_ms }
+    midpoint_bn: { value: -65.0, unit: mV }
+    scale_bn:    { value: -80.0, unit: mV }
+  derived_variables:
+    alpha_m:
+      equation:
+        rhs: "rate_am * (v - midpoint_am) / scale_am / (1 - exp(-(v - midpoint_am) / scale_am))"
+      unit: per_ms
+    beta_m:
+      equation:
+        rhs: "rate_bm * exp((v - midpoint_bm) / scale_bm)"
+      unit: per_ms
+    alpha_h:
+      equation:
+        rhs: "rate_ah * exp((v - midpoint_ah) / scale_ah)"
+      unit: per_ms
+    beta_h:
+      equation:
+        rhs: "rate_bh / (1 + exp(-(v - midpoint_bh) / scale_bh))"
+      unit: per_ms
+    alpha_n:
+      equation:
+        rhs: "rate_an * (v - midpoint_an) / scale_an / (1 - exp(-(v - midpoint_an) / scale_an))"
+      unit: per_ms
+    beta_n:
+      equation:
+        rhs: "rate_bn * exp((v - midpoint_bn) / scale_bn)"
+      unit: per_ms
+  state_variables:
+    v:
+      equation:
+        rhs: "(-g_Na * m**3 * h * (v - E_Na) - g_K * n**4 * (v - E_K) - g_L * (v - E_L) + I_syn) / C"
+      initial_value: -65.0
+      unit: mV
+    m:
+      equation: { rhs: "alpha_m * (1 - m) - beta_m * m" }
+      initial_value: 0.05
+    h:
+      equation: { rhs: "alpha_h * (1 - h) - beta_h * h" }
+      initial_value: 0.6
+    n:
+      equation: { rhs: "alpha_n * (1 - n) - beta_n * n" }
+      initial_value: 0.32
+  coupling_inputs: [I_syn]
+  events:
+    spike:
+      condition:
+        rhs: "v .gt. thresh"
+
+network:
+  number_of_nodes: 5
+  dynamics:
+    hhcell_1:
+      name: hhcell_1
+      parameters:
+        C:     { value: 10.0, unit: pF }
+        g_Na:  { value: 1200.0, unit: nS }
+        g_K:   { value: 360.0, unit: nS }
+        g_L:   { value: 3.0, unit: nS }
+        E_Na:  { value: 50.0, unit: mV }
+        E_K:   { value: -77.0, unit: mV }
+        E_L:   { value: -54.3, unit: mV }
+        thresh: { value: 20.0, unit: mV }
+        rate_am:     { value: 1.0, unit: per_ms }
+        midpoint_am: { value: -40.0, unit: mV }
+        scale_am:    { value: 10.0, unit: mV }
+        rate_bm:     { value: 4.0, unit: per_ms }
+        midpoint_bm: { value: -65.0, unit: mV }
+        scale_bm:    { value: -18.0, unit: mV }
+        rate_ah:     { value: 0.07, unit: per_ms }
+        midpoint_ah: { value: -65.0, unit: mV }
+        scale_ah:    { value: -20.0, unit: mV }
+        rate_bh:     { value: 1.0, unit: per_ms }
+        midpoint_bh: { value: -35.0, unit: mV }
+        scale_bh:    { value: 10.0, unit: mV }
+        rate_an:     { value: 0.1, unit: per_ms }
+        midpoint_an: { value: -55.0, unit: mV }
+        scale_an:    { value: 10.0, unit: mV }
+        rate_bn:     { value: 0.125, unit: per_ms }
+        midpoint_bn: { value: -65.0, unit: mV }
+        scale_bn:    { value: -80.0, unit: mV }
+      derived_variables:
+        alpha_m:
+          equation:
+            rhs: "rate_am * (v - midpoint_am) / scale_am / (1 - exp(-(v - midpoint_am) / scale_am))"
+          unit: per_ms
+        beta_m:
+          equation:
+            rhs: "rate_bm * exp((v - midpoint_bm) / scale_bm)"
+          unit: per_ms
+        alpha_h:
+          equation:
+            rhs: "rate_ah * exp((v - midpoint_ah) / scale_ah)"
+          unit: per_ms
+        beta_h:
+          equation:
+            rhs: "rate_bh / (1 + exp(-(v - midpoint_bh) / scale_bh))"
+          unit: per_ms
+        alpha_n:
+          equation:
+            rhs: "rate_an * (v - midpoint_an) / scale_an / (1 - exp(-(v - midpoint_an) / scale_an))"
+          unit: per_ms
+        beta_n:
+          equation:
+            rhs: "rate_bn * exp((v - midpoint_bn) / scale_bn)"
+          unit: per_ms
+      state_variables:
+        v:
+          equation:
+            rhs: "(-g_Na * m**3 * h * (v - E_Na) - g_K * n**4 * (v - E_K) - g_L * (v - E_L) + I_syn) / C"
+          initial_value: -65.0
+          unit: mV
+        m:
+          equation: { rhs: "alpha_m * (1 - m) - beta_m * m" }
+          initial_value: 0.05
+        h:
+          equation: { rhs: "alpha_h * (1 - h) - beta_h * h" }
+          initial_value: 0.6
+        n:
+          equation: { rhs: "alpha_n * (1 - n) - beta_n * n" }
+          initial_value: 0.32
+      coupling_inputs: [I_syn]
+      events:
+        spike:
+          condition:
+            rhs: "v .gt. thresh"
+    hhcell_2:
+      name: hhcell_2
+      parameters:
+        C:   { value: 10.0, unit: pF }
+        g_L: { value: 3.0, unit: nS }
+        E_L: { value: -54.3, unit: mV }
+      state_variables:
+        v:
+          equation:
+            rhs: "(-g_L * (v - E_L) + I_syn) / C"
+          initial_value: -55.0
+          unit: mV
+      coupling_inputs: [I_syn]
+  nodes:
+    - id: 0
+      dynamics: hhcell_1
+    - id: 1
+      dynamics: hhcell_2
+    - id: 2
+      dynamics: hhcell_2
+    - id: 3
+      dynamics: hhcell_2
+    - id: 100
+      dynamics: pulseGenerator
+      parameters:
+        delay:     { value: 25, unit: ms }
+        duration:  { value: 50, unit: ms }
+        amplitude: { value: 0.065, unit: nA }
+  edges:
+    - source: 100
+      target: 0
+    - source: 0
+      target: 1
+      coupling: expOneSynapse
+      parameters:
+        gbase:    { value: 0.5, unit: nS }
+        erev:     { value: 0, unit: mV }
+        tauDecay: { value: 3, unit: ms }
+    - source: 0
+      target: 2
+      coupling: expTwoSynapse
+      parameters:
+        gbase:    { value: 0.5, unit: nS }
+        erev:     { value: 0, unit: mV }
+        tauRise:  { value: 1, unit: ms }
+        tauDecay: { value: 2, unit: ms }
+    - source: 0
+      target: 3
+      coupling: alphaSynapse
+      parameters:
+        gbase: { value: 0.5, unit: nS }
+        erev:  { value: 0, unit: mV }
+        tau:   { value: 2, unit: ms }
+
+integration:
+  method: euler
+  step_size: 0.005
+  duration: 100.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+print(f"Network nodes: {len(exp.network.nodes)}")
+```
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+print(xml[:2000])
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex3_Net.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+print(f"TVBO output shape: {da.shape}")
+print(f"TVBO coords: {list(da.coords)}")
+```
+
+## 5. Compare
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.interpolate import interp1d
+
+ref_arr = list(ref_outputs.values())[0]
+ref_t = ref_arr[:, 0] * 1000  # s → ms
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+labels = ['Post (expOneSyn)', 'Post (expTwoSyn)', 'Post (alphaSyn)']
+for i, (label, ax) in enumerate(zip(labels, axes)):
+    if i + 1 < ref_arr.shape[1]:
+        ax.plot(ref_t, ref_arr[:, i+1] * 1000, label=f'Ref {label}', alpha=0.8)
+    ax.set_ylabel("V (mV)")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+axes[-1].set_xlabel("Time (ms)")
+axes[0].set_title("Ex3: HH Network — Postsynaptic Responses")
+plt.tight_layout()
+plt.show()
+```

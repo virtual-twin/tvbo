@@ -10,6 +10,7 @@ from os.path import join
 import jax
 import jax.numpy as jnp
 import numpy as np
+import xarray as xr
 
 try:
     from lems.base.util import validate_lems
@@ -18,8 +19,10 @@ except ImportError:
 
 from tvbo import templates
 from tvbo.classes.network import Network
-from tvbo.data.types import SimulationState, TimeSeries, ExperimentResult
+from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult
 from tvbo.datamodel import schema as tvbo_datamodel
+from linkml_runtime.utils.yamlutils import YAMLRoot
+from linkml_runtime.utils.enumerations import EnumDefinitionImpl
 from tvbo.codegen import templater
 from tvbo.codegen.templater import format_code
 from tvbo.classes.coupling import Coupling
@@ -139,6 +142,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _cname = kwargs["coupling"]
             kwargs["coupling"] = {"name": _cname, "iri": f"tvbo:{_cname}"}
 
+        # Resolve Dynamics slot aliases (e.g. components → modes) before
+        # the parent __post_init__ constructs the base-class Dynamics.
+        dyn_kw = kwargs.get("dynamics")
+        if isinstance(dyn_kw, dict):
+            from tvbo.classes.dynamics import _resolve_dynamics_aliases
+            _resolve_dynamics_aliases(dyn_kw)
+
         # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
 
@@ -146,8 +156,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         def _coerce(cls, obj, **extra):
             if isinstance(obj, cls):
                 return obj
-            if hasattr(obj, "_as_dict"):
-                return cls(**obj._as_dict, **extra)
+            if isinstance(obj, YAMLRoot):
+                # Copy dataclass fields directly — _as_dict over-serializes
+                # enums and nested objects causing lossy round-trips.
+                from dataclasses import fields as dc_fields
+                d = {}
+                for f in dc_fields(obj):
+                    if f.name.startswith(("_", "class_")):
+                        continue
+                    val = getattr(obj, f.name, f.default)
+                    # Convert enums/PermissibleValues to plain text so
+                    # constructors can re-parse them via __post_init__.
+                    from linkml_runtime.linkml_model.meta import PermissibleValue
+                    if isinstance(val, PermissibleValue):
+                        val = val.text
+                    elif isinstance(val, EnumDefinitionImpl):
+                        val = str(val)
+                    if val is not None:
+                        d[f.name] = val
+                return cls(**d, **extra)
             if isinstance(obj, dict):
                 return cls(**obj, **extra)
             return obj
@@ -180,7 +207,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if conts and isinstance(conts, dict):
             for key, val in conts.items():
                 if val is not None and not isinstance(val, Continuation):
-                    conts[key] = _coerce(Continuation, val)
+                    val.__class__ = Continuation
+                    conts[key] = val
 
         if not getattr(self, "network", None):
             self.network = Network()
@@ -322,7 +350,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if not getattr(net, "conduction_speed", None):
                 net.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
                     name="conduction_speed", label="v",
-                    value=3.0, unit="mm/ms",
+                    value=3.0, unit="mm_per_ms",
                 )
         if not getattr(obj, "network", None):
             obj.__dict__["network"] = Network()
@@ -1252,35 +1280,48 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             simulator_.initial_conditions = initial_conditions.data
             simulator_.configure()
             simres = simulator_.run(**kwargs)
-            derivatives = []
-            labels_dim = {
-                "State Variable": simulator_.model.variables_of_interest,
-                "Region": list(simulator_.connectivity.region_labels),
-            }
+
+            sv_names = list(simulator_.model.variables_of_interest)
+            region_labels = [str(r) for r in simulator_.connectivity.region_labels]
+
+            observations = {}
+            sim_result = None
             for m, (tv, xv) in zip(simulator_.monitors, simres):
                 m_name = m.title.split(" ")[0]
+                data_np = np.asarray(xv)
+                dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+                coords = {
+                    'time': np.asarray(tv),
+                    'variable': sv_names,
+                    'node': region_labels,
+                }
+                if 'mode' in dims:
+                    coords['mode'] = list(range(data_np.shape[3]))
+                da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 if m_name == "Raw":
-                    ts = TimeSeries(
-                        data=xv,
-                        time=tv,
-                        labels_dimensions=labels_dim,
-                        title=m_name,
-                        sample_period=m.period,
-                    )
+                    sim_result = SimulationResult(data=da)
                 else:
-                    derivatives.append(
-                        TimeSeries(
-                            data=xv,
-                            time=tv,
-                            labels_dimensions=labels_dim,
-                            title=m_name,
-                            sample_period=m.period,
-                        )
-                    )
-            ts.derivatives = derivatives
-            # Link TimeSeries to source experiment for provenance tracking
-            ts.source_experiment = self
-            return ts
+                    observations[m_name.lower()] = SimulationResult(data=da)
+
+            if sim_result is None:
+                # Fallback if no Raw monitor — use first
+                first_m, (tv, xv) = list(zip(simulator_.monitors, simres))[0]
+                data_np = np.asarray(xv)
+                dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+                coords = {
+                    'time': np.asarray(tv),
+                    'variable': sv_names,
+                    'node': region_labels,
+                }
+                if 'mode' in dims:
+                    coords['mode'] = list(range(data_np.shape[3]))
+                da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+                sim_result = SimulationResult(data=da)
+
+            sim_result.observations = observations
+            return ExperimentResult(
+                integration=sim_result, source=self, name=self.label,
+            )
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
             import time
@@ -1314,7 +1355,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
                 # Add timings to results and wrap in ExperimentResult
                 results.timings = timings
-                return ExperimentResult(results, experiment_name=self.label)
+                return ExperimentResult(results, experiment_name=self.label, source=self)
             else:
                 raw_results = ns.run_experiment(
                     weights=self.network.weights,
@@ -1322,7 +1363,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     mode=mode,
                     **kwargs,
                 )
-                return ExperimentResult(raw_results, experiment_name=self.label)
+                return ExperimentResult(raw_results, experiment_name=self.label, source=self)
 
         elif format.lower() in ["autodiff", "jax"]:
             state = self.collect_state(initial_conditions=initial_conditions)
@@ -1335,22 +1376,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             jax_model = self.execute(format="jax", **kwargs)
             ts = jax_model(state)
-            # simulation_data = Bunch()
-            # ts.labels_dimensions = {
-            #     "State Variable": list(self.dynamics.state_variables.keys()),
-            #     "Region": self.network.labels,
-            # }
-            # ts.sample_period = self.integration.step_size
-            # ts.dt = self.integration.step_size
 
-            # Link TimeSeries to source experiment for provenance tracking
-            ts.source_experiment = self
-
-            return ts
+            # Wrap in ExperimentResult for consistent return type
+            return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() == "cuda":
             from tvbo.codegen.cuda import run_cuda
-            return run_cuda(self, **kwargs)
+            cuda_result = run_cuda(self, **kwargs)
+            if isinstance(cuda_result, TimeSeries):
+                return ExperimentResult.from_timeseries(cuda_result, source=self, name=self.label)
+            return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
             bnm = _Network(Network(self.network))
@@ -1361,7 +1396,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 duration=kwargs.get("duration", self.integration.duration),
                 dt=self.integration.step_size,
             )
-            simulation_data["Raw"] = ts
+            return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
             ns = self.execute(format="pde")
@@ -1395,7 +1430,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Support TimeSeries or ndarray as initial conditions
                 if isinstance(initial_conditions, TimeSeries):
                     arr = np.asarray(
-                        initial_conditions.data[-1, 0, :, 0], dtype=float
+                        initial_conditions.data.isel(time=-1, variable=0).values,
+                        dtype=float,
                     ).ravel()
                 else:
                     arr = np.asarray(initial_conditions, dtype=float).ravel()
@@ -1426,18 +1462,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             T = U.shape[0] if U is not None else 1
             t = np.arange(T) * float(meta.get("dt", 1.0))
-            data = U if U is not None else u[np.newaxis, :]
-            data = data.reshape(T, 1, -1, 1)  # (time, state, region, mode)
-            labels_dimensions = {
-                "State Variable": [str(meta.get("unknown", "u"))],
-                "Region": [i for i in range(data.shape[2])],
-            }
-            ts = TimeSeries(
-                time=t, data=data, network=None, labels_dimensions=labels_dimensions
+            data_raw = U if U is not None else u[np.newaxis, :]
+            # Reshape: (time, 1_sv, region) — no singleton mode dim
+            n_region = data_raw.shape[-1] if data_raw.ndim >= 2 else data_raw.size
+            data_np = data_raw.reshape(T, 1, n_region)
+
+            sv_name = str(meta.get("unknown", "u"))
+            da = xr.DataArray(
+                data=data_np,
+                dims=['time', 'variable', 'node'],
+                coords={
+                    'time': t,
+                    'variable': [sv_name],
+                    'node': [str(i) for i in range(n_region)],
+                },
             )
-            # Link TimeSeries to source experiment for provenance tracking
-            ts.source_experiment = self
-            return ts
+            sim = SimulationResult(data=da)
+            return ExperimentResult(
+                integration=sim, source=self, name=self.label,
+            )
 
         elif format.lower() == "pyrates":
             return self._run_pyrates(**kwargs)
@@ -1466,14 +1509,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ]:
             return self._run_julia(**kwargs)
 
+        elif format.lower() in ["neuroml", "nml", "lems"]:
+            from tvbo.adapters.neuroml import NeuroMLAdapter
+            return NeuroMLAdapter(self).run(**kwargs)
+
         else:
             raise ValueError(
                 f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
                 "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl, "
-                "pyrates-bifurcation, julia"
+                "pyrates-bifurcation, julia, neuroml, nml, lems"
             )
-
-        return simulation_data
 
     def _run_pyrates(
         self,
@@ -1482,7 +1527,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         outputs: list[str] | None = None,
         matrix_edge_threshold: int = 100,
         **kwargs,
-    ) -> TimeSeries:
+    ) -> ExperimentResult:
         """Run simulation using PyRates backend.
 
         Parameters
@@ -1501,8 +1546,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Returns
         -------
-        TimeSeries
-            TVBO TimeSeries with simulation results.
+        ExperimentResult
         """
         from tvbo.adapters.pyrates import PyRatesAdapter
 
@@ -1515,35 +1559,43 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             **kwargs,
         )
 
-    def _run_networkdynamics(self, **kwargs) -> TimeSeries:
+    def _run_networkdynamics(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl via pyjulia."""
         from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
 
         adapter = NetworkDynamicsAdapter(self)
         return adapter.run(**kwargs)
 
-    def _run_modelingtoolkit(self, **kwargs) -> TimeSeries:
+    def _run_modelingtoolkit(self, **kwargs) -> ExperimentResult:
         """Run simulation using pure ModelingToolkit.jl via pyjulia."""
         from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
         adapter = ModelingToolkitAdapter(self)
         return adapter.run(**kwargs)
 
-    def _run_bifurcation(self, **kwargs):
+    def _run_bifurcation(self, **kwargs) -> ExperimentResult:
         """Run bifurcation analysis via BifurcationKit.jl."""
         from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
         adapter = BifurcationKitAdapter(self)
-        return adapter.run(**kwargs)
+        bif_result = adapter.run(**kwargs)
+        return ExperimentResult(
+            continuations={'default': bif_result},
+            source=self, name=self.label,
+        )
 
-    def _run_pyrates_bifurcation(self, **kwargs):
+    def _run_pyrates_bifurcation(self, **kwargs) -> ExperimentResult:
         """Run bifurcation analysis via PyRates/PyCoBi (AUTO-07p)."""
         from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
 
         adapter = PyRatesBifurcationAdapter(self)
-        return adapter.run(**kwargs)
+        bif_result = adapter.run(**kwargs)
+        return ExperimentResult(
+            continuations={'default': bif_result},
+            source=self, name=self.label,
+        )
 
-    def _run_julia(self, **kwargs) -> TimeSeries:
+    def _run_julia(self, **kwargs) -> ExperimentResult:
         """Run simulation using DifferentialEquations.jl via juliacall."""
         from tvbo.adapters.diffeq import DiffEqAdapter
 
@@ -1611,12 +1663,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return TimeSeries(t, history)
 
     def save_model_specification(self, dir):
-        file_prefix = self.get_experiment_file_prefix()
-        lems_path = join(dir, f"{file_prefix}_simulation.xml")
-        self.to_lems().export_to_file(lems_path)
-        if validate_lems is not None:
-            validate_lems(lems_path)
-        return lems_path
+        """Save the LEMS simulation file to *dir*.
+
+        .. deprecated::
+            Use ``NeuroMLAdapter(experiment).export(dir)`` from
+            ``tvbo.adapters.neuroml`` instead.
+        """
+        import warnings
+        warnings.warn(
+            "save_model_specification() is deprecated. "
+            "Use NeuroMLAdapter(experiment).export(dir) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from tvbo.adapters.neuroml import NeuroMLAdapter
+        paths = NeuroMLAdapter(self).export(dir, validate=False)
+        return paths["simulation"]
 
     def to_lems(
         self,
@@ -1624,6 +1686,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         out_path: str | None = None,
         out_file: str | None = None,
     ):
+        """Export this experiment as a LEMS Model object.
+
+        .. deprecated::
+            Use ``NeuroMLAdapter(experiment).render_code()`` from
+            ``tvbo.adapters.neuroml`` instead. This method returns a
+            ``lems.Model`` object; the adapter produces a validated XML string
+            that covers all LEMS constructs including ConditionalDerivedVariable
+            and Coupling.
+        """
+        import warnings
+        warnings.warn(
+            "SimulationExperiment.to_lems() is deprecated. "
+            "Use NeuroMLAdapter(experiment).render_code() from tvbo.adapters.neuroml instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         import lems.api as lems
         from lems.model.component import Text
         from lems.model.simulation import DataWriter, Run
@@ -1842,15 +1920,72 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             adapter = PyRatesBifurcationAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
+        elif format.lower() in ["lems", "neuroml", "nml"]:
+            from tvbo.adapters.neuroml import NeuroMLAdapter
+            adapter = NeuroMLAdapter(self)
+            rendered_code = adapter.render_code(**kwargs)
+
         else:
             raise ValueError(
                 f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
                 "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
                 "julia, networkdynamics, nd, mtk, modelingtoolkit, "
-                "bifurcationkit.jl, pyrates-bifurcation"
+                "bifurcationkit.jl, pyrates-bifurcation, lems, neuroml, nml"
             )
 
         return rendered_code
+
+    def render(self, format="yaml", **kwargs) -> str:
+        """Unified entry point for rendering the experiment in any output format.
+
+        Dispatches to the appropriate renderer based on *format*:
+
+        - ``'yaml'`` — TVBO YAML specification (default)
+        - ``'pyrates-yaml'`` — PyRates YAML
+        - ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
+        - ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
+        - ``'openminds'`` / ``'jsonld'`` — openMINDS JSON-LD (returns JSON string)
+        - ``'lems'`` / ``'neuroml'`` / ``'nml'`` — self-contained LEMS XML (``<Lems>`` root)
+        - Any code format accepted by :meth:`render_code` (``'tvb'``,
+          ``'jax'``, ``'tvboptim'``, ``'julia'``, ``'networkdynamics'``, …)
+
+        Parameters
+        ----------
+        format : str
+            Target output format.
+        **kwargs
+            Forwarded to the underlying renderer.
+
+        Returns
+        -------
+        str
+        """
+        fmt = format.lower()
+
+        # ── Serialisation ────────────────────────────────────────────────
+        if fmt == "yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"))
+        if fmt == "pyrates-yaml":
+            return self.to_yaml(
+                filepath=kwargs.get("filepath"), format="pyrates"
+            )
+
+        # ── Report ───────────────────────────────────────────────────────
+        if fmt in ("report", "markdown", "md", "pdf"):
+            report_fmt = "pdf" if fmt == "pdf" else "markdown"
+            return self.report(format=report_fmt, **kwargs)
+
+        # ── openMINDS JSON-LD ────────────────────────────────────────────
+        if fmt in ("openminds", "jsonld", "json-ld"):
+            import json
+            from tvbo.adapters.openminds import experiment_to_openminds
+
+            indent = kwargs.pop("indent", 2)
+            data = experiment_to_openminds(self, **kwargs)
+            return json.dumps(data, indent=indent, default=str)
+
+        # ── Code generation (all other formats) ──────────────────────────
+        return self.render_code(format=format, **kwargs)
 
     def save_code(self, dir, file_name=None):
         if file_name is not None:

@@ -234,6 +234,16 @@ class DriverExecute(DriverSetup):
 
 
 if __name__ == "__main__":
+    import numpy as np
+    from tvbo.data.types import SimulationResult, ExperimentResult
+    import xarray as xr
+
     driver = DriverExecute()
     tavg = driver.run()
     print(f"Output shape: {tavg.shape}")
+
+    # Wrap raw output in ExperimentResult
+    da = xr.DataArray(data=np.asarray(tavg), dims=['time', 'node'][:tavg.ndim])
+    sim = SimulationResult(data=da)
+    results = ExperimentResult(integration=sim, name="${model_name}")
+    print(results)

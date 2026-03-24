@@ -6,6 +6,12 @@ import numpy as np
 from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
+import xarray as xr
+try:
+    import xarray_jax  # side effect: registers xr.DataArray as JAX pytree
+except ImportError:
+    pass
+
 from tvbo.classes import equation as equations
 from tvbo.utils import Bunch
 from tvbo.classes.network import Network
@@ -16,42 +22,139 @@ from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
 
+def _to_dataarray(raw_data, raw_time=None, state_names=None):
+    """Convert raw ndarray + metadata to xr.DataArray.
+
+    Parameters
+    ----------
+    raw_data : array-like or None
+        Raw simulation data (2D, 3D, or 4D).
+    raw_time : array-like or None
+        Time coordinate values.
+    state_names : list[str] or None
+        State variable names for the 'variable' coordinate.
+
+    Returns
+    -------
+    xr.DataArray or None
+    """
+    if raw_data is None:
+        return None
+    if isinstance(raw_data, xr.DataArray):
+        return raw_data
+    data_np = np.asarray(raw_data)
+    dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+    coords = {}
+    if raw_time is not None:
+        coords['time'] = np.asarray(raw_time)
+    if state_names:
+        var_axis = dims.index('variable') if 'variable' in dims else None
+        if var_axis is not None and len(state_names) == data_np.shape[var_axis]:
+            coords['variable'] = list(state_names)
+    if 'mode' in dims:
+        coords['mode'] = list(range(data_np.shape[dims.index('mode')]))
+    return xr.DataArray(data=data_np, dims=dims, coords=coords)
+
+
 # =============================================================================
 # Result Classes for Simulation Experiments
 # =============================================================================
 
 
-class SimulationResult(Bunch):
-    """Wrapper for simulation result with attached observations.
+class SimulationResult:
+    """Output from a single simulation run with its computed observations.
 
-    Mirrors the YAML structure by attaching observations to the simulation
-    they derive from. This provides consistent access regardless of mode.
+    Stores simulation data as an ``xr.DataArray`` with named dimensions
+    (time, variable, node[, mode][, trial]). Observations are bound to the
+    simulation that produced them.
 
-    Supports TimeSeries-like access via get_state() and plot(), converting
-    the raw 3D data (time, state, nodes) to a full TimeSeries on demand.
+    Accepts both new-style (``data=xr.DataArray``) and legacy
+    (``result=NativeSolution, state_names=[...]``) constructor signatures
+    for backward compatibility with generated template code.
 
     Attributes
     ----------
-    data : jnp.ndarray
-        Raw simulation data (time, state, nodes)
-    time : jnp.ndarray
-        Time vector
-    state_names : list[str]
-        Names of state variables (e.g., ['x', 'y'])
-    observations : Bunch
-        Computed observations from this simulation (bold, fc, etc.)
+    data : xr.DataArray or None
+        Simulation data with named dims and coords.
+    observations : dict
+        Computed observations from this simulation (BOLD, FC, etc.).
     transient : SimulationResult or None
-        Transient (warm-up) simulation result, if available.
+        Warm-up simulation result that preceded this one.
     """
 
-    def __init__(self, result=None, observations=None, state_names=None, transient=None, **kwargs):
-        super().__init__(**kwargs)
-        if result is not None:
-            self.data = result.data if hasattr(result, "data") else result
-            self.time = result.ts if hasattr(result, "ts") else None
-        self.state_names = state_names or []
-        self.observations = observations or Bunch()
+    def __init__(self, data=None, observations=None, transient=None, *,
+                 result=None, state_names=None, units=None, **kwargs):
+        self._extras = {}
+        self._timeseries = None
+        self._units = units or {}  # {variable_name: unit_string}
+
+        # ── Backward compat: accept old-style result= arg ──
+        if result is not None and data is None:
+            raw_data = result.data if hasattr(result, "data") else result
+            raw_time = result.ts if hasattr(result, "ts") else None
+            data = _to_dataarray(raw_data, raw_time, state_names)
+        elif data is not None and not isinstance(data, xr.DataArray):
+            data = _to_dataarray(data, None, state_names)
+
+        # Drop singleton node/mode dims — they add no information and
+        # force downstream users to .squeeze().  These dimensions only
+        # matter when there are truly multiple nodes or modes.
+        if isinstance(data, xr.DataArray):
+            for dim in ('node', 'mode'):
+                if dim in data.dims and data.sizes[dim] == 1:
+                    data = data.squeeze(dim)
+        self.data = data
+        self.observations = observations if observations is not None else {}
         self.transient = transient
+        self._extras.update(kwargs)
+        # Store state_names separately for cases with no data yet
+        if state_names and not (data is not None and 'variable' in getattr(data, 'coords', {})):
+            self._extras['state_names'] = state_names
+
+    @property
+    def units(self):
+        """Unit mapping {variable_name: unit_string} for state/derived variables."""
+        return self._units
+
+    # ── xarray delegation ─────────────────────────
+
+    def sel(self, **kw):
+        """Label-based selection returning a new SimulationResult."""
+        return SimulationResult(data=self.data.sel(**kw), units=self._units)
+
+    def isel(self, **kw):
+        """Integer-based selection returning a new SimulationResult."""
+        return SimulationResult(data=self.data.isel(**kw), units=self._units)
+
+    @property
+    def time(self):
+        """Time values as numpy array (backward compatible)."""
+        if self.data is not None and 'time' in self.data.coords:
+            return self.data.coords['time'].values
+        return None
+
+    @property
+    def state_names(self):
+        """State variable names from data coordinates."""
+        if self.data is not None and 'variable' in self.data.coords:
+            return list(self.data.coords['variable'].values)
+        return self._extras.get('state_names', [])
+
+    @property
+    def dims(self):
+        """Dimension names of the data array."""
+        if self.data is not None:
+            return self.data.dims
+        return ()
+
+    @property
+    def coords(self):
+        """Coordinates of the data array."""
+        if self.data is not None:
+            return self.data.coords
+        return {}
+
+    # ── Backward compat: TimeSeries conversion ────
 
     def to_timeseries(self):
         """Convert to a full TimeSeries object for plotting and analysis.
@@ -61,56 +164,109 @@ class SimulationResult(Bunch):
         TimeSeries
             4D time series (Time, State Variable, Space, Mode)
         """
-        # Use cached TimeSeries if available (e.g. from ExperimentResult.from_tvb)
-        if hasattr(self, '_timeseries') and self._timeseries is not None:
+        if self._timeseries is not None:
             return self._timeseries
 
-        data = self.data
-        if data is None:
+        if self.data is None:
             raise ValueError("No simulation data to convert")
 
-        time = self.time
-        if time is None:
-            time = np.arange(data.shape[0])
-
-        # tvboptim data shape: (n_timesteps, n_states, n_nodes)
-        # TimeSeries expects: (Time, State Variable, Space, Mode)
-        if data.ndim == 3:
-            data_4d = np.expand_dims(np.asarray(data), -1)  # add Mode dimension
-        elif data.ndim == 4:
-            data_4d = np.asarray(data)
-        else:
-            data_4d = np.asarray(data)
+        raw = np.asarray(self.data.values)
+        while raw.ndim < 4:
+            raw = np.expand_dims(raw, -1)  # pad to 4D (Time, Variable, Space, Mode)
 
         labels_dimensions = {}
-        if self.state_names:
-            labels_dimensions["State Variable"] = list(self.state_names)
+        names = self.state_names
+        if names:
+            labels_dimensions["State Variable"] = names
+        if self.data is not None and 'node' in self.data.coords:
+            labels_dimensions["Region"] = list(self.data.coords['node'].values)
 
+        time = np.asarray(self.time) if self.time is not None else np.arange(raw.shape[0])
         dt = float(time[1] - time[0]) if len(time) > 1 else 1.0
 
-        return TimeSeries(
-            time=np.asarray(time),
-            data=data_4d,
+        self._timeseries = TimeSeries(
+            time=time,
+            data=raw,
             sample_period=dt,
             labels_dimensions=labels_dimensions,
         )
+        # Propagate extras that animate/plot helpers may need (e.g. graph from NetworkDynamics)
+        for key in ('graph', 'edge_data', 'vertex_data', 'node_positions'):
+            val = self._extras.get(key)
+            if val is not None:
+                setattr(self._timeseries, key, val)
+        return self._timeseries
+
+    def plot(self, ax=None, type="timeseries", **kwargs):
+        """Plot simulation results.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Axes to plot on (single-panel plots only).
+        type : str
+            Plot type: 'timeseries' (default), 'phase'/'state-space',
+            'vector_field', 'eeg', 'power_spectrum', 'raster'.
+        **kwargs
+            Forwarded to the underlying plot function in ``tvbo.plot``.
+        """
+        if type == "raster":
+            return self.data.plot(**kwargs)
+        if type in {"phase", "state-space", "trajectory"}:
+            from tvbo.plot.phase import plot_phase
+            return plot_phase(self, ax=ax, **kwargs)
+        if type == "vector_field":
+            from tvbo.plot.phase import plot_vector_field
+            return plot_vector_field(self, ax=ax, **kwargs)
+        if type == "eeg":
+            from tvbo.plot.timeseries import plot_eeg
+            return plot_eeg(self, ax=ax, **kwargs)
+        if type == "power_spectrum":
+            from tvbo.plot.timeseries import plot_power_spectrum
+            return plot_power_spectrum(self, ax=ax, **kwargs)
+
+        # Default: timeseries
+        from tvbo.plot.timeseries import plot_timeseries
+        return plot_timeseries(self, ax=ax, **kwargs)
+
+    def animate(self, type="network", **kwargs):
+        """Animate simulation results.
+
+        Parameters
+        ----------
+        type : str
+            'network' (default) — nodes colored by state on graph layout.
+            'phase' — trailing trajectory in phase space.
+        **kwargs
+            Forwarded to the animation function.
+
+        Returns
+        -------
+        matplotlib.animation.FuncAnimation
+        """
+        if type == "phase":
+            from tvbo.plot.animate import animate_phase
+            return animate_phase(self, **kwargs)
+        from tvbo.plot.animate import animate_network
+        return animate_network(self, **kwargs)
 
     def __getattr__(self, name):
-        # Let Bunch handle its own dict-key lookups first
-        try:
-            return super().__getattr__(name)
-        except (AttributeError, KeyError):
-            pass
-        # Delegate remaining lookups to the underlying TimeSeries
         if name.startswith('_'):
             raise AttributeError(name)
+        # Check extras first
+        if name in self._extras:
+            return self._extras[name]
+        # Delegate to xarray DataArray (mean, sum, std, min, max, etc.)
+        if self.data is not None and hasattr(self.data, name):
+            return getattr(self.data, name)
+        # Delegate to TimeSeries for plot_eeg, plot_power_spectrum, etc.
         try:
             ts = self.to_timeseries()
         except (ValueError, AttributeError, RecursionError):
             raise AttributeError(name)
         if hasattr(ts, name):
             return getattr(ts, name)
-        raise AttributeError(name)
+        raise AttributeError(f"SimulationResult has no attribute '{name}'")
 
     def __repr__(self):
         n_obs = len(self.observations.keys()) if self.observations else 0
@@ -120,7 +276,7 @@ class SimulationResult(Bunch):
         return f"SimulationResult{shape_str}{obs_str}"
 
 
-class AlgorithmResult(Bunch):
+class AlgorithmResult:
     """Result of an iterative algorithm (FIC, EIB, etc.).
 
     Provides structured access to algorithm outputs with consistent naming
@@ -134,7 +290,6 @@ class AlgorithmResult(Bunch):
         Final state with tuned parameters
     history : Bunch
         Per-iteration tracking: parameters, observations, metrics
-        Access pattern: history.{param_name}[i], history.{obs_name}[i]
     pre_tuning : SimulationResult
         Simulation BEFORE algorithm (for comparison)
     post_tuning : SimulationResult
@@ -160,7 +315,6 @@ class AlgorithmResult(Bunch):
         state_names=None,
         **kwargs,
     ):
-        super().__init__(**kwargs)
         self.name = name
         self.state = state
         self.history = history or Bunch()
@@ -184,6 +338,7 @@ class AlgorithmResult(Bunch):
 
         self.n_iterations = n_iterations
         self.hyperparameters = hyperparameters or Bunch()
+        self._extras = kwargs
 
         # Compute convergence metrics from history
         self.convergence = self._compute_convergence()
@@ -194,14 +349,27 @@ class AlgorithmResult(Bunch):
         if self.history:
             for key, vals in self.history.items():
                 if hasattr(vals, "__len__") and len(vals) > 0:
-                    # Store final value
                     conv[f"{key}_final"] = (
                         vals[-1] if hasattr(vals, "__getitem__") else vals
                     )
-                    # Store delta (change from first to last)
                     if len(vals) > 1:
                         conv[f"{key}_delta"] = vals[-1] - vals[0]
         return conv
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(name)
+        try:
+            return self._extras[name]
+        except KeyError:
+            raise AttributeError(f"AlgorithmResult has no attribute '{name}'")
+
+    def get(self, key, default=None):
+        """Dict-like get for backward compat with Bunch-based code."""
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            return default
 
     def __repr__(self):
         n_iter = self.n_iterations or (
@@ -210,7 +378,7 @@ class AlgorithmResult(Bunch):
         return f"AlgorithmResult(name='{self.name}', n_iterations={n_iter})"
 
 
-class OptimizationResult(Bunch):
+class OptimizationResult:
     """Result of gradient-based optimization.
 
     Provides structured access to optimization outputs including loss trajectory,
@@ -224,7 +392,6 @@ class OptimizationResult(Bunch):
         Final optimized state (alias: fitted_params)
     history : Bunch
         Per-step tracking: loss values, states, gradients
-        Access: history.loss[i], history.state[i]
     simulation : SimulationResult
         Post-optimization simulation with attached observations
     loss_trajectory : jnp.ndarray
@@ -247,7 +414,6 @@ class OptimizationResult(Bunch):
         hyperparameters=None,
         **kwargs,
     ):
-        super().__init__(**kwargs)
         self.name = name
         self.state = state
         self.fitted_params = state  # Legacy alias
@@ -262,13 +428,13 @@ class OptimizationResult(Bunch):
 
         self.n_steps = n_steps
         self.hyperparameters = hyperparameters or Bunch()
+        self._extras = kwargs
 
         # Extract loss trajectory from history
         self._extract_metrics()
 
     def _extract_metrics(self):
         """Extract convenience metrics from history."""
-        # Loss trajectory
         if self.history and hasattr(self.history, "loss"):
             loss_data = self.history.loss
             if hasattr(loss_data, "save"):
@@ -291,7 +457,6 @@ class OptimizationResult(Bunch):
             params_data = self.history["parameters"]
             if hasattr(params_data, "save"):
                 traj = params_data.save
-                # Convert pandas Series to list if needed
                 if hasattr(traj, "tolist"):
                     self.state_trajectory = traj.tolist()
                 else:
@@ -302,6 +467,14 @@ class OptimizationResult(Bunch):
                 self.state_trajectory = params_data
         else:
             self.state_trajectory = None
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(name)
+        try:
+            return self._extras[name]
+        except KeyError:
+            raise AttributeError(f"OptimizationResult has no attribute '{name}'")
 
     def __repr__(self):
         loss_str = (
@@ -453,9 +626,9 @@ class ExplorationResult(Bunch):
                 else getattr(ax, "name", None)
             )
             ax_values = (
-                ax.get("values", getattr(ax, "values", None))
+                ax.get("explored_values", getattr(ax, "explored_values", None))
                 if isinstance(ax, dict)
-                else getattr(ax, "values", None)
+                else getattr(ax, "explored_values", None)
             )
             if ax_name and ax_values is not None and i < len(self.optimal.index):
                 idx = self.optimal.index[i]
@@ -500,7 +673,7 @@ class ExplorationResult(Bunch):
         if n == 1:
             axes = [axes]
 
-        ax_values = np.asarray(ax_info["values"]) if ax_info else None
+        ax_values = np.asarray(ax_info["explored_values"]) if ax_info else None
 
         for i, ax in enumerate(axes):
             data = np.asarray(self.results[i])  # (n_time, ...) or (n_time,)
@@ -534,8 +707,8 @@ class ExplorationResult(Bunch):
         if len(self._grid_shape) == 1:
             ax_info = self.axes[0]
             values = (
-                np.asarray(ax_info["values"])
-                if "values" in ax_info
+                np.asarray(ax_info["explored_values"])
+                if "explored_values" in ax_info
                 else np.arange(self._grid_shape[0])
             )
             fig, ax = plt.subplots(figsize=figsize or (8, 4))
@@ -574,9 +747,9 @@ class ExplorationResult(Bunch):
                     else getattr(ax, "name", None)
                 )
                 ax_values = (
-                    ax.get("values", getattr(ax, "values", None))
+                    ax.get("explored_values", getattr(ax, "explored_values", None))
                     if isinstance(ax, dict)
-                    else getattr(ax, "values", None)
+                    else getattr(ax, "explored_values", None)
                 )
                 if ax_name == param_name and ax_values is not None:
                     # Find closest index
@@ -615,39 +788,157 @@ class ObservationResult(Bunch):
         return getattr(self, "ts", None)
 
 
-class ExperimentResult(Bunch):
+class ExperimentResult:
     """Result from a complete experiment run.
 
-    Wraps the raw results from code execution and provides:
-    - Tree-structured view showing outputs with their contents
-    - Schema-aligned access (results.integration.get_state(...), results.algorithms.fic, etc.)
+    Mirrors the SimulationExperiment schema structure: integration, algorithms,
+    optimizations, explorations, continuations. Accepts both new-style explicit
+    fields and old-style ``results=Bunch`` constructor for backward compatibility.
+
+    Attributes
+    ----------
+    integration : SimulationResult or None
+        Primary simulation output with its observations and transient.
+    algorithms : dict
+        Algorithm results keyed by name.
+    optimizations : dict
+        Optimization results keyed by name.
+    explorations : dict
+        Exploration results keyed by name.
+    continuations : dict
+        Bifurcation/continuation results keyed by name.
+    data_sources : dict
+        External/empirical data (not from simulations).
+    name : str or None
+        Experiment name.
+    source : SimulationExperiment or None
+        Back-reference to input specification.
     """
 
-    # Keys that represent actual outputs (not inputs/metadata)
-    _output_sections = {"integration", "algorithms", "optimizations", "explorations"}
+    _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations"}
 
-    def __init__(self, results=None, experiment_name=None, **kwargs):
-        super().__init__(**kwargs)
-        self._experiment_name = experiment_name
-        if results is not None:
-            for key in results.keys() if hasattr(results, "keys") else []:
-                self[key] = results[key]
+    def __init__(self, integration=None, explorations=None, algorithms=None,
+                 optimizations=None, continuations=None, data_sources=None,
+                 name=None, source=None, **kwargs):
+        self._extras = {}
+
+        # ── Backward compat: ExperimentResult(results_bunch, experiment_name=...) ──
+        experiment_name = kwargs.pop('experiment_name', None)
+        if (integration is not None
+                and not isinstance(integration, SimulationResult)
+                and hasattr(integration, 'keys')):
+            results = integration
+            integration = results.get('integration')
+            algorithms = results.get('algorithms', algorithms)
+            optimizations = results.get('optimizations', optimizations)
+            explorations = results.get('explorations', explorations)
+            continuations = results.get('continuations', continuations)
+            # Preserve extra keys (state, model_fn, timings, etc.)
+            for k, v in results.items():
+                if k not in ('integration', 'algorithms', 'optimizations',
+                             'explorations', 'continuations', 'data_sources'):
+                    self._extras[k] = v
+
+        # Also handle keyword: ExperimentResult(results=bunch, ...)
+        results_kw = kwargs.pop('results', None)
+        if results_kw is not None and integration is None:
+            if hasattr(results_kw, 'keys'):
+                integration = results_kw.get('integration')
+                algorithms = algorithms or results_kw.get('algorithms')
+                optimizations = optimizations or results_kw.get('optimizations')
+                explorations = explorations or results_kw.get('explorations')
+                continuations = continuations or results_kw.get('continuations')
+                for k, v in results_kw.items():
+                    if k not in ('integration', 'algorithms', 'optimizations',
+                                 'explorations', 'continuations', 'data_sources'):
+                        self._extras[k] = v
+
+        self.integration = integration
+        self.algorithms = algorithms or {}
+        self.optimizations = optimizations or {}
+        self.explorations = explorations or {}
+        self.continuations = continuations or {}
+        self.data_sources = data_sources or {}
+        self.name = name or experiment_name
+        self.source = source
+        self._extras.update(kwargs)
+
+        # Inject variable units from source dynamics into integration result
+        if source is not None and integration is not None and not integration._units:
+            dynamics = getattr(source, 'dynamics', None)
+            if dynamics is not None:
+                units = {}
+                for n, sv in getattr(dynamics, 'state_variables', {}).items():
+                    u = getattr(sv, 'unit', None)
+                    if u is not None:
+                        units[str(n)] = str(u)
+                for n, dv in getattr(dynamics, 'derived_variables', {}).items():
+                    u = getattr(dv, 'unit', None)
+                    if u is not None:
+                        units[str(n)] = str(u)
+                integration._units = units
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(name)
+        # Check extras first
+        if name in self._extras:
+            return self._extras[name]
+        # Delegate to integration for backward compat (result.data, result.time, etc.)
+        integration = self.__dict__.get('integration')
+        if integration is not None and hasattr(integration, name):
+            return getattr(integration, name)
+        # Delegate to single continuation (bifurcation results)
+        continuations = self.__dict__.get('continuations', {})
+        if continuations and len(continuations) == 1:
+            cont = next(iter(continuations.values()))
+            if hasattr(cont, name):
+                return getattr(cont, name)
+        raise AttributeError(f"'ExperimentResult' has no attribute '{name}'")
+
+    def __contains__(self, key):
+        if key in self._output_sections:
+            val = getattr(self, key, None)
+            return val is not None and val != {}
+        return key in self._extras
+
+    def plot(self, **kwargs):
+        """Dispatch plot to the most relevant sub-result."""
+        if self.integration is not None:
+            return self.integration.plot(**kwargs)
+        if self.continuations:
+            cont = next(iter(self.continuations.values()))
+            if hasattr(cont, 'plot'):
+                return cont.plot(**kwargs)
+        if self.explorations:
+            expl = next(iter(self.explorations.values()))
+            if hasattr(expl, 'plot'):
+                return expl.plot(**kwargs)
+        raise AttributeError("No plottable sub-result found")
 
     def __repr__(self):
-        name = self._experiment_name or "Experiment"
-        lines = [name]
+        label = self.name or "Experiment"
+        lines = [label]
 
-        output_keys = [k for k in self.keys() if k in self._output_sections]
+        sections = []
+        if self.integration is not None:
+            sections.append(('integration', self.integration))
+        if self.algorithms:
+            sections.append(('algorithms', self.algorithms))
+        if self.optimizations:
+            sections.append(('optimizations', self.optimizations))
+        if self.explorations:
+            sections.append(('explorations', self.explorations))
+        if self.continuations:
+            sections.append(('continuations', self.continuations))
 
-        for i, section in enumerate(output_keys):
-            is_last_section = i == len(output_keys) - 1
+        for i, (section, val) in enumerate(sections):
+            is_last_section = i == len(sections) - 1
             sec_conn = "└── " if is_last_section else "├── "
             sec_ext = "    " if is_last_section else "│   "
 
-            val = self[section]
             lines.append(f"{sec_conn}{section}")
 
-            # If the section value is itself a result type, format it directly
             if isinstance(val, (SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult)):
                 detail_lines = self._format_details(val, sec_ext + "    ")
                 lines.extend(detail_lines)
@@ -658,8 +949,6 @@ class ExperimentResult(Bunch):
                     child_conn = "└── " if is_last_child else "├── "
                     child_ext = "    " if is_last_child else "│   "
                     child_val = val[child_key]
-
-                    # Format based on result type
                     lines.append(f"{sec_ext}{child_conn}{child_key}")
                     detail_lines = self._format_details(child_val, sec_ext + child_ext)
                     lines.extend(detail_lines)
@@ -673,7 +962,7 @@ class ExperimentResult(Bunch):
         if isinstance(val, SimulationResult):
             shape = (
                 tuple(val.data.shape)
-                if hasattr(val, "data") and val.data is not None
+                if val.data is not None
                 else None
             )
             if shape:
@@ -725,14 +1014,252 @@ class ExperimentResult(Bunch):
         """Rich display for Jupyter notebooks."""
         return f"```\n{self.__repr__()}\n```"
 
+    # ── Export ─────────────────────────────────────
+
+    def export(self, output_dir, subject="01", session=None, description="tvbsim"):
+        """Export results and metadata to a BIDS-compatible directory.
+
+        Writes experiment specification as YAML and simulation data as
+        netCDF/HDF5, following BEP034 directory conventions::
+
+            output_dir/
+            ├── dataset_description.json
+            ├── sub-{subject}/
+            │   ├── sub-{subject}_desc-{desc}_experiment.yaml
+            │   └── ts/
+            │       ├── sub-{subject}_desc-{desc}_ts-sim_State.nc
+            │       ├── sub-{subject}_desc-{desc}_ts-sim_State.json
+            │       └── sub-{subject}_desc-{desc}_ts-{obs}_BOLD.nc  (per observation)
+
+        Parameters
+        ----------
+        output_dir : str or Path
+            Root output directory (created if it doesn't exist).
+        subject : str
+            BIDS subject label (default ``"01"``).
+        session : str or None
+            BIDS session label (optional).
+        description : str
+            BIDS ``desc-`` entity (default ``"tvbsim"``).
+
+        Returns
+        -------
+        pathlib.Path
+            Path to the output directory.
+        """
+        from pathlib import Path
+        import json
+
+        output_dir = Path(output_dir)
+        sub = f"sub-{subject}"
+        ses = f"ses-{session}" if session else None
+        desc = f"desc-{description}" if description else ""
+
+        sub_dir = output_dir / sub
+        if ses:
+            sub_dir = sub_dir / ses
+        sub_dir.mkdir(parents=True, exist_ok=True)
+
+        prefix = f"{sub}_{desc}" if desc else sub
+
+        # ── 1. Dataset description ────────────────────
+        dd_path = output_dir / "dataset_description.json"
+        if not dd_path.exists():
+            dd = {
+                "Name": self.name or "TVBO Simulation Experiment",
+                "BIDSVersion": "1.9.0",
+                "DatasetType": "derivative",
+                "GeneratedBy": [{"Name": "tvbo", "Description": "The Virtual Brain Ontology"}],
+            }
+            dd_path.write_text(json.dumps(dd, indent=2))
+
+        # ── 2. Experiment specification YAML ──────────
+        if self.source is not None:
+            yaml_path = sub_dir / f"{prefix}_experiment.yaml"
+            self.source.to_yaml(str(yaml_path))
+
+        # ── 3. Integration data ───────────────────────
+        if self.integration is not None and self.integration.data is not None:
+            ts_dir = sub_dir / "ts"
+            ts_dir.mkdir(exist_ok=True)
+            ts_prefix = f"{prefix}_ts-sim"
+
+            self._write_data(
+                self.integration.data,
+                ts_dir / f"{ts_prefix}_State",
+            )
+
+            # Sidecar
+            sidecar = self._build_sidecar(self.integration)
+            (ts_dir / f"{ts_prefix}_State.json").write_text(
+                json.dumps(sidecar, indent=2, default=str)
+            )
+
+            # Observations
+            for obs_name, obs in self.integration.observations.items():
+                obs_path = ts_dir / f"{prefix}_ts-{obs_name}"
+                if isinstance(obs, xr.DataArray):
+                    self._write_data(obs, obs_path)
+                elif hasattr(obs, 'data'):
+                    obs_da = _to_dataarray(
+                        np.asarray(obs.data),
+                        np.asarray(obs.time) if hasattr(obs, 'time') else None,
+                    )
+                    if obs_da is not None:
+                        self._write_data(obs_da, obs_path)
+
+            # Transient
+            if (self.integration.transient is not None
+                    and self.integration.transient.data is not None):
+                self._write_data(
+                    self.integration.transient.data,
+                    ts_dir / f"{prefix}_ts-transient_State",
+                )
+
+        # ── 4. Algorithm results ──────────────────────
+        for algo_name, algo in self.algorithms.items():
+            algo_dir = sub_dir / "ts"
+            algo_dir.mkdir(exist_ok=True)
+            if isinstance(algo, AlgorithmResult) and algo.post_tuning is not None:
+                if algo.post_tuning.data is not None:
+                    self._write_data(
+                        algo.post_tuning.data,
+                        algo_dir / f"{prefix}_ts-{algo_name}_State",
+                    )
+
+        # ── 5. Optimization results ───────────────────
+        for opt_name, opt in self.optimizations.items():
+            opt_dir = sub_dir / "ts"
+            opt_dir.mkdir(exist_ok=True)
+            if isinstance(opt, OptimizationResult) and opt.simulation is not None:
+                if opt.simulation.data is not None:
+                    self._write_data(
+                        opt.simulation.data,
+                        opt_dir / f"{prefix}_ts-{opt_name}_State",
+                    )
+
+        return output_dir
+
+    @staticmethod
+    def _write_data(da, path_stem):
+        """Write an xr.DataArray to netCDF (preferred) or HDF5.
+
+        Tries engines in order: h5netcdf → scipy (netCDF3).
+        The file extension is set automatically (.nc).
+        """
+        from pathlib import Path
+        path_stem = Path(path_stem)
+        ds = da.to_dataset(name="data")
+        nc_path = path_stem.with_suffix(".nc")
+        for engine in ("h5netcdf", "scipy"):
+            try:
+                ds.to_netcdf(nc_path, engine=engine)
+                return nc_path
+            except ImportError:
+                continue
+        raise ImportError(
+            "netCDF export requires scipy or h5netcdf. "
+            "Install with: pip install h5netcdf"
+        )
+
+    @staticmethod
+    def _build_sidecar(sim_result):
+        """Build a JSON sidecar dict for a SimulationResult."""
+        sidecar = {}
+        if sim_result.data is not None:
+            sidecar["Shape"] = list(sim_result.data.shape)
+            sidecar["Dimensions"] = list(sim_result.data.dims)
+            if 'variable' in sim_result.data.coords:
+                sidecar["StateVariables"] = list(
+                    sim_result.data.coords['variable'].values
+                )
+            if 'node' in sim_result.data.coords:
+                sidecar["Regions"] = list(
+                    sim_result.data.coords['node'].values
+                )
+            if sim_result.time is not None and len(sim_result.time) > 1:
+                dt = float(sim_result.time[1] - sim_result.time[0])
+                sidecar["SamplingPeriod"] = dt
+                sidecar["SamplingPeriodUnit"] = "ms"
+        if sim_result.observations:
+            sidecar["Observations"] = list(sim_result.observations.keys())
+        return sidecar
+
+    # ── Class methods ─────────────────────────────
+
+    @classmethod
+    def from_timeseries(cls, ts, source=None, name=None, **extras):
+        """Create an ExperimentResult from a TVBO TimeSeries.
+
+        Converts a raw TimeSeries (as returned by JAX, PyRates,
+        NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
+
+        Parameters
+        ----------
+        ts : TimeSeries
+            Simulation output with ``.data``, ``.time``, ``.labels_dimensions``.
+        source : SimulationExperiment, optional
+            Back-reference to the experiment that produced this result.
+        name : str, optional
+            Experiment label.
+        **extras
+            Additional attributes to store (e.g. ``sol``, ``graph``).
+
+        Returns
+        -------
+        ExperimentResult
+        """
+        data_np = np.asarray(ts.data)
+
+        ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
+        state_names = ld.get("State Variable", [])
+        region_labels = ld.get("Region", [])
+
+        dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+        coords = {}
+        if ts.time is not None:
+            coords['time'] = np.asarray(ts.time)
+        if state_names:
+            coords['variable'] = list(state_names)
+        if region_labels and data_np.ndim >= 3:
+            coords['node'] = [str(r) for r in region_labels]
+        if 'mode' in dims:
+            coords['mode'] = list(range(data_np.shape[3]))
+
+        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+
+        # Collect observations from derivatives (TVB-style) or extras
+        observations = {}
+        if hasattr(ts, 'derivatives') and ts.derivatives:
+            for d_ts in ts.derivatives:
+                obs_name = getattr(d_ts, 'title', None) or f"obs_{len(observations)}"
+                observations[obs_name] = d_ts
+
+        sim_result = SimulationResult(data=da, observations=observations)
+        sim_result._timeseries = ts
+
+        # Continuations (bifurcation results) go in a separate section
+        continuations = {}
+        if hasattr(ts, 'sol') and extras.get('_is_bifurcation', False):
+            extras.pop('_is_bifurcation')
+            continuations['default'] = ts.sol
+
+        return cls(
+            integration=sim_result,
+            source=source,
+            name=name,
+            continuations=continuations or None,
+            **extras,
+        )
+
     @classmethod
     def from_tvb(cls, simulator, result=None):
         """Create an ExperimentResult from a TVB simulator and its run output.
 
         Wraps TVB simulation output into the standard TVBO result structure:
 
-        - ``result.integration`` — primary monitor as SimulationResult
-        - ``result.integration.observations.<Name>`` — one TimeSeries per
+        - ``result.integration`` — primary monitor as SimulationResult (xr.DataArray)
+        - ``result.integration.observations['MonitorName']`` — one TimeSeries per
           additional monitor, keyed by the TVB monitor class name
 
         Parameters
@@ -755,7 +1282,9 @@ class ExperimentResult(Bunch):
         base_labels = {"State Variable": voi, "Region": region_labels}
 
         primary_ts = None
-        observations = Bunch()
+        primary_tv = None
+        primary_xv = None
+        observations = {}
 
         for monitor, (tv, xv) in zip(simulator.monitors, result):
             mon_labels = deepcopy(base_labels)
@@ -774,18 +1303,31 @@ class ExperimentResult(Bunch):
 
             if primary_ts is None:
                 primary_ts = ts
+                primary_tv = tv
+                primary_xv = xv
             else:
                 observations[mon_name] = ts
 
+        # Build xr.DataArray from primary monitor
+        # TVB shape: (time, state_variables, nodes, modes) — keep mode dim
+        data_np = np.asarray(primary_xv)
+        dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+        coords = {
+            'time': np.asarray(primary_tv),
+            'variable': voi,
+            'node': region_labels,
+        }
+        if 'mode' in dims:
+            coords['mode'] = list(range(data_np.shape[3]))
+        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
+
         sim_result = SimulationResult(
-            state_names=voi,
+            data=da,
             observations=observations,
         )
-        sim_result.data = np.asarray(primary_ts.data)
-        sim_result.time = np.asarray(primary_ts.time)
         sim_result._timeseries = primary_ts
 
-        return cls(results=Bunch(integration=sim_result))
+        return cls(integration=sim_result)
 
 
 # =============================================================================
@@ -794,9 +1336,10 @@ class ExperimentResult(Bunch):
 
 
 @register_pytree_node_class
-class BaseTimeSeries:
+class TimeSeries:
     """
-    Base time-series dataType.
+    Time-series dataType with JAX pytree support, domain-specific analysis,
+    and visualization methods.
     """
 
     def tree_flatten(self):
@@ -1119,8 +1662,8 @@ class BaseTimeSeries:
         return new
 
 
-@register_pytree_node_class
-class TimeSeries(BaseTimeSeries):
+    # ── Domain-specific methods (analysis, visualization) ─────────────
+
     def get_state_variable(self, sv_label):
         if isinstance(sv_label, (list, tuple, np.ndarray)):
             return self.get_state(sv_label)
@@ -2442,17 +2985,6 @@ class TimeSeries(BaseTimeSeries):
 #         plt.close()
 #         return ani
 
-
-class LegacySimulationResult(Bunch):
-    """Legacy simulation result class. Use SimulationResult instead."""
-
-    def __init__(self):
-        self.monitors = []
-
-    def add_timeseries(self, monitor_name, timeseries):
-        setattr(self, monitor_name, timeseries)
-        self.monitors.append(monitor_name)
-        pass
 
 
 @register_pytree_node_class

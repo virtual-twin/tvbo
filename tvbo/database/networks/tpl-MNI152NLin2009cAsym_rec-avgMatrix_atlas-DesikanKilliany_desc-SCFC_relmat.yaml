@@ -13,7 +13,7 @@ parameters:
   conduction_speed:
     label: v
     value: 3.0
-    unit: mm/ms
+    unit: mm_per_ms
 parcellation:
   atlas:
     name: DesikanKilliany
@@ -526,7 +526,7 @@ nodes:
 edges:
 - label: weight
   description: Streamline count (normalised)
-  unit: a.u.
+  unit: arbitrary_unit
   format: dense
   weighted: true
   valid_diagonal: false
@@ -542,7 +542,7 @@ edges:
   directed: false
 - label: fc
   description: Pearson correlation of BOLD signal
-  unit: r_pearson
+  unit: dimensionless
   format: dense
   weighted: true
   valid_diagonal: true

@@ -1,0 +1,213 @@
+---
+title: "Ex4: Kinetic Scheme Channels"
+description: "Ion channels defined via kinetic scheme (Markov) state transitions"
+---
+
+## Model: Kinetic Scheme Ion Channels
+
+This example demonstrates `ionChannelKS` — ion channels defined by Markov state
+transitions between open/closed states.  The `k_vh` channel uses a
+`vHalfTransition` with rates:
+
+$$r_{f0} = \frac{\exp(z\gamma(v - v_{Half})/k_{te})}{\tau}, \quad
+r_{r0} = \frac{\exp(-z(1-\gamma)(v - v_{Half})/k_{te})}{\tau}$$
+
+$$r_f = \frac{1}{1/r_{f0} + \tau_{Min}}, \quad
+r_r = \frac{1}{1/r_{r0} + \tau_{Min}}$$
+
+where $k_{te} = 25.3\,\text{mV}$.  The cell has a standard HH Na channel ($m^3 h$)
+and the KS K channel ($n$, instances=1):
+
+$$C\frac{dv}{dt} = -g_{Na}m^3 h(v - E_{Na}) - g_K n(v - E_K) + I_{\text{ext}}$$
+
+By annotating the dynamics with `iri: neuroml:pointCellCondBased` and structuring
+the ion channels as `components` (including `ionChannelKS` with `gateKS` and
+`vHalfTransition`), TVBO emits standard NeuroML2 types that preserve the jLEMS
+child-before-parent RK4 evaluation order — giving exact numerical identity.
+
+---
+
+## 1. Define in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+# Ex4 parameters: pointCellCondBased, C=1pF
+# Na: 6000 channels × 20pS, erev=50mV (standard HH rates)
+# K (k_vh): 1800 channels × 8pS, erev=-77mV (KS vHalfTransition)
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex4: KS Channels"
+dynamics:
+  name: HH_KineticScheme
+  iri: neuroml:pointCellCondBased
+  description: >
+    Cell with HH Na channel and kinetic-scheme K channel,
+    matching NeuroML2 Ex4.
+  parameters:
+    C:              { value: 1,    description: "nml:1pF" }
+    v0:             { value: -65,  description: "nml:-65mV" }
+    thresh:         { value: -20,  description: "nml:-20mV" }
+    pulse_delay:    { value: 100,  description: "nml:100ms" }
+    pulse_duration: { value: 100,  description: "nml:100ms" }
+    I_amp:          { value: 0.005, description: "nml:0.005 nA" }
+  components:
+    na:
+      name: na
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 20,     description: "nml:20pS" }
+        number:      { value: 6000 }
+        erev:        { value: 50,     description: "nml:50mV" }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 3 }
+          components:
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 1,   description: "nml:1per_ms" }
+                midpoint: { value: -40, description: "nml:-40mV" }
+                scale:    { value: 10,  description: "nml:10mV" }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 4,   description: "nml:4per_ms" }
+                midpoint: { value: -65, description: "nml:-65mV" }
+                scale:    { value: -18, description: "nml:-18mV" }
+        h:
+          name: h
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.07, description: "nml:0.07per_ms" }
+                midpoint: { value: -65,  description: "nml:-65mV" }
+                scale:    { value: -20,  description: "nml:-20mV" }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHSigmoidRate
+              parameters:
+                rate:     { value: 1,   description: "nml:1per_ms" }
+                midpoint: { value: -35, description: "nml:-35mV" }
+                scale:    { value: 10,  description: "nml:10mV" }
+    k_vh:
+      name: k_vh
+      iri: neuroml:ionChannelKS
+      parameters:
+        conductance: { value: 8,   description: "nml:8pS" }
+        number:      { value: 1800 }
+        erev:        { value: -77, description: "nml:-77mV" }
+      components:
+        n:
+          name: n
+          iri: neuroml:gateKS
+          parameters:
+            instances: { value: 1 }
+          components:
+            c1:
+              name: c1
+              iri: neuroml:closedState
+            o1:
+              name: o1
+              iri: neuroml:openState
+            vh1:
+              name: vh1
+              iri: neuroml:vHalfTransition
+              parameters:
+                from:   { value: 0, description: "nml:c1" }
+                to:     { value: 0, description: "nml:o1" }
+                vHalf:  { value: 0,   description: "nml:0mV" }
+                z:      { value: 1.5 }
+                gamma:  { value: 0.75 }
+                tau:    { value: 3.2,  description: "nml:3.2ms" }
+                tauMin: { value: 0.3,  description: "nml:0.3ms" }
+integration:
+  step_size: 0.01
+  duration: 300.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+print(f"IRI: {exp.dynamics.iri}")
+print(f"Components: {list(exp.dynamics.components.keys())}")
+```
+
+::: {.callout-note}
+## Kinetic Scheme via Standard NeuroML Types
+This example uses `iri: neuroml:ionChannelKS` with `gateKS` containing `closedState`,
+`openState`, and `vHalfTransition` sub-components. TVBO's adapter emits these as standard
+NeuroML2 XML elements — no need to flatten the Markov scheme into ODEs. This gives exact
+numerical identity with the reference simulation at the original step size (0.01 ms).
+:::
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+for line in xml.split('\n'):
+    line_stripped = line.strip()
+    if any(tag in line_stripped for tag in ['<ionChannel', '<gateHH', '<gateKS',
+            '<pointCell', '<channelPopulation', '<closedState', '<openState',
+            '<vHalfTransition', '<pulseGenerator', 'Rate type=', '<Include']):
+        print(line_stripped)
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex4_KS.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO Version
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+time = da.coords['time'].values
+v_data = da.sel(variable='v', node='0').values if 'variable' in da.dims else da.values[:, 0]
+tvbo_arr = np.column_stack([time, v_data])
+print(f"TVBO: shape={tvbo_arr.shape}, t=[{tvbo_arr[0,0]:.4f}, {tvbo_arr[-1,0]:.4f}]")
+```
+
+## 5. Numerical Comparison
+
+```{python}
+from _nml_helpers import compare_traces
+import numpy as np
+
+ref_arr = list(ref_outputs.values())[0]
+ref_v = ref_arr[:, [0, 1]]
+tvbo_v = tvbo_arr[:, [0, 1]]
+
+compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
+```
+
+## 6. Plot
+
+```{python}
+from _nml_helpers import plot_comparison
+
+plot_comparison(
+    ref_v, tvbo_v,
+    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
+    title="Ex4: KS Channels — NeuroML vs TVBO",
+    time_scale=1.0, time_unit="s",
+)
+```

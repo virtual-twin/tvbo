@@ -21,22 +21,22 @@ parameters:
             - 1350
     a:
         value: 0.1
-        unit: ms^-1
+        unit: per_ms
     b:
         value: 0.05
-        unit: ms^-1
+        unit: per_ms
     v0:
         value: 6
         unit: mV
     e0:
         value: 0.0025
-        unit: ms^-1
+        unit: per_ms
     r:
         value: 0.56
-        unit: mV^-1
+        unit: per_mV
     p:
         value: 0.24
-        unit: ms^-1
+        unit: per_ms
 derived_parameters:
     C1:
         equation:
@@ -77,7 +77,7 @@ state_variables:
         label: "Pyramidal EPSP drive (velocity)"
         equation:
             rhs: A*a*Sigm(y1 - y2) - 2*a*y3 - a**2*y0
-        unit: mV*ms^-1
+        unit: mV_per_ms
     y1:
         label: "Excitatory interneuron membrane potential (position)"
         equation:
@@ -87,7 +87,7 @@ state_variables:
         label: "Excitatory EPSP drive (velocity) with global input"
         equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - a**2*y1
-        unit: mV*ms^-1
+        unit: mV_per_ms
     y2:
         label: "Inhibitory interneuron membrane potential (position)"
         equation:
@@ -97,6 +97,6 @@ state_variables:
         label: "Inhibitory IPSP drive (velocity)"
         equation:
             rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
-        unit: mV*ms^-1
+        unit: mV_per_ms
 output:
     - v_pyr

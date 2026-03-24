@@ -45,7 +45,7 @@ ts.plot()
 import numpy as np
 print(f"Shape: {ts.data.shape}")
 print(f"Time range: {ts.time[0]:.1f} – {ts.time[-1]:.1f}")
-print(f"Final state std: {np.std(ts.data[-1, 0, :, 0]):.6f}")
+print(f"Final state std: {ts.data.sel(variable='v').isel(time=-1).std().item():.6f}")
 print(f"(Should converge to ~0 as all nodes reach equilibrium)")
 ```
 

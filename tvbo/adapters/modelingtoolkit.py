@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, TimeSeries
 
 # Julia packages required by the MTK backend
 MTK_PACKAGES = [
@@ -85,24 +85,22 @@ class ModelingToolkitAdapter(BaseAdapter):
         )
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "TimeSeries":
+    def run(self, **kwargs) -> "ExperimentResult":
         """Run simulation using pure ModelingToolkit.jl.
 
         Returns
         -------
-        TimeSeries
-            TVBO TimeSeries with simulation results.
+        ExperimentResult
+            Simulation results with named dimensions and coordinates.
         """
         import os
 
-        import numpy as np
-
-        from tvbo.data.types import TimeSeries
+        from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
             run_julia_code,
-            solution_to_array,
+            solution_to_dataarray,
         )
 
         exp = self.experiment
@@ -140,7 +138,6 @@ class ModelingToolkitAdapter(BaseAdapter):
         # auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
         if n_unknowns != n_sv * n_nodes:
-            data = u.T[:, :, np.newaxis, np.newaxis]
             try:
                 unknowns = run_julia_code("string.(unknowns(sys))")
                 state_labels = [
@@ -149,27 +146,19 @@ class ModelingToolkitAdapter(BaseAdapter):
                 ]
             except Exception:
                 state_labels = [f"x_{i}" for i in range(n_unknowns)]
+            # Flat unknowns — treat as n_unknowns variables, 1 node
+            da = solution_to_dataarray(t, u, state_labels, 1)
         else:
-            data = solution_to_array(t, u, n_sv, n_nodes)
-            state_labels = sv_names
+            da = solution_to_dataarray(t, u, sv_names, n_nodes)
 
         # 7. Restore working directory
         os.chdir(original_cwd)
 
-        dt = ctx['dt']
-        ts = TimeSeries(
-            time=t,
-            data=data,
-            labels_dimensions={
-                "State Variable": state_labels,
-                "Region": list(range(max(n_nodes, 1))),
-            },
-            sample_period=dt,
+        sim = SimulationResult(data=da)
+        return ExperimentResult(
+            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            sol=sol,
         )
-        ts.source_experiment = exp
-        ts.sol = sol
-
-        return ts
 
     # ── Symbolic round-trip ────────────────────────────────────────────
 
