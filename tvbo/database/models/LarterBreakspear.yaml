@@ -30,7 +30,7 @@ parameters:
       hi: 1.0
       step: 0.001
     description: Maximal firing rate for excitatory populations
-    unit: Kilohertz
+    unit: kHz
   Q_Zmax:
     name: Q_Zmax
     definition: Maximal firing rate for inhibitory population.
@@ -40,7 +40,7 @@ parameters:
       hi: 1.0
       step: 0.001
     description: Maximal firing rate for inhibitory population
-    unit: Kilohertz
+    unit: kHz
   T_Ca:
     name: T_Ca
     definition: Threshold value for Ca channels.

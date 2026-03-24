@@ -57,7 +57,7 @@ state_variables:
       rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability (facilitation variable)"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -85,7 +85,7 @@ state_variables:
       rhs: "(1 - x)/tau_x - k*x*r_in"
     initial_value: 1.0
     description: "Available synaptic resources"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -116,7 +116,7 @@ state_variables:
       rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -141,7 +141,7 @@ state_variables:
     equation:
       rhs: "(-r + I_ext + r_in)/tau"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   r_in: {}
 """)
 
@@ -200,47 +200,46 @@ edges:
   - source: 0
     target: 1
     parameters:
-      - weight:
-          value: 1.0
+      weight:
+        value: 1.0
     source_var: r_out
     target_var: r_in
   - source: 0
     target: 2
     parameters:
-      - weight:
-          value: 1.0
+      weight:
+        value: 1.0
     source_var: r_out
     target_var: r_in
   - source: 0
     target: 3
     parameters:
-      - weight:
-          value: 1.0
+      weight:
+        value: 1.0
     source_var: r_out
     target_var: r_in
   # All synapses converge onto the post-synaptic neuron
   - source: 1
     target: 4
     parameters:
-      - weight:
-          value: 0.33
+      weight:
+        value: 0.33
     source_var: r_eff
     target_var: r_in
   - source: 2
     target: 4
     parameters:
-      - weight:
-          value: 0.33
+      weight:
+        value: 0.33
     source_var: r_eff
     target_var: r_in
   - source: 3
     target: 4
     parameters:
-      - weight:
-          value: 0.33
+      weight:
+        value: 0.33
     source_var: r_eff
     target_var: r_in
-
 """
 
 # Parse network and create experiment with all components
@@ -320,7 +319,7 @@ ax.set_ylim(-0.5, 6)
 # Row 2: Pre-synaptic activity (state variable: r)
 ax = axes[1]
 pre_r = res.get_region('PreSynaptic').get_state_variable('r')
-ax.plot(t, pre_r.data[:, 0, 0, 0], 'k', lw=2, label="Pre-synaptic Rate")
+ax.plot(t, pre_r.data.squeeze(), 'k', lw=2, label="Pre-synaptic Rate")
 ax.set_ylabel("Pre-synaptic\nRate")
 ax.legend(loc='upper right')
 
@@ -331,10 +330,10 @@ fac_u = res.get_region('FacilitationSynapse').get_state_variable('u')
 tso_x = res.get_region('TsodyksSynapse').get_state_variable('x')
 tso_u = res.get_region('TsodyksSynapse').get_state_variable('u')
 
-ax.plot(t, dep_x.data[:, 0, 0, 0], 'C0', lw=2, label="Depression (x)")
-ax.plot(t, fac_u.data[:, 0, 0, 0], 'C1', lw=2, label="Facilitation (u)")
-ax.plot(t, tso_x.data[:, 0, 0, 0], 'C2', lw=2, label="Tsodyks x")
-ax.plot(t, tso_u.data[:, 0, 0, 0], 'C3', lw=2, label="Tsodyks u")
+ax.plot(t, dep_x.data.squeeze(), 'C0', lw=2, label="Depression (x)")
+ax.plot(t, fac_u.data.squeeze(), 'C1', lw=2, label="Facilitation (u)")
+ax.plot(t, tso_x.data.squeeze(), 'C2', lw=2, label="Tsodyks x")
+ax.plot(t, tso_u.data.squeeze(), 'C3', lw=2, label="Tsodyks u")
 ax.set_ylabel("Synaptic\nVariables")
 ax.legend(loc='right')
 ax.axhline(1.0, color='gray', ls=':', alpha=0.5)
@@ -342,7 +341,7 @@ ax.axhline(1.0, color='gray', ls=':', alpha=0.5)
 # Row 4: Post-synaptic response (state variable: r)
 ax = axes[3]
 post_r = res.get_region('PostSynaptic').get_state_variable('r')
-ax.plot(t, post_r.data[:, 0, 0, 0], 'C4', lw=2, label="Post-synaptic Rate")
+ax.plot(t, post_r.data.squeeze(), 'C4', lw=2, label="Post-synaptic Rate")
 ax.set_ylabel("Post-synaptic\nRate")
 ax.set_xlabel("Time (ms)")
 ax.legend(loc='upper right')

@@ -10,7 +10,7 @@ parameters:
             hi: 200.0
             step: 0.1
         description: Sets the base line frequency for the Kuramoto oscillator
-        unit: rad/ms
+        unit: rad_per_ms
 description:
     The Kuramoto model is a model of synchronization phenomena derived by
     Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including

@@ -31,7 +31,7 @@ data_source:
 parameters:
     conductivity:
         value: 1.0
-        unit: S/m
+        unit: S_per_m
         description: >-
             Volume conductor conductivity for the single-sphere analytic
             approximation. Only used when no precomputed gain is available.
@@ -55,7 +55,7 @@ pipeline:
           parameters:
               sigma:
                   value: 1.0
-                  unit: S/m
+                  unit: S_per_m
       arguments:
           - name: Q
             description: "Source dipole moment orientations (n_sources, 3)"

@@ -16,6 +16,7 @@ dependencies = [
     "scipy>=1.15.0",
     "numpy>=2.0.0",
     "pandas>=2.2.3",
+    "xarray>=2024.0",
 
     # Data models & schema
     "pydantic>=2.6.0",
@@ -29,6 +30,7 @@ dependencies = [
     # ML
     "jax >=0.4.28",
     "equinox >=0.11.12",
+    "xarray-jax>=0.0.4",
 
     # Symbolic
     "sympy>=1.13.0",
@@ -125,7 +127,7 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-n auto --dist=loadscope"
+addopts = "-n 4 --dist=loadscope"
 markers = [
     "backend_core: core backend-agnostic simulation tests",
     "backend_jax: JAX backend tests",
@@ -136,6 +138,8 @@ markers = [
     "backend_julia_diffeq: DifferentialEquations.jl backend tests",
     "backend_networkdynamics: NetworkDynamics.jl backend tests",
     "backend_mtk: ModelingToolkit.jl backend tests",
+    "backend_neuroml: NeuroML/LEMS backend tests",
     "docs: mark test as documentation test (tests that execute .qmd notebooks)",
     "julia: mark test as requiring a Julia runtime via juliacall",
+    "slow: long-running tests excluded by default (use --run-slow to include)",
 ]

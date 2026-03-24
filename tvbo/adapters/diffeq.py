@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from tvbo.data.types import TimeSeries
+    from tvbo.data.types import ExperimentResult, TimeSeries
     from tvbo.classes.experiment import SimulationExperiment
 
 
@@ -71,21 +71,20 @@ class DiffEqAdapter:
         )
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "TimeSeries":
+    def run(self, **kwargs) -> "ExperimentResult":
         """Run simulation using DifferentialEquations.jl.
 
         Returns
         -------
-        TimeSeries
-            Simulation results shaped ``(time, state_vars, 1, 1)``
-            for single-node simulations.
+        ExperimentResult
+            Simulation results with named dimensions and coordinates.
         """
-        from tvbo.data.types import TimeSeries
+        from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
             extract_ode_solution,
             run_julia_code,
-            solution_to_array,
+            solution_to_dataarray,
         )
 
         exp = self.experiment
@@ -104,23 +103,12 @@ class DiffEqAdapter:
         # 4. Extract solution
         t, u, sol = extract_ode_solution()
 
-        # 5. Reshape to TVBO convention (single node)
+        # 5. Build xr.DataArray directly — dims (time, variable, node)
         sv_names = list(model.state_variables.keys())
-        n_sv = len(sv_names)
-        n_nodes = 1
-        data = solution_to_array(t, u, n_sv, n_nodes)
+        da = solution_to_dataarray(t, u, sv_names, 1)
 
-        dt = float(exp.integration.step_size)
-        ts = TimeSeries(
-            time=t,
-            data=data,
-            labels_dimensions={
-                "State Variable": sv_names,
-                "Region": [0],
-            },
-            sample_period=dt,
+        sim = SimulationResult(data=da)
+        return ExperimentResult(
+            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            sol=sol,
         )
-        ts.source_experiment = exp
-        ts.sol = sol
-
-        return ts

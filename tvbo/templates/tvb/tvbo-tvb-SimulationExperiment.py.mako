@@ -114,4 +114,14 @@ if __name__ == "__main__":
     sc = load_connectivity(args.fweights, args.flengths)
     sim = define_simulation(sc, simulation_length=args.simulation_length)
     sim.configure()
-    sim.run()
+    raw = sim.run()
+
+    # Wrap in ExperimentResult for consistent access and export
+    from tvbo.data.types import ExperimentResult
+    results = ExperimentResult.from_tvb(sim, raw)
+    print(results)
+
+    # Export BIDS-compatible output
+    from pathlib import Path
+    results.export(Path(__file__).parent / "derivatives")
+    print(f"BIDS output: {Path(__file__).parent / 'derivatives'}")

@@ -73,7 +73,7 @@ flowchart LR
 |-------------|-------|-----------|-------------|
 | [BIDS](BIDS/index.qmd) | SimulationExperiment | Export | Brain Imaging Data Structure [@Poldrack2024; @Schirner2021] |
 | [OpenMINDS](OpenMINDS.qmd) | SimulationExperiment | Bidirectional | EBRAINS Knowledge Graph metadata (JSON-LD) |
-| NeuroML / LEMS | Dynamics | Export | LEMS ComponentType definitions [@Sinha2024] |
+| [NeuroML / LEMS](NeuroML/index.qmd) | Dynamics, SimulationExperiment | Export | LEMS ComponentType definitions + jNeuroML simulation [@Sinha2024] |
 
 ## Quick Start
 

@@ -14,7 +14,7 @@ parameters:
   conduction_speed:
     label: v
     value: 3.0
-    unit: mm/ms
+    unit: mm_per_ms
 parcellation:
   atlas:
     name: Destrieux

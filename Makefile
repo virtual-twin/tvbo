@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish pypi-release release gen-linkml gen-openminds all
+.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds all
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -25,7 +25,8 @@ help: ## Show this help
 	@echo "  make docs-preview       Preview docs (pre-render once, then live reload)"
 	@echo "  make docs-render        Full Quarto render"
 	@echo "  make docs-clean         Remove generated docs (api/, datamodel/, _site/)"
-	@echo "  make docs-publish       Publish docs to GitHub Pages"
+	@echo "  make docs-publish       Publish docs to GitHub Pages (full render)"
+	@echo "  make docs-publish-changed Render only changed .qmd files, then publish"
 	@echo "  make docs-gen-datamodel Generate LinkML datamodel documentation"
 	@echo "  make docs-quarto        Convert Usage notebooks (.ipynb) to .qmd"
 	@echo "  make docs-jupyter       Convert Usage .qmd files to .ipynb"
@@ -178,9 +179,32 @@ docs-render:
 	@echo "Full Quarto render..."
 	@cd docs && quarto render
 
-docs-publish:
+docs-publish: docs-render
 	@echo "Publishing docs to GitHub Pages..."
-	@cd docs && quarto publish gh-pages --no-prompt
+	@cd docs && quarto publish gh-pages --no-render --no-prompt
+
+docs-publish-changed:
+	@echo "Detecting locally modified .qmd/.md files..."
+	@changed=$$(  \
+		{  \
+			git diff --name-only HEAD 2>/dev/null;  \
+			git diff --name-only --cached 2>/dev/null;  \
+		} | sort -u | grep '^docs/.*\.\(qmd\|md\)$$'  \
+		  | grep -v '^docs/_' | grep -v '__pycache__'  \
+	); \
+	if [ -z "$$changed" ]; then  \
+		echo "No locally modified .qmd/.md files — skipping render.";  \
+	else  \
+		echo "Rendering $$(echo "$$changed" | wc -l | tr -d ' ') changed file(s):";  \
+		echo "$$changed" | sed 's/^/  /';  \
+		while IFS= read -r f; do  \
+			relpath="$${f#docs/}";  \
+			echo "→ quarto render $$relpath";  \
+			(cd docs && quarto render "$$relpath") || true;  \
+		done <<< "$$changed";  \
+	fi
+	@echo "Publishing to GitHub Pages..."
+	@cd docs && quarto publish gh-pages --no-render --no-prompt
 
 docs-test-to-debug:
 	@mkdir -p ./docs/Usage
