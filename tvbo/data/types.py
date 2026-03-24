@@ -96,13 +96,6 @@ class SimulationResult:
         elif data is not None and not isinstance(data, xr.DataArray):
             data = _to_dataarray(data, None, state_names)
 
-        # Drop singleton node/mode dims — they add no information and
-        # force downstream users to .squeeze().  These dimensions only
-        # matter when there are truly multiple nodes or modes.
-        if isinstance(data, xr.DataArray):
-            for dim in ('node', 'mode'):
-                if dim in data.dims and data.sizes[dim] == 1:
-                    data = data.squeeze(dim)
         self.data = data
         self.observations = observations if observations is not None else {}
         self.transient = transient

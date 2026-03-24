@@ -257,7 +257,6 @@ class Network(tvbo_datamodel.Network):
                             tvbo_datamodel.Edge(
                                 source=i,
                                 target=j,
-                                directed=True,
                                 parameters=[
                                     tvbo_datamodel.Parameter(
                                         name="weight", value=float(w_arr[i, j])
@@ -1586,7 +1585,7 @@ class Network(tvbo_datamodel.Network):
                     w = 1.0  # edge exists → default unit weight
                 W[i, j] = w
                 # Mirror for undirected edges (symmetric)
-                if not getattr(edge, "directed", False):
+                if not edge.directed:
                     W[j, i] = w
         return W
 
@@ -1642,7 +1641,7 @@ class Network(tvbo_datamodel.Network):
                     d = 0.0
                 L[i, j] = d
                 # Mirror for undirected edges (symmetric)
-                if not getattr(edge, "directed", False):
+                if not edge.directed:
                     L[j, i] = d
         return L
 
@@ -1666,7 +1665,7 @@ class Network(tvbo_datamodel.Network):
                 delay = self._get_edge_param(edge, "delay")
                 D[i, j] = delay
                 # Mirror for undirected edges (symmetric)
-                if not getattr(edge, "directed", False):
+                if not edge.directed:
                     D[j, i] = delay
                 if delay > 0:
                     has_delays = True
@@ -1930,7 +1929,7 @@ class Network(tvbo_datamodel.Network):
             # Use explicit edges
             for edge in explicit_edges:
                 edge_attrs = {
-                    "directed": getattr(edge, "directed", True),
+                    "directed": edge.directed,
                     "source_var": edge.source_var,
                     "target_var": edge.target_var,
                     "coupling": edge.coupling,
@@ -2485,9 +2484,9 @@ class Network(tvbo_datamodel.Network):
                         "weight": weight,
                         "delay": self._get_edge_param(edge, "delay") or 0.0,
                         "distance": self._get_edge_param(edge, "distance") or 0.0,
-                        "directed": getattr(edge, "directed", True),
-                        "source_var": getattr(edge, "source_var", None),
-                        "target_var": getattr(edge, "target_var", None),
+                        "directed": edge.directed,
+                        "source_var": edge.source_var,
+                        "target_var": edge.target_var,
                     }
                     G.add_edge(source, target, **edge_attrs)
 
@@ -2799,6 +2798,8 @@ class Network(tvbo_datamodel.Network):
             if val is None:
                 continue
             mat[int(e.source), int(e.target)] = float(val)
+            if not e.directed:
+                mat[int(e.target), int(e.source)] = float(val)
             found_any = True
         return mat if found_any else None
 
