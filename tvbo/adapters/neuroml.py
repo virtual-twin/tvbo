@@ -1622,14 +1622,13 @@ class NeuroMLAdapter(BaseAdapter):
                 coords={'time': time_data, 'quantity': col_names},
             )
         else:
-            # Single population: existing flat layout
+            # Single population: (time, variable) — no node dim when there's only one
             da = xr.DataArray(
-                data=values_data.reshape(-1, len(sv_names), 1),
-                dims=['time', 'variable', 'node'],
+                data=values_data.reshape(-1, len(sv_names)),
+                dims=['time', 'variable'],
                 coords={
                     'time': time_data,
                     'variable': sv_names,
-                    'node': ['0'],
                 },
             )
 

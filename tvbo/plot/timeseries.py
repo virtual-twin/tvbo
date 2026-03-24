@@ -14,7 +14,7 @@ import numpy as np
 # ── helpers ──────────────────────────────────────────────────────────
 
 def _prepare(data):
-    """Squeeze singleton dims and average multi-node data → (time, variable)."""
+    """Average multi-node data along node dim → (time, variable)."""
     import xarray as xr
 
     time = data.coords['time'].values if 'time' in data.coords else np.arange(data.shape[0])
@@ -228,11 +228,15 @@ def plot_power_spectrum(result, VOI=None, ROI='mean', mode=0,
     power = np.abs(fft(arr, axis=0)[:n_samples // 2]) ** 2
     power /= power.sum(axis=0, keepdims=True)
 
-    # Reduce to (freq, variable)
-    if power.ndim >= 3:
-        power = power[..., mode] if power.ndim == 3 else power[:, :, :, mode]
-    if power.ndim >= 3:
-        power = power.mean(axis=2) if ROI == 'mean' else power[:, :, ROI]
+    # Reduce to (freq, variable) — drop mode first, then node
+    if 'mode' in data.dims and power.ndim > len(data.dims) - 1:
+        power = power[..., mode]
+    if 'node' in data.dims:
+        node_axis = list(data.dims).index('node')
+        if 'variable' in data.dims:
+            node_axis -= 1  # variable was kept or already selected out
+        if power.ndim > 2:
+            power = power.mean(axis=-1) if ROI == 'mean' else power[..., ROI]
 
     created = ax is None
     if created:

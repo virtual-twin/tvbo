@@ -43,7 +43,14 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None):
     if isinstance(raw_data, xr.DataArray):
         return raw_data
     data_np = np.asarray(raw_data)
-    dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+    all_dims = ['time', 'variable', 'node', 'mode']
+    dims = all_dims[:data_np.ndim]
+    # node and mode dims only exist when they actually carry information (size > 1).
+    # Trailing singleton dims are meaningless — drop them so selection always
+    # yields a predictable shape without any downstream squeeze() calls.
+    while len(dims) > 2 and dims[-1] in ('node', 'mode') and data_np.shape[len(dims) - 1] == 1:
+        data_np = data_np[..., 0]
+        dims = dims[:-1]
     coords = {}
     if raw_time is not None:
         coords['time'] = np.asarray(raw_time)
