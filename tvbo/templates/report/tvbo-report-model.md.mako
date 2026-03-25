@@ -2,6 +2,7 @@
 
 from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
 from tvbo.utils import report
+from tvbo.utils.units import unit_to_latex
 from tvbo import Dynamics
 
 derivative_notation = context.get('derivative_notation', 'd')
@@ -64,7 +65,7 @@ ${"### Parameters"}
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
-${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {p.unit if p.unit else 'N/A'} | {p.description} |" for p in model.parameters.values()])}
+${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {'$' + unit_to_latex(p.unit) + '$' if p.unit and unit_to_latex(p.unit) else ('—' if p.unit else 'N/A')} | {p.description} |" for p in model.parameters.values()])}
 
 % if derived_parameters or derived_variables or functions:
 ${"### Derived Quantities"}
