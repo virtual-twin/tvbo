@@ -1,4 +1,5 @@
 name: RulkovMap
+model_type: generic
 references:
 - Rulkov2002
 - Rulkov2001

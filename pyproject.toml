@@ -127,7 +127,7 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-n 4 --dist=loadscope"
+addopts = "-n 1 --dist=loadscope"
 markers = [
     "backend_core: core backend-agnostic simulation tests",
     "backend_jax: JAX backend tests",

@@ -220,27 +220,27 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
         _upgrade_network_couplings(self.network, _coupling_types)
 
-        # If network defines couplings and experiment has no explicit coupling,
-        # use the first network coupling as the experiment-level default.
-        # This ensures the JAX template (which reads experiment.coupling) picks
-        # up the right coupling function.
+        # --- Coupling resolution: network.coupling is canonical ---
+        # network.coupling is a catalog of named coupling functions (keyed by
+        # function name, e.g. 'Linear'). The mapping from coupling_inputs to
+        # functions happens at code generation time in templates.
+        dyn_ci = getattr(getattr(self, 'dynamics', None), 'coupling_inputs', None)
+        has_coupling_inputs = bool(dyn_ci)
         net_coup = getattr(self.network, 'coupling', None)
+        exp_coup = getattr(self, 'coupling', None)
+
         if net_coup:
-            # Extract first coupling from dict, list, or single object
-            if isinstance(net_coup, dict):
-                first_coup = next(iter(net_coup.values()))
-            elif isinstance(net_coup, list):
-                first_coup = net_coup[0] if net_coup else None
-            else:
-                first_coup = net_coup
-            exp_coup = getattr(self, 'coupling', None)
-            # Override only if experiment coupling is the auto-generated default
-            if exp_coup is None or (
-                isinstance(exp_coup, Coupling)
-                and str(getattr(exp_coup, 'name', '')) == 'Linear'
-                and not getattr(exp_coup, 'iri', None)
-            ):
-                self.coupling = first_coup
+            # network.coupling supervenes: derive exp.coupling from first entry
+            if isinstance(net_coup, dict) and net_coup:
+                self.coupling = next(iter(net_coup.values()))
+        elif has_coupling_inputs:
+            # No network.coupling — populate from exp.coupling or default
+            func = exp_coup
+            if not func:
+                func = Coupling(name="Linear", iri="tvbo:Linear")
+                self.coupling = func
+            coup_name = str(getattr(func, 'name', 'Linear'))
+            self.network.coupling[coup_name] = func
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, '_pending_source_file', None)
@@ -251,9 +251,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
-
-        if not getattr(self, "coupling", None):
-            self.coupling = Coupling(name="Linear", iri="tvbo:Linear")
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.

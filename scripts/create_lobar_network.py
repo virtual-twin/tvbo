@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
-"""Create a lobar structural+functional connectivity network from the dTOR tractogram.
+"""Create lobar brain-network datasets from dTOR tractogram and avgMatrix.
 
-This script creates a small brain-lobe–level network by:
+This script creates two brain-lobe–level networks:
+
+**Lobar SC (17 nodes, rec-dTOR)**
+    SC-only network with weights and tract lengths from the dTOR tractogram.
+
+**Lobar8 SCFC (16 nodes, rec-avgMatrix)**
+    SC+FC network where both structural (weight, length) and functional
+    connectivity are aggregated from the DesikanKilliany 84-node avgMatrix
+    (tvboptim dk_average).  BrainStem is excluded (no DK parcellation)
+    giving 8 lobes × 2 hemispheres = 16 nodes.
+
+Pipeline:
 1. Building a lobar atlas NIfTI from the DesikanKilliany (DKT31) segmentation
    in MNI152NLin2009cAsym space (from TemplateFlow)
 2. Running MRtrix ``tck2connectome`` to compute streamline counts (weights)
-   and mean tract lengths between lobes
-3. Averaging the DesikanKilliany (avgMatrix) FC across regions per lobe
-4. Writing a tvbo-compliant HDF5+YAML network into ``tvbo/database/networks/``
+   and mean tract lengths between lobes → Lobar SC
+3. Aggregating the DK 84-node avgMatrix SC+FC to lobar level → Lobar8 SCFC
+4. Writing tvbo-compliant HDF5+YAML networks into ``tvbo/database/networks/``
 
 The resulting network has anatomical brain lobes as nodes:
 
@@ -199,22 +210,27 @@ DK_ABBREV_TO_LOBE = {
 }
 
 
-def compute_lobar_fc(dk_network_dir: Path) -> np.ndarray:
-    """Compute lobar FC by averaging the DK 84-node FC matrix.
+def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
+    """Aggregate the DK 84-node avgMatrix SC+FC to lobar level.
 
-    Loads the DesikanKilliany (avgMatrix) FC and averages correlations
-    across all region pairs belonging to each lobe pair, producing a
-    17×17 mean FC matrix.
+    Loads the DesikanKilliany avgMatrix weight, length, and FC matrices
+    and aggregates them to 17×17 lobar matrices.  BrainStem has no DK
+    regions, so its row/column will be zero.
+
+    Aggregation:
+    - weight: mean of region-pair weights per lobe pair
+    - length: weight-averaged mean tract length per lobe pair
+    - fc: mean Pearson correlation per lobe pair
 
     Parameters
     ----------
     dk_network_dir : Path
-        Directory containing the DK network HDF5 and YAML files.
+        Directory containing the DK avgMatrix network HDF5 and YAML files.
 
     Returns
     -------
-    lobar_fc : ndarray (17, 17)
-        Mean functional connectivity between lobes.
+    matrices : dict
+        Keys ``weight``, ``length``, ``fc`` — each a float32 (17, 17) array.
     """
     import h5py
 
@@ -229,8 +245,10 @@ def compute_lobar_fc(dk_network_dir: Path) -> np.ndarray:
         dk_data = yaml.safe_load(f)
     dk_labels = [n["label"] for n in dk_data["nodes"]]
 
-    # Load FC matrix
+    # Load all matrices
     with h5py.File(dk_h5, "r") as f:
+        w_84 = np.array(f["edges/weight/data"])
+        l_84 = np.array(f["edges/length/data"])
         fc_84 = np.array(f["edges/fc/data"])
 
     n_dk = len(dk_labels)
@@ -248,7 +266,9 @@ def compute_lobar_fc(dk_network_dir: Path) -> np.ndarray:
         if lobe_label in LOBE_ORDER:
             dk_to_lobe[i] = LOBE_ORDER.index(lobe_label)
 
-    # Aggregate: mean FC per lobe pair
+    # Aggregate to lobar level
+    lobar_w = np.zeros((n_lobes, n_lobes), dtype=np.float64)
+    lobar_wl = np.zeros((n_lobes, n_lobes), dtype=np.float64)  # weight × length
     lobar_fc = np.zeros((n_lobes, n_lobes), dtype=np.float64)
     counts = np.zeros((n_lobes, n_lobes), dtype=np.int32)
 
@@ -260,18 +280,35 @@ def compute_lobar_fc(dk_network_dir: Path) -> np.ndarray:
             lj = dk_to_lobe[j]
             if lj < 0:
                 continue
+            lobar_w[li, lj] += w_84[i, j]
+            lobar_wl[li, lj] += w_84[i, j] * l_84[i, j]
             lobar_fc[li, lj] += fc_84[i, j]
             counts[li, lj] += 1
 
+    # Mean weight, FC, and weight-averaged length per lobe pair.
+    # All three use mean (not sum) so that lobe size doesn't dominate —
+    # sum(W) scales with n_regions², destroying the SC-FC relationship.
     mask = counts > 0
     lobar_fc[mask] /= counts[mask]
+    lobar_w[mask] /= counts[mask]
+
+    lobar_l = np.zeros((n_lobes, n_lobes), dtype=np.float64)
+    w_mask = lobar_w > 0
+    lobar_l[w_mask] = lobar_wl[w_mask] / (lobar_w[w_mask] * counts[w_mask])
 
     n_mapped = np.count_nonzero(dk_to_lobe >= 0)
-    print(f"[fc  ] Aggregated DK FC ({n_dk} regions, {n_mapped} mapped) "
-          f"→ {n_lobes}×{n_lobes} lobar FC")
-    print(f"[fc  ] Lobar FC range: [{lobar_fc.min():.4f}, {lobar_fc.max():.4f}]")
+    print(f"[avg ] Aggregated DK avgMatrix ({n_dk} regions, {n_mapped} mapped) "
+          f"→ {n_lobes}×{n_lobes} lobar SC+FC")
+    print(f"[avg ] weight range: [{lobar_w.min():.4f}, {lobar_w.max():.4f}]")
+    print(f"[avg ] length range: [{lobar_l[lobar_l > 0].min():.1f}, "
+          f"{lobar_l.max():.1f}] mm")
+    print(f"[avg ] FC range: [{lobar_fc.min():.4f}, {lobar_fc.max():.4f}]")
 
-    return lobar_fc.astype(np.float32)
+    return {
+        "weight": lobar_w.astype(np.float32),
+        "length": lobar_l.astype(np.float32),
+        "fc": lobar_fc.astype(np.float32),
+    }
 
 
 # ── Build lobar atlas NIfTI ─────────────────────────────────────────
@@ -509,21 +546,22 @@ def build_network(
 
 
 def build_lobar8_network(
-    parent_network: "Network",
-    fc: np.ndarray,
+    lobar_matrices: dict[str, np.ndarray],
+    centroids: dict[str, tuple[float, float, float]],
 ) -> "Network":
-    """Build a 16-node (8 per hemisphere) SC+FC network by dropping BrainStem.
+    """Build a 16-node (8 per hemisphere) SC+FC network from avgMatrix.
 
-    Subsets the 17-node lobar SC network to only regions with both SC and FC.
-    BrainStem is excluded because the DK atlas has no brainstem parcellation,
-    so FC cannot be computed for it.
+    Both SC (weight, length) and FC come from the same source — the
+    DesikanKilliany 84-node avgMatrix, aggregated to lobar level.
+    BrainStem is excluded (no DK parcellation for it).
 
     Parameters
     ----------
-    parent_network : Network
-        The 17-node lobar SC network.
-    fc : ndarray (17, 17)
-        Full lobar FC matrix (BrainStem row/col will be dropped).
+    lobar_matrices : dict
+        Keys ``weight``, ``length``, ``fc`` — each (17, 17) from
+        :func:`compute_lobar_avgmatrix`.  BrainStem row/col is dropped.
+    centroids : dict
+        Lobe label → (x, y, z) MNI coordinates for node positions.
     """
     from tvbo.classes.network import Network
 
@@ -531,30 +569,28 @@ def build_lobar8_network(
     bs_idx = LOBE_ORDER.index("BrainStem")
     keep = [i for i in range(n_full) if i != bs_idx]
 
-    # Subset matrices
-    W = parent_network.matrix("weight")[np.ix_(keep, keep)]
-    L = parent_network.matrix("length")[np.ix_(keep, keep)]
+    # Subset 17×17 → 16×16 (drop BrainStem)
+    W = lobar_matrices["weight"][np.ix_(keep, keep)]
+    L = lobar_matrices["length"][np.ix_(keep, keep)]
+    FC = lobar_matrices["fc"][np.ix_(keep, keep)]
 
     net8 = Network.from_matrix(
         weights=W,
         lengths=L,
         labels=LOBE_ORDER_8,
     )
+    net8.set_matrix("fc", FC)
 
-    # FC (subset from 17×17 to 16×16)
-    net8.set_matrix("fc", fc[np.ix_(keep, keep)])
-
-    # Copy node positions from parent
+    # Set node positions from centroids
     for node in net8.nodes:
-        parent_node = next(
-            (n for n in parent_network.nodes if n.label == node.label), None
-        )
-        if parent_node and parent_node.position:
-            pos = parent_node.position
-            node.position = {"x": pos.x, "y": pos.y, "z": pos.z}
+        c = centroids.get(node.label)
+        if c:
+            node.position = {"x": float(round(c[0], 4)),
+                             "y": float(round(c[1], 4)),
+                             "z": float(round(c[2], 4))}
 
     # Metadata
-    net8.label = "Lobar8 (dTOR)"
+    net8.label = "Lobar8 (avgMatrix)"
     net8.descriptor = "SCFC"
     net8.distance_unit = "mm"
     net8.time_unit = "ms"
@@ -566,15 +602,13 @@ def build_lobar8_network(
             "coordinateSpace": "MNI152NLin2009cAsym",
         }
     }
-    net8.tractogram = {"name": "dTOR"}
     net8.bids = {
         "template": "MNI152NLin2009cAsym",
-        "cohort": "HCPYA",
-        "reconstruction": "dTOR",
+        "reconstruction": "avgMatrix",
         "atlas": "Lobar8",
     }
 
-    # Subgroup mapping (same as parent, minus BrainStem)
+    # Subgroup mapping
     group_names = []
     mapping = []
     for label in LOBE_ORDER_8:
@@ -928,17 +962,17 @@ def main() -> None:
         print(f"[data] lengths: shape={lengths.shape}, "
               f"mean={lengths[lengths > 0].mean():.1f} mm")
 
-        # Step 2b: Compute lobar FC from DK avgMatrix
+        # Step 2b: Aggregate DK avgMatrix SC+FC to lobar level
         dk_network_dir = args.output_dir
         dk_h5 = dk_network_dir / (
             "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany"
             "_desc-SCFC_relmat.h5"
         )
-        lobar_fc = None
+        lobar_avgmatrix = None
         if dk_h5.exists():
-            lobar_fc = compute_lobar_fc(dk_network_dir)
+            lobar_avgmatrix = compute_lobar_avgmatrix(dk_network_dir)
         else:
-            print(f"[warn] DK FC not found at {dk_h5}, skipping FC")
+            print(f"[warn] DK avgMatrix not found at {dk_h5}, skipping Lobar8")
 
         # Step 3: Build tvbo Network (SC only for 17-node Lobar)
         network = build_network(weights, lengths, centroids)
@@ -974,9 +1008,9 @@ def main() -> None:
             print(f"[ok  ] {surf_sidecar.name}")
             print(f"[ok  ] {surf_sidecar.with_suffix('.h5').name}")
 
-        # Step 6: Build Lobar8 (16-node SC+FC, no BrainStem)
-        if lobar_fc is not None:
-            net8 = build_lobar8_network(network, lobar_fc)
+        # Step 6: Build Lobar8 (16-node SC+FC from avgMatrix, no BrainStem)
+        if lobar_avgmatrix is not None:
+            net8 = build_lobar8_network(lobar_avgmatrix, centroids)
             net8_name = net8.bids_filename
             net8_sidecar = (args.output_dir / net8_name).with_suffix(".yaml")
 

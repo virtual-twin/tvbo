@@ -423,6 +423,40 @@ class ImagingModality(str, Enum):
     """
 
 
+class ModelType(str, Enum):
+    """
+    Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db().
+    """
+    mean_field = "mean_field"
+    """
+    Mathematically derived mean-field models obtained by exact reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne, ReducedWongWang, ZerlautAdaptationFirstOrder.
+    """
+    neural_mass = "neural_mass"
+    """
+    Phenomenological population-rate / neural-mass models that describe synaptic and firing-rate dynamics without an explicit derivation from single-neuron statistics. Examples: JansenRit, WilsonCowan, LarterBreakspear, TsodyksMarkram.
+    """
+    phase_oscillator = "phase_oscillator"
+    """
+    Phase-reduced or Kuramoto-type oscillator models. Examples: Kuramoto, SupHopf.
+    """
+    phenomenological = "phenomenological"
+    """
+    Empirical / phenomenological models that capture macroscopic dynamics without direct biophysical derivation. Examples: Epileptor2D, Epileptor5D.
+    """
+    spiking = "spiking"
+    """
+    Single-neuron or conductance-based spiking models (HH, AdEx, LIF, Izhikevich, etc.). These can be used as nodes in a network alongside mean-field models.
+    """
+    generic = "generic"
+    """
+    Generic / normal-form dynamical systems not specific to neural modelling (e.g. Generic2dOscillator, GenericLinear).
+    """
+    field = "field"
+    """
+    Spatially distributed neural-field models described by integro- differential or PDE formulations.
+    """
+
+
 class SystemType(str, Enum):
     continuous = "continuous"
     """
@@ -3547,6 +3581,7 @@ class Dynamics(ConfiguredBaseModel):
     functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulus: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     modes: Optional[dict[str, Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['components'], 'domain_of': ['Dynamics']} })
+    model_type: Optional[ModelType] = Field(default=None, description="""Coarse classification of this model (mean_field, neural_mass, phase_oscillator, phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
     autonomous: Optional[bool] = Field(default=True, description="""Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'true'} })
     observed: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Observable functions computed from states, inputs, and parameters after simulation. Unlike derived_variables (which are intermediate algebraic expressions used within the ODE), observed variables are post-hoc quantities recoverable from the solution. Maps to obsf/obssym in ND.jl EdgeModel/VertexModel. Example: absolute force magnitude computed from force components.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Coupling']} })

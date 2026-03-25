@@ -1,4 +1,5 @@
 name: MorrisLecar
+model_type: spiking
 references:
 - MorrisLecar1981
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl

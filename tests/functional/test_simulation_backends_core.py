@@ -36,7 +36,8 @@ class TestSimulationBackendsCore:
         assert exp is not None
         assert exp.dynamics is not None
         assert exp.integration is not None
-        assert exp.coupling is not None
+        if model.coupling_inputs:
+            assert exp.coupling is not None
 
     @pytest.mark.backend_jax
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)

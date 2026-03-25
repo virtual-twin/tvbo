@@ -1,5 +1,6 @@
 name: ModelJansen1995
 iri: tvbo:ModelJansen1995
+model_type: neural_mass
 has_reference: "Jansen1995"
 label: "Jansen-Rit Neural Mass Model (single column)"
 description: "JR model with canonical parameters; long-range input is injected via a coupling term. Output is pyramidal potential difference."
@@ -82,6 +83,7 @@ state_variables:
         label: "Excitatory interneuron membrane potential (position)"
         equation:
             rhs: y4
+        coupling_variable: true
         unit: mV
     y4:
         label: "Excitatory EPSP drive (velocity) with global input"
@@ -92,6 +94,7 @@ state_variables:
         label: "Inhibitory interneuron membrane potential (position)"
         equation:
             rhs: y5
+        coupling_variable: true
         unit: mV
     y5:
         label: "Inhibitory IPSP drive (velocity)"

@@ -1,4 +1,5 @@
 name: ThomasCyclical
+model_type: generic
 references:
 - Thomas1999
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl

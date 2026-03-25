@@ -70,8 +70,28 @@ elif model.coupling_terms:
 first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dict else None
 has_coupling = bool(coupling_inputs_dict)
 
-# Build all_couplings dict from network.coupling
+# Build all_couplings dict from network.coupling (keyed by function name — schema convention)
 all_couplings = dict(network.coupling.items()) if network.coupling else {}
+
+# Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
+# tvboptim keys coupling by coupling_input name, schema keys by function name
+ci_coupling_map = {}  # ci_name -> (func_name, coupling_obj)
+func_to_first_ci = {}  # func_name -> first ci_name (for state access translation)
+if coupling_inputs_dict and all_couplings:
+    funcs = list(all_couplings.items())  # [(name, obj), ...]
+    ci_names = list(coupling_inputs_dict.keys())
+    if len(funcs) == 1:
+        # Single function → broadcast to all coupling inputs
+        for ci_name in ci_names:
+            ci_coupling_map[ci_name] = funcs[0]
+        func_to_first_ci[funcs[0][0]] = ci_names[0]
+    elif len(funcs) == len(ci_names):
+        # Map by order
+        for ci_name, (_fn, _co) in zip(ci_names, funcs):
+            ci_coupling_map[ci_name] = (_fn, _co)
+            func_to_first_ci.setdefault(_fn, ci_name)
+# Translate function-name coupling key to ci name for tvboptim state access
+_to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 
 # Check if any coupling has delays
 has_delay = any(c.delayed for c in all_couplings.values() if c)
@@ -83,10 +103,10 @@ coupling_param_names = set()  # Simple set of param names for quick lookup
 for ck, cobj in all_couplings.items():
     if cobj and cobj.parameters:
         for p in cobj.parameters.values():
-            all_coupling_params[(ck, p.name)] = p
+            all_coupling_params[(_to_ci_key(ck), p.name)] = p
             coupling_param_names.add(p.name)
             if p.shape and 'n_nodes' in str(p.shape):
-                all_coupling_param_shapes[(ck, p.name)] = str(p.shape)
+                all_coupling_param_shapes[(_to_ci_key(ck), p.name)] = str(p.shape)
 
 # Integration metadata
 SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}
@@ -277,7 +297,7 @@ for coupling_key, coupling_obj in all_couplings.items():
                 if not is_hetero:
                     is_hetero = param.heterogeneous or param.shape
                 param._optim_heterogeneous = bool(is_hetero)
-                param._coupling_key = coupling_key
+                param._coupling_key = _to_ci_key(coupling_key)
                 optim_coupling_params.append(param)
 
 coupling_optim_params = optim_coupling_params  # Alias for backwards compatibility
@@ -448,7 +468,7 @@ for expl in exploration_list:
         if '.' in pname:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = prefix in all_couplings
-            source_key = prefix
+            source_key = _to_ci_key(prefix) if is_coupling_param else prefix
         # Auto-expand heterogeneous parameters: if pname matches a dynamics param
         # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
         # e.g., K with shape "(n_nodes,)" → K_el0, K_el1, ... K_el(n_nodes-1)
@@ -765,6 +785,7 @@ def create_network(
 
     coupling_dict = {}
 
+    ## Build coupling parameter dicts per function
     % for coupling_key, coupling_obj in all_couplings.items():
 <%
     # Class name = coupling key (cleaned), same as in cfun template
@@ -782,7 +803,12 @@ def create_network(
     }
     if coupling_params and '${coupling_key}' in coupling_params:
         _${coupling_key}_params.update(coupling_params['${coupling_key}'])
-    coupling_dict['${coupling_key}'] = ${c_class_name}(**_${coupling_key}_params)
+    % endfor
+
+    ## Assign coupling instances keyed by coupling_input name (tvboptim requirement)
+    % for ci_name, (func_name, _ci_obj) in ci_coupling_map.items():
+<%  c_class_name = func_name.replace(' ', '').replace('-', '') %>\
+    coupling_dict['${ci_name}'] = ${c_class_name}(**dict(_${func_name}_params))
     % endfor
 
     % if has_noise:
@@ -1224,7 +1250,10 @@ fp_lo = fp.get('lower_bound', None)
 fp_hi = fp.get('upper_bound', None)
 has_bounds = fp_lo is not None or fp_hi is not None
 # Coupling key is explicitly set via dotted notation (e.g., FastLinearCoupling.G)
+# Translate function name to ci name for tvboptim state access
 coupling_key_for_param = fp.get('coupling_key', None)
+if coupling_key_for_param:
+    coupling_key_for_param = _to_ci_key(coupling_key_for_param)
 is_coupling = coupling_key_for_param is not None
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'

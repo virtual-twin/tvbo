@@ -12,35 +12,42 @@ else:
     coupling = context['coupling']
     model = context.get('model', None)
 
-# Collect coupling parameter names for use in expressions
-coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
+_has_coupling = coupling is not None
 
-has_delay = coupling.delayed and (experiment.horizon > 1)
+if _has_coupling:
+    # Collect coupling parameter names for use in expressions
+    coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
 
-# Get incoming_states names for variable assignment
-incoming_states_names = getattr(coupling, 'incoming_states', None) or []
-if isinstance(incoming_states_names, str):
-    incoming_states_names = [incoming_states_names]
-# Convert to list if it's some other iterable
-incoming_states_names = list(incoming_states_names) if incoming_states_names else []
+    has_delay = coupling.delayed and (experiment.horizon > 1)
 
-# Check if any incoming_states variable name is used in pre_expression
-pre_rhs = str(coupling.pre_expression.rhs)
-needs_x_j = 'x_j' in pre_rhs or any(str(name) in pre_rhs for name in incoming_states_names)
-is_list_expr = pre_rhs.strip().startswith('[') and pre_rhs.strip().endswith(']')
+    # Get incoming_states names for variable assignment
+    incoming_states_names = getattr(coupling, 'incoming_states', None) or []
+    if isinstance(incoming_states_names, str):
+        incoming_states_names = [incoming_states_names]
+    # Convert to list if it's some other iterable
+    incoming_states_names = list(incoming_states_names) if incoming_states_names else []
 
-# Check if we need to return multiple coupling outputs
-num_coupling_terms = len(model.coupling_terms) if hasattr(model, 'coupling_terms') else 1
-needs_stacked_output = num_coupling_terms > 1
+    # Check if any incoming_states variable name is used in pre_expression
+    pre_rhs = str(coupling.pre_expression.rhs)
+    needs_x_j = 'x_j' in pre_rhs or any(str(name) in pre_rhs for name in incoming_states_names)
+    is_list_expr = pre_rhs.strip().startswith('[') and pre_rhs.strip().endswith(']')
 
-# Check if coupling has per-term weight parameters (e.g., wLRE, wFFI)
-# These would be named like w_<term_name> or just listed as weight-type parameters
-coupling_term_names = list(model.coupling_terms.keys()) if hasattr(model, 'coupling_terms') else []
-has_weight_params = any(par.name.startswith('w') and par.name[1:] in ['LRE', 'FFI', '_'] or
-                       par.name.lower() in ['wlre', 'wffi']
-                       for par in coupling.parameters.values())
+    # Check if we need to return multiple coupling outputs
+    num_coupling_terms = len(model.coupling_terms) if hasattr(model, 'coupling_terms') else 1
+    needs_stacked_output = num_coupling_terms > 1
+
+    # Check if coupling has per-term weight parameters (e.g., wLRE, wFFI)
+    # These would be named like w_<term_name> or just listed as weight-type parameters
+    coupling_term_names = list(model.coupling_terms.keys()) if hasattr(model, 'coupling_terms') else []
+    has_weight_params = any(par.name.startswith('w') and par.name[1:] in ['LRE', 'FFI', '_'] or
+                           par.name.lower() in ['wlre', 'wffi']
+                           for par in coupling.parameters.values())
 %>
 
+% if not _has_coupling:
+def cfun(weights, history, current_state, p, delay_indices, t):
+    return jnp.zeros_like(current_state[0])
+% else:
 def cfun(weights, history, current_state, p, delay_indices, t):
     n_node = weights.shape[0]
     ${', '.join([par.name for par in coupling.parameters.values()])} = p.${', p.'.join([par.name for par in coupling.parameters.values()])}
@@ -130,4 +137,4 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     % endif
     return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
 % endif
-
+% endif

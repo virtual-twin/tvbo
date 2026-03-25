@@ -1,4 +1,5 @@
 name: MannevilleSimpleMap
+model_type: generic
 references:
 - Manneville1980
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

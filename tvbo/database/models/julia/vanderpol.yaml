@@ -1,4 +1,5 @@
 name: VanDerPolForced
+model_type: generic
 autonomous: false
 references:
 - vanderpol1926

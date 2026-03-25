@@ -1,4 +1,5 @@
 name: StuartLandauOscillator
+model_type: phase_oscillator
 references:
 - Landau1944
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl

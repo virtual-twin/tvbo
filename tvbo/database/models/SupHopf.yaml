@@ -1,5 +1,6 @@
 name: SupHopf
 iri: tvbo:SupHopf
+model_type: generic
 parameters:
   a:
     name: a

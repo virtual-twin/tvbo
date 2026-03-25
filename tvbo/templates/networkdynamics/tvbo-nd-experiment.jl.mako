@@ -157,7 +157,7 @@ g = complete_graph(${n_nodes})
 
 ## ── Network ─────────────────────────────────────────────────────────────────
 <%
-default_coupling_name = next(iter(all_couplings.keys())) if all_couplings else coupling.name
+default_coupling_name = next(iter(all_couplings.keys())) if all_couplings else (coupling.name if coupling else 'Diffusion')
 has_weight_param = weight_sym is not None
 needs_dealias = is_heterogeneous or has_events
 # For single-node self-loop, use the zero edge to avoid coupling feedback

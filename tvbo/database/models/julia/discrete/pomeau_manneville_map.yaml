@@ -1,4 +1,5 @@
 name: PomeauMannevilleMap
+model_type: generic
 references:
 - MannevillePomeau1980
 - Meyer2019

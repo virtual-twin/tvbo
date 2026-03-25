@@ -1,4 +1,5 @@
 name: ZaslavskiiMap
+model_type: generic
 references:
 - Zaslavskii1978
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

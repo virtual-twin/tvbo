@@ -1,4 +1,5 @@
 name: StandardMap
+model_type: generic
 references:
 - Chirikov1969
 - Greene1979

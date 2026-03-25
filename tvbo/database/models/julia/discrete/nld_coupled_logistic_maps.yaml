@@ -1,4 +1,5 @@
 name: NLDCoupledLogisticMaps4
+model_type: generic
 references:
 - Custom
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

@@ -1,0 +1,75 @@
+name: HH_Tissue_Q10
+model_type: spiking
+source: 'NeuroML2 example: Ex17_Tissue'
+parameters:
+  C:
+    value: 10.0
+  g_Na:
+    value: 1200.0
+  g_K:
+    value: 360.0
+  g_L:
+    value: 3.0
+  E_Na:
+    value: 50.0
+  E_K:
+    value: -77.0
+  E_L:
+    value: -54.3
+  I_amp:
+    value: 0.08
+  Q10_early:
+    value: 0.333333
+    description: 'Q10 at 22C: 3^(-1)'
+  Q10_late:
+    value: 0.172414
+    description: 'Q10 at 16C: 3^(-1.6)'
+  switch_time:
+    value: 500.0
+    unit: ms
+    description: Temperature switch at 500ms
+derived_variables:
+  Q10:
+    equation:
+      rhs: Piecewise((Q10_early, t < switch_time), (Q10_late, True))
+    description: 'Q10 factor: switches from 22C to 16C at 500ms'
+  I_ext:
+    equation:
+      rhs: I_amp
+    description: Constant current 0.08 nA
+  alpha_m:
+    equation:
+      rhs: Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))
+  beta_m:
+    equation:
+      rhs: 4.0*exp(-(v + 65.0)/18.0)
+  alpha_h:
+    equation:
+      rhs: 0.07*exp(-(v + 65.0)/20.0)
+  beta_h:
+    equation:
+      rhs: 1.0/(1.0 + exp(-(v + 35.0)/10.0))
+  alpha_n:
+    equation:
+      rhs: Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))
+  beta_n:
+    equation:
+      rhs: 0.125*exp(-(v + 65.0)/80.0)
+state_variables:
+  v:
+    equation:
+      rhs: (-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C
+    initial_value: -65.0
+    variable_of_interest: true
+  m:
+    equation:
+      rhs: Q10*(alpha_m*(1 - m) - beta_m*m)
+    initial_value: 0.052932
+  h:
+    equation:
+      rhs: Q10*(alpha_h*(1 - h) - beta_h*h)
+    initial_value: 0.596121
+  n:
+    equation:
+      rhs: Q10*(alpha_n*(1 - n) - beta_n*n)
+    initial_value: 0.317677

@@ -1,4 +1,5 @@
 name: QuadrupoleBosonHamiltonian
+model_type: generic
 references:
 - Eisenberg1975
 - Baran1998

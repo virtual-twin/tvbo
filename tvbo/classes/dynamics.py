@@ -791,10 +791,61 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return cls.from_file(str(resolve("Dynamics", name)))
 
     @classmethod
-    def list_db(cls) -> list[str]:
-        """List available models in the tvbo database."""
-        from tvbo.data.registry import list_entries
-        return list_entries("Dynamics")
+    def list_db(cls, model_type: str | None = None) -> list[str]:
+        """List available models in the tvbo database.
+
+        Parameters
+        ----------
+        model_type : str, optional
+            Filter by model category.  Valid values: ``mean_field``,
+            ``neural_mass``, ``phase_oscillator``, ``phenomenological``,
+            ``spiking``, ``generic``, ``field``.
+
+        Examples
+        --------
+        >>> Dynamics.list_db()                           # all models
+        >>> Dynamics.list_db(model_type='mean_field')    # mean-field only
+        >>> Dynamics.list_db(model_type='spiking')       # spiking models
+        """
+        from tvbo.data.registry import list_entries, list_entries_with_metadata
+        if model_type is None:
+            return list_entries("Dynamics")
+        rows = list_entries_with_metadata("Dynamics")
+        return sorted(
+            r["name"] for r in rows if r.get("model_type") == model_type
+        )
+
+    @classmethod
+    def db_overview(cls, model_type: str | None = None):
+        """Return a pandas DataFrame summarising the Dynamics database.
+
+        Columns: ``name``, ``model_type``, ``system_type``, ``description``.
+
+        Parameters
+        ----------
+        model_type : str, optional
+            If given, only show models of that category.
+
+        Examples
+        --------
+        >>> Dynamics.db_overview()
+        >>> Dynamics.db_overview(model_type='neural_mass')
+        """
+        import pandas as pd
+        from tvbo.data.registry import list_entries_with_metadata
+        rows = list_entries_with_metadata("Dynamics")
+        if model_type is not None:
+            rows = [r for r in rows if r.get("model_type") == model_type]
+        df = pd.DataFrame([
+            {
+                "name":        r.get("name", ""),
+                "model_type":  r.get("model_type", ""),
+                "system_type": r.get("system_type", "continuous"),
+                "description": (r.get("description") or "")[:80],
+            }
+            for r in rows
+        ]).sort_values(["model_type", "name"]).reset_index(drop=True)
+        return df
 
     # -------  Ontology enrichment  -------
 
@@ -1052,24 +1103,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Migrate coupling_terms → coupling_inputs (coupling_terms is deprecated)
         _migrate_coupling_terms(self)
 
-        # Pre-compute coupling input symbols for fast set intersection
-        coupling_symbols = set(symbols(list(self.coupling_inputs.keys())))
+        # Collect all equations (state + derived) and update stored Equation objects
+        all_eqs = update_equations(self)
 
-        # If any state variable already has coupling_variable=True (from YAML),
-        # respect explicit assignments and skip auto-detection
-        has_explicit_cvars = any(
-            getattr(sv, 'coupling_variable', False)
-            for sv in self.state_variables.values()
-        )
-
-        for v, eq in update_equations(self).items():
+        for v, eq in all_eqs.items():
             equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=str(eq.rhs))
             if v in self.state_variables:
                 self.state_variables[v].equation = equation
-                # Auto-detect coupling variables only if none were explicitly set
-                if not has_explicit_cvars:
-                    if coupling_symbols & eq.rhs.free_symbols:
-                        self.state_variables[v].coupling_variable = True
             elif v in self.derived_variables:
                 # Preserve conditionals through the equation update
                 old_conds = getattr(self.derived_variables[v].equation, 'conditionals', None)
@@ -1355,15 +1395,6 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Keep parameters clean: remove any parameter with same name
         if key in self.parameters:
             del self.parameters[key]
-        # Auto-mark coupling target(s): any state variable whose RHS uses this symbol
-
-        c_sym = Symbol(key)
-        eqs_state = self.get_equations(format="state-equations")
-        for sv_name, eq in (eqs_state or {}).items():
-            rhs = getattr(eq, "rhs", None)
-            if rhs is not None and c_sym in getattr(rhs, "free_symbols", set()):
-                if sv_name in self.state_variables:
-                    self.state_variables[sv_name].coupling_variable = True
 
         return self
 

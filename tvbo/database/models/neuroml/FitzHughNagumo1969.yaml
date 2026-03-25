@@ -1,0 +1,22 @@
+name: FitzHughNagumo1969
+model_type: spiking
+source: 'NeuroML2 example: NML2_AbstractCells'
+parameters:
+  a:
+    value: 0.7
+  b:
+    value: 0.08
+  I:
+    value: 1.0
+  phi:
+    value: 0.08
+state_variables:
+  V:
+    equation:
+      rhs: V - V**3/3 - W + I
+    initial_value: 0.0
+    variable_of_interest: true
+  W:
+    equation:
+      rhs: phi*(V + a - b*W)
+    initial_value: 0.0

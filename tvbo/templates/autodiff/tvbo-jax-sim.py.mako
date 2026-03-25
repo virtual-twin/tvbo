@@ -196,7 +196,7 @@ def kernel(state):
 % else:
     p = Bunch()  # No parameters for this model
 % endif
-    params_integrate = (p, state.parameters.coupling, state.stimulus)
+    params_integrate = (p, ${'state.parameters.coupling' if coupling else 'Bunch()'}, state.stimulus)
 
     op = lambda ics, external_input: integrate(ics, weights, dt, params_integrate, delay_indices, external_input)
     latest_carry, res = jax.lax.scan(op, ics, (time_steps, noise))

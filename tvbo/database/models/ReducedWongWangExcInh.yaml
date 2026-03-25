@@ -1,5 +1,6 @@
 name: ReducedWongWangExcInh
 iri: tvbo:ReducedWongWangExcInh
+model_type: mean_field
 parameters:
   G:
     name: G

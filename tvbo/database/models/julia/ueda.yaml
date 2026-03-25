@@ -1,4 +1,5 @@
 name: Ueda
+model_type: generic
 autonomous: false
 references:
 - Ruelle1980

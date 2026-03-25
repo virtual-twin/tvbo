@@ -240,7 +240,6 @@ def plot_graph_networkx(
 
     # Draw
     edgelist_draw = [(u, v, k) for u, v, k, _ in edges_list]
-    print(edge_kwargs)
     nx.draw_networkx_edges(
         G,
         pos,

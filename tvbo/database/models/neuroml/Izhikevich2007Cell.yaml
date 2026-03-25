@@ -1,0 +1,52 @@
+name: Izhikevich2007Cell
+model_type: spiking
+source: 'NeuroML2 example: Ex16_Inputs'
+parameters:
+  C:
+    value: 100.0
+    description: Capacitance (pF)
+  k:
+    value: 0.7
+    description: nS/mV
+  vr:
+    value: -60.0
+    description: Resting potential (mV)
+  vt:
+    value: -40.0
+    description: Threshold potential (mV)
+  vpeak:
+    value: 35.0
+    description: Peak voltage (mV)
+  a:
+    value: 0.03
+    description: Recovery rate (1/ms)
+  b:
+    value: -2.0
+    description: Recovery sensitivity (nS)
+  c:
+    value: -50.0
+    description: Reset voltage (mV)
+  d:
+    value: 100.0
+    description: Recovery increment (pA)
+derived_variables:
+  I_ext:
+    equation:
+      rhs: Piecewise((1000.0, (t >= 0.05) & (t < 0.25)), (0.0, True))
+    description: 'pulseGen0: delay=50ms, duration=200ms, amplitude=1nA=1000pA (times in SI seconds)'
+state_variables:
+  v:
+    equation:
+      rhs: (k*(v - vr)*(v - vt) + I_ext - u) / C
+    initial_value: -60.0
+    variable_of_interest: true
+  u:
+    equation:
+      rhs: a*(b*(v - vr) - u)
+    initial_value: 0.0
+events:
+  spike:
+    condition:
+      rhs: v > vpeak
+    affect:
+      rhs: v = c; u = u + d

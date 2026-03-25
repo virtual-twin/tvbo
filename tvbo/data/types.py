@@ -94,6 +94,7 @@ class SimulationResult:
         self._extras = {}
         self._timeseries = None
         self._units = units or {}  # {variable_name: unit_string}
+        self._source = None  # back-reference to ExperimentResult (set externally)
 
         # ── Backward compat: accept old-style result= arg ──
         if result is not None and data is None:
@@ -120,11 +121,15 @@ class SimulationResult:
 
     def sel(self, **kw):
         """Label-based selection returning a new SimulationResult."""
-        return SimulationResult(data=self.data.sel(**kw), units=self._units)
+        out = SimulationResult(data=self.data.sel(**kw), units=self._units)
+        out._source = self._source
+        return out
 
     def isel(self, **kw):
         """Integer-based selection returning a new SimulationResult."""
-        return SimulationResult(data=self.data.isel(**kw), units=self._units)
+        out = SimulationResult(data=self.data.isel(**kw), units=self._units)
+        out._source = self._source
+        return out
 
     @property
     def time(self):
@@ -137,7 +142,8 @@ class SimulationResult:
     def state_names(self):
         """State variable names from data coordinates."""
         if self.data is not None and 'variable' in self.data.coords:
-            return list(self.data.coords['variable'].values)
+            v = self.data.coords['variable'].values
+            return list(np.atleast_1d(v))
         return self._extras.get('state_names', [])
 
     @property
@@ -229,14 +235,18 @@ class SimulationResult:
         from tvbo.plot.timeseries import plot_timeseries
         return plot_timeseries(self, ax=ax, **kwargs)
 
-    def animate(self, type="network", **kwargs):
+    def animate(self, type=None, **kwargs):
         """Animate simulation results.
 
         Parameters
         ----------
-        type : str
-            'network' (default) — nodes colored by state on graph layout.
+        type : str, optional
+            'network' — nodes colored by state on graph layout.
             'phase' — trailing trajectory in phase space.
+            'timeseries' — evolving time-series traces.
+            A state variable name — selects that variable, then animates.
+            If None, auto-selects 'network' when a network is available,
+            otherwise 'timeseries'.
         **kwargs
             Forwarded to the animation function.
 
@@ -244,11 +254,36 @@ class SimulationResult:
         -------
         matplotlib.animation.FuncAnimation
         """
+        _known_types = {'network', 'phase', 'timeseries', None}
+        result = self
+        if type not in _known_types:
+            # Treat as variable name selection
+            result = self.sel(variable=type)
+            type = None
+        if type is None:
+            type = result._resolve_animate_type()
         if type == "phase":
             from tvbo.plot.animate import animate_phase
-            return animate_phase(self, **kwargs)
+            return animate_phase(result, **kwargs)
+        if type == "timeseries":
+            from tvbo.plot.animate import animate_timeseries
+            return animate_timeseries(result, **kwargs)
         from tvbo.plot.animate import animate_network
-        return animate_network(self, **kwargs)
+        return animate_network(result, **kwargs)
+
+    def _resolve_animate_type(self):
+        """Pick the best animation type based on available metadata."""
+        if self._extras.get('graph'):
+            return 'network'
+        exp_result = self._source
+        if exp_result is not None:
+            experiment = getattr(exp_result, 'source', None)
+            if experiment is not None and getattr(experiment, 'network', None) is not None:
+                return 'network'
+        has_nodes = (self.data is not None and 'node' in getattr(self.data, 'coords', {}))
+        if has_nodes:
+            return 'network'
+        return 'timeseries'
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -862,6 +897,10 @@ class ExperimentResult:
         self.name = name or experiment_name
         self.source = source
         self._extras.update(kwargs)
+
+        # Link integration back to this ExperimentResult
+        if integration is not None:
+            integration._source = self
 
         # Inject variable units from source dynamics into integration result
         if source is not None and integration is not None and not integration._units:
