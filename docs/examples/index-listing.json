@@ -1,8 +1,0 @@
-{
-  "listing": "/examples/index.html",
-  "items": [
-    "/examples/dynamics_from_db.html",
-    "/examples/network_from_db.html",
-    "/examples/create_network.html"
-  ]
-}
