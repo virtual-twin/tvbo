@@ -87,8 +87,18 @@ jobs:
         run: pip install -e ".[all]" pytest-xdist
       - name: Generate reference data
         run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
-      - name: Run tests (no doc tests)
-        run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
+      - name: Run Python tests (no Julia, no docs)
+        run: |
+          pytest -x -q --ignore=tests/test_docs.py \
+            --ignore=tests/functional/test_simulation_backends_julia.py \
+            --ignore=tests/test_networkdynamics_comparison.py \
+            --override-ini="addopts="
+      - name: Run Julia tests
+        run: |
+          pytest -x -q \
+            tests/functional/test_simulation_backends_julia.py \
+            tests/test_networkdynamics_comparison.py \
+            --override-ini="addopts="
 
   # ─── Doc tests (after build) ─────────────────────────────────
   test-docs:
