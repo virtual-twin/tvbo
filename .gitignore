@@ -24,6 +24,7 @@ docs/api/
 docs/auto_examples/
 docs/**/*.ipynb
 docs/**/*.py
+!docs/Replication/**/*.py
 docs/gen_modules/
 docs/_api/
 docs/apidocs/

@@ -237,13 +237,6 @@ docs-test-to-debug:
 	echo "  Still Failing: $$failed"; \
 	echo "========================================"
 
-pypi-release:
-	@echo "Building and uploading to PyPI..."
-	@rm -rf dist build *.egg-info
-	@python -m build
-	@python -m twine check dist/*
-	@python -m twine upload dist/*
-	@echo "✓ Release uploaded to PyPI"
 
 release:
 	@echo "Creating GitHub release..."
