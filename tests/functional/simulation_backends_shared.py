@@ -6,7 +6,10 @@ from pathlib import Path
 
 def _has(package: str) -> bool:
     """Return True if *package* can be imported."""
-    return importlib.util.find_spec(package) is not None
+    try:
+        return importlib.util.find_spec(package) is not None
+    except (ModuleNotFoundError, ValueError):
+        return False
 
 
 _HAVE_TVB = _has("tvb.simulator")

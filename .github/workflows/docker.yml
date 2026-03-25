@@ -1,7 +1,7 @@
 # Build and push TVBO container, then run tests inside the fresh image.
 #
 # Pipeline: build → test-container + test-docs (parallel) → release-ready (main only)
-name: Docker
+name: Build & Test Container
 
 on:
   push:
