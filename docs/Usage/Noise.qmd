@@ -31,9 +31,9 @@ res_noise = exp_noise.run()
 import matplotlib.pyplot as plt
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 3), sharey=True)
-axes[0].plot(res_det.integration.time, res_det.integration.data[:, 0, 0], lw=0.5)
+axes[0].plot(res_det.integration.time, res_det.integration.isel(variable=0).data.values, lw=0.5)
 axes[0].set_title("Deterministic")
-axes[1].plot(res_noise.integration.time, res_noise.integration.data[:, 0, 0], lw=0.5)
+axes[1].plot(res_noise.integration.time, res_noise.integration.isel(variable=0).data.values, lw=0.5)
 axes[1].set_title(
     f"With noise ({exp_noise.integration.noise.parameters['sigma'].name} =  {exp_noise.integration.noise.parameters['sigma'].value})"
 )

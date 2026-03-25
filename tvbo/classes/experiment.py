@@ -242,6 +242,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             coup_name = str(getattr(func, 'name', 'Linear'))
             self.network.coupling[coup_name] = func
 
+        # Auto-populate incoming_states on couplings from dynamics' coupling_variable flag.
+        # coupling.incoming_states supervenes: if the coupling already declares which
+        # states it receives, that is authoritative. Only when incoming_states is empty
+        # do we fall back to state variables with coupling_variable=True in the dynamics.
+        dyn = getattr(self, 'dynamics', None)
+        if dyn:
+            cvars = [
+                str(sv.name)
+                for sv in (getattr(dyn, 'state_variables', None) or {}).values()
+                if getattr(sv, 'coupling_variable', False)
+            ]
+            if cvars:
+                for coup in (getattr(self.network, 'coupling', None) or {}).values():
+                    if not getattr(coup, 'incoming_states', None):
+                        coup.incoming_states = list(cvars)
+
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, '_pending_source_file', None)
 

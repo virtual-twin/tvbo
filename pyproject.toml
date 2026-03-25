@@ -36,7 +36,7 @@ dependencies = [
     "sympy>=1.13.0",
 
     # Visualization
-    "matplotlib>=3.10.0",
+    "bsplot>=0.0.4",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
 
@@ -76,7 +76,6 @@ docs = [
     "pybtex>=0.24.0",
     "pypdf>=5.1.0",
     "black>=25.9.0",
-    "bsplot @ git+https://github.com/leon-k-martin/bsplot.git",
     "jupyter",
     "nbclient>=0.10.0",
 ]

@@ -896,8 +896,6 @@ website:
                         href: datamodel/slots/operator_type.qmd
                       - text: "operators"
                         href: datamodel/slots/operators.qmd
-                      - text: "optimization"
-                        href: datamodel/slots/optimization.qmd
                       - text: "optimizations"
                         href: datamodel/slots/optimizations.qmd
                       - text: "optional"
@@ -1280,6 +1278,8 @@ website:
                         href: api/adapters/modelingtoolkit.qmd
                       - text: "Networkdynamics"
                         href: api/adapters/networkdynamics.qmd
+                      - text: "Neuroml"
+                        href: api/adapters/neuroml.qmd
                       - text: "Openminds"
                         href: api/adapters/openminds.qmd
                       - text: "Pyrates"
@@ -1416,6 +1416,8 @@ website:
                     contents:
                       - text: "Analysis"
                         href: api/plot/analysis.qmd
+                      - text: "Animate"
+                        href: api/plot/animate.qmd
                       - text: "Bifurcation Diagram"
                         href: api/plot/bifurcation_diagram.qmd
                       - text: "Functions"
@@ -1426,6 +1428,10 @@ website:
                         href: api/plot/network_graph.qmd
                       - text: "Ontology"
                         href: api/plot/ontology.qmd
+                      - text: "Phase"
+                        href: api/plot/phase.qmd
+                      - text: "Timeseries"
+                        href: api/plot/timeseries.qmd
                       - text: "Utils"
                         href: api/plot/utils.qmd
                   - section: "Run"
@@ -1454,6 +1460,8 @@ website:
                     contents:
                       - text: "Report"
                         href: api/utils/report.qmd
+                      - text: "Units"
+                        href: api/utils/units.qmd
 # END:api-autogen
               - text: "Developer"
                 href: Developer/contributing.md
